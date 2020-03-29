@@ -79,15 +79,6 @@ public:
     (void)periodic_faces;
   }
 
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
-  }
-
   void
   set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
                           std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)

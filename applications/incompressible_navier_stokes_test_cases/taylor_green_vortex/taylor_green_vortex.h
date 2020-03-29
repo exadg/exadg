@@ -431,7 +431,7 @@ public:
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
+  set_mesh_movement_function() override
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 

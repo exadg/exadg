@@ -193,15 +193,6 @@ public:
                         deformation);
   }
 
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
-  }
-
   void set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim>> /*boundary_descriptor_velocity*/,
     std::shared_ptr<BoundaryDescriptorP<dim>> /*boundary_descriptor_pressure*/)
@@ -209,7 +200,6 @@ public:
     // test case with pure periodic BC
     // boundary descriptors remain empty for velocity and pressure
   }
-
 
   void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
@@ -219,7 +209,6 @@ public:
     field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
-
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)

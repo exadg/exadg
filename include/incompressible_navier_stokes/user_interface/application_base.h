@@ -58,6 +58,15 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces) = 0;
 
+  virtual std::shared_ptr<Function<dim>>
+  set_mesh_movement_function()
+  {
+    std::shared_ptr<Function<dim>> mesh_motion;
+    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+    return mesh_motion;
+  }
+
   virtual void
   set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -65,9 +74,6 @@ public:
 
   virtual void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
-
-  virtual std::shared_ptr<Function<dim>>
-  set_mesh_movement_function() = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm) = 0;

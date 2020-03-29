@@ -406,10 +406,10 @@ public:
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
     // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
-    param.multigrid_data_viscous.type                   = MultigridType::hMG;
+    param.solver_viscous              = SolverViscous::CG;
+    param.solver_data_viscous         = SolverData(1000, 1.e-12, 1.e-6);
+    param.preconditioner_viscous      = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    param.multigrid_data_viscous.type = MultigridType::hMG;
     param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
     param.update_preconditioner_viscous                 = false;
 
@@ -430,7 +430,7 @@ public:
     param.solver_momentum                = SolverMomentum::FGMRES;
     param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
     param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
     param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
     // Jacobi smoother data
@@ -635,7 +635,7 @@ public:
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
+  set_mesh_movement_function() override
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 

@@ -90,7 +90,7 @@ public:
     param.solver_type = SolverType::Steady; // Unsteady;
     param.temporal_discretization =
       TemporalDiscretization::BDFCoupledSolution; // BDFDualSplittingScheme;
-    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; // Explicit;
+    param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit; // Explicit;
     param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     param.max_velocity                  = max_velocity;
     param.cfl                           = 1.0e-1;
@@ -222,15 +222,6 @@ public:
     }
 
     triangulation->refine_global(n_refine_space);
-  }
-
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
   }
 
   void

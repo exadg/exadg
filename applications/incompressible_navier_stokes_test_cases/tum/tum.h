@@ -180,9 +180,9 @@ public:
     param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-12, 1.e-6);
 
     // linear solver
-    param.solver_momentum         = SolverMomentum::GMRES; // GMRES; //FGMRES;
-    param.solver_data_momentum    = SolverData(1e4, 1.e-12, 1.e-2, 100);
-    param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+    param.solver_momentum                = SolverMomentum::GMRES; // GMRES; //FGMRES;
+    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
     param.update_preconditioner_momentum = true;
 
     // formulation
@@ -319,15 +319,6 @@ public:
         }
       }
     }
-  }
-
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
   }
 
   void

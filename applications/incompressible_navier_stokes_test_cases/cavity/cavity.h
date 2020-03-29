@@ -194,7 +194,8 @@ public:
     param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
     param.multigrid_operator_type_velocity_block =
       MultigridOperatorType::ReactionConvectionDiffusion;
-    param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; // GMRES;
+    param.multigrid_data_velocity_block.smoother_data.smoother =
+      MultigridSmoother::Jacobi; // GMRES;
     param.multigrid_data_velocity_block.smoother_data.preconditioner =
       PreconditionerSmoother::BlockJacobi;
     param.multigrid_data_velocity_block.smoother_data.iterations        = 5;
@@ -237,15 +238,6 @@ public:
           cell->face(face_number)->set_boundary_id(1);
       }
     }
-  }
-
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
   }
 
   void

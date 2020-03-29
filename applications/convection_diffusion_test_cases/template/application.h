@@ -82,21 +82,11 @@ public:
     triangulation->refine_global(n_refine_space);
   }
 
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
-  }
-
   void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
   }
-
 
   void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)

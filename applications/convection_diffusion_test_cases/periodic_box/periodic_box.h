@@ -169,14 +169,6 @@ public:
     field_functions->velocity.reset(new Velocity<dim>(dim));
   }
 
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-
-    return mesh_motion;
-  }
-
   void
   set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution)
   {

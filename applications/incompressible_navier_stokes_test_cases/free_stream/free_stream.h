@@ -114,8 +114,8 @@ public:
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // velocity pressure coupling terms
-    param.gradp_formulation = FormulationPressureGradientTerm::Strong;  // TODO //Weak;
-    param.divu_formulation = FormulationVelocityDivergenceTerm::Strong; // TODO //Weak;
+    param.gradp_formulation = FormulationPressureGradientTerm::Strong;   // TODO //Weak;
+    param.divu_formulation  = FormulationVelocityDivergenceTerm::Strong; // TODO //Weak;
 
     // special case: pure DBC's
     param.pure_dirichlet_bc     = true;
@@ -245,7 +245,7 @@ public:
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
+  set_mesh_movement_function() override
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 
