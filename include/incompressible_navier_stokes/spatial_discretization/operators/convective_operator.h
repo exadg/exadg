@@ -843,7 +843,7 @@ public:
     // inflow:  factor = 0.0 (set convective flux to zero)
     scalar outflow_indicator = make_vectorized_array<Number>(1.0);
 
-    for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+    for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
     {
       if(uM_n[v] < 0.0) // backflow at outflow boundary
         outflow_indicator[v] = 0.0;

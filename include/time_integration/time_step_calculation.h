@@ -214,7 +214,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
 
     // loop over vectorized array
     double dt = std::numeric_limits<double>::max();
-    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+    for(unsigned int v = 0; v < VectorizedArray<value_type>::size(); ++v)
     {
       dt = std::min(dt, (double)delta_t_cell[v]);
     }
@@ -289,7 +289,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
 
     // loop over vectorized array
     double dt = std::numeric_limits<double>::max();
-    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+    for(unsigned int v = 0; v < VectorizedArray<value_type>::size(); ++v)
     {
       dt = std::min(dt, (double)delta_t_cell[v]);
     }

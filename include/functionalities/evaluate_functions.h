@@ -28,8 +28,8 @@ using namespace dealii;
 //{
 //  VectorizedArray<Number> value = make_vectorized_array<Number>(0.0);
 //
-//  Number array[VectorizedArray<Number>::n_array_elements];
-//  for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+//  value_type array[VectorizedArray<value_type>::size()];
+//  for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
 //  {
 //    Point<dim> q_point;
 //    for(unsigned int d = 0; d < dim; ++d)
@@ -54,8 +54,8 @@ using namespace dealii;
 //
 //  for(unsigned int d = 0; d < dim; ++d)
 //  {
-//    Number array[VectorizedArray<Number>::n_array_elements];
-//    for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+//    value_type array[VectorizedArray<value_type>::size()];
+//    for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
 //    {
 //      Point<dim> q_point;
 //      for(unsigned int d = 0; d < dim; ++d)
@@ -153,8 +153,8 @@ struct FunctionEvaluator<0, dim, Number>
   {
     VectorizedArray<Number> value = make_vectorized_array<Number>(0.0);
 
-    Number array[VectorizedArray<Number>::n_array_elements];
-    for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+    Number array[VectorizedArray<Number>::size()];
+    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); ++n)
     {
       Point<dim> q_point;
       for(unsigned int d = 0; d < dim; ++d)
@@ -201,8 +201,8 @@ struct FunctionEvaluator<1, dim, Number>
 
     for(unsigned int d = 0; d < dim; ++d)
     {
-      Number array[VectorizedArray<Number>::n_array_elements];
-      for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+      Number array[VectorizedArray<Number>::size()];
+      for(unsigned int n = 0; n < VectorizedArray<Number>::size(); ++n)
       {
         Point<dim> q_point;
         for(unsigned int d = 0; d < dim; ++d)
@@ -257,8 +257,8 @@ struct FunctionEvaluator<1, dim, Number>
 
     for(unsigned int d = 0; d < dim; ++d)
     {
-      Number array[VectorizedArray<Number>::n_array_elements];
-      for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+      Number array[VectorizedArray<Number>::size()];
+      for(unsigned int n = 0; n < VectorizedArray<Number>::size(); ++n)
       {
         Point<dim>     q_point;
         Tensor<1, dim> normal;

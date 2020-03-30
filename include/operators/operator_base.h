@@ -74,7 +74,7 @@ public:
   /*
    * Solution of linear systems of equations and preconditioning
    */
-  static const unsigned int vectorization_length = VectorizedArray<Number>::n_array_elements;
+  static const unsigned int vectorization_length = VectorizedArray<Number>::size();
 
   typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
 
