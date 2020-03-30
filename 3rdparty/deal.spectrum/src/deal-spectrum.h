@@ -70,7 +70,7 @@ public:
   {
     // init setup ...
     s.init(dim, n_cells_1D, points_src, points_dst);
-    
+
     std::vector<types::global_dof_index> local_cells;
     for(const auto & cell : tria.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
@@ -130,22 +130,24 @@ public:
 
     types::global_dof_index N  = s.cells * s.points_dst;
     types::global_dof_index Nx = (N / 2 + 1) * 2;
-    
+
     for(types::global_dof_index d = 0; d < static_cast<types::global_dof_index>(s.dim); d++)
     {
       types::global_dof_index c = 0;
       for(types::global_dof_index k = 0; k < (end - start); k++)
         for(types::global_dof_index j = 0; j < N; j++)
           for(types::global_dof_index i = 0; i < Nx; i++, c++)
-            if(i < N )
-              indices_want.push_back(d * pow_(points_dst * n_cells_1D, dim) + (k+start) * pow_(points_dst * n_cells_1D, 2) + j * pow_(points_dst * n_cells_1D, 1) + i);
+            if(i < N)
+              indices_want.push_back(d * pow_(points_dst * n_cells_1D, dim) +
+                                     (k + start) * pow_(points_dst * n_cells_1D, 2) +
+                                     j * pow_(points_dst * n_cells_1D, 1) + i);
             else
               indices_want.push_back(numbers::invalid_dof_index); // x-padding
-        
-      for(; c < static_cast<types::global_dof_index>(fftw.bsize) ; c++)
+
+      for(; c < static_cast<types::global_dof_index>(fftw.bsize); c++)
         indices_want.push_back(numbers::invalid_dof_index); // z-padding
     }
-    
+
     nonconti = std::make_shared<Utilities::MPI::NoncontiguousPartitioner<double>>(indices_has,
                                                                                   indices_want,
                                                                                   comm);
@@ -182,12 +184,11 @@ public:
       timer.start("Permutation");
       ArrayView<double> dst(
         fftw.u_real,
-        s.dim *
-          pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
+        s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
       ArrayView<double> src_(ipol.dst,
-                             s.dim * pow_(static_cast<types::global_dof_index>(
-                                                      s.cells * s.points_dst),
-                                                    s.dim));
+                             s.dim *
+                               pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst),
+                                    s.dim));
       nonconti->update_values(dst, src_);
 
       timer.append("Permutation");
@@ -228,18 +229,20 @@ public:
   }
 
 private:
-    
-    types::global_dof_index pow_ (const types::global_dof_index base, const types::global_dof_index exp){
-        types::global_dof_index result = 1.0;
-        
-        for(types::global_dof_index i = 0; i < exp; i++)
-            result *= base;
-        
-        return result;
-    };
-    
+  types::global_dof_index
+  pow_(const types::global_dof_index base, const types::global_dof_index exp)
+  {
+    types::global_dof_index result = 1.0;
+
+    for(types::global_dof_index i = 0; i < exp; i++)
+      result *= base;
+
+    return result;
+  };
+
   template<int dim>
-  double norm_point_to_lex(const Point<dim> &c, const unsigned int &n_cells_1D)
+  double
+  norm_point_to_lex(const Point<dim> & c, const unsigned int & n_cells_1D)
   {
     // convert normalized point [0, 1] to lex
     if(dim == 2)
@@ -249,7 +252,7 @@ private:
              n_cells_1D * n_cells_1D * std::floor(c[2]);
     else
       Assert(false, ExcMessage("not implemented"));
- 
+
     return 0.0;
   }
 
@@ -263,10 +266,10 @@ private:
 
   // struct containing the setup
   Setup s;
-  
+
   // ... for interpolation
   Interpolator ipol;
-  
+
   // ... for spectral analysis
   SpectralAnalysis fftw;
 
