@@ -66,8 +66,8 @@ public:
     auto mid = matrix_free.get_cell_iterator(cell, 0)->material_id();
 
 #ifdef DEBUG
-    for(unsigned int v = 1; v < matrix_free->n_active_entries_per_cell_batch(cell); v++)
-      AssertThrow(mid == matrix_free->get_cell_iterator(cell, v)->material_id(),
+    for(unsigned int v = 1; v < matrix_free.n_active_entries_per_cell_batch(cell); v++)
+      AssertThrow(mid == matrix_free.get_cell_iterator(cell, v)->material_id(),
                   ExcMessage("You have to categorize cells according to their materials!"));
 #endif
 
