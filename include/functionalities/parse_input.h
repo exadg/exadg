@@ -29,8 +29,10 @@ parse_input(std::string const  parameter_file,
 
     fb.close();
 
-    if(assert_all_entries_are_found)
-      prm.check_all_found();
+    // TODO
+    (void)assert_all_entries_are_found;
+//    if(assert_all_entries_are_found)
+//      prm.check_all_found();
   }
 }
 
