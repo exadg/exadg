@@ -9,7 +9,6 @@
 
 #include "../functionalities/categorization.h"
 #include "../functionalities/constraints.h"
-#include "../functionalities/set_zero_mean_value.h"
 #include "operator_base.h"
 
 template<int dim, typename Number, typename AdditionalData, int n_components>

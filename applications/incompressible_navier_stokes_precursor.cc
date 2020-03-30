@@ -5,12 +5,6 @@
  *      Author: fehn
  */
 
-// specify the flow problem that has to be solved
-
-// TODO
-//#include "incompressible_navier_stokes_test_cases/template_two_domains.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
-
 // driver
 #include "../include/incompressible_navier_stokes/driver_precursor.h"
 

@@ -11,7 +11,6 @@
 #include "driver_steady_problems.h"
 
 #include "../user_interface/input_parameters.h"
-#include "functionalities/set_zero_mean_value.h"
 
 namespace IncNS
 {

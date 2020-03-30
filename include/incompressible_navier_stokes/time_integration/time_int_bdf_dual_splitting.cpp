@@ -10,7 +10,6 @@
 #include "../../time_integration/push_back_vectors.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
-#include "functionalities/set_zero_mean_value.h"
 
 namespace IncNS
 {
