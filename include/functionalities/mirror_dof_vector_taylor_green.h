@@ -126,7 +126,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
   }
 
   // perform data exchange and fill this buffer
-  std::vector<double> data_buffer(range_want_lex.size());
+  std::vector<double> data_buffer(range_want_lex.n_elements() * fe.n_dofs_per_cell());
   {
     // data structure for MPI exchange
     std::map<unsigned int, std::vector<double>> recv_buffer;
