@@ -293,7 +293,7 @@ TurbulenceModel<dim, Number>::vreman_model(scalar const & filter_width,
 
   scalar factor = C * filter_width;
 
-  for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; i++)
+  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); i++)
   {
     // If the norm of the velocity gradient tensor is zero, the subgrid-scale
     // viscosity is defined as zero, so we do nothing in that case.
@@ -334,7 +334,7 @@ TurbulenceModel<dim, Number>::wale_model(scalar const & filter_width,
 
   scalar D = make_vectorized_array<Number>(0.0);
 
-  for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; i++)
+  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); i++)
   {
     Number const tolerance = 1.e-12;
     if(S_d_norm_square[i] > tolerance)
@@ -373,7 +373,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   scalar invariant2 = 0.5 * (invariant1 * invariant1 - trace(G * G));
   scalar invariant3 = determinant(G);
 
-  for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements; n++)
+  for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
   {
     // if trace(G) = 0, all eigenvalues (and all singular values) have to be zero
     // and hence G is also zero. Set D[n]=0 in that case.
@@ -432,7 +432,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
    */
 
   //    scalar D_copy = D; // save a copy in order to verify the correctness of
-  //    the computation for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements;
+  //    the computation for(unsigned int n = 0; n < VectorizedArray<Number>::size();
   //    n++)
   //    {
   //      LAPACKFullMatrix<Number> G_local = LAPACKFullMatrix<Number>(dim);
@@ -476,7 +476,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //    }
   //
   //    // make sure that both variants yield the same result
-  //    for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements; n++)
+  //    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
   //    {
   //      AssertThrow(std::abs(D[n]-D_copy[n])<1.e-5,ExcMessage("Calculation of singular values is
   //      incorrect."));
@@ -489,7 +489,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //    scalar D_copy2 = D; // save a copy in order to verify the correctness of
   //    the computation D = make_vectorized_array<Number>(0.0);
   //
-  //    for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements; n++)
+  //    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
   //    {
   //      LAPACKFullMatrix<Number> gradient = LAPACKFullMatrix<Number>(dim);
   //      for(unsigned int i = 0; i < dim; i++)
@@ -515,7 +515,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //    }
   //
   //    // make sure that both variants yield the same result
-  //    for(unsigned int n = 0; n < VectorizedArray<Number>::n_array_elements; n++)
+  //    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
   //    {
   //      AssertThrow(std::abs(D[n]-D_copy2[n])<1.e-5,ExcMessage("Calculation of singular values
   //      is incorrect."));
