@@ -1,5 +1,5 @@
 /*
- * dg_convection_diffusion_operation.cpp
+ * dg_operator.cpp
  *
  *  Created on: Dec 4, 2018
  *      Author: fehn
@@ -114,7 +114,7 @@ DGOperator<dim, Number>::setup(
   dof_index_velocity_external = dof_index_velocity_external_in;
 
   // mass matrix operator
-  MassMatrixOperatorData mass_matrix_operator_data;
+  MassMatrixOperatorData<dim> mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index            = get_dof_index();
   mass_matrix_operator_data.quad_index           = get_quad_index();
   mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;

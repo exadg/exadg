@@ -231,9 +231,10 @@ enum_to_string(DegreePressure const enum_type);
  *
  *  We normally use the option Mirror as default setup.
  *  A direct imposition might be advantageous with respect to the CFL condition
- *  possibly allowing to use significantly larger time step sizes depending on
- *  other parameters of the spatial discretization (e.g., use of divergence and
- *  continuity penalty terms).
+ *  possibly allowing to use larger time step sizes (approximately 20 percent)
+ *  depending on other parameters of the spatial discretization (divergence versus
+ *  convective formulation of convective term, upwind factor, and use of divergence
+ *  and continuity penalty terms).
  */
 enum class TypeDirichletBCs
 {

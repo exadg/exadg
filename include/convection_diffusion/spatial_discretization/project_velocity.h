@@ -68,7 +68,8 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         integrator.submit_value(
-          evaluate_vectorial_function(function, integrator.quadrature_point(q), time), q);
+          FunctionEvaluator<dim, Number, 1>::value(function, integrator.quadrature_point(q), time),
+          q);
       }
 
       integrator.integrate(true, false);

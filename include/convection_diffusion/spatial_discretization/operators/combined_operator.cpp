@@ -183,37 +183,17 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
-  bool const get_value =
-    this->data.unsteady_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::DivergenceFormulation);
-
-  bool const get_gradient =
-    this->data.diffusive_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::ConvectiveFormulation);
-
-  bool const submit_value =
-    this->data.unsteady_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::ConvectiveFormulation);
-
-  bool const submit_gradient =
-    this->data.diffusive_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::DivergenceFormulation);
-
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector gradient_flux;
     scalar value_flux = make_vectorized_array<Number>(0.0);
 
     scalar value = make_vectorized_array<Number>(0.0);
-    if(get_value)
+    if(this->integrator_flags.cell_evaluate.value)
       value = integrator.get_value(q);
 
     vector gradient;
-    if(get_gradient)
+    if(this->integrator_flags.cell_evaluate.gradient)
       gradient = integrator.get_gradient(q);
 
     if(this->data.unsteady_problem)
@@ -246,9 +226,9 @@ Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
       gradient_flux += diffusive_kernel->get_volume_flux(integrator, q);
     }
 
-    if(submit_value)
+    if(this->integrator_flags.cell_integrate.value)
       integrator.submit_value(value_flux, q);
-    if(submit_gradient)
+    if(this->integrator_flags.cell_integrate.gradient)
       integrator.submit_gradient(gradient_flux, q);
   }
 }
@@ -461,15 +441,15 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
-    scalar value_p = calculate_exterior_value(value_m,
-                                              q,
-                                              integrator_m,
-                                              operator_type,
-                                              boundary_type,
-                                              boundary_id,
-                                              this->data.bc,
-                                              this->time);
+    scalar value_m = calculate_interior_value<dim, Number, 1, 0>(q, integrator_m, operator_type);
+    scalar value_p = calculate_exterior_value<dim, Number, 1, 0>(value_m,
+                                                                 q,
+                                                                 integrator_m,
+                                                                 operator_type,
+                                                                 boundary_type,
+                                                                 boundary_id,
+                                                                 this->data.bc,
+                                                                 this->time);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
@@ -486,15 +466,17 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
 
     if(this->data.diffusive_problem)
     {
-      scalar normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
-      scalar normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                                    q,
-                                                                    integrator_m,
-                                                                    operator_type,
-                                                                    boundary_type,
-                                                                    boundary_id,
-                                                                    this->data.bc,
-                                                                    this->time);
+      scalar normal_gradient_m =
+        calculate_interior_normal_gradient<dim, Number, 1, 0>(q, integrator_m, operator_type);
+      scalar normal_gradient_p =
+        calculate_exterior_normal_gradient<dim, Number, 1, 0>(normal_gradient_m,
+                                                              q,
+                                                              integrator_m,
+                                                              operator_type,
+                                                              boundary_type,
+                                                              boundary_id,
+                                                              this->data.bc,
+                                                              this->time);
 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,

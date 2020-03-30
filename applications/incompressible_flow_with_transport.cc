@@ -53,10 +53,10 @@
 #include "incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
+#include "functionalities/mapping_degree.h"
 #include "functionalities/matrix_free_wrapper.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
-#include "functionalities/mapping_degree.h"
 
 using namespace dealii;
 
@@ -151,8 +151,8 @@ private:
     periodic_faces;
 
   // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>               mesh;
-  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
+  std::shared_ptr<Mesh<dim>>                         mesh;
+  std::shared_ptr<MovingMeshAnalytical<dim, Number>> moving_mesh;
 
   // number of scalar quantities
   unsigned int const n_scalars;
@@ -296,9 +296,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   {
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      AssertThrow(
-        scalar_param[i].triangulation_type == TriangulationType::FullyDistributed,
-        ExcMessage("Parameter triangulation_type is different for fluid field and scalar field"));
+      AssertThrow(scalar_param[i].triangulation_type == TriangulationType::FullyDistributed,
+                  ExcMessage(
+                    "Parameter triangulation_type is different for fluid field and scalar field"));
     }
 
     triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
@@ -325,12 +325,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = set_mesh_movement_function<dim>();
-    moving_mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
-                                                  *triangulation,
-                                                  fluid_param.degree_u,
-                                                  mesh_motion,
-                                                  fluid_param.start_time,
-                                                  mpi_comm));
+    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(*triangulation,
+                                                            mapping_degree,
+                                                            fluid_param.degree_u,
+                                                            mpi_comm,
+                                                            mesh_motion,
+                                                            fluid_param.start_time));
 
     mesh = moving_mesh;
   }
@@ -772,19 +772,21 @@ Problem<dim, Number>::solve() const
     /*
      * ALE
      */
-
-    // move the mesh and update dependent data structures
-    moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-    matrix_free_wrapper->update_geometry();
-    navier_stokes_operator->update_after_mesh_movement();
-    for(unsigned int i = 0; i < n_scalars; ++i)
-      conv_diff_operator[i]->update_after_mesh_movement();
-    fluid_time_integrator->ale_update();
-    for(unsigned int i = 0; i < n_scalars; ++i)
+    if(fluid_param.ale_formulation) // moving mesh
     {
-      std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
-        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
-      time_int_bdf->ale_update();
+      // move the mesh and update dependent data structures
+      moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+      matrix_free_wrapper->update_geometry();
+      navier_stokes_operator->update_after_mesh_movement();
+      for(unsigned int i = 0; i < n_scalars; ++i)
+        conv_diff_operator[i]->update_after_mesh_movement();
+      fluid_time_integrator->ale_update();
+      for(unsigned int i = 0; i < n_scalars; ++i)
+      {
+        std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
+        time_int_bdf->ale_update();
+      }
     }
 
     /*
@@ -1061,11 +1063,6 @@ main(int argc, char ** argv)
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
     MPI_Comm mpi_comm(MPI_COMM_WORLD);
-
-    AssertThrow(DEGREE_MIN == DEGREE_MAX, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_SPACE_MIN == REFINE_SPACE_MAX, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_TIME_MIN == REFINE_TIME_MAX, ExcMessage("Invalid parameters!"));
 
     IncNS::InputParameters fluid_param;
     set_input_parameters(fluid_param);

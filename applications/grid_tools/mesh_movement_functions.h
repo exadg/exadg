@@ -45,7 +45,8 @@ class CubeMeshMovementFunctions : public Function<dim>
 {
 public:
   CubeMeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : data(data_in),
+    : Function<dim>(dim),
+      data(data_in),
       width(data_in.dimensions[0]),
       left(-1.0 / 2.0 * width),
       right(-left),
@@ -179,7 +180,8 @@ class RectangleMeshMovementFunctions : public Function<dim>
 {
 public:
   RectangleMeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : data(data_in),
+    : Function<dim>(dim),
+      data(data_in),
       length(data_in.dimensions[0]),
       height(data_in.dimensions[1]),
       depth(dim == 3 ? data_in.dimensions[2] : 1.0),

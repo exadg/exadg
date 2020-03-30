@@ -12,9 +12,9 @@
 
 #include "../../../operators/integrator_flags.h"
 #include "../../../operators/mapping_flags.h"
+#include "../../../operators/operator_type.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
-#include "weak_boundary_conditions.h"
 
 using namespace dealii;
 

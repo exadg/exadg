@@ -5,7 +5,7 @@
 #include "../../operators/operator_base.h"
 #include "../../operators/operator_type.h"
 
-#include "../user_interface/boundary_descriptor.h"
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 
 namespace Poisson
 {
@@ -20,17 +20,15 @@ struct LaplaceKernelData
   double IP_factor;
 };
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components = 1>
 class LaplaceKernel
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef VectorizedArray<Number> scalar;
 
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
-  typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
+  typedef FaceIntegrator<dim, n_components, Number> IntegratorFace;
 
 public:
   LaplaceKernel() : degree(1), tau(make_vectorized_array<Number>(0.0))
@@ -58,28 +56,46 @@ public:
   }
 
   IntegratorFlags
-  get_integrator_flags() const
+  get_integrator_flags(bool const is_dg) const
   {
     IntegratorFlags flags;
 
     flags.cell_evaluate  = CellFlags(false, true, false);
     flags.cell_integrate = CellFlags(false, true, false);
 
-    flags.face_evaluate  = FaceFlags(true, true);
-    flags.face_integrate = FaceFlags(true, true);
+    if(is_dg)
+    {
+      flags.face_evaluate  = FaceFlags(true, true);
+      flags.face_integrate = FaceFlags(true, true);
+    }
+    else
+    {
+      // evaluation of Neumann BCs for continuous elements
+      flags.face_evaluate  = FaceFlags(false, false);
+      flags.face_integrate = FaceFlags(true, false);
+    }
 
     return flags;
   }
 
   static MappingFlags
-  get_mapping_flags()
+  get_mapping_flags(bool const compute_interior_face_integrals,
+                    bool const compute_boundary_face_integrals)
   {
     MappingFlags flags;
 
-    flags.cells       = update_gradients | update_JxW_values;
-    flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
-    flags.boundary_faces =
-      update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+    flags.cells = update_gradients | update_JxW_values;
+
+    if(compute_interior_face_integrals)
+    {
+      flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+    }
+
+    if(compute_boundary_face_integrals)
+    {
+      flags.boundary_faces =
+        update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+    }
 
     return flags;
   }
@@ -117,31 +133,23 @@ public:
     }
   }
 
+  template<typename T>
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_gradient_flux(scalar const & value_m, scalar const & value_p) const
+    T
+    calculate_gradient_flux(T const & value_m, T const & value_p) const
   {
     return -0.5 * (value_m - value_p);
   }
 
+  template<typename T>
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_value_flux(scalar const & normal_gradient_m,
-                         scalar const & normal_gradient_p,
-                         scalar const & value_m,
-                         scalar const & value_p) const
+    T
+    calculate_value_flux(T const & normal_gradient_m,
+                         T const & normal_gradient_p,
+                         T const & value_m,
+                         T const & value_p) const
   {
     return 0.5 * (normal_gradient_m + normal_gradient_p) - tau * (value_m - value_p);
-  }
-
-  /*
-   * Volume flux, i.e., the term occurring in the volume integral
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
-  {
-    return integrator.get_gradient(q);
   }
 
 private:
@@ -165,23 +173,25 @@ struct LaplaceOperatorData : public OperatorBaseData
 
   Operators::LaplaceKernelData kernel_data;
 
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, typename Number>
-class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>>
+template<int dim, typename Number, int n_components = 1>
+class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components>
 {
 private:
-  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>> Base;
-  typedef LaplaceOperator<dim, Number>                        This;
+  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components> Base;
+  typedef LaplaceOperator<dim, Number, n_components>                        This;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
   typedef typename Base::Range Range;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
+  typedef Tensor<rank, dim, VectorizedArray<Number>> value;
 
 public:
   typedef Number                    value_type;
@@ -234,6 +244,11 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
+  void
+  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
+                                  OperatorType const &       operator_type,
+                                  types::boundary_id const & boundary_id) const;
+
   // Some more functionality on top of what is provided by the base class.
   void
   cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
@@ -264,7 +279,7 @@ private:
                                 LaplaceOperatorData<dim> const &     data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  Operators::LaplaceKernel<dim, Number> kernel;
+  Operators::LaplaceKernel<dim, Number, n_components> kernel;
 };
 
 } // namespace Poisson

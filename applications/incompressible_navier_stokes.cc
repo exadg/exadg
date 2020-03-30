@@ -35,9 +35,9 @@
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
+#include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/moving_mesh.h"
-#include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
@@ -130,8 +130,8 @@ private:
     periodic_faces;
 
   // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>               mesh;
-  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
+  std::shared_ptr<Mesh<dim>>                         mesh;
+  std::shared_ptr<MovingMeshAnalytical<dim, Number>> moving_mesh;
 
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
@@ -268,8 +268,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = set_mesh_movement_function<dim>();
-    moving_mesh.reset(new MovingMesh<dim, Number>(
-      mapping_degree, *triangulation, param.degree_u, mesh_motion, param.start_time, mpi_comm));
+    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
+      *triangulation, mapping_degree, param.degree_u, mpi_comm, mesh_motion, param.start_time));
 
     mesh = moving_mesh;
   }
