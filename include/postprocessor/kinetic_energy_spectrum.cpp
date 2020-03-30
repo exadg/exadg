@@ -34,7 +34,7 @@ public:
   }
 
   void
-  execute(const double *)
+  execute(const double *, const std::string & = "", const double = 0.0)
   {
   }
 
