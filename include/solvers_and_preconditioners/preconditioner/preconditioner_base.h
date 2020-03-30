@@ -8,9 +8,9 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_BASE_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_BASE_H_
 
-using namespace dealii;
-
 #include <deal.II/lac/la_parallel_vector.h>
+
+using namespace dealii;
 
 template<typename value_type>
 class PreconditionerBase
