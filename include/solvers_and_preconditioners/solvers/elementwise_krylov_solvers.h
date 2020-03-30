@@ -28,7 +28,7 @@ template<typename Number, typename Number2>
 bool
 all_smaller(const VectorizedArray<Number> a, const Number2 b)
 {
-  for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; ++i)
+  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
     if(a[i] >= b)
       return false;
   return true;
@@ -45,7 +45,7 @@ template<typename Number>
 bool
 all_true(const VectorizedArray<Number> a)
 {
-  for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; ++i)
+  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
     if(a[i] < 0)
       return false;
   return true;
@@ -86,7 +86,7 @@ converged(VectorizedArray<Number> & is_converged,
           unsigned int              k,
           unsigned int              MAX_ITER)
 {
-  for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
   {
     if((norm_r_abs[v] < ABS_TOL || norm_r_rel[v] < REL_TOL || k >= MAX_ITER))
       is_converged[v] = 1.0;
@@ -107,7 +107,7 @@ template<typename Number>
 void
 adjust_division_by_zero(VectorizedArray<Number> & x)
 {
-  for(unsigned int i = 0; i < VectorizedArray<Number>::n_array_elements; ++i)
+  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
     if(x[i] < 1e-30)
       x[i] = 1;
 }
@@ -469,7 +469,7 @@ template<typename Number>
 void
 SolverGMRES<value_type, Matrix, Preconditioner>::print(VectorizedArray<Number> y, std::string name)
 {
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
   {
     std::cout << name << "[" << v << "] = " << y[v] << std::endl;
   }
@@ -549,7 +549,7 @@ void
   VectorizedArray<Number> H_i_k   = VectorizedArray<Number>();
   VectorizedArray<Number> H_ip1_k = VectorizedArray<Number>();
 
-  for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
   {
     if(convergence_status[v] > 0.0)
     {
@@ -585,7 +585,7 @@ void
   VectorizedArray<Number> res_k       = VectorizedArray<Number>();
   VectorizedArray<Number> res_kp1     = VectorizedArray<Number>();
 
-  for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
   {
     if(convergence_status[v] > 0.0)
     {

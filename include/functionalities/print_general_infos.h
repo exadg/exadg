@@ -41,7 +41,7 @@ template<typename Number>
 void
 print_dealii_info(ConditionalOStream const & pcout)
 {
-  unsigned int const n_vect_doubles = VectorizedArray<Number>::n_array_elements;
+  unsigned int const n_vect_doubles = VectorizedArray<Number>::size();
   unsigned int const n_vect_bits    = 8 * sizeof(Number) * n_vect_doubles;
   std::string const  vect_level     = Utilities::System::get_current_vectorization_level();
   std::string const  type           = get_type(Number());
