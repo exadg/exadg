@@ -9,8 +9,11 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
 
 // functionalities
 #include "../../../include/functionalities/parse_input.h"
@@ -58,15 +61,6 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces) = 0;
 
-  virtual std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
-  }
-
   virtual void
   set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -78,6 +72,15 @@ public:
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm) = 0;
 
+  virtual std::shared_ptr<Function<dim>>
+  set_mesh_movement_function()
+  {
+    std::shared_ptr<Function<dim>> mesh_motion;
+    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+    return mesh_motion;
+  }
+
   void
   set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)
   {
@@ -85,11 +88,46 @@ public:
   }
 
 protected:
-  InputParameters param;
-  std::string     parameter_file;
+  std::string parameter_file;
 
   unsigned int n_subdivisions_1d_hypercube;
 };
+
+template<int dim, typename Number>
+class ApplicationBasePrecursor : public ApplicationBase<dim, Number>
+{
+public:
+  ApplicationBasePrecursor(std::string parameter_file)
+    : ApplicationBase<dim, Number>(parameter_file)
+  {
+  }
+
+  virtual ~ApplicationBasePrecursor()
+  {
+  }
+
+  virtual void
+  set_input_parameters_precursor(InputParameters & parameters) = 0;
+
+  virtual void
+  create_grid_precursor(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+      periodic_faces) = 0;
+
+  virtual void
+  set_boundary_conditions_precursor(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) = 0;
+
+  virtual void
+  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
+
+  virtual std::shared_ptr<PostProcessorBase<dim, Number>>
+  construct_postprocessor_precursor(InputParameters const & param, MPI_Comm const & mpi_comm) = 0;
+};
+
 
 } // namespace IncNS
 

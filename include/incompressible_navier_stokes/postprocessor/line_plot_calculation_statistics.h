@@ -41,11 +41,11 @@ using namespace dealii;
  *    around the normal vector.
  */
 
-template<int dim>
+template<int dim, typename Number>
 class LinePlotCalculatorStatistics
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef
     typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
@@ -107,12 +107,12 @@ private:
 
   // For all lines: for all points along the line: for all relevant cells: dof index of first dof of
   // current cell and all shape function values
-  std::vector<std::vector<std::vector<std::pair<unsigned int, std::vector<double>>>>>
+  std::vector<std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>>
     cells_global_velocity;
 
   // For all lines: for all points along the line: for all relevant cells: dof index of first dof of
   // current cell and all shape function values
-  std::vector<std::vector<std::vector<std::pair<unsigned int, std::vector<double>>>>>
+  std::vector<std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>>
     cells_global_pressure;
 
   // number of samples for averaging in time
@@ -120,11 +120,11 @@ private:
 
   // Velocity quantities
   // For all lines: for all points along the line
-  std::vector<std::vector<Tensor<1, dim, double>>> velocity_global;
+  std::vector<std::vector<Tensor<1, dim, Number>>> velocity_global;
 
   // Pressure quantities
   // For all lines: for all points along the line
-  std::vector<std::vector<double>> pressure_global;
+  std::vector<std::vector<Number>> pressure_global;
 
   bool write_final_output;
 };

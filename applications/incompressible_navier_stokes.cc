@@ -34,6 +34,7 @@
 #include "incompressible_navier_stokes_test_cases/vortex_periodic/vortex_periodic.h"
 
 // more complex applications and turbulence
+#include "incompressible_navier_stokes_test_cases/fda/fda_nozzle_benchmark.h"
 #include "incompressible_navier_stokes_test_cases/flow_past_cylinder/flow_past_cylinder.h"
 #include "incompressible_navier_stokes_test_cases/kelvin_helmholtz/kelvin_helmholtz.h"
 #include "incompressible_navier_stokes_test_cases/periodic_hill/periodic_hill.h"
@@ -41,7 +42,6 @@
 #include "incompressible_navier_stokes_test_cases/taylor_green_vortex/taylor_green_vortex.h"
 #include "incompressible_navier_stokes_test_cases/tum/tum.h"
 #include "incompressible_navier_stokes_test_cases/turbulent_channel/turbulent_channel.h"
-//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 // incompressible flow with scalar transport (but can also be used for pure fluid simulations)
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
@@ -106,6 +106,8 @@ public:
         app.reset(new IncNS::TurbulentChannel::Application<dim, Number>());
       else if(name == "PeriodicHill")
         app.reset(new IncNS::PeriodicHill::Application<dim, Number>());
+      else if(name == "FDA")
+        app.reset(new IncNS::FDA::Application<dim, Number>());
       else
         AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -164,6 +166,8 @@ public:
       app.reset(new IncNS::TurbulentChannel::Application<dim, Number>(input_file));
     else if(name == "PeriodicHill")
       app.reset(new IncNS::PeriodicHill::Application<dim, Number>(input_file));
+    else if(name == "FDA")
+      app.reset(new IncNS::FDA::Application<dim, Number>(input_file));
     else
       AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -209,19 +213,19 @@ run(std::string const & input_file,
     unsigned int const  refine_time,
     MPI_Comm const &    mpi_comm)
 {
-  std::shared_ptr<IncNS::Driver<dim, Number>> solver;
-  solver.reset(new IncNS::Driver<dim, Number>(mpi_comm));
+  std::shared_ptr<IncNS::Driver<dim, Number>> driver;
+  driver.reset(new IncNS::Driver<dim, Number>(mpi_comm));
 
   ApplicationSelector selector;
 
   std::shared_ptr<IncNS::ApplicationBase<dim, Number>> application =
     selector.get_application<dim, Number>(input_file);
 
-  solver->setup(application, degree, refine_space, refine_time);
+  driver->setup(application, degree, refine_space, refine_time);
 
-  solver->solve();
+  driver->solve();
 
-  solver->analyze_computing_times();
+  driver->analyze_computing_times();
 }
 
 //#define USE_SUB_COMMUNICATOR

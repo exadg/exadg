@@ -21,7 +21,7 @@ SET( SOURCE_FILES
      # Incompressible Navier-Stokes
      incompressible_navier_stokes.cc
      incompressible_navier_stokes_throughput.cc
-     incompressible_navier_stokes_two_domains.cc
+     incompressible_navier_stokes_precursor.cc
 
      # Incompressible flow with scalar transport
      incompressible_flow_with_transport.cc

@@ -8,42 +8,29 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
-// deal.II
-#include <deal.II/base/revision.h>
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/grid/manifold_lib.h>
-
 // postprocessor
-#include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
+#include "postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "spatial_discretization/dg_coupled_solver.h"
+#include "spatial_discretization/dg_dual_splitting.h"
+#include "spatial_discretization/dg_pressure_correction.h"
 
 // temporal discretization
-#include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
+#include "time_integration/driver_steady_problems.h"
+#include "time_integration/time_int_bdf_coupled_solver.h"
+#include "time_integration/time_int_bdf_dual_splitting.h"
+#include "time_integration/time_int_bdf_pressure_correction.h"
 
-// Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/application_base.h"
-#include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
-#include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
-#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+// application
+#include "user_interface/application_base.h"
 
 // general functionalities
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
-#include "../include/functionalities/moving_mesh.h"
-#include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/verify_boundary_conditions.h"
+#include "../functionalities/mapping_degree.h"
+#include "../functionalities/matrix_free_wrapper.h"
+#include "../functionalities/moving_mesh.h"
+#include "../functionalities/print_general_infos.h"
+#include "../functionalities/verify_boundary_conditions.h"
 
 namespace IncNS
 {

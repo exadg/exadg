@@ -77,7 +77,9 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {
-    create_grid_and_set_boundary_ids_nozzle(triangulation, n_refine_space, periodic_faces);
+    FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
+                                                       n_refine_space,
+                                                       periodic_faces);
   }
 
   void set_boundary_conditions(
