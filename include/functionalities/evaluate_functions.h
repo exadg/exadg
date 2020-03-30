@@ -25,8 +25,8 @@ using namespace dealii;
 //{
 //  VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
 //
-//  value_type array[VectorizedArray<value_type>::n_array_elements];
-//  for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+//  value_type array[VectorizedArray<value_type>::size()];
+//  for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
 //  {
 //    Point<dim> q_point;
 //    for(unsigned int d = 0; d < dim; ++d)
@@ -51,8 +51,8 @@ using namespace dealii;
 //
 //  for(unsigned int d = 0; d < dim; ++d)
 //  {
-//    value_type array[VectorizedArray<value_type>::n_array_elements];
-//    for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+//    value_type array[VectorizedArray<value_type>::size()];
+//    for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
 //    {
 //      Point<dim> q_point;
 //      for(unsigned int d = 0; d < dim; ++d)
@@ -134,8 +134,8 @@ struct FunctionEvaluator<dim, value_type, 0>
   {
     VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
 
-    value_type array[VectorizedArray<value_type>::n_array_elements];
-    for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+    value_type array[VectorizedArray<value_type>::size()];
+    for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
     {
       Point<dim> q_point;
       for(unsigned int d = 0; d < dim; ++d)
@@ -163,8 +163,8 @@ struct FunctionEvaluator<dim, value_type, 1>
 
     for(unsigned int d = 0; d < dim; ++d)
     {
-      value_type array[VectorizedArray<value_type>::n_array_elements];
-      for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+      value_type array[VectorizedArray<value_type>::size()];
+      for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
       {
         Point<dim> q_point;
         for(unsigned int d = 0; d < dim; ++d)
@@ -192,8 +192,8 @@ struct FunctionEvaluator<dim, value_type, 1>
 
     for(unsigned int d = 0; d < dim; ++d)
     {
-      value_type array[VectorizedArray<value_type>::n_array_elements];
-      for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+      value_type array[VectorizedArray<value_type>::size()];
+      for(unsigned int n = 0; n < VectorizedArray<value_type>::size(); ++n)
       {
         Point<dim>     q_point;
         Tensor<1, dim> normal;
