@@ -148,20 +148,17 @@ private:
                              DoFHandler<dim> const &                  dof_handler,
                              std::shared_ptr<Function<dim>>           displacement_function)
   {
+    FEValues<dim> fe_values(mapping,
+                            fe->base_element(0),
+                            Quadrature<dim>(fe->base_element(0).get_unit_support_points()),
+                            update_quadrature_points);
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
     this->mapping_ale->initialize(
       triangulation,
-      [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
+      [&](const typename Triangulation<dim>::cell_iterator & cell) -> std::vector<Point<dim>> {
         FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-        FEValues<dim> fe_values(mapping,
-                                fe,
-                                Quadrature<dim>(fe.base_element(0).get_unit_support_points()),
-                                update_quadrature_points);
-
-        typename DoFHandler<dim>::cell_iterator cell(&triangulation,
-                                                     cell_tria->level(),
-                                                     cell_tria->index(),
-                                                     &dof_handler);
         fe_values.reinit(cell);
 
         // compute displacement and add to original position
