@@ -86,7 +86,6 @@ void set_input_parameters(InputParameters &param)
   param.cfl_exponent_fe_degree_velocity = 1.5;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time_steps = 1;
   param.solver_info_data.interval_time = 0.1 * (param.end_time - param.start_time);
 
@@ -234,7 +233,7 @@ void
 set_input_parameters(InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 3;
+//  param.dim = 3; // TODO remove
   param.right_hand_side = false;
 
   // SPATIAL DISCRETIZATION
@@ -269,44 +268,6 @@ set_input_parameters(InputParameters &param)
 /*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-template<int dim, int spacedim>
-void
-merge_triangulations(const std::vector<Triangulation<dim, spacedim>> &tria_vec,
-                     Triangulation<dim, spacedim> &result,
-                     const double duplicated_vertex_tolerance = 1.0e-12,
-                     const bool copy_manifold_ids = false)
-{
-  std::vector<Triangulation<dim>> tria_tmp;
-  tria_tmp.resize(2);
-  unsigned int alternating = 0;
-  for(auto tria = tria_vec.begin(); tria != tria_vec.end()-1; ++tria, ++alternating)
-  {
-    if(tria_vec.size() == 2)
-    {
-      GridGenerator::merge_triangulations (*tria, *(tria+1), result, duplicated_vertex_tolerance,copy_manifold_ids);
-    }
-    else if(tria_vec.size() > 2)
-    {
-      if(tria == tria_vec.begin()) // begin
-      {
-        GridGenerator::merge_triangulations (*tria, *(tria+1), tria_tmp[alternating%2], duplicated_vertex_tolerance,copy_manifold_ids);
-      }
-      else if((tria+2) == tria_vec.end()) // end
-      {
-        GridGenerator::merge_triangulations (tria_tmp[(alternating-1)%2], *(tria+1), result, duplicated_vertex_tolerance,copy_manifold_ids);
-      }
-      else // intermediate
-      {
-        GridGenerator::merge_triangulations (tria_tmp[(alternating-1)%2], *(tria+1), tria_tmp[alternating%2], duplicated_vertex_tolerance,copy_manifold_ids);
-      }
-    }
-    else
-    {
-      AssertThrow(tria_vec.size() > 1, ExcMessage("A vector with at least two triangulations has to be provided."));
-    }
-  }
-}
 
 void create_triangulation(Triangulation<2> &tria)
 {
@@ -413,7 +374,11 @@ void create_triangulation(Triangulation<3> &tria)
                                            Point<3>(L_IN, -H_F/2.0, B_S/2.0),
                                            Point<3>(L_IN+T_S, H_S-H_F/2.0, B_F/2.0));
 
-  merge_triangulations(tria_vec, tria);
+  std::vector<Triangulation<3> const *> tria_vec_ptr(tria_vec.size());
+  for(unsigned int i=0; i< tria_vec.size(); ++i)
+    tria_vec_ptr[i] = &tria_vec[i];
+
+  GridGenerator::merge_triangulations(tria_vec_ptr, tria);
 }
 
 template<int dim>

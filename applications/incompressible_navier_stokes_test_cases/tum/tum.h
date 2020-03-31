@@ -221,57 +221,53 @@ public:
 
   void create_triangulation(Triangulation<2> & tria)
   {
-    Triangulation<2> tria_h1, tria_h2, tria_h3, tria_v1, tria_v2, tria_v3, tria_v4, tria_v5;
+    std::vector<Triangulation<2>> tria_vector(8);
 
-    GridGenerator::subdivided_hyper_rectangle(tria_h1,
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[0],
                                               std::vector<unsigned int>({4, 1}),
                                               Point<2>(0.0, 0.0),
                                               Point<2>(4.0 * L, -1.0 * L));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_h2,
-                                              std::vector<unsigned int>({1, 1}),
-                                              Point<2>(4.0 * L, -4.0 * L),
-                                              Point<2>(5.0 * L, -5.0 * L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_h3,
-                                              std::vector<unsigned int>({5, 1}),
-                                              Point<2>(5.0 * L, 0.0 * L),
-                                              Point<2>(10.0 * L, -1.0 * L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_v1,
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[1],
                                               std::vector<unsigned int>({1, 4}),
                                               Point<2>(1.0 * L, -1.0 * L),
                                               Point<2>(2.0 * L, -5.0 * L));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_v2,
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[2],
                                               std::vector<unsigned int>({1, 4}),
                                               Point<2>(3.0 * L, -1.0 * L),
                                               Point<2>(4.0 * L, -5.0 * L));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_v3,
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[3],
+                                              std::vector<unsigned int>({1, 1}),
+                                              Point<2>(4.0 * L, -4.0 * L),
+                                              Point<2>(5.0 * L, -5.0 * L));
+
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[4],
                                               std::vector<unsigned int>({1, 4}),
                                               Point<2>(5.0 * L, -1.0 * L),
                                               Point<2>(6.0 * L, -5.0 * L));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_v4,
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[5],
+                                              std::vector<unsigned int>({5, 1}),
+                                              Point<2>(5.0 * L, 0.0 * L),
+                                              Point<2>(10.0 * L, -1.0 * L));
+
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[6],
                                               std::vector<unsigned int>({1, 4}),
                                               Point<2>(7.0 * L, -1.0 * L),
                                               Point<2>(8.0 * L, -5.0 * L));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_v5,
+    GridGenerator::subdivided_hyper_rectangle(tria_vector[7],
                                               std::vector<unsigned int>({1, 4}),
                                               Point<2>(9.0 * L, -1.0 * L),
                                               Point<2>(10.0 * L, -5.0 * L));
 
-    // merge
-    Triangulation<2> tmp1, tmp2;
-    GridGenerator::merge_triangulations(tria_h1, tria_v1, tmp1);
-    GridGenerator::merge_triangulations(tmp1, tria_v2, tmp2);
-    GridGenerator::merge_triangulations(tmp2, tria_h2, tmp1);
-    GridGenerator::merge_triangulations(tmp1, tria_v3, tmp2);
-    GridGenerator::merge_triangulations(tmp2, tria_h3, tmp1);
-    GridGenerator::merge_triangulations(tmp1, tria_v4, tmp2);
-    GridGenerator::merge_triangulations(tmp2, tria_v5, tria);
+    std::vector<Triangulation<2> const *> tria_vector_ptr(tria_vector.size());
+    for(unsigned int i = 0; i < tria_vector.size(); ++i)
+      tria_vector_ptr[i] = &tria_vector[i];
+
+    GridGenerator::merge_triangulations(tria_vector_ptr, tria);
   }
 
   void create_triangulation(Triangulation<3> & tria)
@@ -355,7 +351,7 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = false; // true;
+    pp_data.output_data.write_output              = true;
     pp_data.output_data.output_folder             = output_directory + "vtu/";
     pp_data.output_data.output_name               = output_name;
     pp_data.output_data.output_start_time         = param.start_time;

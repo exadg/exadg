@@ -4,13 +4,13 @@
         "Dim": "2",
         "DegreeMin": "3",
         "DegreeMax": "3",
-        "RefineSpaceMin": "2",
-        "RefineSpaceMax": "2",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0",
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "KelvinHelmholtz",
+       	"Name": "TUM",
 	"OutputDirectory": "output/tum/",
 	"OutputName": "test"
     }
