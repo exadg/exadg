@@ -362,7 +362,7 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
         auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
         cell_v->get_mg_dof_indices(dof_indices);
 
-        for(unsigned int i = 0; i < Utilities::pow(this->degree_1 + 1, dim) * components; i++)
+        for(int i = 0; i < Utilities::pow(this->degree_1 + 1, dim) * components; i++)
           weights[cell * Utilities::pow(this->degree_1 + 1, dim) * components + i][v] =
             1.0 / vec[dof_indices[data_1_cm->get_shape_info(dof_handler_index)
                                     .lexicographic_numbering[i]]];
