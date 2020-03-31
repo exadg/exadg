@@ -478,7 +478,7 @@ Problem<dim, Number>::solve() const
 
       // structure_to_moving_mesh->update_data(vec_displacements);
       fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-      fluid_matrix_free_wrapper->update_geometry();
+      fluid_matrix_free_wrapper->update_mapping();
       fluid_operator->update_after_mesh_movement();
       fluid_time_integrator->ale_update();
 

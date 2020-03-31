@@ -780,7 +780,7 @@ Problem<dim, Number>::solve() const
     {
       // move the mesh and update dependent data structures
       moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-      matrix_free_wrapper->update_geometry();
+      matrix_free_wrapper->update_mapping();
       navier_stokes_operator->update_after_mesh_movement();
       for(unsigned int i = 0; i < n_scalars; ++i)
         conv_diff_operator[i]->update_after_mesh_movement();

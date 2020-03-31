@@ -274,7 +274,7 @@ Driver<dim, Number>::solve() const
         timer.restart();
 
         moving_mesh->move_mesh(time_integrator->get_next_time());
-        matrix_free_wrapper->update_geometry();
+        matrix_free_wrapper->update_mapping();
         navier_stokes_operator->update_after_mesh_movement();
         time_integrator->ale_update();
 

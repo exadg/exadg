@@ -217,7 +217,7 @@ Driver<dim, Number>::solve()
         std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
           std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
         moving_mesh->move_mesh(time_int_bdf->get_next_time());
-        matrix_free_wrapper->update_geometry();
+        matrix_free_wrapper->update_mapping();
         conv_diff_operator->update_after_mesh_movement();
         time_int_bdf->ale_update();
 

@@ -572,7 +572,7 @@ void
 TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
 {
   moving_mesh->move_mesh(time);
-  matrix_free_wrapper->update_geometry();
+  matrix_free_wrapper->update_mapping();
   operator_base->update_after_mesh_movement();
 }
 

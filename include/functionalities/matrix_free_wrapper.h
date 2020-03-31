@@ -63,28 +63,11 @@ public:
   /*
    * This function only updates geometry terms and is called in combination with
    * moving mesh (ALE) methods.
-   *
-   * TODO: MatrixFree<dim, Number> should provide a separate function
-   *
-   *  matrix_free->update_geometry()
-   *
-   * for this purpose.
    */
   void
-  update_geometry()
+  update_mapping()
   {
-    // use a separate additional_data object since we only want to update what is really necessary,
-    // so that the update is computationally efficient
-    typename MatrixFree<dim, Number>::AdditionalData data_update_geometry;
-
-    data_update_geometry = this->data;
-    // connectivity of elements stays the same
-    data_update_geometry.initialize_indices = false;
-    data_update_geometry.initialize_mapping = true;
-
-    // TODO: problems occur if the mesh is not deformed (displacement = 0)
-    matrix_free->reinit(
-      mapping, dof_handler_vec, constraint_vec, quadrature_vec, data_update_geometry);
+    matrix_free->update_mapping(mapping);
   }
 
   template<typename Operator>
