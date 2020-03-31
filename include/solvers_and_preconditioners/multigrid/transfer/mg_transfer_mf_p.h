@@ -62,11 +62,11 @@ private:
   void
   do_prolongate(VectorType & dst, const VectorType & src) const;
 
-  int          degree_1;
-  int          degree_2;
-  int          dof_handler_index;
+  unsigned int degree_1;
+  unsigned int degree_2;
+  unsigned int dof_handler_index;
   unsigned int quad_index;
-  
+
   AlignedVector<VectorizedArray<Number>> weights;
 
   bool is_dg;
