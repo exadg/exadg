@@ -83,27 +83,4 @@ print_grid_data(ConditionalOStream const &               pcout,
   print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
 }
 
-template<int dim>
-inline void
-print_grid_data(ConditionalOStream const &               pcout,
-                unsigned int const                       n_refine_space_1,
-                parallel::TriangulationBase<dim> const & triangulation_1,
-                unsigned int const                       n_refine_space_2,
-                parallel::TriangulationBase<dim> const & triangulation_2)
-{
-  pcout << std::endl
-        << "Generating grid for DOMAIN 1 for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "Number of refinements", n_refine_space_1);
-  print_parameter(pcout, "Number of cells", triangulation_1.n_global_active_cells());
-
-  pcout << std::endl
-        << "Generating grid for DOMAIN 2 for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "Number of refinements", n_refine_space_2);
-  print_parameter(pcout, "Number of cells", triangulation_2.n_global_active_cells());
-}
-
 #endif /* INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_ */

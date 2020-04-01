@@ -160,13 +160,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   }
 
   // create grid
-  application->create_grid_precursor(triangulation_pre,
-                                     param_pre.h_refinements,
-                                     periodic_faces_pre);
-  application->create_grid(triangulation, param.h_refinements, periodic_faces);
+  application->create_grid_precursor(triangulation_pre, refine_space, periodic_faces_pre);
+  application->create_grid(triangulation, refine_space, periodic_faces);
 
-  print_grid_data(
-    pcout, param_pre.h_refinements, *triangulation_pre, param.h_refinements, *triangulation);
+  print_grid_data(pcout, refine_space, *triangulation_pre);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   boundary_descriptor_velocity_pre.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure_pre.reset(new BoundaryDescriptorP<dim>());
@@ -176,12 +174,16 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   verify_boundary_conditions(*boundary_descriptor_velocity_pre,
                              *triangulation_pre,
                              periodic_faces_pre);
+  verify_boundary_conditions(*boundary_descriptor_pressure_pre,
+                             *triangulation_pre,
+                             periodic_faces_pre);
 
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
   verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
 
   field_functions_pre.reset(new FieldFunctions<dim>());
   field_functions.reset(new FieldFunctions<dim>());

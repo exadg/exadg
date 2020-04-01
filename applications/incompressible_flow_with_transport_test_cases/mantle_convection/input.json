@@ -1,0 +1,14 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "Degree": "3",
+        "RefineSpace": "4",
+        "NScalars": "1"
+    },
+    "Application": {
+       	"Name": "MantleConvection",
+	"OutputDirectory": "/data/fehn/navierstokes/applications/output/mantle_convection/",
+	"OutputName": "test"
+    }
+}

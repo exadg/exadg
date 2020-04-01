@@ -75,8 +75,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, param.h_refinements, periodic_faces);
-  print_grid_data(pcout, param.h_refinements, *triangulation);
+  application->create_grid(triangulation, refine_space, periodic_faces);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());

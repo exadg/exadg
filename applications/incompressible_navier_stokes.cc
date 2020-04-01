@@ -44,7 +44,8 @@
 #include "incompressible_navier_stokes_test_cases/turbulent_channel/turbulent_channel.h"
 
 // incompressible flow with scalar transport (but can also be used for pure fluid simulations)
-//#include "incompressible_flow_with_transport_test_cases/lung.h"
+#include "../include/incompressible_flow_with_transport/user_interface/application_base.h"
+#include "incompressible_flow_with_transport_test_cases/lung/lung.h"
 
 class ApplicationSelector
 {
@@ -108,6 +109,8 @@ public:
         app.reset(new IncNS::PeriodicHill::Application<dim, Number>());
       else if(name == "FDA")
         app.reset(new IncNS::FDA::Application<dim, Number>());
+      else if(name == "Lung")
+        app.reset(new FTI::Lung::Application<dim, Number>());
       else
         AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -168,6 +171,8 @@ public:
       app.reset(new IncNS::PeriodicHill::Application<dim, Number>(input_file));
     else if(name == "FDA")
       app.reset(new IncNS::FDA::Application<dim, Number>(input_file));
+    else if(name == "Lung")
+      app.reset(new FTI::Lung::Application<dim, Number>(input_file));
     else
       AssertThrow(false, ExcMessage("This application does not exist!"));
 

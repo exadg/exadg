@@ -200,7 +200,7 @@ public:
   double cfl;
 
   // cfl number for operator-integration-factor splitting (has to be smaller than the
-  // critical time step size arising from the CFL restriction)
+  // critical time step size arising from the CFL restriction, cfl_oif <= cfl)
   double cfl_oif;
 
   // dt = CFL/k_u^{exp} * h / || u ||

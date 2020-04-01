@@ -133,10 +133,10 @@ main(int argc, char ** argv)
 
     // check if parameter file is provided
 
-    // ./incompressible_navier_stokes
+    // ./incompressible_navier_stokes_precursor
     AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
 
-    // ./incompressible_navier_stokes --help
+    // ./incompressible_navier_stokes_precursor --help
     if(argc == 2 && std::string(argv[1]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
@@ -144,7 +144,7 @@ main(int argc, char ** argv)
 
       return 0;
     }
-    // ./incompressible_navier_stokes --help NameOfApplication
+    // ./incompressible_navier_stokes_precursor --help NameOfApplication
     else if(argc == 3 && std::string(argv[1]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
@@ -154,7 +154,7 @@ main(int argc, char ** argv)
     }
 
     // the second argument is the input-file
-    // ./incompressible_navier_stokes InputFile
+    // ./incompressible_navier_stokes_precursor InputFile
     std::string      input_file = std::string(argv[1]);
     ConvergenceStudy study(input_file);
 
