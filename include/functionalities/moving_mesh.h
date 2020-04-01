@@ -58,30 +58,45 @@ public:
   {
     Mapping<dim> const & mapping = *mapping_ale;
 
-    IndexSet relevant_dofs_grid;
-    DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
-
-    vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
+    if(vector.size() != dof_handler.n_dofs())
+    {
+      IndexSet relevant_dofs_grid;
+      DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
+      vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
+    }
+    else
+      vector = 0;
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
 
+    // Set up FEValues with base element to reduce setup cost, as we only use
+    // the geometry information (this means we need to call
+    //   fe_values.reinit(cell);
+    // with Triangulation::cell_iterator rather than DoFHandler.cell_iterator)
     FEValues<dim> fe_values(mapping,
-                            fe,
-                            Quadrature<dim>(fe.get_unit_support_points()),
+                            fe.base_element(0),
+                            Quadrature<dim>(fe.base_element(0).get_unit_support_points()),
                             update_quadrature_points);
 
-    std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+    std::vector<types::global_dof_index>       dof_indices(fe.dofs_per_cell);
+    std::vector<std::array<unsigned int, dim>> component_to_system_index(
+      fe.base_element(0).dofs_per_cell);
+    for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+      component_to_system_index[fe.system_to_component_index(i).second]
+                               [fe.system_to_component_index(i).first] = i;
     for(const auto & cell : dof_handler.active_cell_iterators())
     {
       if(!cell->is_artificial())
       {
-        fe_values.reinit(cell);
+        fe_values.reinit(typename Triangulation<dim>::cell_iterator(cell));
         cell->get_dof_indices(dof_indices);
-        for(unsigned int i = 0; i < dof_indices.size(); ++i)
+        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
         {
-          unsigned int const d     = fe.system_to_component_index(i).first;
-          Point<dim> const   point = fe_values.quadrature_point(i);
-          vector(dof_indices[i])   = point[d];
+          Point<dim> const point = fe_values.quadrature_point(i);
+          for(unsigned int d = 0; d < dim; ++d)
+            if(vector.get_partitioner()->in_local_range(
+                 dof_indices[component_to_system_index[i][d]]))
+              vector(dof_indices[component_to_system_index[i][d]]) = point[d];
         }
       }
     }
