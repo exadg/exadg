@@ -77,8 +77,9 @@ public:
     // reduce setup cost, as we only use the geometry information (this means
     // we need to call fe_values.reinit(cell) with
     // Triangulation::cell_iterator rather than DoFHandler.cell_iterator)
-    FEValues<dim> fe_values(mapping,
-                            fe.base_element(0),
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(mapping,
+                            dummy_fe,
                             QGaussLobatto<dim>(fe.degree + 1),
                             update_quadrature_points);
 
@@ -162,9 +163,9 @@ private:
                              std::shared_ptr<Function<dim>> displacement_function)
   {
     // dummy FE for compatibility with interface of FEValues
-    FE_Nothing<dim> fe;
-    FEValues<dim> fe_values(mapping,
-                            fe,
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(mapping,
+                            dummy_fe,
                             QGaussLobatto<dim>(this->mapping_ale->get_degree() + 1),
                             update_quadrature_points);
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
@@ -197,7 +198,7 @@ private:
   std::shared_ptr<Function<dim>> mesh_movement_function;
 
   // A reference to the triangulation
-  Triangulation<dim> const &triangulation;
+  Triangulation<dim> const & triangulation;
 };
 
 template<int dim, typename Number>
@@ -256,8 +257,9 @@ private:
     AssertThrow(fe.element_multiplicity(0) == dim,
                 ExcMessage("Expected finite element with dim components."));
 
-    FEValues<dim> fe_values(mapping,
-                            fe,
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(mapping,
+                            dummy_fe,
                             QGaussLobatto<dim>(fe->degree + 1),
                             update_quadrature_points);
 
@@ -277,7 +279,7 @@ private:
 
         if(cell->level_subdomain_id() != numbers::artificial_subdomain_id)
         {
-          fe_values.reinit(cell);
+          fe_values.reinit(typename Triangulation<dim>::cell_iterator(cell));
           std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
           cell->get_mg_dof_indices(dof_indices);
 
