@@ -1,0 +1,14 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "3",
+        "DegreeFluid": "3",
+        "DegreeMeshMotion":"3",
+        "RefineSpace": "0"
+    },
+    "Application": {
+       	"Name": "Template",
+	"OutputDirectory": "output/fsi/",
+	"OutputName": "test"
+    }
+}

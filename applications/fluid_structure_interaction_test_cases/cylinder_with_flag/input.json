@@ -1,0 +1,14 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "DegreeFluid": "3",
+        "DegreeMeshMotion":"3",
+        "RefineSpace": "0"
+    },
+    "Application": {
+       	"Name": "CylinderWithFlag",
+	"OutputDirectory": "output/cylinder_with_flag/",
+	"OutputName": "test"
+    }
+}

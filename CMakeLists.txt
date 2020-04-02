@@ -148,6 +148,8 @@ SET( TARGET_SRC
      include/structure/postprocessor/output_generator.cpp
      include/structure/postprocessor/postprocessor.cpp
      include/structure/driver.cpp
+     # fluid-structure-interaction
+     include/fluid_structure_interaction/driver.cpp
   )
 
 # Set the include directory and the name of the project

@@ -346,9 +346,18 @@ Operator<dim, Number, n_components>::distribute_dofs()
 
   unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
 
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
+  pcout << std::endl;
+
+  if(param.spatial_discretization == SpatialDiscretization::DG)
+    pcout << std::endl
+          << "Discontinuous Galerkin finite element discretization:" << std::endl
+          << std::endl;
+  else if(param.spatial_discretization == SpatialDiscretization::CG)
+    pcout << std::endl
+          << "Continuous Galerkin finite element discretization:" << std::endl
+          << std::endl;
+  else
+    AssertThrow(false, ExcMessage("Not implemented."));
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);

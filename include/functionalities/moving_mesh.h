@@ -37,9 +37,6 @@ public:
   virtual void
   move_mesh(double const time) = 0;
 
-  /*
-   * This function implements the interface of base class Mesh<dim>
-   */
   Mapping<dim> const &
   get_mapping() const override
   {
@@ -105,7 +102,7 @@ public:
   }
 
 protected:
-  // needed for re-initialization of MappingQCache
+  // needed for re-initialization of MappingQCache (implemented in derived classes)
   parallel::TriangulationBase<dim> const & triangulation;
 
   std::shared_ptr<MappingQCache<dim>> mapping_ale;
@@ -217,6 +214,7 @@ public:
                     double const &                                       start_time)
     : MovingMeshBase<dim, Number>(triangulation,
                                   mapping_degree_static,
+                                  // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
                                   mpi_comm),
       poisson(poisson_operator)
