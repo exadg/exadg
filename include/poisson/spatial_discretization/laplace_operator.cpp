@@ -267,7 +267,11 @@ LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
   for(auto dbc : this->data.bc->dirichlet_bc)
   {
     dbc.second->set_time(time);
-    ComponentMask mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
+
+    ComponentMask mask     = ComponentMask();
+    auto          dbc_mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    if(dbc_mask != this->data.bc->dirichlet_bc_component_mask.end())
+      mask = dbc_mask->second;
 
     VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
                                              this->matrix_free->get_dof_handler(
