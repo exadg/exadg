@@ -444,26 +444,10 @@ Operator<dim, Number>::solve(VectorType &       sol,
     else
     {
       iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
-
-      // TODO: (why) is this necessary?
-
-      // compute values at Dirichlet boundaries
-      std::map<types::global_dof_index, double> boundary_values;
-      for(auto dbc : boundary_descriptor->dirichlet_bc)
-      {
-        dbc.second->set_time(time);
-        ComponentMask mask =
-          this->boundary_descriptor->dirichlet_bc_component_mask.find(dbc.first)->second;
-
-        VectorTools::interpolate_boundary_values(
-          this->mapping, this->dof_handler, dbc.first, *dbc.second, boundary_values, mask);
-      }
-
-      // set Dirichlet values in solution vector
-      for(auto m : boundary_values)
-        if(sol.get_partitioner()->in_local_range(m.first))
-          sol[m.first] = m.second;
     }
+
+    // set Dirichlet values
+    linear_operator.set_dirichlet_values_continuous(sol, time);
 
     return iterations;
   }

@@ -97,7 +97,7 @@ public:
   vmult(VectorType & dst, VectorType const & src) const;
 
   unsigned int
-  solve(VectorType & sol, VectorType const & rhs) const;
+  solve(VectorType & sol, VectorType const & rhs, double const time) const;
 
   DoFHandler<dim> const &
   get_dof_handler() const;

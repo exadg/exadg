@@ -222,6 +222,11 @@ public:
   void
   rhs_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
+  // This function sets the Dirichlet boundary values in dst vector in case of
+  // continuous elements.
+  void
+  set_dirichlet_values_continuous(VectorType & dst, double const time) const;
+
 private:
   void
   reinit_face(unsigned int const face) const;
@@ -255,6 +260,7 @@ private:
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
                                   types::boundary_id const & boundary_id) const;
 
+  // fills a map with Dirichlet boundary values in case of continuous elements
   void
   fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
                                    double const                                time) const;

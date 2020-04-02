@@ -246,6 +246,20 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
+LaplaceOperator<dim, Number, n_components>::set_dirichlet_values_continuous(VectorType & dst,
+                                                                            double const time) const
+{
+  std::map<types::global_dof_index, double> boundary_values;
+  fill_dirichlet_values_continuous(boundary_values, time);
+
+  // set Dirichlet values in solution vector
+  for(auto m : boundary_values)
+    if(dst.get_partitioner()->in_local_range(m.first))
+      dst[m.first] = m.second;
+}
+
+template<int dim, typename Number, int n_components>
+void
 LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
   std::map<types::global_dof_index, double> & boundary_values,
   double const                                time) const

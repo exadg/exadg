@@ -57,6 +57,7 @@ public:
 
 private:
   typedef OperatorBase<dim, Number, OperatorData<dim>, dim> Base;
+  typedef typename Base::VectorType                         VectorType;
   typedef typename Base::IntegratorCell                     IntegratorCell;
   typedef typename Base::IntegratorFace                     IntegratorFace;
 
@@ -99,6 +100,18 @@ public:
       update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
 
     return flags;
+  }
+
+  void
+  set_dirichlet_values_continuous(VectorType & dst, double const time) const
+  {
+    std::map<types::global_dof_index, double> boundary_values;
+    fill_dirichlet_values_continuous(boundary_values, time);
+
+    // set Dirichlet values in solution vector
+    for(auto m : boundary_values)
+      if(dst.get_partitioner()->in_local_range(m.first))
+        dst[m.first] = m.second;
   }
 
 private:

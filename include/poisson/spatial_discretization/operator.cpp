@@ -221,7 +221,9 @@ Operator<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number, int n_components>
 unsigned int
-Operator<dim, Number, n_components>::solve(VectorType & sol, VectorType const & rhs) const
+Operator<dim, Number, n_components>::solve(VectorType &       sol,
+                                           VectorType const & rhs,
+                                           double const       time) const
 {
   // only activate if desired
   if(false)
@@ -236,6 +238,12 @@ Operator<dim, Number, n_components>::solve(VectorType & sol, VectorType const & 
   }
 
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
+
+  // apply Dirichlet boundary conditions in case of continuous elements
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator.set_dirichlet_values_continuous(sol, time);
+  }
 
   return iterations;
 }

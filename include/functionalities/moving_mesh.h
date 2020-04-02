@@ -238,7 +238,7 @@ public:
 
     // compute rhs and solve mesh deformation problem
     poisson->rhs(rhs, time);
-    poisson->solve(displacement_fine, rhs);
+    poisson->solve(displacement_fine, rhs, time);
 
     initialize_mapping_q_cache(*this->mapping, poisson->get_dof_handler(), displacement_fine);
   }

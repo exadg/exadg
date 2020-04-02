@@ -154,7 +154,7 @@ Driver<dim, Number>::solve()
 
   // solve linear system of equations
   timer_local.restart();
-  iterations       = poisson_operator->solve(sol, rhs);
+  iterations       = poisson_operator->solve(sol, rhs, 0.0 /* time */);
   wall_time_solver = timer_local.wall_time();
 
   // postprocessing of results
