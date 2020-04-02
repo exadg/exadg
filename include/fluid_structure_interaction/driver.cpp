@@ -159,10 +159,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(fluid_param.ale_formulation) // moving mesh
     {
       fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-        *fluid_triangulation, mapping_degree, mpi_comm, poisson_operator, fluid_param.start_time));
+        mapping_degree, mpi_comm, poisson_operator, fluid_param.start_time));
 
-      //      std::shared_ptr<Function<dim>> mesh_motion = set_mesh_movement_function<dim>();
-      //      fluid_moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
+      //      std::shared_ptr<Function<dim>> mesh_motion =
+      //      application->set_mesh_movement_function_fluid(); fluid_moving_mesh.reset(new
+      //      MovingMeshAnalytical<dim, Number>(
       //        *fluid_triangulation, mapping_degree, fluid_param.degree_u, mpi_comm, mesh_motion,
       //        fluid_param.start_time));
 

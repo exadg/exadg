@@ -215,8 +215,7 @@ class MovingMeshPoisson : public MovingMeshBase<dim, Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMeshPoisson(parallel::TriangulationBase<dim> const &             triangulation,
-                    unsigned int const                                   mapping_degree_static,
+  MovingMeshPoisson(unsigned int const                                   mapping_degree_static,
                     MPI_Comm const &                                     mpi_comm,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator,
                     double const &                                       start_time)
@@ -269,7 +268,7 @@ private:
     FE_Nothing<dim> dummy_fe;
     FEValues<dim>   fe_values(mapping,
                             dummy_fe,
-                            QGaussLobatto<dim>(fe->degree + 1),
+                            QGaussLobatto<dim>(fe.degree + 1),
                             update_quadrature_points);
 
     // update mapping according to mesh deformation computed above
@@ -278,12 +277,12 @@ private:
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
         unsigned int const level = cell_tria->level();
 
-        typename DoFHandler<dim>::cell_iterator cell(&cell_tria.get_triangulation(),
+        typename DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
                                                      level,
                                                      cell_tria->index(),
                                                      &dof_handler);
 
-        unsigned int const scalar_dofs_per_cell = Utilities::pow(fe->degree + 1, dim);
+        unsigned int const scalar_dofs_per_cell = Utilities::pow(fe.degree + 1, dim);
 
         std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
 
