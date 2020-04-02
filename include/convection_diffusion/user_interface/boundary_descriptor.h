@@ -30,6 +30,9 @@ struct BoundaryDescriptor
 {
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
 
+  // ComponentMask is only used for continuous elements, and is ignored for DG
+  std::map<types::boundary_id, ComponentMask> dirichlet_bc_component_mask;
+
   std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>>
     dirichlet_mortar_bc;
 

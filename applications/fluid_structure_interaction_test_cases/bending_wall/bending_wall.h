@@ -28,7 +28,7 @@ double const L_IN = 0.6;
 
 double const END_TIME = 20.0;
 
-double const AMPLITUDE = 3.0 * T_S;
+double const AMPLITUDE = 2.0 * T_S;
 
 // moving mesh
 bool const ALE = true;
@@ -51,8 +51,7 @@ template<int dim>
 class MeshMotion : public Function<dim>
 {
 public:
-  MeshMotion()
-    : Function<dim>(dim, 0.0)
+  MeshMotion() : Function<dim>(dim, 0.0)
   {
   }
 
@@ -73,8 +72,7 @@ template<int dim>
 class InflowBC : public Function<dim>
 {
 public:
-  InflowBC()
-    : Function<dim>(dim, 0.0)
+  InflowBC() : Function<dim>(dim, 0.0)
   {
   }
 
@@ -95,8 +93,7 @@ template<int dim>
 class VelocityBendingWall : public Function<dim>
 {
 public:
-  VelocityBendingWall()
-    : Function<dim>(dim, 0.0)
+  VelocityBendingWall() : Function<dim>(dim, 0.0)
   {
   }
 
@@ -166,16 +163,16 @@ public:
     param.viscosity  = VISCOSITY;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                  = SolverType::Unsteady;
-    param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
-    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator        = 2;
-    param.start_with_low_order         = true;
-    param.adaptive_time_stepping       = true;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFL; // UserSpecified; //CFL;
-    param.time_step_size                = END_TIME;
-    param.max_velocity                  = U_X_MAX;
-    param.cfl                           = 0.4;
+    param.solver_type                     = SolverType::Unsteady;
+    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    param.order_time_integrator           = 2;
+    param.start_with_low_order            = true;
+    param.adaptive_time_stepping          = true;
+    param.calculation_of_time_step_size   = TimeStepCalculation::CFL; // UserSpecified; //CFL;
+    param.time_step_size                  = END_TIME;
+    param.max_velocity                    = U_X_MAX;
+    param.cfl                             = 0.4;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
@@ -277,7 +274,7 @@ public:
     param.solver_momentum                = SolverMomentum::FGMRES;
     param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
     param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
     param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
     // Jacobi smoother data
@@ -341,11 +338,11 @@ public:
 
     // SOLVER
     param.solver                    = Poisson::Solver::CG;
-    param.solver_data.abs_tol       = 1.e-20;
-    param.solver_data.rel_tol       = 1.e-10;
+    param.solver_data.abs_tol       = 1.e-12;
+    param.solver_data.rel_tol       = 1.e-6;
     param.solver_data.max_iter      = 1e4;
     param.preconditioner            = Preconditioner::Multigrid;
-    param.multigrid_data.type       = MultigridType::cphMG;
+    param.multigrid_data.type       = MultigridType::phMG;
     param.multigrid_data.p_sequence = PSequenceType::Bisect;
     // MG smoother
     param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
@@ -536,12 +533,24 @@ public:
     std::shared_ptr<ConvDiff::BoundaryDescriptor<1, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    // TODO let the mesh slide along the outer walls
+    // let the mesh slide along the outer walls
+    std::vector<bool> mask = {false, true, true};
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask));
+
+    // inflow
     boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, ComponentMask()));
+
+    // outflow
     boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, ComponentMask()));
+
+    // fluid-structure interface
     boundary_descriptor->dirichlet_bc.insert(pair(3, new MeshMotion<dim>()));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, ComponentMask()));
   }
 
 
@@ -560,16 +569,33 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
+
+    // channel walls
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
+
+    // inflow
     boundary_descriptor_velocity->dirichlet_bc.insert(pair(1, new InflowBC<dim>()));
+
+    // outflow
     boundary_descriptor_velocity->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+
+    // fluid-structure interface
     boundary_descriptor_velocity->dirichlet_bc.insert(pair(3, new VelocityBendingWall<dim>()));
 
+
     // fill boundary descriptor pressure
+
+    // channel walls
     boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+
+    // inflow
     boundary_descriptor_pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+
+    // outflow
     boundary_descriptor_pressure->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
+
+    // fluid-structure interface
     boundary_descriptor_pressure->neumann_bc.insert(pair(3, new Functions::ZeroFunction<dim>(dim)));
   }
 

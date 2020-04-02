@@ -267,12 +267,15 @@ LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
   for(auto dbc : this->data.bc->dirichlet_bc)
   {
     dbc.second->set_time(time);
+    ComponentMask mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
+
     VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
                                              this->matrix_free->get_dof_handler(
                                                this->data.dof_index),
                                              dbc.first,
                                              *dbc.second,
-                                             boundary_values);
+                                             boundary_values,
+                                             mask);
   }
 
   // TODO extend to dirichlet_mortar_bc

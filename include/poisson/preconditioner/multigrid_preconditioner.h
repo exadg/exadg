@@ -126,6 +126,28 @@ private:
       matrix_free_data_update[level].initialize_mapping = true;
     }
 
+    MGConstrainedDoFs mg_constrained_dofs;
+    mg_constrained_dofs.initialize(*this->dof_handlers[level]);
+    for(auto it : data.bc->dirichlet_bc)
+    {
+      std::set<types::boundary_id> dirichlet_boundary;
+      dirichlet_boundary.insert(it.first);
+
+      ComponentMask mask    = ComponentMask();
+      auto          it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
+      if(it_mask != data.bc->dirichlet_bc_component_mask.end())
+        mask = it_mask->second;
+
+      mg_constrained_dofs.make_zero_boundary_constraints(*this->dof_handlers[level],
+                                                         dirichlet_boundary,
+                                                         mask);
+    }
+
+    this->constraints[level]->clear();
+    this->constraints[level]->add_lines(
+      mg_constrained_dofs.get_boundary_indices(this->level_info[level].h_level()));
+    this->constraints[level]->close();
+
     quadrature[level] = QGauss<1>(this->level_info[level].degree() + 1);
     matrix_free->reinit(*this->mapping,
                         *this->dof_handlers[level],

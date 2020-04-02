@@ -56,15 +56,19 @@ Operator<dim, Number, n_components>::append_data_structures(
   // AffineConstraints
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    MGConstrainedDoFs            mg_constrained_dofs;
-    std::set<types::boundary_id> dirichlet_boundary;
-    for(auto it : boundary_descriptor->dirichlet_bc)
-      dirichlet_boundary.insert(it.first);
-    mg_constrained_dofs.initialize(dof_handler);
-    mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-    constraint_matrix.add_lines(mg_constrained_dofs.get_boundary_indices(
-      dof_handler.get_triangulation().n_global_levels() - 1));
+    constraint_matrix.clear();
+    for(auto it : this->boundary_descriptor->dirichlet_bc)
+    {
+      ComponentMask mask    = ComponentMask();
+      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
+        mask = it_mask->second;
+
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, constraint_matrix, mask);
+    }
+    constraint_matrix.close();
   }
+
   matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index);
 
   // Quadrature
