@@ -88,21 +88,6 @@ public:
   }
 
 private:
-  void
-  initialize_matrix_free() override
-  {
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update.resize(0, this->n_levels - 1);
-    }
-
-    dof_handler_vec.resize(0, this->n_levels - 1);
-    constraint_matrix_vec.resize(0, this->n_levels - 1);
-    quadrature_vec.resize(0, this->n_levels - 1);
-
-    Base::initialize_matrix_free();
-  }
-
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
   do_initialize_matrix_free(unsigned int const level) override
   {
@@ -114,26 +99,29 @@ private:
 
     // dof_handler
     // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-    dof_handler_vec[level].resize(2);
-    dof_handler_vec[level][data.dof_index_velocity] = &dof_handler_u;
-    dof_handler_vec[level][data.dof_index_pressure] = &dof_handler_p;
+    std::vector<const DoFHandler<dim> *> dof_handler_vec;
+    dof_handler_vec.resize(2);
+    dof_handler_vec[data.dof_index_velocity] = &dof_handler_u;
+    dof_handler_vec[data.dof_index_pressure] = &dof_handler_p;
 
     // constraint matrix
     // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-    constraint_matrix_vec[level].resize(2);
-    constraint_matrix_vec[level][data.dof_index_velocity] = &*this->constraints_velocity[level];
-    constraint_matrix_vec[level][data.dof_index_pressure] = &*this->constraints[level];
+    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
+    constraint_matrix_vec.resize(2);
+    constraint_matrix_vec[data.dof_index_velocity] = &*this->constraints_velocity[level];
+    constraint_matrix_vec[data.dof_index_pressure] = &*this->constraints[level];
 
     // quadratures
-    quadrature_vec[level].resize(2);
+    std::vector<Quadrature<1>> quadrature_vec;
+    quadrature_vec.resize(2);
     // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature
     // formula that is used for the gradient operator and the divergence operator (and the inverse
     // velocity mass matrix operator)
-    quadrature_vec[level][0] =
+    quadrature_vec[0] =
       QGauss<1>(this->level_info[level].degree() + 1 + (data.degree_u - data.degree_p));
     // quadrature formula with (fe_degree_p+1) quadrature points: this is the quadrature
     // that is needed for p-transfer
-    quadrature_vec[level][1] = QGauss<1>(this->level_info[level].degree() + 1);
+    quadrature_vec[1] = QGauss<1>(this->level_info[level].degree() + 1);
 
     MatrixFreeData addit_data;
     addit_data.mapping_update_flags =
@@ -161,19 +149,8 @@ private:
     //  this->level_info[level].level);
     //}
 
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update[level] = addit_data;
-      matrix_free_data_update[level].initialize_indices =
-        false; // connectivity of elements stays the same
-      matrix_free_data_update[level].initialize_mapping = true;
-    }
-
-    matrix_free->reinit(*this->mapping,
-                        dof_handler_vec[level],
-                        constraint_matrix_vec[level],
-                        quadrature_vec[level],
-                        addit_data);
+    matrix_free->reinit(
+      *this->mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
 
     return matrix_free;
   }
@@ -242,11 +219,7 @@ private:
   void
   do_update_matrix_free(unsigned int const level) override
   {
-    this->matrix_free_objects[level]->reinit(*this->mapping,
-                                             dof_handler_vec[level],
-                                             constraint_matrix_vec[level],
-                                             quadrature_vec[level],
-                                             matrix_free_data_update[level]);
+    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   std::shared_ptr<PDEOperator>
@@ -263,12 +236,6 @@ private:
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
 
   CompatibleLaplaceOperatorData<dim> data;
-
-  MGLevelObject<MatrixFreeData> matrix_free_data_update;
-
-  MGLevelObject<std::vector<const DoFHandler<dim> *>>           dof_handler_vec;
-  MGLevelObject<std::vector<AffineConstraints<double> const *>> constraint_matrix_vec;
-  MGLevelObject<std::vector<Quadrature<1>>>                     quadrature_vec;
 
   bool mesh_is_moving;
 };

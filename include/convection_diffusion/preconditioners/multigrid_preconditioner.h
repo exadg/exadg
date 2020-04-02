@@ -158,19 +158,6 @@ public:
   }
 
 private:
-  void
-  initialize_matrix_free() override
-  {
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update.resize(0, this->n_levels - 1);
-    }
-
-    quadrature.resize(0, this->n_levels - 1);
-
-    Base::initialize_matrix_free();
-  }
-
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
   do_initialize_matrix_free(unsigned int const level) override
   {
@@ -203,15 +190,7 @@ private:
                                           this->level_info[level].h_level());
     }
 
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update[level] = additional_data;
-      matrix_free_data_update[level].initialize_indices =
-        false; // connectivity of elements stays the same
-      matrix_free_data_update[level].initialize_mapping = true;
-    }
-
-    quadrature[level] = QGauss<1>(this->level_info[level].degree() + 1);
+    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
 
     std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
     matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
@@ -220,7 +199,7 @@ private:
       matrix_free->reinit(*this->mapping,
                           *this->dof_handlers[level],
                           *this->constraints[level],
-                          quadrature[level],
+                          quadrature,
                           additional_data);
     }
     // we need two dof-handlers in case the velocity field comes from the fluid solver.
@@ -241,7 +220,7 @@ private:
 
       std::vector<Quadrature<1>> quadrature_vec;
       quadrature_vec.resize(1);
-      quadrature_vec[0] = quadrature[level];
+      quadrature_vec[0] = quadrature;
 
       matrix_free->reinit(
         *this->mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
@@ -257,44 +236,7 @@ private:
   void
   do_update_matrix_free(unsigned int const level) override
   {
-    if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
-    {
-      this->matrix_free_objects[level]->reinit(*this->mapping,
-                                               *this->dof_handlers[level],
-                                               *this->constraints[level],
-                                               quadrature[level],
-                                               matrix_free_data_update[level]);
-    }
-    // we need two dof-handlers in case the velocity field comes from the fluid solver.
-    else if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
-    {
-      // collect dof-handlers
-      std::vector<const DoFHandler<dim> *> dof_handler_vec;
-      dof_handler_vec.resize(2);
-      dof_handler_vec[0] = &*this->dof_handlers[level];
-      dof_handler_vec[1] = &*this->dof_handlers_velocity[level];
-
-      // collect affine matrices
-      std::vector<const AffineConstraints<double> *> constraint_vec;
-      constraint_vec.resize(2);
-      constraint_vec[0] = &*this->constraints[level];
-      constraint_vec[1] = &*this->constraints_velocity[level];
-
-
-      std::vector<Quadrature<1>> quadrature_vec;
-      quadrature_vec.resize(1);
-      quadrature_vec[0] = quadrature[level];
-
-      this->matrix_free_objects[level]->reinit(*this->mapping,
-                                               dof_handler_vec,
-                                               constraint_vec,
-                                               quadrature_vec,
-                                               matrix_free_data_update[level]);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   std::shared_ptr<MGOperatorBase>
@@ -526,11 +468,6 @@ private:
 
   // TODO multigrid preconditioner is used as filtering operation here
   mutable MGLevelObject<VectorTypeMG> solution;
-
-  // moving mesh
-  MGLevelObject<MatrixFreeData> matrix_free_data_update;
-
-  MGLevelObject<Quadrature<1>> quadrature;
 
   bool mesh_is_moving;
 };

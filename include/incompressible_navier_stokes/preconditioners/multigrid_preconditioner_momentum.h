@@ -118,19 +118,6 @@ public:
   }
 
 private:
-  void
-  initialize_matrix_free() override
-  {
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update.resize(0, this->n_levels - 1);
-    }
-
-    quadrature.resize(0, this->n_levels - 1);
-
-    Base::initialize_matrix_free();
-  }
-
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
   do_initialize_matrix_free(unsigned int const level) override
   {
@@ -165,19 +152,11 @@ private:
                                           this->level_info[level].h_level());
     }
 
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update[level] = additional_data;
-      matrix_free_data_update[level].initialize_indices =
-        false; // connectivity of elements stays the same
-      matrix_free_data_update[level].initialize_mapping = true;
-    }
-
-    quadrature[level] = QGauss<1>(this->level_info[level].degree() + 1);
+    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
     matrix_free->reinit(*this->mapping,
                         *this->dof_handlers[level],
                         *this->constraints[level],
-                        quadrature[level],
+                        quadrature,
                         additional_data);
 
     return matrix_free;
@@ -205,11 +184,7 @@ private:
   void
   do_update_matrix_free(unsigned int const level) override
   {
-    this->matrix_free_objects[level]->reinit(*this->mapping,
-                                             *this->dof_handlers[level],
-                                             *this->constraints[level],
-                                             quadrature[level],
-                                             matrix_free_data_update[level]);
+    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   /*
@@ -326,10 +301,6 @@ private:
   PDEOperator const * pde_operator;
 
   MultigridOperatorType mg_operator_type;
-
-  MGLevelObject<MatrixFreeData> matrix_free_data_update;
-
-  MGLevelObject<Quadrature<1>> quadrature;
 
   bool mesh_is_moving;
 };

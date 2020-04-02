@@ -37,7 +37,8 @@ private:
   typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
 
 public:
-  MultigridPreconditioner(MPI_Comm const & mpi_comm) : Base(mpi_comm), mesh_is_moving(false)
+  MultigridPreconditioner(MPI_Comm const & mpi_comm)
+    : Base(mpi_comm), is_dg(true), mesh_is_moving(false)
   {
   }
 
@@ -54,6 +55,8 @@ public:
     data            = data_in;
     data.dof_index  = 0;
     data.quad_index = 0;
+
+    is_dg = (fe.dofs_per_vertex == 0);
 
     this->mesh_is_moving = mesh_is_moving;
 
@@ -80,19 +83,6 @@ public:
   }
 
 private:
-  void
-  initialize_matrix_free() override
-  {
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update.resize(0, this->n_levels - 1);
-    }
-
-    quadrature.resize(0, this->n_levels - 1);
-
-    Base::initialize_matrix_free();
-  }
-
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
   do_initialize_matrix_free(unsigned int const level) override
   {
@@ -118,45 +108,55 @@ private:
                                           this->level_info[level].h_level());
     }
 
-    if(mesh_is_moving)
-    {
-      matrix_free_data_update[level] = additional_data;
-      matrix_free_data_update[level].initialize_indices =
-        false; // connectivity of elements stays the same
-      matrix_free_data_update[level].initialize_mapping = true;
-    }
-
-    MGConstrainedDoFs mg_constrained_dofs;
-    mg_constrained_dofs.initialize(*this->dof_handlers[level]);
-    for(auto it : data.bc->dirichlet_bc)
-    {
-      std::set<types::boundary_id> dirichlet_boundary;
-      dirichlet_boundary.insert(it.first);
-
-      ComponentMask mask    = ComponentMask();
-      auto          it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != data.bc->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
-
-      mg_constrained_dofs.make_zero_boundary_constraints(*this->dof_handlers[level],
-                                                         dirichlet_boundary,
-                                                         mask);
-    }
-
-    this->constraints[level]->clear();
-    this->constraints[level]->add_lines(
-      mg_constrained_dofs.get_boundary_indices(this->level_info[level].h_level()));
-    this->constraints[level]->close();
-
-    quadrature[level] = QGauss<1>(this->level_info[level].degree() + 1);
+    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
     matrix_free->reinit(*this->mapping,
                         *this->dof_handlers[level],
                         *this->constraints[level],
-                        quadrature[level],
+                        quadrature,
                         additional_data);
 
     return matrix_free;
   }
+
+  /*
+   * Has to be overwritten since we want to use ComponentMask here
+   */
+  void
+  initialize_constrained_dofs(DoFHandler<dim> const & dof_handler,
+                              MGConstrainedDoFs &     constrained_dofs,
+                              Map const &             dirichlet_bc) override
+  {
+    // TODO: use the same code as for CG case below (which currently segfaults
+    // if used for DG case as well)
+    if(is_dg)
+    {
+      std::set<types::boundary_id> dirichlet_boundary;
+      for(auto & it : dirichlet_bc)
+        dirichlet_boundary.insert(it.first);
+      constrained_dofs.initialize(dof_handler);
+      constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
+    }
+    else
+    {
+      // We use data.bc->dirichlet_bc since we also need dirichlet_bc_component_mask,
+      // but the argument dirichlet_bc could be used as well
+
+      constrained_dofs.initialize(dof_handler);
+      for(auto it : data.bc->dirichlet_bc)
+      {
+        std::set<types::boundary_id> dirichlet_boundary;
+        dirichlet_boundary.insert(it.first);
+
+        ComponentMask mask    = ComponentMask();
+        auto          it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
+        if(it_mask != data.bc->dirichlet_bc_component_mask.end())
+          mask = it_mask->second;
+
+        constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary, mask);
+      }
+    }
+  }
+
 
   std::shared_ptr<MGOperatorBase>
   initialize_operator(unsigned int const level)
@@ -175,11 +175,7 @@ private:
   void
   do_update_matrix_free(unsigned int const level) override
   {
-    this->matrix_free_objects[level]->reinit(*this->mapping,
-                                             *this->dof_handlers[level],
-                                             *this->constraints[level],
-                                             quadrature[level],
-                                             matrix_free_data_update[level]);
+    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   /*
@@ -206,9 +202,7 @@ private:
 
   LaplaceOperatorData<rank, dim> data;
 
-  MGLevelObject<MatrixFreeData> matrix_free_data_update;
-
-  MGLevelObject<Quadrature<1>> quadrature;
+  bool is_dg;
 
   bool mesh_is_moving;
 };
