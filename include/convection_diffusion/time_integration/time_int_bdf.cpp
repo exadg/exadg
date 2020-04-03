@@ -648,13 +648,6 @@ TimeIntBDF<dim, Number>::solve_timestep()
 
   iterations += N_iter;
 
-  // TODO: implement filtering as a separate module
-  // filtering is currently based on multigrid implementation and can therefore
-  // only be used in combination with semi-implicit BDF time integration and
-  // multigrid preconditioner
-  if(param.filter_solution)
-    pde_operator->filter_solution(solution_np);
-
   // evaluate convective term at end time t_{n+1} at which we know the boundary condition
   // g_u(t_{n+1})
   if(param.convective_problem() &&

@@ -122,41 +122,6 @@ public:
     this->update_coarse_solver(data.operator_is_singular);
   }
 
-  // TODO multigrid preconditioner is used as filtering operation here
-  void
-  project_and_prolongate(VectorType & solution_fine) const
-  {
-    unsigned int smoothing_levels = std::min((unsigned int)1, this->n_levels - 1);
-
-    solution.resize(0, this->n_levels - 1);
-
-    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
-    VectorTypeMG         vector_fine;
-    VectorTypeMG const * vector_fine_ptr;
-    if(std::is_same<MultigridNumber, Number>::value)
-    {
-      vector_fine_ptr = reinterpret_cast<VectorTypeMG const *>(&solution_fine);
-    }
-    else
-    {
-      vector_fine     = solution_fine;
-      vector_fine_ptr = &vector_fine;
-    }
-
-    for(unsigned int level = this->fine_level - smoothing_levels; level <= this->fine_level;
-        ++level)
-    {
-      AssertThrow(this->get_operator(level).get() != 0, ExcMessage("invalid pointer"));
-      this->get_operator(level)->initialize_dof_vector(solution[level]);
-      if(level == this->fine_level)
-        solution[level] = *vector_fine_ptr;
-    }
-
-    do_project_and_prolongate(this->operators.max_level(), smoothing_levels);
-
-    solution_fine = solution[this->operators.max_level()];
-  }
-
 private:
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
   do_initialize_matrix_free(unsigned int const level) override
@@ -295,27 +260,6 @@ private:
                                                                 this->constraints_velocity,
                                                                 this->constrained_dofs_velocity,
                                                                 1);
-  }
-
-  void
-  do_project_and_prolongate(unsigned int const level, unsigned int const smoothing_levels) const
-  {
-    // call coarse grid solver
-    if(level == this->fine_level - smoothing_levels)
-    {
-      // do nothing
-
-      return;
-    }
-
-    // restriction
-    this->transfers.interpolate(level, solution[level - 1], solution[level]);
-
-    // coarse grid correction
-    do_project_and_prolongate(level - 1, smoothing_levels);
-
-    // prolongation
-    this->transfers.prolongate(level, solution[level], solution[level - 1]);
   }
 
   /*
@@ -465,9 +409,6 @@ private:
   PDEOperator const * pde_operator;
 
   MultigridOperatorType mg_operator_type;
-
-  // TODO multigrid preconditioner is used as filtering operation here
-  mutable MGLevelObject<VectorTypeMG> solution;
 
   bool mesh_is_moving;
 };

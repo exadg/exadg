@@ -902,19 +902,6 @@ DGOperator<dim, Number>::update_after_mesh_movement()
   }
 }
 
-// TODO: implement filtering as a separate module
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::filter_solution(VectorType & solution) const
-{
-  typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
-
-  std::shared_ptr<MULTIGRID> mg_preconditioner =
-    std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-  if(mg_preconditioner.get() != 0)
-    mg_preconditioner->project_and_prolongate(solution);
-}
-
 template class DGOperator<2, float>;
 template class DGOperator<2, double>;
 

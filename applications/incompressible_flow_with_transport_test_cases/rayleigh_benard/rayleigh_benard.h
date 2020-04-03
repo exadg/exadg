@@ -304,7 +304,6 @@ public:
 
     // NUMERICAL PARAMETERS
     param.use_combined_operator = true;
-    param.filter_solution       = false;
     param.use_overintegration   = true;
   }
 

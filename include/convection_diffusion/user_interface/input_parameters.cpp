@@ -73,7 +73,6 @@ InputParameters::InputParameters()
     use_cell_based_face_loops(false),
     use_combined_operator(true),
     store_analytical_velocity_in_dof_vector(false),
-    filter_solution(false),
     use_overintegration(false)
 {
 }
@@ -303,16 +302,6 @@ InputParameters::check_input_parameters()
   }
 
   // NUMERICAL PARAMETERS
-
-  // TODO: implement filtering as a separate module
-  if(filter_solution)
-  {
-    AssertThrow(
-      linear_system_has_to_be_solved() && preconditioner == Preconditioner::Multigrid &&
-        multigrid_data.type == MultigridType::pMG,
-      ExcMessage(
-        "In the current implementation, a multigrid preconditioner has to be used in order to use filtering."));
-  }
 }
 
 bool
@@ -576,10 +565,6 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
                       store_analytical_velocity_in_dof_vector);
     }
   }
-
-  // TODO: implement filtering as a separate module
-  if(temporal_discretization == TemporalDiscretization::BDF)
-    print_parameter(pcout, "Use filtering", filter_solution);
 
   print_parameter(pcout, "Use over-integration", use_overintegration);
 }

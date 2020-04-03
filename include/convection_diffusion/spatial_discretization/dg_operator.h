@@ -272,10 +272,6 @@ public:
   void
   update_after_mesh_movement();
 
-  // TODO: implement filtering as a separate module
-  void
-  filter_solution(VectorType & solution) const;
-
 private:
   /*
    * Initializes DoFHandlers.
