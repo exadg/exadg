@@ -15,6 +15,7 @@ template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -24,6 +25,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
+    degree_u(degree_u_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor_velocity(boundary_descriptor_velocity_in),
     boundary_descriptor_pressure(boundary_descriptor_pressure_in),
@@ -31,9 +33,9 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     param(parameters_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
-    fe_u(new FESystem<dim>(FE_DGQ<dim>(parameters_in.degree_u), dim)),
-    fe_p(parameters_in.get_degree_p()),
-    fe_u_scalar(parameters_in.degree_u),
+    fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u_in), dim)),
+    fe_p(parameters_in.get_degree_p(degree_u_in)),
+    fe_u_scalar(degree_u_in),
     dof_handler_u(triangulation_in),
     dof_handler_p(triangulation_in),
     dof_handler_u_scalar(triangulation_in),
@@ -107,15 +109,16 @@ DGNavierStokesBase<dim, Number>::append_data_structures(
   matrix_free_wrapper.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree_u + 1), field + quad_index_u);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.get_degree_p() + 1), field + quad_index_p);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree_u + 1), field + quad_index_u);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.get_degree_p(degree_u) + 1),
+                                        field + quad_index_p);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree_u + (degree_u + 2) / 2),
                                         field + quad_index_u_nonlinear);
   if(param.store_previous_boundary_values)
   {
-    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.degree_u + 1),
+    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(degree_u + 1),
                                           field + quad_index_u_gauss_lobatto);
-    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.get_degree_p() + 1),
+    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(degree_u) + 1),
                                           field + quad_index_p_gauss_lobatto);
   }
 }
@@ -197,8 +200,9 @@ DGNavierStokesBase<dim, Number>::distribute_dofs()
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
-  unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
-  unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.get_degree_p() + 1, dim);
+  unsigned int const ndofs_per_cell_velocity = Utilities::pow(degree_u + 1, dim) * dim;
+  unsigned int const ndofs_per_cell_pressure =
+    Utilities::pow(param.get_degree_p(degree_u) + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -206,12 +210,12 @@ DGNavierStokesBase<dim, Number>::distribute_dofs()
         << std::flush;
 
   pcout << "Velocity:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", param.degree_u);
+  print_parameter(pcout, "degree of 1D polynomials", degree_u);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_velocity);
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
 
   pcout << "Pressure:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p());
+  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p(degree_u));
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_pressure);
   print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
 
@@ -371,7 +375,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     Operators::DivergencePenaltyKernelData div_penalty_data;
     div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
     div_penalty_data.viscosity              = param.viscosity;
-    div_penalty_data.degree                 = param.degree_u;
+    div_penalty_data.degree                 = degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
 
     div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
@@ -396,7 +400,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     kernel_data.type_penalty_parameter = param.type_penalty_parameter;
     kernel_data.which_components       = param.continuity_penalty_components;
     kernel_data.viscosity              = param.viscosity;
-    kernel_data.degree                 = param.degree_u;
+    kernel_data.degree                 = degree_u;
     kernel_data.penalty_factor         = param.continuity_penalty_factor;
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
@@ -456,7 +460,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.kinematic_viscosity = param.viscosity;
   model_data.dof_index           = get_dof_index_velocity();
   model_data.quad_index          = get_quad_index_velocity_linear();
-  model_data.degree              = param.degree_u;
+  model_data.degree              = degree_u;
   turbulence_model.initialize(*matrix_free, get_mapping(), viscous_kernel, model_data);
 }
 
@@ -695,7 +699,7 @@ template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_polynomial_degree() const
 {
-  return param.degree_u;
+  return degree_u;
 }
 
 template<int dim, typename Number>
@@ -834,7 +838,7 @@ DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velo
                                                     get_quad_index_velocity_linear(),
                                                     velocity,
                                                     cfl,
-                                                    param.degree_u,
+                                                    degree_u,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);

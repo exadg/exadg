@@ -584,7 +584,6 @@ public:
     using namespace IncNS;
 
     // MATHEMATICAL MODEL
-    param.dim                            = 3;
     param.problem_type                   = ProblemType::Unsteady;
     param.equation_type                  = EquationType::NavierStokes;
     param.formulation_viscous_term       = FormulationViscousTerm::LaplaceFormulation;
@@ -772,8 +771,8 @@ public:
     param.IP_factor = 1.0;
 
     // SOLVER
-    param.solver      = ConvDiff::Solver::GMRES;
-    param.solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver         = ConvDiff::Solver::GMRES;
+    param.solver_data    = SolverData(1e4, 1.e-12, 1.e-6, 100);
     param.preconditioner = Preconditioner::InverseMassMatrix; // BlockJacobi; //Multigrid;
     param.implement_block_diagonal_preconditioner_matrix_free = false;
     param.use_cell_based_face_loops                           = false;
@@ -897,10 +896,8 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
-
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
@@ -915,7 +912,7 @@ public:
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_q_criterion         = true;
     pp_data.output_data.write_processor_id        = true;
-    pp_data.output_data.degree                    = param.degree_u;
+    pp_data.output_data.degree                    = degree;
     pp_data.output_data.write_higher_order        = high_order_output;
 
     // Lung specific modules
@@ -968,9 +965,9 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(ConvDiff::InputParameters const & param,
-                                 MPI_Comm const &                  mpi_comm,
-                                 unsigned int const                scalar_index)
+  construct_postprocessor_scalar(unsigned int const degree,
+                                 MPI_Comm const &   mpi_comm,
+                                 unsigned int const scalar_index)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output      = write_output;
@@ -978,7 +975,7 @@ public:
     pp_data.output_data.output_name       = output_name + "_scalar_" + std::to_string(scalar_index);
     pp_data.output_data.output_start_time = output_start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = high_order_output;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;

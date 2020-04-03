@@ -121,9 +121,9 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
+    (void)degree;
 
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -158,11 +158,11 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(ConvDiff::InputParameters const & param,
-                                 MPI_Comm const &                  mpi_comm,
-                                 unsigned int const                scalar_index)
+  construct_postprocessor_scalar(unsigned int const degree,
+                                 MPI_Comm const &   mpi_comm,
+                                 unsigned int const scalar_index)
   {
-    (void)param;
+    (void)degree;
     (void)scalar_index;
 
     ConvDiff::PostProcessorData<dim> pp_data;

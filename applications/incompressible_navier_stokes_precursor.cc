@@ -1,15 +1,18 @@
 /*
- *unsteady_navier_stokes_two_domains.cc
+ * incompressible_navier_stokes_precursor.cc
  *
  *  Created on: 2017
  *      Author: fehn
  */
 
+// deal.II
+#include <deal.II/base/parameter_handler.h>
+
+// TODO: this function will be included in deal.II
+#include "../include/functionalities/parse_input.h"
+
 // driver
 #include "../include/incompressible_navier_stokes/driver_precursor.h"
-
-// infrastructure for convergence studies
-#include "../include/functionalities/convergence_study.h"
 
 // application
 #include "incompressible_navier_stokes_test_cases/backward_facing_step/backward_facing_step.h"
@@ -80,12 +83,48 @@ private:
   std::string name = "MyApp";
 };
 
+struct Study
+{
+  Study()
+  {
+  }
+
+  Study(const std::string & input_file)
+  {
+    dealii::ParameterHandler prm;
+    this->add_parameters(prm);
+
+    parse_input(input_file, prm, true, true);
+  }
+
+  void
+  add_parameters(dealii::ParameterHandler & prm)
+  {
+    // clang-format off
+    prm.enter_subsection("General");
+      prm.add_parameter("Precision",   precision,     "Floating point precision.",                    Patterns::Selection("float|double"));
+      prm.add_parameter("Dim",         dim,           "Number of space dimension.",                   Patterns::Integer(2,3));
+      prm.add_parameter("Degree",      degree,        "Polynomial degree of shape functions.",        Patterns::Integer(1,15));
+      prm.add_parameter("RefineSpace", refine_space,  "Number of global, uniform mesh refinements.",  Patterns::Integer(0,20));
+    prm.leave_subsection();
+    // clang-format on
+  }
+
+  std::string precision = "double";
+
+  unsigned int dim = 2;
+
+  unsigned int degree = 3;
+
+  unsigned int refine_space = 0;
+};
+
 void
 create_input_file(std::string const & name_of_application = "")
 {
   dealii::ParameterHandler prm;
 
-  ConvergenceStudy study;
+  Study study;
   study.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
@@ -104,7 +143,6 @@ void
 run(std::string const & input_file,
     unsigned int const  degree,
     unsigned int const  refine_space,
-    unsigned int const  refine_time,
     MPI_Comm const &    mpi_comm)
 {
   std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver;
@@ -115,7 +153,7 @@ run(std::string const & input_file,
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
     selector.get_application<dim, Number>(input_file);
 
-  driver->setup(application, degree, refine_space, refine_time);
+  driver->setup(application, degree, refine_space);
 
   driver->solve();
 
@@ -155,26 +193,18 @@ main(int argc, char ** argv)
 
     // the second argument is the input-file
     // ./incompressible_navier_stokes_precursor InputFile
-    std::string      input_file = std::string(argv[1]);
-    ConvergenceStudy study(input_file);
-
-    AssertThrow(study.degree_min == study.degree_max &&
-                  study.refine_space_min == study.refine_space_max &&
-                  study.refine_time_min == study.refine_time_max,
-                ExcMessage("Automatic convergence studies are currently not "
-                           "implemented for precursor-type simulations."));
+    std::string input_file = std::string(argv[1]);
+    Study       study(input_file);
 
     // run the simulation
-    unsigned int const degree = study.degree_min, refine_space = study.refine_space_min,
-                       refine_time = study.refine_time_min;
     if(study.dim == 2 && study.precision == "float")
-      run<2, float>(input_file, degree, refine_space, refine_time, mpi_comm);
+      run<2, float>(input_file, study.degree, study.refine_space, mpi_comm);
     else if(study.dim == 2 && study.precision == "double")
-      run<2, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+      run<2, double>(input_file, study.degree, study.refine_space, mpi_comm);
     else if(study.dim == 3 && study.precision == "float")
-      run<3, float>(input_file, degree, refine_space, refine_time, mpi_comm);
+      run<3, float>(input_file, study.degree, study.refine_space, mpi_comm);
     else if(study.dim == 3 && study.precision == "double")
-      run<3, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+      run<3, double>(input_file, study.degree, study.refine_space, mpi_comm);
     else
       AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }

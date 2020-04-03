@@ -145,7 +145,6 @@ public:
     using namespace IncNS;
 
     // MATHEMATICAL MODEL
-    param.dim                            = 3;
     param.problem_type                   = ProblemType::Unsteady;
     param.equation_type                  = EquationType::NavierStokes;
     param.formulation_viscous_term       = FormulationViscousTerm::LaplaceFormulation;
@@ -609,28 +608,24 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output                    = true;
-    pp_data.output_data.output_folder                   = output_directory + "vtu/";
-    pp_data.output_data.output_name                     = output_name;
-    pp_data.output_data.write_boundary_IDs              = true;
-    pp_data.output_data.output_start_time               = param.start_time;
-    pp_data.output_data.output_interval_time            = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.write_vorticity                 = true;
-    pp_data.output_data.write_divergence                = true;
-    pp_data.output_data.write_velocity_magnitude        = true;
-    pp_data.output_data.write_vorticity_magnitude       = true;
-    pp_data.output_data.write_processor_id              = true;
-    pp_data.output_data.mean_velocity.calculate         = true;
-    pp_data.output_data.mean_velocity.sample_start_time = param.start_time;
-    pp_data.output_data.mean_velocity.sample_end_time   = param.end_time;
-    pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.write_higher_order                   = false;
-    pp_data.output_data.degree                               = param.degree_u;
+    pp_data.output_data.write_output              = true;
+    pp_data.output_data.output_folder             = output_directory + "vtu/";
+    pp_data.output_data.output_name               = output_name;
+    pp_data.output_data.write_boundary_IDs        = true;
+    pp_data.output_data.output_start_time         = 0.0;
+    pp_data.output_data.output_interval_time      = END_TIME / 20;
+    pp_data.output_data.write_vorticity           = true;
+    pp_data.output_data.write_divergence          = true;
+    pp_data.output_data.write_velocity_magnitude  = true;
+    pp_data.output_data.write_vorticity_magnitude = true;
+    pp_data.output_data.write_processor_id        = true;
+    pp_data.output_data.write_higher_order        = false;
+    pp_data.output_data.degree                    = degree;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));

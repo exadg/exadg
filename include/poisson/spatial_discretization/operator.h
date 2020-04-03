@@ -65,6 +65,7 @@ private:
 public:
   Operator(parallel::TriangulationBase<dim> const &                       triangulation,
            Mapping<dim> const &                                           mapping,
+           unsigned int const                                             degree,
            PeriodicFaces const                                            periodic_face_pairs,
            std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> const boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim>> const                     field_functions,
@@ -111,6 +112,9 @@ public:
   double
   get_average_convergence_rate() const;
 
+  unsigned int
+  get_degree() const;
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
@@ -141,6 +145,11 @@ private:
    * Mapping
    */
   Mapping<dim> const & mapping;
+
+  /*
+   * Polynomial degree
+   */
+  unsigned int const degree;
 
   /*
    * Periodic face pairs: This variable is only needed when using a multigrid preconditioner

@@ -121,7 +121,6 @@ public:
     using namespace IncNS;
 
     // MATHEMATICAL MODEL
-    param.dim                         = dim; // TODO
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::Stokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
@@ -210,9 +209,9 @@ public:
       param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
 
     // viscous step
-    param.solver_viscous      = SolverViscous::CG;
-    param.solver_data_viscous = SolverData(1000, 1.e-30, reltol);
-    param.preconditioner_viscous = PreconditionerViscous::Multigrid; // InverseMassMatrix;
+    param.solver_viscous              = SolverViscous::CG;
+    param.solver_data_viscous         = SolverData(1000, 1.e-30, reltol);
+    param.preconditioner_viscous      = PreconditionerViscous::Multigrid; // InverseMassMatrix;
     param.multigrid_data_viscous.type = MultigridType::cphMG;
 
 
@@ -395,10 +394,8 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
-
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
@@ -408,7 +405,7 @@ public:
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.write_processor_id   = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
@@ -441,9 +438,9 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(ConvDiff::InputParameters const & param,
-                                 MPI_Comm const &                  mpi_comm,
-                                 unsigned int const                scalar_index)
+  construct_postprocessor_scalar(unsigned int const degree,
+                                 MPI_Comm const &   mpi_comm,
+                                 unsigned int const scalar_index)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output      = write_output;
@@ -451,7 +448,7 @@ public:
     pp_data.output_data.output_name       = output_name + "_scalar_" + std::to_string(scalar_index);
     pp_data.output_data.output_start_time = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;

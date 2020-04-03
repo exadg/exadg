@@ -17,6 +17,7 @@ template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
@@ -27,11 +28,12 @@ TimeIntExplRK<Number>::TimeIntExplRK(
                               mpi_comm_in), // currently no adaptive time stepping implemented
     pde_operator(operator_in),
     param(param_in),
+    refine_steps_time(refine_steps_time_in),
     postprocessor(postprocessor_in),
     time_postprocessing(0.0),
     l2_norm(0.0),
-    cfl_number(param.cfl_number / std::pow(2.0, param.dt_refinements)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, param.dt_refinements))
+    cfl_number(param.cfl_number / std::pow(2.0, refine_steps_time_in)),
+    diffusion_number(param.diffusion_number / std::pow(2.0, refine_steps_time_in))
 {
 }
 
@@ -111,7 +113,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    this->time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
+    this->time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
     print_parameter(this->pcout, "time step size", this->time_step);
   }

@@ -16,7 +16,6 @@ namespace IncNS
 // standard constructor that initializes parameters
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
     formulation_viscous_term(FormulationViscousTerm::LaplaceFormulation),
@@ -55,7 +54,6 @@ InputParameters::InputParameters()
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
     order_time_integrator(1),
     start_with_low_order(true),
-    dt_refinements(0),
 
     // pseudo time-stepping
     convergence_criterion_steady_problem(ConvergenceCriterionSteadyProblem::Undefined),
@@ -74,15 +72,11 @@ InputParameters::InputParameters()
     // triangulation
     triangulation_type(TriangulationType::Undefined),
 
-    // polynomial degrees
-    degree_u(3),
-    degree_p(DegreePressure::MixedOrder),
-
     // mapping
     mapping(MappingType::Affine),
 
-    // h-refinement
-    h_refinements(0),
+    // polynomial degrees
+    degree_p(DegreePressure::MixedOrder),
 
     // convective term
     upwind_factor(1.0),
@@ -225,8 +219,6 @@ void
 InputParameters::check_input_parameters(ConditionalOStream & pcout)
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
-
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
@@ -519,7 +511,7 @@ InputParameters::linear_problem_has_to_be_solved() const
 }
 
 unsigned int
-InputParameters::get_degree_p() const
+InputParameters::get_degree_p(unsigned int const degree_u) const
 {
   unsigned int k = 1;
 
@@ -577,7 +569,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
 
@@ -669,8 +660,6 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
   print_parameter(pcout, "Order of time integration scheme", order_time_integrator);
   print_parameter(pcout, "Start with low order method", start_with_low_order);
 
-  print_parameter(pcout, "Refinement steps dt", dt_refinements);
-
   if(problem_type == ProblemType::Steady)
   {
     print_parameter(pcout,
@@ -696,12 +685,9 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-  print_parameter(pcout, "Polynomial degree velocity", degree_u);
-  print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
-
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
 
-  print_parameter(pcout, "Number of h-refinements", h_refinements);
+  print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
 
   if(this->convective_problem())
   {

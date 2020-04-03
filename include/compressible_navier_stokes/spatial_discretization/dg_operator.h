@@ -53,6 +53,7 @@ private:
 public:
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,
              Mapping<dim> const &                           mapping_in,
+             unsigned int const                             degree_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
@@ -189,6 +190,11 @@ private:
    * Mapping
    */
   Mapping<dim> const & mapping;
+
+  /*
+   * polynomial degree
+   */
+  unsigned int const degree;
 
   /*
    * User interface: Boundary conditions and field functions.

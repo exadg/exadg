@@ -41,16 +41,6 @@ private:
   double const diffusivity;
 };
 
-// convergence studies in space or time
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
-
-unsigned int const REFINE_SPACE_MIN = 5;
-unsigned int const REFINE_SPACE_MAX = 5;
-
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -110,19 +100,14 @@ public:
     param.time_step_size                = 1.0e-1;
     param.cfl                           = 0.2;
     param.diffusion_number              = 0.01;
-    param.dt_refinements                = REFINE_TIME_MIN;
 
     // SPATIAL DISCRETIZATION
 
     // triangulation
     param.triangulation_type = TriangulationType::Distributed;
 
-    // polynomial degree
-    param.degree  = DEGREE_MIN;
+    // mapping
     param.mapping = MappingType::Affine;
-
-    // h-refinements
-    param.h_refinements = REFINE_SPACE_MIN;
 
     // convective term
     param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
@@ -208,20 +193,20 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(ConvDiff::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
+    pp_data.output_data.degree               = degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(diffusivity));
-    pp_data.error_data.error_calc_start_time    = param.start_time;
-    pp_data.error_data.error_calc_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.error_data.error_calc_start_time    = start_time;
+    pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 20;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

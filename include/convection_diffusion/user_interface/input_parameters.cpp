@@ -46,15 +46,12 @@ InputParameters::InputParameters()
     c_eff(-1.),
     exponent_fe_degree_convection(1.5),
     exponent_fe_degree_diffusion(3.0),
-    dt_refinements(0),
     restarted_simulation(false),
     restart_data(RestartData()),
 
     // SPATIAL DISCRETIZATION
     triangulation_type(TriangulationType::Undefined),
-    degree(1),
     mapping(MappingType::Affine),
-    h_refinements(0),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
     IP_factor(1.0),
 
@@ -237,8 +234,6 @@ InputParameters::check_input_parameters()
   // SPATIAL DISCRETIZATION
   AssertThrow(triangulation_type != TriangulationType::Undefined,
               ExcMessage("parameter must be defined"));
-
-  AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
 
   if(equation_type == EquationType::Convection ||
      equation_type == EquationType::ConvectionDiffusion)
@@ -489,8 +484,6 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
   // because this is done by the time integration scheme (or the functions that
   // calculate the time step size)
 
-  print_parameter(pcout, "Refinement steps dt", dt_refinements);
-
   print_parameter(pcout, "Restarted simulation", restarted_simulation);
 
   restart_data.print(pcout);
@@ -503,11 +496,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-  print_parameter(pcout, "Polynomial degree of shape functions", degree);
-
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
-
-  print_parameter(pcout, "Number of h-refinements", h_refinements);
 
   if(equation_type == EquationType::Convection ||
      equation_type == EquationType::ConvectionDiffusion)

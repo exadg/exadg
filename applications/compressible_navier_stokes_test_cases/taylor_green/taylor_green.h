@@ -128,6 +128,9 @@ public:
   std::string mesh_type_string = "Cartesian";
   MeshType    mesh_type        = MeshType::Cartesian;
 
+  double const start_time = 0.0;
+  double const end_time   = 20.0 * CHARACTERISTIC_TIME;
+
   std::string output_directory = "output/compressible_flow/taylor_green/", output_name = "test";
 
   void
@@ -138,8 +141,8 @@ public:
     param.right_hand_side = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = 0.0;
-    param.end_time              = 20.0 * CHARACTERISTIC_TIME;
+    param.start_time            = start_time;
+    param.end_time              = end_time;
     param.dynamic_viscosity     = DYN_VISCOSITY;
     param.reference_density     = RHO_0;
     param.heat_capacity_ratio   = GAMMA;
@@ -258,7 +261,7 @@ public:
   }
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(CompNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     CompNS::PostProcessorData<dim> pp_data;
     pp_data.output_data.output_folder = output_directory + "vtu/";
@@ -270,9 +273,9 @@ public:
     pp_data.output_data.write_temperature    = true;
     pp_data.output_data.write_vorticity      = true;
     pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
+    pp_data.output_data.degree               = degree;
 
     // kinetic energy
     pp_data.kinetic_energy_data.calculate                  = true;
@@ -285,8 +288,8 @@ public:
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps    = -1;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
     pp_data.kinetic_energy_spectrum_data.filename = output_directory + output_name + "_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree   = param.degree;
-    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree + 1) * 1;
+    pp_data.kinetic_energy_spectrum_data.degree   = degree;
+    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1) * 1;
 
     std::shared_ptr<CompNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));

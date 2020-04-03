@@ -59,9 +59,9 @@ public:
                              unsigned int const                             scalar_index = 0) = 0;
 
   virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(ConvDiff::InputParameters const & param,
-                                 MPI_Comm const &                  mpi_comm,
-                                 unsigned int const                scalar_index = 0) = 0;
+  construct_postprocessor_scalar(unsigned int const degree,
+                                 MPI_Comm const &   mpi_comm,
+                                 unsigned int const scalar_index = 0) = 0;
 };
 
 } // namespace FTI

@@ -171,7 +171,6 @@ public:
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim          = 3;
     param.problem_type = ProblemType::Unsteady;
     if(inviscid)
       param.equation_type = EquationType::Euler;
@@ -352,7 +351,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -360,13 +359,13 @@ public:
     pp_data.output_data.write_output              = write_vtu_output;
     pp_data.output_data.output_folder             = output_directory + "vtu/";
     pp_data.output_data.output_name               = output_name_vtu;
-    pp_data.output_data.output_start_time         = param.start_time;
+    pp_data.output_data.output_start_time         = start_time;
     pp_data.output_data.output_interval_time      = flow_through_time / 10.0;
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_q_criterion         = true;
-    pp_data.output_data.degree                    = param.degree_u;
+    pp_data.output_data.degree                    = degree;
     pp_data.output_data.write_higher_order        = false;
 
     MyPostProcessorData<dim> my_pp_data;

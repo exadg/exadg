@@ -49,11 +49,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application = app;
 
   application->set_input_parameters(param);
-  // some parameters have to be overwritten
-  param.degree         = degree;
-  param.h_refinements  = refine_space;
-  param.dt_refinements = refine_time;
-
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
@@ -74,8 +69,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, param.h_refinements, periodic_faces);
-  print_grid_data(pcout, param.h_refinements, *triangulation);
+  application->create_grid(triangulation, refine_space, periodic_faces);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   boundary_descriptor.reset(new BoundaryDescriptor<0, dim>());
   application->set_boundary_conditions(boundary_descriptor);
@@ -85,13 +80,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
 
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
-      *triangulation, mapping_degree, param.degree, mpi_comm, mesh_motion, param.start_time));
+      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, param.start_time));
 
     mesh = moving_mesh;
   }
@@ -103,6 +98,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize convection-diffusion operator
   conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
                                                        mesh->get_mapping(),
+                                                       degree,
                                                        periodic_faces,
                                                        boundary_descriptor,
                                                        field_functions,
@@ -118,7 +114,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   conv_diff_operator->setup(matrix_free_wrapper);
 
   // initialize postprocessor
-  postprocessor = application->construct_postprocessor(param, mpi_comm);
+  postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(conv_diff_operator->get_dof_handler(), mesh->get_mapping());
 
   // initialize time integrator or driver for steady problems
@@ -127,12 +123,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
       time_integrator.reset(
-        new TimeIntExplRK<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
+        new TimeIntExplRK<Number>(conv_diff_operator, param, refine_time, mpi_comm, postprocessor));
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(new TimeIntBDF<dim, Number>(
-        conv_diff_operator, param, mpi_comm, postprocessor, moving_mesh, matrix_free_wrapper));
+      time_integrator.reset(new TimeIntBDF<dim, Number>(conv_diff_operator,
+                                                        param,
+                                                        refine_time,
+                                                        mpi_comm,
+                                                        postprocessor,
+                                                        moving_mesh,
+                                                        matrix_free_wrapper));
     }
     else
     {
@@ -330,9 +331,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree,
-                                                                   dofs,
-                                                                   dofs_per_walltime);
+  return std::tuple<unsigned int, types::global_dof_index, double>(
+    conv_diff_operator->get_polynomial_degree(), dofs, dofs_per_walltime);
 }
 
 template<int dim, typename Number>

@@ -49,11 +49,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application = app;
 
   application->set_input_parameters(param);
-  // some parameters have to be overwritten
-  param.degree         = degree;
-  param.h_refinements  = refine_space;
-  param.dt_refinements = refine_time;
-
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
@@ -74,8 +69,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, param.h_refinements, periodic_faces);
-  print_grid_data(pcout, param.h_refinements, *triangulation);
+  application->create_grid(triangulation, refine_space, periodic_faces);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
@@ -96,12 +91,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // Mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
                                                                 mesh->get_mapping(),
+                                                                degree,
                                                                 boundary_descriptor_density,
                                                                 boundary_descriptor_velocity,
                                                                 boundary_descriptor_pressure,
@@ -119,12 +115,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   comp_navier_stokes_operator->setup(matrix_free_wrapper);
 
   // initialize postprocessor
-  postprocessor = application->construct_postprocessor(param, mpi_comm);
+  postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(*comp_navier_stokes_operator);
 
   // initialize time integrator
-  time_integrator.reset(
-    new TimeIntExplRK<Number>(comp_navier_stokes_operator, param, mpi_comm, postprocessor));
+  time_integrator.reset(new TimeIntExplRK<Number>(
+    comp_navier_stokes_operator, param, refine_time, mpi_comm, postprocessor));
   time_integrator->setup(param.restarted_simulation);
 
   setup_time = timer.wall_time();
@@ -323,9 +319,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree,
-                                                                   dofs,
-                                                                   dofs_per_walltime);
+  return std::tuple<unsigned int, types::global_dof_index, double>(
+    comp_navier_stokes_operator->get_polynomial_degree(), dofs, dofs_per_walltime);
 }
 
 template class Driver<2, float>;

@@ -16,6 +16,7 @@ template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &          triangulation_in,
   Mapping<dim> const &                              mapping_in,
+  unsigned int const                                degree_in,
   PeriodicFaces const                               periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<0, dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const        field_functions_in,
@@ -23,11 +24,12 @@ DGOperator<dim, Number>::DGOperator(
   MPI_Comm const &                                  mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
+    degree(degree_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
-    fe(param.degree),
+    fe(degree_in),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -36,7 +38,7 @@ DGOperator<dim, Number>::DGOperator(
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
+    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
     dof_handler_velocity.reset(new DoFHandler<dim>(triangulation_in));
   }
 
@@ -91,11 +93,11 @@ DGOperator<dim, Number>::append_data_structures(
   }
 
   // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index_std);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree + 1), field + quad_index_std);
 
   if(param.use_overintegration)
   {
-    matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + (param.degree + 2) / 2),
+    matrix_free_wrapper.insert_quadrature(QGauss<1>(degree + (degree + 2) / 2),
                                           field + quad_index_overintegration);
   }
 }
@@ -272,13 +274,13 @@ DGOperator<dim, Number>::distribute_dofs()
     dof_handler_velocity->distribute_mg_dofs();
   }
 
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "degree of 1D polynomials", degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
@@ -818,7 +820,7 @@ DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
                                                     get_quad_index(),
                                                     velocity,
                                                     cfl,
-                                                    param.degree,
+                                                    degree,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -837,7 +839,7 @@ DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
                                                     field_functions->velocity,
                                                     time,
                                                     cfl,
-                                                    param.degree,
+                                                    degree,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -878,7 +880,7 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_polynomial_degree() const
 {
-  return param.degree;
+  return degree;
 }
 
 template<int dim, typename Number>

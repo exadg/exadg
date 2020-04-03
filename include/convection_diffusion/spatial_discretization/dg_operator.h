@@ -63,6 +63,7 @@ public:
    */
   DGOperator(parallel::TriangulationBase<dim> const &          triangulation,
              Mapping<dim> const &                              mapping,
+             unsigned int const                                degree,
              PeriodicFaces const                               periodic_face_pairs,
              std::shared_ptr<BoundaryDescriptor<0, dim>> const boundary_descriptor,
              std::shared_ptr<FieldFunctions<dim>> const        field_functions,
@@ -319,6 +320,11 @@ private:
    * Mapping
    */
   Mapping<dim> const & mapping;
+
+  /*
+   * Polynomial degree of shape function
+   */
+  unsigned int const degree;
 
   /*
    * Periodic face pairs: This variable is only needed when using a multigrid preconditioner

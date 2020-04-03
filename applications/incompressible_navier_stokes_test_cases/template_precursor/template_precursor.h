@@ -111,9 +111,9 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
+    (void)degree;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -124,9 +124,9 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor_precursor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
+    (void)degree;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 

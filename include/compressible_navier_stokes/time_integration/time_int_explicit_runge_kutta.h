@@ -41,6 +41,7 @@ public:
 
   TimeIntExplRK(std::shared_ptr<Operator>                       operator_in,
                 InputParameters const &                         param_in,
+                unsigned int const                              refine_steps_time_in,
                 MPI_Comm const &                                mpi_comm_in,
                 std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
@@ -95,6 +96,8 @@ private:
   std::shared_ptr<ExplicitTimeIntegrator<Operator, VectorType>> rk_time_integrator;
 
   InputParameters const & param;
+
+  unsigned int const refine_steps_time;
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 

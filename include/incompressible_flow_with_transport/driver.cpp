@@ -59,11 +59,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // parameters fluid
   application->set_input_parameters(fluid_param);
-  // some parameters have to be overwritten // TODO
-  fluid_param.degree_u       = degree;
-  fluid_param.h_refinements  = refine_space;
-  fluid_param.dt_refinements = 0;
-
   fluid_param.check_input_parameters(pcout);
   fluid_param.print(pcout, "List of input parameters for fluid solver:");
 
@@ -71,11 +66,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     application->set_input_parameters_scalar(scalar_param[i], i);
-    // some parameters have to be overwritten // TODO
-    scalar_param[i].degree         = degree;
-    scalar_param[i].h_refinements  = refine_space;
-    scalar_param[i].dt_refinements = 0;
-
     scalar_param[i].check_input_parameters();
     AssertThrow(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady,
                 ExcMessage("ProblemType must be unsteady!"));
@@ -120,7 +110,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   print_grid_data(pcout, refine_space, *triangulation);
 
   // mapping
-  unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, fluid_param.degree_u);
+  unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree);
 
   if(fluid_param.ale_formulation) // moving mesh
   {
@@ -133,12 +123,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(*triangulation,
-                                                            mapping_degree,
-                                                            fluid_param.degree_u,
-                                                            mpi_comm,
-                                                            mesh_motion,
-                                                            fluid_param.start_time));
+    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
+      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, fluid_param.start_time));
 
     mesh = moving_mesh;
   }
@@ -182,6 +168,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
                                                        mesh->get_mapping(),
+                                                       degree,
                                                        periodic_faces,
                                                        fluid_boundary_descriptor_velocity,
                                                        fluid_boundary_descriptor_pressure,
@@ -197,6 +184,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     navier_stokes_operator_dual_splitting.reset(
       new DGDualSplitting(*triangulation,
                           mesh->get_mapping(),
+                          degree,
                           periodic_faces,
                           fluid_boundary_descriptor_velocity,
                           fluid_boundary_descriptor_pressure,
@@ -212,6 +200,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation,
                                mesh->get_mapping(),
+                               degree,
                                periodic_faces,
                                fluid_boundary_descriptor_velocity,
                                fluid_boundary_descriptor_pressure,
@@ -231,6 +220,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
                                                                       mesh->get_mapping(),
+                                                                      degree,
                                                                       periodic_faces,
                                                                       scalar_boundary_descriptor[i],
                                                                       scalar_field_functions[i],
@@ -274,13 +264,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // setup postprocessor
-  fluid_postprocessor = application->construct_postprocessor(fluid_param, mpi_comm);
+  fluid_postprocessor = application->construct_postprocessor(degree, mpi_comm);
   fluid_postprocessor->setup(*navier_stokes_operator);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_postprocessor[i] =
-      application->construct_postprocessor_scalar(scalar_param[i], mpi_comm, i);
+    scalar_postprocessor[i] = application->construct_postprocessor_scalar(degree, mpi_comm, i);
     scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(), mesh->get_mapping());
   }
 
@@ -291,6 +280,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
                                                    fluid_param,
+                                                   0 /* refine_time */,
                                                    mpi_comm,
                                                    fluid_postprocessor,
                                                    moving_mesh,
@@ -301,6 +291,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
                                                          fluid_param,
+                                                         0 /* refine_time */,
                                                          mpi_comm,
                                                          fluid_postprocessor,
                                                          moving_mesh,
@@ -312,6 +303,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_time_integrator.reset(
       new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
                                     fluid_param,
+                                    0 /* refine_time */,
                                     mpi_comm,
                                     fluid_postprocessor,
                                     moving_mesh,
@@ -329,13 +321,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
     {
-      scalar_time_integrator[i].reset(new ConvDiff::TimeIntExplRK<Number>(
-        conv_diff_operator[i], scalar_param[i], mpi_comm, scalar_postprocessor[i]));
+      scalar_time_integrator[i].reset(new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i],
+                                                                          scalar_param[i],
+                                                                          0 /* refine_time */,
+                                                                          mpi_comm,
+                                                                          scalar_postprocessor[i]));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
       scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<dim, Number>(conv_diff_operator[i],
                                                                             scalar_param[i],
+                                                                            0 /* refine_time */,
                                                                             mpi_comm,
                                                                             scalar_postprocessor[i],
                                                                             moving_mesh,

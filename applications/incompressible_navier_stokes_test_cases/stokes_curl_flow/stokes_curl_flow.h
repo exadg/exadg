@@ -140,11 +140,13 @@ public:
 
   double const viscosity = 1.0e-5;
 
+  double const start_time = 0.0;
+  double const end_time   = 1.0e4;
+
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                      = 2;
     param.problem_type             = ProblemType::Steady;
     param.equation_type            = EquationType::Stokes;
     param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -152,8 +154,8 @@ public:
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
-    param.end_time   = 1.0e4;
+    param.start_time = start_time;
+    param.end_time   = end_time;
     param.viscosity  = viscosity;
 
 
@@ -308,7 +310,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -316,25 +318,25 @@ public:
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time); // /10;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time); // /10;
     pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;
     pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
     pp_data.error_data_u.calculate_relative_errors = true;
-    pp_data.error_data_u.error_calc_start_time     = param.start_time;
-    pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time);
+    pp_data.error_data_u.error_calc_start_time     = start_time;
+    pp_data.error_data_u.error_calc_interval_time  = (end_time - start_time);
     pp_data.error_data_u.name                      = "velocity";
 
     // ... pressure error
     pp_data.error_data_p.analytical_solution_available = true;
     pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
     pp_data.error_data_p.calculate_relative_errors = true;
-    pp_data.error_data_p.error_calc_start_time     = param.start_time;
-    pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time);
+    pp_data.error_data_p.error_calc_start_time     = start_time;
+    pp_data.error_data_p.error_calc_interval_time  = (end_time - start_time);
     pp_data.error_data_p.name                      = "pressure";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

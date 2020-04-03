@@ -122,9 +122,9 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor(Poisson::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
+    (void)degree;
 
     ConvDiff::PostProcessorData<dim> pp_data;
 

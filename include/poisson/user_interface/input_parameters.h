@@ -62,14 +62,8 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of shape functions
-  unsigned int degree;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
-
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
 
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;

@@ -279,7 +279,6 @@ public:
   do_set_input_parameters(InputParameters & param, bool const is_precursor = false)
   {
     // MATHEMATICAL MODEL
-    param.dim                            = 3; // TODO DIMENSION;
     param.problem_type                   = ProblemType::Unsteady;
     param.equation_type                  = EquationType::NavierStokes;
     param.use_outflow_bc_convective_term = true;
@@ -314,7 +313,6 @@ public:
     param.time_step_size                         = 1.0e-1;
     param.order_time_integrator                  = 2;
     param.start_with_low_order                   = true;
-    param.dt_refinements                         = 0;
 
     // output of solver information
     param.solver_info_data.interval_time = T_0;
@@ -639,7 +637,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -656,7 +654,7 @@ public:
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.degree                               = param.degree_u;
+    pp_data.output_data.degree                               = degree;
 
     PostProcessorDataFDA<dim> pp_data_fda;
     pp_data_fda.pp_data = pp_data;
@@ -841,7 +839,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor_precursor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -858,7 +856,7 @@ public:
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.degree                               = param.degree_u;
+    pp_data.output_data.degree                               = degree;
 
     PostProcessorDataFDA<dim> pp_data_fda;
     pp_data_fda.pp_data = pp_data;

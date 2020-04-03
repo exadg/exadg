@@ -65,7 +65,6 @@ public:
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                         = 3;
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
@@ -211,9 +210,9 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
+    (void)degree;
 
     PostProcessorData<dim> pp_data;
 

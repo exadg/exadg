@@ -53,10 +53,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application = app;
 
   application->set_input_parameters(param);
-  // some parameters have to be overwritten
-  param.degree        = degree;
-  param.h_refinements = refine_space;
-
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
@@ -77,8 +73,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, param.h_refinements, periodic_faces);
-  print_grid_data(pcout, param.h_refinements, *triangulation);
+  application->create_grid(triangulation, refine_space, periodic_faces);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
   application->set_boundary_conditions(boundary_descriptor);
@@ -88,7 +84,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // compute aspect ratio
@@ -98,7 +94,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     double AR = calculate_aspect_ratio_vertex_distance(*triangulation, mpi_comm);
     pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
-    QGauss<dim> quadrature(param.degree + 1);
+    QGauss<dim> quadrature(degree + 1);
     AR = GridTools::compute_maximum_aspect_ratio(*triangulation, mesh->get_mapping(), quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
@@ -106,6 +102,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize Poisson operator
   poisson_operator.reset(new Operator<dim, Number>(*triangulation,
                                                    mesh->get_mapping(),
+                                                   degree,
                                                    periodic_faces,
                                                    boundary_descriptor,
                                                    field_functions,
@@ -121,7 +118,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   poisson_operator->setup_solver();
 
   // initialize postprocessor
-  postprocessor = application->construct_postprocessor(param, mpi_comm);
+  postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
 
   setup_time = timer.wall_time();
@@ -288,7 +285,7 @@ Driver<dim, Number>::analyze_computing_times() const
               << std::endl
               << std::endl;
 
-  return Timings(param.degree, DoFs, n_10, tau_10);
+  return Timings(poisson_operator->get_degree(), DoFs, n_10, tau_10);
 }
 
 template<int dim, typename Number>
@@ -390,7 +387,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree,
+  return std::tuple<unsigned int, types::global_dof_index, double>(poisson_operator->get_degree(),
                                                                    dofs,
                                                                    dofs_per_walltime);
 }

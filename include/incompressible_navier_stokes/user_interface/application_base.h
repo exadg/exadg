@@ -70,7 +70,7 @@ public:
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm) = 0;
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
   virtual std::shared_ptr<Function<dim>>
   set_mesh_movement_function()
@@ -125,7 +125,7 @@ public:
   set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor_precursor(InputParameters const & param, MPI_Comm const & mpi_comm) = 0;
+  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 };
 
 

@@ -12,13 +12,6 @@ namespace Poisson
 {
 namespace Lung
 {
-// convergence studies in space
-unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 15;
-
-unsigned int const REFINE_SPACE_MIN = 0;
-unsigned int const REFINE_SPACE_MAX = 0;
-
 // lung geometry
 std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output/";
 
@@ -41,8 +34,7 @@ template<int dim>
 class DirichletBC : public Function<dim>
 {
 public:
-  DirichletBC(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
+  DirichletBC() : Function<dim>(1, 0.0)
   {
   }
 
@@ -164,7 +156,6 @@ public:
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type     = TriangulationType::Distributed;
-    param.degree                 = DEGREE_MIN;
     param.mapping                = MappingType::Affine; // Isoparametric;
     param.spatial_discretization = SpatialDiscretization::DG;
     param.IP_factor              = 1.0;
@@ -247,14 +238,14 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor(Poisson::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = true;
     pp_data.output_data.output_folder      = output_directory;
     pp_data.output_data.output_name        = output_name;
-    pp_data.output_data.degree             = param.degree;
-    pp_data.output_data.write_higher_order = false;
+    pp_data.output_data.write_higher_order = true;
+    pp_data.output_data.degree             = degree;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));

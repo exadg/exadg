@@ -239,10 +239,13 @@ public:
   ProblemType  problem_type = ProblemType::Unsteady;
   double const Um = (dim == 2 ? (test_case == 1 ? 0.3 : 1.5) : (test_case == 1 ? 0.45 : 2.25));
 
-  // end time
+  double const viscosity = 1.e-3;
+
+  // start and end time
   // use a large value for test_case = 1 (steady problem)
   // in order to not stop pseudo-timestepping approach before having converged
-  double const end_time = (test_case == 1) ? 1000.0 : 8.0;
+  double const start_time = 0.0;
+  double const end_time   = (test_case == 1) ? 1000.0 : 8.0;
 
   // superimpose random perturbations at inflow
   bool const use_perturbation = false;
@@ -269,7 +272,6 @@ public:
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                      = dim; // TODO this parameter will be removed
     param.problem_type             = problem_type;
     param.equation_type            = EquationType::NavierStokes;
     param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -277,9 +279,9 @@ public:
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
+    param.start_time = start_time;
     param.end_time   = end_time;
-    param.viscosity  = 1.0e-3;
+    param.viscosity  = viscosity;
 
 
     // TEMPORAL DISCRETIZATION
@@ -580,7 +582,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -588,18 +590,18 @@ public:
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence     = true;
     pp_data.output_data.write_higher_order   = false;
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.write_surface_mesh   = true;
     pp_data.output_data.write_boundary_IDs   = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
 
     // lift and drag
     pp_data.lift_and_drag_data.calculate_lift_and_drag = true;
-    pp_data.lift_and_drag_data.viscosity               = param.viscosity;
+    pp_data.lift_and_drag_data.viscosity               = viscosity;
 
     const double U = Um * (dim == 2 ? 2. / 3. : 4. / 9.);
     if(dim == 2)

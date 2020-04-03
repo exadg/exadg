@@ -159,7 +159,8 @@ public:
     // solve Orr-Sommerfeld equation
     compute_eigenvector(EIG_VEC, OMEGA, Re, ALPHA, FE);
     // calculate characteristic time interval
-    t0 = 2.0 * PI * ALPHA / OMEGA.real();
+    t0       = 2.0 * PI * ALPHA / OMEGA.real();
+    end_time = 2.0 * t0;
   }
 
   void
@@ -200,13 +201,14 @@ public:
 
   // the time the Tollmien-Schlichting-waves need to travel through the domain
   // (depends on solution of Orr-Sommerfeld equation)
-  double t0 = 0.0;
+  double       t0         = 0.0;
+  double const start_time = 0.0;
+  double       end_time   = 2.0 * t0;
 
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                      = 2;
     param.problem_type             = ProblemType::Unsteady;
     param.equation_type            = EquationType::NavierStokes;
     param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -214,8 +216,8 @@ public:
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
-    param.end_time   = 2.0 * t0;
+    param.start_time = start_time;
+    param.end_time   = end_time;
     param.viscosity  = VISCOSITY;
 
 
@@ -379,7 +381,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -387,10 +389,10 @@ public:
     pp_data.output_data.write_output         = false;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
 
     MyPostProcessorData<dim> pp_data_os;
     pp_data_os.pp_data = pp_data;

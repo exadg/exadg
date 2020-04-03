@@ -8,6 +8,7 @@ template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
   parallel::TriangulationBase<dim> const &                       triangulation_in,
   Mapping<dim> const &                                           mapping_in,
+  unsigned int const                                             degree_in,
   PeriodicFaces const                                            periodic_face_pairs_in,
   std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const                     field_functions_in,
@@ -15,6 +16,7 @@ Operator<dim, Number, n_components>::Operator(
   MPI_Comm const &                                               mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
+    degree(degree_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
@@ -72,7 +74,7 @@ Operator<dim, Number, n_components>::append_data_structures(
   matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index);
 
   // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree + 1), field + quad_index);
 }
 
 template<int dim, typename Number, int n_components>
@@ -283,6 +285,13 @@ Operator<dim, Number, n_components>::get_average_convergence_rate() const
   return iterative_solver->rho;
 }
 
+template<int dim, typename Number, int n_components>
+unsigned int
+Operator<dim, Number, n_components>::get_degree() const
+{
+  return degree;
+}
+
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number, int n_components>
 void
@@ -332,18 +341,18 @@ Operator<dim, Number, n_components>::distribute_dofs()
   if(n_components == 1)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FE_DGQ<dim>(param.degree));
+      fe.reset(new FE_DGQ<dim>(degree));
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FE_Q<dim>(param.degree));
+      fe.reset(new FE_Q<dim>(degree));
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
+      fe.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FESystem<dim>(FE_Q<dim>(param.degree), dim));
+      fe.reset(new FESystem<dim>(FE_Q<dim>(degree), dim));
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
@@ -356,7 +365,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
 
   dof_handler.distribute_mg_dofs();
 
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
 
   pcout << std::endl;
 
@@ -371,7 +380,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
   else
     AssertThrow(false, ExcMessage("Not implemented."));
 
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "degree of 1D polynomials", degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }

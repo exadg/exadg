@@ -46,7 +46,7 @@ public:
   linear_problem_has_to_be_solved() const;
 
   unsigned int
-  get_degree_p() const;
+  get_degree_p(unsigned int const degree_u) const;
 
   void
   print(ConditionalOStream & pcout, std::string const & name);
@@ -91,9 +91,6 @@ public:
   /*                                 MATHEMATICAL MODEL                                 */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // number of space dimensions
-  unsigned int dim;
 
   // description: see enum declaration
   ProblemType problem_type;
@@ -225,10 +222,6 @@ public:
   // start time integrator with low order time integrator, i.e., first order Euler method
   bool start_with_low_order;
 
-  // number of refinement steps for time step size
-  //   default: use dt_refinements = 0
-  unsigned int dt_refinements;
-
   // description: see enum declaration
   ConvergenceCriterionSteadyProblem convergence_criterion_steady_problem;
 
@@ -264,17 +257,11 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of velocity shape functions
-  unsigned int degree_u;
-
-  // Polynomial degree used for pressure shape functions
-  DegreePressure degree_p;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
+  // Polynomial degree used for pressure shape functions
+  DegreePressure degree_p;
 
   // convective term: upwind factor describes the scaling factor in front of the
   // stabilization term (which is strictly dissipative) of the numerical function

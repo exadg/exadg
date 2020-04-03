@@ -248,7 +248,6 @@ public:
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                      = 3;
     param.problem_type             = ProblemType::Unsteady;
     param.equation_type            = EquationType::NavierStokes;
     param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -445,7 +444,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -453,10 +452,10 @@ public:
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
+    pp_data.output_data.output_start_time    = START_TIME;
     pp_data.output_data.output_interval_time = 1.0;
     pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     // calculate div and mass error

@@ -127,6 +127,9 @@ public:
 
   std::string output_directory = "output/compressible_flow/poiseuille/", output_name = "test";
 
+  double const start_time = 0.0;
+  double const end_time   = 25.0;
+
   void
   set_input_parameters(InputParameters & param)
   {
@@ -135,8 +138,8 @@ public:
     param.right_hand_side = true;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = 0.0;
-    param.end_time              = 25.0;
+    param.start_time            = start_time;
+    param.end_time              = end_time;
     param.dynamic_viscosity     = DYN_VISCOSITY;
     param.reference_density     = RHO_0;
     param.heat_capacity_ratio   = GAMMA;
@@ -249,7 +252,7 @@ public:
   }
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(CompNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     CompNS::PostProcessorData<dim> pp_data;
     pp_data.output_data.output_folder        = output_directory;
@@ -260,9 +263,9 @@ public:
     pp_data.output_data.write_temperature    = true;
     pp_data.output_data.write_vorticity      = true;
     pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     std::shared_ptr<CompNS::PostProcessorBase<dim, Number>> pp;

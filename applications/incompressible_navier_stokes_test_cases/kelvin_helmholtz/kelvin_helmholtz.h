@@ -87,15 +87,17 @@ public:
   double const DELTA_0      = 1. / 28.;
   double const U_INF        = 1.0;
   double const C_N          = 1.0e-3;
-  double const MAX_VELOCITY = U_INF;
-  double const VISCOSITY    = U_INF * DELTA_0 / Re;
+  double const max_velocity = U_INF;
+  double const viscosity    = U_INF * DELTA_0 / Re;
   double const T            = DELTA_0 / U_INF;
+
+  double const start_time = 0.0;
+  double const end_time   = 400.0 * T;
 
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                      = 2;
     param.problem_type             = ProblemType::Unsteady;
     param.equation_type            = EquationType::NavierStokes;
     param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -103,9 +105,9 @@ public:
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
-    param.end_time   = 400.0 * T;
-    param.viscosity  = VISCOSITY;
+    param.start_time = start_time;
+    param.end_time   = end_time;
+    param.viscosity  = viscosity;
 
 
     // TEMPORAL DISCRETIZATION
@@ -115,7 +117,7 @@ public:
                                                       // //BDFCoupledSolution;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    param.max_velocity                    = MAX_VELOCITY;
+    param.max_velocity                    = max_velocity;
     param.cfl                             = 0.1;
     param.cfl_exponent_fe_degree_velocity = 1.5;
     param.time_step_size                  = 1.0e-2;
@@ -265,7 +267,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -273,17 +275,17 @@ public:
     pp_data.output_data.write_output              = false;
     pp_data.output_data.output_folder             = output_directory + "vtu/";
     pp_data.output_data.output_name               = output_name;
-    pp_data.output_data.output_start_time         = param.start_time;
-    pp_data.output_data.output_interval_time      = (param.end_time - param.start_time) / 200;
+    pp_data.output_data.output_start_time         = start_time;
+    pp_data.output_data.output_interval_time      = (end_time - start_time) / 200;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_processor_id        = true;
-    pp_data.output_data.degree                    = param.degree_u;
+    pp_data.output_data.degree                    = degree;
 
     // kinetic energy
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
-    pp_data.kinetic_energy_data.viscosity                  = VISCOSITY;
+    pp_data.kinetic_energy_data.viscosity                  = viscosity;
     pp_data.kinetic_energy_data.filename                   = output_directory + output_name;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

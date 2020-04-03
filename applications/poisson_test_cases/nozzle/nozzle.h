@@ -105,14 +105,14 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor(Poisson::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = true;
     pp_data.output_data.output_folder      = output_directory;
     pp_data.output_data.output_name        = output_name;
-    pp_data.output_data.degree             = param.degree;
-    pp_data.output_data.write_higher_order = false;
+    pp_data.output_data.write_higher_order = true;
+    pp_data.output_data.degree             = degree;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));

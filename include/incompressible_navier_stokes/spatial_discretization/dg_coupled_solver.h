@@ -193,6 +193,7 @@ public:
   DGNavierStokesCoupled(
     parallel::TriangulationBase<dim> const & triangulation_in,
     Mapping<dim> const &                     mapping_in,
+    unsigned int const                       degree_u_in,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs_in,
     std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,

@@ -35,6 +35,7 @@ public:
 
   TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
              InputParameters const &                         param_in,
+             unsigned int const                              refine_steps_time_in,
              MPI_Comm const &                                mpi_comm_in,
              std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
              std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
@@ -93,6 +94,10 @@ protected:
   move_mesh_and_update_dependent_data_structures(double const time) const;
 
   InputParameters const & param;
+
+  // number of refinement steps, where the time step size is reduced in
+  // factors of 2 with each refinement
+  unsigned int const refine_steps_time;
 
   // global cfl number
   double const cfl;

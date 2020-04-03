@@ -19,6 +19,7 @@ template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<OperatorBase>                   operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
@@ -32,8 +33,9 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
                            param_in.restart_data,
                            mpi_comm_in),
     param(param_in),
-    cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
-    cfl_oif(param_in.cfl_oif / std::pow(2.0, param.dt_refinements)),
+    refine_steps_time(refine_steps_time_in),
+    cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
+    cfl_oif(param_in.cfl_oif / std::pow(2.0, refine_steps_time_in)),
     operator_base(operator_in),
     vec_convective_term(this->order),
     postprocessor(postprocessor_in),
@@ -338,7 +340,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
+    time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
     this->pcout << "User specified time step size:" << std::endl << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
@@ -392,12 +394,12 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     double const h_min = operator_base->calculate_minimum_element_length();
 
     time_step = calculate_time_step_max_efficiency(
-      param.c_eff, h_min, degree_u, this->order, param.dt_refinements);
+      param.c_eff, h_min, degree_u, this->order, refine_steps_time);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, refine_steps_time));
     print_parameter(this->pcout, "Time step size", time_step);
   }
   else

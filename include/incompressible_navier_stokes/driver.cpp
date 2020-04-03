@@ -50,11 +50,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application = app;
 
   application->set_input_parameters(param);
-  // some parameters have to be overwritten
-  param.degree_u       = degree;
-  param.h_refinements  = refine_space;
-  param.dt_refinements = refine_time;
-
   param.check_input_parameters(pcout);
   param.print(pcout, "List of input parameters:");
 
@@ -90,13 +85,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree_u);
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
 
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
-      *triangulation, mapping_degree, param.degree_u, mpi_comm, mesh_motion, param.start_time));
+      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, param.start_time));
 
     mesh = moving_mesh;
   }
@@ -112,6 +107,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
                                                          mesh->get_mapping(),
+                                                         degree,
                                                          periodic_faces,
                                                          boundary_descriptor_velocity,
                                                          boundary_descriptor_pressure,
@@ -125,6 +121,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       navier_stokes_operator_dual_splitting.reset(new DGDualSplitting(*triangulation,
                                                                       mesh->get_mapping(),
+                                                                      degree,
                                                                       periodic_faces,
                                                                       boundary_descriptor_velocity,
                                                                       boundary_descriptor_pressure,
@@ -139,6 +136,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       navier_stokes_operator_pressure_correction.reset(
         new DGPressureCorrection(*triangulation,
                                  mesh->get_mapping(),
+                                 degree,
                                  periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
@@ -157,6 +155,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
                                                        mesh->get_mapping(),
+                                                       degree,
                                                        periodic_faces,
                                                        boundary_descriptor_velocity,
                                                        boundary_descriptor_pressure,
@@ -180,7 +179,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   navier_stokes_operator->setup(matrix_free_wrapper);
 
   // setup postprocessor
-  postprocessor = application->construct_postprocessor(param, mpi_comm);
+  postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(*navier_stokes_operator);
 
   // setup time integrator before calling setup_solvers
@@ -193,6 +192,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
                                                param,
+                                               refine_time,
                                                mpi_comm,
                                                postprocessor,
                                                moving_mesh,
@@ -202,6 +202,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
                                                      param,
+                                                     refine_time,
                                                      mpi_comm,
                                                      postprocessor,
                                                      moving_mesh,
@@ -212,6 +213,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       time_integrator.reset(
         new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
                                       param,
+                                      refine_time,
                                       mpi_comm,
                                       postprocessor,
                                       moving_mesh,
@@ -673,7 +675,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
     dofs = navier_stokes_operator->get_dof_handler_u().n_dofs() +
            navier_stokes_operator->get_dof_handler_p().n_dofs();
 
-    fe_degree = param.degree_u;
+    fe_degree = navier_stokes_operator->get_polynomial_degree();
   }
   else if(operator_type == Operator::ConvectiveOperator ||
           operator_type == Operator::VelocityConvDiffOperator ||
@@ -683,13 +685,13 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   {
     dofs = navier_stokes_operator->get_dof_handler_u().n_dofs();
 
-    fe_degree = param.degree_u;
+    fe_degree = navier_stokes_operator->get_polynomial_degree();
   }
   else if(operator_type == Operator::PressurePoissonOperator)
   {
     dofs = navier_stokes_operator->get_dof_handler_p().n_dofs();
 
-    fe_degree = param.get_degree_p();
+    fe_degree = param.get_degree_p(navier_stokes_operator->get_polynomial_degree());
   }
   else
   {

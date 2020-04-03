@@ -197,10 +197,6 @@ public:
   // exponent of fe_degree used in the calculation of the diffusion time step size
   double exponent_fe_degree_diffusion;
 
-  // number of refinement steps for time step size
-  //   default: use dt_refinements = 0
-  unsigned int dt_refinements;
-
   // set this variable to true to start the simulation from restart files
   bool restarted_simulation;
 
@@ -216,14 +212,8 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of shape functions
-  unsigned int degree;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
-
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
 
   // description: see enum declaration
   NumericalFluxConvectiveOperator numerical_flux_convective_operator;

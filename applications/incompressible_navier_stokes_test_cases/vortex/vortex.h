@@ -280,19 +280,19 @@ public:
   double const left  = -0.5;
   double const right = 0.5;
 
-  double const end_time = 1.0;
+  double const start_time = 0.0;
+  double const end_time   = 1.0;
 
   FormulationViscousTerm const formulation_viscous = FormulationViscousTerm::LaplaceFormulation;
 
   MeshType const mesh_type = MeshType::UniformCartesian;
 
-  bool const ALE = false;
+  bool const ALE = true;
 
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                         = 2;
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = formulation_viscous;
@@ -304,14 +304,15 @@ public:
     param.neumann_with_variable_normal_vector = ALE;
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
+    param.start_time = start_time;
     param.end_time   = end_time;
     param.viscosity  = viscosity;
 
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                  = SolverType::Unsteady;
-    param.temporal_discretization      = TemporalDiscretization::BDFCoupledSolution;
+    param.solver_type = SolverType::Unsteady;
+    param.temporal_discretization =
+      TemporalDiscretization::BDFDualSplittingScheme; // BDFCoupledSolution;
     param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator        = 2;
     param.start_with_low_order         = false;
@@ -690,35 +691,35 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output                    = false;
-    pp_data.output_data.output_folder                   = output_directory + "vtu/";
-    pp_data.output_data.output_name                     = output_name;
-    pp_data.output_data.output_start_time               = param.start_time;
-    pp_data.output_data.output_interval_time            = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.write_vorticity                 = true;
-    pp_data.output_data.write_divergence                = true;
-    pp_data.output_data.write_velocity_magnitude        = true;
-    pp_data.output_data.write_vorticity_magnitude       = true;
-    pp_data.output_data.write_processor_id              = true;
-    pp_data.output_data.mean_velocity.calculate         = true;
-    pp_data.output_data.mean_velocity.sample_start_time = param.start_time;
-    pp_data.output_data.mean_velocity.sample_end_time   = param.end_time;
+    pp_data.output_data.write_output                         = false;
+    pp_data.output_data.output_folder                        = output_directory + "vtu/";
+    pp_data.output_data.output_name                          = output_name;
+    pp_data.output_data.output_start_time                    = start_time;
+    pp_data.output_data.output_interval_time                 = (end_time - start_time) / 20;
+    pp_data.output_data.write_vorticity                      = true;
+    pp_data.output_data.write_divergence                     = true;
+    pp_data.output_data.write_velocity_magnitude             = true;
+    pp_data.output_data.write_vorticity_magnitude            = true;
+    pp_data.output_data.write_processor_id                   = true;
+    pp_data.output_data.mean_velocity.calculate              = true;
+    pp_data.output_data.mean_velocity.sample_start_time      = start_time;
+    pp_data.output_data.mean_velocity.sample_end_time        = end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
     pp_data.output_data.write_higher_order                   = true;
-    pp_data.output_data.degree                               = param.degree_u;
+    pp_data.output_data.degree                               = degree;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;
     pp_data.error_data_u.analytical_solution.reset(
       new AnalyticalSolutionVelocity<dim>(u_x_max, viscosity));
     pp_data.error_data_u.calculate_relative_errors = true;
-    pp_data.error_data_u.error_calc_start_time     = param.start_time;
-    pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time);
+    pp_data.error_data_u.error_calc_start_time     = start_time;
+    pp_data.error_data_u.error_calc_interval_time  = (end_time - start_time);
     pp_data.error_data_u.name                      = "velocity";
 
     // ... pressure error
@@ -726,8 +727,8 @@ public:
     pp_data.error_data_p.analytical_solution.reset(
       new AnalyticalSolutionPressure<dim>(u_x_max, viscosity));
     pp_data.error_data_p.calculate_relative_errors = true;
-    pp_data.error_data_p.error_calc_start_time     = param.start_time;
-    pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time);
+    pp_data.error_data_p.error_calc_start_time     = start_time;
+    pp_data.error_data_p.error_calc_interval_time  = (end_time - start_time);
     pp_data.error_data_p.name                      = "pressure";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

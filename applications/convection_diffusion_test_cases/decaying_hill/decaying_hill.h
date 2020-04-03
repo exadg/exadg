@@ -244,21 +244,21 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(ConvDiff::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_higher_order   = false;
-    //  pp_data.output_data.degree = param.degree;
+    pp_data.output_data.degree               = degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(diffusivity));
-    pp_data.error_data.error_calc_start_time    = param.start_time;
-    pp_data.error_data.error_calc_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.error_data.error_calc_start_time    = start_time;
+    pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 20;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

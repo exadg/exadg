@@ -139,9 +139,9 @@ public:
 
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
+    (void)degree;
 
     // these lines show exemplarily how the postprocessor is constructued
     IncNS::PostProcessorData<dim> pp_data;

@@ -154,17 +154,19 @@ public:
   double const p_0                 = 0.0;
   double const max_velocity        = V_0;
   double const characteristic_time = L / V_0;
+  double const start_time          = 0.0;
   double const end_time            = 20.0 * characteristic_time;
   double const left = -numbers::PI * L, right = numbers::PI * L;
 
   // viscosity
   double viscosity = inviscid ? 0.0 : V_0 * L / Re;
 
+  double refine_levels = 0.0;
+
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim          = 3;
     param.problem_type = ProblemType::Unsteady;
     if(inviscid)
       param.equation_type = EquationType::Euler;
@@ -181,7 +183,7 @@ public:
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
+    param.start_time = start_time;
     param.end_time   = end_time;
     param.viscosity  = viscosity;
 
@@ -361,6 +363,8 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {
+    this->refine_levels = n_refine_space;
+
     double const deformation = 0.5;
 
     if(ALE)
@@ -482,7 +486,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -490,8 +494,8 @@ public:
     pp_data.output_data.write_output              = write_vtu_output;
     pp_data.output_data.output_folder             = output_directory + "vtu/";
     pp_data.output_data.output_name               = output_name;
-    pp_data.output_data.output_start_time         = param.start_time;
-    pp_data.output_data.output_interval_time      = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.output_start_time         = start_time;
+    pp_data.output_data.output_interval_time      = (end_time - start_time) / 20;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -499,7 +503,7 @@ public:
     pp_data.output_data.write_q_criterion         = true;
     pp_data.output_data.write_processor_id        = true;
     pp_data.output_data.write_higher_order        = false;
-    pp_data.output_data.degree                    = param.degree_u;
+    pp_data.output_data.degree                    = degree;
 
     // calculate div and mass error
     pp_data.mass_data.calculate_error         = false;
@@ -512,9 +516,9 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.evaluate_individual_terms  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
-    pp_data.kinetic_energy_data.viscosity                  = param.viscosity;
+    pp_data.kinetic_energy_data.viscosity                  = viscosity;
     pp_data.kinetic_energy_data.filename                   = output_directory + output_name;
-    pp_data.kinetic_energy_data.clear_file                 = !param.restarted_simulation;
+    pp_data.kinetic_energy_data.clear_file                 = !is_a_restarted_simulation;
 
     // kinetic energy spectrum
     bool const do_fftw_during_simulation                               = true;
@@ -524,13 +528,13 @@ public:
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.1;
     pp_data.kinetic_energy_spectrum_data.filename =
       output_directory + output_name + "_energy_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree                     = param.degree_u;
-    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree_u + 1);
+    pp_data.kinetic_energy_spectrum_data.degree                     = degree;
+    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1);
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = exploit_symmetry;
     pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid = this->n_subdivisions_1d_hypercube;
-    pp_data.kinetic_energy_spectrum_data.refine_level           = param.h_refinements;
+    pp_data.kinetic_energy_spectrum_data.refine_level           = this->refine_levels;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
-    pp_data.kinetic_energy_spectrum_data.clear_file              = !param.restarted_simulation;
+    pp_data.kinetic_energy_spectrum_data.clear_file              = !is_a_restarted_simulation;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

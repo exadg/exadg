@@ -90,8 +90,7 @@ public:
   set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) = 0;
 
   virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(IncNS::InputParameters const & param,
-                                MPI_Comm const &               mpi_comm) = 0;
+  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
   // Moving mesh (Poisson problem)
   virtual void

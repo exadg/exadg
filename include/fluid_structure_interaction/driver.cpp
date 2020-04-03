@@ -51,20 +51,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // parameters fluid
   application->set_input_parameters_fluid(fluid_param);
-  // some parameters have to be overwritten // TODO
-  fluid_param.degree_u       = degree_fluid;
-  fluid_param.h_refinements  = refine_space;
-  fluid_param.dt_refinements = 0;
-
   fluid_param.check_input_parameters(pcout);
   fluid_param.print(pcout, "List of input parameters for incompressible flow solver:");
 
   // parameters Poisson
   application->set_input_parameters_poisson(poisson_param);
-  // some parameters have to be overwritten // TODO
-  poisson_param.degree        = degree_poisson;
-  poisson_param.h_refinements = refine_space;
-
   poisson_param.check_input_parameters();
   poisson_param.print(pcout, "List of input parameters for Poisson solver (moving mesh):");
 
@@ -91,10 +82,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid_fluid(fluid_triangulation,
-                                 fluid_param.h_refinements,
-                                 fluid_periodic_faces);
-  print_grid_data(pcout, fluid_param.h_refinements, *fluid_triangulation);
+  application->create_grid_fluid(fluid_triangulation, refine_space, fluid_periodic_faces);
+  print_grid_data(pcout, refine_space, *fluid_triangulation);
 
   // field functions and boundary conditions
 
@@ -127,13 +116,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
               ExcMessage("Parameter does not make sense in context of FSI."));
 
   // mapping for Poisson solver (static mesh)
-  unsigned int const mapping_degree =
-    get_mapping_degree(poisson_param.mapping, poisson_param.degree);
+  unsigned int const mapping_degree = get_mapping_degree(poisson_param.mapping, degree_poisson);
   poisson_mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize Poisson operator
   poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
                                                                  poisson_mesh->get_mapping(),
+                                                                 degree_poisson,
                                                                  fluid_periodic_faces,
                                                                  poisson_boundary_descriptor,
                                                                  poisson_field_functions,
@@ -152,8 +141,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // mapping for fluid problem (moving mesh)
   {
-    unsigned int const mapping_degree =
-      get_mapping_degree(fluid_param.mapping, fluid_param.degree_u);
+    unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree_fluid);
 
     // TODO
     if(fluid_param.ale_formulation) // moving mesh
@@ -180,6 +168,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_operator_coupled.reset(new DGCoupled(*fluid_triangulation,
                                                fluid_mesh->get_mapping(),
+                                               degree_fluid,
                                                fluid_periodic_faces,
                                                fluid_boundary_descriptor_velocity,
                                                fluid_boundary_descriptor_pressure,
@@ -194,6 +183,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_operator_dual_splitting.reset(new DGDualSplitting(*fluid_triangulation,
                                                             fluid_mesh->get_mapping(),
+                                                            degree_fluid,
                                                             fluid_periodic_faces,
                                                             fluid_boundary_descriptor_velocity,
                                                             fluid_boundary_descriptor_pressure,
@@ -209,6 +199,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_operator_pressure_correction.reset(
       new DGPressureCorrection(*fluid_triangulation,
                                fluid_mesh->get_mapping(),
+                               degree_fluid,
                                fluid_periodic_faces,
                                fluid_boundary_descriptor_velocity,
                                fluid_boundary_descriptor_pressure,
@@ -232,7 +223,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   fluid_operator->setup(fluid_matrix_free_wrapper);
 
   // setup postprocessor
-  fluid_postprocessor = application->construct_postprocessor_fluid(fluid_param, mpi_comm);
+  fluid_postprocessor = application->construct_postprocessor_fluid(degree_fluid, mpi_comm);
   fluid_postprocessor->setup(*fluid_operator);
 
   // setup time integrator before calling setup_solvers
@@ -246,6 +237,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_time_integrator.reset(new TimeIntCoupled(fluid_operator_coupled,
                                                    fluid_param,
+                                                   0 /* refine_time */,
                                                    mpi_comm,
                                                    fluid_postprocessor,
                                                    fluid_moving_mesh,
@@ -256,6 +248,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_time_integrator.reset(new TimeIntDualSplitting(fluid_operator_dual_splitting,
                                                          fluid_param,
+                                                         0 /* refine_time */,
                                                          mpi_comm,
                                                          fluid_postprocessor,
                                                          fluid_moving_mesh,
@@ -266,6 +259,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_time_integrator.reset(new TimeIntPressureCorrection(fluid_operator_pressure_correction,
                                                               fluid_param,
+                                                              0 /* refine_time */,
                                                               mpi_comm,
                                                               fluid_postprocessor,
                                                               fluid_moving_mesh,

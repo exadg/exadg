@@ -255,13 +255,14 @@ public:
 
   std::string output_directory = "output/vortex/", output_name = "fsi_test";
 
+  unsigned int const end_time = END_TIME;
+
   void
   set_input_parameters_fluid(IncNS::InputParameters & param)
   {
     using namespace IncNS;
 
     // MATHEMATICAL MODEL
-    param.dim                         = 2;
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FORMULATION_VISCOUS_TERM;
@@ -278,16 +279,16 @@ public:
     param.viscosity  = VISCOSITY;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                  = SolverType::Unsteady;
-    param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
-    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator        = 2;
-    param.start_with_low_order         = false;
-    param.adaptive_time_stepping       = false;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFL; // UserSpecified; //CFL;
-    param.time_step_size                = END_TIME;
-    param.max_velocity                  = 1.4 * U_X_MAX;
-    param.cfl                           = 0.2; // 0.4;
+    param.solver_type                     = SolverType::Unsteady;
+    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    param.order_time_integrator           = 2;
+    param.start_with_low_order            = false;
+    param.adaptive_time_stepping          = false;
+    param.calculation_of_time_step_size   = TimeStepCalculation::CFL; // UserSpecified; //CFL;
+    param.time_step_size                  = END_TIME;
+    param.max_velocity                    = 1.4 * U_X_MAX;
+    param.cfl                             = 0.2; // 0.4;
     param.cfl_exponent_fe_degree_velocity = 1.5;
     param.c_eff                           = 8.0;
     param.time_integrator_oif             = TimeIntegratorOIF::ExplRK3Stage7Reg2;
@@ -373,10 +374,10 @@ public:
     param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
     // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
-    param.multigrid_data_viscous.type                   = MultigridType::hMG;
+    param.solver_viscous              = SolverViscous::CG;
+    param.solver_data_viscous         = SolverData(1000, 1.e-12, 1.e-6);
+    param.preconditioner_viscous      = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    param.multigrid_data_viscous.type = MultigridType::hMG;
     param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
     param.update_preconditioner_viscous                 = false;
 
@@ -397,7 +398,7 @@ public:
     param.solver_momentum                = SolverMomentum::FGMRES;
     param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
     param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
+    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
     param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
     // Jacobi smoother data
@@ -521,14 +522,14 @@ public:
     std::shared_ptr<Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
-    data.temporal                       = MeshMovementAdvanceInTime::Sin;
-    data.shape                          = MeshMovementShape::Sin; // SineAligned;
-    data.dimensions[0]                  = std::abs(RIGHT - LEFT);
-    data.dimensions[1]                  = std::abs(RIGHT - LEFT);
-    data.amplitude                      = 0.08 * (RIGHT - LEFT); // 0.12 * (RIGHT-LEFT); // A_max = (RIGHT-LEFT)/(2*pi)
-    data.period                         = 4.0 * END_TIME;
-    data.t_start                        = 0.0;
-    data.t_end                          = END_TIME;
+    data.temporal      = MeshMovementAdvanceInTime::Sin;
+    data.shape         = MeshMovementShape::Sin; // SineAligned;
+    data.dimensions[0] = std::abs(RIGHT - LEFT);
+    data.dimensions[1] = std::abs(RIGHT - LEFT);
+    data.amplitude = 0.08 * (RIGHT - LEFT); // 0.12 * (RIGHT-LEFT); // A_max = (RIGHT-LEFT)/(2*pi)
+    data.period    = 4.0 * END_TIME;
+    data.t_start   = 0.0;
+    data.t_end     = END_TIME;
     data.spatial_number_of_oscillations = 1.0;
     mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
 
@@ -587,42 +588,33 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output                    = true;
-    pp_data.output_data.output_folder                   = output_directory + "vtu/";
-    pp_data.output_data.output_name                     = output_name;
-    pp_data.output_data.output_start_time               = param.start_time;
-    pp_data.output_data.output_interval_time            = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.write_vorticity                 = true;
-    pp_data.output_data.write_divergence                = true;
-    pp_data.output_data.write_velocity_magnitude        = true;
-    pp_data.output_data.write_vorticity_magnitude       = true;
-    pp_data.output_data.write_processor_id              = true;
-    pp_data.output_data.mean_velocity.calculate         = true;
-    pp_data.output_data.mean_velocity.sample_start_time = param.start_time;
-    pp_data.output_data.mean_velocity.sample_end_time   = param.end_time;
-    pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.write_higher_order                   = false;
-    pp_data.output_data.degree                               = param.degree_u;
+    pp_data.output_data.write_output         = true;
+    pp_data.output_data.output_folder        = output_directory + "vtu/";
+    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.output_start_time    = 0.0;
+    pp_data.output_data.output_interval_time = end_time / 20;
+    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.degree               = degree;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;
     pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
     pp_data.error_data_u.calculate_relative_errors = true;
-    pp_data.error_data_u.error_calc_start_time     = param.start_time;
-    pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time);
+    pp_data.error_data_u.error_calc_start_time     = 0.0;
+    pp_data.error_data_u.error_calc_interval_time  = end_time;
     pp_data.error_data_u.name                      = "velocity";
 
     // ... pressure error
     pp_data.error_data_p.analytical_solution_available = true;
     pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
     pp_data.error_data_p.calculate_relative_errors = true;
-    pp_data.error_data_p.error_calc_start_time     = param.start_time;
-    pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time);
+    pp_data.error_data_p.error_calc_start_time     = 0.0;
+    pp_data.error_data_p.error_calc_interval_time  = end_time;
     pp_data.error_data_p.name                      = "pressure";
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;

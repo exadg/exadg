@@ -134,10 +134,6 @@ public:
   // exponent of fe_degree used in the calculation of the diffusion time step size
   double exponent_fe_degree_viscous;
 
-  // number of refinement steps for time step size
-  //   default: use dt_refinements = 0
-  unsigned int dt_refinements;
-
   // set this variable to true to start the simulation from restart files
   bool restarted_simulation;
 
@@ -156,16 +152,10 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of shape functions used to approximate the solution
-  unsigned int degree;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
   QuadratureRule n_q_points_convective, n_q_points_viscous;
-
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
 
   // diffusive term: Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0

@@ -16,9 +16,7 @@ InputParameters::InputParameters()
 
     // SPATIAL DISCRETIZATION
     triangulation_type(TriangulationType::Undefined),
-    degree(1),
     mapping(MappingType::Affine),
-    h_refinements(0),
     spatial_discretization(SpatialDiscretization::Undefined),
     IP_factor(1.0),
 
@@ -40,8 +38,6 @@ InputParameters::check_input_parameters()
   // SPATIAL DISCRETIZATION
   AssertThrow(triangulation_type != TriangulationType::Undefined,
               ExcMessage("parameter must be defined."));
-
-  AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
 
   AssertThrow(spatial_discretization != SpatialDiscretization::Undefined,
               ExcMessage("parameter must be defined."));
@@ -85,11 +81,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-  print_parameter(pcout, "Polynomial degree of shape functions", degree);
-
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
-
-  print_parameter(pcout, "Number of h-refinements", h_refinements);
 
   print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
 

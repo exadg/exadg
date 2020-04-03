@@ -15,6 +15,7 @@ template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -24,6 +25,7 @@ DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   MPI_Comm const &                                mpi_comm_in)
   : Base(triangulation_in,
          mapping_in,
+         degree_u_in,
          periodic_face_pairs_in,
          boundary_descriptor_velocity_in,
          boundary_descriptor_pressure_in,
@@ -31,7 +33,7 @@ DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
          parameters_in,
          mpi_comm_in)
 {
-  AssertThrow(this->param.get_degree_p() > 0,
+  AssertThrow(this->param.get_degree_p(degree_u_in) > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
                          "zero for projection methods."));
 }

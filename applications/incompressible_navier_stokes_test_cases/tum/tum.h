@@ -81,11 +81,13 @@ public:
   double const max_velocity = 1.0;
   double const viscosity    = 1.0e-3;
 
+  double const start_time = 0.0;
+  double const end_time   = 50.0;
+
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                            = 2; // TODO this parameter will be removed
     param.problem_type                   = ProblemType::Unsteady;
     param.equation_type                  = EquationType::NavierStokes;
     param.formulation_viscous_term       = FormulationViscousTerm::LaplaceFormulation;
@@ -95,8 +97,8 @@ public:
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
-    param.end_time   = 50.0;
+    param.start_time = start_time;
+    param.end_time   = end_time;
     param.viscosity  = viscosity;
 
 
@@ -346,7 +348,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -354,8 +356,8 @@ public:
     pp_data.output_data.write_output              = true;
     pp_data.output_data.output_folder             = output_directory + "vtu/";
     pp_data.output_data.output_name               = output_name;
-    pp_data.output_data.output_start_time         = param.start_time;
-    pp_data.output_data.output_interval_time      = (param.end_time - param.start_time) / 200;
+    pp_data.output_data.output_start_time         = start_time;
+    pp_data.output_data.output_interval_time      = (end_time - start_time) / 200;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_vorticity_magnitude = true;
@@ -364,7 +366,7 @@ public:
     pp_data.output_data.write_surface_mesh        = true;
     pp_data.output_data.write_boundary_IDs        = true;
     pp_data.output_data.write_higher_order        = false;
-    pp_data.output_data.degree                    = param.degree_u;
+    pp_data.output_data.degree                    = degree;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

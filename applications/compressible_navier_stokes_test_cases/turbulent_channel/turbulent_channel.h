@@ -400,7 +400,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output  = true;
@@ -414,7 +414,7 @@ public:
     pp_data.output_data.write_divergence     = false;
     pp_data.output_data.output_start_time    = START_TIME;
     pp_data.output_data.output_interval_time = 1.0;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     MyPostProcessorData<dim> pp_data_turb_ch;

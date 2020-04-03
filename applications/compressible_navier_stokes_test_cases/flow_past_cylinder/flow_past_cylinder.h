@@ -98,7 +98,8 @@ public:
   unsigned int test_case = 3;
 
   // end time
-  double const end_time = 8.0;
+  double const start_time = 0.0;
+  double const end_time   = 8.0;
 
   // physical quantities
   double const VISCOSITY    = 1.e-3;
@@ -123,7 +124,7 @@ public:
     param.right_hand_side = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = 0.0;
+    param.start_time            = start_time;
     param.end_time              = end_time;
     param.dynamic_viscosity     = VISCOSITY;
     param.reference_density     = RHO_0;
@@ -279,7 +280,7 @@ public:
   }
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(CompNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     CompNS::PostProcessorData<dim> pp_data;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
@@ -292,14 +293,14 @@ public:
     pp_data.output_data.write_temperature    = true;
     pp_data.output_data.write_vorticity      = true;
     pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
-    pp_data.output_data.degree               = param.degree;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     // lift and drag
     pp_data.lift_and_drag_data.calculate_lift_and_drag = true;
-    pp_data.lift_and_drag_data.viscosity               = param.dynamic_viscosity;
+    pp_data.lift_and_drag_data.viscosity               = VISCOSITY;
     const double U                                     = Um * (dim == 2 ? 2. / 3. : 4. / 9.);
     if(dim == 2)
       pp_data.lift_and_drag_data.reference_value = RHO_0 / 2.0 * pow(U, 2.0) * D;

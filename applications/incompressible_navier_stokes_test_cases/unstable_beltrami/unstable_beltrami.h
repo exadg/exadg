@@ -170,11 +170,13 @@ public:
 
   double const viscosity = 1.0 / (2.0e3);
 
+  double const start_time = 0.0;
+  double const end_time   = 20.0;
+
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                         = 3;
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
@@ -182,8 +184,8 @@ public:
     param.right_hand_side             = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
-    param.end_time   = 20.0;
+    param.start_time = start_time;
+    param.end_time   = end_time;
     param.viscosity  = viscosity;
 
 
@@ -341,7 +343,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -349,17 +351,17 @@ public:
     pp_data.output_data.write_output         = false; // true;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 100;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = false;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;
     pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>(viscosity));
     pp_data.error_data_u.calculate_H1_seminorm_error = true;
     pp_data.error_data_u.calculate_relative_errors   = true;
-    pp_data.error_data_u.error_calc_start_time       = param.start_time;
+    pp_data.error_data_u.error_calc_start_time       = start_time;
     pp_data.error_data_u.error_calc_interval_time    = 10;
     pp_data.error_data_u.write_errors_to_file        = true;
     pp_data.error_data_u.folder                      = output_directory;
@@ -369,7 +371,7 @@ public:
     pp_data.error_data_p.analytical_solution_available = true;
     pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>(viscosity));
     pp_data.error_data_p.calculate_relative_errors = true;
-    pp_data.error_data_p.error_calc_start_time     = param.start_time;
+    pp_data.error_data_p.error_calc_start_time     = start_time;
     pp_data.error_data_p.error_calc_interval_time  = 10;
     pp_data.error_data_p.write_errors_to_file      = true;
     pp_data.error_data_p.folder                    = output_directory;

@@ -77,11 +77,13 @@ public:
   double const rho       = 30.0;
   double const delta     = 0.05;
 
+  double const start_time = 0.0;
+  double const end_time   = 4.0;
+
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim          = 2;
     param.problem_type = ProblemType::Unsteady;
     if(inviscid)
       param.equation_type = EquationType::Euler;
@@ -92,8 +94,8 @@ public:
     param.right_hand_side             = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time = 0.0;
-    param.end_time   = 4.0;
+    param.start_time = start_time;
+    param.end_time   = end_time;
     param.viscosity  = viscosity;
 
 
@@ -220,7 +222,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
 
@@ -228,11 +230,11 @@ public:
     pp_data.output_data.write_output         = false; // true;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 40;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 40;
     pp_data.output_data.write_divergence     = true;
     pp_data.output_data.write_vorticity      = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
 
     // kinetic energy
     pp_data.kinetic_energy_data.calculate                  = true;

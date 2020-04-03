@@ -101,7 +101,6 @@ public:
     using namespace IncNS;
 
     // MATHEMATICAL MODEL
-    param.dim                         = dim; // TODO
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
@@ -398,10 +397,8 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(IncNS::InputParameters const & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
-
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
@@ -411,7 +408,7 @@ public:
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.write_processor_id   = true;
-    pp_data.output_data.degree               = param.degree_u;
+    pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
@@ -444,9 +441,9 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(ConvDiff::InputParameters const & param,
-                                 MPI_Comm const &                  mpi_comm,
-                                 unsigned int const                scalar_index)
+  construct_postprocessor_scalar(unsigned int const degree,
+                                 MPI_Comm const &   mpi_comm,
+                                 unsigned int const scalar_index)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output      = write_output;
@@ -454,8 +451,8 @@ public:
     pp_data.output_data.output_name       = output_name + "_scalar_" + std::to_string(scalar_index);
     pp_data.output_data.output_start_time = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
-    pp_data.output_data.degree               = param.degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_higher_order   = true;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));

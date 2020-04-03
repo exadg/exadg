@@ -95,8 +95,7 @@ template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
                                     unsigned int const &                                   degree,
-                                    unsigned int const & refine_space,
-                                    unsigned int const & refine_time)
+                                    unsigned int const & refine_space)
 {
   timer.restart();
 
@@ -107,24 +106,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   application = app;
 
   application->set_input_parameters_precursor(param_pre);
-  // some parameters have to be overwritten
-  param_pre.degree_u       = degree;
-  param_pre.h_refinements  = refine_space;
-  param_pre.dt_refinements = refine_time;
-
   param_pre.check_input_parameters(pcout);
   param_pre.print(pcout, "List of input parameters for precursor domain:");
 
   application->set_input_parameters(param);
-  // some parameters have to be overwritten
-  param.degree_u       = degree;
-  param.h_refinements  = refine_space;
-  param.dt_refinements = refine_time;
-
   param.check_input_parameters(pcout);
   param.print(pcout, "List of input parameters for actual domain:");
-
-  AssertThrow(param_pre.dim == param.dim, ExcMessage("Invalid parameters."));
 
   // triangulation
   if(param_pre.triangulation_type == TriangulationType::Distributed)
@@ -204,10 +191,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // mapping
-  unsigned int const mapping_degree_pre = get_mapping_degree(param_pre.mapping, param_pre.degree_u);
+  unsigned int const mapping_degree_pre = get_mapping_degree(param_pre.mapping, degree);
   mesh_pre.reset(new Mesh<dim>(mapping_degree_pre));
 
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree_u);
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize navier_stokes_operator_pre (precursor domain)
@@ -215,6 +202,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     navier_stokes_operator_coupled_pre.reset(new DGCoupled(*triangulation_pre,
                                                            mesh_pre->get_mapping(),
+                                                           degree,
                                                            periodic_faces_pre,
                                                            boundary_descriptor_velocity_pre,
                                                            boundary_descriptor_pressure_pre,
@@ -229,6 +217,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
     navier_stokes_operator_dual_splitting_pre.reset(
       new DGDualSplitting(*triangulation_pre,
                           mesh_pre->get_mapping(),
+                          degree,
                           periodic_faces_pre,
                           boundary_descriptor_velocity_pre,
                           boundary_descriptor_pressure_pre,
@@ -243,6 +232,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
     navier_stokes_operator_pressure_correction_pre.reset(
       new DGPressureCorrection(*triangulation_pre,
                                mesh_pre->get_mapping(),
+                               degree,
                                periodic_faces_pre,
                                boundary_descriptor_velocity_pre,
                                boundary_descriptor_pressure_pre,
@@ -262,6 +252,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
                                                        mesh->get_mapping(),
+                                                       degree,
                                                        periodic_faces,
                                                        boundary_descriptor_velocity,
                                                        boundary_descriptor_pressure,
@@ -275,6 +266,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     navier_stokes_operator_dual_splitting.reset(new DGDualSplitting(*triangulation,
                                                                     mesh->get_mapping(),
+                                                                    degree,
                                                                     periodic_faces,
                                                                     boundary_descriptor_velocity,
                                                                     boundary_descriptor_pressure,
@@ -289,6 +281,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
     navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation,
                                mesh->get_mapping(),
+                               degree,
                                periodic_faces,
                                boundary_descriptor_velocity,
                                boundary_descriptor_pressure,
@@ -303,12 +296,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  // initialize matrix_free 1
+  // initialize matrix_free precursor
   matrix_free_wrapper_pre.reset(new MatrixFreeWrapper<dim, Number>(mesh_pre->get_mapping()));
   matrix_free_wrapper_pre->append_data_structures(*navier_stokes_operator_pre);
   matrix_free_wrapper_pre->reinit(param_pre.use_cell_based_face_loops, triangulation_pre);
 
-  // initialize matrix_free 2
+  // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
   matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
@@ -319,10 +312,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   navier_stokes_operator->setup(matrix_free_wrapper);
 
   // setup postprocessor
-  postprocessor_pre = application->construct_postprocessor_precursor(param_pre, mpi_comm);
+  postprocessor_pre = application->construct_postprocessor_precursor(degree, mpi_comm);
   postprocessor_pre->setup(*navier_stokes_operator_pre);
 
-  postprocessor = application->construct_postprocessor(param, mpi_comm);
+  postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(*navier_stokes_operator);
 
 
@@ -330,18 +323,28 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_pre.reset(new TimeIntCoupled(
-      navier_stokes_operator_coupled_pre, param_pre, mpi_comm, postprocessor_pre));
+    time_integrator_pre.reset(new TimeIntCoupled(navier_stokes_operator_coupled_pre,
+                                                 param_pre,
+                                                 0 /* refine_time */,
+                                                 mpi_comm,
+                                                 postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_pre.reset(new TimeIntDualSplitting(
-      navier_stokes_operator_dual_splitting_pre, param_pre, mpi_comm, postprocessor_pre));
+    time_integrator_pre.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting_pre,
+                                                       param_pre,
+                                                       0 /* refine_time */,
+                                                       mpi_comm,
+                                                       postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pre.reset(new TimeIntPressureCorrection(
-      navier_stokes_operator_pressure_correction_pre, param_pre, mpi_comm, postprocessor_pre));
+    time_integrator_pre.reset(
+      new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction_pre,
+                                    param_pre,
+                                    0 /* refine_time */,
+                                    mpi_comm,
+                                    postprocessor_pre));
   }
   else
   {
@@ -350,18 +353,21 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator.reset(
-      new TimeIntCoupled(navier_stokes_operator_coupled, param, mpi_comm, postprocessor));
+    time_integrator.reset(new TimeIntCoupled(
+      navier_stokes_operator_coupled, param, 0 /* refine_time */, mpi_comm, postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     time_integrator.reset(new TimeIntDualSplitting(
-      navier_stokes_operator_dual_splitting, param, mpi_comm, postprocessor));
+      navier_stokes_operator_dual_splitting, param, 0 /* refine_time */, mpi_comm, postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator.reset(new TimeIntPressureCorrection(
-      navier_stokes_operator_pressure_correction, param, mpi_comm, postprocessor));
+    time_integrator.reset(new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
+                                                        param,
+                                                        0 /* refine_time */,
+                                                        mpi_comm,
+                                                        postprocessor));
   }
   else
   {

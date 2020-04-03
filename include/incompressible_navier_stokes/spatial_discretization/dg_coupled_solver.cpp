@@ -13,6 +13,7 @@ template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -22,6 +23,7 @@ DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   MPI_Comm const &                                mpi_comm_in)
   : Base(triangulation_in,
          mapping_in,
+         degree_u_in,
          periodic_face_pairs_in,
          boundary_descriptor_velocity_in,
          boundary_descriptor_pressure_in,
@@ -619,8 +621,8 @@ CompatibleLaplaceOperatorData<dim> const
 DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
 {
   CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
-  comp_laplace_operator_data.degree_u               = this->param.degree_u;
-  comp_laplace_operator_data.degree_p               = this->param.get_degree_p();
+  comp_laplace_operator_data.degree_u               = this->degree_u;
+  comp_laplace_operator_data.degree_p               = this->param.get_degree_p(this->degree_u);
   comp_laplace_operator_data.dof_index_velocity     = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure     = this->get_dof_index_pressure();
   comp_laplace_operator_data.operator_is_singular   = this->param.pure_dirichlet_bc;

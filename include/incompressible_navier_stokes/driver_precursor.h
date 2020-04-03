@@ -41,8 +41,7 @@ public:
   void
   setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
         unsigned int const &                                   degree,
-        unsigned int const &                                   refine_space,
-        unsigned int const &                                   refine_time);
+        unsigned int const &                                   refine_space);
 
   void
   solve() const;
