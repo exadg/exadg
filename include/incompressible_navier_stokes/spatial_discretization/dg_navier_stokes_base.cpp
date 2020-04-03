@@ -24,6 +24,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   InputParameters const &                         parameters_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
+    triangulation(triangulation_in),
     mapping(mapping_in),
     degree_u(degree_u_in),
     periodic_face_pairs(periodic_face_pairs_in),
@@ -39,6 +40,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     dof_handler_u(triangulation_in),
     dof_handler_p(triangulation_in),
     dof_handler_u_scalar(triangulation_in),
+    pressure_level_is_undefined(false),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     velocity_ptr(nullptr),
@@ -54,10 +56,30 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   constraint_p.close();
   constraint_u_scalar.close();
 
-  if(param.pure_dirichlet_bc == true &&
-     param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+  // Erroneously, the boundary descriptor might contain too many boundary IDs which
+  // do not even exist in the triangulation. Here, we make sure that each entry of
+  // the boundary descriptor has indeed a counterpart in the triangulation.
+  std::vector<types::boundary_id> boundary_ids = triangulation.get_boundary_ids();
+  for(auto it = boundary_descriptor_pressure->dirichlet_bc.begin();
+      it != boundary_descriptor_pressure->dirichlet_bc.end();
+      ++it)
   {
-    initialization_pure_dirichlet_bc();
+    bool const triangulation_has_boundary_id =
+      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
+
+    AssertThrow(triangulation_has_boundary_id,
+                ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
+                           "that are not part of the triangulation."));
+  }
+
+  pressure_level_is_undefined = boundary_descriptor_pressure->dirichlet_bc.empty();
+
+  if(is_pressure_level_undefined())
+  {
+    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+    {
+      initialization_pure_dirichlet_bc();
+    }
   }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
@@ -860,47 +882,76 @@ DGNavierStokesBase<dim, Number>::apply_mass_matrix_add(VectorType &       dst,
 }
 
 template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::shift_pressure(VectorType & pressure, double const & time) const
+bool
+DGNavierStokesBase<dim, Number>::is_pressure_level_undefined() const
 {
-  VectorType vec1(pressure);
-  for(unsigned int i = 0; i < vec1.local_size(); ++i)
-    vec1.local_element(i) = 1.;
-  field_functions->analytical_solution_pressure->set_time(time);
-  double const exact   = field_functions->analytical_solution_pressure->value(first_point);
-  double       current = 0.;
-  if(pressure.locally_owned_elements().is_element(dof_index_first_point))
-    current = pressure(dof_index_first_point);
-  current = Utilities::MPI::sum(current, mpi_comm);
-  pressure.add(exact - current, vec1);
+  return pressure_level_is_undefined;
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressure,
-                                                           double const & time) const
+DGNavierStokesBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType &   pressure,
+                                                                    double const & time) const
 {
-  // one cannot use Number as template here since Number might be float
-  // while analytical_solution_pressure is of type Function<dim,double>
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  if(is_pressure_level_undefined())
+  {
+    // If an analytical solution is available: shift pressure so that the numerical pressure
+    // solution coincides with the analytical pressure solution in an arbitrary point. Note that the
+    // parameter 'time' is only needed for unsteady problems.
+    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+    {
+      field_functions->analytical_solution_pressure->set_time(time);
+      double const exact = field_functions->analytical_solution_pressure->value(first_point);
 
-  VectorTypeDouble vec_double;
-  vec_double = pressure; // initialize
+      double current = 0.;
+      if(pressure.locally_owned_elements().is_element(dof_index_first_point))
+        current = pressure(dof_index_first_point);
+      current = Utilities::MPI::sum(current, mpi_comm);
 
-  field_functions->analytical_solution_pressure->set_time(time);
-  VectorTools::interpolate(get_mapping(),
-                           dof_handler_p,
-                           *(field_functions->analytical_solution_pressure),
-                           vec_double);
+      VectorType vec_temp(pressure);
+      for(unsigned int i = 0; i < vec_temp.local_size(); ++i)
+        vec_temp.local_element(i) = 1.;
 
-  double const exact   = vec_double.mean_value();
-  double const current = pressure.mean_value();
+      pressure.add(exact - current, vec_temp);
+    }
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
+    {
+      LinearAlgebra::set_zero_mean_value(pressure);
+    }
+    // If an analytical solution is available: shift pressure so that the numerical pressure
+    // solution has a mean value identical to the "exact pressure solution" obtained by
+    // interpolation of analytical solution. Note that the parameter 'time' is only needed for
+    // unsteady problems.
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+    {
+      // one cannot use Number as template here since Number might be float
+      // while analytical_solution_pressure is of type Function<dim,double>
+      typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-  VectorType vec_temp2(pressure);
-  for(unsigned int i = 0; i < vec_temp2.local_size(); ++i)
-    vec_temp2.local_element(i) = 1.;
+      VectorTypeDouble vec_double;
+      vec_double = pressure; // initialize
 
-  pressure.add(exact - current, vec_temp2);
+      field_functions->analytical_solution_pressure->set_time(time);
+      VectorTools::interpolate(get_mapping(),
+                               dof_handler_p,
+                               *(field_functions->analytical_solution_pressure),
+                               vec_double);
+
+      double const exact   = vec_double.mean_value();
+      double const current = pressure.mean_value();
+
+      VectorType vec_temp(pressure);
+      for(unsigned int i = 0; i < vec_temp.local_size(); ++i)
+        vec_temp.local_element(i) = 1.;
+
+      pressure.add(exact - current, vec_temp);
+    }
+    else
+    {
+      AssertThrow(false,
+                  ExcMessage("Specified method to adjust pressure level is not implemented."));
+    }
+  }
 }
 
 template<int dim, typename Number>

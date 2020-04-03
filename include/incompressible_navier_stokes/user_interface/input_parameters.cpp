@@ -98,7 +98,6 @@ InputParameters::InputParameters()
     divu_use_boundary_data(true),
 
     // special case: pure DBC's
-    pure_dirichlet_bc(false),
     adjust_pressure_level(AdjustPressureLevel::ApplyZeroMeanValue),
 
     // div-div and continuity penalty terms
@@ -726,13 +725,9 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
     print_parameter(pcout, "Div(u) - use boundary data", divu_use_boundary_data);
   }
 
-  // special case pure DBC's
-  print_parameter(pcout, "Pure Dirichlet BC's", pure_dirichlet_bc);
-
-  if(pure_dirichlet_bc == true)
-  {
-    print_parameter(pcout, "Adjust pressure level", enum_to_string(adjust_pressure_level));
-  }
+  print_parameter(pcout,
+                  "Adjust pressure level (if undefined)",
+                  enum_to_string(adjust_pressure_level));
 
   print_parameter(pcout, "Use divergence penalty term", use_divergence_penalty);
 

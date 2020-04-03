@@ -530,31 +530,10 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   unsigned int iterations_pressure =
     pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
 
-  // special case: pure Dirichlet BC's
+  // special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
-  // For some test cases it was found that ApplyZeroMeanValue works better than
-  // ApplyAnalyticalSolutionInPoint
-  if(this->param.pure_dirichlet_bc)
-  {
-    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      pde_operator->shift_pressure(pressure_np, this->get_next_time());
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
-    {
-      set_zero_mean_value(pressure_np);
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
-    {
-      pde_operator->shift_pressure_mean_value(pressure_np, this->get_next_time());
-    }
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
-    }
-  }
+  pde_operator->adjust_pressure_level_if_undefined(pressure_np, this->get_next_time());
 
   // write output
   if(this->print_solver_info())
@@ -691,12 +670,12 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
     }
   }
 
-  // special case: pure Dirichlet BC's
+  // special case: pressure level is undefined
   // Set mean value of rhs to zero in order to obtain a consistent linear system of equations.
   // This is really necessary for the dual-splitting scheme in contrast to the pressure-correction
   // scheme and coupled solution approach due to the Dirichlet BC prescribed for the intermediate
   // velocity field and the pressure Neumann BC in case of the dual-splitting scheme.
-  if(this->param.pure_dirichlet_bc)
+  if(pde_operator->is_pressure_level_undefined())
     set_zero_mean_value(rhs);
 }
 

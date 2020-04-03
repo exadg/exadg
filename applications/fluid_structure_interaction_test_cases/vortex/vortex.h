@@ -255,7 +255,7 @@ public:
 
   std::string output_directory = "output/vortex/", output_name = "fsi_test";
 
-  unsigned int const end_time = END_TIME;
+  double const end_time = END_TIME;
 
   void
   set_input_parameters_fluid(IncNS::InputParameters & param)
@@ -320,9 +320,6 @@ public:
     // velocity pressure coupling terms
     param.gradp_formulation = FormulationPressureGradientTerm::Weak;
     param.divu_formulation  = FormulationVelocityDivergenceTerm::Weak;
-
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = false;
 
     // div-div and continuity penalty
     param.use_divergence_penalty               = true;

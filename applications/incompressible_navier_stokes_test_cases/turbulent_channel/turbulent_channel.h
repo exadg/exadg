@@ -287,9 +287,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = true;
-
     // TURBULENCE
     param.use_turbulence_model = false;
     param.turbulence_model     = TurbulenceEddyViscosityModel::Sigma;
@@ -429,6 +426,7 @@ public:
 
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
+
     boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
   }
 

@@ -116,8 +116,7 @@ public:
     param.gradp_formulation = FormulationPressureGradientTerm::Strong;   // TODO //Weak;
     param.divu_formulation  = FormulationVelocityDivergenceTerm::Strong; // TODO //Weak;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc     = true;
+    // pressure level is undefined
     param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalSolutionInPoint;
 
     // div-div and continuity penalty

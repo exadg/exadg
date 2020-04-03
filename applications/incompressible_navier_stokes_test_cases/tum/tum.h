@@ -138,9 +138,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = false;
-
     // PROJECTION METHODS
 
     // pressure Poisson equation

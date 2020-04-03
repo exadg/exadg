@@ -214,9 +214,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = true;
-
     // TURBULENCE
     param.use_turbulence_model = false;
     param.turbulence_model     = TurbulenceEddyViscosityModel::Sigma;

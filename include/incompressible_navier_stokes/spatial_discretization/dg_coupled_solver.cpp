@@ -625,7 +625,7 @@ DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
   comp_laplace_operator_data.degree_p               = this->param.get_degree_p(this->degree_u);
   comp_laplace_operator_data.dof_index_velocity     = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure     = this->get_dof_index_pressure();
-  comp_laplace_operator_data.operator_is_singular   = this->param.pure_dirichlet_bc;
+  comp_laplace_operator_data.operator_is_singular   = this->is_pressure_level_undefined();
   comp_laplace_operator_data.dof_handler_u          = &this->get_dof_handler_u();
   comp_laplace_operator_data.gradient_operator_data = this->gradient_operator.get_operator_data();
   comp_laplace_operator_data.divergence_operator_data =
@@ -672,7 +672,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
     Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
     laplace_operator_data.dof_index             = this->get_dof_index_pressure();
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
-    laplace_operator_data.operator_is_singular  = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular  = this->is_pressure_level_undefined();
     laplace_operator_data.kernel_data.IP_factor = 1.0;
     laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
 
@@ -1379,7 +1379,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
     // solve a linear system of equations for negative Laplace operator to given (relative)
     // tolerance using the PCG method
     VectorType const * pointer_to_src = &src;
-    if(this->param.pure_dirichlet_bc == true)
+    if(this->is_pressure_level_undefined())
     {
       VectorType vector_zero_mean;
       vector_zero_mean = src;

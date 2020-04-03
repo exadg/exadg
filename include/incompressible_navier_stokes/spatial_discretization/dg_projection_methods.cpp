@@ -84,11 +84,11 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
   laplace_operator_data.quad_index = this->get_quad_index_pressure();
 
   /*
-   * In case of pure Dirichlet boundary conditions for the velocity (or more precisely pure Neumann
-   * boundary conditions for the pressure), the pressure Poisson equation is singular (i.e. vectors
-   * describing a constant pressure state form the nullspace of the discrete pressure Poisson
-   * operator). To solve the pressure Poisson equation in that case, a Krylov subspace projection is
-   * applied during the solution of the linear system of equations.
+   * In case no Dirichlet boundary conditions as prescribed for the pressure, the pressure Poisson
+   * equation is singular (i.e. vectors describing a constant pressure state form the nullspace
+   * of the discrete pressure Poisson operator). To solve the pressure Poisson equation in that
+   * case, a Krylov subspace projection is applied during the solution of the linear system of
+   * equations.
    *
    * Strictly speaking, this projection is only needed if the linear system of equations
    *
@@ -107,7 +107,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
     // the Krylov subspace projection is needed for the dual splitting scheme since the linear
     // system of equations is not consistent for this splitting method (due to the boundary
     // conditions).
-    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -120,7 +120,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
     // but we detected no convergence for some test cases and specific parameters.
     // Hence, for reasons of robustness we also solve a transformed linear system of equations
     // in case of the pressure-correction scheme.
-    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
   }
 
   laplace_operator_data.bc                   = this->boundary_descriptor_laplace;

@@ -303,11 +303,13 @@ public:
   // use boundary data if integrated by parts
   bool divu_use_boundary_data;
 
-  // special case of pure Dirichlet BCs on whole boundary
-  bool pure_dirichlet_bc;
-
-  // adjust pressure level in case of pure Dirichlet BC's where
-  // the pressure is only defined up to an additive constant
+  // For certain setups and types of boundary conditions, the pressure level is undefined,
+  // e.g., if the velocity is prescribed on the whole boundary or in case of periodic
+  // boundary conditions. This variable defines the method used to adjust the pressure level
+  // in or to obtain a well-defined pressure solution.
+  // If you observe convergence in the velocity error, but no convergence in the pressure
+  // error, this might likely be related to the fact that this parameter has not been set
+  // as intended.
   AdjustPressureLevel adjust_pressure_level;
 
   // use div-div penalty term

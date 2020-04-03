@@ -224,8 +224,7 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc     = true;
+    // pressure level is undefined
     param.adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue;
 
     // divergence and continuity penalty terms

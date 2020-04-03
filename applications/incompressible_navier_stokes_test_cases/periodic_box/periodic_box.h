@@ -104,9 +104,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's (only periodic BCs -> pure_dirichlet_bc = true)
-    param.pure_dirichlet_bc = true;
-
     // div-div and continuity penalty
     param.use_divergence_penalty                     = true;
     param.divergence_penalty_factor                  = 1.0e0;
@@ -196,7 +193,7 @@ public:
     std::shared_ptr<BoundaryDescriptorU<dim>> /*boundary_descriptor_velocity*/,
     std::shared_ptr<BoundaryDescriptorP<dim>> /*boundary_descriptor_pressure*/)
   {
-    // test case with pure periodic BC
+    // test case with purely periodic boundary conditions
     // boundary descriptors remain empty for velocity and pressure
   }
 

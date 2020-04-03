@@ -122,27 +122,7 @@ DriverSteadyProblems<dim, Number>::solve()
       solution, rhs, this->param.update_preconditioner_coupled, N_iter_nonlinear, N_iter_linear);
   }
 
-  // special case: pure Dirichlet BC's
-  if(this->param.pure_dirichlet_bc)
-  {
-    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      pde_operator->shift_pressure(solution.block(1));
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
-    {
-      set_zero_mean_value(solution.block(1));
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
-    {
-      pde_operator->shift_pressure_mean_value(solution.block(1));
-    }
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
-    }
-  }
+  pde_operator->adjust_pressure_level_if_undefined(solution.block(1), 0.0 /* time */);
 
   computing_times[0] += timer.wall_time();
 

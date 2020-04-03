@@ -622,31 +622,10 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
   // calculate pressure p^{n+1} from pressure increment
   pressure_update(pressure_increment);
 
-  // Special case: pure Dirichlet BC's
+  // Special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
-  // For some test cases it was found that ApplyZeroMeanValue works better than
-  // ApplyAnalyticalSolutionInPoint
-  if(this->param.pure_dirichlet_bc)
-  {
-    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      pde_operator->shift_pressure(pressure_np, this->get_next_time());
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
-    {
-      set_zero_mean_value(pressure_np);
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
-    {
-      pde_operator->shift_pressure_mean_value(pressure_np, this->get_next_time());
-    }
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
-    }
-  }
+  pde_operator->adjust_pressure_level_if_undefined(pressure_np, this->get_next_time());
 
   // write output
   if(this->print_solver_info())
@@ -720,7 +699,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
     rhs.add(-extra_pressure_gradient.get_beta(i), temp);
   }
 
-  // special case: pure Dirichlet BC's
+  // special case: pressure level is undefined
   // Unclear if this is really necessary, because from a theoretical
   // point of view one would expect that the mean value of the rhs of the
   // presssure Poisson equation is zero if consistent Dirichlet boundary
@@ -730,7 +709,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
   // Hence, for reasons of robustness we also solve a transformed linear system of equations
   // in case of the pressure-correction scheme.
 
-  if(this->param.pure_dirichlet_bc)
+  if(pde_operator->is_pressure_level_undefined())
     set_zero_mean_value(rhs);
 }
 

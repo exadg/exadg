@@ -148,10 +148,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = true;
-
-
     // NUMERICAL PARAMETERS
     param.implement_block_diagonal_preconditioner_matrix_free = true;
     param.use_cell_based_face_loops                           = true;

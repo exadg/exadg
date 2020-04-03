@@ -214,8 +214,7 @@ public:
     param.divu_use_boundary_data   = true;
     param.divu_formulation         = FormulationVelocityDivergenceTerm::Weak;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = true;
+    // pressure level is undefined
     param.adjust_pressure_level =
       AdjustPressureLevel::ApplyZeroMeanValue; // ApplyAnalyticalSolutionInPoint;
 

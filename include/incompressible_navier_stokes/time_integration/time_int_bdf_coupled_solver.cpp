@@ -337,29 +337,10 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
   // reconstruct pressure solution p from auxiliary variable p^{*}: p = scaling_factor * p^{*}
   solution_np.block(1) *= scaling_factor_continuity;
 
-  // special case: pure Dirichlet BC's
+  // special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
-  if(this->param.pure_dirichlet_bc)
-  {
-    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      pde_operator->shift_pressure(solution_np.block(1), this->get_next_time());
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
-    {
-      set_zero_mean_value(solution_np.block(1));
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
-    {
-      pde_operator->shift_pressure_mean_value(solution_np.block(1), this->get_next_time());
-    }
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
-    }
-  }
+  pde_operator->adjust_pressure_level_if_undefined(solution_np.block(1), this->get_next_time());
 
   computing_times[0] += timer.wall_time() + computing_time_convective;
 

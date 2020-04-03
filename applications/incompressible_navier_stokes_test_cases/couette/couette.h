@@ -113,9 +113,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = false;
-
     // divergence and continuity penalty terms
     param.apply_penalty_terms_in_postprocessing_step = false;
 

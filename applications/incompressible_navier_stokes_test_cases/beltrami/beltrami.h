@@ -182,8 +182,7 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = true;
+    // pressure level is undefined
     param.adjust_pressure_level =
       AdjustPressureLevel::ApplyAnalyticalMeanValue; // ApplyAnalyticalSolutionInPoint;
 
@@ -272,6 +271,7 @@ public:
 
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(0, new AnalyticalSolutionVelocity<dim>(viscosity)));
+
     boundary_descriptor_pressure->neumann_bc.insert(pair(0, new PressureBC_dudt<dim>(viscosity)));
   }
 

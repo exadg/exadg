@@ -187,8 +187,7 @@ public:
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
     param.IP_factor_viscous      = 1.0e0;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc     = true;
+    // pressure level is undefined
     param.adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue;
 
     // div-div and continuity penalty

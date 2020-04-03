@@ -129,10 +129,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc     = true;
-    param.adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue;
-
     // velocity-pressure coupling terms
     param.gradp_formulation = FormulationPressureGradientTerm::Weak;
     param.divu_formulation  = FormulationVelocityDivergenceTerm::Weak;

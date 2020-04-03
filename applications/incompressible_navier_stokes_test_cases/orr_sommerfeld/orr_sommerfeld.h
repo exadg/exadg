@@ -251,9 +251,6 @@ public:
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
-    // special case: pure DBC's
-    param.pure_dirichlet_bc = true;
-
     // divergence and continuity penalty terms
     param.use_divergence_penalty                     = true;
     param.divergence_penalty_factor                  = 1.0e0;
@@ -367,6 +364,7 @@ public:
 
     boundary_descriptor_velocity->dirichlet_bc.insert(pair(
       0, new AnalyticalSolutionVelocity<dim>(H, MAX_VELOCITY, ALPHA, EPSILON, FE, OMEGA, EIG_VEC)));
+
     boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
   }
 

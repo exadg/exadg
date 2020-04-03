@@ -262,24 +262,20 @@ public:
                           double const       exponent_degree) const;
 
   /*
-   * Special case: pure Dirichlet boundary conditions. For incompressible flows with pure Dirichlet
-   * boundary conditions for the velocity (or more precisely with no Dirichlet boundary conditions
-   * for the pressure), the pressure field is only defined up to an additive constant (since only
-   * the pressure gradient appears in the incompressible Navier-Stokes equations. Different options
-   * are available to fix the pressure level as described below.
+   * For certain setups and types of boundary conditions, the pressure field is only defined up to
+   * an additive constant which originates from the fact that only the derivative of the pressure
+   * appears in the incompressible Navier-Stokes equations. Examples of such a scenario are problems
+   * where the velocity is prescribed on the whole boundary or periodic boundaries.
    */
 
-  // If an analytical solution is available: shift pressure so that the numerical pressure solution
-  // coincides with the analytical pressure solution in an arbitrary point. Note that the parameter
-  // 'time' is only needed for unsteady problems.
-  void
-  shift_pressure(VectorType & pressure, double const & time = 0.0) const;
+  // This function can be used to query whether the pressure level is undefined.
+  bool
+  is_pressure_level_undefined() const;
 
-  // If an analytical solution is available: shift pressure so that the numerical pressure solution
-  // has a mean value identical to the "exact pressure solution" obtained by interpolation of
-  // analytical solution. Note that the parameter 'time' is only needed for unsteady problems.
+  // This function adjust the pressure level, where different options are available to fix the
+  // pressure level. The method selected by this function depends on the specified input parameter.
   void
-  shift_pressure_mean_value(VectorType & pressure, double const & time = 0.0) const;
+  adjust_pressure_level_if_undefined(VectorType & pressure, double const & time) const;
 
   /*
    *  Boussinesq approximation
@@ -418,6 +414,11 @@ protected:
   unsteady_problem_has_to_be_solved() const;
 
   /*
+   * Triangulation
+   */
+  parallel::TriangulationBase<dim> const & triangulation;
+
+  /*
    * Mapping
    */
   Mapping<dim> const & mapping;
@@ -498,6 +499,8 @@ private:
 
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+
+  bool pressure_level_is_undefined;
 
 protected:
   /*
