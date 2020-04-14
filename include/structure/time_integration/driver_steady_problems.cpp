@@ -74,21 +74,63 @@ DriverSteady<dim, Number>::solve()
   Timer timer;
   timer.restart();
 
-  // calculate rhs vector
+  // TODO: nonlinear formulation
+  // for displacement dependent boundary conditions and body forces,
+  // the "right-hand side" vector depends on the Newton iteration and has to
+  // be re-evaluated as part of the nonlinear residual evaluation within every
+  // iteration of the Newton solver
+
+  // calculate right-hand side vector
   pde_operator->rhs(rhs_vector);
 
+  unsigned int N_iter_nonlinear = 0;
+  unsigned int N_iter_linear    = 0;
+
   // solve system of equations
-  unsigned int iterations =
-    pde_operator->solve(solution, rhs_vector, /* update_preconditioner = */ false);
+  if(param.large_deformation)
+  {
+    pde_operator->solve_nonlinear(solution,
+                                  rhs_vector,
+                                  /* time */ 0.0,
+                                  /* update_preconditioner = */ true,
+                                  N_iter_nonlinear,
+                                  N_iter_linear);
+  }
+  else
+  {
+    N_iter_linear = pde_operator->solve_linear(solution,
+                                               rhs_vector,
+                                               /* time */ 0.0,
+                                               /* update_preconditioner = */ true);
+  }
 
   computing_times[0] += timer.wall_time();
 
-  // write output
-  pcout << std::endl
-        << "Solve linear system of equations:" << std::endl
-        << "  Iterations: " << std::setw(6) << std::right << iterations
-        << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << computing_times[0]
-        << std::endl;
+  // solver info output
+  if(param.large_deformation)
+  {
+    double N_iter_linear_avg =
+      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
+
+    pcout << std::endl
+          << "Solve nonlinear problem:" << std::endl
+          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
+          << std::endl
+          << "  Linear iterations (avg):" << std::setw(12) << std::scientific
+          << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
+          << "  Linear iterations (tot):" << std::setw(12) << std::scientific
+          << std::setprecision(4) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:          " << std::setw(12) << std::scientific
+          << std::setprecision(4) << computing_times[0] << std::endl;
+  }
+  else
+  {
+    pcout << std::endl
+          << "Solve linear problem:" << std::endl
+          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
+          << computing_times[0] << std::endl;
+  }
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -106,7 +148,7 @@ DriverSteady<dim, Number>::get_wall_times(std::vector<std::string> & name,
                                           std::vector<double> &      wall_time) const
 {
   name.resize(1);
-  std::vector<std::string> names = {"Linear system"};
+  std::vector<std::string> names = {"(Non-)linear system"};
   name                           = names;
 
   wall_time.resize(1);

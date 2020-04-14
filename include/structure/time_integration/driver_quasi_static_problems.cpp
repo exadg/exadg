@@ -133,19 +133,56 @@ DriverQuasiStatic<dim, Number>::solve_primary()
   // calculate rhs vector
   pde_operator->rhs(rhs_vector, time.get_current_time());
 
+  unsigned int N_iter_nonlinear = 0;
+  unsigned int N_iter_linear    = 0;
+
   // solve system of equations
-  unsigned int iterations =
-    pde_operator->solve(solution, rhs_vector, /* update_preconditioner = */ false);
+  if(param.large_deformation)
+  {
+    pde_operator->solve_nonlinear(solution,
+                                  rhs_vector,
+                                  time.get_current_time(),
+                                  /* update_preconditioner = */ true,
+                                  N_iter_nonlinear,
+                                  N_iter_linear);
+  }
+  else
+  {
+    N_iter_linear = pde_operator->solve_linear(solution,
+                                               rhs_vector,
+                                               time.get_current_time(),
+                                               /* update_preconditioner = */ true);
+  }
 
   computing_times[0] += timer.wall_time();
 
-  // write output
-  pcout << "Solve linear system of equations:" << std::endl
-        << "  Iterations: " << std::setw(6) << std::right << iterations
-        << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << computing_times[0]
-        << std::endl;
+  // solver info output
+  if(param.large_deformation)
+  {
+    double N_iter_linear_avg =
+      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
 
-  return iterations;
+    pcout << std::endl
+          << "Solve nonlinear problem:" << std::endl
+          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
+          << std::endl
+          << "  Linear iterations (avg):" << std::setw(12) << std::scientific
+          << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
+          << "  Linear iterations (tot):" << std::setw(12) << std::scientific
+          << std::setprecision(4) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:          " << std::setw(12) << std::scientific
+          << std::setprecision(4) << computing_times[0] << std::endl;
+  }
+  else
+  {
+    pcout << std::endl
+          << "Solve linear problem:" << std::endl
+          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
+          << computing_times[0] << std::endl;
+  }
+
+  return N_iter_linear;
 }
 
 template<int dim, typename Number>

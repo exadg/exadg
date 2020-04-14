@@ -130,16 +130,16 @@ private:
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // update geometrical information
+      // kinematics
       auto const gradient = integrator.get_gradient(q);
-      auto const E        = apply_l<dim, Number>(gradient);
 
-      // update material
+      // strains and stresses
+      auto const E = tensor_to_vector<dim, Number>(gradient);
       material->reinit(E);
       auto const C = material->get_dSdE();
 
       // test with gradients
-      integrator.submit_gradient(apply_l_transposed<dim, Number>(C * E), q);
+      integrator.submit_gradient(vector_to_tensor<dim, Number>(C * E), q);
     }
   }
 

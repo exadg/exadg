@@ -198,9 +198,16 @@ Operator<dim, Number>::setup_operators()
 
   // setup operator
   if(param.large_deformation)
-    non_linear_operator.reinit(matrix_free, constraint_matrix, operator_data);
+  {
+    elasticity_operator_nonlinear.reinit(matrix_free, constraint_matrix, operator_data);
+
+    residual_operator.initialize(*this);
+    linearized_operator.initialize(*this);
+  }
   else
-    linear_operator.reinit(matrix_free, constraint_matrix, operator_data);
+  {
+    elasticity_operator_linear.reinit(matrix_free, constraint_matrix, operator_data);
+  }
 
   // setup rhs operator
   RHSOperatorData<dim> rhs_operator_data;
@@ -239,7 +246,8 @@ Operator<dim, Number>::initialize_preconditioner()
     AssertThrow(!param.large_deformation,
                 ExcMessage("PointJacobi is not implemented yet for non-linear operator!"));
 
-    preconditioner.reset(new JacobiPreconditioner<LinearOperator<dim, Number>>(linear_operator));
+    preconditioner.reset(
+      new JacobiPreconditioner<LinearOperator<dim, Number>>(elasticity_operator_linear));
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -261,19 +269,20 @@ Operator<dim, Number>::initialize_preconditioner()
                                   tria,
                                   fe,
                                   mapping,
-                                  linear_operator,
-                                  &linear_operator.get_data().bc->dirichlet_bc,
+                                  elasticity_operator_linear,
+                                  &elasticity_operator_linear.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
   else if(param.preconditioner == Preconditioner::AMG)
   {
     if(param.large_deformation)
       preconditioner_amg.reset(
-        new PreconditionerAMG<NonLinearOperator<dim, Number>, double>(non_linear_operator,
+        new PreconditionerAMG<NonLinearOperator<dim, Number>, double>(elasticity_operator_nonlinear,
                                                                       AMGData()));
     else
       preconditioner_amg.reset(
-        new PreconditionerAMG<LinearOperator<dim, Number>, double>(linear_operator, AMGData()));
+        new PreconditionerAMG<LinearOperator<dim, Number>, double>(elasticity_operator_linear,
+                                                                   AMGData()));
   }
   else
   {
@@ -301,11 +310,11 @@ Operator<dim, Number>::initialize_solver()
     if(param.large_deformation)
       iterative_solver.reset(
         new CGSolver<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-          non_linear_operator, *preconditioner, solver_data));
+          elasticity_operator_nonlinear, *preconditioner, solver_data));
     else
       iterative_solver.reset(
         new CGSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-          linear_operator, *preconditioner, solver_data));
+          elasticity_operator_linear, *preconditioner, solver_data));
   }
   else
   {
@@ -317,21 +326,22 @@ Operator<dim, Number>::initialize_solver()
   {
     // TODO: move to parameters
     NewtonSolverData newton_data;
+    newton_data.rel_tol = 1.e-5;
 
     // initialize Newton
-    non_linear_solver.reset(
-      new NewtonSolver<VectorType,
-                       NonLinearOperator<dim, Number>,
-                       IterativeSolverBase<VectorType>,
-                       dim>(newton_data, non_linear_operator, *iterative_solver, dof_handler));
+    non_linear_solver.reset(new NewtonSolver<VectorType,
+                                             ResidualOperator<dim, Number>,
+                                             LinearizedOperator<dim, Number>,
+                                             IterativeSolverBase<VectorType>>(
+      newton_data, residual_operator, linearized_operator, *iterative_solver));
   }
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize_dof_vector(VectorType & src, unsigned int index) const
+Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  matrix_free.initialize_dof_vector(src, index);
+  matrix_free.initialize_dof_vector(src, 0);
 }
 
 template<int dim, typename Number>
@@ -355,102 +365,142 @@ Operator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
   // nonlinear problem: evaluate NBC-contribution
   if(param.large_deformation)
   {
+    // TODO: implement Neumann boundary conditions as inhomogeneous
+    // contributions of nonlinear operator and not as part of
+    // rhs_operator (rhs_operator should only account for body forces)
     rhs_operator.evaluate_add_nbc(dst, evaluation_time);
   }
 
   // linear problem: Neumann BCs and inhomogeneous Dirichlet BCs
   if(param.large_deformation == false)
   {
-    linear_operator.set_time(evaluation_time);
-    linear_operator.rhs_add(dst);
+    elasticity_operator_linear.set_time(evaluation_time);
+    elasticity_operator_linear.rhs_add(dst);
   }
 }
 
 template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::solve(VectorType &       sol,
-                             VectorType const & rhs,
-                             bool const         update_preconditioner,
-                             double const       scaling_factor,
-                             double const       time)
+void
+Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
+                                                   VectorType const & src,
+                                                   VectorType const & rhs_vector,
+                                                   double const       time) const
 {
-  (void)scaling_factor;
-  (void)time;
+  // TODO dynamic problems
 
-  // nonlinear problem
-  if(param.large_deformation)
+  elasticity_operator_nonlinear.set_time(time);
+  elasticity_operator_nonlinear.evaluate(dst, src);
+
+  dst -= rhs_vector;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::set_solution_linearization(VectorType const & vector) const
+{
+  elasticity_operator_nonlinear.set_solution_linearization(vector);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
+                                                 VectorType const & src,
+                                                 double const       time) const
+{
+  // TODO dynamic problems
+
+  elasticity_operator_nonlinear.set_time(time);
+  elasticity_operator_nonlinear.vmult(dst, src);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
+                                       VectorType const & rhs,
+                                       double const       time,
+                                       bool const         update_preconditioner,
+                                       unsigned int &     newton_iterations,
+                                       unsigned int &     linear_iterations)
+{
+  // update operators
+  residual_operator.update(rhs, time);
+  linearized_operator.update(time);
+
+  // compute values at Dirichlet boundaries
+  std::map<types::global_dof_index, double> boundary_values;
+  for(auto dbc : boundary_descriptor->dirichlet_bc)
   {
-    // compute values at Dirichlet boundaries
-    std::map<types::global_dof_index, double> boundary_values;
-    for(auto dbc : boundary_descriptor->dirichlet_bc)
-    {
-      dbc.second->set_time(time);
-      ComponentMask mask =
-        this->boundary_descriptor->dirichlet_bc_component_mask.find(dbc.first)->second;
+    dbc.second->set_time(time);
+    ComponentMask mask =
+      this->boundary_descriptor->dirichlet_bc_component_mask.find(dbc.first)->second;
 
-      VectorTools::interpolate_boundary_values(
-        this->mapping, this->dof_handler, dbc.first, *dbc.second, boundary_values, mask);
-    }
-
-    // set Dirichlet values in solution vector
-    for(auto m : boundary_values)
-      if(sol.get_partitioner()->in_local_range(m.first))
-        sol[m.first] = m.second;
-
-    // call Newton solver
-    unsigned int newton_iterations, linear_iterations;
-    non_linear_solver->solve(sol, rhs, newton_iterations, linear_iterations, true, 1);
-    return linear_iterations;
+    VectorTools::interpolate_boundary_values(
+      this->mapping, this->dof_handler, dbc.first, *dbc.second, boundary_values, mask);
   }
-  else // linear problem
-  {
-    unsigned int iterations = 0;
 
-    if(param.preconditioner == Preconditioner::AMG)
-    {
+  // set Dirichlet values in solution vector
+  for(auto m : boundary_values)
+    if(sol.get_partitioner()->in_local_range(m.first))
+      sol[m.first] = m.second;
+
+  // call Newton solver
+  non_linear_solver->solve(
+    sol, newton_iterations, linear_iterations, update_preconditioner, 1 /* TODO */);
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::solve_linear(VectorType &       sol,
+                                    VectorType const & rhs,
+                                    double const       time,
+                                    bool const         update_preconditioner)
+{
+  unsigned int iterations = 0;
+
+  if(param.preconditioner == Preconditioner::AMG)
+  {
 #ifdef DEAL_II_WITH_TRILINOS
-      TrilinosWrappers::SparseMatrix const * system_matrix = nullptr;
+    TrilinosWrappers::SparseMatrix const * system_matrix = nullptr;
 
-      std::shared_ptr<PreconditionerAMG<LinearOperator<dim, Number>, double>> preconditioner =
-        std::dynamic_pointer_cast<PreconditionerAMG<LinearOperator<dim, Number>, double>>(
-          preconditioner_amg);
-      if(update_preconditioner)
-        preconditioner->update();
-      system_matrix = &preconditioner->get_system_matrix();
+    std::shared_ptr<PreconditionerAMG<LinearOperator<dim, Number>, double>> preconditioner =
+      std::dynamic_pointer_cast<PreconditionerAMG<LinearOperator<dim, Number>, double>>(
+        preconditioner_amg);
+    if(update_preconditioner)
+      preconditioner->update();
+    system_matrix = &preconditioner->get_system_matrix();
 
-      ReductionControl solver_control(param.solver_data.max_iter,
-                                      param.solver_data.abs_tol,
-                                      param.solver_data.rel_tol);
+    ReductionControl solver_control(param.solver_data.max_iter,
+                                    param.solver_data.abs_tol,
+                                    param.solver_data.rel_tol);
 
-      // create temporal vectors of type VectorTypeTrilinos (double)
-      typedef LinearAlgebra::distributed::Vector<double> VectorTypeTrilinos;
-      VectorTypeTrilinos                                 sol_trilinos;
-      sol_trilinos.reinit(sol, false);
-      VectorTypeTrilinos rhs_trilinos;
-      rhs_trilinos.reinit(rhs, true);
-      rhs_trilinos = rhs;
+    // create temporal vectors of type VectorTypeTrilinos (double)
+    typedef LinearAlgebra::distributed::Vector<double> VectorTypeTrilinos;
+    VectorTypeTrilinos                                 sol_trilinos;
+    sol_trilinos.reinit(sol, false);
+    VectorTypeTrilinos rhs_trilinos;
+    rhs_trilinos.reinit(rhs, true);
+    rhs_trilinos = rhs;
 
-      SolverCG<VectorTypeTrilinos> solver(solver_control);
-      solver.solve(*system_matrix, sol_trilinos, rhs_trilinos, *preconditioner_amg);
+    SolverCG<VectorTypeTrilinos> solver(solver_control);
+    solver.solve(*system_matrix, sol_trilinos, rhs_trilinos, *preconditioner_amg);
 
-      // convert: VectorTypeTrilinos -> VectorTypeMultigrid
-      sol.copy_locally_owned_data_from(sol_trilinos);
+    // convert: VectorTypeTrilinos -> VectorTypeMultigrid
+    sol.copy_locally_owned_data_from(sol_trilinos);
 
-      iterations = solver_control.last_step();
+    iterations = solver_control.last_step();
 #else
-      AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
-    }
-    else
-    {
-      iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
-    }
-
-    // set Dirichlet values
-    linear_operator.set_dirichlet_values_continuous(sol, time);
-
-    return iterations;
   }
+  else
+  {
+    iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
+  }
+
+  // set Dirichlet values
+  elasticity_operator_linear.set_dirichlet_values_continuous(sol, time);
+
+  return iterations;
 }
 
 template<int dim, typename Number>

@@ -25,7 +25,7 @@ struct Info
 
 template<int dim, typename Number>
 Tensor<1, Info<dim>::n_stress_components, VectorizedArray<Number>>
-  apply_l(Tensor<2, dim, VectorizedArray<Number>> gradient_in)
+  tensor_to_vector(Tensor<2, dim, VectorizedArray<Number>> gradient_in)
 {
   if(dim == 2)
   {
@@ -75,7 +75,7 @@ Tensor<1, Info<dim>::n_stress_components, VectorizedArray<Number>>
 
 template<int dim, typename Number>
 Tensor<2, dim, VectorizedArray<Number>>
-  apply_l_transposed(Tensor<1, Info<dim>::n_stress_components, VectorizedArray<Number>> vector_out)
+  vector_to_tensor(Tensor<1, Info<dim>::n_stress_components, VectorizedArray<Number>> vector_out)
 {
   if(dim == 2)
   {
@@ -107,7 +107,7 @@ Tensor<2, dim, VectorizedArray<Number>>
 }
 
 /**
- * \brief computes the cauchy-stress tensor sigma from 2nd Piola-Kirchohoff-sress S and the
+ * \brief computes the Cauchy stress tensor sigma from 2nd Piola-Kirchhoff stress S and the
  * deformation gradient F.
  */
 template<int dim, typename Number>
@@ -117,12 +117,15 @@ get_sigma(const Tensor<1, Info<dim>::n_stress_components, VectorizedArray<Number
 {
   // compute the determinant of the deformation gradient
   auto const det_F = determinant(F);
+
   // redo Voigt notation of S (now S is normal 2nd order tensor)
-  auto const tmp_S = apply_l_transposed<dim, Number>(S);
-  // compute 2nd order tensor sigma
-  auto const tmp_sigma = (F * tmp_S * transpose(F)) / det_F;
-  // use voigt notation on sigma (now sigma is a 1st order tensor)
-  auto const sigma = apply_l<dim, Number>(tmp_sigma);
+  auto const S_tensor = vector_to_tensor<dim, Number>(S);
+
+  // compute Cauchy stresses
+  auto const sigma_tensor = (F * S_tensor * transpose(F)) / det_F;
+
+  // use Voigt notation on sigma (now sigma is a 1st order tensor)
+  auto const sigma = tensor_to_vector<dim, Number>(sigma_tensor);
 
   // return sigma in Voigt notation
   return sigma;
@@ -139,7 +142,7 @@ template<int dim, typename Number>
 Tensor<1, Info<dim>::n_stress_components, VectorizedArray<Number>>
 get_E(const Tensor<2, dim, VectorizedArray<Number>> & F)
 {
-  return 0.5 * apply_l<dim, Number>(sub_identity(transpose(F) * F));
+  return 0.5 * tensor_to_vector<dim, Number>(sub_identity(transpose(F) * F));
 }
 
 } // namespace Structure
