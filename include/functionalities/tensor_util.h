@@ -25,7 +25,7 @@ Tensor<2, dim, VectorizedArray<Number>>
 
 template<int dim, typename Number = double>
 Tensor<2, dim, VectorizedArray<Number>>
-  sub_identity(Tensor<2, dim, VectorizedArray<Number>> gradient)
+  subtract_identity(Tensor<2, dim, VectorizedArray<Number>> gradient)
 {
   for(unsigned int i = 0; i < dim; i++)
     gradient[i][i] = gradient[i][i] - 1.0;

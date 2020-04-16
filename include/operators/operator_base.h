@@ -392,7 +392,7 @@ private:
                         IntegratorFace & integrator_2) const;
 
   /*
-   * This function apply Dirichlet BCs for continuous Galerkin discretizations.
+   * This function applies Dirichlet BCs for continuous Galerkin discretizations.
    */
   void
   cell_loop_dbc(MatrixFree<dim, Number> const & matrix_free,

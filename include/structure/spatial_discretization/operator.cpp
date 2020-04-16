@@ -13,36 +13,6 @@
 
 namespace Structure
 {
-// TODO this functionality should be replaced by MovingMesh functionality developed recently
-template<int dim, typename VectorType>
-void
-do_move_mesh(DoFHandler<dim, dim> & dof_handler, const VectorType & solution)
-{
-  std::vector<bool> vertex_touched(dof_handler.get_triangulation().n_vertices(), false);
-
-  for(typename DoFHandler<dim>::active_cell_iterator cell = dof_handler.begin_active();
-      cell != dof_handler.end();
-      ++cell)
-  {
-    if(cell->is_locally_owned())
-    {
-      for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
-      {
-        if(vertex_touched[cell->vertex_index(v)] == false)
-        {
-          vertex_touched[cell->vertex_index(v)] = true;
-
-          Point<dim> vertex_displacement;
-
-          for(unsigned int d = 0; d < dim; ++d)
-            vertex_displacement[d] = solution(cell->vertex_dof_index(v, d));
-          cell->vertex(v) += vertex_displacement;
-        }
-      }
-    }
-  }
-}
-
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> &             triangulation_in,
@@ -128,7 +98,7 @@ Operator<dim, Number>::initialize_matrix_free()
   else
     flags = flags || LinearOperator<dim, Number>::get_mapping_flags();
 
-  flags = flags || RHSOperator<dim, Number>::get_mapping_flags();
+  flags = flags || BodyForceOperator<dim, Number>::get_mapping_flags();
 
   additional_data.mapping_update_flags                = flags.cells;
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
@@ -154,39 +124,6 @@ Operator<dim, Number>::initialize_matrix_free()
   matrix_free.reinit(mapping, dof_handlers, constraints, quadrature, additional_data);
 }
 
-// TODO use matrix_free_wrapper concept
-template<int dim, typename Number>
-void
-Operator<dim, Number>::reinitialize_matrix_free()
-{
-  // initialize matrix_free_data
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-
-  MappingFlags flags;
-  if(param.large_deformation)
-    flags = flags || NonLinearOperator<dim, Number>::get_mapping_flags();
-  else
-    flags = flags || LinearOperator<dim, Number>::get_mapping_flags();
-
-  flags = flags || RHSOperator<dim, Number>::get_mapping_flags();
-
-  additional_data.mapping_update_flags                = flags.cells;
-  additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-  additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-
-  // note: here we can skip setting up the constraint matrix
-  //       since it does not change
-
-  // quadrature formula used to perform integrals
-  QGauss<1> quadrature(degree + 1);
-
-  std::vector<const DoFHandler<dim> *>           dof_handlers{&dof_handler};
-  std::vector<const AffineConstraints<double> *> constraints{&constraint_matrix};
-
-  matrix_free.reinit(mapping, dof_handlers, constraints, quadrature, additional_data);
-}
-
-
 template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_operators()
@@ -194,7 +131,10 @@ Operator<dim, Number>::setup_operators()
   // pass boundary conditions to operator
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;
-  operator_data.updated_formulation = param.updated_formulation;
+  if(param.large_deformation)
+    operator_data.pull_back_traction = param.pull_back_traction;
+  else
+    operator_data.pull_back_traction = false;
 
   // setup operator
   if(param.large_deformation)
@@ -210,14 +150,15 @@ Operator<dim, Number>::setup_operators()
   }
 
   // setup rhs operator
-  RHSOperatorData<dim> rhs_operator_data;
-  rhs_operator_data.dof_index  = 0;
-  rhs_operator_data.quad_index = 0;
-  rhs_operator_data.degree     = degree;
-  rhs_operator_data.rhs        = field_functions->right_hand_side;
-  rhs_operator_data.do_rhs     = param.right_hand_side;
-  rhs_operator_data.bc         = boundary_descriptor;
-  rhs_operator.reinit(matrix_free, dof_handler, constraint_matrix, mapping, rhs_operator_data);
+  BodyForceData<dim> body_force_data;
+  body_force_data.dof_index  = 0;
+  body_force_data.quad_index = 0;
+  body_force_data.function   = field_functions->right_hand_side;
+  if(param.large_deformation)
+    body_force_data.pull_back_body_force = param.pull_back_body_force;
+  else
+    body_force_data.pull_back_body_force = false;
+  body_force_operator.reinit(matrix_free, body_force_data);
 }
 
 template<int dim, typename Number>
@@ -244,7 +185,7 @@ Operator<dim, Number>::initialize_preconditioner()
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
     AssertThrow(!param.large_deformation,
-                ExcMessage("PointJacobi is not implemented yet for non-linear operator!"));
+                ExcMessage("PointJacobi is not implemented for non-linear operator!"));
 
     preconditioner.reset(
       new JacobiPreconditioner<LinearOperator<dim, Number>>(elasticity_operator_linear));
@@ -308,11 +249,11 @@ Operator<dim, Number>::initialize_solver()
 
     // initialize solver
     if(param.large_deformation)
-      iterative_solver.reset(
+      linear_solver.reset(
         new CGSolver<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
           elasticity_operator_nonlinear, *preconditioner, solver_data));
     else
-      iterative_solver.reset(
+      linear_solver.reset(
         new CGSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
           elasticity_operator_linear, *preconditioner, solver_data));
   }
@@ -328,12 +269,9 @@ Operator<dim, Number>::initialize_solver()
     NewtonSolverData newton_data;
     newton_data.rel_tol = 1.e-5;
 
-    // initialize Newton
-    non_linear_solver.reset(new NewtonSolver<VectorType,
-                                             ResidualOperator<dim, Number>,
-                                             LinearizedOperator<dim, Number>,
-                                             IterativeSolverBase<VectorType>>(
-      newton_data, residual_operator, linearized_operator, *iterative_solver));
+    // initialize Newton solver
+    newton_solver.reset(
+      new Newton(newton_data, residual_operator, linearized_operator, *linear_solver));
   }
 }
 
@@ -356,25 +294,23 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
+Operator<dim, Number>::compute_rhs_linear(VectorType & dst, double const time) const
 {
-  // compute volume force
   dst = 0.0;
-  rhs_operator.evaluate_add(dst, evaluation_time);
 
-  // nonlinear problem: evaluate NBC-contribution
-  if(param.large_deformation)
+  // body force
+  if(param.body_force)
   {
-    // TODO: implement Neumann boundary conditions as inhomogeneous
-    // contributions of nonlinear operator and not as part of
-    // rhs_operator (rhs_operator should only account for body forces)
-    rhs_operator.evaluate_add_nbc(dst, evaluation_time);
+    // src is irrelevant for linear problem, since
+    // pull_back_body_force = false in this case.
+    VectorType src;
+    body_force_operator.evaluate_add(dst, src, time);
   }
 
-  // linear problem: Neumann BCs and inhomogeneous Dirichlet BCs
+  // Neumann BCs and inhomogeneous Dirichlet BCs
   if(param.large_deformation == false)
   {
-    elasticity_operator_linear.set_time(evaluation_time);
+    elasticity_operator_linear.set_time(time);
     elasticity_operator_linear.rhs_add(dst);
   }
 }
@@ -383,15 +319,24 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    VectorType const & src,
-                                                   VectorType const & rhs_vector,
+                                                   VectorType const & const_vector,
                                                    double const       time) const
 {
   // TODO dynamic problems
+  (void)const_vector;
 
+  // elasticity operator
   elasticity_operator_nonlinear.set_time(time);
-  elasticity_operator_nonlinear.evaluate(dst, src);
+  elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
-  dst -= rhs_vector;
+  // body forces
+  if(param.body_force)
+  {
+    VectorType body_forces;
+    body_forces.reinit(dst);
+    body_force_operator.evaluate_add(body_forces, src, time);
+    dst -= body_forces;
+  }
 }
 
 template<int dim, typename Number>
@@ -426,25 +371,11 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   residual_operator.update(rhs, time);
   linearized_operator.update(time);
 
-  // compute values at Dirichlet boundaries
-  std::map<types::global_dof_index, double> boundary_values;
-  for(auto dbc : boundary_descriptor->dirichlet_bc)
-  {
-    dbc.second->set_time(time);
-    ComponentMask mask =
-      this->boundary_descriptor->dirichlet_bc_component_mask.find(dbc.first)->second;
-
-    VectorTools::interpolate_boundary_values(
-      this->mapping, this->dof_handler, dbc.first, *dbc.second, boundary_values, mask);
-  }
-
-  // set Dirichlet values in solution vector
-  for(auto m : boundary_values)
-    if(sol.get_partitioner()->in_local_range(m.first))
-      sol[m.first] = m.second;
+  // set inhomogeneous Dirichlet values
+  elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
 
   // call Newton solver
-  non_linear_solver->solve(
+  newton_solver->solve(
     sol, newton_iterations, linear_iterations, update_preconditioner, 1 /* TODO */);
 }
 
@@ -494,27 +425,13 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   }
   else
   {
-    iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
+    iterations = linear_solver->solve(sol, rhs, update_preconditioner);
   }
 
   // set Dirichlet values
   elasticity_operator_linear.set_dirichlet_values_continuous(sol, time);
 
   return iterations;
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::move_mesh(const VectorType & solution)
-{
-  // move vertices according to the vector
-  do_move_mesh(this->dof_handler, solution);
-
-  // reinitialize the mapping with matrix_free
-  this->reinitialize_matrix_free();
-
-  // update preconditioner
-  this->preconditioner->update();
 }
 
 template<int dim, typename Number>

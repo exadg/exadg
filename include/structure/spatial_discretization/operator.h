@@ -22,9 +22,9 @@
 #include "../user_interface/input_parameters.h"
 
 // operators
-#include "../../structure/spatial_discretization/operators/linear_operator.h"
-#include "../../structure/spatial_discretization/operators/nonlinear_operator.h"
-#include "../../structure/spatial_discretization/operators/rhs_operator.h"
+#include "operators/body_force_operator.h"
+#include "operators/linear_operator.h"
+#include "operators/nonlinear_operator.h"
 
 // solvers
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
@@ -39,6 +39,11 @@ namespace Structure
 template<int dim, typename Number>
 class Operator;
 
+/*
+ * This operator provides the interface required by the non-linear Newton solver.
+ * Requests to evaluate the residual for example are simply handed over to the
+ * operators that implement the physics.
+ */
 template<int dim, typename Number>
 class ResidualOperator
 {
@@ -48,7 +53,7 @@ private:
   typedef Operator<dim, Number> PDEOperator;
 
 public:
-  ResidualOperator() : pde_operator(nullptr), rhs_vector(nullptr), time(0.0)
+  ResidualOperator() : pde_operator(nullptr), const_vector(nullptr), time(0.0)
   {
   }
 
@@ -59,10 +64,10 @@ public:
   }
 
   void
-  update(VectorType const & rhs_vector, double const & time)
+  update(VectorType const & const_vector, double const & time)
   {
-    this->rhs_vector = &rhs_vector;
-    this->time       = time;
+    this->const_vector = &const_vector;
+    this->time         = time;
   }
 
   /*
@@ -82,16 +87,21 @@ public:
   void
   evaluate_nonlinear_residual(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->evaluate_nonlinear_residual(dst, src, *rhs_vector, time);
+    pde_operator->evaluate_nonlinear_residual(dst, src, *const_vector, time);
   }
 
 private:
   PDEOperator const * pde_operator;
 
-  VectorType const * rhs_vector;
+  VectorType const * const_vector;
   double             time;
 };
 
+/*
+ * This operator implements the interface required by the non-linear Newton solver.
+ * Requests to apply the linearized operator are simply handed over to the
+ * operators that implement the physics.
+ */
 template<int dim, typename Number>
 class LinearizedOperator : public dealii::Subscriptor
 {
@@ -189,9 +199,6 @@ public:
   void
   initialize_dof_vector(VectorType & src) const;
 
-  void
-  reinitialize_matrix_free();
-
   /*
    * Prescribe initial conditions using a specified analytical/initial solution function.
    */
@@ -199,16 +206,20 @@ public:
   prescribe_initial_conditions(VectorType & src, double const time) const;
 
   /*
-   * This function calculates the volume force term as well as contributions
-   * from inhomogeneous boundary conditions.
+   * This function calculates the right-hand side of the linear system
+   * of equations for linear elasticity problems.
    */
   void
-  rhs(VectorType & dst, double const time = 0.0) const;
+  compute_rhs_linear(VectorType & dst, double const time = 0.0) const;
 
+  /*
+   * This function evaluates the nonlinear residual which is required by
+   * the Newton solver.
+   */
   void
   evaluate_nonlinear_residual(VectorType &       dst,
                               VectorType const & src,
-                              VectorType const & rhs_vector,
+                              VectorType const & const_vector,
                               double const       time) const;
 
   void
@@ -233,13 +244,6 @@ public:
                VectorType const & rhs,
                double const       time,
                bool const         update_preconditioner);
-
-  /*
-   * Move mesh by a certain amount specified by the vector and update internal
-   * data structures.
-   */
-  void
-  move_mesh(const VectorType & solution);
 
   /*
    * Setters and getters.
@@ -331,7 +335,7 @@ private:
   /*
    * Basic operators.
    */
-  RHSOperator<dim, Number> rhs_operator;
+  BodyForceOperator<dim, Number> body_force_operator;
 
   LinearOperator<dim, Number>    elasticity_operator_linear;
   NonLinearOperator<dim, Number> elasticity_operator_nonlinear;
@@ -344,16 +348,22 @@ private:
   /*
    * Solution of (non-)linear systems of equations
    */
+
+  // preconditioner linear solver
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
   std::shared_ptr<PreconditionerBase<double>> preconditioner_amg;
 
-  std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
+  // linear solver
+  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
 
-  std::shared_ptr<NewtonSolver<VectorType,
-                               ResidualOperator<dim, Number>,
-                               LinearizedOperator<dim, Number>,
-                               IterativeSolverBase<VectorType>>>
-    non_linear_solver;
+  typedef NewtonSolver<VectorType,
+                       ResidualOperator<dim, Number>,
+                       LinearizedOperator<dim, Number>,
+                       IterativeSolverBase<VectorType>>
+    Newton;
+
+  // Newton solver
+  std::shared_ptr<Newton> newton_solver;
 };
 
 } // namespace Structure

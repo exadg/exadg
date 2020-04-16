@@ -27,9 +27,10 @@ public:
   InputParameters()
     : // MATHEMATICAL MODEL
       problem_type(ProblemType::Undefined),
-      right_hand_side(false),
+      body_force(false),
       large_deformation(false),
-      updated_formulation(true),
+      pull_back_body_force(false),
+      pull_back_traction(false),
 
       // PHYSICAL QUANTITIES
 
@@ -102,11 +103,15 @@ public:
 
     print_parameter(pcout, "Problem type", enum_to_string(problem_type));
 
-    print_parameter(pcout, "Right-hand side", right_hand_side);
+    print_parameter(pcout, "Body force", body_force);
 
     print_parameter(pcout, "Large deformation", large_deformation);
 
-    print_parameter(pcout, "updated Lagrangian formulation", updated_formulation);
+    if(large_deformation)
+    {
+      print_parameter(pcout, "Pull back body force", pull_back_body_force);
+      print_parameter(pcout, "Pull back traction", pull_back_traction);
+    }
   }
 
   void
@@ -165,17 +170,48 @@ public:
   // description: see enum declaration
   ProblemType problem_type;
 
-  // if the rhs f is unequal zero, set right_hand_side = true
-  bool right_hand_side;
+  // set true in order to consider body forces
+  bool body_force;
 
   // are large deformations to be expected, than compute with non linear method
   bool large_deformation;
 
-  // which formulation of the weak form is used
-  // updated Lagrangian formulation = true
-  // total Lagrangian formulation = false
-  // only relevant for nonlinear formulation
-  bool updated_formulation;
+  // For nonlinear problems with large deformations, it is important to specify whether
+  // the body forces are formulated with respect to the current deformed configuration
+  // or the reference configuration.
+  //
+  // Option 1: pull_back_body_force = false
+  // In this case, the body force is specified as force per undeformed volume. A typical
+  // use case are density-proportional forces such as the gravitational force. The body
+  // is then directly described in reference space, b_0 = rho_0 * g, and the pull-back to
+  // the reference configuration is deactivated.
+  //
+  // Option 2: pull_back_body_force = true
+  // The body force is specified as force per deformed volume, and the body force needs
+  // to be pulled-back according to b_0 = dv/dV * b, where the volume ratio dv/dV depends
+  // on the current state of deformation.
+  bool pull_back_body_force;
+
+  // For nonlinear problems with large deformations, it is important to specify whether
+  // the traction Neumann boundary condition is formulated with respect to the current
+  // deformed configuration or the reference configuration. Both cases appear in practice,
+  // so it needs to be specified by the user which formulation is to be used.
+  //
+  // Option 1: pull_back_traction = false
+  // In this case, the traction is specified as a force per undeformed area, e.g., a
+  // force of fixed amount distributed uniformly over a surface of the body. The force per
+  // deformed area is an unknown. Hence, it is more natural to specify the traction in the
+  // reference configuration and deactivate the pull-back from the current to the reference
+  // configuration.
+  //
+  // Option 2: pull_back_traction = true
+  // The traction is known as a force per area of the deformed body. In this case, the
+  // traction needs to be pulled-back to the reference configuration, i.e., t_0 = da/dA * t,
+  // where the surface area ratio da/dA depends on the current state of deformation.
+  // A typical use case would be fluid-structure-interaction problems where the fluid
+  // stresses are applied as traction boundary conditions for the structure. Note that
+  // the direction of the traction vector does not change by this pull-back operation.
+  bool pull_back_traction;
 
   /**************************************************************************************/
   /*                                                                                    */

@@ -57,10 +57,6 @@ DriverQuasiStatic<dim, Number>::solve_problem()
     if(param.time_step_control)
       adapt_time_step_size(iterations, time.get_delta_t(), 300, 1);
 
-    // move mesh as well as update matrixfree, solvers, and preconditioners
-    if(param.updated_formulation)
-      pde_operator->move_mesh(solution);
-
     // perform postprocessing
     postprocessing();
   }
@@ -130,17 +126,15 @@ DriverQuasiStatic<dim, Number>::solve_primary()
   Timer timer;
   timer.restart();
 
-  // calculate rhs vector
-  pde_operator->rhs(rhs_vector, time.get_current_time());
-
   unsigned int N_iter_nonlinear = 0;
   unsigned int N_iter_linear    = 0;
 
   // solve system of equations
   if(param.large_deformation)
   {
+    VectorType const_vector;
     pde_operator->solve_nonlinear(solution,
-                                  rhs_vector,
+                                  const_vector,
                                   time.get_current_time(),
                                   /* update_preconditioner = */ true,
                                   N_iter_nonlinear,
@@ -148,6 +142,9 @@ DriverQuasiStatic<dim, Number>::solve_primary()
   }
   else
   {
+    // calculate right-hand side vector of linear system of equations
+    pde_operator->compute_rhs_linear(rhs_vector, time.get_current_time());
+
     N_iter_linear = pde_operator->solve_linear(solution,
                                                rhs_vector,
                                                time.get_current_time(),

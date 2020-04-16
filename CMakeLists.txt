@@ -141,7 +141,7 @@ SET( TARGET_SRC
      include/structure/material/library/st_venant_kirchhoff.cpp
      include/structure/spatial_discretization/operators/nonlinear_operator.cpp
      include/structure/spatial_discretization/operators/linear_operator.cpp
-     include/structure/spatial_discretization/operators/rhs_operator.cpp
+     include/structure/spatial_discretization/operators/body_force_operator.cpp
      include/structure/time_integration/driver_steady_problems.cpp
      include/structure/time_integration/driver_quasi_static_problems.cpp
      include/structure/spatial_discretization/operator.cpp

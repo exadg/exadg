@@ -8,121 +8,38 @@
 #ifndef INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_LINEAR_OPERATOR_H_
 #define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_LINEAR_OPERATOR_H_
 
-#include "../../../functionalities/evaluate_functions.h"
-
-#include "../../material/material_handler.h"
-#include "continuum_mechanics_util.h"
-#include "operator_data.h"
+#include "elasticity_operator_base.h"
 
 namespace Structure
 {
-/*
- * This function calculates the Neumann boundary value.
- */
 template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  Tensor<1, dim, VectorizedArray<Number>>
-  calculate_neumann_value(unsigned int const                             q,
-                          FaceIntegrator<dim, dim, Number> const &       integrator,
-                          BoundaryType const &                           boundary_type,
-                          types::boundary_id const                       boundary_id,
-                          std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
-                          double const &                                 time)
-{
-  Tensor<1, dim, VectorizedArray<Number>> normal_gradient;
-
-  if(boundary_type == BoundaryType::Neumann)
-  {
-    auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
-    auto q_points = integrator.quadrature_point(q);
-
-    normal_gradient = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
-  }
-  else
-  {
-    // do nothing
-
-    AssertThrow(boundary_type == BoundaryType::Dirichlet,
-                ExcMessage("Boundary type of face is invalid or not implemented."));
-  }
-
-  return normal_gradient;
-}
-
-template<int dim, typename Number>
-class LinearOperator : public OperatorBase<dim, Number, OperatorData<dim>, dim>
+class LinearOperator : public ElasticityOperatorBase<dim, Number>
 {
 public:
   typedef Number value_type;
 
 private:
-  typedef OperatorBase<dim, Number, OperatorData<dim>, dim> Base;
-  typedef typename Base::VectorType                         VectorType;
-  typedef typename Base::IntegratorCell                     IntegratorCell;
-  typedef typename Base::IntegratorFace                     IntegratorFace;
+  typedef ElasticityOperatorBase<dim, Number> Base;
 
-public:
-  void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         operator_data)
-  {
-    Base::reinit(matrix_free, constraint_matrix, operator_data);
+  typedef typename Base::VectorType     VectorType;
+  typedef typename Base::IntegratorCell IntegratorCell;
+  typedef typename Base::IntegratorFace IntegratorFace;
 
-    this->integrator_flags = this->get_integrator_flags();
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-    material_handler.initialize(this->get_data().material_descriptor);
-  }
-
-  IntegratorFlags
-  get_integrator_flags() const
-  {
-    IntegratorFlags flags;
-
-    flags.cell_evaluate  = CellFlags(false, true, false);
-    flags.cell_integrate = CellFlags(false, true, false);
-
-    // evaluation of Neumann BCs
-    flags.face_evaluate  = FaceFlags(false, false);
-    flags.face_integrate = FaceFlags(true, false);
-
-    return flags;
-  }
-
-  static MappingFlags
-  get_mapping_flags()
-  {
-    MappingFlags flags;
-
-    flags.cells = update_gradients | update_JxW_values;
-
-    flags.boundary_faces =
-      update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
-
-    return flags;
-  }
-
-  void
-  set_dirichlet_values_continuous(VectorType & dst, double const time) const
-  {
-    std::map<types::global_dof_index, double> boundary_values;
-    fill_dirichlet_values_continuous(boundary_values, time);
-
-    // set Dirichlet values in solution vector
-    for(auto m : boundary_values)
-      if(dst.get_partitioner()->in_local_range(m.first))
-        dst[m.first] = m.second;
-  }
-
-private:
-  void
-  reinit_cell(unsigned int const cell) const
-  {
-    Base::reinit_cell(cell);
-
-    this->material_handler.reinit(*this->matrix_free, cell);
-  }
-
+  /*
+   * Calculates the integral
+   *
+   *  (grad(v_h), sigma_h)_Omega
+   *
+   * with
+   *
+   *  sigma_h = C : eps_h, eps_h = grad(d_h)
+   *
+   * where
+   *
+   *  d_h denotes the displacement vector.
+   */
   void
   do_cell_integral(IntegratorCell & integrator) const
   {
@@ -130,19 +47,25 @@ private:
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      // kinematics
-      auto const gradient = integrator.get_gradient(q);
+      // engineering strains (material tensor is symmetric)
+      tensor const gradient = integrator.get_gradient(q);
+      auto const   eps      = tensor_to_vector<dim, Number>(gradient);
 
-      // strains and stresses
-      auto const E = tensor_to_vector<dim, Number>(gradient);
-      material->reinit(E);
-      auto const C = material->get_dSdE();
+      // Cauchy stresses
+      material->reinit(eps);
+      auto const   C     = material->get_dSdE();
+      tensor const sigma = vector_to_tensor<dim, Number>(C * eps);
 
       // test with gradients
-      integrator.submit_gradient(vector_to_tensor<dim, Number>(C * E), q);
+      integrator.submit_gradient(sigma, q);
     }
   }
 
+  /*
+   * Computes Neumann BC integral
+   *
+   *  - (v_h, t)_{Gamma_N}
+   */
   void
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
                                   types::boundary_id const & boundary_id) const
@@ -157,27 +80,6 @@ private:
       integrator_m.submit_value(-neumann_value, q);
     }
   }
-
-  void
-  fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
-                                   double const                                time) const
-  {
-    for(auto dbc : this->data.bc->dirichlet_bc)
-    {
-      dbc.second->set_time(time);
-      ComponentMask mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
-
-      VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
-                                               this->matrix_free->get_dof_handler(
-                                                 this->data.dof_index),
-                                               dbc.first,
-                                               *dbc.second,
-                                               boundary_values,
-                                               mask);
-    }
-  }
-
-  mutable MaterialHandler<dim, Number> material_handler;
 };
 } // namespace Structure
 

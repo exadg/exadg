@@ -50,10 +50,7 @@ template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::initialize_vectors()
 {
-  // solution
   pde_operator->initialize_dof_vector(solution);
-
-  // rhs_vector
   pde_operator->initialize_dof_vector(rhs_vector);
 }
 
@@ -74,30 +71,24 @@ DriverSteady<dim, Number>::solve()
   Timer timer;
   timer.restart();
 
-  // TODO: nonlinear formulation
-  // for displacement dependent boundary conditions and body forces,
-  // the "right-hand side" vector depends on the Newton iteration and has to
-  // be re-evaluated as part of the nonlinear residual evaluation within every
-  // iteration of the Newton solver
-
-  // calculate right-hand side vector
-  pde_operator->rhs(rhs_vector);
-
   unsigned int N_iter_nonlinear = 0;
   unsigned int N_iter_linear    = 0;
 
-  // solve system of equations
-  if(param.large_deformation)
+  if(param.large_deformation) // nonlinear problem
   {
+    VectorType const_vector;
     pde_operator->solve_nonlinear(solution,
-                                  rhs_vector,
+                                  const_vector,
                                   /* time */ 0.0,
                                   /* update_preconditioner = */ true,
                                   N_iter_nonlinear,
                                   N_iter_linear);
   }
-  else
+  else // linear problem
   {
+    // calculate right-hand side vector
+    pde_operator->compute_rhs_linear(rhs_vector);
+
     N_iter_linear = pde_operator->solve_linear(solution,
                                                rhs_vector,
                                                /* time */ 0.0,
