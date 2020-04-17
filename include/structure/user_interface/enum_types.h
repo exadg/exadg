@@ -108,7 +108,6 @@ enum_to_string(Solver const enum_type);
  */
 enum class Preconditioner
 {
-  Undefined,
   None,
   PointJacobi,
   Multigrid,

@@ -80,7 +80,7 @@ DriverSteady<dim, Number>::solve()
     pde_operator->solve_nonlinear(solution,
                                   const_vector,
                                   /* time */ 0.0,
-                                  /* update_preconditioner = */ true,
+                                  param.update_preconditioner,
                                   N_iter_nonlinear,
                                   N_iter_linear);
   }
@@ -91,8 +91,7 @@ DriverSteady<dim, Number>::solve()
 
     N_iter_linear = pde_operator->solve_linear(solution,
                                                rhs_vector,
-                                               /* time */ 0.0,
-                                               /* update_preconditioner = */ true);
+                                               /* time */ 0.0);
   }
 
   computing_times[0] += timer.wall_time();

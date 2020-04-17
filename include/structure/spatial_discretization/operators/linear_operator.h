@@ -15,9 +15,6 @@ namespace Structure
 template<int dim, typename Number>
 class LinearOperator : public ElasticityOperatorBase<dim, Number>
 {
-public:
-  typedef Number value_type;
-
 private:
   typedef ElasticityOperatorBase<dim, Number> Base;
 

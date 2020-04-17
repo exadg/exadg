@@ -15,11 +15,6 @@ class PreconditionerAMG : public PreconditionerBase<TrilinosNumber>
 private:
   typedef LinearAlgebra::distributed::Vector<TrilinosNumber> VectorTypeTrilinos;
 
-  // reference to matrix-free operator
-  Operator const & pde_operator;
-
-  AMGData amg_data;
-
 #ifdef DEAL_II_WITH_TRILINOS
 public:
   // distributed sparse system matrix
@@ -30,10 +25,9 @@ private:
 #endif
 
 public:
-  PreconditionerAMG(Operator const & op, AMGData data = AMGData()) : pde_operator(op)
+  PreconditionerAMG(Operator const & op, AMGData data = AMGData())
+    : pde_operator(op), amg_data(data)
   {
-    amg_data = data;
-
 #ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix);
@@ -84,6 +78,12 @@ public:
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
   }
+
+private:
+  // reference to matrix-free operator
+  Operator const & pde_operator;
+
+  AMGData amg_data;
 };
 
 #endif

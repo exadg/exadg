@@ -184,11 +184,16 @@ Operator<dim, Number>::initialize_preconditioner()
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
-    AssertThrow(!param.large_deformation,
-                ExcMessage("PointJacobi is not implemented for non-linear operator!"));
-
-    preconditioner.reset(
-      new JacobiPreconditioner<LinearOperator<dim, Number>>(elasticity_operator_linear));
+    if(param.large_deformation)
+    {
+      preconditioner.reset(
+        new JacobiPreconditioner<NonLinearOperator<dim, Number>>(elasticity_operator_nonlinear));
+    }
+    else
+    {
+      preconditioner.reset(
+        new JacobiPreconditioner<LinearOperator<dim, Number>>(elasticity_operator_linear));
+    }
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -217,13 +222,15 @@ Operator<dim, Number>::initialize_preconditioner()
   else if(param.preconditioner == Preconditioner::AMG)
   {
     if(param.large_deformation)
-      preconditioner_amg.reset(
-        new PreconditionerAMG<NonLinearOperator<dim, Number>, double>(elasticity_operator_nonlinear,
-                                                                      AMGData()));
+    {
+      typedef AlgebraicMultigridPreconditioner<NonLinearOperator<dim, Number>, Number> AMG;
+      preconditioner.reset(new AMG(elasticity_operator_nonlinear, AMGData()));
+    }
     else
-      preconditioner_amg.reset(
-        new PreconditionerAMG<LinearOperator<dim, Number>, double>(elasticity_operator_linear,
-                                                                   AMGData()));
+    {
+      typedef AlgebraicMultigridPreconditioner<LinearOperator<dim, Number>, Number> AMG;
+      preconditioner.reset(new AMG(elasticity_operator_linear, AMGData()));
+    }
   }
   else
   {
@@ -370,58 +377,18 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
 
   // call Newton solver
-  newton_solver->solve(
-    sol, newton_iterations, linear_iterations, update_preconditioner, 1 /* TODO */);
+  newton_solver->solve(sol,
+                       newton_iterations,
+                       linear_iterations,
+                       update_preconditioner,
+                       param.update_preconditioner_every_newton_iterations);
 }
 
 template<int dim, typename Number>
 unsigned int
-Operator<dim, Number>::solve_linear(VectorType &       sol,
-                                    VectorType const & rhs,
-                                    double const       time,
-                                    bool const         update_preconditioner)
+Operator<dim, Number>::solve_linear(VectorType & sol, VectorType const & rhs, double const time)
 {
-  unsigned int iterations = 0;
-
-  if(param.preconditioner == Preconditioner::AMG)
-  {
-#ifdef DEAL_II_WITH_TRILINOS
-    TrilinosWrappers::SparseMatrix const * system_matrix = nullptr;
-
-    std::shared_ptr<PreconditionerAMG<LinearOperator<dim, Number>, double>> preconditioner =
-      std::dynamic_pointer_cast<PreconditionerAMG<LinearOperator<dim, Number>, double>>(
-        preconditioner_amg);
-    if(update_preconditioner)
-      preconditioner->update();
-    system_matrix = &preconditioner->get_system_matrix();
-
-    ReductionControl solver_control(param.solver_data.max_iter,
-                                    param.solver_data.abs_tol,
-                                    param.solver_data.rel_tol);
-
-    // create temporal vectors of type VectorTypeTrilinos (double)
-    typedef LinearAlgebra::distributed::Vector<double> VectorTypeTrilinos;
-    VectorTypeTrilinos                                 sol_trilinos;
-    sol_trilinos.reinit(sol, false);
-    VectorTypeTrilinos rhs_trilinos;
-    rhs_trilinos.reinit(rhs, true);
-    rhs_trilinos = rhs;
-
-    SolverCG<VectorTypeTrilinos> solver(solver_control);
-    solver.solve(*system_matrix, sol_trilinos, rhs_trilinos, *preconditioner_amg);
-
-    // convert: VectorTypeTrilinos -> VectorTypeMultigrid
-    sol.copy_locally_owned_data_from(sol_trilinos);
-
-    iterations = solver_control.last_step();
-#else
-    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
-#endif
-  }
-  else
-  {
-    iterations = linear_solver->solve(sol, rhs, update_preconditioner);
-  }
+  unsigned int const iterations = linear_solver->solve(sol, rhs, false);
 
   // set Dirichlet values
   elasticity_operator_linear.set_dirichlet_values_continuous(sol, time);

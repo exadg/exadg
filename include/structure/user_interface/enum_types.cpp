@@ -157,9 +157,6 @@ enum_to_string(Preconditioner const enum_type)
 
   switch(enum_type)
   {
-    case Preconditioner::Undefined:
-      string_type = "Undefined";
-      break;
     case Preconditioner::None:
       string_type = "None";
       break;

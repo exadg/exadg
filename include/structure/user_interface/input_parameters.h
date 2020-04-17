@@ -50,7 +50,10 @@ public:
       newton_solver_data(NewtonSolverData(1e4, 1.e-12, 1.e-6)),
       solver(Solver::Undefined),
       solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
-      preconditioner(Preconditioner::Undefined),
+      preconditioner(Preconditioner::AMG),
+      update_preconditioner(false),
+      update_preconditioner_every_time_steps(1),
+      update_preconditioner_every_newton_iterations(10),
       multigrid_data(MultigridData())
   {
   }
@@ -75,8 +78,6 @@ public:
 
     // SOLVER
     AssertThrow(solver != Solver::Undefined, ExcMessage("Parameter must be defined."));
-    AssertThrow(preconditioner != Preconditioner::Undefined,
-                ExcMessage("Parameter must be defined."));
   }
 
   void
@@ -284,6 +285,13 @@ public:
 
   // description: see enum declaration
   Preconditioner preconditioner;
+
+  // only relevant for nonlinear problems
+  bool update_preconditioner;
+  // ... every time steps (or load steps for QuasiStatic problems)
+  unsigned int update_preconditioner_every_time_steps;
+  // ... every Newton iterations
+  unsigned int update_preconditioner_every_newton_iterations;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data;

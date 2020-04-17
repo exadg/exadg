@@ -201,6 +201,9 @@ struct OperatorData : public OperatorBaseData
 template<int dim, typename Number>
 class ElasticityOperatorBase : public OperatorBase<dim, Number, OperatorData<dim>, dim>
 {
+public:
+  typedef Number value_type;
+
 protected:
   typedef OperatorBase<dim, Number, OperatorData<dim>, dim> Base;
   typedef typename Base::VectorType                         VectorType;

@@ -20,7 +20,8 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
     param(param_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    computing_times(1)
+    computing_times(1),
+    step_number(1)
 {
 }
 
@@ -83,6 +84,7 @@ DriverQuasiStatic<dim, Number>::solve_problem()
 
     // increment load factor
     load_factor += load_increment;
+    ++step_number;
 
     // adjust increment for next load step
     if(param.adjust_load_increment)
@@ -136,12 +138,13 @@ DriverQuasiStatic<dim, Number>::solve(double const load_factor)
   if(param.large_deformation)
   {
     VectorType const_vector;
-    pde_operator->solve_nonlinear(solution,
-                                  const_vector,
-                                  load_factor,
-                                  /* update_preconditioner = */ true,
-                                  N_iter_nonlinear,
-                                  N_iter_linear);
+
+    bool const update_preconditioner =
+      this->param.update_preconditioner &&
+      ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
+
+    pde_operator->solve_nonlinear(
+      solution, const_vector, load_factor, update_preconditioner, N_iter_nonlinear, N_iter_linear);
 
     // solver info output
     double N_iter_linear_avg =

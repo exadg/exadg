@@ -68,6 +68,8 @@ private:
   // vectors
   VectorType solution;
   VectorType rhs_vector;
+
+  unsigned int step_number;
 };
 
 } // namespace Structure

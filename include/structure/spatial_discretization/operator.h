@@ -30,6 +30,7 @@
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
+#include "../preconditioners/amg_preconditioner.h"
 
 using namespace dealii;
 
@@ -240,10 +241,7 @@ public:
                   unsigned int &     linear_iterations);
 
   unsigned int
-  solve_linear(VectorType &       sol,
-               VectorType const & rhs,
-               double const       time,
-               bool const         update_preconditioner);
+  solve_linear(VectorType & sol, VectorType const & rhs, double const time);
 
   /*
    * Setters and getters.
@@ -346,24 +344,22 @@ private:
   LinearizedOperator<dim, Number> linearized_operator;
 
   /*
-   * Solution of (non-)linear systems of equations
+   * Solution of nonlinear systems of equations
    */
-
-  // preconditioner linear solver
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
-  std::shared_ptr<PreconditionerBase<double>> preconditioner_amg;
-
-  // linear solver
-  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
-
   typedef NewtonSolver<VectorType,
                        ResidualOperator<dim, Number>,
                        LinearizedOperator<dim, Number>,
                        IterativeSolverBase<VectorType>>
     Newton;
 
-  // Newton solver
   std::shared_ptr<Newton> newton_solver;
+
+  /*
+   * Solution of linear systems of equations
+   */
+  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
+
+  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
 };
 
 } // namespace Structure

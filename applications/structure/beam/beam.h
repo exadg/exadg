@@ -160,7 +160,7 @@ public:
   {
     parameters.problem_type      = ProblemType::QuasiStatic;
     parameters.body_force        = false;
-    parameters.large_deformation = true; // TODO //false;
+    parameters.large_deformation = true;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
@@ -169,10 +169,14 @@ public:
     parameters.adjust_load_increment     = true;
     parameters.desired_newton_iterations = 20;
 
-    parameters.newton_solver_data = NewtonSolverData(1e4, 1.e-12, 1.e-6);
-    parameters.solver             = Solver::CG;
-    parameters.solver_data        = SolverData(1e4, 1.e-8, 1.e-2, 100);
-    parameters.preconditioner     = Preconditioner::None; // TODO //AMG;
+    parameters.newton_solver_data    = NewtonSolverData(1e4, 1.e-12, 1.e-6);
+    parameters.solver                = Solver::CG;
+    parameters.solver_data           = SolverData(1e4, 1.e-8, 1.e-2, 100);
+    parameters.preconditioner        = Preconditioner::AMG; // Multigrid; // AMG;
+    parameters.update_preconditioner = true;
+    parameters.update_preconditioner_every_time_steps        = 1;
+    parameters.update_preconditioner_every_newton_iterations = 100;
+    parameters.multigrid_data.type                           = MultigridType::pMG;
 
     this->param = parameters;
   }
