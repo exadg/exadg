@@ -18,15 +18,9 @@ template<int dim>
 class BendingMoment : public Function<dim>
 {
 public:
-  BendingMoment(double force, double height, bool incremental_loading, double end_time = -1.0)
-    : Function<dim>(dim),
-      force_max(force / (height / 2)),
-      incremental_loading(incremental_loading),
-      end_time(end_time)
+  BendingMoment(double force, double height, bool incremental_loading)
+    : Function<dim>(dim), force_max(force / (height / 2)), incremental_loading(incremental_loading)
   {
-    if(incremental_loading)
-      AssertThrow(end_time > 0.0,
-                  ExcMessage("End time needs to be specified in case of incremental loading."));
   }
 
   double
@@ -34,7 +28,7 @@ public:
   {
     double factor = 1.0;
     if(incremental_loading)
-      factor = this->get_time() / end_time;
+      factor = this->get_time();
 
     if(c == 0)
       return factor * force_max * p[1];
@@ -45,22 +39,15 @@ public:
 private:
   const double force_max;
   bool const   incremental_loading;
-  double const end_time;
 };
 
 template<int dim>
 class SingleForce : public Function<dim>
 {
 public:
-  SingleForce(double force, double length, bool incremental_loading, double end_time = -1.0)
-    : Function<dim>(dim),
-      force_per_length(force / length),
-      incremental_loading(incremental_loading),
-      end_time(end_time)
+  SingleForce(double force, double length, bool incremental_loading)
+    : Function<dim>(dim), force_per_length(force / length), incremental_loading(incremental_loading)
   {
-    if(incremental_loading)
-      AssertThrow(end_time > 0.0,
-                  ExcMessage("End time needs to be specified in case of incremental loading."));
   }
 
   double
@@ -70,7 +57,7 @@ public:
 
     double factor = 1.0;
     if(incremental_loading)
-      factor = this->get_time() / end_time;
+      factor = this->get_time();
 
     if(c == 1)
       return -factor * force_per_length;
@@ -81,7 +68,6 @@ public:
 private:
   double const force_per_length;
   bool const   incremental_loading;
-  double const end_time;
 };
 
 template<int dim>
@@ -172,15 +158,21 @@ public:
   void
   set_input_parameters(InputParameters & parameters)
   {
-    parameters.problem_type      = ProblemType::Steady;
-    parameters.right_hand_side   = false;
-    parameters.large_deformation = false;
+    parameters.problem_type      = ProblemType::QuasiStatic;
+    parameters.body_force        = false;
+    parameters.large_deformation = true; // TODO //false;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
-    parameters.solver         = Solver::CG;
-    parameters.preconditioner = Preconditioner::AMG;
+    parameters.load_increment            = 1.0;
+    parameters.adjust_load_increment     = true;
+    parameters.desired_newton_iterations = 20;
+
+    parameters.newton_solver_data = NewtonSolverData(1e4, 1.e-12, 1.e-6);
+    parameters.solver             = Solver::CG;
+    parameters.solver_data        = SolverData(1e4, 1.e-8, 1.e-2, 100);
+    parameters.preconditioner     = Preconditioner::None; // TODO //AMG;
 
     this->param = parameters;
   }
@@ -266,14 +258,14 @@ public:
     if(boundary_type == "BendingMoment")
     {
       boundary_descriptor->neumann_bc.insert(
-        pair(2, new BendingMoment<dim>(force, height, incremental_loading, this->param.end_time)));
+        pair(2, new BendingMoment<dim>(force, height, incremental_loading)));
     }
     else if(boundary_type == "SingleForce")
     {
       boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
 
-      boundary_descriptor->neumann_bc.insert(pair(
-        3, new SingleForce<dim>(force, element_length, incremental_loading, this->param.end_time)));
+      boundary_descriptor->neumann_bc.insert(
+        pair(3, new SingleForce<dim>(force, element_length, incremental_loading)));
     }
     else
     {

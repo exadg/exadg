@@ -18,11 +18,8 @@ template<int dim>
 class DisplacementDBC : public Function<dim>
 {
 public:
-  DisplacementDBC(double displacement, bool incremental_loading, double end_time = -1.0)
-    : Function<dim>(dim),
-      displacement(displacement),
-      incremental_loading(incremental_loading),
-      end_time(end_time)
+  DisplacementDBC(double displacement, bool incremental_loading)
+    : Function<dim>(dim), displacement(displacement), incremental_loading(incremental_loading)
   {
   }
 
@@ -33,7 +30,7 @@ public:
 
     double factor = 1.0;
     if(incremental_loading)
-      factor = this->get_time() / end_time;
+      factor = this->get_time();
 
     if(c == 2)
       return factor * displacement;
@@ -44,15 +41,14 @@ public:
 private:
   double const displacement;
   bool const   incremental_loading;
-  double const end_time;
 };
 
 template<int dim>
 class AreaForce : public Function<dim>
 {
 public:
-  AreaForce(double force, bool incremental_loading, double end_time = -1.0)
-    : Function<dim>(dim), force(force), incremental_loading(incremental_loading), end_time(end_time)
+  AreaForce(double force, bool incremental_loading)
+    : Function<dim>(dim), force(force), incremental_loading(incremental_loading)
   {
   }
 
@@ -63,7 +59,7 @@ public:
 
     double factor = 1.0;
     if(incremental_loading)
-      factor = this->get_time() / end_time;
+      factor = this->get_time();
 
     if(c == 2)
       return factor * force; // area_force in z-direction
@@ -74,7 +70,6 @@ public:
 private:
   double const force;
   bool const   incremental_loading;
-  double const end_time;
 };
 
 template<int dim>
@@ -152,7 +147,7 @@ public:
   set_input_parameters(InputParameters & parameters)
   {
     parameters.problem_type      = ProblemType::Steady;
-    parameters.right_hand_side   = use_volume_force;
+    parameters.body_force        = use_volume_force;
     parameters.large_deformation = false;
 
     parameters.triangulation_type = TriangulationType::Distributed;
@@ -226,13 +221,13 @@ public:
       // std::vector<bool> mask_upper = {false, false, true}; // let boundary slide in x-y-plane
       std::vector<bool> mask_upper = {true, true, true}; // clamp boundary, i.e., fix all directions
       boundary_descriptor->dirichlet_bc.insert(
-        pair(1, new DisplacementDBC<dim>(displacement, incremental_loading, this->param.end_time)));
+        pair(1, new DisplacementDBC<dim>(displacement, incremental_loading)));
       boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_upper));
     }
     else if(boundary_type == "Neumann")
     {
       boundary_descriptor->neumann_bc.insert(
-        pair(1, new AreaForce<dim>(area_force, incremental_loading, this->param.end_time)));
+        pair(1, new AreaForce<dim>(area_force, incremental_loading)));
     }
     else
     {

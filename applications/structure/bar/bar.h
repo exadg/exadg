@@ -188,15 +188,17 @@ public:
   void
   set_input_parameters(InputParameters & parameters)
   {
-    parameters.problem_type      = ProblemType::Steady;
-    parameters.right_hand_side   = use_volume_force;
-    parameters.large_deformation = false;
+    parameters.problem_type         = ProblemType::Steady;
+    parameters.body_force           = use_volume_force;
+    parameters.large_deformation    = true;
+    parameters.pull_back_body_force = false;
+    parameters.pull_back_traction   = false;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
     parameters.solver         = Solver::CG;
-    parameters.preconditioner = Preconditioner::AMG;
+    parameters.preconditioner = Preconditioner::None; // Preconditioner::AMG;
 
     this->param = parameters;
   }

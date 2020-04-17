@@ -14,6 +14,7 @@
 #include "../../functionalities/print_functions.h"
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 
 #include "../../structure/user_interface/enum_types.h"
@@ -35,15 +36,18 @@ public:
       // PHYSICAL QUANTITIES
 
       // TEMPORAL DISCRETIZATION
-      end_time(1.0),
-      delta_t(1.0),
-      time_step_control(false),
+
+      // quasi-static solver
+      load_increment(1.0),
+      adjust_load_increment(false),
+      desired_newton_iterations(10),
 
       // SPATIAL DISCRETIZATION
       triangulation_type(TriangulationType::Undefined),
       mapping(MappingType::Affine),
 
       // SOLVER
+      newton_solver_data(NewtonSolverData(1e4, 1.e-12, 1.e-6)),
       solver(Solver::Undefined),
       solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner(Preconditioner::Undefined),
@@ -127,11 +131,15 @@ public:
   {
     pcout << std::endl << "Temporal discretization:" << std::endl;
 
-    if(problem_type == ProblemType::QuasiStatic || problem_type == ProblemType::Unsteady)
+    if(problem_type == ProblemType::QuasiStatic)
     {
-      print_parameter(pcout, "End time", end_time);
-      print_parameter(pcout, "Delta t", delta_t);
-      print_parameter(pcout, "Adapt time step size", time_step_control);
+      print_parameter(pcout, "load_increment", load_increment);
+      print_parameter(pcout, "Adjust load increment", adjust_load_increment);
+      print_parameter(pcout, "Desired Newton iterations", desired_newton_iterations);
+    }
+
+    if(problem_type == ProblemType::Unsteady)
+    {
     }
   }
 
@@ -151,6 +159,13 @@ public:
 
     print_parameter(pcout, "Solver", enum_to_string(solver));
 
+    if(large_deformation)
+    {
+      pcout << std::endl << "Newton:" << std::endl;
+      newton_solver_data.print(pcout);
+    }
+
+    pcout << std::endl << "Linear solver:" << std::endl;
     solver_data.print(pcout);
 
     print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
@@ -226,11 +241,18 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // these parameters are currently used for quasi-static solver (... and later for
-  // unsteady solver as well)
-  double end_time;
-  double delta_t;
-  bool   time_step_control;
+  // quasi-static solver
+
+  // choose a value in [0,1] where 1 = maximum load (Neumann or Dirichlet)
+  double load_increment;
+
+  // adjust load increment adaptively depending on the number of iterations needed to
+  // solve the system of equations
+  bool adjust_load_increment;
+
+  // in case of adaptively adjusting the load increment: specify a desired number of
+  // Newton iterations according to which the load increment will be adjusted
+  unsigned int desired_newton_iterations;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -250,6 +272,9 @@ public:
   /*                                       SOLVER                                       */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // Newton solver data (only relevant for nonlinear problems)
+  NewtonSolverData newton_solver_data;
 
   // description: see enum declaration
   Solver solver;

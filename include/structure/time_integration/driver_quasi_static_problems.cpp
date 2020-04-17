@@ -20,8 +20,7 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
     param(param_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    computing_times(1),
-    time(param.end_time, param.delta_t, mpi_comm_in)
+    computing_times(1)
 {
 }
 
@@ -42,63 +41,67 @@ DriverQuasiStatic<dim, Number>::solve_problem()
 {
   pcout << std::endl << "Solving quasi-static problem ..." << std::endl;
 
-  // perform post processing for initial condition
+  // perform post processing for initial solution
   postprocessing();
 
   // perform time loop
-  for(; !time.finished(); time.do_increment())
+  double       load_factor    = 0.0;
+  double       load_increment = param.load_increment;
+  double const eps            = 1.e-10;
+  while(load_factor < 1.0 - eps)
   {
-    // print information to the current time step
-    time.print_header();
+    unsigned int iterations = 0;
 
-    // compute deformation increment
-    unsigned int const iterations = solve_primary();
+    // compute displacement for new load factor
+    if(param.adjust_load_increment)
+    {
+      // reduce load increment in factors of 2 until the current
+      // step can be solved successfully
+      bool         success        = false;
+      unsigned int re_try_counter = 0;
+      while(!success && re_try_counter < 10)
+      {
+        try
+        {
+          iterations = solve(load_factor + load_increment);
+          success    = true;
+          ++re_try_counter;
+        }
+        catch(...)
+        {
+          load_increment *= 0.5;
+          pcout << std::endl
+                << "Could not solve non-linear problem. Reduce load increment to " << load_increment
+                << std::flush;
+        }
+      }
+    }
+    else
+    {
+      iterations = solve(load_factor + load_increment);
+    }
 
-    if(param.time_step_control)
-      adapt_time_step_size(iterations, time.get_delta_t(), 300, 1);
+    // increment load factor
+    load_factor += load_increment;
 
-    // perform postprocessing
-    postprocessing();
+    // adjust increment for next load step
+    if(param.adjust_load_increment)
+    {
+      if(iterations > 0)
+        load_increment *=
+          std::pow((double)param.desired_newton_iterations / (double)iterations, 0.5);
+    }
+
+    // make sure to hit maximum load exactly
+    if(load_factor + load_increment >= 1.0)
+      load_increment = 1.0 - load_factor;
   }
+
+  // perform post processing for final solution
+  postprocessing();
 
   pcout << std::endl << "... done!" << std::endl;
 }
-
-template<int dim, typename Number>
-void
-DriverQuasiStatic<dim, Number>::adapt_time_step_size(unsigned int n_current_iteration,
-                                                     double       current_delta_t,
-                                                     unsigned int ideal_iterations,
-                                                     double       p)
-{
-  if(current_delta_t > 1.0e-3)
-  {
-    double A = double(ideal_iterations);
-    double B = double(n_current_iteration);
-
-    std::cout << "n_current_iteration = " << n_current_iteration << std::endl;
-    std::cout << "ideal_iterations = " << ideal_iterations << std::endl;
-    std::cout << "current_delta_t = " << current_delta_t << std::endl;
-
-    auto R = A / B;
-
-    std::cout << "R = " << R << std::endl;
-
-    double alpha       = std::pow(R, p);
-    double new_delta_t = alpha * current_delta_t;
-
-    std::cout << "alpha = " << alpha << std::endl;
-    std::cout << "new_delta_t = " << new_delta_t << std::endl;
-
-    time.set_delta_t(new_delta_t);
-  }
-  else
-  {
-    double new_delta_t = current_delta_t;
-    time.set_delta_t(new_delta_t);
-  }
-}
-
 
 template<int dim, typename Number>
 void
@@ -121,7 +124,7 @@ DriverQuasiStatic<dim, Number>::initialize_solution()
 
 template<int dim, typename Number>
 unsigned int
-DriverQuasiStatic<dim, Number>::solve_primary()
+DriverQuasiStatic<dim, Number>::solve(double const load_factor)
 {
   Timer timer;
   timer.restart();
@@ -135,51 +138,36 @@ DriverQuasiStatic<dim, Number>::solve_primary()
     VectorType const_vector;
     pde_operator->solve_nonlinear(solution,
                                   const_vector,
-                                  time.get_current_time(),
+                                  load_factor,
                                   /* update_preconditioner = */ true,
                                   N_iter_nonlinear,
                                   N_iter_linear);
+
+    // solver info output
+    double N_iter_linear_avg =
+      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
+
+    // clang-format off
+    pcout << std::endl
+          << "______________________________________________________________________" << std::endl
+          << std::endl
+          << " Solved non-linear problem for load factor = " << std::scientific << std::setprecision(4) << load_factor << std::endl
+          << "______________________________________________________________________" << std::endl
+          << std::endl
+          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
+          << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
+          << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+    // clang-format on
   }
   else
   {
-    // calculate right-hand side vector of linear system of equations
-    pde_operator->compute_rhs_linear(rhs_vector, time.get_current_time());
-
-    N_iter_linear = pde_operator->solve_linear(solution,
-                                               rhs_vector,
-                                               time.get_current_time(),
-                                               /* update_preconditioner = */ true);
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   computing_times[0] += timer.wall_time();
 
-  // solver info output
-  if(param.large_deformation)
-  {
-    double N_iter_linear_avg =
-      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
-
-    pcout << std::endl
-          << "Solve nonlinear problem:" << std::endl
-          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
-          << std::endl
-          << "  Linear iterations (avg):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-          << "  Linear iterations (tot):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:          " << std::setw(12) << std::scientific
-          << std::setprecision(4) << computing_times[0] << std::endl;
-  }
-  else
-  {
-    pcout << std::endl
-          << "Solve linear problem:" << std::endl
-          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-          << computing_times[0] << std::endl;
-  }
-
-  return N_iter_linear;
+  return N_iter_nonlinear;
 }
 
 template<int dim, typename Number>
@@ -187,7 +175,6 @@ void
 DriverQuasiStatic<dim, Number>::postprocessing() const
 {
   postprocessor->do_postprocessing(solution);
-  norm_vector.push_back(this->solution.norm_sqr());
 }
 
 template<int dim, typename Number>
@@ -201,10 +188,6 @@ DriverQuasiStatic<dim, Number>::get_wall_times(std::vector<std::string> & name,
 
   wall_time.resize(1);
   wall_time[0] = computing_times[0];
-
-  // TODO: move it to some more useful place
-  for(auto i : norm_vector)
-    pcout << "Norm_vector_component: " << i << std::endl;
 }
 
 template class DriverQuasiStatic<2, float>;

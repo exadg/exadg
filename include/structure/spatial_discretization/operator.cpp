@@ -235,7 +235,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize_solver()
 {
-  // initialize linear solvers
+  // initialize linear solver
   if(param.solver == Solver::CG)
   {
     // initialize solver_data
@@ -262,16 +262,11 @@ Operator<dim, Number>::initialize_solver()
     AssertThrow(false, ExcMessage("Specified solver is not implemented!"));
   }
 
-  // initialize non-linear solver
+  // initialize Newton solver
   if(param.large_deformation)
   {
-    // TODO: move to parameters
-    NewtonSolverData newton_data;
-    newton_data.rel_tol = 1.e-5;
-
-    // initialize Newton solver
     newton_solver.reset(
-      new Newton(newton_data, residual_operator, linearized_operator, *linear_solver));
+      new Newton(param.newton_solver_data, residual_operator, linearized_operator, *linear_solver));
   }
 }
 
