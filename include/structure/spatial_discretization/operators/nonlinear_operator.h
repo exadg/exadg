@@ -68,6 +68,12 @@ public:
     displacement_lin.update_ghost_values();
   }
 
+  VectorType const &
+  get_solution_linearization() const
+  {
+    return displacement_lin;
+  }
+
 private:
   /*
    * Non-linear operator.

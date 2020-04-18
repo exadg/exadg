@@ -165,18 +165,21 @@ public:
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
-    parameters.load_increment            = 1.0;
+    parameters.load_increment            = 0.1;
     parameters.adjust_load_increment     = true;
     parameters.desired_newton_iterations = 20;
 
-    parameters.newton_solver_data                     = Newton::SolverData(1e4, 1.e-12, 1.e-6);
+    parameters.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
     parameters.solver                                 = Solver::CG;
-    parameters.solver_data                            = SolverData(1e4, 1.e-8, 1.e-2, 100);
-    parameters.preconditioner                         = Preconditioner::AMG; // Multigrid; // AMG;
+    parameters.solver_data                            = SolverData(1e3, 1.e-14, 1.e-6, 100);
+    parameters.preconditioner                         = Preconditioner::Multigrid;
     parameters.update_preconditioner                  = true;
     parameters.update_preconditioner_every_time_steps = 1;
-    parameters.update_preconditioner_every_newton_iterations = 100;
-    parameters.multigrid_data.type                           = MultigridType::pMG;
+    parameters.update_preconditioner_every_newton_iterations = 10;
+    parameters.multigrid_data.type                           = MultigridType::hpMG;
+    parameters.multigrid_data.coarse_problem.solver          = MultigridCoarseGridSolver::CG;
+    parameters.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
 
     this->param = parameters;
   }

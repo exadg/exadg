@@ -197,27 +197,42 @@ Operator<dim, Number>::initialize_preconditioner()
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
-    AssertThrow(!param.large_deformation,
-                ExcMessage("Geometric multigrid is not implemented for non-linear operator!"));
-
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber> Multigrid;
-
-    preconditioner.reset(new Multigrid(mpi_comm));
-    std::shared_ptr<Multigrid> mg_preconditioner =
-      std::dynamic_pointer_cast<Multigrid>(preconditioner);
-
     parallel::TriangulationBase<dim> const * tria =
       dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet;
-    mg_preconditioner->initialize(param.multigrid_data,
-                                  tria,
-                                  fe,
-                                  mapping,
-                                  elasticity_operator_linear,
-                                  &elasticity_operator_linear.get_data().bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
+    if(param.large_deformation)
+    {
+      typedef MultigridPreconditioner<dim, Number, MultigridNumber, true /* nonlinear */> Multigrid;
+
+      preconditioner.reset(new Multigrid(mpi_comm));
+      std::shared_ptr<Multigrid> mg_preconditioner =
+        std::dynamic_pointer_cast<Multigrid>(preconditioner);
+
+      mg_preconditioner->initialize(param.multigrid_data,
+                                    tria,
+                                    fe,
+                                    mapping,
+                                    elasticity_operator_nonlinear,
+                                    &elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
+                                    &this->periodic_face_pairs);
+    }
+    else
+    {
+      typedef MultigridPreconditioner<dim, Number, MultigridNumber, false /* linear */> Multigrid;
+
+      preconditioner.reset(new Multigrid(mpi_comm));
+      std::shared_ptr<Multigrid> mg_preconditioner =
+        std::dynamic_pointer_cast<Multigrid>(preconditioner);
+
+      mg_preconditioner->initialize(param.multigrid_data,
+                                    tria,
+                                    fe,
+                                    mapping,
+                                    elasticity_operator_linear,
+                                    &elasticity_operator_linear.get_data().bc->dirichlet_bc,
+                                    &this->periodic_face_pairs);
+    }
   }
   else if(param.preconditioner == Preconditioner::AMG)
   {

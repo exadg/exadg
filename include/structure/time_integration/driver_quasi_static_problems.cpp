@@ -40,7 +40,7 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::solve_problem()
 {
-  pcout << std::endl << "Solving quasi-static problem ..." << std::endl;
+  pcout << std::endl << "Solving quasi-static problem ..." << std::endl << std::flush;
 
   // perform post processing for initial solution
   postprocessing();
@@ -72,8 +72,8 @@ DriverQuasiStatic<dim, Number>::solve_problem()
         {
           load_increment *= 0.5;
           pcout << std::endl
-                << "Could not solve non-linear problem. Reduce load increment to " << load_increment
-                << std::flush;
+                << "Could not solve non-linear problem. Reduce load factor to "
+                << load_factor + load_increment << std::flush;
         }
       }
     }
@@ -137,6 +137,13 @@ DriverQuasiStatic<dim, Number>::solve(double const load_factor)
   // solve system of equations
   if(param.large_deformation)
   {
+    pcout << std::endl
+          << "______________________________________________________________________" << std::endl
+          << std::endl
+          << " Solve non-linear problem for load factor = " << std::scientific
+          << std::setprecision(4) << load_factor << std::endl
+          << "______________________________________________________________________" << std::endl;
+
     VectorType const_vector;
 
     bool const update_preconditioner =
@@ -152,11 +159,6 @@ DriverQuasiStatic<dim, Number>::solve(double const load_factor)
 
     // clang-format off
     pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Solved non-linear problem for load factor = " << std::scientific << std::setprecision(4) << load_factor << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
           << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
           << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
           << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl

@@ -190,15 +190,21 @@ public:
   {
     parameters.problem_type         = ProblemType::Steady;
     parameters.body_force           = use_volume_force;
-    parameters.large_deformation    = false;
+    parameters.large_deformation    = true;
     parameters.pull_back_body_force = false;
     parameters.pull_back_traction   = false;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
-    parameters.solver         = Solver::CG;
-    parameters.preconditioner = Preconditioner::AMG;
+    parameters.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    parameters.solver              = Solver::CG;
+    parameters.solver_data         = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    parameters.preconditioner      = Preconditioner::Multigrid;
+    parameters.multigrid_data.type = MultigridType::pMG;
+
+    parameters.update_preconditioner                         = true;
+    parameters.update_preconditioner_every_newton_iterations = 1;
 
     this->param = parameters;
   }
@@ -260,15 +266,14 @@ public:
     boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // left face
-    bool const        fix_vertical_displacement = false;
-    std::vector<bool> mask                      = {true, fix_vertical_displacement};
+    std::vector<bool> mask = {true, false};
     boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask));
 
     // right face
     if(boundary_type == "Dirichlet")
     {
-      std::vector<bool> mask = {true, false};
+      std::vector<bool> mask = {true, true};
       boundary_descriptor->dirichlet_bc.insert(pair(2, new DisplacementDBC<dim>(displacement)));
       boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, ComponentMask(mask)));
     }
