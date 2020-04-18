@@ -389,7 +389,7 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-12, 1.e-6); // TODO
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6); // TODO
 
     // linear solver
     param.solver_momentum                = SolverMomentum::FGMRES;
@@ -414,7 +414,7 @@ public:
 
     // nonlinear solver (Newton solver)
     param.newton_solver_data_coupled =
-      NewtonSolverData(100, 1.e-10, 1.e-6); // TODO did not converge with 1.e-12
+      Newton::SolverData(100, 1.e-10, 1.e-6); // TODO did not converge with 1.e-12
 
     // linear solver
     param.solver_coupled      = SolverCoupled::FGMRES;

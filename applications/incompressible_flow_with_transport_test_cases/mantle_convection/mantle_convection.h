@@ -221,7 +221,7 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-30, reltol);
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-30, reltol);
 
     // linear solver
     // use FGMRES for matrix-free BlockJacobi or Multigrid with Krylov methods as smoother/coarse
@@ -235,7 +235,7 @@ public:
     // COUPLED NAVIER-STOKES SOLVER
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = NewtonSolverData(100, 1.e-30, reltol);
+    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-30, reltol);
 
     // linear solver
     param.solver_coupled         = SolverCoupled::GMRES;

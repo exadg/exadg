@@ -272,8 +272,8 @@ Operator<dim, Number>::initialize_solver()
   // initialize Newton solver
   if(param.large_deformation)
   {
-    newton_solver.reset(
-      new Newton(param.newton_solver_data, residual_operator, linearized_operator, *linear_solver));
+    newton_solver.reset(new NewtonSolver(
+      param.newton_solver_data, residual_operator, linearized_operator, *linear_solver));
   }
 }
 
@@ -377,11 +377,14 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
 
   // call Newton solver
-  newton_solver->solve(sol,
-                       newton_iterations,
-                       linear_iterations,
-                       update_preconditioner,
-                       param.update_preconditioner_every_newton_iterations);
+  Newton::UpdateData update;
+  update.do_update             = update_preconditioner;
+  update.threshold_newton_iter = param.update_preconditioner_every_newton_iterations;
+
+  std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(sol, update);
+
+  newton_iterations = std::get<0>(iter);
+  linear_iterations = std::get<1>(iter);
 }
 
 template<int dim, typename Number>

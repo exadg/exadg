@@ -57,20 +57,10 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'initialize_vector_for_newton_solver'.
+   * 'evaluate_residual'.
    */
   void
-  initialize_vector_for_newton_solver(BlockVectorType & src) const
-  {
-    pde_operator->initialize_block_vector_velocity_pressure(src);
-  }
-
-  /*
-   * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual'.
-   */
-  void
-  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src) const
+  evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
   {
     pde_operator->evaluate_nonlinear_residual(
       dst, src, rhs_vector, time, scaling_factor_mass_matrix);
@@ -397,10 +387,10 @@ private:
   NonlinearOperatorCoupled<dim, Number> nonlinear_operator;
 
   // Newton solver
-  std::shared_ptr<NewtonSolver<BlockVectorType,
-                               NonlinearOperatorCoupled<dim, Number>,
-                               LinearOperatorCoupled<dim, Number>,
-                               IterativeSolverBase<BlockVectorType>>>
+  std::shared_ptr<Newton::Solver<BlockVectorType,
+                                 NonlinearOperatorCoupled<dim, Number>,
+                                 LinearOperatorCoupled<dim, Number>,
+                                 IterativeSolverBase<BlockVectorType>>>
     newton_solver;
 
   // Linear operator

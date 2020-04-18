@@ -536,7 +536,7 @@ public:
   /**************************************************************************************/
 
   // Newton solver data
-  NewtonSolverData newton_solver_data_momentum;
+  Newton::SolverData newton_solver_data_momentum;
 
   // description: see enum declaration
   SolverMomentum solver_momentum;
@@ -593,7 +593,7 @@ public:
   double scaling_factor_continuity;
 
   // solver tolerances Newton solver
-  NewtonSolverData newton_solver_data_coupled;
+  Newton::SolverData newton_solver_data_coupled;
 
   // description: see enum declaration
   SolverCoupled solver_coupled;

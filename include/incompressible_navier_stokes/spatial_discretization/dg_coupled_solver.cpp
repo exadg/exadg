@@ -122,10 +122,10 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
   {
     nonlinear_operator.initialize(*this);
 
-    newton_solver.reset(new NewtonSolver<BlockVectorType,
-                                         NonlinearOperatorCoupled<dim, Number>,
-                                         LinearOperatorCoupled<dim, Number>,
-                                         IterativeSolverBase<BlockVectorType>>(
+    newton_solver.reset(new Newton::Solver<BlockVectorType,
+                                           NonlinearOperatorCoupled<dim, Number>,
+                                           LinearOperatorCoupled<dim, Number>,
+                                           IterativeSolverBase<BlockVectorType>>(
       this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver));
   }
 }
@@ -261,11 +261,14 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
   // no need to update linear operator since this is a steady problem
 
   // solve nonlinear problem
-  newton_solver->solve(dst,
-                       newton_iterations,
-                       linear_iterations,
-                       update_preconditioner,
-                       this->param.update_preconditioner_coupled_every_newton_iter);
+  Newton::UpdateData update;
+  update.do_update             = update_preconditioner;
+  update.threshold_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
+
+  std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(dst, update);
+
+  newton_iterations = std::get<0>(iter);
+  linear_iterations = std::get<1>(iter);
 }
 
 template<int dim, typename Number>
@@ -286,11 +289,14 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   linear_operator.update(time, scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  newton_solver->solve(dst,
-                       newton_iterations,
-                       linear_iterations,
-                       update_preconditioner,
-                       this->param.update_preconditioner_coupled_every_newton_iter);
+  Newton::UpdateData update;
+  update.do_update             = update_preconditioner;
+  update.threshold_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
+
+  std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(dst, update);
+
+  newton_iterations = std::get<0>(iter);
+  linear_iterations = std::get<1>(iter);
 }
 
 template<int dim, typename Number>

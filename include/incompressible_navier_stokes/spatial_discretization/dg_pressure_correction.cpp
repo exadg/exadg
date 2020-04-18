@@ -198,13 +198,13 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
 
     // setup Newton solver
     momentum_newton_solver.reset(
-      new NewtonSolver<VectorType,
-                       NonlinearMomentumOperator<dim, Number>,
-                       MomentumOperator<dim, Number>,
-                       IterativeSolverBase<VectorType>>(this->param.newton_solver_data_momentum,
-                                                        nonlinear_operator,
-                                                        this->momentum_operator,
-                                                        *momentum_linear_solver));
+      new Newton::Solver<VectorType,
+                         NonlinearMomentumOperator<dim, Number>,
+                         MomentumOperator<dim, Number>,
+                         IterativeSolverBase<VectorType>>(this->param.newton_solver_data_momentum,
+                                                          nonlinear_operator,
+                                                          this->momentum_operator,
+                                                          *momentum_linear_solver));
   }
 }
 
@@ -264,11 +264,14 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
   this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  momentum_newton_solver->solve(dst,
-                                newton_iterations,
-                                linear_iterations,
-                                update_preconditioner,
-                                this->param.update_preconditioner_momentum_every_newton_iter);
+  Newton::UpdateData update;
+  update.do_update             = update_preconditioner;
+  update.threshold_newton_iter = this->param.update_preconditioner_momentum_every_newton_iter;
+
+  std::tuple<unsigned int, unsigned int> iter = momentum_newton_solver->solve(dst, update);
+
+  newton_iterations = std::get<0>(iter);
+  linear_iterations = std::get<1>(iter);
 }
 
 template<int dim, typename Number>

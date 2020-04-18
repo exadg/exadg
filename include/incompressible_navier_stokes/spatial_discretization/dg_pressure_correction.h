@@ -51,20 +51,10 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'initialize_vector_for_newton_solver'.
+   * 'evaluate_residual'.
    */
   void
-  initialize_vector_for_newton_solver(VectorType & src) const
-  {
-    pde_operator->initialize_vector_velocity(src);
-  }
-
-  /*
-   * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual'.
-   */
-  void
-  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src)
+  evaluate_residual(VectorType & dst, VectorType const & src)
   {
     pde_operator->evaluate_nonlinear_residual(
       dst, src, rhs_vector, time, scaling_factor_mass_matrix);
@@ -258,10 +248,10 @@ private:
   // Nonlinear operator and solver
   NonlinearMomentumOperator<dim, Number> nonlinear_operator;
 
-  std::shared_ptr<NewtonSolver<VectorType,
-                               NonlinearMomentumOperator<dim, Number>,
-                               MomentumOperator<dim, Number>,
-                               IterativeSolverBase<VectorType>>>
+  std::shared_ptr<Newton::Solver<VectorType,
+                                 NonlinearMomentumOperator<dim, Number>,
+                                 MomentumOperator<dim, Number>,
+                                 IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
 
   // linear solver (momentum_operator serves as linear operator)

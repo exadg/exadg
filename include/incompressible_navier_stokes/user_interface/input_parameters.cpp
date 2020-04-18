@@ -164,7 +164,7 @@ InputParameters::InputParameters()
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
-    newton_solver_data_momentum(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
+    newton_solver_data_momentum(Newton::SolverData(1e2, 1.e-12, 1.e-6)),
     solver_momentum(SolverMomentum::GMRES),
     solver_data_momentum(SolverData(1e4, 1.e-12, 1.e-6, 100)),
     preconditioner_momentum(MomentumPreconditioner::InverseMassMatrix),
@@ -186,7 +186,7 @@ InputParameters::InputParameters()
     scaling_factor_continuity(1.0),
 
     // nonlinear solver (Newton solver)
-    newton_solver_data_coupled(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
+    newton_solver_data_coupled(Newton::SolverData(1e2, 1.e-12, 1.e-6)),
 
     // linear solver
     solver_coupled(SolverCoupled::GMRES),

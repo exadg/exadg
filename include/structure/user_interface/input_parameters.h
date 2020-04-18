@@ -47,7 +47,7 @@ public:
       mapping(MappingType::Affine),
 
       // SOLVER
-      newton_solver_data(NewtonSolverData(1e4, 1.e-12, 1.e-6)),
+      newton_solver_data(Newton::SolverData(1e4, 1.e-12, 1.e-6)),
       solver(Solver::Undefined),
       solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner(Preconditioner::AMG),
@@ -275,7 +275,7 @@ public:
   /**************************************************************************************/
 
   // Newton solver data (only relevant for nonlinear problems)
-  NewtonSolverData newton_solver_data;
+  Newton::SolverData newton_solver_data;
 
   // description: see enum declaration
   Solver solver;

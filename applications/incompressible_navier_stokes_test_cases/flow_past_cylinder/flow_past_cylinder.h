@@ -379,7 +379,7 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = NewtonSolverData(100, ABS_TOL, REL_TOL);
+    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
     param.solver_momentum                  = SolverMomentum::CG; // FGMRES;
@@ -400,7 +400,7 @@ public:
     // COUPLED NAVIER-STOKES SOLVER
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = NewtonSolverData(100, ABS_TOL, REL_TOL);
+    param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
     param.solver_coupled      = SolverCoupled::FGMRES; // FGMRES;

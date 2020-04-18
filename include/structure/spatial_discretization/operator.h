@@ -73,20 +73,10 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'initialize_vector_for_newton_solver'.
+   * 'evaluate_residual'.
    */
   void
-  initialize_vector_for_newton_solver(VectorType & src) const
-  {
-    pde_operator->initialize_dof_vector(src);
-  }
-
-  /*
-   * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual'.
-   */
-  void
-  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src) const
+  evaluate_residual(VectorType & dst, VectorType const & src) const
   {
     pde_operator->evaluate_nonlinear_residual(dst, src, *const_vector, time);
   }
@@ -346,13 +336,13 @@ private:
   /*
    * Solution of nonlinear systems of equations
    */
-  typedef NewtonSolver<VectorType,
-                       ResidualOperator<dim, Number>,
-                       LinearizedOperator<dim, Number>,
-                       IterativeSolverBase<VectorType>>
-    Newton;
+  typedef Newton::Solver<VectorType,
+                         ResidualOperator<dim, Number>,
+                         LinearizedOperator<dim, Number>,
+                         IterativeSolverBase<VectorType>>
+    NewtonSolver;
 
-  std::shared_ptr<Newton> newton_solver;
+  std::shared_ptr<NewtonSolver> newton_solver;
 
   /*
    * Solution of linear systems of equations

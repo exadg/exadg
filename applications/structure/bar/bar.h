@@ -190,7 +190,7 @@ public:
   {
     parameters.problem_type         = ProblemType::Steady;
     parameters.body_force           = use_volume_force;
-    parameters.large_deformation    = true;
+    parameters.large_deformation    = false;
     parameters.pull_back_body_force = false;
     parameters.pull_back_traction   = false;
 
@@ -198,7 +198,7 @@ public:
     parameters.mapping            = MappingType::Affine;
 
     parameters.solver         = Solver::CG;
-    parameters.preconditioner = Preconditioner::None; // Preconditioner::AMG;
+    parameters.preconditioner = Preconditioner::AMG;
 
     this->param = parameters;
   }
