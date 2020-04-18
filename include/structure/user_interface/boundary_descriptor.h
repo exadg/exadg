@@ -45,33 +45,6 @@ struct BoundaryDescriptor
     return BoundaryType::Undefined;
   }
 
-  // TODO adapt interfaces of this function to the rest of the code
-  inline DEAL_II_ALWAYS_INLINE //
-    std::pair<BoundaryType, std::shared_ptr<Function<dim>>>
-    get_boundary(types::boundary_id const & boundary_id) const
-  {
-    // process dirichlet bc
-    {
-      auto res = this->dirichlet_bc.find(boundary_id);
-
-      if(res != this->dirichlet_bc.end())
-        return {BoundaryType::Dirichlet, res->second};
-    }
-
-    // process neumann bc
-    {
-      auto res = this->neumann_bc.find(boundary_id);
-      if(res != this->neumann_bc.end())
-        return {BoundaryType::Neumann, res->second};
-    }
-
-    std::cout << boundary_id << std::endl;
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-
-    return {BoundaryType::Undefined,
-            std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>(dim))};
-  }
-
   inline DEAL_II_ALWAYS_INLINE //
     void
     verify_boundary_conditions(types::boundary_id const             boundary_id,
