@@ -122,81 +122,57 @@ run(std::string const & input_file,
 int
 main(int argc, char ** argv)
 {
-  try
+  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+  MPI_Comm mpi_comm(MPI_COMM_WORLD);
+
+  // check if parameter file is provided
+
+  // ./elasticity
+  AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
+
+  // ./elasticity --help
+  if(argc == 2 && std::string(argv[1]) == "--help")
   {
-    dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      create_input_file();
 
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+    return 0;
+  }
+  // ./elasticity --help NameOfApplication
+  else if(argc == 3 && std::string(argv[1]) == "--help")
+  {
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      create_input_file(argv[2]);
 
-    // check if parameter file is provided
+    return 0;
+  }
 
-    // ./elasticity
-    AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
+  // the second argument is the input-file
+  // ./elasticity InputFile
+  std::string      input_file = std::string(argv[1]);
+  ConvergenceStudy study(input_file);
 
-    // ./elasticity --help
-    if(argc == 2 && std::string(argv[1]) == "--help")
+  // k-refinement
+  for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
+  {
+    // h-refinement
+    for(unsigned int refine_space = study.refine_space_min; refine_space <= study.refine_space_max;
+        ++refine_space)
     {
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file();
-
-      return 0;
-    }
-    // ./elasticity --help NameOfApplication
-    else if(argc == 3 && std::string(argv[1]) == "--help")
-    {
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file(argv[2]);
-
-      return 0;
-    }
-
-    // the second argument is the input-file
-    // ./elasticity InputFile
-    std::string      input_file = std::string(argv[1]);
-    ConvergenceStudy study(input_file);
-
-    // k-refinement
-    for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
-    {
-      // h-refinement
-      for(unsigned int refine_space = study.refine_space_min;
-          refine_space <= study.refine_space_max;
-          ++refine_space)
-      {
-        // run the simulation
-        if(study.dim == 2 && study.precision == "float")
-          run<2, float>(input_file, degree, refine_space, mpi_comm);
-        else if(study.dim == 2 && study.precision == "double")
-          run<2, double>(input_file, degree, refine_space, mpi_comm);
-        else if(study.dim == 3 && study.precision == "float")
-          run<3, float>(input_file, degree, refine_space, mpi_comm);
-        else if(study.dim == 3 && study.precision == "double")
-          run<3, double>(input_file, degree, refine_space, mpi_comm);
-        else
-          AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
-      }
+      // run the simulation
+      if(study.dim == 2 && study.precision == "float")
+        run<2, float>(input_file, degree, refine_space, mpi_comm);
+      else if(study.dim == 2 && study.precision == "double")
+        run<2, double>(input_file, degree, refine_space, mpi_comm);
+      else if(study.dim == 3 && study.precision == "float")
+        run<3, float>(input_file, degree, refine_space, mpi_comm);
+      else if(study.dim == 3 && study.precision == "double")
+        run<3, double>(input_file, degree, refine_space, mpi_comm);
+      else
+        AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
     }
   }
-  catch(std::exception & exc)
-  {
-    std::cerr << std::endl
-              << std::endl
-              << "----------------------------------------------------" << std::endl;
-    std::cerr << "Exception on processing: " << std::endl
-              << exc.what() << std::endl
-              << "Aborting!" << std::endl
-              << "----------------------------------------------------" << std::endl;
-    return 1;
-  }
-  catch(...)
-  {
-    std::cerr << std::endl
-              << std::endl
-              << "----------------------------------------------------" << std::endl;
-    std::cerr << "Unknown exception!" << std::endl
-              << "Aborting!" << std::endl
-              << "----------------------------------------------------" << std::endl;
-    return 1;
-  }
+
   return 0;
 }

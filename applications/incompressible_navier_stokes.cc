@@ -238,113 +238,88 @@ run(std::string const & input_file,
 int
 main(int argc, char ** argv)
 {
-  try
-  {
-    Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+  Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+  MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
-    // new communicator
-    MPI_Comm sub_comm;
+  // new communicator
+  MPI_Comm sub_comm;
 
 #ifdef USE_SUB_COMMUNICATOR
-    // use stride of n cores
-    const int n = 48; // 24;
+  // use stride of n cores
+  const int n = 48; // 24;
 
-    const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
-    const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
-    const int flag     = 1;
-    const int new_rank = rank + (rank % n) * size;
+  const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
+  const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
+  const int flag     = 1;
+  const int new_rank = rank + (rank % n) * size;
 
-    // split default communicator into two groups
-    MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);
+  // split default communicator into two groups
+  MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);
 
-    if(rank == 0)
-      std::cout << std::endl << "Created sub communicator with stride of " << n << std::endl;
+  if(rank == 0)
+    std::cout << std::endl << "Created sub communicator with stride of " << n << std::endl;
 #else
-    sub_comm = mpi_comm;
+  sub_comm = mpi_comm;
 #endif
 
-    // check if parameter file is provided
+  // check if parameter file is provided
 
-    // ./incompressible_navier_stokes
-    AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
+  // ./incompressible_navier_stokes
+  AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
 
-    // ./incompressible_navier_stokes --help
-    if(argc == 2 && std::string(argv[1]) == "--help")
+  // ./incompressible_navier_stokes --help
+  if(argc == 2 && std::string(argv[1]) == "--help")
+  {
+    if(dealii::Utilities::MPI::this_mpi_process(sub_comm) == 0)
+      create_input_file();
+
+    return 0;
+  }
+  // ./incompressible_navier_stokes --help NameOfApplication
+  else if(argc == 3 && std::string(argv[1]) == "--help")
+  {
+    if(dealii::Utilities::MPI::this_mpi_process(sub_comm) == 0)
+      create_input_file(argv[2]);
+
+    return 0;
+  }
+
+  // the second argument is the input-file
+  // ./incompressible_navier_stokes InputFile
+  std::string      input_file = std::string(argv[1]);
+  ConvergenceStudy study(input_file);
+
+  // k-refinement
+  for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
+  {
+    // h-refinement
+    for(unsigned int refine_space = study.refine_space_min; refine_space <= study.refine_space_max;
+        ++refine_space)
     {
-      if(dealii::Utilities::MPI::this_mpi_process(sub_comm) == 0)
-        create_input_file();
-
-      return 0;
-    }
-    // ./incompressible_navier_stokes --help NameOfApplication
-    else if(argc == 3 && std::string(argv[1]) == "--help")
-    {
-      if(dealii::Utilities::MPI::this_mpi_process(sub_comm) == 0)
-        create_input_file(argv[2]);
-
-      return 0;
-    }
-
-    // the second argument is the input-file
-    // ./incompressible_navier_stokes InputFile
-    std::string      input_file = std::string(argv[1]);
-    ConvergenceStudy study(input_file);
-
-    // k-refinement
-    for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
-    {
-      // h-refinement
-      for(unsigned int refine_space = study.refine_space_min;
-          refine_space <= study.refine_space_max;
-          ++refine_space)
+      // dt-refinement
+      for(unsigned int refine_time = study.refine_time_min; refine_time <= study.refine_time_max;
+          ++refine_time)
       {
-        // dt-refinement
-        for(unsigned int refine_time = study.refine_time_min; refine_time <= study.refine_time_max;
-            ++refine_time)
-        {
-          // run the simulation
-          if(study.dim == 2 && study.precision == "float")
-            run<2, float>(input_file, degree, refine_space, refine_time, sub_comm);
-          else if(study.dim == 2 && study.precision == "double")
-            run<2, double>(input_file, degree, refine_space, refine_time, sub_comm);
-          else if(study.dim == 3 && study.precision == "float")
-            run<3, float>(input_file, degree, refine_space, refine_time, sub_comm);
-          else if(study.dim == 3 && study.precision == "double")
-            run<3, double>(input_file, degree, refine_space, refine_time, sub_comm);
-          else
-            AssertThrow(false,
-                        ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
-        }
+        // run the simulation
+        if(study.dim == 2 && study.precision == "float")
+          run<2, float>(input_file, degree, refine_space, refine_time, sub_comm);
+        else if(study.dim == 2 && study.precision == "double")
+          run<2, double>(input_file, degree, refine_space, refine_time, sub_comm);
+        else if(study.dim == 3 && study.precision == "float")
+          run<3, float>(input_file, degree, refine_space, refine_time, sub_comm);
+        else if(study.dim == 3 && study.precision == "double")
+          run<3, double>(input_file, degree, refine_space, refine_time, sub_comm);
+        else
+          AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
       }
     }
+  }
 
 #ifdef USE_SUB_COMMUNICATOR
-    // free communicator
-    MPI_Comm_free(&sub_comm);
+  // free communicator
+  MPI_Comm_free(&sub_comm);
 #endif
-  }
-  catch(std::exception & exc)
-  {
-    std::cerr << std::endl
-              << std::endl
-              << "----------------------------------------------------" << std::endl;
-    std::cerr << "Exception on processing: " << std::endl
-              << exc.what() << std::endl
-              << "Aborting!" << std::endl
-              << "----------------------------------------------------" << std::endl;
-    return 1;
-  }
-  catch(...)
-  {
-    std::cerr << std::endl
-              << std::endl
-              << "----------------------------------------------------" << std::endl;
-    std::cerr << "Unknown exception!" << std::endl
-              << "Aborting!" << std::endl
-              << "----------------------------------------------------" << std::endl;
-    return 1;
-  }
+
   return 0;
 }

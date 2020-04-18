@@ -128,84 +128,61 @@ run(ThroughputStudy const & throughput,
 int
 main(int argc, char ** argv)
 {
-  try
+  Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+  MPI_Comm mpi_comm(MPI_COMM_WORLD);
+
+  // check if parameter file is provided
+
+  // ./incompressible_navier_stokes_throughput
+  AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
+
+  // ./incompressible_navier_stokes_throughput --help
+  if(argc == 2 && std::string(argv[1]) == "--help")
   {
-    Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      create_input_file();
 
-    MPI_Comm mpi_comm(MPI_COMM_WORLD);
-
-    // check if parameter file is provided
-
-    // ./incompressible_navier_stokes_throughput
-    AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
-
-    // ./incompressible_navier_stokes_throughput --help
-    if(argc == 2 && std::string(argv[1]) == "--help")
-    {
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file();
-
-      return 0;
-    }
-    // ./incompressible_navier_stokes_throughput --help NameOfApplication
-    else if(argc == 3 && std::string(argv[1]) == "--help")
-    {
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file(argv[2]);
-
-      return 0;
-    }
-
-    // the second argument is the input-file
-    // ./incompressible_navier_stokes_throughput InputFile
-    std::string     input_file = std::string(argv[1]);
-    ParameterStudy  study(input_file);
-    ThroughputStudy throughput(input_file);
-
-    // fill resolution vector depending on the operator_type
-    study.fill_resolution_vector(&IncNS::get_dofs_per_element, throughput.operator_type);
-
-    // loop over resolutions vector and run simulations
-    for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
-    {
-      unsigned int const degree       = std::get<0>(*iter);
-      unsigned int const refine_space = std::get<1>(*iter);
-      unsigned int const n_cells_1d   = std::get<2>(*iter);
-
-      if(study.dim == 2 && study.precision == "float")
-        run<2, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-      else if(study.dim == 2 && study.precision == "double")
-        run<2, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-      else if(study.dim == 3 && study.precision == "float")
-        run<3, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-      else if(study.dim == 3 && study.precision == "double")
-        run<3, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-      else
-        AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
-    }
-
-    throughput.print_results(mpi_comm);
+    return 0;
   }
-  catch(std::exception & exc)
+  // ./incompressible_navier_stokes_throughput --help NameOfApplication
+  else if(argc == 3 && std::string(argv[1]) == "--help")
   {
-    std::cerr << std::endl
-              << std::endl
-              << "----------------------------------------------------" << std::endl;
-    std::cerr << "Exception on processing: " << std::endl
-              << exc.what() << std::endl
-              << "Aborting!" << std::endl
-              << "----------------------------------------------------" << std::endl;
-    return 1;
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      create_input_file(argv[2]);
+
+    return 0;
   }
-  catch(...)
+
+  // the second argument is the input-file
+  // ./incompressible_navier_stokes_throughput InputFile
+  std::string     input_file = std::string(argv[1]);
+  ParameterStudy  study(input_file);
+  ThroughputStudy throughput(input_file);
+
+  // fill resolution vector depending on the operator_type
+  study.fill_resolution_vector(&IncNS::get_dofs_per_element, throughput.operator_type);
+
+  // loop over resolutions vector and run simulations
+  for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
   {
-    std::cerr << std::endl
-              << std::endl
-              << "----------------------------------------------------" << std::endl;
-    std::cerr << "Unknown exception!" << std::endl
-              << "Aborting!" << std::endl
-              << "----------------------------------------------------" << std::endl;
-    return 1;
+    unsigned int const degree       = std::get<0>(*iter);
+    unsigned int const refine_space = std::get<1>(*iter);
+    unsigned int const n_cells_1d   = std::get<2>(*iter);
+
+    if(study.dim == 2 && study.precision == "float")
+      run<2, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+    else if(study.dim == 2 && study.precision == "double")
+      run<2, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+    else if(study.dim == 3 && study.precision == "float")
+      run<3, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+    else if(study.dim == 3 && study.precision == "double")
+      run<3, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+    else
+      AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }
+
+  throughput.print_results(mpi_comm);
+
   return 0;
 }
