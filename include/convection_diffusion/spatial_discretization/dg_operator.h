@@ -61,14 +61,14 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::TriangulationBase<dim> const &          triangulation,
-             Mapping<dim> const &                              mapping,
-             unsigned int const                                degree,
-             PeriodicFaces const                               periodic_face_pairs,
-             std::shared_ptr<BoundaryDescriptor<0, dim>> const boundary_descriptor,
-             std::shared_ptr<FieldFunctions<dim>> const        field_functions,
-             InputParameters const &                           param,
-             MPI_Comm const &                                  mpi_comm);
+  DGOperator(parallel::TriangulationBase<dim> const &       triangulation,
+             Mapping<dim> const &                           mapping,
+             unsigned int const                             degree,
+             PeriodicFaces const                            periodic_face_pairs,
+             std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+             std::shared_ptr<FieldFunctions<dim>> const     field_functions,
+             InputParameters const &                        param,
+             MPI_Comm const &                               mpi_comm);
 
 
   void
@@ -331,8 +331,8 @@ private:
   /*
    * User interface: Boundary conditions and field functions.
    */
-  std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>        field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
 
   /*
    * List of input parameters.

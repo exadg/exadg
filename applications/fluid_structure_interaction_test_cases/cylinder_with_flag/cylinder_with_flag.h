@@ -565,7 +565,7 @@ public:
 
 
   void set_boundary_conditions_poisson(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<1, dim>> boundary_descriptor)
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

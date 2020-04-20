@@ -1,6 +1,6 @@
 #include "laplace_operator.h"
 
-#include "../../convection_diffusion/spatial_discretization/operators/weak_boundary_conditions.h"
+#include "weak_boundary_conditions.h"
 
 namespace Poisson
 {
@@ -184,16 +184,29 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     value value_m =
-      ConvDiff::calculate_interior_value<dim, Number, n_components, rank>(q,
+      calculate_interior_value<dim, Number, n_components, rank>(q, integrator_m, operator_type);
+    value value_p = calculate_exterior_value<dim, Number, n_components, rank>(value_m,
+                                                                              q,
+                                                                              integrator_m,
+                                                                              operator_type,
+                                                                              boundary_type,
+                                                                              boundary_id,
+                                                                              this->data.bc,
+                                                                              this->time);
+
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+
+    value normal_gradient_m =
+      calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
                                                                           integrator_m,
                                                                           operator_type);
-    value value_p =
-      ConvDiff::calculate_exterior_value<dim, Number, n_components, rank>(value_m,
+    value normal_gradient_p =
+      calculate_exterior_normal_gradient<dim, Number, n_components, rank>(normal_gradient_m,
                                                                           q,
                                                                           integrator_m,
                                                                           operator_type,
@@ -201,23 +214,6 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
                                                                           boundary_id,
                                                                           this->data.bc,
                                                                           this->time);
-
-    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
-
-    value normal_gradient_m =
-      ConvDiff::calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
-                                                                                    integrator_m,
-                                                                                    operator_type);
-    value normal_gradient_p =
-      ConvDiff::calculate_exterior_normal_gradient<dim, Number, n_components, rank>(
-        normal_gradient_m,
-        q,
-        integrator_m,
-        operator_type,
-        boundary_type,
-        boundary_id,
-        this->data.bc,
-        this->time);
 
     value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
@@ -233,11 +229,11 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   IntegratorFace &           integrator_m,
   types::boundary_id const & boundary_id) const
 {
-  ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    value neumann_value = ConvDiff::calculate_neumann_value<dim, Number, n_components, rank>(
+    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
       q, integrator_m, boundary_type, boundary_id, this->data.bc, this->time);
 
     integrator_m.submit_value(-neumann_value, q);
@@ -296,14 +292,12 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     value value_m =
-      ConvDiff::calculate_interior_value<dim, Number, n_components, rank>(q,
-                                                                          integrator_m,
-                                                                          operator_type);
+      calculate_interior_value<dim, Number, n_components, rank>(q, integrator_m, operator_type);
 
     // deviating from the standard boundary_face_loop_inhom_operator() function,
     // because the boundary condition comes from the vector src
@@ -311,11 +305,11 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
            ExcMessage("This function is only implemented for OperatorType::inhomogeneous."));
 
     value value_p = value();
-    if(boundary_type == ConvDiff::BoundaryType::Dirichlet)
+    if(boundary_type == BoundaryType::Dirichlet)
     {
       value_p = 2.0 * integrator_m.get_value(q);
     }
-    else if(boundary_type == ConvDiff::BoundaryType::Neumann)
+    else if(boundary_type == BoundaryType::Neumann)
     {
       // do nothing
     }
@@ -327,19 +321,18 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
     value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
     value normal_gradient_m =
-      ConvDiff::calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
-                                                                                    integrator_m,
-                                                                                    operator_type);
+      calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
+                                                                          integrator_m,
+                                                                          operator_type);
     value normal_gradient_p =
-      ConvDiff::calculate_exterior_normal_gradient<dim, Number, n_components, rank>(
-        normal_gradient_m,
-        q,
-        integrator_m,
-        operator_type,
-        boundary_type,
-        boundary_id,
-        this->data.bc,
-        this->time);
+      calculate_exterior_normal_gradient<dim, Number, n_components, rank>(normal_gradient_m,
+                                                                          q,
+                                                                          integrator_m,
+                                                                          operator_type,
+                                                                          boundary_type,
+                                                                          boundary_id,
+                                                                          this->data.bc,
+                                                                          this->time);
 
     value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);

@@ -1,22 +1,22 @@
 /*
  * weak_boundary_conditions.h
  *
- *  Created on: Jun 4, 2019
+ *  Created on: 19.04.2020
  *      Author: fehn
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
-#define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
+#ifndef INCLUDE_POISSON_SPATIAL_DISCRETIZATION_WEAK_BOUNDARY_CONDITIONS_H_
+#define INCLUDE_POISSON_SPATIAL_DISCRETIZATION_WEAK_BOUNDARY_CONDITIONS_H_
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../operators/operator_type.h"
+#include "../../operators/operator_type.h"
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../functionalities/evaluate_functions.h"
 
-#include "../../user_interface/boundary_descriptor.h"
+#include "../user_interface/boundary_descriptor.h"
 
-namespace ConvDiff
+namespace Poisson
 {
 /*
  *  The following two functions calculate the interior_value/exterior_value
@@ -33,57 +33,71 @@ namespace ConvDiff
  *  | inhomogeneous operator  | phi⁻ = 0, phi⁺ = 2g  | phi⁻ = 0, phi⁺ = 0 |
  *  +-------------------------+----------------------+--------------------+
  */
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_interior_value(unsigned int const                     q,
-                           FaceIntegrator<dim, 1, Number> const & integrator,
-                           OperatorType const &                   operator_type)
+  Tensor<rank, dim, VectorizedArray<Number>>
+  calculate_interior_value(unsigned int const                                q,
+                           FaceIntegrator<dim, n_components, Number> const & integrator,
+                           OperatorType const &                              operator_type)
 {
-  VectorizedArray<Number> value_m = make_vectorized_array<Number>(0.0);
-
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
-    value_m = integrator.get_value(q);
+    return integrator.get_value(q);
   }
   else if(operator_type == OperatorType::inhomogeneous)
   {
-    // do nothing (value_m already initialized with 0.0)
+    return Tensor<rank, dim, VectorizedArray<Number>>();
   }
   else
   {
     AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
   }
 
-  return value_m;
+  return Tensor<rank, dim, VectorizedArray<Number>>();
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_exterior_value(VectorizedArray<Number> const &                value_m,
-                           unsigned int const                             q,
-                           FaceIntegrator<dim, 1, Number> const &         integrator,
-                           OperatorType const &                           operator_type,
-                           BoundaryType const &                           boundary_type,
-                           types::boundary_id const                       boundary_id,
-                           std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
-                           double const &                                 time)
+  Tensor<rank, dim, VectorizedArray<Number>>
+  calculate_exterior_value(Tensor<rank, dim, VectorizedArray<Number>> const &   value_m,
+                           unsigned int const                                   q,
+                           FaceIntegrator<dim, n_components, Number> const &    integrator,
+                           OperatorType const &                                 operator_type,
+                           BoundaryType const &                                 boundary_type,
+                           types::boundary_id const                             boundary_id,
+                           std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+                           double const &                                       time)
 {
-  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
+  Tensor<rank, dim, VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryType::Dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      VectorizedArray<Number> g;
+      Tensor<rank, dim, VectorizedArray<Number>> g;
 
-      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
-      auto q_points = integrator.quadrature_point(q);
+      if(boundary_type == BoundaryType::Dirichlet)
+      {
+        auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+        auto q_points = integrator.quadrature_point(q);
 
-      g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, time);
+        g = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
+      }
+      else if(boundary_type == BoundaryType::DirichletMortar)
+      {
+        // TODO get face and quad_index from integrator
+        AssertThrow(false, ExcMessage("not implemented."));
+        auto               bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        unsigned int const face       = 0;
+        unsigned int const quad_index = 0;
+        g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
 
-      value_p = -value_m + 2.0 * g;
+      value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
     }
     else if(operator_type == OperatorType::homogeneous)
     {
@@ -133,14 +147,14 @@ inline DEAL_II_ALWAYS_INLINE //
    *  +-------------------------+-----------------------------------------------+------------------------------------------------------+
    */
 // clang-format on
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_interior_normal_gradient(unsigned int const                     q,
-                                     FaceIntegrator<dim, 1, Number> const & integrator,
-                                     OperatorType const &                   operator_type)
+  Tensor<rank, dim, VectorizedArray<Number>>
+  calculate_interior_normal_gradient(unsigned int const                                q,
+                                     FaceIntegrator<dim, n_components, Number> const & integrator,
+                                     OperatorType const & operator_type)
 {
-  VectorizedArray<Number> normal_gradient_m = make_vectorized_array<Number>(0.0);
+  Tensor<rank, dim, VectorizedArray<Number>> normal_gradient_m;
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
@@ -158,22 +172,22 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_m;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
+  Tensor<rank, dim, VectorizedArray<Number>>
   calculate_exterior_normal_gradient(
-    VectorizedArray<Number> const &                normal_gradient_m,
-    unsigned int const                             q,
-    FaceIntegrator<dim, 1, Number> const &         integrator,
-    OperatorType const &                           operator_type,
-    BoundaryType const &                           boundary_type,
-    types::boundary_id const                       boundary_id,
-    std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
-    double const &                                 time)
+    Tensor<rank, dim, VectorizedArray<Number>> const &   normal_gradient_m,
+    unsigned int const                                   q,
+    FaceIntegrator<dim, n_components, Number> const &    integrator,
+    OperatorType const &                                 operator_type,
+    BoundaryType const &                                 boundary_type,
+    types::boundary_id const                             boundary_id,
+    std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+    double const &                                       time)
 {
-  VectorizedArray<Number> normal_gradient_p = make_vectorized_array<Number>(0.0);
+  Tensor<rank, dim, VectorizedArray<Number>> normal_gradient_p;
 
-  if(boundary_type == BoundaryType::Dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)
   {
     normal_gradient_p = normal_gradient_m;
   }
@@ -184,9 +198,9 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      auto h = FunctionEvaluator<0, dim, Number>::value(bc, q_points, time);
+      auto h = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
 
-      normal_gradient_p = -normal_gradient_m + 2.0 * h;
+      normal_gradient_p = -normal_gradient_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
     }
     else if(operator_type == OperatorType::homogeneous)
     {
@@ -205,7 +219,43 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_p;
 }
 
-} // namespace ConvDiff
+/*
+ * This function calculates the Neumann boundary value and is required in case of continuous
+ * Galerkin discretizations.
+ */
+template<int dim, typename Number, int n_components, int rank>
+inline DEAL_II_ALWAYS_INLINE //
+  Tensor<rank, dim, VectorizedArray<Number>>
+  calculate_neumann_value(unsigned int const                                   q,
+                          FaceIntegrator<dim, n_components, Number> const &    integrator,
+                          BoundaryType const &                                 boundary_type,
+                          types::boundary_id const                             boundary_id,
+                          std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+                          double const &                                       time)
+{
+  Tensor<rank, dim, VectorizedArray<Number>> normal_gradient;
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_ \
-        */
+  if(boundary_type == BoundaryType::Neumann)
+  {
+    auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
+    auto q_points = integrator.quadrature_point(q);
+
+    normal_gradient = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
+  }
+  else
+  {
+    // do nothing
+
+    Assert(boundary_type == BoundaryType::Dirichlet ||
+             boundary_type == BoundaryType::DirichletMortar,
+           ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return normal_gradient;
+}
+
+} // namespace Poisson
+
+
+
+#endif /* INCLUDE_POISSON_SPATIAL_DISCRETIZATION_WEAK_BOUNDARY_CONDITIONS_H_ */

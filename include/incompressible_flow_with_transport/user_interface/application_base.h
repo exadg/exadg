@@ -50,9 +50,10 @@ public:
   set_input_parameters_scalar(ConvDiff::InputParameters & parameters,
                               unsigned int const          scalar_index = 0) = 0;
 
-  virtual void set_boundary_conditions_scalar(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor,
-    unsigned int const                                    scalar_index = 0) = 0;
+  virtual void
+  set_boundary_conditions_scalar(
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
+    unsigned int const                                 scalar_index = 0) = 0;
 
   virtual void
   set_field_functions_scalar(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions,

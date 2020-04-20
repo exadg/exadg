@@ -225,15 +225,15 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value<dim, Number, 1, 0>(q, integrator_m, operator_type);
-    scalar value_p = calculate_exterior_value<dim, Number, 1, 0>(value_m,
-                                                                 q,
-                                                                 integrator_m,
-                                                                 operator_type,
-                                                                 boundary_type,
-                                                                 boundary_id,
-                                                                 this->data.bc,
-                                                                 this->time);
+    scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
+    scalar value_p = calculate_exterior_value(value_m,
+                                              q,
+                                              integrator_m,
+                                              operator_type,
+                                              boundary_type,
+                                              boundary_id,
+                                              this->data.bc,
+                                              this->time);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 

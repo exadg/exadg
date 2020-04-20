@@ -79,8 +79,8 @@ private:
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;
 
-  std::shared_ptr<Poisson::FieldFunctions<dim>>         poisson_field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
 
   // static mesh for Poisson problem
   std::shared_ptr<Mesh<dim>> poisson_mesh;

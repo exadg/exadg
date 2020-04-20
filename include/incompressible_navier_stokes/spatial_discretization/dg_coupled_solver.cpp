@@ -784,8 +784,8 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   // pressure convection-diffusion operator
 
   // fill boundary descriptor
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor;
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
   // For the pressure convection-diffusion operator the homogeneous operators are applied, so there
   // is no need to specify functions for boundary conditions since they will never be used.

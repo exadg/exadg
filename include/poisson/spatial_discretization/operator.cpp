@@ -6,14 +6,14 @@ namespace Poisson
 {
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
-  parallel::TriangulationBase<dim> const &                       triangulation_in,
-  Mapping<dim> const &                                           mapping_in,
-  unsigned int const                                             degree_in,
-  PeriodicFaces const                                            periodic_face_pairs_in,
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const                     field_functions_in,
-  Poisson::InputParameters const &                               param_in,
-  MPI_Comm const &                                               mpi_comm_in)
+  parallel::TriangulationBase<dim> const &             triangulation_in,
+  Mapping<dim> const &                                 mapping_in,
+  unsigned int const                                   degree_in,
+  PeriodicFaces const                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const           field_functions_in,
+  InputParameters const &                              param_in,
+  MPI_Comm const &                                     mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
     degree(degree_in),

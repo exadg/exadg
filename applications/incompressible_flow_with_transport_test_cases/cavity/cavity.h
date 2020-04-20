@@ -392,9 +392,10 @@ public:
     return pp;
   }
 
-  void set_boundary_conditions_scalar(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor,
-    unsigned int                                          scalar_index = 0)
+  void
+  set_boundary_conditions_scalar(
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
+    unsigned int                                       scalar_index = 0)
   {
     (void)scalar_index; // only one scalar quantity considered
 

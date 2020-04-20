@@ -457,7 +457,7 @@ protected:
    * the operator has to be evaluated so that the boundary conditions are never applied).
    *
    */
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor_laplace;
+  std::shared_ptr<Poisson::BoundaryDescriptor<0, dim>> boundary_descriptor_laplace;
 
   /*
    * Special case: pure Dirichlet boundary conditions.

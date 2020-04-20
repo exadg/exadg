@@ -32,7 +32,7 @@ struct OperatorData : public OperatorBaseData
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   Operators::DiffusiveKernelData       diffusive_kernel_data;
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, typename Number>

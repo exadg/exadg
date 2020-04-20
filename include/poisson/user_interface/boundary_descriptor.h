@@ -1,12 +1,12 @@
 /*
  * boundary_descriptor.h
  *
- *  Created on: Aug 3, 2016
+ *  Created on: 19.04.2020
  *      Author: fehn
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
-#define INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
+#ifndef INCLUDE_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
+#define INCLUDE_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
@@ -15,19 +15,26 @@
 
 using namespace dealii;
 
-namespace ConvDiff
+namespace Poisson
 {
 enum class BoundaryType
 {
   Undefined,
   Dirichlet,
+  DirichletMortar,
   Neumann
 };
 
-template<int dim>
+template<int rank, int dim>
 struct BoundaryDescriptor
 {
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+
+  // ComponentMask is only used for continuous elements, and is ignored for DG
+  std::map<types::boundary_id, ComponentMask> dirichlet_bc_component_mask;
+
+  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>>
+    dirichlet_mortar_bc;
 
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
@@ -38,6 +45,8 @@ struct BoundaryDescriptor
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryType::Dirichlet;
+    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+      return BoundaryType::DirichletMortar;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
 
@@ -55,6 +64,9 @@ struct BoundaryDescriptor
     if(dirichlet_bc.find(boundary_id) != dirichlet_bc.end())
       counter++;
 
+    if(dirichlet_mortar_bc.find(boundary_id) != dirichlet_mortar_bc.end())
+      counter++;
+
     if(neumann_bc.find(boundary_id) != neumann_bc.end())
       counter++;
 
@@ -65,6 +77,8 @@ struct BoundaryDescriptor
   }
 };
 
-} // namespace ConvDiff
+} // namespace Poisson
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_ */
+
+
+#endif /* INCLUDE_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

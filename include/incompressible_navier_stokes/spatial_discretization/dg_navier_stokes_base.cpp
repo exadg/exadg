@@ -186,7 +186,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
-  boundary_descriptor_laplace.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
+  boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
   // Dirichlet BCs for pressure
   boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor_pressure->dirichlet_bc;
@@ -1037,8 +1037,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   laplace_operator_data.dof_index  = get_dof_index_velocity_scalar();
   laplace_operator_data.quad_index = get_quad_index_velocity_linear();
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor_streamfunction;
-  boundary_descriptor_streamfunction.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
+  std::shared_ptr<Poisson::BoundaryDescriptor<0, dim>> boundary_descriptor_streamfunction;
+  boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
   // fill boundary descriptor: Assumption: only Dirichlet BC's
   boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor_velocity->dirichlet_bc;

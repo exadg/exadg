@@ -149,7 +149,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // boundary conditions
-    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<0, dim>());
+    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<dim>());
 
     application->set_boundary_conditions_scalar(scalar_boundary_descriptor[i], i);
     verify_boundary_conditions(*scalar_boundary_descriptor[i], *triangulation, periodic_faces);

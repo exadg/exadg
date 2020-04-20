@@ -103,7 +103,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions_fluid(fluid_field_functions);
 
   // poisson
-  poisson_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<1, dim>());
+  poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
   application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
   verify_boundary_conditions(*poisson_boundary_descriptor,
                              *fluid_triangulation,

@@ -68,7 +68,7 @@ public:
   }
 
   virtual void
-    set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor) = 0;
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) = 0;
 
   virtual void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;

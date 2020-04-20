@@ -153,15 +153,15 @@ public:
                         deformation);
   }
 
-  void set_boundary_conditions(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor)
+  void
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
   {
     (void)boundary_descriptor;
   }
 
 
   void
-  set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
@@ -170,7 +170,7 @@ public:
   }
 
   void
-  set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution)
+  set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
   {
     // these lines show exemplarily how the analytical solution is filled
     analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));

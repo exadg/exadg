@@ -129,8 +129,8 @@ private:
 
   InputParameters param;
 
-  std::shared_ptr<FieldFunctions<dim>>                  field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>        field_functions;
+  std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor;
 
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 

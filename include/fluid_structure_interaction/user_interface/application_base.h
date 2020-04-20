@@ -97,7 +97,7 @@ public:
   set_input_parameters_poisson(Poisson::InputParameters & parameters) = 0;
 
   virtual void set_boundary_conditions_poisson(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<1, dim>> boundary_descriptor) = 0;
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) = 0;
 
   virtual void
   set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;

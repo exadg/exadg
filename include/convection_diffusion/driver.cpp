@@ -72,7 +72,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->create_grid(triangulation, refine_space, periodic_faces);
   print_grid_data(pcout, refine_space, *triangulation);
 
-  boundary_descriptor.reset(new BoundaryDescriptor<0, dim>());
+  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   application->set_boundary_conditions(boundary_descriptor);
   verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
 

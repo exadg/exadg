@@ -172,8 +172,8 @@ public:
     triangulation->refine_global(n_refine_space);
   }
 
-  void set_boundary_conditions(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor)
+  void
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -183,7 +183,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
