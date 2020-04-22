@@ -257,6 +257,9 @@ public:
       field_functions->right_hand_side.reset(new VolumeForce<dim>(volume_force));
     else
       field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>

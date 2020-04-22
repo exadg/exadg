@@ -31,7 +31,7 @@ public:
   TimeIntBDFBase(double const        start_time_,
                  double const        end_time_,
                  unsigned int const  max_number_of_time_steps_,
-                 double const        order_,
+                 unsigned const      order_,
                  bool const          start_with_low_order_,
                  bool const          adaptive_time_stepping_,
                  RestartData const & restart_data_,
@@ -55,12 +55,6 @@ public:
    */
   double
   get_scaling_factor_time_derivative_term() const;
-
-  /*
-   * Reset the current time.
-   */
-  void
-  reset_time(double const & current_time);
 
   /*
    * Get the time step size.
@@ -292,6 +286,12 @@ private:
                               VectorType &,
                               double const start_time,
                               double const time_step_size);
+
+  /*
+   * returns whether solver info has to be written in the current time step.
+   */
+  virtual bool
+  print_solver_info() const = 0;
 };
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */

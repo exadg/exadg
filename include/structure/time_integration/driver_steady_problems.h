@@ -36,9 +36,6 @@ public:
   void
   solve_problem();
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
-
 private:
   void
   initialize_vectors();

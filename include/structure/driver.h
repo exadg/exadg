@@ -26,6 +26,7 @@
 // time integration
 #include "../structure/time_integration/driver_quasi_static_problems.h"
 #include "../structure/time_integration/driver_steady_problems.h"
+#include "../structure/time_integration/time_int_gen_alpha.h"
 
 using namespace dealii;
 
@@ -96,6 +97,9 @@ private:
 
   // driver quasi-static
   std::shared_ptr<DriverQuasiStatic<dim, Number>> driver_quasi_static;
+
+  // time integration scheme
+  std::shared_ptr<TimeIntGenAlpha<dim, Number>> time_integrator;
 
   // computation time
   Timer          timer;

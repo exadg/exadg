@@ -356,7 +356,8 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::solve_timestep()
 {
-  this->output_solver_info_header();
+  if(this->print_solver_info())
+    this->output_solver_info_header();
 
   Timer timer;
   timer.restart();

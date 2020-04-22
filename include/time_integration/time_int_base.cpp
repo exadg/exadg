@@ -113,6 +113,17 @@ TimeIntBase::advance_one_timestep()
   advance_one_timestep_post_solve();
 }
 
+void
+TimeIntBase::reset_time(double const & current_time)
+{
+  // Only allow overwriting the time to a value smaller than start_time
+  // (which is needed when coupling different solvers, different domains, etc.).
+  if(current_time <= start_time + eps)
+    time = current_time;
+  else
+    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
+}
+
 double
 TimeIntBase::get_time() const
 {
@@ -188,17 +199,14 @@ TimeIntBase::read_restart()
 void
 TimeIntBase::output_solver_info_header() const
 {
-  if(print_solver_info())
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Number of TIME STEPS: " << std::left << std::setw(8) << time_step_number
-          << "t_n = " << std::scientific << std::setprecision(4) << time
-          << " -> t_n+1 = " << time + get_time_step_size() << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl;
-  }
+  pcout << std::endl
+        << "______________________________________________________________________" << std::endl
+        << std::endl
+        << " Number of TIME STEPS: " << std::left << std::setw(8) << time_step_number
+        << "t_n = " << std::scientific << std::setprecision(4) << time
+        << " -> t_n+1 = " << time + get_time_step_size() << std::endl
+        << "______________________________________________________________________" << std::endl
+        << std::endl;
 }
 
 /*
@@ -207,22 +215,19 @@ TimeIntBase::output_solver_info_header() const
  *  current time.
  */
 void
-TimeIntBase::output_remaining_time(bool const do_write_output) const
+TimeIntBase::output_remaining_time() const
 {
-  if(print_solver_info() && do_write_output)
+  if(time > start_time)
   {
-    if(time > start_time)
-    {
-      double const remaining_time =
-        global_timer.wall_time() * (end_time - time) / (time - start_time);
+    double const remaining_time =
+      global_timer.wall_time() * (end_time - time) / (time - start_time);
 
-      int const hours   = int(remaining_time / 3600.0);
-      int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
-      int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
+    int const hours   = int(remaining_time / 3600.0);
+    int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
+    int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
 
-      pcout << std::endl
-            << "Estimated time until completion is " << hours << " h " << minutes << " min "
-            << seconds << " s." << std::endl;
-    }
+    pcout << std::endl
+          << "Estimated time until completion is " << hours << " h " << minutes << " min "
+          << seconds << " s." << std::endl;
   }
 }

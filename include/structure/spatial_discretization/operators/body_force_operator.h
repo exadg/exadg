@@ -71,6 +71,7 @@ public:
   {
     MappingFlags flags;
 
+    // gradients because of potential pull-back of body forces
     flags.cells = update_gradients | update_JxW_values | update_quadrature_points;
 
     return flags;

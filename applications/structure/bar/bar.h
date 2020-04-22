@@ -18,22 +18,31 @@ template<int dim>
 class DisplacementDBC : public Function<dim>
 {
 public:
-  DisplacementDBC(double displacement) : Function<dim>(dim), displacement(displacement)
+  DisplacementDBC(double const displacement, bool const unsteady, double const end_time)
+    : Function<dim>(dim), displacement(displacement), unsteady(unsteady), end_time(end_time)
   {
   }
-
-  const double displacement;
 
   double
   value(const Point<dim> & p, const unsigned int c) const
   {
     (void)p;
 
+    double factor = 1.0;
+
+    if(unsteady)
+      factor = std::pow(std::sin(this->get_time() * 2.0 * numbers::PI / end_time), 2.0);
+
     if(c == 0)
-      return displacement;
+      return displacement * factor;
     else
       return 0.0;
   }
+
+private:
+  double const displacement;
+  bool const   unsteady;
+  double const end_time;
 };
 
 template<int dim>
@@ -173,6 +182,10 @@ public:
 
   double const E_modul = 200.0;
 
+  double const end_time = 100.0;
+
+  double const density = 0.001;
+
   Application() : ApplicationBase<dim, Number>("")
   {
   }
@@ -188,23 +201,33 @@ public:
   void
   set_input_parameters(InputParameters & parameters)
   {
-    parameters.problem_type         = ProblemType::Steady;
+    parameters.problem_type         = ProblemType::Unsteady;
     parameters.body_force           = use_volume_force;
     parameters.large_deformation    = true;
     parameters.pull_back_body_force = false;
     parameters.pull_back_traction   = false;
 
+    parameters.density = density;
+
+    parameters.start_time                           = 0.0;
+    parameters.end_time                             = end_time;
+    parameters.time_step_size                       = end_time / 200.;
+    parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
+    parameters.spectral_radius                      = 0.8;
+    parameters.solver_info_data.interval_time_steps = 1;
+
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
-    parameters.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    parameters.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-6);
     parameters.solver              = Solver::CG;
-    parameters.solver_data         = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    parameters.solver_data         = SolverData(1e4, 1.e-12, 1.e-6, 100);
     parameters.preconditioner      = Preconditioner::Multigrid;
-    parameters.multigrid_data.type = MultigridType::pMG;
+    parameters.multigrid_data.type = MultigridType::phMG;
 
     parameters.update_preconditioner                         = true;
-    parameters.update_preconditioner_every_newton_iterations = 1;
+    parameters.update_preconditioner_every_time_steps        = 1;
+    parameters.update_preconditioner_every_newton_iterations = 10;
 
     this->param = parameters;
   }
@@ -273,8 +296,10 @@ public:
     // right face
     if(boundary_type == "Dirichlet")
     {
-      std::vector<bool> mask = {true, true};
-      boundary_descriptor->dirichlet_bc.insert(pair(2, new DisplacementDBC<dim>(displacement)));
+      std::vector<bool> mask     = {true, true};
+      bool const        unsteady = (this->param.problem_type == ProblemType::Unsteady);
+      boundary_descriptor->dirichlet_bc.insert(
+        pair(2, new DisplacementDBC<dim>(displacement, unsteady, end_time)));
       boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, ComponentMask(mask)));
     }
     else if(boundary_type == "Neumann")
@@ -306,6 +331,9 @@ public:
       field_functions->right_hand_side.reset(new VolumeForce<dim>(this->volume_force));
     else
       field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
@@ -314,10 +342,12 @@ public:
     (void)param;
 
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = true;
-    pp_data.output_data.output_folder      = output_directory;
-    pp_data.output_data.output_name        = output_name;
-    pp_data.output_data.write_higher_order = false;
+    pp_data.output_data.write_output         = true;
+    pp_data.output_data.output_folder        = output_directory;
+    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.output_start_time    = param.start_time;
+    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.write_higher_order   = false;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.calculate_relative_errors     = true;

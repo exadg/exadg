@@ -41,6 +41,7 @@ SET( TARGET_SRC
      include/time_integration/time_int_base.cpp
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
+     include/time_integration/time_int_gen_alpha_base.cpp
      include/time_integration/enum_types.cpp
      include/functionalities/enum_types.cpp
      include/functionalities/linear_interpolation.cpp
@@ -144,6 +145,7 @@ SET( TARGET_SRC
      include/structure/spatial_discretization/operators/body_force_operator.cpp
      include/structure/time_integration/driver_steady_problems.cpp
      include/structure/time_integration/driver_quasi_static_problems.cpp
+     include/structure/time_integration/time_int_gen_alpha.cpp
      include/structure/spatial_discretization/operator.cpp
      include/structure/postprocessor/output_generator.cpp
      include/structure/postprocessor/postprocessor.cpp

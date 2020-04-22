@@ -65,19 +65,9 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  // print some statistics on the finest grid
-  if(fe.dofs_per_vertex == 0)
-  {
-    pcout << std::endl
-          << "Discontinuous Galerkin finite element discretization:" << std::endl
-          << std::endl;
-  }
-  else
-  {
-    pcout << std::endl
-          << "Continuous Galerkin finite element discretization:" << std::endl
-          << std::endl;
-  }
+  pcout << std::endl
+        << "Continuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", degree);
   print_parameter(pcout, "number of dofs per cell", Utilities::pow(degree + 1, dim));
@@ -128,25 +118,65 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_operators()
 {
-  // pass boundary conditions to operator
+  // elasticity operator
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;
+  operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
+  operator_data.density             = param.density;
   if(param.large_deformation)
+  {
     operator_data.pull_back_traction = param.pull_back_traction;
+  }
   else
+  {
     operator_data.pull_back_traction = false;
+  }
 
-  // setup operator
   if(param.large_deformation)
   {
     elasticity_operator_nonlinear.reinit(matrix_free, constraint_matrix, operator_data);
-
-    residual_operator.initialize(*this);
-    linearized_operator.initialize(*this);
   }
   else
   {
     elasticity_operator_linear.reinit(matrix_free, constraint_matrix, operator_data);
+  }
+
+  // mass matrix operator and related solver for inversion
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    MassMatrixOperatorData<dim> mass_data;
+    mass_data.dof_index  = 0 /* dof_index */;
+    mass_data.quad_index = 0 /* quad_index */;
+    mass.reinit(matrix_free, constraint_matrix, mass_data);
+    mass.set_scaling_factor(param.density);
+
+    // preconditioner and solver for mass matrix have to be initialized in
+    // setup_operators() since the mass matrix solver is already needed in
+    // setup() function of time integration scheme.
+
+    // preconditioner
+    mass_preconditioner.reset(new JacobiPreconditioner<MassMatrixOperator<dim, dim, Number>>(mass));
+
+    // initialize solver
+    CGSolverData solver_data;
+    solver_data.use_preconditioner = true;
+    // use the same solver tolerances as for solving the momentum equation
+    if(param.large_deformation)
+    {
+      solver_data.solver_tolerance_abs = param.newton_solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.newton_solver_data.rel_tol;
+      solver_data.max_iter             = param.newton_solver_data.max_iter;
+    }
+    else
+    {
+      solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+      solver_data.max_iter             = param.solver_data.max_iter;
+    }
+
+    mass_solver.reset(
+      new CGSolver<MassMatrixOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>(
+        mass, *mass_preconditioner, solver_data));
   }
 
   // setup rhs operator
@@ -287,6 +317,9 @@ Operator<dim, Number>::initialize_solver()
   // initialize Newton solver
   if(param.large_deformation)
   {
+    residual_operator.initialize(*this);
+    linearized_operator.initialize(*this);
+
     newton_solver.reset(new NewtonSolver(
       param.newton_solver_data, residual_operator, linearized_operator, *linear_solver));
   }
@@ -301,12 +334,97 @@ Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::prescribe_initial_conditions(VectorType & src,
-                                                    double const evaluation_time) const
+Operator<dim, Number>::prescribe_initial_displacement(VectorType & displacement,
+                                                      double const time) const
 {
-  (void)evaluation_time;
-  src = 0.0; // start with initial guess 0
-  src.update_ghost_values();
+  // This is necessary if Number == float
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble src_double;
+  src_double = displacement;
+
+  field_functions->initial_displacement->set_time(time);
+  VectorTools::interpolate(dof_handler, *field_functions->initial_displacement, src_double);
+
+  displacement = src_double;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::prescribe_initial_velocity(VectorType & velocity, double const time) const
+{
+  // This is necessary if Number == float
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble src_double;
+  src_double = velocity;
+
+  field_functions->initial_velocity->set_time(time);
+  VectorTools::interpolate(dof_handler, *field_functions->initial_velocity, src_double);
+
+  velocity = src_double;
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::compute_initial_acceleration(VectorType &       acceleration,
+                                                    VectorType const & displacement,
+                                                    double const       time) const
+{
+  VectorType rhs(acceleration);
+  rhs = 0.0;
+
+  if(param.large_deformation) // nonlinear case
+  {
+    // elasticity operator
+    elasticity_operator_nonlinear.set_time(time);
+    // NB: we have to deactivate the mass matrix term
+    elasticity_operator_nonlinear.set_scaling_factor_mass(0.0);
+    // evaluate nonlinear operator including Neumann BCs
+    elasticity_operator_nonlinear.evaluate_nonlinear(rhs, displacement);
+    // shift to right-hand side
+    rhs *= -1.0;
+
+    // body forces
+    if(param.body_force)
+    {
+      body_force_operator.evaluate_add(rhs, displacement, time);
+    }
+  }
+  else // linear case
+  {
+    // elasticity operator
+    elasticity_operator_linear.set_time(time);
+    // NB: we have to deactivate the mass matrix term
+    elasticity_operator_linear.set_scaling_factor_mass(0.0);
+
+    // compute action of homogeneous operator
+    elasticity_operator_linear.apply(rhs, displacement);
+    // shift to right-hand side
+    rhs *= -1.0;
+
+    // Neumann BCs and inhomogeneous Dirichlet BCs
+    // (has already the correction sign, since rhs_add())
+    elasticity_operator_linear.rhs_add(rhs);
+
+    // body force
+    if(param.body_force)
+    {
+      // displacement is irrelevant for linear problem, since
+      // pull_back_body_force = false in this case.
+      body_force_operator.evaluate_add(rhs, displacement, time);
+    }
+  }
+
+  // invert mass matrix to get acceleration
+  mass_solver->solve(acceleration, rhs, false);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::apply_mass_matrix(VectorType & dst, VectorType const & src) const
+{
+  mass.apply(dst, src);
 }
 
 template<int dim, typename Number>
@@ -325,11 +443,8 @@ Operator<dim, Number>::compute_rhs_linear(VectorType & dst, double const time) c
   }
 
   // Neumann BCs and inhomogeneous Dirichlet BCs
-  if(param.large_deformation == false)
-  {
-    elasticity_operator_linear.set_time(time);
-    elasticity_operator_linear.rhs_add(dst);
-  }
+  elasticity_operator_linear.set_time(time);
+  elasticity_operator_linear.rhs_add(dst);
 }
 
 template<int dim, typename Number>
@@ -337,14 +452,19 @@ void
 Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    VectorType const & src,
                                                    VectorType const & const_vector,
+                                                   double const       factor,
                                                    double const       time) const
 {
-  // TODO dynamic problems
-  (void)const_vector;
-
   // elasticity operator
+  elasticity_operator_nonlinear.set_scaling_factor_mass(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
+
+  // dynamic problems
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    dst.add(1.0, const_vector);
+  }
 
   // body forces
   if(param.body_force)
@@ -367,26 +487,35 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
                                                  VectorType const & src,
+                                                 double const       factor,
                                                  double const       time) const
 {
-  // TODO dynamic problems
-
+  elasticity_operator_nonlinear.set_scaling_factor_mass(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.vmult(dst, src);
 }
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::apply_dirichlet_bc_homogeneous(VectorType & vector) const
+{
+  if(param.large_deformation)
+    elasticity_operator_nonlinear.set_dirichlet_values_continuous_hom(vector);
+  else
+    elasticity_operator_linear.set_dirichlet_values_continuous_hom(vector);
+}
+
+template<int dim, typename Number>
+std::tuple<unsigned int, unsigned int>
 Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
                                        VectorType const & rhs,
+                                       double const       factor,
                                        double const       time,
-                                       bool const         update_preconditioner,
-                                       unsigned int &     newton_iterations,
-                                       unsigned int &     linear_iterations)
+                                       bool const         update_preconditioner)
 {
   // update operators
-  residual_operator.update(rhs, time);
-  linearized_operator.update(time);
+  residual_operator.update(rhs, factor, time);
+  linearized_operator.update(factor, time);
 
   // set inhomogeneous Dirichlet values
   elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
@@ -396,16 +525,27 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   update.do_update             = update_preconditioner;
   update.threshold_newton_iter = param.update_preconditioner_every_newton_iterations;
 
-  std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(sol, update);
+  // solve nonlinear problem
+  auto const iter = newton_solver->solve(sol, update);
 
-  newton_iterations = std::get<0>(iter);
-  linear_iterations = std::get<1>(iter);
+  // set inhomogeneous Dirichlet values
+  elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
+
+  return iter;
 }
 
 template<int dim, typename Number>
 unsigned int
-Operator<dim, Number>::solve_linear(VectorType & sol, VectorType const & rhs, double const time)
+Operator<dim, Number>::solve_linear(VectorType &       sol,
+                                    VectorType const & rhs,
+                                    double const       factor,
+                                    double const       time)
 {
+  // unsteady problems
+  elasticity_operator_linear.set_scaling_factor_mass(factor);
+  elasticity_operator_linear.set_time(time);
+
+  // solve linear system of equations
   unsigned int const iterations = linear_solver->solve(sol, rhs, false);
 
   // set Dirichlet values

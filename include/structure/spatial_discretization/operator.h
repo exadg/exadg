@@ -26,6 +26,9 @@
 #include "operators/linear_operator.h"
 #include "operators/nonlinear_operator.h"
 
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../operators/mass_matrix_operator.h"
+
 // solvers
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
@@ -54,7 +57,8 @@ private:
   typedef Operator<dim, Number> PDEOperator;
 
 public:
-  ResidualOperator() : pde_operator(nullptr), const_vector(nullptr), time(0.0)
+  ResidualOperator()
+    : pde_operator(nullptr), const_vector(nullptr), scaling_factor_mass(0.0), time(0.0)
   {
   }
 
@@ -65,10 +69,11 @@ public:
   }
 
   void
-  update(VectorType const & const_vector, double const & time)
+  update(VectorType const & const_vector, double const factor, double const time)
   {
-    this->const_vector = &const_vector;
-    this->time         = time;
+    this->const_vector        = &const_vector;
+    this->scaling_factor_mass = factor;
+    this->time                = time;
   }
 
   /*
@@ -78,14 +83,16 @@ public:
   void
   evaluate_residual(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->evaluate_nonlinear_residual(dst, src, *const_vector, time);
+    pde_operator->evaluate_nonlinear_residual(dst, src, *const_vector, scaling_factor_mass, time);
   }
 
 private:
   PDEOperator const * pde_operator;
 
   VectorType const * const_vector;
-  double             time;
+
+  double scaling_factor_mass;
+  double time;
 };
 
 /*
@@ -102,7 +109,8 @@ private:
   typedef Operator<dim, Number> PDEOperator;
 
 public:
-  LinearizedOperator() : dealii::Subscriptor(), pde_operator(nullptr), time(0.0)
+  LinearizedOperator()
+    : dealii::Subscriptor(), pde_operator(nullptr), scaling_factor_mass(0.0), time(0.0)
   {
   }
 
@@ -123,9 +131,10 @@ public:
   }
 
   void
-  update(double const & time)
+  update(double const factor, double const time)
   {
-    this->time = time;
+    this->scaling_factor_mass = factor;
+    this->time                = time;
   }
 
   /*
@@ -135,12 +144,13 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    pde_operator->apply_linearized_operator(dst, src, time);
+    pde_operator->apply_linearized_operator(dst, src, scaling_factor_mass, time);
   }
 
 private:
   PDEOperator const * pde_operator;
 
+  double scaling_factor_mass;
   double time;
 };
 
@@ -191,17 +201,28 @@ public:
   initialize_dof_vector(VectorType & src) const;
 
   /*
-   * Prescribe initial conditions using a specified analytical/initial solution function.
+   * Prescribe initial conditions using a specified initial solution function.
    */
   void
-  prescribe_initial_conditions(VectorType & src, double const time) const;
+  prescribe_initial_displacement(VectorType & displacement, double const time) const;
+
+  void
+  prescribe_initial_velocity(VectorType & velocity, double const time) const;
+
+  void
+  compute_initial_acceleration(VectorType &       acceleration,
+                               VectorType const & displacement,
+                               double const       time) const;
+
+  void
+  apply_mass_matrix(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function calculates the right-hand side of the linear system
    * of equations for linear elasticity problems.
    */
   void
-  compute_rhs_linear(VectorType & dst, double const time = 0.0) const;
+  compute_rhs_linear(VectorType & dst, double const time) const;
 
   /*
    * This function evaluates the nonlinear residual which is required by
@@ -211,27 +232,33 @@ public:
   evaluate_nonlinear_residual(VectorType &       dst,
                               VectorType const & src,
                               VectorType const & const_vector,
+                              double const       factor,
                               double const       time) const;
 
   void
   set_solution_linearization(VectorType const & vector) const;
 
   void
-  apply_linearized_operator(VectorType & dst, VectorType const & src, double const time) const;
+  apply_linearized_operator(VectorType &       dst,
+                            VectorType const & src,
+                            double const       factor,
+                            double const       time) const;
+
+  void
+  apply_dirichlet_bc_homogeneous(VectorType & vector) const;
 
   /*
    * This function solves the (non-)linear system of equations.
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear(VectorType &       sol,
                   VectorType const & rhs,
+                  double const       factor,
                   double const       time,
-                  bool const         update_preconditioner,
-                  unsigned int &     newton_iterations,
-                  unsigned int &     linear_iterations);
+                  bool const         update_preconditioner);
 
   unsigned int
-  solve_linear(VectorType & sol, VectorType const & rhs, double const time);
+  solve_linear(VectorType & sol, VectorType const & rhs, double const factor, double const time);
 
   /*
    * Setters and getters.
@@ -329,13 +356,16 @@ private:
   NonLinearOperator<dim, Number> elasticity_operator_nonlinear;
   OperatorData<dim>              operator_data;
 
-  // operators required for Newton solver
-  ResidualOperator<dim, Number>   residual_operator;
-  LinearizedOperator<dim, Number> linearized_operator;
+  MassMatrixOperator<dim, dim, Number> mass;
 
   /*
    * Solution of nonlinear systems of equations
    */
+
+  // operators required for Newton solver
+  ResidualOperator<dim, Number>   residual_operator;
+  LinearizedOperator<dim, Number> linearized_operator;
+
   typedef Newton::Solver<VectorType,
                          ResidualOperator<dim, Number>,
                          LinearizedOperator<dim, Number>,
@@ -350,6 +380,10 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
+
+  // mass matrix inversion
+  std::shared_ptr<PreconditionerBase<Number>>      mass_preconditioner;
+  std::shared_ptr<IterativeSolverBase<VectorType>> mass_solver;
 };
 
 } // namespace Structure

@@ -59,6 +59,9 @@ public:
   void
   ale_update();
 
+  virtual void
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const = 0;
+
 protected:
   virtual void
   allocate_vectors() override;

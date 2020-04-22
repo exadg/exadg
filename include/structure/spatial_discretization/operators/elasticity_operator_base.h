@@ -185,7 +185,10 @@ template<int dim>
 struct OperatorData : public OperatorBaseData
 {
   OperatorData()
-    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */), pull_back_traction(false)
+    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
+      pull_back_traction(false),
+      unsteady(false),
+      density(1.0)
   {
   }
 
@@ -196,6 +199,12 @@ struct OperatorData : public OperatorBaseData
   // with large deformations. When set to true, the traction t
   // is pulled back to the reference configuration, t_0 = da/dA t.
   bool pull_back_traction;
+
+  // activates mass matrix operator in operator evaluation for unsteady problems
+  bool unsteady;
+
+  // density
+  double density;
 };
 
 template<int dim, typename Number>
@@ -209,17 +218,21 @@ protected:
   typedef typename Base::VectorType                         VectorType;
 
 public:
+  ElasticityOperatorBase() : scaling_factor_mass(1.0)
+  {
+  }
+
   virtual ~ElasticityOperatorBase()
   {
   }
 
   IntegratorFlags
-  get_integrator_flags() const
+  get_integrator_flags(bool const unsteady) const
   {
     IntegratorFlags flags;
 
-    flags.cell_evaluate  = CellFlags(false, true, false);
-    flags.cell_integrate = CellFlags(false, true, false);
+    flags.cell_evaluate  = CellFlags(unsteady, true, false);
+    flags.cell_integrate = CellFlags(unsteady, true, false);
 
     // evaluation of Neumann BCs
     flags.face_evaluate  = FaceFlags(false, false);
@@ -248,9 +261,15 @@ public:
   {
     Base::reinit(matrix_free, constraint_matrix, operator_data);
 
-    this->integrator_flags = this->get_integrator_flags();
+    this->integrator_flags = this->get_integrator_flags(operator_data.unsteady);
 
     material_handler.initialize(this->get_data().material_descriptor);
+  }
+
+  void
+  set_scaling_factor_mass(double const factor) const
+  {
+    scaling_factor_mass = factor;
   }
 
   void
@@ -258,6 +277,18 @@ public:
   {
     std::map<types::global_dof_index, double> boundary_values;
     fill_dirichlet_values_continuous(boundary_values, time);
+
+    // set Dirichlet values in solution vector
+    for(auto m : boundary_values)
+      if(dst.get_partitioner()->in_local_range(m.first))
+        dst[m.first] = m.second;
+  }
+
+  void
+  set_dirichlet_values_continuous_hom(VectorType & dst) const
+  {
+    std::map<types::global_dof_index, double> boundary_values;
+    fill_dirichlet_values_continuous_hom(boundary_values);
 
     // set Dirichlet values in solution vector
     for(auto m : boundary_values)
@@ -276,6 +307,8 @@ protected:
 
   mutable MaterialHandler<dim, Number> material_handler;
 
+  mutable double scaling_factor_mass;
+
 private:
   void
   fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
@@ -291,6 +324,26 @@ private:
                                                  this->data.dof_index),
                                                dbc.first,
                                                *dbc.second,
+                                               boundary_values,
+                                               mask);
+    }
+  }
+
+  void
+  fill_dirichlet_values_continuous_hom(
+    std::map<types::global_dof_index, double> & boundary_values) const
+  {
+    for(auto dbc : this->data.bc->dirichlet_bc)
+    {
+      Functions::ZeroFunction<dim> zero_function = Functions::ZeroFunction<dim>(dim);
+
+      ComponentMask mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
+
+      VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                               this->matrix_free->get_dof_handler(
+                                                 this->data.dof_index),
+                                               dbc.first,
+                                               zero_function,
                                                boundary_values,
                                                mask);
     }

@@ -27,7 +27,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (grad(v_h), sigma_h)_Omega
+   *  (v_h, factor * d_h)_Omega + (grad(v_h), sigma_h)_Omega
    *
    * with
    *
@@ -55,6 +55,11 @@ private:
 
       // test with gradients
       integrator.submit_gradient(sigma, q);
+
+      if(this->data.unsteady)
+        integrator.submit_value(this->scaling_factor_mass * this->data.density *
+                                  integrator.get_value(q),
+                                q);
     }
   }
 

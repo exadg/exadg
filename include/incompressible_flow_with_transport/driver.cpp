@@ -706,7 +706,22 @@ Driver<dim, Number>::analyze_computing_times_transport(double const overall_time
 
     if(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady)
     {
-      this->scalar_time_integrator[i]->get_wall_times(names, computing_times);
+      if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+      {
+        std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_integrator_rk =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[i]);
+        time_integrator_rk->get_wall_times(names, computing_times);
+      }
+      else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+      {
+        std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_integrator_bdf =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
+        time_integrator_bdf->get_wall_times(names, computing_times);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
     }
     else
     {

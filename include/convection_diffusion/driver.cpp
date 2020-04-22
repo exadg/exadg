@@ -388,7 +388,22 @@ Driver<dim, Number>::analyze_computing_times() const
 
   if(param.problem_type == ProblemType::Unsteady)
   {
-    this->time_integrator->get_wall_times(names, computing_times);
+    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      std::shared_ptr<TimeIntExplRK<Number>> time_integrator_rk =
+        std::dynamic_pointer_cast<TimeIntExplRK<Number>>(time_integrator);
+      time_integrator_rk->get_wall_times(names, computing_times);
+    }
+    else if(param.temporal_discretization == TemporalDiscretization::BDF)
+    {
+      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+      time_integrator_bdf->get_wall_times(names, computing_times);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
   else
   {

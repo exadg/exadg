@@ -297,6 +297,9 @@ public:
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>

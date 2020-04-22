@@ -105,10 +105,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   postprocessor = application->construct_postprocessor(param, mpi_comm);
   postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
 
-  // initialize driver
+  // initialize time integrator/driver
   if(param.problem_type == ProblemType::Unsteady)
   {
-    AssertThrow(false, ExcMessage("Unsteady solver has not been implemented!"));
+    time_integrator.reset(
+      new TimeIntGenAlpha<dim, Number>(pde_operator, postprocessor, param, mpi_comm));
+    time_integrator->setup(param.restarted_simulation);
   }
   else if(param.problem_type == ProblemType::Steady)
   {
@@ -138,7 +140,7 @@ Driver<dim, Number>::solve() const
 {
   if(param.problem_type == ProblemType::Unsteady)
   {
-    AssertThrow(false, ExcMessage("Unsteady solver not implemented yet."));
+    time_integrator->timeloop();
   }
   else if(param.problem_type == ProblemType::Steady)
   {
@@ -161,12 +163,6 @@ void
 Driver<dim, Number>::analyze_computing_times() const
 {
   // TODO
-
-  std::vector<std::string> name;
-  std::vector<double>      wall_time;
-
-  if(driver_quasi_static.get() != 0)
-    driver_quasi_static->get_wall_times(name, wall_time);
 }
 
 template class Driver<2, float>;

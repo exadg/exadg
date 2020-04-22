@@ -59,7 +59,7 @@ void
 DriverSteady<dim, Number>::initialize_solution()
 {
   double time = 0.0;
-  pde_operator->prescribe_initial_conditions(solution, time);
+  pde_operator->prescribe_initial_displacement(solution, time);
 }
 
 template<int dim, typename Number>
@@ -77,21 +77,19 @@ DriverSteady<dim, Number>::solve()
   if(param.large_deformation) // nonlinear problem
   {
     VectorType const_vector;
-    pde_operator->solve_nonlinear(solution,
-                                  const_vector,
-                                  /* time */ 0.0,
-                                  param.update_preconditioner,
-                                  N_iter_nonlinear,
-                                  N_iter_linear);
+    auto const iter = pde_operator->solve_nonlinear(
+      solution, const_vector, 0.0 /* no mass term */, 0.0 /* time */, param.update_preconditioner);
+
+    N_iter_nonlinear = std::get<0>(iter);
+    N_iter_linear    = std::get<1>(iter);
   }
   else // linear problem
   {
     // calculate right-hand side vector
-    pde_operator->compute_rhs_linear(rhs_vector);
+    pde_operator->compute_rhs_linear(rhs_vector, 0.0 /* time */);
 
-    N_iter_linear = pde_operator->solve_linear(solution,
-                                               rhs_vector,
-                                               /* time */ 0.0);
+    N_iter_linear =
+      pde_operator->solve_linear(solution, rhs_vector, 0.0 /* no mass term */, 0.0 /* time */);
   }
 
   computing_times[0] += timer.wall_time();
@@ -130,19 +128,6 @@ void
 DriverSteady<dim, Number>::postprocessing() const
 {
   postprocessor->do_postprocessing(solution);
-}
-
-template<int dim, typename Number>
-void
-DriverSteady<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                          std::vector<double> &      wall_time) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"(Non-)linear system"};
-  name                           = names;
-
-  wall_time.resize(1);
-  wall_time[0] = computing_times[0];
 }
 
 template class DriverSteady<2, float>;

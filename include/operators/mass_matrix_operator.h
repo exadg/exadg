@@ -28,6 +28,8 @@ class MassMatrixOperator
   : public OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components>
 {
 public:
+  typedef Number value_type;
+
   typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components> Base;
 
   typedef typename Base::VectorType     VectorType;

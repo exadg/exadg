@@ -12,6 +12,9 @@
 #include <deal.II/base/exceptions.h>
 
 #include "../../functionalities/print_functions.h"
+#include "../../functionalities/restart_data.h"
+#include "../../functionalities/solver_info_data.h"
+#include "../../time_integration/enum_types.h"
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
@@ -34,8 +37,18 @@ public:
       pull_back_traction(false),
 
       // PHYSICAL QUANTITIES
+      density(1.0),
 
       // TEMPORAL DISCRETIZATION
+      start_time(0.0),
+      end_time(1.0),
+      time_step_size(1.0),
+      max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
+      gen_alpha_type(GenAlphaType::GenAlpha),
+      spectral_radius(1.0),
+      solver_info_data(SolverInfoData()),
+      restarted_simulation(false),
+      restart_data(RestartData()),
 
       // quasi-static solver
       load_increment(1.0),
@@ -63,13 +76,16 @@ public:
   {
     // MATHEMATICAL MODEL
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("Parameter must be defined."));
-    AssertThrow(problem_type != ProblemType::Unsteady,
-                ExcMessage("Unsteady solver is not implemented."));
 
     if(problem_type == ProblemType::QuasiStatic)
     {
       AssertThrow(large_deformation == true,
                   ExcMessage("QuasiStatic solver only implemented for nonlinear formulation."));
+    }
+
+    if(problem_type == ProblemType::Unsteady)
+    {
+      AssertThrow(restarted_simulation == false, ExcMessage("Restart has not been implemented."));
     }
 
     // SPATIAL DISCRETIZATION
@@ -124,7 +140,10 @@ public:
   {
     pcout << std::endl << "Physical quantities:" << std::endl;
 
-    (void)pcout;
+    if(problem_type == ProblemType::Unsteady)
+    {
+      print_parameter(pcout, "Density", density);
+    }
   }
 
   void
@@ -141,6 +160,14 @@ public:
 
     if(problem_type == ProblemType::Unsteady)
     {
+      print_parameter(pcout, "Start time", start_time);
+      print_parameter(pcout, "End time", end_time);
+      print_parameter(pcout, "Max. number of time steps", max_number_of_time_steps);
+      print_parameter(pcout, "Time integration type", enum_to_string(gen_alpha_type));
+      print_parameter(pcout, "Spectral radius", spectral_radius);
+      solver_info_data.print(pcout);
+      if(restarted_simulation)
+        restart_data.print(pcout);
     }
   }
 
@@ -235,12 +262,33 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
+  // density rho_0 in initial configuration (only relevant for unsteady problems)
+  double density;
 
   /**************************************************************************************/
   /*                                                                                    */
   /*                             TEMPORAL DISCRETIZATION                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  double       start_time;
+  double       end_time;
+  double       time_step_size;
+  unsigned int max_number_of_time_steps;
+
+  GenAlphaType gen_alpha_type;
+
+  // spectral radius rho_infty for generalized alpha time integration scheme
+  double spectral_radius;
+
+  // configure printing of solver performance (wall time, number of iterations)
+  SolverInfoData solver_info_data;
+
+  // set this variable to true to start the simulation from restart files
+  bool restarted_simulation;
+
+  // restart
+  RestartData restart_data;
 
   // quasi-static solver
 

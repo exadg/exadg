@@ -77,8 +77,8 @@ public:
   /*
    * Reset the current time.
    */
-  virtual void
-  reset_time(double const & current_time) = 0;
+  void
+  reset_time(double const & current_time);
 
   /*
    * Get the time step size.
@@ -111,12 +111,18 @@ public:
   void
   do_timestep(bool const do_write_output = true);
 
+  /*
+   * e.g., update of time integrator constants
+   */
   virtual void
   do_timestep_pre_solve() = 0;
 
   virtual void
   solve_timestep() = 0;
 
+  /*
+   * e.g., update of DoF vectors, increment time, adjust time step size, etc.
+   */
   virtual void
   do_timestep_post_solve(bool const do_write_output = true) = 0;
 
@@ -125,13 +131,6 @@ public:
    */
   virtual void
   postprocessing() const = 0;
-
-  /*
-   * fills a vector of wall times (if several equations have to be solved) with
-   * a list of names describing the equations/sub-steps that are solved
-   */
-  virtual void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const = 0;
 
 protected:
   /*
@@ -163,14 +162,8 @@ protected:
   /*
    * Output estimated computation time until completion of the simulation.
    */
-  virtual void
-  output_remaining_time(bool const do_write_output = true) const;
-
-  /*
-   * returns whether solver info has to be written in the current time step.
-   */
-  virtual bool
-  print_solver_info() const = 0;
+  void
+  output_remaining_time() const;
 
   /*
    * Start and end times.

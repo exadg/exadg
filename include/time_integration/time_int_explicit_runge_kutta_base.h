@@ -30,9 +30,6 @@ public:
   void
   setup(bool const do_restart = false);
 
-  void
-  reset_time(double const & current_time);
-
   double
   get_time_step_size() const;
 
@@ -73,6 +70,12 @@ private:
 
   virtual double
   recalculate_time_step_size() const = 0;
+
+  /*
+   * returns whether solver info has to be written in the current time step.
+   */
+  virtual bool
+  print_solver_info() const = 0;
 
   void
   do_write_restart(std::string const & filename) const override;

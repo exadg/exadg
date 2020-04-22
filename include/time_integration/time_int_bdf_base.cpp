@@ -11,7 +11,7 @@ template<typename Number>
 TimeIntBDFBase<Number>::TimeIntBDFBase(double const        start_time_,
                                        double const        end_time_,
                                        unsigned int const  max_number_of_time_steps_,
-                                       double const        order_,
+                                       unsigned int const  order_,
                                        bool const          start_with_low_order_,
                                        bool const          adaptive_time_stepping_,
                                        RestartData const & restart_data_,
@@ -142,18 +142,6 @@ TimeIntBDFBase<Number>::get_previous_time(int const i /* t_{n-i} */) const
 }
 
 template<typename Number>
-void
-TimeIntBDFBase<Number>::reset_time(double const & current_time)
-{
-  // Only allow overwriting the time to a value smaller than start_time (which is needed when
-  // coupling different solvers, different domains, etc.).
-  if(current_time <= start_time + eps)
-    this->time = current_time;
-  else
-    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
-}
-
-template<typename Number>
 double
 TimeIntBDFBase<Number>::get_time_step_size() const
 {
@@ -249,7 +237,10 @@ TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
     write_restart();
   }
 
-  output_remaining_time(do_write_output);
+  if(this->print_solver_info() && do_write_output)
+  {
+    output_remaining_time();
+  }
 }
 
 template<typename Number>

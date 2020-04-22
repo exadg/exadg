@@ -4,19 +4,19 @@
         "Dim": "3",
         "DegreeMin": "1",
         "DegreeMax": "1",
-        "RefineSpaceMin": "0",
-        "RefineSpaceMax": "0",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2",
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },
     "Application": {
         "OutputDirectory": "output/beam/vtu/",
-	"OutputName": "test",
+	"OutputName": "test_nonlinear",
 	"Name": "Beam",
 	"Length": "1100.0",
 	"Height": "100.0",
 	"Width": "20.0",
-	"BoundaryType": "SingleForce",
-	"Force": "2500.0" 
+	"BoundaryType": "BendingMoment",
+	"Force": "25000.0"
     }
 }

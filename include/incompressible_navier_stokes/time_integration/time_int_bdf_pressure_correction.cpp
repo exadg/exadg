@@ -303,7 +303,8 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::solve_timestep()
 {
-  this->output_solver_info_header();
+  if(this->print_solver_info())
+    this->output_solver_info_header();
 
   // perform the substeps of the pressure-correction scheme
 

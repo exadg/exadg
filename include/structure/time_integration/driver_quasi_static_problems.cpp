@@ -120,8 +120,7 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::initialize_solution()
 {
-  double time = 0.0;
-  pde_operator->prescribe_initial_conditions(solution, time);
+  pde_operator->prescribe_initial_displacement(solution, 0.0 /* time */);
 }
 
 template<int dim, typename Number>
@@ -150,8 +149,14 @@ DriverQuasiStatic<dim, Number>::solve(double const load_factor)
       this->param.update_preconditioner &&
       ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
 
-    pde_operator->solve_nonlinear(
-      solution, const_vector, load_factor, update_preconditioner, N_iter_nonlinear, N_iter_linear);
+    auto const iter = pde_operator->solve_nonlinear(solution,
+                                                    const_vector,
+                                                    0.0 /*no mass term*/,
+                                                    load_factor /* = time */,
+                                                    update_preconditioner);
+
+    N_iter_nonlinear = std::get<0>(iter);
+    N_iter_linear    = std::get<1>(iter);
 
     // solver info output
     double N_iter_linear_avg =
@@ -180,19 +185,6 @@ void
 DriverQuasiStatic<dim, Number>::postprocessing() const
 {
   postprocessor->do_postprocessing(solution);
-}
-
-template<int dim, typename Number>
-void
-DriverQuasiStatic<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                               std::vector<double> &      wall_time) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Linear system"};
-  name                           = names;
-
-  wall_time.resize(1);
-  wall_time[0] = computing_times[0];
 }
 
 template class DriverQuasiStatic<2, float>;

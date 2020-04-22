@@ -21,16 +21,6 @@ TimeIntExplRKBase<Number>::TimeIntExplRKBase(double const &      start_time_,
 }
 
 template<typename Number>
-void
-TimeIntExplRKBase<Number>::reset_time(double const & current_time)
-{
-  if(current_time <= start_time + eps)
-    time = current_time;
-  else
-    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
-}
-
-template<typename Number>
 double
 TimeIntExplRKBase<Number>::get_time_step_size() const
 {
@@ -100,7 +90,10 @@ TimeIntExplRKBase<Number>::do_timestep_post_solve(bool const do_write_output)
     this->write_restart();
   }
 
-  output_remaining_time(do_write_output);
+  if(this->print_solver_info() && do_write_output)
+  {
+    this->output_remaining_time();
+  }
 }
 
 template<typename Number>

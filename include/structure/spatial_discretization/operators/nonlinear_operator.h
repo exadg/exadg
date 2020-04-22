@@ -99,11 +99,11 @@ private:
       reinit_cell_nonlinear(integrator, cell);
 
       integrator.read_dof_values_plain(src);
-      integrator.evaluate(false, true, false);
+      integrator.evaluate(this->data.unsteady, true, false);
 
       do_cell_integral_nonlinear(integrator);
 
-      integrator.integrate_scatter(false, true, dst);
+      integrator.integrate_scatter(this->data.unsteady, true, dst);
     }
   }
 
@@ -150,7 +150,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (Grad(v_h), P_h)_Omega
+   *  (v_h, factor * d_h)_Omega + (Grad(v_h), P_h)_Omega
    *
    * with 1st Piola-Kirchhoff stress tensor P_h
    *
@@ -198,6 +198,11 @@ private:
 
       // Grad_v : P
       integrator.submit_gradient(P, q);
+
+      if(this->data.unsteady)
+        integrator.submit_value(this->scaling_factor_mass * this->data.density *
+                                  integrator.get_value(q),
+                                q);
     }
   }
 
@@ -254,7 +259,7 @@ private:
   /*
    * Calculates the integral
    *
-   *  (Grad(v_h), delta P_h)_Omega
+   *  (v_h, factor * delta d_h)_Omega + (Grad(v_h), delta P_h)_Omega
    *
    * with the directional derivative of the 1st Piola-Kirchhoff stress tensor P_h
    *
@@ -312,6 +317,11 @@ private:
 
       // Grad_v : delta_P
       integrator.submit_gradient(delta_P, q);
+
+      if(this->data.unsteady)
+        integrator.submit_value(this->scaling_factor_mass * this->data.density *
+                                  integrator.get_value(q),
+                                q);
     }
   }
 
