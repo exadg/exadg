@@ -27,7 +27,7 @@ namespace Structure
 template<int dim>
 struct Info
 {
-  static constexpr unsigned int n_stress_components = (dim == 1 ? 1 : (dim == 2 ? 3 : 6));
+  static constexpr unsigned int n_stress_components = dim * (dim + 1) / 2;
 };
 
 template<int dim, typename Number = double>
