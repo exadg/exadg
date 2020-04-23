@@ -5,12 +5,12 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_CONVERGENCE_STUDY_H_
-#define INCLUDE_FUNCTIONALITIES_CONVERGENCE_STUDY_H_
+#ifndef INCLUDE_UTILITIES_CONVERGENCE_STUDY_H_
+#define INCLUDE_UTILITIES_CONVERGENCE_STUDY_H_
 
 #include <deal.II/base/parameter_handler.h>
 
-#include "parse_input.h"
+#include "../utilities/parse_input.h"
 
 using namespace dealii;
 
@@ -61,4 +61,4 @@ struct ConvergenceStudy
 
 
 
-#endif /* INCLUDE_FUNCTIONALITIES_CONVERGENCE_STUDY_H_ */
+#endif /* INCLUDE_UTILITIES_CONVERGENCE_STUDY_H_ */

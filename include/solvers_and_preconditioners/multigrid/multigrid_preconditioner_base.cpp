@@ -6,10 +6,10 @@
 
 #include "../preconditioner/preconditioner_amg.h"
 
-#include "../../functionalities/categorization.h"
-#include "../../functionalities/constraints.h"
+#include "../../matrix_free/categorization.h"
 #include "../../operators/operator_base.h"
 #include "../util/compute_eigenvalues.h"
+#include "constraints.h"
 
 template<int dim, typename Number, typename MultigridNumber>
 void

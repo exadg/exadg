@@ -11,7 +11,7 @@
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 
 namespace IncNS
 {

@@ -11,7 +11,7 @@
 // test case for a purely convective problem
 // sine wave that is advected from left to right by a constant velocity field
 
-#include "../../grid_tools/mesh_movement_functions.h"
+#include "grid/mesh_movement_functions.h"
 
 namespace ConvDiff
 {

@@ -14,7 +14,7 @@
 
 #include "operator_type.h"
 
-#include "../functionalities/lazy_ptr.h"
+#include "lazy_ptr.h"
 
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 

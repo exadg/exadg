@@ -11,7 +11,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../include/functionalities/evaluate_functions.h"
+#include "../include/functions_and_boundary_conditions/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"
 
 #include "../../compressible_navier_stokes/user_interface/boundary_descriptor.h"

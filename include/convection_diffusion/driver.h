@@ -16,13 +16,15 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 
+// matrix-free
+#include "../include/matrix_free/matrix_free_wrapper.h"
+
+// grid
+#include "../include/grid/mapping_degree.h"
+#include "../include/grid/moving_mesh.h"
+
 // general functionalities
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
-#include "../include/functionalities/moving_mesh.h"
-#include "../include/functionalities/print_functions.h"
-#include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/verify_boundary_conditions.h"
+#include "../include/functions_and_boundary_conditions/verify_boundary_conditions.h"
 
 // spatial discretization
 #include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
@@ -42,6 +44,8 @@
 #include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
 #include "../include/convection_diffusion/user_interface/field_functions.h"
 #include "../include/convection_diffusion/user_interface/input_parameters.h"
+#include "../utilities/print_functions.h"
+#include "../utilities/print_general_infos.h"
 
 using namespace dealii;
 

@@ -7,8 +7,6 @@
 
 #include "dg_dual_splitting.h"
 
-#include "../../functionalities/moving_mesh.h"
-
 namespace IncNS
 {
 template<int dim, typename Number>

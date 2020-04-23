@@ -34,11 +34,8 @@
 // time step calculation
 #include "time_integration/time_step_calculation.h"
 
-// postprocessor
-#include "../postprocessor/postprocessor_base.h"
-
-// general functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
 
 namespace CompNS
 {
@@ -47,8 +44,6 @@ class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  typedef PostProcessorBase<dim, Number> Postprocessor;
 
 public:
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,

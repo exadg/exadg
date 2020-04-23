@@ -27,13 +27,17 @@
 // Poisson: spatial discretization
 #include "../poisson/spatial_discretization/operator.h"
 
-// general functionalities
-#include "../functionalities/interface_coupling.h"
-#include "../functionalities/mapping_degree.h"
-#include "../functionalities/matrix_free_wrapper.h"
-#include "../functionalities/moving_mesh.h"
-#include "../functionalities/print_general_infos.h"
-#include "../functionalities/verify_boundary_conditions.h"
+// grid
+#include "../grid/mapping_degree.h"
+#include "../grid/moving_mesh.h"
+
+// matrix-free
+#include "../matrix_free/matrix_free_wrapper.h"
+
+// functionalities
+#include "../functions_and_boundary_conditions/interface_coupling.h"
+#include "../functions_and_boundary_conditions/verify_boundary_conditions.h"
+#include "../utilities/print_general_infos.h"
 
 namespace FSI
 {

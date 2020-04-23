@@ -5,10 +5,10 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_THROUGHPUT_STUDY_H_
-#define INCLUDE_FUNCTIONALITIES_THROUGHPUT_STUDY_H_
+#ifndef INCLUDE_UTILITIES_THROUGHPUT_STUDY_H_
+#define INCLUDE_UTILITIES_THROUGHPUT_STUDY_H_
 
-#include "print_throughput.h"
+#include "../utilities/print_throughput.h"
 
 struct ThroughputStudy
 {
@@ -55,4 +55,4 @@ struct ThroughputStudy
 
 
 
-#endif /* INCLUDE_FUNCTIONALITIES_THROUGHPUT_STUDY_H_ */
+#endif /* INCLUDE_UTILITIES_THROUGHPUT_STUDY_H_ */

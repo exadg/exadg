@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include "../../../include/functionalities/one_sided_cylindrical_manifold.h"
+#include "grid/one_sided_cylindrical_manifold.h"
 
 namespace Poisson
 {

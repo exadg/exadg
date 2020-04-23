@@ -8,11 +8,14 @@
 #ifndef INCLUDE_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
 #define INCLUDE_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
 
+// deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
-#include "../functionalities/calculate_characteristic_element_length.h"
-#include "../functionalities/evaluate_functions.h"
+
+#include "../functions_and_boundary_conditions/evaluate_functions.h"
+#include "../grid/calculate_characteristic_element_length.h"
+
 #include "enum_types.h"
 
 using namespace dealii;

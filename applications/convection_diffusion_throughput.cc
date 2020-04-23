@@ -13,10 +13,10 @@
 #include "../include/convection_diffusion/driver.h"
 
 // infrastructure for parameter studies and throughput measurements
-#include "../include/functionalities/parameter_study.h"
-#include "../include/functionalities/throughput_study.h"
+#include "../include/utilities/parameter_study.h"
+#include "../include/utilities/throughput_study.h"
 
-// application
+// applications
 #include "convection_diffusion_test_cases/periodic_box/periodic_box.h"
 
 class ApplicationSelector

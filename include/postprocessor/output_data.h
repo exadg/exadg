@@ -8,7 +8,7 @@
 #ifndef INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_
 #define INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_
 
-#include "../functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 using namespace dealii;
 
@@ -76,7 +76,7 @@ struct OutputDataBase
 
   // this variable decides whether a vtk-file is written that allows a visualization of boundary
   // IDs, e.g., to verify that boundary IDs have been set correctly. Note that in the current
-  // version of deal.II, boundaries with ID = 0 (default) are not visible, but only those with 
+  // version of deal.II, boundaries with ID = 0 (default) are not visible, but only those with
   // ID != 0.
   bool write_boundary_IDs;
 

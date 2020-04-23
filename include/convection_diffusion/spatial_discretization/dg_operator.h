@@ -16,6 +16,9 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
+
 // user interface
 #include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
@@ -24,6 +27,8 @@
 // operators
 #include "../../operators/inverse_mass_matrix.h"
 #include "../../operators/mass_matrix_operator.h"
+#include "interface.h"
+#include "operators/combined_operator.h"
 #include "operators/rhs_operator.h"
 
 // solvers and preconditioners
@@ -31,16 +36,6 @@
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../preconditioners/multigrid_preconditioner.h"
-
-// time integration and interface
-#include "interface.h"
-
-// functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
-
-// postprocessor
-#include "../postprocessor/postprocessor_base.h"
-#include "operators/combined_operator.h"
 
 using namespace dealii;
 

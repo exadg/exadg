@@ -18,8 +18,8 @@
 
 #include <deal.II/matrix_free/operators.h>
 
-// functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
 
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"

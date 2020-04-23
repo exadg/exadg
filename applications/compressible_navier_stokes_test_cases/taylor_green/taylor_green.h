@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 
-#include "../../grid_tools/periodic_box.h"
+#include "grid/periodic_box.h"
 
 namespace CompNS
 {

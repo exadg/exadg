@@ -1,8 +1,8 @@
 #ifndef LUNG_LUNG_TRIA
 #define LUNG_LUNG_TRIA
 
-#include "algebra_util.h"
-#include "lung_util.h"
+#include "../../grid/lung/algebra_util.h"
+#include "../../grid/lung/lung_util.h"
 
 #define LUNG_NUMBER_OF_VERTICES_2D 17
 
@@ -306,29 +306,29 @@ create_cylinder(double       radius1,
      ************************************************************************/
     point_out = (1 - beta) * Point<3>(offset + transform * point_out_alph) +
                 beta * Point<3>(offset + transform_parent * point_out_beta);
-    
-    if((beta==0.0 || beta==1.0) && (std::abs(std::abs(point_in[0])-1.0) < 1e-8 || std::abs(std::abs(point_in[1])-1.0)<1e-8))
+
+    if((beta == 0.0 || beta == 1.0) && (std::abs(std::abs(point_in[0]) - 1.0) < 1e-8 ||
+                                        std::abs(std::abs(point_in[1]) - 1.0) < 1e-8))
     {
-        
       if(is_right && do_rotate)
       {
         unsigned int f = 0;
-        if(beta==1.0 && point_in[0] == -1)
-           f = 3;  
-        if(beta==1.0 && point_in[0] == +1)
-           f = 0;  
-        if(beta==1.0 && point_in[1] == -1)
-           f = 1;  
-        if(beta==1.0 && point_in[1] == +1)
-           f = 2;  
-        if(beta==0.0 && point_in[0] == -1)
-           f = 7;  
-        if(beta==0.0 && point_in[0] == +1)
-           f = 4;  
-        if(beta==0.0 && point_in[1] == -1)
-           f = 5;  
-        if(beta==0.0 && point_in[1] == +1)
-           f = 6;  
+        if(beta == 1.0 && point_in[0] == -1)
+          f = 3;
+        if(beta == 1.0 && point_in[0] == +1)
+          f = 0;
+        if(beta == 1.0 && point_in[1] == -1)
+          f = 1;
+        if(beta == 1.0 && point_in[1] == +1)
+          f = 2;
+        if(beta == 0.0 && point_in[0] == -1)
+          f = 7;
+        if(beta == 0.0 && point_in[0] == +1)
+          f = 4;
+        if(beta == 0.0 && point_in[1] == -1)
+          f = 5;
+        if(beta == 0.0 && point_in[1] == +1)
+          f = 6;
         skeleton[f] = point_out;
       }
       else if(is_left && do_rotate)
@@ -336,46 +336,63 @@ create_cylinder(double       radius1,
         const unsigned int idz = point_in[2] == 0 ? 1 : 0;
         const unsigned int idy = (point_in[1] == -1 || point_in[0] == -1) ? 1 : 0;
         const unsigned int idx = (point_in[0] == +1 || point_in[1] == -1) ? 1 : 0;
-        const unsigned int id  = idz*4+idy*2+idx;
-        unsigned int idd = 0;
-        switch(id){
-            case 0: idd = 1; break;
-            case 1: idd = 3; break;
-            case 2: idd = 0; break;
-            case 3: idd = 2; break;
-            case 4: idd = 5; break;
-            case 5: idd = 7; break;
-            case 6: idd = 4; break;
-            case 7: idd = 6; break;
+        const unsigned int id  = idz * 4 + idy * 2 + idx;
+        unsigned int       idd = 0;
+        switch(id)
+        {
+          case 0:
+            idd = 1;
+            break;
+          case 1:
+            idd = 3;
+            break;
+          case 2:
+            idd = 0;
+            break;
+          case 3:
+            idd = 2;
+            break;
+          case 4:
+            idd = 5;
+            break;
+          case 5:
+            idd = 7;
+            break;
+          case 6:
+            idd = 4;
+            break;
+          case 7:
+            idd = 6;
+            break;
         }
-        
+
         skeleton[idd] = point_out;
       }
       else
       {
-        const unsigned int idz = beta == 0.0 ? 1 : 0;
-        const unsigned int idy = (point_in[1] == -1 || point_in[0] == -1) ? 1 : 0;
-        const unsigned int idx = (point_in[0] == 1 || point_in[1] == -1) ? 1 : 0;
-        skeleton[idz*4+idy*2+idx] = point_out;
+        const unsigned int idz            = beta == 0.0 ? 1 : 0;
+        const unsigned int idy            = (point_in[1] == -1 || point_in[0] == -1) ? 1 : 0;
+        const unsigned int idx            = (point_in[0] == 1 || point_in[1] == -1) ? 1 : 0;
+        skeleton[idz * 4 + idy * 2 + idx] = point_out;
       }
     }
   }
 }
 
 void
-process_node(Node *                     node,
-             std::vector<CellData<3>> & cell_data_3d_global,
-             std::vector<Point<3>> &    vertices_3d_global,
+process_node(Node *                           node,
+             std::vector<CellData<3>> &       cell_data_3d_global,
+             std::vector<Point<3>> &          vertices_3d_global,
              std::shared_ptr<LungID::Checker> branch_filter,
-             const int                  id                = LungID::create_root(),
-             const int                  parent_os         = 0,
-             Tensor<2, 3>               transform_parent  = Tensor<2, 3>(),
-             double                     degree_parent     = 0.0,
-             double                     degree_seperation = 0.0)
+             const int                        id                = LungID::create_root(),
+             const int                        parent_os         = 0,
+             Tensor<2, 3>                     transform_parent  = Tensor<2, 3>(),
+             double                           degree_parent     = 0.0,
+             double                           degree_seperation = 0.0)
 {
+  if(!branch_filter->pre(id))
+    return;
 
-  if(!branch_filter->pre(id)) return;
-    
   // normal and tangential vector in the reference system
   dealii::Tensor<1, 3> src_n({0, 1, 0});
   dealii::Tensor<1, 3> src_t({0, 0, 1});
@@ -504,24 +521,29 @@ process_node(Node *                     node,
       cell_data_3d_global.push_back(c);
     }
   }
-  
-  if(!branch_filter->post(id)) return;
-  
-  //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)==id)
+
+  if(!branch_filter->post(id))
+    return;
+
+  // if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false),
+  // false)==id)
   //    return;
-  
-  //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),true)==id)
+
+  // if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(),
+  // true), false), false),true)==id)
   //    return;
-  
-  //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),false)==id)
+
+  // if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(),
+  // true), false), false),false)==id)
   //    return;
-  
-  //if(LungID::generate(LungID::generate(LungID::create_root(), false), true)==id)
+
+  // if(LungID::generate(LungID::generate(LungID::create_root(), false), true)==id)
   //    return;
-  
-  
-   //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),true)==id) return;
-  
+
+
+  // if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(),
+  // true), false), false),true)==id) return;
+
   // process children
   if(node->has_children())
   {

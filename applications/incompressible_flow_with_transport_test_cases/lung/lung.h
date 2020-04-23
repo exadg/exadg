@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 
-#include "../../grid_tools/lung/lung_environment.h"
-#include "../../grid_tools/lung/lung_grid.h"
+#include "grid/lung/lung_environment.h"
+#include "grid/lung/lung_grid.h"
 
 #include "../../../include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
 #include "../../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"

@@ -1,8 +1,7 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_
 
-#include "../../grid_tools/dealii_extensions.h"
-#include "../../grid_tools/mesh_movement_functions.h"
+#include "grid/mesh_movement_functions.h"
 
 namespace IncNS
 {

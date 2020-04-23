@@ -13,11 +13,8 @@
 #include <deal.II/distributed/tria.h>
 
 // functionalities
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/mesh.h"
-#include "../include/functionalities/print_general_infos.h"
-
-// application
+#include "../include/grid/mapping_degree.h"
+#include "../include/grid/mesh.h"
 #include "../structure/user_interface/application_base.h"
 
 // spatial discretization
@@ -27,6 +24,7 @@
 #include "../structure/time_integration/driver_quasi_static_problems.h"
 #include "../structure/time_integration/driver_steady_problems.h"
 #include "../structure/time_integration/time_int_gen_alpha.h"
+#include "../utilities/print_general_infos.h"
 
 using namespace dealii;
 

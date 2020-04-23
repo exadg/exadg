@@ -5,7 +5,7 @@ using namespace dealii;
 
 namespace Categorization
 {
-/**
+/*
  * Adjust MatrixFree::AdditionalData such that
  *   1) cells which have the same boundary IDs for all faces are put into the
  *      same category

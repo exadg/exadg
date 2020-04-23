@@ -8,10 +8,10 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
-#include "../../functionalities/enum_types.h"
-#include "../../functionalities/print_functions.h"
-#include "../../functionalities/restart_data.h"
-#include "../../functionalities/solver_info_data.h"
+#include "../../grid/enum_types.h"
+#include "../../time_integration/restart_data.h"
+#include "../../time_integration/solver_info_data.h"
+#include "../../utilities/print_functions.h"
 
 #include "enum_types.h"
 

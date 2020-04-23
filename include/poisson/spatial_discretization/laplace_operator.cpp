@@ -1,3 +1,6 @@
+// deal.II
+#include <deal.II/numerics/vector_tools.h>
+
 #include "laplace_operator.h"
 
 #include "weak_boundary_conditions.h"

@@ -11,16 +11,16 @@
 // deal.II
 #include <deal.II/base/exceptions.h>
 
-#include "../../functionalities/enum_types.h"
-#include "../../functionalities/restart_data.h"
-#include "../../functionalities/solver_info_data.h"
+#include "enum_types.h"
 
+#include "../../grid/enum_types.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/preconditioner/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../../time_integration/enum_types.h"
-#include "enum_types.h"
+#include "../../time_integration/restart_data.h"
+#include "../../time_integration/solver_info_data.h"
 
 namespace ConvDiff
 {

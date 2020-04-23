@@ -7,8 +7,6 @@
 
 #include "dg_pressure_correction.h"
 
-#include "../../functionalities/moving_mesh.h"
-
 namespace IncNS
 {
 template<int dim, typename Number>

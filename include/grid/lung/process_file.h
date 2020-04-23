@@ -1,7 +1,7 @@
 #ifndef LUNG_PROCESS_FILE
 #define LUNG_PROCESS_FILE
 
-#include "lung_util.h"
+#include "../../grid/lung/lung_util.h"
 
 void
 load_files(std::vector<std::string>          files,

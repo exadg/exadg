@@ -9,16 +9,16 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_
 
 // nozzle geometry
-#include "../../grid_tools/fda_benchmark/nozzle.h"
+#include "grid/fda_benchmark/nozzle.h"
+
+// inflow profile
+#include "functions_and_boundary_conditions/linear_interpolation.h"
 
 // flow-rate controller
 #include "flow_rate_controller.h"
 
 // postprocessor
 #include "postprocessor.h"
-
-// inflow profile
-#include "../../../include/functionalities/linear_interpolation.h"
 
 namespace IncNS
 {

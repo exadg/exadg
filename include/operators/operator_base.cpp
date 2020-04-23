@@ -1,15 +1,14 @@
-#include <deal.II/distributed/tria.h>
+
+// deal.II
 #include <deal.II/dofs/dof_tools.h>
-#include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/numerics/vector_tools.h>
+
+#include "operator_base.h"
 
 #include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
-#include "../functionalities/categorization.h"
-#include "../functionalities/constraints.h"
-#include "operator_base.h"
+#include "../matrix_free/categorization.h"
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()

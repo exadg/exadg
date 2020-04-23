@@ -5,7 +5,7 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_
 
-#include "../../grid_tools/periodic_box.h"
+#include "grid/periodic_box.h"
 
 namespace ConvDiff
 {

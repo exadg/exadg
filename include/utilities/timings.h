@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_TIMINGS_H_
-#define INCLUDE_FUNCTIONALITIES_TIMINGS_H_
+#ifndef INCLUDE_UTILITIES_TIMINGS_H_
+#define INCLUDE_UTILITIES_TIMINGS_H_
 
 #include <deal.II/base/conditional_ostream.h>
 
@@ -89,4 +89,4 @@ print_results(std::vector<Timings> const & timings, MPI_Comm const & mpi_comm)
 
 
 
-#endif /* INCLUDE_FUNCTIONALITIES_TIMINGS_H_ */
+#endif /* INCLUDE_UTILITIES_TIMINGS_H_ */

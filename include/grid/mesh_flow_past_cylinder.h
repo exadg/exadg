@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 
-#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+#include "grid/one_sided_cylindrical_manifold.h"
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0 = 0.0;  // origin (x-coordinate)

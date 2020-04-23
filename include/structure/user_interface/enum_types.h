@@ -11,9 +11,6 @@
 // C/C++
 #include <string>
 
-
-#include "../../functionalities/enum_types.h"
-
 namespace Structure
 {
 /**************************************************************************************/

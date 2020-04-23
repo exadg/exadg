@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 
-#include "../../functionalities/evaluate_solution_in_given_point.h"
+#include "../../postprocessor/evaluate_solution_in_given_point.h"
 #include "../postprocessor/line_plot_data.h"
 
 /*

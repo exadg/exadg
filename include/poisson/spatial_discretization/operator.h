@@ -15,6 +15,9 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/numerics/vector_tools.h>
 
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
+
 // operators
 #include "../../convection_diffusion/spatial_discretization/operators/rhs_operator.h"
 #include "../../operators/inverse_mass_matrix.h"
@@ -31,12 +34,6 @@
 #include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"
-
-// functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
-
-// postprocessor
-#include "../../convection_diffusion/postprocessor/postprocessor_base.h"
 
 namespace Poisson
 {

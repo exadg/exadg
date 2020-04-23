@@ -15,7 +15,7 @@
 
 #include "elasticity_operator_base.h"
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 
 using namespace dealii;
 

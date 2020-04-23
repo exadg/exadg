@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#include "../../grid_tools/lung/lung_environment.h"
-#include "../../grid_tools/lung/lung_grid.h"
+#include "grid/lung/lung_environment.h"
+#include "grid/lung/lung_grid.h"
 
 namespace Poisson
 {

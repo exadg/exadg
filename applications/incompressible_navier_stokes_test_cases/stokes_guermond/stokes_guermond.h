@@ -8,8 +8,7 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_GUERMOND_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_GUERMOND_H_
 
-#include "../../../include/functionalities/one_sided_cylindrical_manifold.h"
-#include "../../grid_tools/dealii_extensions.h"
+#include "grid/one_sided_cylindrical_manifold.h"
 
 namespace IncNS
 {

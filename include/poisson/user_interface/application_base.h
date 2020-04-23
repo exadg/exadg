@@ -17,15 +17,13 @@
 #include <deal.II/grid/tria_description.h>
 
 // functionalities
-#include "../../functionalities/parse_input.h"
-
-// user interface
 #include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 #include "field_functions.h"
 #include "input_parameters.h"
 
 // postprocessor
 #include "../../convection_diffusion/postprocessor/postprocessor.h"
+#include "../../utilities/parse_input.h"
 
 using namespace dealii;
 

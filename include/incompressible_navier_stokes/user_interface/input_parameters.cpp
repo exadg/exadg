@@ -7,9 +7,7 @@
 
 #include "input_parameters.h"
 
-#include "../../functionalities/print_functions.h"
-
-#include <deal.II/base/mpi.h>
+#include "../../utilities/print_functions.h"
 
 namespace IncNS
 {

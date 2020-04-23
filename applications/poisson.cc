@@ -9,7 +9,7 @@
 #include "../include/poisson/driver.h"
 
 // infrastructure for parameter studies
-#include "../include/functionalities/parameter_study.h"
+#include "../include/utilities/parameter_study.h"
 
 // applications
 #include "poisson_test_cases/gaussian/gaussian.h"

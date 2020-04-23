@@ -8,10 +8,9 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
 
-#include "../../../include/functionalities/one_sided_cylindrical_manifold.h"
-#include "../../grid_tools/dealii_extensions.h"
-#include "../../grid_tools/deformed_cube_manifold.h"
-#include "../../grid_tools/mesh_movement_functions.h"
+#include "grid/deformed_cube_manifold.h"
+#include "grid/mesh_movement_functions.h"
+#include "grid/one_sided_cylindrical_manifold.h"
 
 namespace IncNS
 {

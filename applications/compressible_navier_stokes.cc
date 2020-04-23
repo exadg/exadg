@@ -9,11 +9,9 @@
 #include "../include/compressible_navier_stokes/driver.h"
 
 // infrastructure for convergence studies
-#include "../include/functionalities/convergence_study.h"
+#include "../include/utilities/convergence_study.h"
 
 // applications
-
-// template
 #include "compressible_navier_stokes_test_cases/template/template.h"
 
 // Euler equations

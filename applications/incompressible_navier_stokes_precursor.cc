@@ -9,7 +9,7 @@
 #include <deal.II/base/parameter_handler.h>
 
 // TODO: this function will be included in deal.II
-#include "../include/functionalities/parse_input.h"
+#include "../include/utilities/parse_input.h"
 
 // driver
 #include "../include/incompressible_navier_stokes/driver_precursor.h"

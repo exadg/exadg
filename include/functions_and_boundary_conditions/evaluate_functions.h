@@ -14,8 +14,8 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 
-#include "../../include/functionalities/function_interpolation.h"
-#include "../../include/functionalities/function_with_normal.h"
+#include "function_interpolation.h"
+#include "function_with_normal.h"
 
 using namespace dealii;
 

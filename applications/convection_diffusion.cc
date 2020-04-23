@@ -13,9 +13,9 @@
 #include "../include/convection_diffusion/driver.h"
 
 // infrastructure for convergence studies
-#include "../include/functionalities/convergence_study.h"
+#include "../include/utilities/convergence_study.h"
 
-// applications - template
+// applications
 #include "convection_diffusion_test_cases/template/application.h"
 
 // applications - convection

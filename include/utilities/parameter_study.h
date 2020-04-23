@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_PARAMETER_STUDY_H_
-#define INCLUDE_FUNCTIONALITIES_PARAMETER_STUDY_H_
+#ifndef INCLUDE_UTILITIES_PARAMETER_STUDY_H_
+#define INCLUDE_UTILITIES_PARAMETER_STUDY_H_
 
 /*
  * study throughput as a function of polynomial degree or problem size
@@ -265,4 +265,4 @@ struct ParameterStudy
 
 
 
-#endif /* INCLUDE_FUNCTIONALITIES_PARAMETER_STUDY_H_ */
+#endif /* INCLUDE_UTILITIES_PARAMETER_STUDY_H_ */

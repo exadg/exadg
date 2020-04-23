@@ -12,7 +12,7 @@
 
 #include "../../operators/operator_type.h"
 
-#include "../../functionalities/evaluate_functions.h"
+#include "../../functions_and_boundary_conditions/evaluate_functions.h"
 
 #include "../user_interface/boundary_descriptor.h"
 

@@ -12,6 +12,9 @@
 #include <deal.II/base/revision.h>
 #include <deal.II/base/timer.h>
 
+// matrix_free
+#include "../include/matrix_free/matrix_free_wrapper.h"
+
 // spatial discretization
 #include "../include/poisson/spatial_discretization/operator.h"
 
@@ -25,15 +28,16 @@
 #include "../include/poisson/user_interface/field_functions.h"
 #include "../include/poisson/user_interface/input_parameters.h"
 
+// grid
+#include "../include/grid/calculate_maximum_aspect_ratio.h"
+#include "../include/grid/mapping_degree.h"
+#include "../include/grid/mesh.h"
+
 // functionalities
-#include "../include/functionalities/calculate_maximum_aspect_ratio.h"
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
-#include "../include/functionalities/mesh.h"
-#include "../include/functionalities/print_functions.h"
-#include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/timings.h"
-#include "../include/functionalities/verify_boundary_conditions.h"
+#include "../include/functions_and_boundary_conditions/verify_boundary_conditions.h"
+#include "../utilities/print_functions.h"
+#include "../utilities/print_general_infos.h"
+#include "../utilities/timings.h"
 
 namespace Poisson
 {

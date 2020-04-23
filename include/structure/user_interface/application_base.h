@@ -12,10 +12,8 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 
+#include "../../utilities/parse_input.h"
 // functionalities
-#include "../../../include/functionalities/parse_input.h"
-
-// user interface
 #include "boundary_descriptor.h"
 #include "field_functions.h"
 #include "input_parameters.h"

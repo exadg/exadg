@@ -15,11 +15,11 @@
 #include <deal.II/grid/grid_reordering.h>
 #include <vector>
 
-#include "deform_via_splines.h"
-#include "lung_tria.h"
-#include "lung_util.h"
-#include "process_file.h"
-#include "triangulation_util.h"
+#include "../../grid/lung/deform_via_splines.h"
+#include "../../grid/lung/lung_tria.h"
+#include "../../grid/lung/lung_util.h"
+#include "../../grid/lung/process_file.h"
+#include "../../grid/lung/triangulation_util.h"
 
 #define USE_CHILD_GEOMETRY
 //#define USE_ADULT_GEOMETRY

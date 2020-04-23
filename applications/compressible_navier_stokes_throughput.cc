@@ -13,8 +13,8 @@
 #include "../include/compressible_navier_stokes/driver.h"
 
 // infrastructure for parameter studies and throughput measurements
-#include "../include/functionalities/parameter_study.h"
-#include "../include/functionalities/throughput_study.h"
+#include "../include/utilities/parameter_study.h"
+#include "../include/utilities/throughput_study.h"
 
 // specify the test case that has to be solved
 #include "compressible_navier_stokes_test_cases/taylor_green/taylor_green.h"

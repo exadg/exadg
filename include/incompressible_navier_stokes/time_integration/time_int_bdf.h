@@ -1,19 +1,20 @@
 /*
- * time_int_bdf_navier_stokes.h
+ * time_int_bdf.h
  *
  *  Created on: Jun 10, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../../functionalities/matrix_free_wrapper.h"
-#include "../../functionalities/moving_mesh.h"
 #include "../postprocessor/postprocessor_base.h"
 #include "../spatial_discretization/dg_navier_stokes_base.h"
+#include "grid/moving_mesh.h"
+#include "matrix_free/matrix_free_wrapper.h"
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
@@ -187,4 +188,4 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_ */
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_ */

@@ -8,9 +8,10 @@
 #ifndef INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_
 #define INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_
 
-#include "evaluate_solution_in_given_point.h"
+#include "../postprocessor/evaluate_solution_in_given_point.h"
 #include "function_interpolation.h"
-#include "matrix_free_wrapper.h"
+
+#include "../matrix_free/matrix_free_wrapper.h"
 
 using namespace dealii;
 

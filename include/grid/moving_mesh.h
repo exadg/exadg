@@ -27,9 +27,8 @@ public:
     : Mesh<dim>(mapping_degree_static_in), mpi_comm(mpi_comm_in)
   {
     mapping_ale.reset(new MappingQCache<dim>(mapping_degree_moving_in));
-    hierarchic_to_lexicographic_numbering.resize(Utilities::pow(mapping_degree_moving_in + 1, dim));
-    FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_moving_in,
-                                                        hierarchic_to_lexicographic_numbering);
+    hierarchic_to_lexicographic_numbering =
+      FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_moving_in);
     lexicographic_to_hierarchic_numbering =
       Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
   }

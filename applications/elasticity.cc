@@ -7,7 +7,7 @@
 #include "../include/structure/driver.h"
 
 // infrastructure for convergence studies
-#include "../include/functionalities/convergence_study.h"
+#include "../include/utilities/convergence_study.h"
 
 // applications
 #include "./structure/bar/bar.h"

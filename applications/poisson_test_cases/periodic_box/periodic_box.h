@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include "../../grid_tools/periodic_box.h"
+#include "grid/periodic_box.h"
 
 namespace Poisson
 {

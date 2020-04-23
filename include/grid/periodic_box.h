@@ -12,7 +12,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
 
-#include "deformed_cube_manifold.h"
+#include "../grid/deformed_cube_manifold.h"
 
 template<int dim>
 void

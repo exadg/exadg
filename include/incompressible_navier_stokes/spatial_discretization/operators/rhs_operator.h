@@ -10,7 +10,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/mapping_flags.h"
 
 using namespace dealii;

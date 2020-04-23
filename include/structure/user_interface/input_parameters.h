@@ -11,16 +11,17 @@
 // deal.II
 #include <deal.II/base/exceptions.h>
 
-#include "../../functionalities/print_functions.h"
-#include "../../functionalities/restart_data.h"
-#include "../../functionalities/solver_info_data.h"
+#include "../../grid/enum_types.h"
 #include "../../time_integration/enum_types.h"
+#include "../../time_integration/restart_data.h"
+#include "../../time_integration/solver_info_data.h"
+#include "../../utilities/print_functions.h"
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 
-#include "../../structure/user_interface/enum_types.h"
+#include "enum_types.h"
 
 namespace Structure
 {

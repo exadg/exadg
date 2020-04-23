@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include "../../../include/functionalities/linear_interpolation.h"
-#include "../../grid_tools/mesh_flow_past_cylinder.h"
+#include "functions_and_boundary_conditions/linear_interpolation.h"
+#include "grid/mesh_flow_past_cylinder.h"
 
 namespace IncNS
 {

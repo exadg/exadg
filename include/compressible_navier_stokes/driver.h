@@ -8,6 +8,9 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
+// matrix-free
+#include "../include/matrix_free/matrix_free_wrapper.h"
+
 // spatial discretization
 #include "spatial_discretization/dg_operator.h"
 
@@ -21,12 +24,13 @@
 #include "user_interface/field_functions.h"
 #include "user_interface/input_parameters.h"
 
+// grid
+#include "../include/grid/mapping_degree.h"
+#include "../include/grid/mesh.h"
+
 // general functionalities
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
-#include "../include/functionalities/mesh.h"
-#include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/verify_boundary_conditions.h"
+#include "../include/functions_and_boundary_conditions/verify_boundary_conditions.h"
+#include "../utilities/print_general_infos.h"
 
 namespace CompNS
 {

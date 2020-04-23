@@ -8,11 +8,13 @@
 #ifndef INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
 #define INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_
 
-#include "deal.II/base/conditional_ostream.h"
-
-#include "print_functions.h"
-
+// C/C++
 #include <limits>
+
+// deal.II
+#include <deal.II/base/conditional_ostream.h>
+
+#include "../utilities/print_functions.h"
 
 struct RestartData
 {

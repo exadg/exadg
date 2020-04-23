@@ -7,9 +7,9 @@
 
 #include "time_int_explicit_runge_kutta.h"
 
+#include "../../utilities/print_functions.h"
 #include "../spatial_discretization/interface.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
-#include "functionalities/print_functions.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace ConvDiff

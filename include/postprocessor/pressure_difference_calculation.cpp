@@ -5,11 +5,12 @@
  *      Author: fehn
  */
 
+// C/C++
+#include <fstream>
+
 #include "pressure_difference_calculation.h"
 
-#include "../functionalities/evaluate_solution_in_given_point.h"
-
-#include <fstream>
+#include "evaluate_solution_in_given_point.h"
 
 template<int dim, typename Number>
 PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm const & comm)

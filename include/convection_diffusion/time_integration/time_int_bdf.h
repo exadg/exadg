@@ -13,8 +13,9 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
-#include "../../functionalities/matrix_free_wrapper.h"
-#include "../../functionalities/moving_mesh.h"
+#include "grid/moving_mesh.h"
+#include "matrix_free/matrix_free_wrapper.h"
+
 #include "../postprocessor/postprocessor_base.h"
 
 #include "../spatial_discretization/dg_operator.h"

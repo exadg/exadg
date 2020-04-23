@@ -11,7 +11,7 @@
 
 #include <deal.II/base/point.h>
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 
 using namespace dealii;
 

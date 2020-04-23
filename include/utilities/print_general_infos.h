@@ -5,13 +5,13 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_
-#define INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_
+#ifndef INCLUDE_UTILITIES_PRINT_GENERAL_INFOS_H_
+#define INCLUDE_UTILITIES_PRINT_GENERAL_INFOS_H_
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/revision.h>
 
-#include "print_functions.h"
+#include "../utilities/print_functions.h"
 
 using namespace dealii;
 
@@ -83,4 +83,4 @@ print_grid_data(ConditionalOStream const &               pcout,
   print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
 }
 
-#endif /* INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_ */
+#endif /* INCLUDE_UTILITIES_PRINT_GENERAL_INFOS_H_ */

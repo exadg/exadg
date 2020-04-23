@@ -5,7 +5,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 // turbulent channel data
 

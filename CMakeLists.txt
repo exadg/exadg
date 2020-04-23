@@ -32,8 +32,6 @@ ENDIF()
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
-include_directories(applications/macros)
-
 # Set the source files to be compiled
 SET( TARGET_SRC
      include/time_integration/bdf_time_integration.cpp
@@ -43,8 +41,8 @@ SET( TARGET_SRC
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/time_integration/time_int_gen_alpha_base.cpp
      include/time_integration/enum_types.cpp
-     include/functionalities/enum_types.cpp
-     include/functionalities/linear_interpolation.cpp
+     include/grid/enum_types.cpp
+     include/functions_and_boundary_conditions/linear_interpolation.cpp
      include/matrix_free/resolve_templates_float_2d.cpp
      include/matrix_free/resolve_templates_float_3d.cpp
      include/matrix_free/resolve_templates_double_2d.cpp
@@ -108,7 +106,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp 
      include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
-     include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.cpp
+     include/incompressible_navier_stokes/time_integration/time_int_bdf.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
@@ -186,6 +184,6 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 DEAL_II_SETUP_TARGET(exadg)
 
 ADD_SUBDIRECTORY(applications)
-ADD_SUBDIRECTORY(tests)
+#ADD_SUBDIRECTORY(tests)
 
 

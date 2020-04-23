@@ -5,15 +5,13 @@
  *      Author: fehn
  */
 
-// specify the application to be used for throughput measurements
-
 #include "../include/incompressible_navier_stokes/driver.h"
 
 // infrastructure for parameter studies and throughput measurements
-#include "../include/functionalities/parameter_study.h"
-#include "../include/functionalities/throughput_study.h"
+#include "../include/utilities/parameter_study.h"
+#include "../include/utilities/throughput_study.h"
 
-// application
+// applications
 #include "incompressible_navier_stokes_test_cases/periodic_box/periodic_box.h"
 
 class ApplicationSelector

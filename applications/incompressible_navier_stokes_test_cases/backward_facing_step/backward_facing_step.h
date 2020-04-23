@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
-#include "../../../include/functionalities/linear_interpolation.h"
+#include "functions_and_boundary_conditions/linear_interpolation.h"
 
 #include "postprocessor.h"
 

@@ -11,7 +11,7 @@
 #include <deal.II/lac/la_parallel_block_vector.h>
 
 #include "../spatial_discretization/dg_dual_splitting.h"
-#include "time_int_bdf_navier_stokes.h"
+#include "time_int_bdf.h"
 
 using namespace dealii;
 

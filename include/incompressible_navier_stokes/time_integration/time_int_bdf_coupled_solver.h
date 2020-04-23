@@ -12,7 +12,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 #include "../spatial_discretization/dg_coupled_solver.h"
-#include "time_int_bdf_navier_stokes.h"
+#include "time_int_bdf.h"
 
 namespace IncNS
 {

@@ -6,7 +6,7 @@
  */
 
 
-#include "../../grid_tools/deformed_cube_manifold.h"
+#include "grid/deformed_cube_manifold.h"
 
 namespace Poisson
 {

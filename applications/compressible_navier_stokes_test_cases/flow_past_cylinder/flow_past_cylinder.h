@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include "../../../include/functionalities/one_sided_cylindrical_manifold.h"
-#include "../../grid_tools/mesh_flow_past_cylinder.h"
+#include "grid/mesh_flow_past_cylinder.h"
+#include "grid/one_sided_cylindrical_manifold.h"
 
 namespace CompNS
 {

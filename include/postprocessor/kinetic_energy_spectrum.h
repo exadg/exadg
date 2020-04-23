@@ -13,7 +13,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include "deal.II/matrix_free/matrix_free.h"
 
-#include "../functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 // kinetic energy spectrum data
 

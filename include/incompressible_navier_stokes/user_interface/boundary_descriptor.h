@@ -13,7 +13,7 @@ using namespace dealii;
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
-#include "../../functionalities/function_interpolation.h"
+#include "../../functions_and_boundary_conditions/function_interpolation.h"
 
 namespace IncNS
 {

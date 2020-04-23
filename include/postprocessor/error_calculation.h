@@ -15,7 +15,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 
-#include "../functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 template<int dim>
 struct ErrorCalculationData

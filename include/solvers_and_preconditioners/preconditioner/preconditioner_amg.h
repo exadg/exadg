@@ -5,7 +5,7 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 #include "../multigrid/multigrid_input_parameters.h"
 #include "../preconditioner/preconditioner_base.h"
 

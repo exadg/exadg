@@ -7,8 +7,8 @@
 
 #include "inflow_data_calculator.h"
 
-#include "../../functionalities/evaluate_solution_in_given_point.h"
-#include "../../functionalities/linear_interpolation.h"
+#include "../../functions_and_boundary_conditions/linear_interpolation.h"
+#include "../../postprocessor/evaluate_solution_in_given_point.h"
 
 template<int dim, typename Number>
 InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in,

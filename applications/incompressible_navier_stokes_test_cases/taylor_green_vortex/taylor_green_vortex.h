@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TAYLOR_GREEN_VORTEX_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TAYLOR_GREEN_VORTEX_H_
 
-#include "../../grid_tools/mesh_movement_functions.h"
-#include "../../grid_tools/periodic_box.h"
+#include "grid/mesh_movement_functions.h"
+#include "grid/periodic_box.h"
 
 namespace IncNS
 {
