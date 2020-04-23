@@ -265,10 +265,13 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
                                                                    VectorType const & src) const
 {
-  if(is_dg && evaluate_face_integrals())
+  if(is_dg)
   {
-    matrix_free->loop(
-      &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
+    if(evaluate_face_integrals())
+      matrix_free->loop(
+        &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
+    else
+      matrix_free->cell_loop(&This::cell_loop, this, dst, src);
   }
   else
   {
