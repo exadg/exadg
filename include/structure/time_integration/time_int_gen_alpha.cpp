@@ -86,7 +86,7 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
   // to zero in order to allow convergence of solvers (especially for Newton solver,
   // linear solver should converge without this line because the linear operator
   // has values of 1 on the diagonal for constrained degrees of freedom).
-  pde_operator->apply_dirichlet_bc_homogeneous(const_vector);
+  pde_operator->set_constrained_values_to_zero(const_vector);
 
   // solve system of equations for displacement d_{n+1-alpha_f}
   unsigned int N_iter_nonlinear = 0;

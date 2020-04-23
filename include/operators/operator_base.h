@@ -156,6 +156,9 @@ public:
   initialize_dof_vector(VectorType & vector) const;
 
   void
+  set_constrained_values_to_zero(VectorType & vector) const;
+
+  void
   calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*

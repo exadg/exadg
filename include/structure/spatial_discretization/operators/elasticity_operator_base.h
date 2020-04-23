@@ -284,18 +284,6 @@ public:
         dst[m.first] = m.second;
   }
 
-  void
-  set_dirichlet_values_continuous_hom(VectorType & dst) const
-  {
-    std::map<types::global_dof_index, double> boundary_values;
-    fill_dirichlet_values_continuous_hom(boundary_values);
-
-    // set Dirichlet values in solution vector
-    for(auto m : boundary_values)
-      if(dst.get_partitioner()->in_local_range(m.first))
-        dst[m.first] = m.second;
-  }
-
 protected:
   virtual void
   reinit_cell(unsigned int const cell) const
@@ -324,26 +312,6 @@ private:
                                                  this->data.dof_index),
                                                dbc.first,
                                                *dbc.second,
-                                               boundary_values,
-                                               mask);
-    }
-  }
-
-  void
-  fill_dirichlet_values_continuous_hom(
-    std::map<types::global_dof_index, double> & boundary_values) const
-  {
-    for(auto dbc : this->data.bc->dirichlet_bc)
-    {
-      Functions::ZeroFunction<dim> zero_function = Functions::ZeroFunction<dim>(dim);
-
-      ComponentMask mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
-
-      VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
-                                               this->matrix_free->get_dof_handler(
-                                                 this->data.dof_index),
-                                               dbc.first,
-                                               zero_function,
                                                boundary_values,
                                                mask);
     }

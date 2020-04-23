@@ -245,7 +245,7 @@ public:
                             double const       time) const;
 
   void
-  apply_dirichlet_bc_homogeneous(VectorType & vector) const;
+  set_constrained_values_to_zero(VectorType & vector) const;
 
   /*
    * This function solves the (non-)linear system of equations.

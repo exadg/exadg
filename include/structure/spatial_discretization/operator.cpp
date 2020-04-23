@@ -497,12 +497,12 @@ Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_dirichlet_bc_homogeneous(VectorType & vector) const
+Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
 {
   if(param.large_deformation)
-    elasticity_operator_nonlinear.set_dirichlet_values_continuous_hom(vector);
+    elasticity_operator_nonlinear.set_constrained_values_to_zero(vector);
   else
-    elasticity_operator_linear.set_dirichlet_values_continuous_hom(vector);
+    elasticity_operator_linear.set_constrained_values_to_zero(vector);
 }
 
 template<int dim, typename Number>

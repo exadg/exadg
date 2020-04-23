@@ -231,6 +231,17 @@ OperatorBase<dim, Number, AdditionalData, n_components>::initialize_dof_vector(
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
+OperatorBase<dim, Number, AdditionalData, n_components>::set_constrained_values_to_zero(
+  VectorType & vector) const
+{
+  for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+  {
+    vector.local_element(constrained_indices[i]) = 0.0;
+  }
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
 OperatorBase<dim, Number, AdditionalData, n_components>::calculate_inverse_diagonal(
   VectorType & diagonal) const
 {
