@@ -46,10 +46,7 @@ public:
   postprocessing_stability_analysis();
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
-
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  print_iterations() const;
 
 private:
   void
@@ -150,11 +147,9 @@ private:
   // stores pressure Dirichlet boundary values at previous times
   std::vector<VectorType> pressure_dbc;
 
-  mutable std::vector<double> computing_times;
-  double                      computing_time_convective;
-  std::vector<unsigned int>   iterations;
-
-  unsigned int N_iter_nonlinear_momentum;
+  // iteration counts
+  unsigned int iterations_momentum_linear, iterations_momentum_nonlinear, iterations_pressure,
+    iterations_projection;
 };
 
 } // namespace IncNS

@@ -22,7 +22,7 @@ DriverSteadyProblems<Number>::DriverSteadyProblems(
     param(param_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    computing_times(1),
+    timer_tree(new TimerTree()),
     postprocessor(postprocessor_in)
 {
 }
@@ -42,11 +42,23 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::solve_problem()
 {
+  Timer timer;
+  timer.restart();
+
   postprocessing();
 
   solve();
 
   postprocessing();
+
+  timer_tree->insert({"DriverSteady"}, timer.wall_time());
+}
+
+template<typename Number>
+std::shared_ptr<TimerTree>
+DriverSteadyProblems<Number>::get_timings() const
+{
+  return timer_tree;
 }
 
 template<typename Number>
@@ -72,10 +84,10 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::solve()
 {
-  pcout << std::endl << "Solving steady state problem ..." << std::endl;
-
   Timer timer;
   timer.restart();
+
+  pcout << std::endl << "Solving steady state problem ..." << std::endl;
 
   // prepare pointer for velocity field, but only if necessary
   VectorType const * velocity_ptr = nullptr;
@@ -110,40 +122,31 @@ DriverSteadyProblems<Number>::solve()
                                                 0.0 /* time */,
                                                 velocity_ptr);
 
-  computing_times[0] += timer.wall_time();
-
   // write output
   pcout << std::endl
         << "Solve linear system of equations:" << std::endl
         << "  Iterations: " << std::setw(6) << std::right << iterations
-        << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << computing_times[0]
+        << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << timer.wall_time()
         << std::endl;
 
   pcout << std::endl << "... done!" << std::endl;
+
+  timer_tree->insert({"DriverSteady", "Solve"}, timer.wall_time());
 }
 
 template<typename Number>
 void
 DriverSteadyProblems<Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   postprocessor->do_postprocessing(solution);
-}
 
-template<typename Number>
-void
-DriverSteadyProblems<Number>::get_wall_times(std::vector<std::string> & name,
-                                             std::vector<double> &      wall_time) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Linear system"};
-  name                           = names;
-
-  wall_time.resize(1);
-  wall_time[0] = computing_times[0];
+  timer_tree->insert({"DriverSteady", "Postprocessing"}, timer.wall_time());
 }
 
 // instantiations
-
 template class DriverSteadyProblems<float>;
 template class DriverSteadyProblems<double>;
 

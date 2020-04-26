@@ -38,6 +38,7 @@
 #include "../utilities/print_functions.h"
 #include "../utilities/print_general_infos.h"
 #include "../utilities/timings.h"
+#include "../utilities/timings_hierarchical.h"
 
 namespace Poisson
 {
@@ -101,7 +102,7 @@ public:
   solve();
 
   Timings
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(std::string const & operator_type_string,
@@ -142,14 +143,12 @@ private:
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor;
 
-  // Computation time (wall clock time)
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
-
   // number of iterations
   mutable unsigned int iterations;
-  mutable double wall_time_vector_init, wall_time_rhs, wall_time_solver, wall_time_postprocessing;
+
+  // Computation time (wall clock time)
+  mutable TimerTree timer_tree;
+  mutable double    solve_time;
 };
 
 } // namespace Poisson

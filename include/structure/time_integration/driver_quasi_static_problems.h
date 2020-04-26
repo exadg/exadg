@@ -14,6 +14,7 @@
 
 #include "../postprocessor/postprocessor.h"
 #include "../spatial_discretization/operator.h"
+#include "utilities/timings_hierarchical.h"
 
 using namespace dealii;
 
@@ -37,6 +38,9 @@ public:
   void
   solve_problem();
 
+  std::shared_ptr<TimerTree>
+  get_timings() const;
+
 private:
   void
   initialize_vectors();
@@ -44,8 +48,11 @@ private:
   void
   initialize_solution();
 
+  void
+  solve();
+
   unsigned int
-  solve(double const load_factor);
+  solve_step(double const load_factor);
 
   void
   postprocessing() const;
@@ -60,13 +67,13 @@ private:
 
   ConditionalOStream pcout;
 
-  std::vector<double> computing_times;
-
   // vectors
   VectorType solution;
   VectorType rhs_vector;
 
   unsigned int step_number;
+
+  std::shared_ptr<TimerTree> timer_tree;
 };
 
 } // namespace Structure

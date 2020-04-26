@@ -36,9 +36,11 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
     acceleration(this->param.order_extrapolation_pressure_nbc),
 #endif
     velocity_dbc(this->order),
-    computing_times(6),
-    computing_time_convective(0.0),
-    iterations(5),
+    iterations_convection(0),
+    iterations_pressure(0),
+    iterations_projection(0),
+    iterations_viscous(0),
+    iterations_penalty(0),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
                        this->param.start_with_low_order)
 {
@@ -475,32 +477,31 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
     this->pcout << std::endl
                 << "Solve convective step explicitly:" << std::endl
                 << "  Iterations:        " << std::setw(6) << std::right << "-"
-                << "\t Wall time [s]: " << std::scientific
-                << timer.wall_time() + computing_time_convective << std::endl;
+                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
-  computing_times[0] += timer.wall_time() + computing_time_convective;
+  this->timer_tree->insert({"Timeloop", "Convective step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::evaluate_convective_term()
 {
+  Timer timer;
+  timer.restart();
+
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
     {
-      Timer timer;
-      timer.restart();
-
       pde_operator->evaluate_convective_term(this->convective_term_np,
                                              velocity_np,
                                              this->get_next_time());
-
-      computing_time_convective = timer.wall_time();
     }
   }
+
+  this->timer_tree->insert({"Timeloop", "Convective step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -528,8 +529,8 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
 
-  unsigned int iterations_pressure =
-    pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
+  unsigned int const n_iter = pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
+  iterations_pressure += n_iter;
 
   // special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
@@ -541,12 +542,11 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << iterations_pressure
+                << "  Iterations:        " << std::setw(6) << std::right << n_iter
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
-  computing_times[1] += timer.wall_time();
-  iterations[1] += iterations_pressure;
+  this->timer_tree->insert({"Timeloop", "Pressure step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -711,7 +711,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
 
   // penalty terms
-  unsigned int iterations_projection = 0;
+  unsigned int n_iter = 0;
 
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
@@ -724,8 +724,8 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
            this->param.update_preconditioner_projection_every_time_steps ==
          0);
 
-      iterations_projection =
-        pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+      n_iter = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+      iterations_projection += n_iter;
     }
   }
 
@@ -734,12 +734,11 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   {
     this->pcout << std::endl
                 << "Solve projection step for intermediate velocity:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << iterations_projection
+                << "  Iterations:        " << std::setw(6) << std::right << n_iter
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
-  computing_times[2] += timer.wall_time();
-  iterations[2] += iterations_projection;
+  this->timer_tree->insert({"Timeloop", "Pojection step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -808,19 +807,18 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       ((this->time_step_number - 1) % this->param.update_preconditioner_viscous_every_time_steps ==
        0);
 
-    unsigned int iterations_viscous = pde_operator->solve_viscous(
+    unsigned int const n_iter = pde_operator->solve_viscous(
       velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
+    iterations_viscous += n_iter;
 
     // write output
     if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve viscous step for velocity u:" << std::endl
-                  << "  Iterations:        " << std::setw(6) << std::right << iterations_viscous
+                  << "  Iterations:        " << std::setw(6) << std::right << n_iter
                   << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
-
-    iterations[3] += iterations_viscous;
   }
   else // inviscid
   {
@@ -828,7 +826,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     AssertThrow(this->param.equation_type == EquationType::Euler, ExcMessage("Logical error."));
   }
 
-  computing_times[3] += timer.wall_time();
+  this->timer_tree->insert({"Timeloop", "Viscous step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -851,11 +849,11 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::penalty_step()
 {
-  Timer timer;
-  timer.restart();
-
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
+    Timer timer;
+    timer.restart();
+
     // extrapolate velocity to time t_n+1 and use this velocity field to
     // calculate the penalty parameter for the divergence and continuity penalty term
     VectorType velocity_extrapolated;
@@ -882,22 +880,21 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
        0);
 
     // use solution of previous step as initial guess
-    unsigned int iterations_projection =
+    unsigned int const n_iter =
       pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+    iterations_penalty += n_iter;
 
     // write output
     if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve penalty step:" << std::endl
-                  << "  Iterations:        " << std::setw(6) << std::right << iterations_projection
+                  << "  Iterations:        " << std::setw(6) << std::right << n_iter
                   << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
 
-    iterations[4] += iterations_projection;
+    this->timer_tree->insert({"Timeloop", "Penalty step"}, timer.wall_time());
   }
-
-  computing_times[4] += timer.wall_time();
 }
 
 template<int dim, typename Number>
@@ -1009,7 +1006,7 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
       // solve time step
-      this->do_timestep(false);
+      this->do_timestep();
 
       // calculate increment:
       // increment = solution_{n+1} - solution_{n}
@@ -1071,49 +1068,37 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                                     std::vector<double> &      iteration) const
+TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
 {
-  unsigned int             size  = 4;
+  unsigned int const N_time_steps = this->get_time_step_number() - 1;
+
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
+
+  std::vector<double> iterations_avg;
+  iterations_avg.resize(4);
+  iterations_avg[0] = (double)this->iterations_convection / (double)N_time_steps;
+  iterations_avg[1] = (double)this->iterations_pressure / (double)N_time_steps;
+  iterations_avg[2] = (double)this->iterations_projection / (double)N_time_steps;
+  iterations_avg[3] = (double)this->iterations_viscous / (double)N_time_steps;
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
   {
     names.push_back("Penalty terms");
-    size++;
+    iterations_avg.push_back((double)this->iterations_penalty / (double)N_time_steps);
   }
 
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
-
-  name.resize(size);
-  iteration.resize(size);
-  for(unsigned int i = 0; i < size; ++i)
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
   {
-    name[i]      = names[i];
-    iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
-  }
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                     std::vector<double> &      wall_time) const
-{
-  unsigned int             size  = 4;
-  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
-
-  if(this->param.apply_penalty_terms_in_postprocessing_step)
-  {
-    names.push_back("Penalty terms");
-    size++;
+    length = length > names[i].length() ? length : names[i].length();
   }
 
-  name.resize(size);
-  wall_time.resize(size);
-  for(unsigned int i = 0; i < size; ++i)
+  // print
+  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
   {
-    name[i]      = names[i];
-    wall_time[i] = this->computing_times[i];
+    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
+                << std::endl;
   }
 }
 

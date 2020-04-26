@@ -23,7 +23,7 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   : pde_operator(operator_in),
     param(param_in),
     mpi_comm(mpi_comm_in),
-    computing_times(1),
+    timer_tree(new TimerTree()),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     postprocessor(postprocessor_in)
 {
@@ -46,6 +46,13 @@ LinearAlgebra::distributed::Vector<Number> const &
 DriverSteadyProblems<dim, Number>::get_velocity() const
 {
   return solution.block(0);
+}
+
+template<int dim, typename Number>
+std::shared_ptr<TimerTree>
+DriverSteadyProblems<dim, Number>::get_timings() const
+{
+  return timer_tree;
 }
 
 template<int dim, typename Number>
@@ -72,10 +79,10 @@ template<int dim, typename Number>
 void
 DriverSteadyProblems<dim, Number>::solve()
 {
-  pcout << std::endl << "Solving steady state problem ..." << std::endl;
-
   Timer timer;
   timer.restart();
+
+  pcout << std::endl << "Solving steady state problem ..." << std::endl;
 
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
@@ -124,8 +131,6 @@ DriverSteadyProblems<dim, Number>::solve()
 
   pde_operator->adjust_pressure_level_if_undefined(solution.block(1), 0.0 /* time */);
 
-  computing_times[0] += timer.wall_time();
-
   // write output
   if(this->param.equation_type == EquationType::Stokes)
   {
@@ -133,7 +138,7 @@ DriverSteadyProblems<dim, Number>::solve()
           << "Solve linear problem:" << std::endl
           << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
           << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-          << computing_times[0] << std::endl;
+          << timer.wall_time() << std::endl;
   }
   else // nonlinear problem
   {
@@ -149,38 +154,42 @@ DriverSteadyProblems<dim, Number>::solve()
           << "  Linear iterations (tot):" << std::setw(12) << std::scientific
           << std::setprecision(4) << std::right << N_iter_linear << std::endl
           << "  Wall time [s]:          " << std::setw(12) << std::scientific
-          << std::setprecision(4) << computing_times[0] << std::endl;
+          << std::setprecision(4) << timer.wall_time() << std::endl;
   }
 
   pcout << std::endl << "... done!" << std::endl;
-}
 
-template<int dim, typename Number>
-void
-DriverSteadyProblems<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                  std::vector<double> &      wall_time) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Coupled system"};
-  name                           = names;
-
-  wall_time.resize(1);
-  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
-  {
-    wall_time[i] = this->computing_times[i];
-  }
+  timer_tree->insert({"DriverSteady", "Solve"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 DriverSteadyProblems<dim, Number>::solve_steady_problem()
 {
-  postprocessor->do_postprocessing(solution.block(0), solution.block(1));
+  Timer timer;
+  timer.restart();
+
+  postprocessing();
 
   solve();
 
-  postprocessor->do_postprocessing(solution.block(0), solution.block(1));
+  postprocessing();
+
+  timer_tree->insert({"DriverSteady"}, timer.wall_time());
 }
+
+template<int dim, typename Number>
+void
+DriverSteadyProblems<dim, Number>::postprocessing() const
+{
+  Timer timer;
+  timer.restart();
+
+  postprocessor->do_postprocessing(solution.block(0), solution.block(1));
+
+  timer_tree->insert({"DriverSteady", "Postprocessing"}, timer.wall_time());
+}
+
 
 template class DriverSteadyProblems<2, float>;
 template class DriverSteadyProblems<2, double>;

@@ -20,7 +20,7 @@ DriverSteady<dim, Number>::DriverSteady(
     param(param_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    computing_times(1)
+    timer_tree(new TimerTree())
 {
 }
 
@@ -39,11 +39,23 @@ template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::solve_problem()
 {
+  Timer timer;
+  timer.restart();
+
   postprocessing();
 
   solve();
 
   postprocessing();
+
+  timer_tree->insert({"DriverSteady"}, timer.wall_time());
+}
+
+template<int dim, typename Number>
+std::shared_ptr<TimerTree>
+DriverSteady<dim, Number>::get_timings() const
+{
+  return timer_tree;
 }
 
 template<int dim, typename Number>
@@ -66,13 +78,10 @@ template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::solve()
 {
-  pcout << std::endl << "Solving steady state problem ..." << std::endl;
-
   Timer timer;
   timer.restart();
 
-  unsigned int N_iter_nonlinear = 0;
-  unsigned int N_iter_linear    = 0;
+  pcout << std::endl << "Solving steady state problem ..." << std::endl;
 
   if(param.large_deformation) // nonlinear problem
   {
@@ -80,23 +89,9 @@ DriverSteady<dim, Number>::solve()
     auto const iter = pde_operator->solve_nonlinear(
       solution, const_vector, 0.0 /* no mass term */, 0.0 /* time */, param.update_preconditioner);
 
-    N_iter_nonlinear = std::get<0>(iter);
-    N_iter_linear    = std::get<1>(iter);
-  }
-  else // linear problem
-  {
-    // calculate right-hand side vector
-    pde_operator->compute_rhs_linear(rhs_vector, 0.0 /* time */);
+    unsigned int const N_iter_nonlinear = std::get<0>(iter);
+    unsigned int const N_iter_linear    = std::get<1>(iter);
 
-    N_iter_linear =
-      pde_operator->solve_linear(solution, rhs_vector, 0.0 /* no mass term */, 0.0 /* time */);
-  }
-
-  computing_times[0] += timer.wall_time();
-
-  // solver info output
-  if(param.large_deformation)
-  {
     double N_iter_linear_avg =
       (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
 
@@ -109,25 +104,38 @@ DriverSteady<dim, Number>::solve()
           << "  Linear iterations (tot):" << std::setw(12) << std::scientific
           << std::setprecision(4) << std::right << N_iter_linear << std::endl
           << "  Wall time [s]:          " << std::setw(12) << std::scientific
-          << std::setprecision(4) << computing_times[0] << std::endl;
+          << std::setprecision(4) << timer.wall_time() << std::endl;
   }
-  else
+  else // linear problem
   {
+    // calculate right-hand side vector
+    pde_operator->compute_rhs_linear(rhs_vector, 0.0 /* time */);
+
+    unsigned int const N_iter_linear =
+      pde_operator->solve_linear(solution, rhs_vector, 0.0 /* no mass term */, 0.0 /* time */);
+
     pcout << std::endl
           << "Solve linear problem:" << std::endl
           << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
           << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-          << computing_times[0] << std::endl;
+          << timer.wall_time() << std::endl;
   }
 
   pcout << std::endl << "... done!" << std::endl;
+
+  timer_tree->insert({"DriverSteady", "Solve"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   postprocessor->do_postprocessing(solution);
+
+  timer_tree->insert({"DriverSteady", "Postprocessing"}, timer.wall_time());
 }
 
 template class DriverSteady<2, float>;

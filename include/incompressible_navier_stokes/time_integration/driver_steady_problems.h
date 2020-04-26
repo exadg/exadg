@@ -12,6 +12,7 @@
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../../utilities/timings_hierarchical.h"
 #include "../postprocessor/postprocessor_base.h"
 #include "../spatial_discretization/dg_coupled_solver.h"
 
@@ -42,11 +43,11 @@ public:
   void
   solve_steady_problem();
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
-
   VectorType const &
   get_velocity() const;
+
+  std::shared_ptr<TimerTree>
+  get_timings() const;
 
 private:
   void
@@ -58,13 +59,16 @@ private:
   void
   solve();
 
+  void
+  postprocessing() const;
+
   std::shared_ptr<Operator> pde_operator;
 
   InputParameters const & param;
 
   MPI_Comm const & mpi_comm;
 
-  std::vector<double> computing_times;
+  std::shared_ptr<TimerTree> timer_tree;
 
   ConditionalOStream pcout;
 

@@ -6,15 +6,13 @@
  */
 
 #include "driver.h"
+#include "../utilities/print_throughput.h"
 
 namespace Structure
 {
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const & comm)
-  : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
-    overall_time(0.0),
-    setup_time(0.0)
+  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0)
 {
 }
 
@@ -38,6 +36,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
                            unsigned int const &                          refine_space)
 {
+  Timer timer;
   timer.restart();
 
   print_header();
@@ -131,7 +130,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   pde_operator->setup_solver();
 
-  setup_time = timer.wall_time();
+  timer_tree.insert({"Elasticity", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -154,15 +153,56 @@ Driver<dim, Number>::solve() const
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-
-  overall_time += this->timer.wall_time();
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::analyze_computing_times() const
+Driver<dim, Number>::print_statistics(double const total_time) const
 {
-  // TODO
+  pcout << std::endl
+        << "_________________________________________________________________________________"
+        << std::endl
+        << std::endl;
+
+  this->pcout << "Performance results for elasticity solver:" << std::endl;
+
+  timer_tree.insert({"Elasticity"}, total_time);
+
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    timer_tree.insert({"Elasticity"}, time_integrator->get_timings());
+  }
+  else if(param.problem_type == ProblemType::Steady)
+  {
+    timer_tree.insert({"Elasticity"}, driver_steady->get_timings());
+  }
+  else if(param.problem_type == ProblemType::QuasiStatic)
+  {
+    timer_tree.insert({"Elasticity"}, driver_quasi_static->get_timings());
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // computational costs in CPUh
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              total_time_avg  = total_time_data.avg;
+
+  print_costs(pcout, total_time_avg, N_mpi_processes);
+
+  pcout << std::endl
+        << "_________________________________________________________________________________"
+        << std::endl
+        << std::endl;
 }
 
 template class Driver<2, float>;

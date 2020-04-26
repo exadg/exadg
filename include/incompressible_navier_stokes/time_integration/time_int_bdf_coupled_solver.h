@@ -44,10 +44,7 @@ public:
   postprocessing_stability_analysis();
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
-
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  print_iterations() const;
 
 private:
   void
@@ -72,7 +69,7 @@ private:
   evaluate_residual();
 
   void
-  projection_step();
+  penalty_step();
 
   void
   prepare_vectors_for_next_timestep() override;
@@ -100,11 +97,8 @@ private:
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;
 
-  // performance analysis: average number of iterations and solver time
-  mutable std::vector<double> computing_times;
-  double                      computing_time_convective;
-  std::vector<unsigned int>   iterations;
-  unsigned int                N_iter_nonlinear;
+  // iteration counts
+  unsigned int iterations_linear, iterations_nonlinear, iterations_penalty;
 
   // scaling factor continuity equation
   double scaling_factor_continuity;

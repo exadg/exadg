@@ -219,7 +219,7 @@ TimeIntBDFBase<Number>::do_timestep_pre_solve()
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
+TimeIntBDFBase<Number>::do_timestep_post_solve()
 {
   prepare_vectors_for_next_timestep();
 
@@ -237,7 +237,7 @@ TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
     write_restart();
   }
 
-  if(this->print_solver_info() && do_write_output)
+  if(this->print_solver_info())
   {
     output_remaining_time();
   }

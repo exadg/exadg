@@ -22,6 +22,8 @@
 #include "time_integration/restart.h"
 #include "time_integration/restart_data.h"
 
+#include "utilities/timings_hierarchical.h"
+
 using namespace dealii;
 
 class TimeIntBase
@@ -106,12 +108,16 @@ public:
   double
   get_number_of_time_steps() const;
 
+  std::shared_ptr<TimerTree>
+  get_timings() const;
+
+protected:
   /*
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
   void
-  do_timestep(bool const do_write_output = true);
+  do_timestep();
 
   /*
    * e.g., update of time integrator constants
@@ -126,7 +132,7 @@ public:
    * e.g., update of DoF vectors, increment time, adjust time step size, etc.
    */
   virtual void
-  do_timestep_post_solve(bool const do_write_output = true) = 0;
+  do_timestep_post_solve() = 0;
 
   /*
    * Postprocessing of solution.
@@ -134,7 +140,6 @@ public:
   virtual void
   postprocessing() const = 0;
 
-protected:
   /*
    * Get the current time step number.
    */
@@ -180,7 +185,8 @@ protected:
   /*
    * Computation time (wall clock time).
    */
-  Timer global_timer;
+  Timer                      global_timer;
+  std::shared_ptr<TimerTree> timer_tree;
 
   /*
    * A small number which is much smaller than the time step size.

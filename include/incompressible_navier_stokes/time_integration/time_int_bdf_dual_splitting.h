@@ -51,10 +51,7 @@ public:
   postprocessing_stability_analysis();
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
-
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  print_iterations() const;
 
 private:
   void
@@ -157,9 +154,9 @@ private:
   std::vector<VectorType> velocity_dbc;
   VectorType              velocity_dbc_np;
 
-  mutable std::vector<double> computing_times;
-  double                      computing_time_convective;
-  std::vector<unsigned int>   iterations;
+  // iteration counts
+  unsigned int iterations_convection, iterations_pressure, iterations_projection,
+    iterations_viscous, iterations_penalty;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;

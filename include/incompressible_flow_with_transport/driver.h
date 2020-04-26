@@ -18,7 +18,7 @@
 #include "../grid/mapping_degree.h"
 #include "../matrix_free/matrix_free_wrapper.h"
 #include "../utilities/print_functions.h"
-
+#include "../utilities/timings_hierarchical.h"
 
 // CONVECTION-DIFFUSION
 
@@ -60,7 +60,7 @@ public:
   solve() const;
 
   void
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
 private:
   void
@@ -78,17 +78,18 @@ private:
   void
   synchronize_time_step_size() const;
 
-  double
-  analyze_computing_times_fluid(double const overall_time) const;
-
-  void
-  analyze_iterations_fluid() const;
-
-  double
-  analyze_computing_times_transport(double const overall_time) const;
-
-  void
-  analyze_iterations_transport() const;
+  // TODO
+  //  double
+  //  analyze_computing_times_fluid(double const overall_time) const;
+  //
+  //  void
+  //  analyze_iterations_fluid() const;
+  //
+  //  double
+  //  analyze_computing_times_transport(double const overall_time) const;
+  //
+  //  void
+  //  analyze_iterations_transport() const;
 
   // MPI communicator
   MPI_Comm const & mpi_comm;
@@ -168,11 +169,10 @@ private:
   /*
    * Computation time (wall clock time).
    */
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
+  mutable TimerTree timer_tree;
 
-  unsigned int const length = 15;
+  // TODO
+  //  unsigned int const length = 15;
 };
 
 } // namespace FTI

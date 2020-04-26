@@ -6,6 +6,7 @@
  */
 
 #include "driver.h"
+#include "../utilities/print_throughput.h"
 
 namespace Poisson
 {
@@ -13,13 +14,8 @@ template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const & comm)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-    overall_time(0.0),
-    setup_time(0.0),
     iterations(0),
-    wall_time_vector_init(0.0),
-    wall_time_rhs(0.0),
-    wall_time_solver(0.0),
-    wall_time_postprocessing(0.0)
+    solve_time(0.0)
 {
 }
 
@@ -44,6 +40,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
                            unsigned int const &                          refine_space)
 {
+  Timer timer;
   timer.restart();
 
   print_header();
@@ -121,50 +118,48 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
 
-  setup_time = timer.wall_time();
+  timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 Driver<dim, Number>::solve()
 {
-  Timer timer_local;
-
   // initialization of vectors
-  timer_local.restart();
+  Timer timer;
+  timer.restart();
   LinearAlgebra::distributed::Vector<Number> rhs;
   LinearAlgebra::distributed::Vector<Number> sol;
   poisson_operator->initialize_dof_vector(rhs);
   poisson_operator->initialize_dof_vector(sol);
   poisson_operator->prescribe_initial_conditions(sol);
-  wall_time_vector_init = timer_local.wall_time();
+  timer_tree.insert({"Poisson", "Vector init"}, timer.wall_time());
 
   // postprocessing of results
-  timer_local.restart();
+  timer.restart();
   postprocessor->do_postprocessing(sol);
-  wall_time_postprocessing = timer_local.wall_time();
+  timer_tree.insert({"Poisson", "Postprocessing"}, timer.wall_time());
 
   // calculate right-hand side
-  timer_local.restart();
+  timer.restart();
   poisson_operator->rhs(rhs);
-  wall_time_rhs = timer_local.wall_time();
+  timer_tree.insert({"Poisson", "Right-hand side"}, timer.wall_time());
 
   // solve linear system of equations
-  timer_local.restart();
-  iterations       = poisson_operator->solve(sol, rhs, 0.0 /* time */);
-  wall_time_solver = timer_local.wall_time();
+  timer.restart();
+  iterations = poisson_operator->solve(sol, rhs, 0.0 /* time */);
+  solve_time += timer.wall_time();
+  timer_tree.insert({"Poisson", "Solve"}, solve_time);
 
   // postprocessing of results
-  timer_local.restart();
+  timer.restart();
   postprocessor->do_postprocessing(sol);
-  wall_time_postprocessing += timer_local.wall_time();
-
-  overall_time += this->timer.wall_time();
+  timer_tree.insert({"Poisson", "Postprocessing"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 Timings
-Driver<dim, Number>::analyze_computing_times() const
+Driver<dim, Number>::print_statistics(double const total_time) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -173,118 +168,45 @@ Driver<dim, Number>::analyze_computing_times() const
 
   this->pcout << "Performance results for Poisson solver:" << std::endl;
 
-  double const n_10 = poisson_operator->get_n10();
   // Iterations
-  {
-    this->pcout << std::endl << "Number of iterations:" << std::endl;
+  double const n_10 = poisson_operator->get_n10();
 
-    this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl;
+  this->pcout << std::endl << "Number of iterations:" << std::endl;
 
-    this->pcout << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
-                << std::endl;
-
-    this->pcout << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
-                << poisson_operator->get_average_convergence_rate() << std::endl;
-  }
-
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+  this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl
+              << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
+              << std::endl
+              << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
+              << poisson_operator->get_average_convergence_rate() << std::endl;
 
   // wall times
-  this->pcout << std::endl << "Wall times:" << std::endl;
+  timer_tree.insert({"Poisson"}, total_time);
 
-  std::vector<std::string> names = {"Initialization of vectors",
-                                    "Right-hand side",
-                                    "Linear solver",
-                                    "Postprocessing"};
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
 
-  std::vector<double> computing_times;
-  computing_times.resize(4);
-  computing_times[0] = wall_time_vector_init;
-  computing_times[1] = wall_time_rhs;
-  computing_times[2] = wall_time_solver;
-  computing_times[3] = wall_time_postprocessing;
+  // throughput
+  types::global_dof_index const DoFs = poisson_operator->get_number_of_dofs();
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
+  // Throughput of linear solver in DoFs/s per core
+  double const t_10 = solve_time * n_10 / iterations;
+  print_throughput_10(pcout, DoFs, t_10, N_mpi_processes);
 
-    sum_of_substeps += data.avg;
-  }
-
-  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
-  double const              setup_time_avg  = setup_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << other << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << other / overall_time_avg * 100 << " %" << std::endl;
-
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
+  // Throughput in DoFs/s per core (overall costs)
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
+  print_throughput_steady(pcout, DoFs, overall_time_avg, N_mpi_processes);
 
   // computational costs in CPUh
-  // Throughput in DoF/s per time step per core
-  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-  types::global_dof_index const DoFs            = poisson_operator->get_number_of_dofs();
-
-  this->pcout << std::endl
-              << "Computational costs and throughput:" << std::endl
-              << "  Number of MPI processes = " << N_mpi_processes << std::endl
-              << "  Degrees of freedom      = " << DoFs << std::endl
-              << std::endl;
-
-  this->pcout << "Overall costs (including setup + postprocessing):" << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
-              << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (overall_time_avg * N_mpi_processes) << " DoF/s/core" << std::endl
-              << std::endl;
-
-  this->pcout << "Linear solver:" << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << wall_time_solver << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << wall_time_solver * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
-              << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (wall_time_solver * N_mpi_processes) << " DoF/s/core" << std::endl
-              << std::endl;
-
-  double const t_10   = wall_time_solver * n_10 / iterations;
-  double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
-  this->pcout << "Linear solver (numbers based on n_10):" << std::endl
-              << "  Wall time t_10          = " << std::scientific << std::setprecision(2) << t_10
-              << " s" << std::endl
-              << "  tau_10                  = " << std::scientific << std::setprecision(2) << tau_10
-              << " s*core/DoF" << std::endl
-              << "  Throughput E_10         = " << std::scientific << std::setprecision(2)
-              << 1.0 / tau_10 << " DoF/s/core" << std::endl;
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl
               << std::endl;
 
+  double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
   return Timings(poisson_operator->get_degree(), DoFs, n_10, tau_10);
 }
 

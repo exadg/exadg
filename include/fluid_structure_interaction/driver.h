@@ -38,6 +38,7 @@
 #include "../functions_and_boundary_conditions/interface_coupling.h"
 #include "../functions_and_boundary_conditions/verify_boundary_conditions.h"
 #include "../utilities/print_general_infos.h"
+#include "../utilities/timings_hierarchical.h"
 
 namespace FSI
 {
@@ -53,12 +54,11 @@ public:
         unsigned int const &                          degree_poisson,
         unsigned int const &                          refine_space);
 
-
   void
   solve() const;
 
   void
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
 private:
   void
@@ -149,10 +149,7 @@ private:
   /*
    * Computation time (wall clock time).
    */
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
-  mutable double ale_update_time;
+  mutable TimerTree timer_tree;
 };
 
 } // namespace FSI

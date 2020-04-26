@@ -150,7 +150,7 @@ public:
   solve() const;
 
   void
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
@@ -239,10 +239,7 @@ private:
   /*
    * Computation time (wall clock time).
    */
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
-  mutable double ale_update_time;
+  mutable TimerTree timer_tree;
 };
 
 } // namespace IncNS

@@ -11,6 +11,7 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../../utilities/timings_hierarchical.h"
 #include "../postprocessor/postprocessor_base.h"
 
 using namespace dealii;
@@ -45,8 +46,8 @@ public:
   void
   solve_problem();
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  std::shared_ptr<TimerTree>
+  get_timings() const;
 
 private:
   void
@@ -69,7 +70,7 @@ private:
 
   ConditionalOStream pcout;
 
-  std::vector<double> computing_times;
+  std::shared_ptr<TimerTree> timer_tree;
 
   // vectors
   VectorType solution;

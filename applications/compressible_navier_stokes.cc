@@ -141,6 +141,9 @@ run(std::string const & input_file,
     unsigned int const  refine_time,
     MPI_Comm const &    mpi_comm)
 {
+  Timer timer;
+  timer.restart();
+
   std::shared_ptr<CompNS::Driver<dim, Number>> solver;
   solver.reset(new CompNS::Driver<dim, Number>(mpi_comm));
 
@@ -153,7 +156,7 @@ run(std::string const & input_file,
 
   solver->solve();
 
-  solver->analyze_computing_times();
+  solver->print_statistics(timer.wall_time());
 }
 
 int

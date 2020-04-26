@@ -48,9 +48,6 @@ public:
                 std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
-
-  void
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
                            std::vector<double> const &             times_in);
 
@@ -101,8 +98,6 @@ private:
 
   double const cfl;
   double const diffusion_number;
-
-  double wall_time;
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 };

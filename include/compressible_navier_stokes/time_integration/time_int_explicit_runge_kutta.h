@@ -101,10 +101,6 @@ private:
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
-  // timer
-  mutable Timer  timer_postprocessing;
-  mutable double time_postprocessing;
-
   // monitor the L2-norm of the solution vector in order to detect instabilities
   mutable double l2_norm;
 

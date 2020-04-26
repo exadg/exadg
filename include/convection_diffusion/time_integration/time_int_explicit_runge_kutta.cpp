@@ -33,22 +33,8 @@ TimeIntExplRK<Number>::TimeIntExplRK(
     time_step_diff(1.0),
     cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
     diffusion_number(param.diffusion_number / std::pow(2.0, refine_steps_time_in)),
-    wall_time(0.0),
     postprocessor(postprocessor_in)
 {
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::get_wall_times(std::vector<std::string> & name,
-                                      std::vector<double> &      wall_time_vector) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Time integrator"};
-  name                           = names;
-
-  wall_time_vector.resize(1);
-  wall_time_vector[0] = wall_time;
 }
 
 template<typename Number>
@@ -356,11 +342,11 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::solve_timestep()
 {
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
   Timer timer;
   timer.restart();
+
+  if(this->print_solver_info())
+    this->output_solver_info_header();
 
   if(param.convective_problem())
   {
@@ -375,8 +361,6 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  wall_time += timer.wall_time();
-
   // write output
   if(print_solver_info())
   {
@@ -384,13 +368,20 @@ TimeIntExplRK<Number>::solve_timestep()
                 << "Solve time step explicitly: Wall time in [s] = " << std::scientific
                 << timer.wall_time() << std::endl;
   }
+
+  this->timer_tree->insert({"Timeloop", "Solve-explicit"}, timer.wall_time());
 }
 
 template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   postprocessor->do_postprocessing(this->solution_n, this->time, this->time_step_number);
+
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 // instantiations

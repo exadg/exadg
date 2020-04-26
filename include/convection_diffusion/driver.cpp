@@ -6,15 +6,13 @@
  */
 
 #include "driver.h"
+#include "utilities/print_throughput.h"
 
 namespace ConvDiff
 {
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const & comm)
-  : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-    overall_time(0.0),
-    setup_time(0.0)
+  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
 {
 }
 
@@ -40,6 +38,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          refine_space,
                            unsigned int const &                          refine_time)
 {
+  Timer timer;
   timer.restart();
 
   print_header();
@@ -199,7 +198,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Not implemented"));
   }
 
-  setup_time = timer.wall_time();
+  timer_tree.insert({"Convection-diffusion", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -240,8 +239,87 @@ Driver<dim, Number>::solve()
   {
     AssertThrow(false, ExcMessage("Not implemented"));
   }
+}
 
-  overall_time += this->timer.wall_time();
+template<int dim, typename Number>
+void
+Driver<dim, Number>::print_statistics(double const total_time) const
+{
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
+
+  this->pcout << "Performance results for convection-diffusion solver:" << std::endl;
+
+  // Averaged number of iterations are only relevant for BDF time integrator
+  if(param.problem_type == ProblemType::Unsteady &&
+     param.temporal_discretization == TemporalDiscretization::BDF)
+  {
+    this->pcout << std::endl << "Average number of iterations:" << std::endl;
+
+    std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+      std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+    time_integrator_bdf->print_iterations();
+  }
+
+  // wall times
+  timer_tree.insert({"Convection-diffusion"}, total_time);
+
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      std::shared_ptr<TimeIntExplRK<Number>> time_integrator_rk =
+        std::dynamic_pointer_cast<TimeIntExplRK<Number>>(time_integrator);
+      timer_tree.insert({"Convection-diffusion"}, time_integrator_rk->get_timings());
+    }
+    else if(param.temporal_discretization == TemporalDiscretization::BDF)
+    {
+      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+      timer_tree.insert({"Convection-diffusion"}, time_integrator_bdf->get_timings());
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+  else
+  {
+    timer_tree.insert({"Convection-diffusion"}, driver_steady->get_timings());
+  }
+
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index const DoFs            = conv_diff_operator->get_number_of_dofs();
+  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
+
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    unsigned int N_time_steps = this->time_integrator->get_number_of_time_steps();
+    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+  }
+  else
+  {
+    print_throughput_steady(pcout, DoFs, overall_time_avg, N_mpi_processes);
+  }
+
+  // computational costs in CPUh
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
+
+  this->pcout << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
 }
 
 template<int dim, typename Number>
@@ -334,164 +412,6 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   return std::tuple<unsigned int, types::global_dof_index, double>(
     conv_diff_operator->get_polynomial_degree(), dofs, dofs_per_walltime);
 }
-
-template<int dim, typename Number>
-void
-Driver<dim, Number>::analyze_computing_times() const
-{
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-
-  this->pcout << "Performance results for convection-diffusion solver:" << std::endl;
-
-  // Iterations are only relevant for BDF time integrator
-  if(param.temporal_discretization == TemporalDiscretization::BDF)
-  {
-    // Iterations
-    if(param.problem_type == ProblemType::Unsteady)
-    {
-      this->pcout << std::endl << "Average number of iterations:" << std::endl;
-
-      std::vector<std::string> names;
-      std::vector<double>      iterations;
-
-      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
-      time_integrator_bdf->get_iterations(names, iterations);
-
-      unsigned int length = 1;
-      for(unsigned int i = 0; i < names.size(); ++i)
-      {
-        length = length > names[i].length() ? length : names[i].length();
-      }
-
-      for(unsigned int i = 0; i < iterations.size(); ++i)
-      {
-        this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                    << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
-                    << std::endl;
-      }
-    }
-  }
-
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-
-  // wall times
-  this->pcout << std::endl << "Wall times:" << std::endl;
-
-  std::vector<std::string> names;
-  std::vector<double>      computing_times;
-
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
-    {
-      std::shared_ptr<TimeIntExplRK<Number>> time_integrator_rk =
-        std::dynamic_pointer_cast<TimeIntExplRK<Number>>(time_integrator);
-      time_integrator_rk->get_wall_times(names, computing_times);
-    }
-    else if(param.temporal_discretization == TemporalDiscretization::BDF)
-    {
-      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
-      time_integrator_bdf->get_wall_times(names, computing_times);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-  else
-  {
-    this->driver_steady->get_wall_times(names, computing_times);
-  }
-
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
-
-    sum_of_substeps += data.avg;
-  }
-
-  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
-  double const              setup_time_avg  = setup_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << other << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << other / overall_time_avg * 100 << " %" << std::endl;
-
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  this->pcout << std::endl
-              << "Computational costs (including setup + postprocessing):" << std::endl
-              << "  Number of MPI processes = " << N_mpi_processes << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
-
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs = conv_diff_operator->get_number_of_dofs();
-
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    unsigned int N_time_steps      = this->time_integrator->get_number_of_time_steps();
-    double const time_per_timestep = overall_time_avg / (double)N_time_steps;
-    this->pcout << std::endl
-                << "Throughput per time step (including setup + postprocessing):" << std::endl
-                << "  Degrees of freedom      = " << DoFs << std::endl
-                << "  Wall time               = " << std::scientific << std::setprecision(2)
-                << overall_time_avg << " s" << std::endl
-                << "  Time steps              = " << std::left << N_time_steps << std::endl
-                << "  Wall time per time step = " << std::scientific << std::setprecision(2)
-                << time_per_timestep << " s" << std::endl
-                << "  Throughput              = " << std::scientific << std::setprecision(2)
-                << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
-  }
-  else
-  {
-    this->pcout << std::endl
-                << "Throughput (including setup + postprocessing):" << std::endl
-                << "  Degrees of freedom      = " << DoFs << std::endl
-                << "  Wall time               = " << std::scientific << std::setprecision(2)
-                << overall_time_avg << " s" << std::endl
-                << "  Throughput              = " << std::scientific << std::setprecision(2)
-                << DoFs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl;
-  }
-
-
-  this->pcout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-}
-
 
 template class Driver<2, float>;
 template class Driver<3, float>;

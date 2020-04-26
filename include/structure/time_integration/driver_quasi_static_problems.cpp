@@ -20,8 +20,8 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
     param(param_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    computing_times(1),
-    step_number(1)
+    step_number(1),
+    timer_tree(new TimerTree())
 {
 }
 
@@ -40,10 +40,33 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::solve_problem()
 {
-  pcout << std::endl << "Solving quasi-static problem ..." << std::endl << std::flush;
+  Timer timer;
+  timer.restart();
 
-  // perform post processing for initial solution
   postprocessing();
+
+  solve();
+
+  postprocessing();
+
+  timer_tree->insert({"DriverQuasiStatic"}, timer.wall_time());
+}
+
+template<int dim, typename Number>
+std::shared_ptr<TimerTree>
+DriverQuasiStatic<dim, Number>::get_timings() const
+{
+  return timer_tree;
+}
+
+template<int dim, typename Number>
+void
+DriverQuasiStatic<dim, Number>::solve()
+{
+  Timer timer;
+  timer.restart();
+
+  pcout << std::endl << "Solving quasi-static problem ..." << std::endl << std::flush;
 
   // perform time loop
   double       load_factor    = 0.0;
@@ -64,7 +87,7 @@ DriverQuasiStatic<dim, Number>::solve_problem()
       {
         try
         {
-          iterations = solve(load_factor + load_increment);
+          iterations = solve_step(load_factor + load_increment);
           success    = true;
           ++re_try_counter;
         }
@@ -79,7 +102,7 @@ DriverQuasiStatic<dim, Number>::solve_problem()
     }
     else
     {
-      iterations = solve(load_factor + load_increment);
+      iterations = solve_step(load_factor + load_increment);
     }
 
     // increment load factor
@@ -99,10 +122,9 @@ DriverQuasiStatic<dim, Number>::solve_problem()
       load_increment = 1.0 - load_factor;
   }
 
-  // perform post processing for final solution
-  postprocessing();
-
   pcout << std::endl << "... done!" << std::endl;
+
+  timer_tree->insert({"DriverQuasiStatic", "Solve"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -125,57 +147,43 @@ DriverQuasiStatic<dim, Number>::initialize_solution()
 
 template<int dim, typename Number>
 unsigned int
-DriverQuasiStatic<dim, Number>::solve(double const load_factor)
+DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
 {
   Timer timer;
   timer.restart();
 
-  unsigned int N_iter_nonlinear = 0;
-  unsigned int N_iter_linear    = 0;
+  AssertThrow(param.large_deformation, ExcMessage("Not implemented."));
 
-  // solve system of equations
-  if(param.large_deformation)
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Solve non-linear problem for load factor = " << std::scientific
-          << std::setprecision(4) << load_factor << std::endl
-          << "______________________________________________________________________" << std::endl;
+  pcout << std::endl
+        << "______________________________________________________________________" << std::endl
+        << std::endl
+        << " Solve non-linear problem for load factor = " << std::scientific << std::setprecision(4)
+        << load_factor << std::endl
+        << "______________________________________________________________________" << std::endl;
 
-    VectorType const_vector;
+  VectorType const_vector;
 
-    bool const update_preconditioner =
-      this->param.update_preconditioner &&
-      ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
+  bool const update_preconditioner =
+    this->param.update_preconditioner &&
+    ((this->step_number - 1) % this->param.update_preconditioner_every_time_steps == 0);
 
-    auto const iter = pde_operator->solve_nonlinear(solution,
-                                                    const_vector,
-                                                    0.0 /*no mass term*/,
-                                                    load_factor /* = time */,
-                                                    update_preconditioner);
+  auto const iter = pde_operator->solve_nonlinear(
+    solution, const_vector, 0.0 /*no mass term*/, load_factor /* = time */, update_preconditioner);
 
-    N_iter_nonlinear = std::get<0>(iter);
-    N_iter_linear    = std::get<1>(iter);
+  unsigned int const N_iter_nonlinear = std::get<0>(iter);
+  unsigned int const N_iter_linear    = std::get<1>(iter);
 
-    // solver info output
-    double N_iter_linear_avg =
-      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
+  // solver info output
+  double N_iter_linear_avg =
+    (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
 
-    // clang-format off
-    pcout << std::endl
-          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
-          << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-          << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
-    // clang-format on
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  computing_times[0] += timer.wall_time();
+  // clang-format off
+  pcout << std::endl
+        << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
+        << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
+        << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
+        << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+  // clang-format on
 
   return N_iter_nonlinear;
 }
@@ -184,7 +192,12 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   postprocessor->do_postprocessing(solution);
+
+  timer_tree->insert({"DriverQuasiStatic", "Postprocessing"}, timer.wall_time());
 }
 
 template class DriverQuasiStatic<2, float>;

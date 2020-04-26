@@ -49,7 +49,7 @@ public:
   solve() const;
 
   void
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
 private:
   void
@@ -140,19 +140,7 @@ private:
   /*
    * Computation time (wall clock time).
    */
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
-
-  unsigned int const length = 15;
-
-  void
-  analyze_iterations(InputParameters const &        param,
-                     std::shared_ptr<TimeInt> const time_integrator) const;
-
-  double
-  analyze_computing_times(InputParameters const &        param,
-                          std::shared_ptr<TimeInt> const time_integrator) const;
+  mutable TimerTree timer_tree;
 };
 
 } // namespace IncNS

@@ -51,12 +51,6 @@ public:
              std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
-
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
-
-  void
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
                            std::vector<double> const &             times_in);
 
@@ -65,6 +59,9 @@ public:
 
   void
   ale_update();
+
+  void
+  print_iterations() const;
 
 private:
   void
@@ -156,7 +153,6 @@ private:
 
   // iteration counts and solver time
   double iterations;
-  double wall_time;
 
   // Operator-integration-factor (OIF) splitting
 

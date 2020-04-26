@@ -61,7 +61,7 @@ public:
   ale_update();
 
   virtual void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const = 0;
+  print_iterations() const = 0;
 
 protected:
   virtual void
@@ -163,9 +163,6 @@ private:
 
   void
   postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
 
   // Operator-integration-factor splitting for convective term
   std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;

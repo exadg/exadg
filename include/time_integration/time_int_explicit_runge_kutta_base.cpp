@@ -73,7 +73,7 @@ TimeIntExplRKBase<Number>::do_timestep_pre_solve()
 
 template<typename Number>
 void
-TimeIntExplRKBase<Number>::do_timestep_post_solve(bool const do_write_output)
+TimeIntExplRKBase<Number>::do_timestep_post_solve()
 {
   prepare_vectors_for_next_timestep();
 
@@ -90,7 +90,7 @@ TimeIntExplRKBase<Number>::do_timestep_post_solve(bool const do_write_output)
     this->write_restart();
   }
 
-  if(this->print_solver_info() && do_write_output)
+  if(this->print_solver_info())
   {
     this->output_remaining_time();
   }

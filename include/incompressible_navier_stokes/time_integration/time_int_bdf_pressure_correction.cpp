@@ -35,10 +35,10 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     pressure_dbc(param_in.order_pressure_extrapolation),
-    computing_times(4),
-    computing_time_convective(0.0),
-    iterations(3),
-    N_iter_nonlinear_momentum(0)
+    iterations_momentum_linear(0),
+    iterations_momentum_nonlinear(0),
+    iterations_pressure(0),
+    iterations_projection(0)
 {
 }
 
@@ -387,25 +387,24 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       }
 
       // solve linear system of equations
-      unsigned int linear_iterations_momentum = 0;
+      unsigned int n_iter = 0;
 
       pde_operator->solve_linear_momentum_equation(velocity_np,
                                                    rhs,
                                                    update_preconditioner,
                                                    this->get_scaling_factor_time_derivative_term(),
-                                                   linear_iterations_momentum);
+                                                   n_iter);
+
+      iterations_momentum_linear += n_iter;
 
       // write output explicit case
       if(this->print_solver_info())
       {
         this->pcout << std::endl
                     << "Solve linear momentum equation for intermediate velocity:" << std::endl
-                    << "  Iterations:        " << std::setw(6) << std::right
-                    << linear_iterations_momentum << "\t Wall time [s]: " << std::scientific
-                    << timer.wall_time() + computing_time_convective << std::endl;
+                    << "  Iterations:        " << std::setw(6) << std::right << n_iter
+                    << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
       }
-
-      iterations[0] += linear_iterations_momentum;
     }
     else // Euler equations
     {
@@ -418,8 +417,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
         this->pcout << std::endl
                     << "Solve linear momentum equation for intermediate velocity:" << std::endl
                     << "  Iterations:        " << std::setw(6) << std::right << 0
-                    << "\t Wall time [s]: " << std::scientific
-                    << timer.wall_time() + computing_time_convective << std::endl;
+                    << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
       }
     }
   }
@@ -436,40 +434,37 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       velocity_np.add(this->extra.get_beta(i), velocity[i]);
     }
 
-    unsigned int linear_iterations_momentum;
-    unsigned int nonlinear_iterations_momentum;
-
+    unsigned int n_iter_linear    = 0;
+    unsigned int n_iter_nonlinear = 0;
     pde_operator->solve_nonlinear_momentum_equation(velocity_np,
                                                     rhs,
                                                     this->get_next_time(),
                                                     update_preconditioner,
                                                     this->get_scaling_factor_time_derivative_term(),
-                                                    nonlinear_iterations_momentum,
-                                                    linear_iterations_momentum);
+                                                    n_iter_nonlinear,
+                                                    n_iter_linear);
+
+    iterations_momentum_linear += n_iter_linear;
+    iterations_momentum_nonlinear += n_iter_nonlinear;
 
     // write output implicit case
     if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve nonlinear momentum equation for intermediate velocity:" << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right
-                  << nonlinear_iterations_momentum << "\t Wall time [s]: " << std::scientific
-                  << timer.wall_time() << std::endl
+                  << "  Newton iterations: " << std::setw(6) << std::right << n_iter_nonlinear
+                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
                   << "  Linear iterations: " << std::setw(6) << std::right << std::fixed
                   << std::setprecision(2)
-                  << (nonlinear_iterations_momentum > 0 ?
-                        (double)linear_iterations_momentum / (double)nonlinear_iterations_momentum :
-                        linear_iterations_momentum)
+                  << (n_iter_nonlinear > 0 ? (double)n_iter_linear / (double)n_iter_nonlinear :
+                                             n_iter_linear)
                   << " (avg)" << std::endl
                   << "  Linear iterations: " << std::setw(6) << std::right << std::fixed
-                  << std::setprecision(2) << linear_iterations_momentum << " (tot)" << std::endl;
+                  << std::setprecision(2) << n_iter_linear << " (tot)" << std::endl;
     }
-
-    iterations[0] += linear_iterations_momentum;
-    N_iter_nonlinear_momentum += nonlinear_iterations_momentum;
   }
 
-  computing_times[0] += timer.wall_time() + computing_time_convective;
+  this->timer_tree->insert({"Timeloop", "Momentum step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -617,8 +612,9 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
 
-  unsigned int iterations_pressure =
+  unsigned int const n_iter =
     pde_operator->solve_pressure(pressure_increment, rhs, update_preconditioner);
+  iterations_pressure += n_iter;
 
   // calculate pressure p^{n+1} from pressure increment
   pressure_update(pressure_increment);
@@ -633,12 +629,11 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << iterations_pressure
+                << "  Iterations:        " << std::setw(6) << std::right << n_iter
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
-  computing_times[1] += timer.wall_time();
-  iterations[1] += iterations_pressure;
+  this->timer_tree->insert({"Timeloop", "Pressure step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -832,7 +827,7 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
   if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
     pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
 
-  unsigned int iterations_projection = 0;
+  unsigned int n_iter = 0;
 
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
@@ -843,7 +838,8 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
 
-    iterations_projection = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+    n_iter = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+    iterations_projection += n_iter;
   }
 
   // write output
@@ -851,34 +847,33 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
   {
     this->pcout << std::endl
                 << "Solve projection step for intermediate velocity:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << iterations_projection
+                << "  Iterations:        " << std::setw(6) << std::right << n_iter
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
-  computing_times[2] += timer.wall_time();
-  iterations[2] += iterations_projection;
+  this->timer_tree->insert({"Timeloop", "Projection step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::evaluate_convective_term()
 {
+  Timer timer;
+  timer.restart();
+
   // evaluate convective term once solution_np is known
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
     {
-      Timer timer;
-      timer.restart();
-
       pde_operator->evaluate_convective_term(this->convective_term_np,
                                              velocity_np,
                                              this->get_next_time());
-
-      computing_time_convective = timer.wall_time();
     }
   }
+
+  this->timer_tree->insert({"Timeloop", "Momentum step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -933,7 +928,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
       // solve time step
-      this->do_timestep(false);
+      this->do_timestep();
 
       // calculate increment:
       // increment = solution_{n+1} - solution_{n}
@@ -976,7 +971,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
     while(!converged && this->time < (this->end_time - this->eps) &&
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
-      this->do_timestep(false);
+      this->do_timestep();
 
       // check convergence by evaluating the residual of
       // the steady-state incompressible Navier-Stokes equations
@@ -1032,64 +1027,53 @@ TimeIntBDFPressureCorrection<dim, Number>::evaluate_residual()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                                          std::vector<double> & iteration) const
+TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
 {
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
+  std::vector<std::string> names;
+  std::vector<double>      iterations_avg;
+
+  unsigned int const N_time_steps = this->get_time_step_number() - 1;
 
   if(this->param.linear_problem_has_to_be_solved())
   {
-    name.resize(3);
-    std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
-    name                           = names;
+    names = {"Momentum", "Pressure", "Projection"};
 
-    unsigned int N_time_steps = this->get_time_step_number() - 1;
-
-    iteration.resize(3);
-    for(unsigned int i = 0; i < this->iterations.size(); ++i)
-    {
-      iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
-    }
+    iterations_avg.resize(3);
+    iterations_avg[0] = iterations_momentum_linear / (double)N_time_steps;
+    iterations_avg[1] = iterations_pressure / (double)N_time_steps;
+    iterations_avg[2] = iterations_projection / (double)N_time_steps;
   }
   else // nonlinear system of equations in momentum step
   {
-    name.resize(5);
-    std::vector<std::string> names = {"Momentum (nonlinear)",
-                                      "Momentum (linear)",
-                                      "Momentum (linear-accumulated)",
-                                      "Pressure",
-                                      "Projection"};
+    names = {"Momentum (nonlinear)",
+             "Momentum (linear accumulated)",
+             "Momentum (linear per nonlinear)",
+             "Pressure",
+             "Projection"};
 
-    name = names;
-
-    double n_iter_nonlinear          = (double)N_iter_nonlinear_momentum / (double)N_time_steps;
-    double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
-    double n_iter_pressure           = (double)iterations[1] / (double)N_time_steps;
-    double n_iter_projection         = (double)iterations[2] / (double)N_time_steps;
-
-    iteration.resize(5);
-    iteration[0] = n_iter_nonlinear;
-    iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
-    iteration[2] = n_iter_linear_accumulated;
-    iteration[3] = n_iter_pressure;
-    iteration[4] = n_iter_projection;
+    iterations_avg.resize(5);
+    iterations_avg[0] = (double)iterations_momentum_nonlinear / (double)N_time_steps;
+    iterations_avg[1] = (double)iterations_momentum_linear / (double)N_time_steps;
+    if(iterations_avg[0] > std::numeric_limits<double>::min())
+      iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
+    else
+      iterations_avg[2] = iterations_avg[1];
+    iterations_avg[3] = (double)iterations_pressure / (double)N_time_steps;
+    iterations_avg[4] = (double)iterations_projection / (double)N_time_steps;
   }
-}
 
-template<int dim, typename Number>
-void
-TimeIntBDFPressureCorrection<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                          std::vector<double> & wall_time) const
-{
-  unsigned int             size  = 3;
-  std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
-
-  name.resize(size);
-  wall_time.resize(size);
-  for(unsigned int i = 0; i < size; ++i)
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
   {
-    name[i]      = names[i];
-    wall_time[i] = this->computing_times[i];
+    length = length > names[i].length() ? length : names[i].length();
+  }
+
+  // print
+  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
+  {
+    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
+                << std::endl;
   }
 }
 

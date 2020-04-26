@@ -133,6 +133,9 @@ run(std::vector<Timings> & timings,
     unsigned int const     n_cells_1d,
     MPI_Comm const &       mpi_comm)
 {
+  Timer timer;
+  timer.restart();
+
   std::shared_ptr<Poisson::Driver<dim, Number>> driver;
   driver.reset(new Poisson::Driver<dim, Number>(mpi_comm));
 
@@ -146,7 +149,7 @@ run(std::vector<Timings> & timings,
 
   driver->solve();
 
-  Timings timing = driver->analyze_computing_times();
+  Timings timing = driver->print_statistics(timer.wall_time());
   timings.push_back(timing);
 }
 

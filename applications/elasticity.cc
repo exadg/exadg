@@ -104,6 +104,9 @@ run(std::string const & input_file,
     unsigned int const  refine_space,
     MPI_Comm const &    mpi_comm)
 {
+  Timer timer;
+  timer.restart();
+
   std::shared_ptr<Structure::Driver<dim, Number>> solver;
   solver.reset(new Structure::Driver<dim, Number>(mpi_comm));
 
@@ -116,7 +119,7 @@ run(std::string const & input_file,
 
   solver->solve();
 
-  solver->analyze_computing_times();
+  solver->print_statistics(timer.wall_time());
 }
 
 int

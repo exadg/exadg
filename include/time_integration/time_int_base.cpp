@@ -15,6 +15,7 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
   : start_time(start_time_),
     end_time(end_time_),
     time(start_time_),
+    timer_tree(new TimerTree()),
     eps(1.e-10),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     time_step_number(1),
@@ -39,32 +40,25 @@ TimeIntBase::finished() const
 void
 TimeIntBase::timeloop()
 {
-  pcout << std::endl << "Starting time loop ..." << std::endl;
-
-  global_timer.restart();
-
-  postprocessing();
-
-  while(time < (end_time - eps) && time_step_number <= max_number_of_time_steps)
+  while(!finished())
   {
-    do_timestep();
-
-    postprocessing();
+    advance_one_timestep();
   }
-
-  pcout << std::endl << "... finished time loop!" << std::endl;
 }
 
 void
 TimeIntBase::advance_one_timestep_pre_solve()
 {
+  Timer timer;
+  timer.restart();
+
   if(started())
   {
     if(time_step_number == 1)
     {
-      pcout << std::endl << "Starting time loop ..." << std::endl;
-
       global_timer.restart();
+
+      pcout << std::endl << "Starting time loop ..." << std::endl;
 
       postprocessing();
     }
@@ -81,26 +75,38 @@ TimeIntBase::advance_one_timestep_pre_solve()
     // the current time step.
     time += get_time_step_size();
   }
+
+  timer_tree->insert({"Timeloop"}, timer.wall_time());
 }
 
 void
 TimeIntBase::advance_one_timestep_solve()
 {
+  Timer timer;
+  timer.restart();
+
   if(started() && !finished())
   {
     solve_timestep();
   }
+
+  timer_tree->insert({"Timeloop"}, timer.wall_time());
 }
 
 void
 TimeIntBase::advance_one_timestep_post_solve()
 {
+  Timer timer;
+  timer.restart();
+
   if(started() && !finished())
   {
     do_timestep_post_solve();
 
     postprocessing();
   }
+
+  timer_tree->insert({"Timeloop"}, timer.wall_time());
 }
 
 void
@@ -136,14 +142,20 @@ TimeIntBase::get_number_of_time_steps() const
   return this->get_time_step_number() - 1;
 }
 
+std::shared_ptr<TimerTree>
+TimeIntBase::get_timings() const
+{
+  return timer_tree;
+}
+
 void
-TimeIntBase::do_timestep(bool const do_write_output)
+TimeIntBase::do_timestep()
 {
   do_timestep_pre_solve();
 
   solve_timestep();
 
-  do_timestep_post_solve(do_write_output);
+  do_timestep_post_solve();
 }
 
 unsigned int

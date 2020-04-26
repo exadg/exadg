@@ -145,6 +145,9 @@ run(std::string const & input_file,
     unsigned int const  refine_space,
     MPI_Comm const &    mpi_comm)
 {
+  Timer timer;
+  timer.restart();
+
   std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver;
   driver.reset(new IncNS::DriverPrecursor<dim, Number>(mpi_comm));
 
@@ -157,7 +160,7 @@ run(std::string const & input_file,
 
   driver->solve();
 
-  driver->analyze_computing_times();
+  driver->print_statistics(timer.wall_time());
 }
 
 int

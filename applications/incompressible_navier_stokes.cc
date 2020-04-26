@@ -216,6 +216,9 @@ run(std::string const & input_file,
     unsigned int const  refine_time,
     MPI_Comm const &    mpi_comm)
 {
+  Timer timer;
+  timer.restart();
+
   std::shared_ptr<IncNS::Driver<dim, Number>> driver;
   driver.reset(new IncNS::Driver<dim, Number>(mpi_comm));
 
@@ -228,7 +231,7 @@ run(std::string const & input_file,
 
   driver->solve();
 
-  driver->analyze_computing_times();
+  driver->print_statistics(timer.wall_time());
 }
 
 //#define USE_SUB_COMMUNICATOR

@@ -123,7 +123,7 @@ public:
                  unsigned int const  n_repetitions_outer) const;
 
   void
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
 private:
   void
@@ -165,9 +165,7 @@ private:
   std::shared_ptr<DriverSteadyProblems<Number>> driver_steady;
 
   // Computation time (wall clock time)
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
+  mutable TimerTree timer_tree;
 };
 
 } // namespace ConvDiff

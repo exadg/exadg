@@ -6,15 +6,13 @@
  */
 
 #include "driver.h"
+#include "../utilities/print_throughput.h"
 
 namespace CompNS
 {
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const & comm)
-  : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-    overall_time(0.0),
-    setup_time(0.0)
+  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
 {
 }
 
@@ -40,6 +38,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          refine_space,
                            unsigned int const &                          refine_time)
 {
+  Timer timer;
   timer.restart();
 
   print_header();
@@ -123,7 +122,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     comp_navier_stokes_operator, param, refine_time, mpi_comm, postprocessor));
   time_integrator->setup(param.restarted_simulation);
 
-  setup_time = timer.wall_time();
+  timer_tree.insert({"Compressible flow", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -131,13 +130,11 @@ void
 Driver<dim, Number>::solve()
 {
   time_integrator->timeloop();
-
-  overall_time += this->timer.wall_time();
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::analyze_computing_times() const
+Driver<dim, Number>::print_statistics(double const total_time) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -146,80 +143,29 @@ Driver<dim, Number>::analyze_computing_times() const
 
   this->pcout << "Performance results for compressible Navier-Stokes solver:" << std::endl;
 
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+  // Wall times
+  timer_tree.insert({"Compressible flow"}, total_time);
 
-  // wall times
-  this->pcout << std::endl << "Wall times:" << std::endl;
+  timer_tree.insert({"Compressible flow"}, time_integrator->get_timings());
 
-  std::vector<std::string> names;
-  std::vector<double>      computing_times;
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
 
-  this->time_integrator->get_wall_times(names, computing_times);
-
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
-
-    sum_of_substeps += data.avg;
-  }
-
-  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
-  double const              setup_time_avg  = setup_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << other << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << other / overall_time_avg * 100 << " %" << std::endl;
-
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  this->pcout << std::endl
-              << "Computational costs (including setup + postprocessing):" << std::endl
-              << "  Number of MPI processes = " << N_mpi_processes << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs         = comp_navier_stokes_operator->get_number_of_dofs();
-  unsigned int                  N_time_steps = time_integrator->get_number_of_time_steps();
-  double const                  time_per_timestep = overall_time_avg / (double)N_time_steps;
-  this->pcout << std::endl
-              << "Throughput per time step (including setup + postprocessing):" << std::endl
-              << "  Degrees of freedom      = " << DoFs << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Time steps              = " << std::left << N_time_steps << std::endl
-              << "  Wall time per time step = " << std::scientific << std::setprecision(2)
-              << time_per_timestep << " s" << std::endl
-              << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
+  types::global_dof_index const DoFs            = comp_navier_stokes_operator->get_number_of_dofs();
+  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
 
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
+
+  print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+
+  // computational costs in CPUh
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

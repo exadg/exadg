@@ -174,6 +174,9 @@ run(std::string const & input_file,
     unsigned int const  n_scalars,
     MPI_Comm const &    mpi_comm)
 {
+  Timer timer;
+  timer.restart();
+
   std::shared_ptr<FTI::Driver<dim, Number>> driver;
   driver.reset(new FTI::Driver<dim, Number>(mpi_comm, n_scalars));
 
@@ -186,7 +189,7 @@ run(std::string const & input_file,
 
   driver->solve();
 
-  driver->analyze_computing_times();
+  driver->print_statistics(timer.wall_time());
 }
 
 int

@@ -71,7 +71,7 @@ private:
   }
 
   void
-  do_timestep_post_solve(bool const do_write_output) override;
+  do_timestep_post_solve() override;
 
   virtual void
   prepare_vectors_for_next_timestep() = 0;

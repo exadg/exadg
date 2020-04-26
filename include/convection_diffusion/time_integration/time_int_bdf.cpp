@@ -39,7 +39,6 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     solution(param_in.order_time_integrator),
     vec_convective_term(param_in.order_time_integrator),
     iterations(0.0),
-    wall_time(0.0),
     cfl_oif(param.cfl_oif / std::pow(2.0, refine_steps_time_in)),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator),
@@ -543,11 +542,11 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::solve_timestep()
 {
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
   Timer timer;
   timer.restart();
+
+  if(this->print_solver_info())
+    this->output_solver_info_header();
 
   // transport velocity
   VectorType velocity;
@@ -672,8 +671,6 @@ TimeIntBDF<dim, Number>::solve_timestep()
     }
   }
 
-  wall_time += timer.wall_time();
-
   // write output
   if(print_solver_info())
   {
@@ -681,6 +678,8 @@ TimeIntBDF<dim, Number>::solve_timestep()
                 << "  Iterations: " << std::setw(6) << std::right << N_iter
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
+
+  this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -739,6 +738,9 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   // the mesh has to be at the correct position to allow a computation of
   // errors at start_time
   if(this->param.ale_formulation && this->get_time_step_number() == 1)
@@ -747,34 +749,36 @@ TimeIntBDF<dim, Number>::postprocessing() const
   }
 
   postprocessor->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());
+
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                        std::vector<double> &      iteration) const
+TimeIntBDF<dim, Number>::print_iterations() const
 {
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
-
-  name.resize(1);
+  // names
   std::vector<std::string> names = {"Linear system"};
-  name                           = names;
 
-  iteration.resize(1);
-  iteration[0] = (double)iterations / (double)N_time_steps;
-}
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
+  {
+    length = length > names[i].length() ? length : names[i].length();
+  }
 
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                        std::vector<double> &      wall_time_vector) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Linear system"};
-  name                           = names;
+  // iterations
+  unsigned int const  N_time_steps = this->get_time_step_number() - 1;
+  std::vector<double> iterations_avg;
+  iterations_avg.resize(1);
+  iterations_avg[0] = (double)iterations / (double)N_time_steps;
 
-  wall_time_vector.resize(1);
-  wall_time_vector[0] = this->wall_time;
+  // print
+  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
+  {
+    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
+                << std::endl;
+  }
 }
 
 template<int dim, typename Number>

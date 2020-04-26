@@ -9,7 +9,7 @@
 #define INCLUDE_UTILITIES_PRINT_THROUGHPUT_H_
 
 
-void
+inline void
 print_throughput(std::vector<std::pair<unsigned int, double>> const & wall_times,
                  std::string const &                                  name,
                  MPI_Comm const &                                     mpi_comm)
@@ -44,7 +44,7 @@ print_throughput(std::vector<std::pair<unsigned int, double>> const & wall_times
   }
 }
 
-void
+inline void
 print_throughput(
   std::vector<std::tuple<unsigned int, types::global_dof_index, double>> const & wall_times,
   std::string const &                                                            name,
@@ -80,6 +80,78 @@ print_throughput(
               << std::endl << std::endl;
     // clang-format on
   }
+}
+
+inline void
+print_throughput_steady(ConditionalOStream const &    pcout,
+                        types::global_dof_index const n_dofs,
+                        double const                  overall_time_avg,
+                        unsigned int const            N_mpi_processes)
+{
+  pcout << std::endl
+        << "Throughput:" << std::endl
+        << "  Number of MPI processes = " << N_mpi_processes << std::endl
+        << "  Degrees of freedom      = " << n_dofs << std::endl
+        << "  Wall time               = " << std::scientific << std::setprecision(2)
+        << overall_time_avg << " s" << std::endl
+        << "  Throughput              = " << std::scientific << std::setprecision(2)
+        << n_dofs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl;
+}
+
+inline void
+print_throughput_10(ConditionalOStream const &    pcout,
+                    types::global_dof_index const n_dofs,
+                    double const                  t_10,
+                    unsigned int const            N_mpi_processes)
+{
+  double const tau_10 = t_10 * (double)N_mpi_processes / n_dofs;
+  pcout << "Throughput of linear solver (numbers based on n_10):" << std::endl
+        << "  Number of MPI processes = " << N_mpi_processes << std::endl
+        << "  Degrees of freedom      = " << n_dofs << std::endl
+        << "  Wall time t_10          = " << std::scientific << std::setprecision(2) << t_10 << " s"
+        << std::endl
+        << "  tau_10                  = " << std::scientific << std::setprecision(2) << tau_10
+        << " s*core/DoF" << std::endl
+        << "  Throughput E_10         = " << std::scientific << std::setprecision(2) << 1.0 / tau_10
+        << " DoF/s/core" << std::endl;
+}
+
+inline void
+print_throughput_unsteady(ConditionalOStream const &    pcout,
+                          types::global_dof_index const n_dofs,
+                          double const                  overall_time_avg,
+                          unsigned int const            N_time_steps,
+                          unsigned int const            N_mpi_processes)
+{
+  double const time_per_timestep = overall_time_avg / (double)N_time_steps;
+  pcout << std::endl
+        << "Throughput per time step:" << std::endl
+        << "  Number of MPI processes = " << N_mpi_processes << std::endl
+        << "  Degrees of freedom      = " << n_dofs << std::endl
+        << "  Wall time               = " << std::scientific << std::setprecision(2)
+        << overall_time_avg << " s" << std::endl
+        << "  Time steps              = " << std::left << N_time_steps << std::endl
+        << "  Wall time per time step = " << std::scientific << std::setprecision(2)
+        << time_per_timestep << " s" << std::endl
+        << "  Number of MPI processes = " << N_mpi_processes << std::endl
+        << "  Throughput              = " << std::scientific << std::setprecision(2)
+        << n_dofs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
+}
+
+
+inline void
+print_costs(ConditionalOStream const & pcout,
+            double const               overall_time_avg,
+            unsigned int const         N_mpi_processes)
+
+{
+  pcout << std::endl
+        << "Computational costs:" << std::endl
+        << "  Number of MPI processes = " << N_mpi_processes << std::endl
+        << "  Wall time               = " << std::scientific << std::setprecision(2)
+        << overall_time_avg << " s" << std::endl
+        << "  Computational costs     = " << std::scientific << std::setprecision(2)
+        << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 }
 
 

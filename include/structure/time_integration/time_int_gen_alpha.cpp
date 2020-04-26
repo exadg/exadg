@@ -73,6 +73,8 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
   if(this->print_solver_info())
     this->output_solver_info_header();
 
+  // compute right-hand side in case of linear problems or "constant vector"
+  // in case of nonlinear problems
   Timer timer;
   timer.restart();
 
@@ -88,9 +90,18 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
   // has values of 1 on the diagonal for constrained degrees of freedom).
   pde_operator->set_constrained_values_to_zero(const_vector);
 
+  if(param.large_deformation == false) // linear case
+  {
+    // calculate right-hand side vector
+    pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
+    // shift const_vector to right-hand side
+    rhs.add(-1.0, const_vector);
+  }
+
+  this->timer_tree->insert({"Timeloop", "Compute rhs"}, timer.wall_time());
+
   // solve system of equations for displacement d_{n+1-alpha_f}
-  unsigned int N_iter_nonlinear = 0;
-  unsigned int N_iter_linear    = 0;
+  timer.restart();
 
   // initial guess
   displacement_np = displacement_n;
@@ -107,54 +118,49 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
                                                     this->get_mid_time(),
                                                     update_preconditioner);
 
-    N_iter_nonlinear = std::get<0>(iter);
-    N_iter_linear    = std::get<1>(iter);
-  }
-  else // linear case
-  {
-    // calculate right-hand side vector
-    pde_operator->compute_rhs_linear(rhs, this->get_mid_time());
-    // shift const_vector to right-hand side
-    rhs.add(-1.0, const_vector);
+    unsigned int const N_iter_nonlinear = std::get<0>(iter);
+    unsigned int const N_iter_linear    = std::get<1>(iter);
 
-    // solve linear system of equations
-    N_iter_linear = pde_operator->solve_linear(displacement_np,
-                                               rhs,
-                                               this->get_scaling_factor_mass(),
-                                               this->get_mid_time());
-  }
-
-  // compute vectors at time t_{n+1}
-  this->update_displacement(displacement_np, displacement_n);
-  this->update_velocity(velocity_np, displacement_np, displacement_n, velocity_n, acceleration_n);
-  this->update_acceleration(
-    acceleration_np, displacement_np, displacement_n, velocity_n, acceleration_n);
-
-  // solver info output
-  if(this->print_solver_info())
-  {
-    if(param.large_deformation) // nonlinear case
+    if(this->print_solver_info())
     {
       double N_iter_linear_avg =
         (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
 
       // clang-format off
-        pcout << std::endl
-              << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
-              << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-              << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
-              << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
-      // clang-format on
-    }
-    else // linear case
-    {
-      // clang-format off
-        pcout << std::endl
-              << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
-              << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+      pcout << std::endl
+            << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
+            << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
+            << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
+            << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
       // clang-format on
     }
   }
+  else // linear case
+  {
+    // solve linear system of equations
+    unsigned int const N_iter_linear = pde_operator->solve_linear(displacement_np,
+                                                                  rhs,
+                                                                  this->get_scaling_factor_mass(),
+                                                                  this->get_mid_time());
+
+    // clang-format off
+    pcout << std::endl
+          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
+    // clang-format on
+  }
+
+  this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());
+
+  // compute vectors at time t_{n+1}
+  timer.restart();
+
+  this->update_displacement(displacement_np, displacement_n);
+  this->update_velocity(velocity_np, displacement_np, displacement_n, velocity_n, acceleration_n);
+  this->update_acceleration(
+    acceleration_np, displacement_np, displacement_n, velocity_n, acceleration_n);
+
+  this->timer_tree->insert({"Timeloop", "Update vectors"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -186,7 +192,12 @@ template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   postprocessor->do_postprocessing(displacement_n, this->get_time(), this->get_time_step_number());
+
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 template<int dim, typename Number>

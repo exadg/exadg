@@ -13,6 +13,7 @@
 
 #include "../../time_integration/time_int_gen_alpha_base.h"
 
+#include "../../utilities/timings_hierarchical.h"
 #include "../postprocessor/postprocessor.h"
 #include "../spatial_discretization/operator.h"
 

@@ -12,10 +12,14 @@
 #include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 
+// application
+#include "user_interface/application_base.h"
+
 // functionalities
 #include "../include/grid/mapping_degree.h"
 #include "../include/grid/mesh.h"
-#include "../structure/user_interface/application_base.h"
+#include "../utilities/print_general_infos.h"
+#include "../utilities/timings_hierarchical.h"
 
 // spatial discretization
 #include "../structure/spatial_discretization/operator.h"
@@ -24,7 +28,6 @@
 #include "../structure/time_integration/driver_quasi_static_problems.h"
 #include "../structure/time_integration/driver_steady_problems.h"
 #include "../structure/time_integration/time_int_gen_alpha.h"
-#include "../utilities/print_general_infos.h"
 
 using namespace dealii;
 
@@ -45,7 +48,7 @@ public:
   solve() const;
 
   void
-  analyze_computing_times() const;
+  print_statistics(double const total_time) const;
 
 private:
   void
@@ -100,9 +103,7 @@ private:
   std::shared_ptr<TimeIntGenAlpha<dim, Number>> time_integrator;
 
   // computation time
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
+  mutable TimerTree timer_tree;
 };
 
 } // namespace Structure

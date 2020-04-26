@@ -606,6 +606,9 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   // the mesh has to be at the correct position to allow a computation of
   // errors at start_time
   if(this->param.ale_formulation && this->get_time_step_number() == 1)
@@ -639,13 +642,8 @@ TimeIntBDF<dim, Number>::postprocessing() const
                                      this->get_time(),
                                      this->get_time_step_number());
   }
-}
 
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::postprocessing_steady_problem() const
-{
-  postprocessor->do_postprocessing(get_velocity(0), get_pressure(0));
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 // instantiations

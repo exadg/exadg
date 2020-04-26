@@ -6,6 +6,7 @@
  */
 
 #include "driver_precursor.h"
+#include "../utilities/print_throughput.h"
 
 namespace IncNS
 {
@@ -13,9 +14,7 @@ template<int dim, typename Number>
 DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-    use_adaptive_time_stepping(false),
-    overall_time(0.0),
-    setup_time(0.0)
+    use_adaptive_time_stepping(false)
 {
 }
 
@@ -97,6 +96,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                     unsigned int const &                                   degree,
                                     unsigned int const & refine_space)
 {
+  Timer timer;
   timer.restart();
 
   print_header();
@@ -399,19 +399,18 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   navier_stokes_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
                                         time_integrator->get_velocity());
 
-  setup_time = timer.wall_time();
+  timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::solve() const
 {
-  // run time loop
-
   set_start_time();
 
   synchronize_time_step_size();
 
+  // time loop
   do
   {
     // advance one time step for precursor domain
@@ -431,162 +430,53 @@ DriverPrecursor<dim, Number>::solve() const
     if(use_adaptive_time_stepping == true)
       synchronize_time_step_size();
   } while(!time_integrator_pre->finished() || !time_integrator->finished());
-
-  overall_time += this->timer.wall_time();
 }
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::analyze_iterations(
-  InputParameters const &        param,
-  std::shared_ptr<TimeInt> const time_integrator) const
-{
-  // Iterations
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    std::vector<std::string> names;
-    std::vector<double>      iterations;
-
-    time_integrator->get_iterations(names, iterations);
-
-    for(unsigned int i = 0; i < iterations.size(); ++i)
-    {
-      this->pcout << "  " << std::setw(length) << std::left << names[i] << std::fixed
-                  << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
-                  << std::endl;
-    }
-  }
-}
-template<int dim, typename Number>
-double
-DriverPrecursor<dim, Number>::analyze_computing_times(
-  InputParameters const &        param,
-  std::shared_ptr<TimeInt> const time_integrator) const
-{
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-
-  std::vector<std::string> names;
-  std::vector<double>      computing_times;
-
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    time_integrator->get_wall_times(names, computing_times);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter"));
-  }
-
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
-    this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
-
-    sum_of_substeps += data.avg;
-  }
-
-  return sum_of_substeps;
-}
-
-template<int dim, typename Number>
-void
-DriverPrecursor<dim, Number>::analyze_computing_times() const
+DriverPrecursor<dim, Number>::print_statistics(double const total_time) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
               << std::endl
               << std::endl;
 
+  // Iterations
   this->pcout << std::endl
               << "Average number of iterations for incompressible Navier-Stokes solver:"
               << std::endl;
 
-  this->pcout << std::endl << "Precursor domain:" << std::endl;
+  this->pcout << std::endl << "Precursor:" << std::endl;
 
-  analyze_iterations(param_pre, time_integrator_pre);
+  time_integrator_pre->print_iterations();
 
-  this->pcout << std::endl << "Actual domain:" << std::endl;
+  this->pcout << std::endl << "Main:" << std::endl;
 
-  analyze_iterations(param, time_integrator);
+  time_integrator->print_iterations();
 
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-
+  // Wall times
   this->pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
 
-  // wall times
-  this->pcout << std::endl << "Domain 1:" << std::endl;
+  timer_tree.insert({"Incompressible flow"}, total_time);
 
-  double const time_domain_pre_avg = analyze_computing_times(param_pre, time_integrator_pre);
+  timer_tree.insert({"Incompressible flow"},
+                    time_integrator_pre->get_timings(),
+                    "Timeloop precursor");
+  timer_tree.insert({"Incompressible flow"}, time_integrator->get_timings(), "Timeloop main");
 
-  // wall times
-  this->pcout << std::endl << "Domain 2:" << std::endl;
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
 
-  double const time_domain_avg = analyze_computing_times(param, time_integrator);
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
 
-  this->pcout << std::endl;
+  // Computational costs in CPUh
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
-  double const              setup_time_avg  = setup_time_data.avg;
-  this->pcout << "  " << std::setw(length) << std::left << "Setup" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
+  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              total_time_avg  = total_time_data.avg;
 
-  double const other = overall_time_avg - time_domain_pre_avg - time_domain_avg - setup_time_avg;
-  this->pcout << "  " << std::setw(length) << std::left << "Other" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << other << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << other / overall_time_avg * 100 << " %" << std::endl;
-
-  this->pcout << "  " << std::setw(length) << std::left << "Overall" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  this->pcout << std::endl
-              << "Computational costs (both domains, including setup + postprocessing):"
-              << std::endl
-              << "  Number of MPI processes = " << N_mpi_processes << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
-
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs =
-    navier_stokes_operator_pre->get_number_of_dofs() + navier_stokes_operator->get_number_of_dofs();
-
-  if(param_pre.solver_type == SolverType::Unsteady)
-  {
-    unsigned int N_time_steps      = time_integrator_pre->get_number_of_time_steps();
-    double const time_per_timestep = overall_time_avg / (double)N_time_steps;
-    this->pcout << std::endl
-                << "Throughput per time step (both domains, including setup + postprocessing):"
-                << std::endl
-                << "  Degrees of freedom      = " << DoFs << std::endl
-                << "  Wall time               = " << std::scientific << std::setprecision(2)
-                << overall_time_avg << " s" << std::endl
-                << "  Time steps              = " << std::left << N_time_steps << std::endl
-                << "  Wall time per time step = " << std::scientific << std::setprecision(2)
-                << time_per_timestep << " s" << std::endl
-                << "  Throughput              = " << std::scientific << std::setprecision(2)
-                << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter"));
-  }
+  print_costs(pcout, total_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

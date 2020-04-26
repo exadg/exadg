@@ -51,7 +51,7 @@ private:
   do_timestep_pre_solve();
 
   void
-  do_timestep_post_solve(bool const do_write_output);
+  do_timestep_post_solve();
 
   void
   prepare_vectors_for_next_timestep();
