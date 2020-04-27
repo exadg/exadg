@@ -33,6 +33,7 @@ write_output(OutputDataBase const &  output_data,
   data_out.set_flags(flags);
 
   data_out.attach_dof_handler(dof_handler);
+  solution_vector.update_ghost_values();
   data_out.add_data_vector(solution_vector, "solution");
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 

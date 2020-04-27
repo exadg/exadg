@@ -43,6 +43,7 @@ write_output(OutputData const &                              output_data,
   solution_component_interpretation[0]       = DataComponentInterpretation::component_is_scalar;
   solution_component_interpretation[1 + dim] = DataComponentInterpretation::component_is_scalar;
 
+  solution_conserved.update_ghost_values();
   data_out.add_data_vector(dof_handler,
                            solution_conserved,
                            solution_names_conserved,
@@ -54,6 +55,8 @@ write_output(OutputData const &                              output_data,
       it != additional_fields.end();
       ++it)
   {
+    it->vector->update_ghost_values();
+
     if(it->type == SolutionFieldType::scalar)
     {
       data_out.add_data_vector(*it->dof_handler, *it->vector, it->name);

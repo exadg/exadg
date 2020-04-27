@@ -42,6 +42,7 @@ write_output(OutputData const &                                 output_data,
     velocity_component_interpretation(dim,
                                       DataComponentInterpretation::component_is_part_of_vector);
 
+  velocity.update_ghost_values();
   data_out.add_data_vector(dof_handler_velocity,
                            velocity,
                            velocity_names,
@@ -55,6 +56,8 @@ write_output(OutputData const &                                 output_data,
       it != additional_fields.end();
       ++it)
   {
+    it->vector->update_ghost_values();
+
     if(it->type == SolutionFieldType::scalar)
     {
       data_out.add_data_vector(*it->dof_handler, *it->vector, it->name);

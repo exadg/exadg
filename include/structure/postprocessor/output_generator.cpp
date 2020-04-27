@@ -32,6 +32,7 @@ write_output(OutputDataBase const &  output_data,
   std::vector<DataComponentInterpretation::DataComponentInterpretation> component_interpretation(
     dim, DataComponentInterpretation::component_is_part_of_vector);
 
+  solution_vector.update_ghost_values();
   data_out.add_data_vector(dof_handler, solution_vector, names, component_interpretation);
 
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
