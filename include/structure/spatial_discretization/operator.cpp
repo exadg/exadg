@@ -575,6 +575,13 @@ Operator<dim, Number>::get_dof_handler() const
   return dof_handler;
 }
 
+template<int dim, typename Number>
+types::global_dof_index
+Operator<dim, Number>::get_number_of_dofs() const
+{
+  return dof_handler.n_dofs();
+}
+
 template class Operator<2, float>;
 template class Operator<2, double>;
 

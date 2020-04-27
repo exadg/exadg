@@ -272,6 +272,9 @@ public:
   DoFHandler<dim> const &
   get_dof_handler() const;
 
+  types::global_dof_index
+  get_number_of_dofs() const;
+
 private:
   /*
    * Initializes DoFHandler.
