@@ -35,8 +35,8 @@ public:
     unsigned int const                              refine_steps_time_in,
     MPI_Comm const &                                mpi_comm_in,
     std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
-    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
+    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
+    std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
   virtual ~TimeIntBDFPressureCorrection()
   {

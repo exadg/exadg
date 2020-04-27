@@ -63,12 +63,12 @@ public:
              std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
              std::shared_ptr<FieldFunctions<dim>> const     field_functions,
              InputParameters const &                        param,
+             std::string const &                            field,
              MPI_Comm const &                               mpi_comm);
 
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field = "") const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -76,8 +76,9 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_velocity_external_in = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+        std::string const &                          dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -277,15 +278,21 @@ private:
   bool
   needs_own_dof_handler_velocity() const;
 
+  std::string
+  get_quad_name() const;
+
+  std::string
+  get_quad_name_overintegration() const;
+
+  std::string
+  get_dof_name_velocity() const;
+
   unsigned int
   get_dof_index() const;
 
   /*
    * Dof index for velocity (in case of numerical velocity field)
    */
-  std::string
-  get_dof_name_velocity() const;
-
   unsigned int
   get_dof_index_velocity() const;
 
@@ -334,6 +341,8 @@ private:
    */
   InputParameters const & param;
 
+  std::string const field;
+
   /*
    * Basic finite element ingredients.
    */
@@ -357,15 +366,13 @@ private:
   std::string const quad_index_std             = "conv_diff";
   std::string const quad_index_overintegration = "conv_diff_overintegration";
 
-  mutable std::string field;
-
   std::string dof_index_velocity_external;
 
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
 
   /*
    * Basic operators.

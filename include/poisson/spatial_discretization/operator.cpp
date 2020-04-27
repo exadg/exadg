@@ -18,6 +18,7 @@ Operator<dim, Number, n_components>::Operator(
   std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const           field_functions_in,
   InputParameters const &                              param_in,
+  std::string const &                                  field_in,
   MPI_Comm const &                                     mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
@@ -26,6 +27,7 @@ Operator<dim, Number, n_components>::Operator(
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
+    field(field_in),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -39,26 +41,23 @@ Operator<dim, Number, n_components>::Operator(
 
 template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number, n_components>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+Operator<dim, Number, n_components>::fill_matrix_free_data(
+  MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  this->field = field;
-
   // append mapping flags
 
   // for continuous FE discretizations, we need to evaluate inhomogeneous Neumann
   // boundary conditions which is why the second argument is always true
-  matrix_free_wrapper.append_mapping_flags(
+  matrix_free_data.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number, n_components>::get_mapping_flags(
       param.spatial_discretization == SpatialDiscretization::DG, true));
 
   if(param.right_hand_side)
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       ConvDiff::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
 
   // DoFHandler
-  matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index);
+  matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
 
   // AffineConstraints
   if(param.spatial_discretization == SpatialDiscretization::CG)
@@ -76,21 +75,22 @@ Operator<dim, Number, n_components>::append_data_structures(
     constraint_matrix.close();
   }
 
-  matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index);
+  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
 
   // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree + 1), field + quad_index);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 }
 
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
 {
   pcout << std::endl << "Setup Poisson operator ..." << std::endl;
 
-  matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper->get_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   setup_operators();
 
@@ -326,17 +326,31 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 #endif
 
 template<int dim, typename Number, int n_components>
+std::string
+Operator<dim, Number, n_components>::get_dof_name() const
+{
+  return field + "_" + dof_index;
+}
+
+template<int dim, typename Number, int n_components>
+std::string
+Operator<dim, Number, n_components>::get_quad_name() const
+{
+  return field + "_" + quad_index;
+}
+
+template<int dim, typename Number, int n_components>
 unsigned int
 Operator<dim, Number, n_components>::get_dof_index() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index);
+  return matrix_free_data->get_dof_index(get_dof_name());
 }
 
 template<int dim, typename Number, int n_components>
 unsigned int
 Operator<dim, Number, n_components>::get_quad_index() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index);
+  return matrix_free_data->get_quad_index(get_quad_name());
 }
 
 template<int dim, typename Number, int n_components>

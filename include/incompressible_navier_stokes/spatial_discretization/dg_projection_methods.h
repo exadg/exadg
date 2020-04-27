@@ -31,16 +31,17 @@ public:
    * Constructor.
    */
   DGNavierStokesProjectionMethods(
-    parallel::TriangulationBase<dim> const & triangulation_in,
-    Mapping<dim> const &                     mapping_in,
-    unsigned int const                       degree_u_in,
+    parallel::TriangulationBase<dim> const & triangulation,
+    Mapping<dim> const &                     mapping,
+    unsigned int const                       degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-    InputParameters const &                         parameters_in,
-    MPI_Comm const &                                mpi_comm_in);
+                                                    periodic_face_pairs,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+    InputParameters const &                         parameters,
+    std::string const &                             field,
+    MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.
@@ -52,8 +53,9 @@ public:
    * needed for projection-type methods.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_temperature = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+        std::string const &                          dof_index_temperature = "");
 
   virtual void
   update_after_mesh_movement() override;

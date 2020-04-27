@@ -21,6 +21,9 @@
 #include "../utilities/print_general_infos.h"
 #include "../utilities/timings_hierarchical.h"
 
+// matrix-free
+#include "../include/matrix_free/matrix_free_wrapper.h"
+
 // spatial discretization
 #include "../structure/spatial_discretization/operator.h"
 
@@ -85,13 +88,15 @@ private:
   // field functions
   std::shared_ptr<FieldFunctions<dim>> field_functions;
 
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+
   // operator
-  typedef Operator<dim, Number> PDEOperator;
-  std::shared_ptr<PDEOperator>  pde_operator;
+  std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   // postprocessor
-  typedef PostProcessor<dim, Number> Postprocessor;
-  std::shared_ptr<Postprocessor>     postprocessor;
+  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
 
   // driver steady-state
   std::shared_ptr<DriverSteady<dim, Number>> driver_steady;

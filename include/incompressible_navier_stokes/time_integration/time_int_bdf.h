@@ -14,7 +14,6 @@
 #include "../postprocessor/postprocessor_base.h"
 #include "../spatial_discretization/dg_navier_stokes_base.h"
 #include "grid/moving_mesh.h"
-#include "matrix_free/matrix_free_wrapper.h"
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
@@ -39,8 +38,8 @@ public:
              unsigned int const                              refine_steps_time_in,
              MPI_Comm const &                                mpi_comm_in,
              std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-             std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
-             std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
+             std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
+             std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
   virtual ~TimeIntBDF()
   {
@@ -179,8 +178,8 @@ private:
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
 
-  std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh;
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 };
 
 } // namespace IncNS

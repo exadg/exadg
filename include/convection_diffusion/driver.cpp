@@ -102,15 +102,30 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                        boundary_descriptor,
                                                        field_functions,
                                                        param,
+                                                       "scalar",
                                                        mpi_comm));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*conv_diff_operator);
-  matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
+  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  if(param.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
+  }
+  conv_diff_operator->fill_matrix_free_data(*matrix_free_data);
+
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(mesh->get_mapping(),
+                      matrix_free_data->get_dof_handler_vector(),
+                      matrix_free_data->get_constraint_vector(),
+                      matrix_free_data->get_quadrature_vector(),
+                      matrix_free_data->data);
 
   // setup convection-diffusion operator
-  conv_diff_operator->setup(matrix_free_wrapper);
+  conv_diff_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
   postprocessor = application->construct_postprocessor(degree, mpi_comm);
@@ -126,13 +141,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(new TimeIntBDF<dim, Number>(conv_diff_operator,
-                                                        param,
-                                                        refine_time,
-                                                        mpi_comm,
-                                                        postprocessor,
-                                                        moving_mesh,
-                                                        matrix_free_wrapper));
+      time_integrator.reset(new TimeIntBDF<dim, Number>(
+        conv_diff_operator, param, refine_time, mpi_comm, postprocessor, moving_mesh, matrix_free));
     }
     else
     {
@@ -217,7 +227,7 @@ Driver<dim, Number>::solve()
         std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
           std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
         moving_mesh->move_mesh(time_int_bdf->get_next_time());
-        matrix_free_wrapper->update_mapping();
+        matrix_free->update_mapping(moving_mesh->get_mapping());
         conv_diff_operator->update_after_mesh_movement();
         time_int_bdf->ale_update();
 

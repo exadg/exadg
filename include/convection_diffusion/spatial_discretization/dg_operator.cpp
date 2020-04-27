@@ -21,6 +21,7 @@ DGOperator<dim, Number>::DGOperator(
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
   InputParameters const &                        param_in,
+  std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
@@ -29,6 +30,7 @@ DGOperator<dim, Number>::DGOperator(
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
+    field(field_in),
     fe(degree_in),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
@@ -52,66 +54,61 @@ DGOperator<dim, Number>::DGOperator(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  this->field = field;
-
   // append mapping flags
   if(param.problem_type == ProblemType::Unsteady)
   {
-    matrix_free_wrapper.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.right_hand_side)
   {
-    matrix_free_wrapper.append_mapping_flags(
-      Operators::RHSKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.convective_problem())
   {
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.diffusive_problem())
   {
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::DiffusiveKernel<dim, Number>::get_mapping_flags());
   }
 
   // DoFHandler, AffineConstraints
-  matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index_std);
-  matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_std);
+  matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
+  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
 
   if(needs_own_dof_handler_velocity())
   {
-    matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), field + dof_index_velocity);
-    matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_velocity);
+    matrix_free_data.insert_dof_handler(&(*dof_handler_velocity), get_dof_name_velocity());
+    matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name_velocity());
   }
 
   // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree + 1), field + quad_index_std);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 
   if(param.use_overintegration)
   {
-    matrix_free_wrapper.insert_quadrature(QGauss<1>(degree + (degree + 2) / 2),
-                                          field + quad_index_overintegration);
+    matrix_free_data.insert_quadrature(QGauss<1>(degree + (degree + 2) / 2),
+                                       get_quad_name_overintegration());
   }
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in,
-  std::string const &                             dof_index_velocity_external_in)
+DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+                               std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+                               std::string const & dof_index_velocity_external_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
-  matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper->get_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   dof_index_velocity_external = dof_index_velocity_external_in;
 
@@ -293,6 +290,20 @@ DGOperator<dim, Number>::get_dof_name() const
 }
 
 template<int dim, typename Number>
+std::string
+DGOperator<dim, Number>::get_quad_name() const
+{
+  return field + quad_index_std;
+}
+
+template<int dim, typename Number>
+std::string
+DGOperator<dim, Number>::get_quad_name_overintegration() const
+{
+  return field + quad_index_overintegration;
+}
+
+template<int dim, typename Number>
 bool
 DGOperator<dim, Number>::needs_own_dof_handler_velocity() const
 {
@@ -303,7 +314,7 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index() const
 {
-  return matrix_free_wrapper->get_dof_index(get_dof_name());
+  return matrix_free_data->get_dof_index(get_dof_name());
 }
 
 template<int dim, typename Number>
@@ -325,7 +336,7 @@ unsigned int
 DGOperator<dim, Number>::get_dof_index_velocity() const
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
+    return matrix_free_data->get_dof_index(get_dof_name_velocity());
   else
     return numbers::invalid_unsigned_int;
 }
@@ -334,14 +345,14 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_std);
+  return matrix_free_data->get_quad_index(field + quad_index_std);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_overintegration() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_overintegration);
+  return matrix_free_data->get_quad_index(field + quad_index_overintegration);
 }
 
 template<int dim, typename Number>
@@ -426,7 +437,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
       {
         unsigned int const degree_scalar = fe.degree;
         unsigned int const degree_velocity =
-          matrix_free_wrapper->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
+          matrix_free_data->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
         AssertThrow(
           degree_scalar == degree_velocity,
           ExcMessage(
@@ -873,7 +884,7 @@ template<int dim, typename Number>
 DoFHandler<dim> const &
 DGOperator<dim, Number>::get_dof_handler_velocity() const
 {
-  return matrix_free_wrapper->get_dof_handler(get_dof_name_velocity());
+  return matrix_free_data->get_dof_handler(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>

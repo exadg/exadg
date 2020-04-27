@@ -67,14 +67,15 @@ public:
            std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim>> const           field_functions,
            InputParameters const &                              param,
+           std::string const &                                  field,
            MPI_Comm const &                                     mpi_comm);
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field) const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
 
   void
   setup_solver();
@@ -126,6 +127,12 @@ public:
 #endif
 
 private:
+  std::string
+  get_dof_name() const;
+
+  std::string
+  get_quad_name() const;
+
   unsigned int
   get_dof_index() const;
 
@@ -165,6 +172,8 @@ private:
    */
   InputParameters const & param;
 
+  std::string const field;
+
   /*
    * Basic finite element ingredients.
    */
@@ -177,10 +186,8 @@ private:
   std::string const dof_index  = "laplace";
   std::string const quad_index = "laplace";
 
-  mutable std::string field;
-
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
 
   ConvDiff::RHSOperator<dim, Number, n_components> rhs_operator;
 

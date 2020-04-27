@@ -128,7 +128,8 @@ private:
   IncNS::InputParameters fluid_param;
 
   //  MatrixFree
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
   typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
   typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;

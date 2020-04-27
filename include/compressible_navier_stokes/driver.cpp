@@ -103,15 +103,24 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                 boundary_descriptor_energy,
                                                                 field_functions,
                                                                 param,
+                                                                "fluid",
                                                                 mpi_comm));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*comp_navier_stokes_operator);
-  matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
+  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  comp_navier_stokes_operator->fill_matrix_free_data(*matrix_free_data);
+
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(mesh->get_mapping(),
+                      matrix_free_data->get_dof_handler_vector(),
+                      matrix_free_data->get_constraint_vector(),
+                      matrix_free_data->get_quadrature_vector(),
+                      matrix_free_data->data);
 
   // setup compressible Navier-Stokes operator
-  comp_navier_stokes_operator->setup(matrix_free_wrapper);
+  comp_navier_stokes_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
   postprocessor = application->construct_postprocessor(degree, mpi_comm);

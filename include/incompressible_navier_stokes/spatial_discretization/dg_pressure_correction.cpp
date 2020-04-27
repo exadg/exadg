@@ -20,6 +20,7 @@ DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : ProjBase(triangulation_in,
              mapping_in,
@@ -29,6 +30,7 @@ DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
              boundary_descriptor_pressure_in,
              field_functions_in,
              parameters_in,
+             field_in,
              mpi_comm_in)
 {
 }
@@ -41,10 +43,11 @@ DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection
 template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-  std::string const &                             dof_index_temperature)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+  std::string const &                          dof_index_temperature)
 {
-  ProjBase::setup(matrix_free_wrapper, dof_index_temperature);
+  ProjBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
   setup_inverse_mass_matrix_operator_pressure();
 }

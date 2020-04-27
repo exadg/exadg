@@ -100,7 +100,8 @@ private:
   /*
    * MatrixFree
    */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_pre, matrix_free_wrapper;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_pre, matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_pre, matrix_free;
 
   /*
    * Spatial discretization

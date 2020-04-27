@@ -43,29 +43,31 @@ public:
 
   void
   setup(
-    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_dst_in,
-    std::vector<std::string> const &                quadrature_rules_dst_in,
-    unsigned int &                                  dof_index_dst_in,
+    std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_dst_in,
+    std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_dst_in,
+    std::vector<std::string> const &             quadrature_rules_dst_in,
+    unsigned int &                               dof_index_dst_in,
     std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>> const & bc_in,
     DoFHandler<dim> const & dof_handler_src_in,
     Mapping<dim> const &    mapping_src_in,
     VectorType const &      dof_vector_src)
   {
-    matrix_free_wrapper_dst = matrix_free_wrapper_dst_in;
-    quadrature_rules_dst    = quadrature_rules_dst_in;
-    dof_index_dst           = dof_index_dst_in;
-    bc                      = bc_in;
+    matrix_free_dst      = matrix_free_dst_in;
+    matrix_free_data_dst = matrix_free_data_dst_in;
+    quadrature_rules_dst = quadrature_rules_dst_in;
+    dof_index_dst        = dof_index_dst_in;
+    bc                   = bc_in;
 
     dof_handler_src = &dof_handler_src_in;
     mapping_src     = &mapping_src_in;
 
     VectorType dst_dummy;
-    matrix_free_wrapper_dst->get_matrix_free()->loop(&This::cell_loop_empty,
-                                                     &This::face_loop_empty,
-                                                     &This::boundary_face_loop,
-                                                     this,
-                                                     dst_dummy,
-                                                     dof_vector_src);
+    matrix_free_dst->loop(&This::cell_loop_empty,
+                          &This::face_loop_empty,
+                          &This::boundary_face_loop,
+                          this,
+                          dst_dummy,
+                          dof_vector_src);
   }
 
   void
@@ -80,7 +82,7 @@ public:
 
       for(auto quad = quadrature_rules_dst.begin(); quad != quadrature_rules_dst.end(); ++quad)
       {
-        unsigned int quad_index = matrix_free_wrapper_dst->get_quad_index(*quad);
+        unsigned int quad_index = matrix_free_data_dst->get_quad_index(*quad);
 
         ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_index)->second;
         ArraySolution &  array_solution  = map_solution.find(quad_index)->second;
@@ -137,7 +139,7 @@ private:
 
       for(auto quad = quadrature_rules_dst.begin(); quad != quadrature_rules_dst.end(); ++quad)
       {
-        unsigned int quad_index = matrix_free_wrapper_dst->get_quad_index(*quad);
+        unsigned int quad_index = matrix_free_data_dst->get_quad_index(*quad);
 
         Integrator integrator(matrix_free, true, dof_index_dst, quad_index);
 
@@ -182,9 +184,10 @@ private:
     }
   }
 
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_dst;
-  std::vector<std::string>                        quadrature_rules_dst;
-  unsigned int                                    dof_index_dst;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_dst;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_dst;
+  std::vector<std::string>                     quadrature_rules_dst;
+  unsigned int                                 dof_index_dst;
 
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>> bc;
 

@@ -23,6 +23,7 @@ Operator<dim, Number>::Operator(
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
   std::shared_ptr<MaterialDescriptor> const      material_descriptor_in,
   InputParameters const &                        param_in,
+  std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
@@ -31,10 +32,11 @@ Operator<dim, Number>::Operator(
     field_functions(field_functions_in),
     material_descriptor(material_descriptor_in),
     param(param_in),
-    mpi_comm(mpi_comm_in),
+    field(field_in),
     degree(degree_in),
     fe(FE_Q<dim>(degree_in), dim),
     dof_handler(triangulation_in),
+    mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct elasticity operator ..." << std::endl;
@@ -46,11 +48,13 @@ Operator<dim, Number>::Operator(
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup()
+Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
 {
   pcout << std::endl << "Setup spatial discretization operator ..." << std::endl;
 
-  initialize_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   setup_operators();
 
@@ -65,35 +69,6 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  pcout << std::endl
-        << "Continuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "degree of 1D polynomials", degree);
-  print_parameter(pcout, "number of dofs per cell", Utilities::pow(degree + 1, dim));
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-}
-
-// TODO use matrix_free_wrapper concept
-template<int dim, typename Number>
-void
-Operator<dim, Number>::initialize_matrix_free()
-{
-  // initialize matrix_free_data
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-
-  MappingFlags flags;
-  if(param.large_deformation)
-    flags = flags || NonLinearOperator<dim, Number>::get_mapping_flags();
-  else
-    flags = flags || LinearOperator<dim, Number>::get_mapping_flags();
-
-  flags = flags || BodyForceOperator<dim, Number>::get_mapping_flags();
-
-  additional_data.mapping_update_flags                = flags.cells;
-  additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-  additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-
   // determine constrained dofs
   constraint_matrix.clear();
   for(auto it : this->boundary_descriptor->dirichlet_bc)
@@ -105,13 +80,61 @@ Operator<dim, Number>::initialize_matrix_free()
   }
   constraint_matrix.close();
 
-  // quadrature formula used to perform integrals
-  QGauss<1> quadrature(degree + 1);
+  pcout << std::endl
+        << "Continuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
 
-  std::vector<const DoFHandler<dim> *>           dof_handlers{&dof_handler};
-  std::vector<const AffineConstraints<double> *> constraints{&constraint_matrix};
+  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "number of dofs per cell", Utilities::pow(degree + 1, dim));
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+}
 
-  matrix_free.reinit(mapping, dof_handlers, constraints, quadrature, additional_data);
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_dof_name() const
+{
+  return field + "_" + dof_index;
+}
+
+template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_quad_name() const
+{
+  return field + "_" + quad_index;
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_dof_index() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_quad_index() const
+{
+  return matrix_free_data->get_quad_index(get_quad_name());
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
+{
+  if(param.large_deformation)
+    matrix_free_data.append_mapping_flags(NonLinearOperator<dim, Number>::get_mapping_flags());
+  else
+    matrix_free_data.append_mapping_flags(LinearOperator<dim, Number>::get_mapping_flags());
+
+  if(param.body_force)
+    matrix_free_data.append_mapping_flags(BodyForceOperator<dim, Number>::get_mapping_flags());
+
+  // DoFHandler, AffineConstraints
+  matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
+  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
+
+  // Quadrature
+  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 }
 
 template<int dim, typename Number>
@@ -134,20 +157,20 @@ Operator<dim, Number>::setup_operators()
 
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.reinit(matrix_free, constraint_matrix, operator_data);
+    elasticity_operator_nonlinear.reinit(*matrix_free, constraint_matrix, operator_data);
   }
   else
   {
-    elasticity_operator_linear.reinit(matrix_free, constraint_matrix, operator_data);
+    elasticity_operator_linear.reinit(*matrix_free, constraint_matrix, operator_data);
   }
 
   // mass matrix operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
     MassMatrixOperatorData<dim> mass_data;
-    mass_data.dof_index  = 0 /* dof_index */;
-    mass_data.quad_index = 0 /* quad_index */;
-    mass.reinit(matrix_free, constraint_matrix, mass_data);
+    mass_data.dof_index  = get_dof_index();
+    mass_data.quad_index = get_quad_index();
+    mass.reinit(*matrix_free, constraint_matrix, mass_data);
     mass.set_scaling_factor(param.density);
 
     // preconditioner and solver for mass matrix have to be initialized in
@@ -181,14 +204,14 @@ Operator<dim, Number>::setup_operators()
 
   // setup rhs operator
   BodyForceData<dim> body_force_data;
-  body_force_data.dof_index  = 0;
-  body_force_data.quad_index = 0;
+  body_force_data.dof_index  = get_dof_index();
+  body_force_data.quad_index = get_quad_index();
   body_force_data.function   = field_functions->right_hand_side;
   if(param.large_deformation)
     body_force_data.pull_back_body_force = param.pull_back_body_force;
   else
     body_force_data.pull_back_body_force = false;
-  body_force_operator.reinit(matrix_free, body_force_data);
+  body_force_operator.reinit(*matrix_free, body_force_data);
 }
 
 template<int dim, typename Number>
@@ -329,7 +352,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  matrix_free.initialize_dof_vector(src, 0);
+  matrix_free->initialize_dof_vector(src, get_dof_index());
 }
 
 template<int dim, typename Number>
@@ -558,7 +581,7 @@ template<int dim, typename Number>
 MatrixFree<dim, Number> const &
 Operator<dim, Number>::get_matrix_free() const
 {
-  return matrix_free;
+  return *matrix_free;
 }
 
 template<int dim, typename Number>

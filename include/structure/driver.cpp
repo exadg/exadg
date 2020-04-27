@@ -88,17 +88,31 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // setup spatial operator
-  pde_operator.reset(new PDEOperator(*triangulation,
-                                     mesh->get_mapping(),
-                                     degree,
-                                     periodic_faces,
-                                     boundary_descriptor,
-                                     field_functions,
-                                     material_descriptor,
-                                     param,
-                                     mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(*triangulation,
+                                               mesh->get_mapping(),
+                                               degree,
+                                               periodic_faces,
+                                               boundary_descriptor,
+                                               field_functions,
+                                               material_descriptor,
+                                               param,
+                                               "elasticity",
+                                               mpi_comm));
 
-  pde_operator->setup();
+  // initialize matrix_free
+  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  pde_operator->fill_matrix_free_data(*matrix_free_data);
+
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(mesh->get_mapping(),
+                      matrix_free_data->get_dof_handler_vector(),
+                      matrix_free_data->get_constraint_vector(),
+                      matrix_free_data->get_quadrature_vector(),
+                      matrix_free_data->data);
+
+  pde_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
   postprocessor = application->construct_postprocessor(param, mpi_comm);

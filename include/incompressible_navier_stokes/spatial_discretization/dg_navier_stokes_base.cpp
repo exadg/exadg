@@ -22,6 +22,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
     triangulation(triangulation_in),
@@ -32,6 +33,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     boundary_descriptor_pressure(boundary_descriptor_pressure_in),
     field_functions(field_functions_in),
     param(parameters_in),
+    field(field_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u_in), dim)),
@@ -87,75 +89,72 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+DGNavierStokesBase<dim, Number>::fill_matrix_free_data(
+  MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  this->field = field;
-
   // append mapping flags
-  matrix_free_wrapper.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
-  matrix_free_wrapper.append_mapping_flags(
+  matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+  matrix_free_data.append_mapping_flags(
     Operators::DivergenceKernel<dim, Number>::get_mapping_flags());
-  matrix_free_wrapper.append_mapping_flags(
+  matrix_free_data.append_mapping_flags(
     Operators::GradientKernel<dim, Number>::get_mapping_flags());
 
   if(param.convective_problem())
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
 
   if(param.viscous_problem())
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ViscousKernel<dim, Number>::get_mapping_flags());
 
   if(param.right_hand_side)
-    matrix_free_wrapper.append_mapping_flags(
-      Operators::RHSKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_divergence_penalty)
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_continuity_penalty)
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
   // dof handler
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_u, field + dof_index_u);
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_p, field + dof_index_p);
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_u_scalar, field + dof_index_u_scalar);
+  matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);
+  matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);
+  matrix_free_data.insert_dof_handler(&dof_handler_u_scalar, field + dof_index_u_scalar);
 
   // constraint
-  matrix_free_wrapper.insert_constraint(&constraint_u, field + dof_index_u);
-  matrix_free_wrapper.insert_constraint(&constraint_p, field + dof_index_p);
-  matrix_free_wrapper.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
+  matrix_free_data.insert_constraint(&constraint_u, field + dof_index_u);
+  matrix_free_data.insert_constraint(&constraint_p, field + dof_index_p);
+  matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree_u + 1), field + quad_index_u);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.get_degree_p(degree_u) + 1),
-                                        field + quad_index_p);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(degree_u + (degree_u + 2) / 2),
-                                        field + quad_index_u_nonlinear);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree_u + 1), field + quad_index_u);
+  matrix_free_data.insert_quadrature(QGauss<1>(param.get_degree_p(degree_u) + 1),
+                                     field + quad_index_p);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree_u + (degree_u + 2) / 2),
+                                     field + quad_index_u_nonlinear);
   if(param.store_previous_boundary_values)
   {
-    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(degree_u + 1),
-                                          field + quad_index_u_gauss_lobatto);
-    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(degree_u) + 1),
-                                          field + quad_index_p_gauss_lobatto);
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree_u + 1),
+                                       field + quad_index_u_gauss_lobatto);
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(degree_u) + 1),
+                                       field + quad_index_p_gauss_lobatto);
   }
 }
 
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in,
-  std::string const &                             dof_index_temperature)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+  std::string const &                          dof_index_temperature)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
   // MatrixFree
-  matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper_in->get_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   // initialize data structures depending on MatrixFree
   initialize_operators(dof_index_temperature);
@@ -307,7 +306,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   RHSOperatorData<dim> rhs_data;
   rhs_data.dof_index = get_dof_index_velocity();
   if(param.boussinesq_term)
-    rhs_data.dof_index_scalar = matrix_free_wrapper->get_dof_index(dof_index_temperature);
+    rhs_data.dof_index_scalar = matrix_free_data->get_dof_index(dof_index_temperature);
   rhs_data.quad_index                                = get_quad_index_velocity_linear();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
@@ -572,56 +571,56 @@ template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity() const
 {
-  return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
+  return matrix_free_data->get_dof_index(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_pressure() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_p);
+  return matrix_free_data->get_dof_index(field + dof_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity_scalar() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_u_scalar);
+  return matrix_free_data->get_dof_index(field + dof_index_u_scalar);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linear() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_u);
+  return matrix_free_data->get_quad_index(field + quad_index_u);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_p);
+  return matrix_free_data->get_quad_index(field + quad_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_nonlinear() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_u_nonlinear);
+  return matrix_free_data->get_quad_index(field + quad_index_u_nonlinear);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_u_gauss_lobatto);
+  return matrix_free_data->get_quad_index(field + quad_index_u_gauss_lobatto);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_p_gauss_lobatto);
+  return matrix_free_data->get_quad_index(field + quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>

@@ -190,6 +190,7 @@ public:
     std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
     std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
     InputParameters const &                         parameters_in,
+    std::string const &                             field_in,
     MPI_Comm const &                                mpi_comm_in);
 
   /*
@@ -198,8 +199,9 @@ public:
   virtual ~DGNavierStokesCoupled();
 
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_temperature = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+        std::string const &                          dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

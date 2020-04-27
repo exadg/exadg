@@ -152,7 +152,8 @@ private:
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
   std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
 
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
   std::shared_ptr<DGOperator<dim, Number>> comp_navier_stokes_operator;
 

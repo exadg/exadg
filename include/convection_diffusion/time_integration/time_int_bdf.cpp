@@ -23,7 +23,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -43,13 +43,13 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator),
     moving_mesh(moving_mesh_in),
-    matrix_free_wrapper(matrix_free_wrapper_in)
+    matrix_free(matrix_free_in)
 {
   if(param.ale_formulation)
   {
     AssertThrow(moving_mesh != nullptr,
                 ExcMessage("Shared pointer moving_mesh is not correctly initialized."));
-    AssertThrow(matrix_free_wrapper != nullptr,
+    AssertThrow(matrix_free != nullptr,
                 ExcMessage("Shared pointer matrix_free_wrapper is not correctly initialized."));
   }
 }
@@ -465,7 +465,7 @@ void
 TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
 {
   moving_mesh->move_mesh(time);
-  matrix_free_wrapper->update_mapping();
+  matrix_free->update_mapping(moving_mesh->get_mapping());
   pde_operator->update_after_mesh_movement();
 }
 

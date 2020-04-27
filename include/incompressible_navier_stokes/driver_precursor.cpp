@@ -208,6 +208,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                            boundary_descriptor_pressure_pre,
                                                            field_functions_pre,
                                                            param_pre,
+                                                           "fluid",
                                                            mpi_comm));
 
     navier_stokes_operator_pre = navier_stokes_operator_coupled_pre;
@@ -223,6 +224,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                           boundary_descriptor_pressure_pre,
                           field_functions_pre,
                           param_pre,
+                          "fluid",
                           mpi_comm));
 
     navier_stokes_operator_pre = navier_stokes_operator_dual_splitting_pre;
@@ -238,6 +240,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                boundary_descriptor_pressure_pre,
                                field_functions_pre,
                                param_pre,
+                               "fluid",
                                mpi_comm));
 
     navier_stokes_operator_pre = navier_stokes_operator_pressure_correction_pre;
@@ -258,6 +261,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                        boundary_descriptor_pressure,
                                                        field_functions,
                                                        param,
+                                                       "fluid",
                                                        mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
@@ -272,6 +276,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                                     boundary_descriptor_pressure,
                                                                     field_functions,
                                                                     param,
+                                                                    "fluid",
                                                                     mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
@@ -287,6 +292,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                boundary_descriptor_pressure,
                                field_functions,
                                param,
+                               "fluid",
                                mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
@@ -297,19 +303,45 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   }
 
   // initialize matrix_free precursor
-  matrix_free_wrapper_pre.reset(new MatrixFreeWrapper<dim, Number>(mesh_pre->get_mapping()));
-  matrix_free_wrapper_pre->append_data_structures(*navier_stokes_operator_pre);
-  matrix_free_wrapper_pre->reinit(param_pre.use_cell_based_face_loops, triangulation_pre);
+  matrix_free_data_pre.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data_pre->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  if(param_pre.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_pre);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data_pre->data);
+  }
+  navier_stokes_operator_pre->fill_matrix_free_data(*matrix_free_data_pre);
+  matrix_free_pre.reset(new MatrixFree<dim, Number>());
+  matrix_free_pre->reinit(mesh_pre->get_mapping(),
+                          matrix_free_data_pre->get_dof_handler_vector(),
+                          matrix_free_data_pre->get_constraint_vector(),
+                          matrix_free_data_pre->get_quadrature_vector(),
+                          matrix_free_data->data);
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
-  matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
+  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  if(param.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
+  }
+  navier_stokes_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(mesh->get_mapping(),
+                      matrix_free_data->get_dof_handler_vector(),
+                      matrix_free_data->get_constraint_vector(),
+                      matrix_free_data->get_quadrature_vector(),
+                      matrix_free_data->data);
 
 
   // setup Navier-Stokes operator
-  navier_stokes_operator_pre->setup(matrix_free_wrapper_pre);
-  navier_stokes_operator->setup(matrix_free_wrapper);
+  navier_stokes_operator_pre->setup(matrix_free_pre, matrix_free_data_pre);
+  navier_stokes_operator->setup(matrix_free, matrix_free_data);
 
   // setup postprocessor
   postprocessor_pre = application->construct_postprocessor_precursor(degree, mpi_comm);

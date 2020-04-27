@@ -125,16 +125,29 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                  poisson_boundary_descriptor,
                                                                  poisson_field_functions,
                                                                  poisson_param,
+                                                                 "Poisson",
                                                                  mpi_comm));
 
   // initialize matrix_free
-  poisson_matrix_free_wrapper.reset(
-    new MatrixFreeWrapper<dim, Number>(poisson_mesh->get_mapping()));
-  poisson_matrix_free_wrapper->append_data_structures(*poisson_operator);
-  poisson_matrix_free_wrapper->reinit(poisson_param.enable_cell_based_face_loops,
-                                      fluid_triangulation);
+  poisson_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  poisson_matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  if(poisson_param.enable_cell_based_face_loops)
+  {
+    auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
+      fluid_triangulation);
+    Categorization::do_cell_based_loops(*tria, poisson_matrix_free_data->data);
+  }
+  poisson_operator->fill_matrix_free_data(*poisson_matrix_free_data);
 
-  poisson_operator->setup(poisson_matrix_free_wrapper);
+  poisson_matrix_free.reset(new MatrixFree<dim, Number>());
+  poisson_matrix_free->reinit(poisson_mesh->get_mapping(),
+                              poisson_matrix_free_data->get_dof_handler_vector(),
+                              poisson_matrix_free_data->get_constraint_vector(),
+                              poisson_matrix_free_data->get_quadrature_vector(),
+                              poisson_matrix_free_data->data);
+
+  poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
   poisson_operator->setup_solver();
 
   // mapping for fluid problem (moving mesh)
@@ -172,6 +185,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                fluid_boundary_descriptor_pressure,
                                                fluid_field_functions,
                                                fluid_param,
+                                               "fluid",
                                                mpi_comm));
 
     fluid_operator = fluid_operator_coupled;
@@ -187,6 +201,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                             fluid_boundary_descriptor_pressure,
                                                             fluid_field_functions,
                                                             fluid_param,
+                                                            "fluid",
                                                             mpi_comm));
 
     fluid_operator = fluid_operator_dual_splitting;
@@ -203,6 +218,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                fluid_boundary_descriptor_pressure,
                                fluid_field_functions,
                                fluid_param,
+                               "fluid",
                                mpi_comm));
 
     fluid_operator = fluid_operator_pressure_correction;
@@ -213,12 +229,26 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize matrix_free
-  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh->get_mapping()));
-  fluid_matrix_free_wrapper->append_data_structures(*fluid_operator);
-  fluid_matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, fluid_triangulation);
+  fluid_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  fluid_matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  if(fluid_param.use_cell_based_face_loops)
+  {
+    auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
+      fluid_triangulation);
+    Categorization::do_cell_based_loops(*tria, fluid_matrix_free_data->data);
+  }
+  fluid_operator->fill_matrix_free_data(*fluid_matrix_free_data);
+
+  fluid_matrix_free.reset(new MatrixFree<dim, Number>());
+  fluid_matrix_free->reinit(fluid_mesh->get_mapping(),
+                            fluid_matrix_free_data->get_dof_handler_vector(),
+                            fluid_matrix_free_data->get_constraint_vector(),
+                            fluid_matrix_free_data->get_quadrature_vector(),
+                            fluid_matrix_free_data->data);
 
   // setup Navier-Stokes operator
-  fluid_operator->setup(fluid_matrix_free_wrapper);
+  fluid_operator->setup(fluid_matrix_free, fluid_matrix_free_data);
 
   // setup postprocessor
   fluid_postprocessor = application->construct_postprocessor_fluid(degree_fluid, mpi_comm);
@@ -239,7 +269,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                    mpi_comm,
                                                    fluid_postprocessor,
                                                    fluid_moving_mesh,
-                                                   fluid_matrix_free_wrapper));
+                                                   fluid_matrix_free));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -250,7 +280,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                          mpi_comm,
                                                          fluid_postprocessor,
                                                          fluid_moving_mesh,
-                                                         fluid_matrix_free_wrapper));
+                                                         fluid_matrix_free));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -261,7 +291,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                               mpi_comm,
                                                               fluid_postprocessor,
                                                               fluid_moving_mesh,
-                                                              fluid_matrix_free_wrapper));
+                                                              fluid_matrix_free));
   }
   else
   {
@@ -307,7 +337,7 @@ Driver<dim, Number>::solve() const
 
         // structure_to_moving_mesh->update_data(vec_displacements);
         fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-        fluid_matrix_free_wrapper->update_mapping();
+        fluid_matrix_free->update_mapping(fluid_moving_mesh->get_mapping());
         fluid_operator->update_after_mesh_movement();
         fluid_time_integrator->ale_update();
 

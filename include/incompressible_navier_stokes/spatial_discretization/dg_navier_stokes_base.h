@@ -93,16 +93,17 @@ public:
    * Constructor.
    */
   DGNavierStokesBase(
-    parallel::TriangulationBase<dim> const & triangulation_in,
-    Mapping<dim> const &                     mapping_in,
-    unsigned int const                       degree_u_in,
+    parallel::TriangulationBase<dim> const & triangulation,
+    Mapping<dim> const &                     mapping,
+    unsigned int const                       degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-    InputParameters const &                         parameters_in,
-    MPI_Comm const &                                mpi_comm_in);
+                                                    periodic_face_pairs,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+    InputParameters const &                         parameters,
+    std::string const &                             field,
+    MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.
@@ -110,8 +111,7 @@ public:
   virtual ~DGNavierStokesBase(){};
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field = "") const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -119,8 +119,9 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_temperature = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+        std::string const &                          dof_index_temperature = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -443,6 +444,8 @@ protected:
    */
   InputParameters const & param;
 
+  std::string const field;
+
   /*
    * In case of projection type incompressible Navier-Stokes solvers this variable is needed to
    * solve the pressure Poisson equation. However, this variable is also needed in case of a
@@ -495,10 +498,8 @@ private:
   std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
   std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
 
-  mutable std::string field;
-
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
   bool pressure_level_is_undefined;
 

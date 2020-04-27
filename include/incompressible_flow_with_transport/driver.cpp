@@ -174,6 +174,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                        fluid_boundary_descriptor_pressure,
                                                        fluid_field_functions,
                                                        fluid_param,
+                                                       "fluid",
                                                        mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
@@ -190,6 +191,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                           fluid_boundary_descriptor_pressure,
                           fluid_field_functions,
                           fluid_param,
+                          "fluid",
                           mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
@@ -206,6 +208,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                fluid_boundary_descriptor_pressure,
                                fluid_field_functions,
                                fluid_param,
+                               "fluid",
                                mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
@@ -225,16 +228,30 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                       scalar_boundary_descriptor[i],
                                                                       scalar_field_functions[i],
                                                                       scalar_param[i],
+                                                                      "scalar" + std::to_string(i),
                                                                       mpi_comm));
   }
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*navier_stokes_operator, "fluid");
+  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data->data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  if(fluid_param.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
+  }
+  navier_stokes_operator->fill_matrix_free_data(*matrix_free_data);
   for(unsigned int i = 0; i < n_scalars; ++i)
-    matrix_free_wrapper->append_data_structures(*conv_diff_operator[i],
-                                                "scalar" + std::to_string(i));
-  matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);
+    conv_diff_operator[i]->fill_matrix_free_data(*matrix_free_data);
+
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(mesh->get_mapping(),
+                      matrix_free_data->get_dof_handler_vector(),
+                      matrix_free_data->get_constraint_vector(),
+                      matrix_free_data->get_quadrature_vector(),
+                      matrix_free_data->data);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
@@ -249,17 +266,20 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     // assume that the first scalar field with index 0 is the active scalar that
     // couples to the incompressible Navier-Stokes equations
-    navier_stokes_operator->setup(matrix_free_wrapper, conv_diff_operator[0]->get_dof_name());
+    navier_stokes_operator->setup(matrix_free,
+                                  matrix_free_data,
+                                  conv_diff_operator[0]->get_dof_name());
   }
   else
   {
-    navier_stokes_operator->setup(matrix_free_wrapper);
+    navier_stokes_operator->setup(matrix_free, matrix_free_data);
   }
 
   // setup convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    conv_diff_operator[i]->setup(matrix_free_wrapper,
+    conv_diff_operator[i]->setup(matrix_free,
+                                 matrix_free_data,
                                  navier_stokes_operator->get_dof_name_velocity());
   }
 
@@ -284,7 +304,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                    mpi_comm,
                                                    fluid_postprocessor,
                                                    moving_mesh,
-                                                   matrix_free_wrapper));
+                                                   matrix_free));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -295,7 +315,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                          mpi_comm,
                                                          fluid_postprocessor,
                                                          moving_mesh,
-                                                         matrix_free_wrapper));
+                                                         matrix_free));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -307,7 +327,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                     mpi_comm,
                                     fluid_postprocessor,
                                     moving_mesh,
-                                    matrix_free_wrapper));
+                                    matrix_free));
   }
   else
   {
@@ -335,7 +355,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             mpi_comm,
                                                                             scalar_postprocessor[i],
                                                                             moving_mesh,
-                                                                            matrix_free_wrapper));
+                                                                            matrix_free));
     }
     else
     {
@@ -583,7 +603,7 @@ Driver<dim, Number>::solve() const
     {
       // move the mesh and update dependent data structures
       moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-      matrix_free_wrapper->update_mapping();
+      matrix_free->update_mapping(moving_mesh->get_mapping());
       navier_stokes_operator->update_after_mesh_movement();
       for(unsigned int i = 0; i < n_scalars; ++i)
         conv_diff_operator[i]->update_after_mesh_movement();

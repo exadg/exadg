@@ -16,6 +16,9 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
+
 // user interface
 #include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
@@ -177,15 +180,19 @@ public:
            std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
            std::shared_ptr<MaterialDescriptor> const      material_descriptor_in,
            InputParameters const &                        param_in,
+           std::string const &                            field_in,
            MPI_Comm const &                               mpi_comm_in);
 
+  void
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
+
   /*
-   * Setup function. Initializes basic finite element components, matrix-free object, and basic
-   * operators. This function does not perform the setup related to the solution of linear systems
-   * of equations.
+   * Setup function. Initializes basic operators. This function does not perform the setup
+   * related to the solution of linear systems of equations.
    */
   void
-  setup();
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -282,11 +289,17 @@ private:
   void
   distribute_dofs();
 
-  /*
-   * Initializes MatrixFree-object.
-   */
-  void
-  initialize_matrix_free();
+  std::string
+  get_dof_name() const;
+
+  std::string
+  get_quad_name() const;
+
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
 
   /*
    * Initializes operators.
@@ -329,10 +342,7 @@ private:
    */
   InputParameters const & param;
 
-  /*
-   * MPI communicator
-   */
-  MPI_Comm const & mpi_comm;
+  std::string const field;
 
   /*
    * Basic finite element ingredients.
@@ -343,12 +353,14 @@ private:
   DoFHandler<dim>           dof_handler;
   AffineConstraints<double> constraint_matrix;
 
-  MatrixFree<dim, Number> matrix_free;
+  std::string const dof_index  = "dof";
+  std::string const quad_index = "quad";
 
   /*
-   * Output to screen.
+   * Matrix-free operator evaluation.
    */
-  ConditionalOStream pcout;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
   /*
    * Basic operators.
@@ -387,6 +399,16 @@ private:
   // mass matrix inversion
   std::shared_ptr<PreconditionerBase<Number>>      mass_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> mass_solver;
+
+  /*
+   * MPI communicator
+   */
+  MPI_Comm const & mpi_comm;
+
+  /*
+   * Output to screen.
+   */
+  ConditionalOStream pcout;
 };
 
 } // namespace Structure

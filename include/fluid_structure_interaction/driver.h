@@ -89,7 +89,8 @@ private:
   // static mesh for Poisson problem
   std::shared_ptr<Mesh<dim>> poisson_mesh;
 
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>>      poisson_matrix_free_wrapper;
+  std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator;
 
   IncNS::InputParameters fluid_param;
@@ -102,7 +103,8 @@ private:
   std::shared_ptr<Mesh<dim>>                   fluid_mesh;
   std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
 
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> fluid_matrix_free_wrapper;
+  std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
 
   // Spatial discretization
   typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;

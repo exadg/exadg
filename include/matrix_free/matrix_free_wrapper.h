@@ -9,73 +9,38 @@
 #define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_
 
 // deal.II
-#include <deal.II/distributed/tria.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 #include "../operators/mapping_flags.h"
-#include "categorization.h"
 
 using namespace dealii;
 
 template<int dim, typename Number>
-struct MatrixFreeWrapper
+struct MatrixFreeData
 {
 public:
-  MatrixFreeWrapper(Mapping<dim> const & mapping_in) : mapping(mapping_in)
+  std::vector<DoFHandler<dim> const *> &
+  get_dof_handler_vector()
   {
-    matrix_free.reset(new MatrixFree<dim, Number>());
+    return dof_handler_vec;
   }
 
-  /*
-   * Returns pointer to actual matrix-free object.
-   */
-  std::shared_ptr<MatrixFree<dim, Number>>
-  get_matrix_free()
+  std::vector<AffineConstraints<double> const *> &
+  get_constraint_vector()
   {
-    return matrix_free;
+    return constraint_vec;
+  }
+
+  std::vector<Quadrature<1>> &
+  get_quadrature_vector()
+  {
+    return quadrature_vec;
   }
 
   DoFHandler<dim> const &
   get_dof_handler(std::string const & name)
   {
     return *dof_handler_vec.at(get_dof_index(name));
-  }
-
-  /*
-   * This function performs a "complete" reinit() of MatrixFree<dim, Number>.
-   */
-  void
-  reinit(bool const                                        use_cell_based_face_loops,
-         std::shared_ptr<parallel::TriangulationBase<dim>> triangulation)
-  {
-    // cell-based face loops
-    if(use_cell_based_face_loops)
-    {
-      auto tria =
-        std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-      Categorization::do_cell_based_loops(*tria, data);
-    }
-
-    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
-    matrix_free->reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, data);
-  }
-
-  /*
-   * This function only updates geometry terms and is called in combination with
-   * moving mesh (ALE) methods.
-   */
-  void
-  update_mapping()
-  {
-    matrix_free->update_mapping(mapping);
-  }
-
-  template<typename Operator>
-  void
-  append_data_structures(Operator const & pde_operator, std::string const & field = "")
-  {
-    pde_operator.append_data_structures(*this, field);
   }
 
   void
@@ -130,6 +95,9 @@ public:
     return get_index(quad_index_map, name);
   }
 
+  // additional data
+  typename MatrixFree<dim, Number>::AdditionalData data;
+
 private:
   template<typename T>
   void
@@ -175,23 +143,12 @@ private:
     return index;
   }
 
-  // the actual MatrixFree object
-  std::shared_ptr<MatrixFree<dim, Number>> matrix_free;
-
   // maps between names and indices for DoFHandler, Constraint, Quadrature
   std::map<std::string, unsigned int> dof_index_map;
   std::map<std::string, unsigned int> constraint_index_map;
   std::map<std::string, unsigned int> quad_index_map;
 
   // collection of data structures required for initialization and update of matrix_free
-
-  // mapping
-  Mapping<dim> const & mapping;
-
-  // additional data
-  typename MatrixFree<dim, Number>::AdditionalData data;
-
-  // DoFHandler, Constraint, Quadrature vectors
   std::vector<DoFHandler<dim> const *>           dof_handler_vec;
   std::vector<AffineConstraints<double> const *> constraint_vec;
   std::vector<Quadrature<1>>                     quadrature_vec;

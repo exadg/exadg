@@ -21,14 +21,14 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
   : Base(operator_in,
          param_in,
          refine_steps_time_in,
          mpi_comm_in,
          postprocessor_in,
          moving_mesh_in,
-         matrix_free_wrapper_in),
+         matrix_free_in),
     pde_operator(operator_in),
     velocity(this->order),
     pressure(this->order),

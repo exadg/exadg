@@ -55,14 +55,15 @@ public:
              std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
              std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
              InputParameters const &                        param_in,
+             std::string const &                            field_in,
              MPI_Comm const &                               mpi_comm_in);
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field = "") const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -205,6 +206,8 @@ private:
    */
   InputParameters const & param;
 
+  std::string const field;
+
   /*
    * Basic finite element ingredients.
    */
@@ -240,13 +243,11 @@ private:
   // alternative: use more accurate over-integration strategy
   //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
 
-  mutable std::string field;
-
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
   /*
    * Basic operators.

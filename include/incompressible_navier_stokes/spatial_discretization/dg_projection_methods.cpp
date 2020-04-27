@@ -22,6 +22,7 @@ DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : Base(triangulation_in,
          mapping_in,
@@ -31,6 +32,7 @@ DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
          boundary_descriptor_pressure_in,
          field_functions_in,
          parameters_in,
+         field_in,
          mpi_comm_in)
 {
   AssertThrow(this->param.get_degree_p(degree_u_in) > 0,
@@ -46,10 +48,11 @@ DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 template<int dim, typename Number>
 void
 DGNavierStokesProjectionMethods<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-  std::string const &                             dof_index_temperature)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+  std::string const &                          dof_index_temperature)
 {
-  Base::setup(matrix_free_wrapper, dof_index_temperature);
+  Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
   initialize_laplace_operator();
 }
