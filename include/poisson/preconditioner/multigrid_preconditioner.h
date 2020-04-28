@@ -34,8 +34,6 @@ private:
   typedef typename Base::Map               Map;
   typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
 
-  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
-
 public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm)
     : Base(mpi_comm), is_dg(true), mesh_is_moving(false)
@@ -52,9 +50,7 @@ public:
              Map const *                              dirichlet_bc        = nullptr,
              PeriodicFacePairs *                      periodic_face_pairs = nullptr)
   {
-    data            = data_in;
-    data.dof_index  = 0;
-    data.quad_index = 0;
+    data = data_in;
 
     is_dg = (fe.dofs_per_vertex == 0);
 
@@ -83,39 +79,30 @@ public:
   }
 
 private:
-  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  do_initialize_matrix_free(unsigned int const level) override
+  void
+  fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
+                        unsigned int const                     level)
   {
-    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
+    matrix_free_data.data.mg_level = this->level_info[level].h_level();
 
-    MatrixFreeData additional_data;
-    additional_data.mg_level = this->level_info[level].h_level();
-
-    MappingFlags flags =
+    matrix_free_data.append_mapping_flags(
       Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
-                                                               this->level_info[level].is_dg());
-    additional_data.mapping_update_flags                = flags.cells;
-    additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-    additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+                                                               this->level_info[level].is_dg()));
+
 
     if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
       Categorization::do_cell_based_loops(*tria,
-                                          additional_data,
+                                          matrix_free_data.data,
                                           this->level_info[level].h_level());
     }
 
-    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
-    matrix_free->reinit(*this->mapping,
-                        *this->dof_handlers[level],
-                        *this->constraints[level],
-                        quadrature,
-                        additional_data);
-
-    return matrix_free;
+    matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "laplace_dof_handler");
+    matrix_free_data.insert_constraint(&(*this->constraints[level]), "laplace_dof_handler");
+    matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+                                       "laplace_quadrature");
   }
 
   /*
@@ -164,18 +151,15 @@ private:
     // initialize pde_operator in a first step
     std::shared_ptr<Laplace> pde_operator(new Laplace());
 
+    data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("laplace_dof_handler");
+    data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("laplace_quadrature");
+
     pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
 
     return mg_operator;
-  }
-
-  void
-  do_update_matrix_free(unsigned int const level) override
-  {
-    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   /*

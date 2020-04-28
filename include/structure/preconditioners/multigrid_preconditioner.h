@@ -51,9 +51,7 @@ public:
   {
     this->pde_operator = &pde_operator;
 
-    data            = this->pde_operator->get_data();
-    data.dof_index  = 0;
-    data.quad_index = 0;
+    data = this->pde_operator->get_data();
 
     Base::initialize(mg_data,
                      tria,
@@ -88,35 +86,23 @@ public:
   }
 
 private:
-  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  do_initialize_matrix_free(unsigned int const level) override
+  void
+  fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
+                        unsigned int const                     level)
   {
-    typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+    matrix_free_data.data.mg_level = this->level_info[level].h_level();
+    matrix_free_data.data.tasks_parallel_scheme =
+      MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
-    additional_data.mg_level              = this->level_info[level].h_level();
-    additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
-
-    MappingFlags flags;
     if(nonlinear)
-      flags = flags || PDEOperatorNonlinear::get_mapping_flags();
+      matrix_free_data.append_mapping_flags(PDEOperatorNonlinear::get_mapping_flags());
     else // linear
-      flags = flags || PDEOperatorLinear::get_mapping_flags();
+      matrix_free_data.append_mapping_flags(PDEOperatorLinear::get_mapping_flags());
 
-    additional_data.mapping_update_flags                = flags.cells;
-    additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-    additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-
-    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
-
-    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
-    matrix_free->reinit(*this->mapping,
-                        *this->dof_handlers[level],
-                        *this->constraints[level],
-                        quadrature,
-                        additional_data);
-
-    return matrix_free;
+    matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "elasticity_dof_handler");
+    matrix_free_data.insert_constraint(&(*this->constraints[level]), "elasticity_dof_handler");
+    matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+                                       "elasticity_quadrature");
   }
 
   /*
@@ -209,6 +195,10 @@ private:
   initialize_operator(unsigned int const level)
   {
     std::shared_ptr<MGOperatorBase> mg_operator_level;
+
+    data.dof_index = this->matrix_free_data_objects[level]->get_dof_index("elasticity_dof_handler");
+    data.quad_index =
+      this->matrix_free_data_objects[level]->get_quad_index("elasticity_quadrature");
 
     if(nonlinear)
     {

@@ -105,7 +105,7 @@ DGNavierStokesBase<dim, Number>::fill_matrix_free_data(
 
   if(param.viscous_problem())
     matrix_free_data.append_mapping_flags(
-      Operators::ViscousKernel<dim, Number>::get_mapping_flags());
+      Operators::ViscousKernel<dim, Number>::get_mapping_flags(true, true));
 
   if(param.right_hand_side)
     matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());

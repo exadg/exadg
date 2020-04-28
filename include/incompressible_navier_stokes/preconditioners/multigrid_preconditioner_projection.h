@@ -34,8 +34,6 @@ private:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
-  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
-
 public:
   MultigridPreconditionerProjection(MPI_Comm const & mpi_comm)
     : Base(mpi_comm), pde_operator(nullptr), mesh_is_moving(false)
@@ -54,9 +52,7 @@ public:
   {
     this->pde_operator = &pde_operator;
 
-    data            = this->pde_operator->get_data();
-    data.dof_index  = 0;
-    data.quad_index = 0;
+    data = this->pde_operator->get_data();
 
     this->mesh_is_moving = mesh_is_moving;
 
@@ -89,48 +85,36 @@ public:
   }
 
 private:
-  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  do_initialize_matrix_free(unsigned int const level) override
+  void
+  fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
+                        unsigned int const                     level)
   {
-    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
-
-    MatrixFreeData additional_data;
-
-    additional_data.mg_level              = this->level_info[level].h_level();
-    additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
+    matrix_free_data.data.mg_level = this->level_info[level].h_level();
+    matrix_free_data.data.tasks_parallel_scheme =
+      MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
-    flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
+    matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
     if(data.use_divergence_penalty)
-      flags = flags || Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags();
-    if(data.use_continuity_penalty)
-      flags = flags || Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags();
-
-    additional_data.mapping_update_flags = flags.cells;
-    if(this->level_info[level].is_dg())
-    {
-      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-    }
+      matrix_free_data.append_mapping_flags(
+        Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
+    if(data.use_continuity_penalty && this->level_info[level].is_dg())
+      matrix_free_data.append_mapping_flags(
+        Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
     if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
       Categorization::do_cell_based_loops(*tria,
-                                          additional_data,
+                                          matrix_free_data.data,
                                           this->level_info[level].h_level());
     }
 
-    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
-    matrix_free->reinit(*this->mapping,
-                        *this->dof_handlers[level],
-                        *this->constraints[level],
-                        quadrature,
-                        additional_data);
-
-    return matrix_free;
+    matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
+    matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
+    matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+                                       "std_quadrature");
   }
 
   std::shared_ptr<MGOperatorBase>
@@ -138,6 +122,9 @@ private:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+
+    data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("std_dof_handler");
+    data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
 
     // The polynomial degree changes in case of p-multigrid, so we have to adapt the kernel_data
     // objects.
@@ -159,12 +146,6 @@ private:
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
 
     return mg_operator;
-  }
-
-  void
-  do_update_matrix_free(unsigned int const level) override
-  {
-    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   /*

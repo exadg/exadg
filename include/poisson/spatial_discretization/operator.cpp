@@ -56,28 +56,8 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
     matrix_free_data.append_mapping_flags(
       ConvDiff::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
 
-  // DoFHandler
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
-
-  // AffineConstraints
-  if(param.spatial_discretization == SpatialDiscretization::CG)
-  {
-    constraint_matrix.clear();
-    for(auto it : this->boundary_descriptor->dirichlet_bc)
-    {
-      ComponentMask mask    = ComponentMask();
-      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
-
-      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, constraint_matrix, mask);
-    }
-    constraint_matrix.close();
-  }
-
   matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
-
-  // Quadrature
   matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 }
 
@@ -383,6 +363,22 @@ Operator<dim, Number, n_components>::distribute_dofs()
   dof_handler.distribute_dofs(*fe);
 
   dof_handler.distribute_mg_dofs();
+
+  // AffineConstraints
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    constraint_matrix.clear();
+    for(auto it : this->boundary_descriptor->dirichlet_bc)
+    {
+      ComponentMask mask    = ComponentMask();
+      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
+        mask = it_mask->second;
+
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, constraint_matrix, mask);
+    }
+    constraint_matrix.close();
+  }
 
   unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
 

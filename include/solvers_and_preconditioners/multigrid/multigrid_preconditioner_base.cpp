@@ -392,10 +392,22 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free()
 {
-  this->matrix_free_objects.resize(0, this->n_levels - 1);
+  matrix_free_data_objects.resize(0, n_levels - 1);
+  matrix_free_objects.resize(0, n_levels - 1);
 
   for(unsigned int level = coarse_level; level <= fine_level; level++)
-    this->matrix_free_objects[level] = this->do_initialize_matrix_free(level);
+  {
+    matrix_free_data_objects[level].reset(new MatrixFreeData<dim, MultigridNumber>());
+    fill_matrix_free_data(*matrix_free_data_objects[level], level);
+
+    matrix_free_objects[level].reset(new MatrixFree<dim, MultigridNumber>());
+
+    matrix_free_objects[level]->reinit(*mapping,
+                                       matrix_free_data_objects[level]->get_dof_handler_vector(),
+                                       matrix_free_data_objects[level]->get_constraint_vector(),
+                                       matrix_free_data_objects[level]->get_quadrature_vector(),
+                                       matrix_free_data_objects[level]->data);
+  }
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -403,32 +415,7 @@ void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_matrix_free()
 {
   for(unsigned int level = coarse_level; level <= fine_level; level++)
-    this->do_update_matrix_free(level);
-}
-
-
-template<int dim, typename Number, typename MultigridNumber>
-std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::do_initialize_matrix_free(
-  unsigned int const level)
-{
-  (void)level;
-
-  AssertThrow(false, ExcMessage("This function needs to be implemented by derived classes."));
-
-  std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-
-  return matrix_free;
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::do_update_matrix_free(
-  unsigned int const level)
-{
-  (void)level;
-
-  AssertThrow(false, ExcMessage("This function needs to be implemented by derived classes."));
+    this->matrix_free_objects[level]->update_mapping(*this->mapping);
 }
 
 template<int dim, typename Number, typename MultigridNumber>

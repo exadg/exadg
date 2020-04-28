@@ -34,8 +34,6 @@ private:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
-  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
-
 public:
   MultigridPreconditioner(MPI_Comm const & comm)
     : Base(comm),
@@ -62,9 +60,7 @@ public:
 
     this->mesh_is_moving = mesh_is_moving;
 
-    data            = this->pde_operator->get_data();
-    data.dof_index  = 0;
-    data.quad_index = 0;
+    data = this->pde_operator->get_data();
 
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -118,48 +114,37 @@ public:
   }
 
 private:
-  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  do_initialize_matrix_free(unsigned int const level) override
+  void
+  fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
+                        unsigned int const                     level)
   {
-    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
+    matrix_free_data.data.mg_level = this->level_info[level].h_level();
+    matrix_free_data.data.tasks_parallel_scheme =
+      MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
-    MatrixFreeData additional_data;
-    additional_data.mg_level              = this->level_info[level].h_level();
-    additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
-
-    MappingFlags flags;
     if(data.unsteady_problem)
-      flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
+      matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
     if(data.convective_problem)
-      flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+      matrix_free_data.append_mapping_flags(
+        Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
     if(data.viscous_problem)
-      flags = flags || Operators::ViscousKernel<dim, Number>::get_mapping_flags();
-
-    additional_data.mapping_update_flags = flags.cells;
-    if(this->level_info[level].is_dg())
-    {
-      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-    }
+      matrix_free_data.append_mapping_flags(
+        Operators::ViscousKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
+                                                                 this->level_info[level].is_dg()));
 
     if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
       Categorization::do_cell_based_loops(*tria,
-                                          additional_data,
+                                          matrix_free_data.data,
                                           this->level_info[level].h_level());
     }
 
-    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
-    matrix_free->reinit(*this->mapping,
-                        *this->dof_handlers[level],
-                        *this->constraints[level],
-                        quadrature,
-                        additional_data);
-
-    return matrix_free;
+    matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
+    matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
+    matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+                                       "std_quadrature");
   }
 
   std::shared_ptr<MGOperatorBase>
@@ -167,6 +152,9 @@ private:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
+
+    data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("std_dof_handler");
+    data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
 
     pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
@@ -179,12 +167,6 @@ private:
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
 
     return mg_operator;
-  }
-
-  void
-  do_update_matrix_free(unsigned int const level) override
-  {
-    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   /*

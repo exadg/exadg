@@ -35,8 +35,6 @@ private:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
-  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
-
 public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm)
     : Base(mpi_comm),
@@ -61,13 +59,9 @@ public:
   {
     this->pde_operator     = &pde_operator;
     this->mg_operator_type = mg_operator_type;
+    this->mesh_is_moving   = mesh_is_moving;
 
-    this->mesh_is_moving = mesh_is_moving;
-
-    data                                           = this->pde_operator->get_data();
-    data.dof_index                                 = 0;
-    data.convective_kernel_data.dof_index_velocity = 1;
-    data.quad_index                                = 0;
+    data = this->pde_operator->get_data();
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -123,85 +117,56 @@ public:
   }
 
 private:
-  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  do_initialize_matrix_free(unsigned int const level) override
+  void
+  fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
+                        unsigned int const                     level)
   {
-    typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
-
-    additional_data.mg_level              = this->level_info[level].h_level();
-    additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
+    matrix_free_data.data.mg_level = this->level_info[level].h_level();
+    matrix_free_data.data.tasks_parallel_scheme =
+      MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
     if(data.unsteady_problem)
-      flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
+      matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
     if(data.convective_problem)
-      flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+      matrix_free_data.append_mapping_flags(
+        Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
     if(data.diffusive_problem)
-      flags = flags || Operators::DiffusiveKernel<dim, Number>::get_mapping_flags();
-
-    additional_data.mapping_update_flags = flags.cells;
-    if(this->level_info[level].is_dg())
-    {
-      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-    }
+      matrix_free_data.append_mapping_flags(
+        Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(
+          this->level_info[level].is_dg(), this->level_info[level].is_dg()));
 
     if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
       Categorization::do_cell_based_loops(*tria,
-                                          additional_data,
+                                          matrix_free_data.data,
                                           this->level_info[level].h_level());
     }
 
-    Quadrature<1> quadrature = QGauss<1>(this->level_info[level].degree() + 1);
+    matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
+    matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
+    matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+                                       "std_quadrature");
 
-    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
-    if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
+    if(data.convective_problem)
     {
-      matrix_free->reinit(*this->mapping,
-                          *this->dof_handlers[level],
-                          *this->constraints[level],
-                          quadrature,
-                          additional_data);
+      if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
+      {
+        // do nothing
+      }
+      else if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
+      {
+        matrix_free_data.insert_dof_handler(&(*dof_handlers_velocity[level]),
+                                            "velocity_dof_handler");
+        matrix_free_data.insert_constraint(&(*constraints_velocity[level]), "velocity_dof_handler");
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
     }
-    // we need two dof-handlers in case the velocity field comes from the fluid solver.
-    else if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
-    {
-      // collect dof-handlers
-      std::vector<const DoFHandler<dim> *> dof_handler_vec;
-      dof_handler_vec.resize(2);
-      dof_handler_vec[0] = &*this->dof_handlers[level];
-      dof_handler_vec[1] = &*this->dof_handlers_velocity[level];
-
-      // collect affine matrices
-      std::vector<const AffineConstraints<double> *> constraint_vec;
-      constraint_vec.resize(2);
-      constraint_vec[0] = &*this->constraints[level];
-      constraint_vec[1] = &*this->constraints_velocity[level];
-
-
-      std::vector<Quadrature<1>> quadrature_vec;
-      quadrature_vec.resize(1);
-      quadrature_vec[0] = quadrature;
-
-      matrix_free->reinit(
-        *this->mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-
-    return matrix_free;
-  }
-
-  void
-  do_update_matrix_free(unsigned int const level) override
-  {
-    this->matrix_free_objects[level]->update_mapping(*this->mapping);
   }
 
   std::shared_ptr<MGOperatorBase>
@@ -209,6 +174,16 @@ private:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
+
+    // set dof and quad indices after matrix_free_data has been filled
+    data.dof_index = this->matrix_free_data_objects[level]->get_dof_index("std_dof_handler");
+    if(data.convective_problem &&
+       data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
+    {
+      data.convective_kernel_data.dof_index_velocity =
+        this->matrix_free_data_objects[level]->get_dof_index("velocity_dof_handler");
+    }
+    data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
 
     pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 

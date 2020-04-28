@@ -14,6 +14,9 @@
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
+
 // multigrid algorithm
 #include "multigrid_algorithm.h"
 
@@ -155,12 +158,13 @@ protected:
   virtual void
   initialize_transfer_operators();
 
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>            dof_handlers;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                constrained_dofs;
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>>        constraints;
-  MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>> matrix_free_objects;
-  MGLevelObject<std::shared_ptr<Operator>>                         operators;
-  MGTransferMF_MGLevelObject<dim, VectorTypeMG>                    transfers;
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>                dof_handlers;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                    constrained_dofs;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>>            constraints;
+  MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>> matrix_free_data_objects;
+  MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>>     matrix_free_objects;
+  MGLevelObject<std::shared_ptr<Operator>>                             operators;
+  MGTransferMF_MGLevelObject<dim, VectorTypeMG>                        transfers;
 
   Mapping<dim> const * mapping;
 
@@ -197,11 +201,9 @@ private:
   /*
    * Data structures needed for matrix-free operator evaluation.
    */
-  virtual std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  do_initialize_matrix_free(unsigned int const level);
-
   virtual void
-  do_update_matrix_free(unsigned int const level);
+  fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
+                        unsigned int const                     level) = 0;
 
   /*
    * Initializes the multigrid operators for all multigrid levels.

@@ -76,7 +76,7 @@ DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & mat
   if(param.diffusive_problem())
   {
     matrix_free_data.append_mapping_flags(
-      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags());
+      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(true, true));
   }
 
   // DoFHandler, AffineConstraints
