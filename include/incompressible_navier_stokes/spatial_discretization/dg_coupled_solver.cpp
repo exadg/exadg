@@ -634,6 +634,7 @@ DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
   comp_laplace_operator_data.degree_p               = this->param.get_degree_p(this->degree_u);
   comp_laplace_operator_data.dof_index_velocity     = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure     = this->get_dof_index_pressure();
+  comp_laplace_operator_data.dof_index_velocity     = this->get_quad_index_velocity_linear();
   comp_laplace_operator_data.operator_is_singular   = this->is_pressure_level_undefined();
   comp_laplace_operator_data.dof_handler_u          = &this->get_dof_handler_u();
   comp_laplace_operator_data.gradient_operator_data = this->gradient_operator.get_operator_data();

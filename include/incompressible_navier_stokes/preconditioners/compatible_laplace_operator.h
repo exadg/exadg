@@ -24,6 +24,7 @@ struct CompatibleLaplaceOperatorData
       degree_p(1),
       dof_index_velocity(0),
       dof_index_pressure(1),
+      quad_index_velocity(0),
       operator_is_singular(false),
       dof_handler_u(nullptr)
   {
@@ -33,6 +34,7 @@ struct CompatibleLaplaceOperatorData
   unsigned int                degree_p;
   unsigned int                dof_index_velocity;
   unsigned int                dof_index_pressure;
+  unsigned int                quad_index_velocity;
   bool                        operator_is_singular;
   const DoFHandler<dim> *     dof_handler_u;
   GradientOperatorData<dim>   gradient_operator_data;

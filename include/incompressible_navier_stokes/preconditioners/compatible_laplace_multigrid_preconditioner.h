@@ -122,16 +122,16 @@ private:
       this->matrix_free_data_objects[level]->get_dof_index("velocity_dof_handler");
     data.dof_index_pressure =
       this->matrix_free_data_objects[level]->get_dof_index("pressure_dof_handler");
+    data.quad_index_velocity =
+      this->matrix_free_data_objects[level]->get_quad_index("velocity_quadrature");
 
     data.gradient_operator_data.dof_index_velocity = data.dof_index_velocity;
     data.gradient_operator_data.dof_index_pressure = data.dof_index_pressure;
-    data.gradient_operator_data.quad_index =
-      this->matrix_free_data_objects[level]->get_quad_index("velocity_quadrature");
+    data.gradient_operator_data.quad_index         = data.quad_index_velocity;
 
     data.divergence_operator_data.dof_index_velocity = data.dof_index_velocity;
     data.divergence_operator_data.dof_index_pressure = data.dof_index_pressure;
-    data.divergence_operator_data.quad_index =
-      this->matrix_free_data_objects[level]->get_quad_index("velocity_quadrature");
+    data.divergence_operator_data.quad_index         = data.quad_index_velocity;
 
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());

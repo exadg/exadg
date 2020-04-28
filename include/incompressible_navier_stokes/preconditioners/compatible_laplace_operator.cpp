@@ -22,20 +22,15 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
   (void)constraint_matrix;
 
   // setup own gradient operator
-  GradientOperatorData<dim> gradient_operator_data = operator_data.gradient_operator_data;
-  own_gradient_operator_storage.reinit(matrix_free, gradient_operator_data);
+  own_gradient_operator_storage.reinit(matrix_free, operator_data.gradient_operator_data);
 
   // setup own divergence operator
-  DivergenceOperatorData<dim> divergence_operator_data = operator_data.divergence_operator_data;
-  own_divergence_operator_storage.reinit(matrix_free, divergence_operator_data);
+  own_divergence_operator_storage.reinit(matrix_free, operator_data.divergence_operator_data);
 
   // setup own inverse mass matrix operator
-  // NOTE: use quad_index = 0 since own_matrix_free_storage contains only one quadrature formula
-  // (i.e. on would use quad_index = 0 also if quad_index_velocity would be 1 !)
-  unsigned int quad_index = 0;
   own_inv_mass_matrix_operator_storage.initialize(matrix_free,
                                                   operator_data.dof_index_velocity,
-                                                  quad_index);
+                                                  operator_data.quad_index_velocity);
 
   // setup compatible Laplace operator
   initialize(matrix_free,
