@@ -51,6 +51,9 @@ private:
   void
   solve();
 
+  void
+  output_solver_info_header(double const load_factor);
+
   unsigned int
   solve_step(double const load_factor);
 

@@ -6,6 +6,7 @@
  */
 
 #include "driver_steady_problems.h"
+#include "../../utilities/print_throughput.h"
 
 namespace Structure
 {
@@ -92,19 +93,7 @@ DriverSteady<dim, Number>::solve()
     unsigned int const N_iter_nonlinear = std::get<0>(iter);
     unsigned int const N_iter_linear    = std::get<1>(iter);
 
-    double N_iter_linear_avg =
-      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
-
-    pcout << std::endl
-          << "Solve nonlinear problem:" << std::endl
-          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
-          << std::endl
-          << "  Linear iterations (avg):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-          << "  Linear iterations (tot):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:          " << std::setw(12) << std::scientific
-          << std::setprecision(4) << timer.wall_time() << std::endl;
+    print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
   }
   else // linear problem
   {
@@ -114,11 +103,7 @@ DriverSteady<dim, Number>::solve()
     unsigned int const N_iter_linear =
       pde_operator->solve_linear(solution, rhs_vector, 0.0 /* no mass term */, 0.0 /* time */);
 
-    pcout << std::endl
-          << "Solve linear problem:" << std::endl
-          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-          << timer.wall_time() << std::endl;
+    print_solver_info_linear(pcout, N_iter_linear, timer.wall_time());
   }
 
   pcout << std::endl << "... done!" << std::endl;

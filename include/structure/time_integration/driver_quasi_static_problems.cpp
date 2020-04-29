@@ -6,6 +6,7 @@
  */
 
 #include "driver_quasi_static_problems.h"
+#include "../../utilities/print_throughput.h"
 
 namespace Structure
 {
@@ -29,6 +30,8 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::setup()
 {
+  AssertThrow(param.large_deformation, ExcMessage("Not implemented."));
+
   // initialize global solution vectors (allocation)
   initialize_vectors();
 
@@ -146,22 +149,27 @@ DriverQuasiStatic<dim, Number>::initialize_solution()
 }
 
 template<int dim, typename Number>
-unsigned int
-DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
+void
+DriverQuasiStatic<dim, Number>::output_solver_info_header(double const load_factor)
 {
-  Timer timer;
-  timer.restart();
-
-  AssertThrow(param.large_deformation, ExcMessage("Not implemented."));
-
   pcout << std::endl
         << "______________________________________________________________________" << std::endl
         << std::endl
         << " Solve non-linear problem for load factor = " << std::scientific << std::setprecision(4)
         << load_factor << std::endl
         << "______________________________________________________________________" << std::endl;
+}
 
-  VectorType const_vector;
+template<int dim, typename Number>
+unsigned int
+DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
+{
+  Timer timer;
+  timer.restart();
+
+  output_solver_info_header(load_factor);
+
+  VectorType const const_vector;
 
   bool const update_preconditioner =
     this->param.update_preconditioner &&
@@ -173,17 +181,7 @@ DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
   unsigned int const N_iter_nonlinear = std::get<0>(iter);
   unsigned int const N_iter_linear    = std::get<1>(iter);
 
-  // solver info output
-  double N_iter_linear_avg =
-    (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
-
-  // clang-format off
-  pcout << std::endl
-        << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
-        << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-        << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
-        << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
-  // clang-format on
+  print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
 
   return N_iter_nonlinear;
 }

@@ -10,6 +10,7 @@
 
 #include "driver_steady_problems.h"
 
+#include "../../utilities/print_throughput.h"
 #include "../user_interface/input_parameters.h"
 
 namespace IncNS
@@ -89,21 +90,11 @@ DriverSteadyProblems<dim, Number>::solve()
   // instead of applying these terms in a postprocessing step.
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
-    {
-      if(this->param.use_divergence_penalty == true)
-      {
-        pde_operator->update_divergence_penalty_operator(solution.block(0));
-      }
-      if(this->param.use_continuity_penalty == true)
-      {
-        pde_operator->update_continuity_penalty_operator(solution.block(0));
-      }
-    }
+    if(this->param.use_divergence_penalty == true)
+      pde_operator->update_divergence_penalty_operator(solution.block(0));
+    if(this->param.use_continuity_penalty == true)
+      pde_operator->update_continuity_penalty_operator(solution.block(0));
   }
-
-  unsigned int N_iter_nonlinear = 0;
-  unsigned int N_iter_linear    = 0;
 
   // linear problem
   if(this->param.linear_problem_has_to_be_solved())
@@ -112,10 +103,12 @@ DriverSteadyProblems<dim, Number>::solve()
     pde_operator->rhs_stokes_problem(rhs_vector);
 
     // solve coupled system of equations
-    N_iter_linear =
+    unsigned int const N_iter_linear =
       pde_operator->solve_linear_stokes_problem(solution,
                                                 rhs_vector,
                                                 this->param.update_preconditioner_coupled);
+
+    print_solver_info_linear(pcout, N_iter_linear, timer.wall_time());
   }
   else // nonlinear problem
   {
@@ -124,38 +117,17 @@ DriverSteadyProblems<dim, Number>::solve()
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, 0.0 /* time */);
 
+    unsigned int N_iter_nonlinear = 0;
+    unsigned int N_iter_linear    = 0;
+
     // Newton solver
     pde_operator->solve_nonlinear_steady_problem(
       solution, rhs, this->param.update_preconditioner_coupled, N_iter_nonlinear, N_iter_linear);
+
+    print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
   }
 
   pde_operator->adjust_pressure_level_if_undefined(solution.block(1), 0.0 /* time */);
-
-  // write output
-  if(this->param.equation_type == EquationType::Stokes)
-  {
-    pcout << std::endl
-          << "Solve linear problem:" << std::endl
-          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-          << timer.wall_time() << std::endl;
-  }
-  else // nonlinear problem
-  {
-    double N_iter_linear_avg =
-      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
-
-    pcout << std::endl
-          << "Solve nonlinear problem:" << std::endl
-          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
-          << std::endl
-          << "  Linear iterations (avg):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-          << "  Linear iterations (tot):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:          " << std::setw(12) << std::scientific
-          << std::setprecision(4) << timer.wall_time() << std::endl;
-  }
 
   pcout << std::endl << "... done!" << std::endl;
 

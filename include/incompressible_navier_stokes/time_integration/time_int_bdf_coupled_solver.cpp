@@ -7,10 +7,13 @@
 
 #include "time_int_bdf_coupled_solver.h"
 
-#include "../spatial_discretization/interface.h"
-#include "../user_interface/input_parameters.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
+
+#include "../spatial_discretization/interface.h"
+#include "../user_interface/input_parameters.h"
+
+#include "../../utilities/print_throughput.h"
 
 namespace IncNS
 {
@@ -175,9 +178,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
 
     if(this->print_solver_info())
     {
-      this->pcout << std::endl
-                  << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
-                  << timer_turbulence.wall_time() << std::endl;
+      this->pcout << std::endl << "Update of turbulent viscosity:";
+      print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
     }
   }
 
@@ -280,9 +282,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     // write output
     if(this->print_solver_info())
     {
-      this->pcout << "Solve linear problem:" << std::endl
-                  << "  Iterations: " << std::setw(6) << std::right << n_iter
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+      this->pcout << std::endl << "Solve linear problem:";
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -319,16 +320,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     // write output
     if(this->print_solver_info())
     {
-      this->pcout << "Solve nonlinear problem:" << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right << n_iter_nonlinear
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
-                  << std::right
-                  << ((n_iter_nonlinear > 0) ? (double(n_iter_linear) / (double)n_iter_nonlinear) :
-                                               n_iter_linear)
-                  << " (avg)" << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
-                  << std::right << n_iter_linear << " (tot)" << std::endl;
+      this->pcout << std::endl << "Solve nonlinear problem:";
+      print_solver_info_nonlinear(this->pcout, n_iter_nonlinear, n_iter_linear, timer.wall_time());
     }
   }
 
@@ -412,10 +405,8 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
   // write output
   if(this->print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve projection step:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << n_iter
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    this->pcout << std::endl << "Solve penalty step:";
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
   }
 }
 

@@ -7,10 +7,13 @@
 
 #include "time_int_explicit_runge_kutta.h"
 
-#include "../../utilities/print_functions.h"
-#include "../spatial_discretization/interface.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
 #include "time_integration/time_step_calculation.h"
+
+#include "../spatial_discretization/interface.h"
+#include "../user_interface/input_parameters.h"
+
+#include "../../utilities/print_functions.h"
+#include "../../utilities/print_throughput.h"
 
 namespace ConvDiff
 {
@@ -345,9 +348,6 @@ TimeIntExplRK<Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
   if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
@@ -361,12 +361,11 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  // write output
   if(print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve time step explicitly: Wall time in [s] = " << std::scientific
-                << timer.wall_time() << std::endl;
+    this->output_solver_info_header();
+    this->pcout << std::endl << "Solve scalar convection-diffusion equation explicitly:";
+    print_solver_info_explicit(this->pcout, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Solve-explicit"}, timer.wall_time());

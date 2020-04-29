@@ -6,10 +6,12 @@
  */
 
 #include "time_int_explicit_runge_kutta.h"
+#include "time_integration/time_step_calculation.h"
 
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
-#include "time_integration/time_step_calculation.h"
+
+#include "../../utilities/print_throughput.h"
 
 namespace CompNS
 {
@@ -258,20 +260,16 @@ TimeIntExplRK<Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
   rk_time_integrator->solve_timestep(this->solution_np,
                                      this->solution_n,
                                      this->time,
                                      this->time_step);
 
-  // output
   if(print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve time step explicitly: Wall time in [s] = " << std::scientific
-                << timer.wall_time() << std::endl;
+    this->output_solver_info_header();
+    this->pcout << std::endl << "Solve compressible Navier-Stokes equations explicitly:";
+    print_solver_info_explicit(this->pcout, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Solve-explicit"}, timer.wall_time());

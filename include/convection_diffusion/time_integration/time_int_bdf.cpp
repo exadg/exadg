@@ -7,11 +7,13 @@
 
 #include "time_int_bdf.h"
 
-#include "../spatial_discretization/interface.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
+#include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
+
+#include "../../utilities/print_throughput.h"
 
 namespace ConvDiff
 {
@@ -545,9 +547,6 @@ TimeIntBDF<dim, Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
   // transport velocity
   VectorType velocity;
 
@@ -671,12 +670,11 @@ TimeIntBDF<dim, Number>::solve_timestep()
     }
   }
 
-  // write output
   if(print_solver_info())
   {
-    this->pcout << "Solve scalar convection-diffusion problem:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << N_iter
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    this->output_solver_info_header();
+    this->pcout << std::endl << "Solve scalar convection-diffusion equation:";
+    print_solver_info_linear(this->pcout, N_iter, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());

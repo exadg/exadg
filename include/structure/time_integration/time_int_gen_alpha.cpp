@@ -6,6 +6,7 @@
  */
 
 #include "time_int_gen_alpha.h"
+#include "../../utilities/print_throughput.h"
 
 namespace Structure
 {
@@ -118,22 +119,8 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
                                                     this->get_mid_time(),
                                                     update_preconditioner);
 
-    unsigned int const N_iter_nonlinear = std::get<0>(iter);
-    unsigned int const N_iter_linear    = std::get<1>(iter);
-
     if(this->print_solver_info())
-    {
-      double N_iter_linear_avg =
-        (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
-
-      // clang-format off
-      pcout << std::endl
-            << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
-            << "  Linear iterations (avg):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
-            << "  Linear iterations (tot):" << std::setw(12) << std::scientific << std::setprecision(4) << std::right << N_iter_linear << std::endl
-            << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
-      // clang-format on
-    }
+      print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
   }
   else // linear case
   {
@@ -143,11 +130,8 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
                                                                   this->get_scaling_factor_mass(),
                                                                   this->get_mid_time());
 
-    // clang-format off
-    pcout << std::endl
-          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
-          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4) << timer.wall_time() << std::endl;
-    // clang-format on
+    if(this->print_solver_info())
+      print_solver_info_linear(pcout, N_iter_linear, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());

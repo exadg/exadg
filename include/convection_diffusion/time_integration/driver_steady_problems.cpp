@@ -7,6 +7,7 @@
 
 #include "driver_steady_problems.h"
 
+#include "../../utilities/print_throughput.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 
@@ -122,12 +123,7 @@ DriverSteadyProblems<Number>::solve()
                                                 0.0 /* time */,
                                                 velocity_ptr);
 
-  // write output
-  pcout << std::endl
-        << "Solve linear system of equations:" << std::endl
-        << "  Iterations: " << std::setw(6) << std::right << iterations
-        << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << timer.wall_time()
-        << std::endl;
+  print_solver_info_linear(pcout, iterations, timer.wall_time());
 
   pcout << std::endl << "... done!" << std::endl;
 
