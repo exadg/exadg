@@ -32,27 +32,14 @@ ConvectiveOperator<dim, Number>::get_velocity() const
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
-                                        AffineConstraints<double> const &   constraint_matrix,
-                                        ConvectiveOperatorData<dim> const & data)
-{
-  (void)matrix_free;
-  (void)constraint_matrix;
-  (void)data;
-
-  AssertThrow(false,
-              ExcMessage(
-                "This reinit() function can not be used to initialize the convective operator."));
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::reinit(
+ConvectiveOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
   AffineConstraints<double> const &                         constraint_matrix,
   ConvectiveOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
 {
+  operator_data = data;
+
   kernel = convective_kernel;
 
   Base::reinit(matrix_free, constraint_matrix, data);
@@ -172,10 +159,12 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
   VectorType const &              src,
   Range const &                   cell_range) const
 {
-  IntegratorCell integrator(matrix_free, this->data.dof_index, this->data.quad_index_nonlinear);
+  IntegratorCell integrator(matrix_free,
+                            operator_data.dof_index,
+                            operator_data.quad_index_nonlinear);
   IntegratorCell integrator_grid_velocity(matrix_free,
-                                          this->data.dof_index,
-                                          this->data.quad_index_nonlinear);
+                                          operator_data.dof_index,
+                                          operator_data.quad_index_nonlinear);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -188,7 +177,7 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
                                this->integrator_flags.cell_evaluate.gradient,
                                this->integrator_flags.cell_evaluate.hessian);
 
-    if(this->data.kernel_data.ale)
+    if(operator_data.kernel_data.ale)
     {
       integrator_grid_velocity.reinit(cell);
       integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false, false);
@@ -212,17 +201,17 @@ ConvectiveOperator<dim, Number>::face_loop_nonlinear_operator(
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
   IntegratorFace integrator_p(matrix_free,
                               false,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
 
   IntegratorFace integrator_grid_velocity(matrix_free,
                                           true,
-                                          this->data.dof_index,
-                                          this->data.quad_index_nonlinear);
+                                          operator_data.dof_index,
+                                          operator_data.quad_index_nonlinear);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
@@ -239,7 +228,7 @@ ConvectiveOperator<dim, Number>::face_loop_nonlinear_operator(
                                  this->integrator_flags.face_evaluate.value,
                                  this->integrator_flags.face_evaluate.gradient);
 
-    if(this->data.kernel_data.ale)
+    if(operator_data.kernel_data.ale)
     {
       integrator_grid_velocity.reinit(face);
       integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false);
@@ -267,13 +256,13 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
 
   IntegratorFace integrator_grid_velocity(matrix_free,
                                           true,
-                                          this->data.dof_index,
-                                          this->data.quad_index_nonlinear);
+                                          operator_data.dof_index,
+                                          operator_data.quad_index_nonlinear);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
@@ -285,7 +274,7 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
                                  this->integrator_flags.face_evaluate.value,
                                  this->integrator_flags.face_evaluate.gradient);
 
-    if(this->data.kernel_data.ale)
+    if(operator_data.kernel_data.ale)
     {
       integrator_grid_velocity.reinit(face);
       integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false);
@@ -311,18 +300,19 @@ ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
   {
     vector u = integrator.get_value(q);
 
-    if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
       // nonlinear convective flux F(u) = uu
       tensor F = outer_product(u, u);
       // minus sign due to integration by parts
       integrator.submit_gradient(-F, q);
     }
-    else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    else if(operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
     {
       // convective formulation: (u * grad) u = grad(u) * u
       tensor gradient_u = integrator.get_gradient(q);
-      if(this->data.kernel_data.ale == true)
+      if(operator_data.kernel_data.ale == true)
         u -= integrator_u_grid.get_value(q);
 
       vector F = gradient_u * u;
@@ -331,7 +321,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
       // integration by parts is performed twice
       integrator.submit_value(F, q);
     }
-    else if(this->data.kernel_data.formulation ==
+    else if(operator_data.kernel_data.formulation ==
             FormulationConvectiveTerm::EnergyPreservingFormulation)
     {
       // nonlinear convective flux F(u) = uu
@@ -362,7 +352,7 @@ ConvectiveOperator<dim, Number>::do_face_integral_nonlinear_operator(
     vector normal_m = integrator_m.get_normal_vector(q);
 
     vector u_grid;
-    if(this->data.kernel_data.ale == true)
+    if(operator_data.kernel_data.ale == true)
       u_grid = integrator_grid_velocity.get_value(q);
 
     std::tuple<vector, vector> flux =
@@ -380,7 +370,7 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
   IntegratorFace &           integrator_grid_velocity,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -389,15 +379,15 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
                                                     q,
                                                     integrator,
                                                     boundary_type,
-                                                    this->data.kernel_data.type_dirichlet_bc,
+                                                    operator_data.kernel_data.type_dirichlet_bc,
                                                     boundary_id,
-                                                    this->data.bc,
+                                                    operator_data.bc,
                                                     this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
 
     vector u_grid;
-    if(this->data.kernel_data.ale == true)
+    if(operator_data.kernel_data.ale == true)
       u_grid = integrator_grid_velocity.get_value(q);
 
     vector flux =
@@ -413,7 +403,7 @@ ConvectiveOperator<dim, Number>::get_integrator_flags_linear_transport() const
 {
   IntegratorFlags flags;
 
-  if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+  if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
   {
     flags.cell_evaluate  = CellFlags(true, false, false);
     flags.cell_integrate = CellFlags(false, true, false);
@@ -421,7 +411,7 @@ ConvectiveOperator<dim, Number>::get_integrator_flags_linear_transport() const
     flags.face_evaluate  = FaceFlags(true, false);
     flags.face_integrate = FaceFlags(true, false);
   }
-  else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+  else if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
   {
     flags.cell_evaluate  = CellFlags(false, true, false);
     flags.cell_integrate = CellFlags(true, false, false);
@@ -453,11 +443,13 @@ ConvectiveOperator<dim, Number>::cell_loop_linear_transport(
   VectorType const &              src,
   Range const &                   cell_range) const
 {
-  IntegratorCell integrator(matrix_free, this->data.dof_index, this->data.quad_index_nonlinear);
+  IntegratorCell integrator(matrix_free,
+                            operator_data.dof_index,
+                            operator_data.quad_index_nonlinear);
 
   IntegratorCell integrator_velocity(matrix_free,
-                                     this->data.dof_index,
-                                     this->data.quad_index_nonlinear);
+                                     operator_data.dof_index,
+                                     operator_data.quad_index_nonlinear);
 
   IntegratorFlags flags = get_integrator_flags_linear_transport();
 
@@ -491,23 +483,23 @@ ConvectiveOperator<dim, Number>::face_loop_linear_transport(
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
 
   IntegratorFace integrator_p(matrix_free,
                               false,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
 
   IntegratorFace integrator_velocity_m(matrix_free,
                                        true,
-                                       this->data.dof_index,
-                                       this->data.quad_index_nonlinear);
+                                       operator_data.dof_index,
+                                       operator_data.quad_index_nonlinear);
 
   IntegratorFace integrator_velocity_p(matrix_free,
                                        false,
-                                       this->data.dof_index,
-                                       this->data.quad_index_nonlinear);
+                                       operator_data.dof_index,
+                                       operator_data.quad_index_nonlinear);
 
 
   IntegratorFlags flags = get_integrator_flags_linear_transport();
@@ -548,13 +540,13 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_linear_transport(
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                              operator_data.dof_index,
+                              operator_data.quad_index_nonlinear);
 
   IntegratorFace integrator_velocity_m(matrix_free,
                                        true,
-                                       this->data.dof_index,
-                                       this->data.quad_index_nonlinear);
+                                       operator_data.dof_index,
+                                       operator_data.quad_index_nonlinear);
 
   IntegratorFlags flags = get_integrator_flags_linear_transport();
 
@@ -583,7 +575,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral_linear_transport(IntegratorCel
   {
     vector w = velocity.get_value(q);
 
-    if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
       // nonlinear convective flux F = uw
       vector u = integrator.get_value(q);
@@ -591,7 +583,8 @@ ConvectiveOperator<dim, Number>::do_cell_integral_linear_transport(IntegratorCel
       // minus sign due to integration by parts
       integrator.submit_gradient(-F, q);
     }
-    else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    else if(operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
     {
       // convective formulation: grad(u) * w
       tensor grad_u = integrator.get_gradient(q);
@@ -641,7 +634,7 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_linear_transport(
   IntegratorFace &           velocity,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -650,9 +643,9 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_linear_transport(
                                                     q,
                                                     integrator,
                                                     boundary_type,
-                                                    this->data.kernel_data.type_dirichlet_bc,
+                                                    operator_data.kernel_data.type_dirichlet_bc,
                                                     boundary_id,
-                                                    this->data.bc,
+                                                    operator_data.bc,
                                                     this->time);
 
     // concerning the transport velocity w, use the same value for interior and
@@ -714,13 +707,14 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
   {
     vector delta_u = integrator.get_value(q);
 
-    if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
       tensor flux = kernel->get_volume_flux_linearized_divergence_formulation(delta_u, q);
 
       integrator.submit_gradient(flux, q);
     }
-    else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    else if(operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
     {
       tensor grad_delta_u = integrator.get_gradient(q);
 
@@ -848,7 +842,7 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
     ExcMessage(
       "For the linearized convective operator, only OperatorType::homogeneous makes sense."));
 
-  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -857,9 +851,9 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                                     q,
                                                     integrator,
                                                     boundary_type,
-                                                    this->data.kernel_data.type_dirichlet_bc,
+                                                    operator_data.kernel_data.type_dirichlet_bc,
                                                     boundary_id,
-                                                    this->data.bc,
+                                                    operator_data.bc,
                                                     this->time);
 
     vector delta_u_m = integrator.get_value(q);

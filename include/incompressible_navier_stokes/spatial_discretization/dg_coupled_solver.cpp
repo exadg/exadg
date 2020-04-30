@@ -744,9 +744,9 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     laplace_operator_data.kernel_data.IP_factor = 1.0;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
-    laplace_operator_classical->reinit(this->get_matrix_free(),
-                                       this->get_constraint_p(),
-                                       laplace_operator_data);
+    laplace_operator_classical->initialize(this->get_matrix_free(),
+                                           this->get_constraint_p(),
+                                           laplace_operator_data);
 
     solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
                                              PreconditionerBase<Number>,
@@ -853,9 +853,9 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
   pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
-  pressure_conv_diff_operator->reinit(this->get_matrix_free(),
-                                      this->get_constraint_p(),
-                                      operator_data);
+  pressure_conv_diff_operator->initialize(this->get_matrix_free(),
+                                          this->get_constraint_p(),
+                                          operator_data);
 }
 
 // clang-format off

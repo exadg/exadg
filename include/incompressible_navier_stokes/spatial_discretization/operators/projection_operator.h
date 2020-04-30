@@ -44,7 +44,7 @@ template<int dim>
 struct ProjectionOperatorData : public OperatorBaseData
 {
   ProjectionOperatorData()
-    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
+    : OperatorBaseData(),
       use_divergence_penalty(true),
       use_continuity_penalty(true),
       use_boundary_data(false)
@@ -60,10 +60,10 @@ struct ProjectionOperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class ProjectionOperator : public OperatorBase<dim, Number, ProjectionOperatorData<dim>, dim>
+class ProjectionOperator : public OperatorBase<dim, Number, dim>
 {
 private:
-  typedef OperatorBase<dim, Number, ProjectionOperatorData<dim>, dim> Base;
+  typedef OperatorBase<dim, Number, dim> Base;
 
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
@@ -82,23 +82,18 @@ public:
   }
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         ProjectionOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const &                matrix_free,
+             AffineConstraints<double> const &              constraint_matrix,
+             ProjectionOperatorData<dim> const &            data,
+             Operators::DivergencePenaltyKernelData const & div_kernel_data,
+             Operators::ContinuityPenaltyKernelData const & conti_kernel_data);
 
   void
-  reinit(MatrixFree<dim, Number> const &                matrix_free,
-         AffineConstraints<double> const &              constraint_matrix,
-         ProjectionOperatorData<dim> const &            data,
-         Operators::DivergencePenaltyKernelData const & div_kernel_data,
-         Operators::ContinuityPenaltyKernelData const & conti_kernel_data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         ProjectionOperatorData<dim> const & data,
-         std::shared_ptr<DivKernel>          div_penalty_kernel,
-         std::shared_ptr<ContiKernel>        conti_penalty_kernel);
+  initialize(MatrixFree<dim, Number> const &     matrix_free,
+             AffineConstraints<double> const &   constraint_matrix,
+             ProjectionOperatorData<dim> const & data,
+             std::shared_ptr<DivKernel>          div_penalty_kernel,
+             std::shared_ptr<ContiKernel>        conti_penalty_kernel);
 
   ProjectionOperatorData<dim>
   get_data() const;
@@ -149,6 +144,8 @@ private:
   do_boundary_integral(IntegratorFace &           integrator_m,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  ProjectionOperatorData<dim> operator_data;
 
   VectorType const * velocity;
   double             time_step_size;

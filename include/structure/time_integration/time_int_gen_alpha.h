@@ -28,6 +28,7 @@ private:
 public:
   TimeIntGenAlpha(std::shared_ptr<Operator<dim, Number>>      operator_,
                   std::shared_ptr<PostProcessor<dim, Number>> postprocessor_,
+                  unsigned int const                          refine_time_,
                   InputParameters const &                     param_,
                   MPI_Comm const &                            mpi_comm_);
 
@@ -56,6 +57,10 @@ private:
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
+
+  // number of refinement steps, where the time step size is reduced in
+  // factors of 2 with each refinement
+  unsigned int const refine_steps_time;
 
   InputParameters const & param;
 

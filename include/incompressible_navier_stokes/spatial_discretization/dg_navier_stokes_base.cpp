@@ -290,7 +290,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   MassMatrixOperatorData<dim> mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index  = get_dof_index_velocity();
   mass_matrix_operator_data.quad_index = get_quad_index_velocity_linear();
-  mass_matrix_operator.reinit(*matrix_free, constraint_dummy, mass_matrix_operator_data);
+  mass_matrix_operator.initialize(*matrix_free, constraint_dummy, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_velocity.initialize(*matrix_free,
@@ -314,7 +314,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
   rhs_data.kernel_data.gravitational_force           = field_functions->gravitational_force;
 
-  rhs_operator.reinit(*matrix_free, rhs_data);
+  rhs_operator.initialize(*matrix_free, rhs_data);
 
   // gradient operator
   GradientOperatorData<dim> gradient_operator_data;
@@ -325,7 +325,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   gradient_operator_data.formulation          = param.gradp_formulation;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
   gradient_operator_data.bc                   = boundary_descriptor_pressure;
-  gradient_operator.reinit(*matrix_free, gradient_operator_data);
+  gradient_operator.initialize(*matrix_free, gradient_operator_data);
 
   // divergence operator
   DivergenceOperatorData<dim> divergence_operator_data;
@@ -336,7 +336,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   divergence_operator_data.formulation          = param.divu_formulation;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
   divergence_operator_data.bc                   = boundary_descriptor_velocity;
-  divergence_operator.reinit(*matrix_free, divergence_operator_data);
+  divergence_operator.initialize(*matrix_free, divergence_operator_data);
 
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
@@ -346,10 +346,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.quad_index_nonlinear = get_quad_index_velocity_nonlinear();
   convective_operator_data.bc                   = boundary_descriptor_velocity;
-  convective_operator.reinit(*matrix_free,
-                             constraint_dummy,
-                             convective_operator_data,
-                             convective_kernel);
+  convective_operator.initialize(*matrix_free,
+                                 constraint_dummy,
+                                 convective_operator_data,
+                                 convective_kernel);
 
   // viscous operator
   ViscousOperatorData<dim> viscous_operator_data;
@@ -358,7 +358,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   viscous_operator_data.dof_index            = get_dof_index_velocity();
   viscous_operator_data.quad_index           = get_quad_index_velocity_linear();
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  viscous_operator.reinit(*matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
+  viscous_operator.initialize(*matrix_free,
+                              constraint_dummy,
+                              viscous_operator_data,
+                              viscous_kernel);
 
   // Momentum operator
   MomentumOperatorData<dim> data;
@@ -388,7 +391,8 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   data.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
   data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
 
-  momentum_operator.reinit(*matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
+  momentum_operator.initialize(
+    *matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
 
   if(param.use_divergence_penalty)
   {
@@ -410,7 +414,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     operator_data.dof_index  = get_dof_index_velocity();
     operator_data.quad_index = get_quad_index_velocity_linear();
 
-    div_penalty_operator.reinit(*matrix_free, operator_data, div_penalty_kernel);
+    div_penalty_operator.initialize(*matrix_free, operator_data, div_penalty_kernel);
   }
 
   if(param.use_continuity_penalty)
@@ -437,7 +441,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     operator_data.use_boundary_data = param.continuity_penalty_use_boundary_data;
     operator_data.bc                = this->boundary_descriptor_velocity;
 
-    conti_penalty_operator.reinit(*matrix_free, operator_data, conti_penalty_kernel);
+    conti_penalty_operator.initialize(*matrix_free, operator_data, conti_penalty_kernel);
   }
 
   if(param.use_divergence_penalty || param.use_continuity_penalty)
@@ -464,7 +468,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
 
       projection_operator.reset(new PROJ_OPERATOR());
 
-      projection_operator->reinit(
+      projection_operator->initialize(
         *matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
     }
   }
@@ -1056,7 +1060,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   typedef Poisson::LaplaceOperator<dim, Number, 1> Laplace;
   Laplace                                          laplace_operator;
   AffineConstraints<double>                        constraint_dummy;
-  laplace_operator.reinit(*matrix_free, constraint_dummy, laplace_operator_data);
+  laplace_operator.initialize(*matrix_free, constraint_dummy, laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;

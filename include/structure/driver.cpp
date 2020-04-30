@@ -34,7 +34,8 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
-                           unsigned int const &                          refine_space)
+                           unsigned int const &                          refine_space,
+                           unsigned int const &                          refine_time)
 {
   Timer timer;
   timer.restart();
@@ -122,7 +123,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(param.problem_type == ProblemType::Unsteady)
   {
     time_integrator.reset(
-      new TimeIntGenAlpha<dim, Number>(pde_operator, postprocessor, param, mpi_comm));
+      new TimeIntGenAlpha<dim, Number>(pde_operator, postprocessor, refine_time, param, mpi_comm));
     time_integrator->setup(param.restarted_simulation);
   }
   else if(param.problem_type == ProblemType::Steady)

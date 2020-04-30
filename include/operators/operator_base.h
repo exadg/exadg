@@ -21,6 +21,8 @@
 #include "integrator_flags.h"
 #include "mapping_flags.h"
 
+#include "../matrix_free/categorization.h"
+
 #include "../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "../solvers_and_preconditioners/preconditioner/enum_types.h"
 #include "../solvers_and_preconditioners/solvers/enum_types.h"
@@ -31,9 +33,9 @@ using namespace dealii;
 
 struct OperatorBaseData
 {
-  OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index)
-    : dof_index(dof_index),
-      quad_index(quad_index),
+  OperatorBaseData()
+    : dof_index(0),
+      quad_index(0),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
@@ -60,20 +62,17 @@ struct OperatorBaseData
   SolverData                  solver_data_block_diagonal;
 };
 
-template<int dim, typename Number, typename AdditionalData, int n_components = 1>
+template<int dim, typename Number, int n_components = 1>
 class OperatorBase : public dealii::Subscriptor
 {
 public:
-  typedef OperatorBase<dim, Number, AdditionalData, n_components> This;
+  typedef OperatorBase<dim, Number, n_components> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef std::pair<unsigned int, unsigned int>      Range;
   typedef CellIntegrator<dim, n_components, Number>  IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>  IntegratorFace;
 
-  /*
-   * Solution of linear systems of equations and preconditioning
-   */
   static const unsigned int vectorization_length = VectorizedArray<Number>::size();
 
   typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
@@ -89,17 +88,9 @@ public:
   {
   }
 
-  virtual void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         AdditionalData const &            operator_data);
-
   /*
    *  Getters and setters.
    */
-  AdditionalData const &
-  get_data() const;
-
   void
   set_time(double const time) const;
 
@@ -264,11 +255,15 @@ public:
                                        unsigned int const                    problem_size) const;
 
 protected:
+  void
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
+         AffineConstraints<double> const & constraints,
+         OperatorBaseData const &          data);
+
   /*
    * These methods have to be overwritten by derived classes because these functions are
    * operator-specific and define how the operator looks like.
    */
-
   virtual void
   reinit_cell(unsigned int const cell) const;
 
@@ -322,11 +317,6 @@ protected:
   virtual void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
-
-  /*
-   * Data structure containing all operator-specific data.
-   */
-  AdditionalData data;
 
   /*
    * Matrix-free object.
@@ -578,6 +568,11 @@ private:
   evaluate_face_integrals() const;
 
   /*
+   * Data structure containing all operator-specific data.
+   */
+  OperatorBaseData data;
+
+  /*
    * Multigrid level: 0 <= level <= max_level. If the operator is not used as a multigrid
    * level operator, this variable takes a value of numbers::invalid_unsigned_int.
    */
@@ -603,7 +598,5 @@ private:
   std::vector<unsigned int>                      constrained_indices;
   mutable std::vector<std::pair<Number, Number>> constrained_values;
 };
-
-#include "operator_base.cpp"
 
 #endif

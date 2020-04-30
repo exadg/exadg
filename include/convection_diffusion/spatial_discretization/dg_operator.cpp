@@ -120,7 +120,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
   mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  mass_matrix_operator.reinit(*matrix_free, constraint_matrix, mass_matrix_operator_data);
+  mass_matrix_operator.initialize(*matrix_free, constraint_matrix, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_matrix_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
@@ -154,10 +154,10 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
       param.implement_block_diagonal_preconditioner_matrix_free;
     convective_operator_data.kernel_data = convective_kernel_data;
 
-    convective_operator.reinit(*matrix_free,
-                               constraint_matrix,
-                               convective_operator_data,
-                               convective_kernel);
+    convective_operator.initialize(*matrix_free,
+                                   constraint_matrix,
+                                   convective_operator_data,
+                                   convective_kernel);
   }
 
   // diffusive operator
@@ -180,10 +180,10 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
       param.implement_block_diagonal_preconditioner_matrix_free;
     diffusive_operator_data.kernel_data = diffusive_kernel_data;
 
-    diffusive_operator.reinit(*matrix_free,
-                              constraint_matrix,
-                              diffusive_operator_data,
-                              diffusive_kernel);
+    diffusive_operator.initialize(*matrix_free,
+                                  constraint_matrix,
+                                  diffusive_operator_data,
+                                  diffusive_kernel);
   }
 
   // rhs operator
@@ -191,7 +191,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
   rhs_operator_data.dof_index     = get_dof_index();
   rhs_operator_data.quad_index    = get_quad_index();
   rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
-  rhs_operator.reinit(*matrix_free, rhs_operator_data);
+  rhs_operator.initialize(*matrix_free, rhs_operator_data);
 
   // merged operator
   if(param.temporal_discretization == TemporalDiscretization::BDF ||
@@ -250,7 +250,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
         get_quad_index_overintegration() :
         get_quad_index();
 
-    combined_operator.reinit(
+    combined_operator.initialize(
       *matrix_free, constraint_matrix, combined_operator_data, convective_kernel, diffusive_kernel);
   }
 

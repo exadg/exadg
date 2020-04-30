@@ -510,7 +510,7 @@ private:
 template<int dim>
 struct ConvectiveOperatorData : public OperatorBaseData
 {
-  ConvectiveOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  ConvectiveOperatorData() : OperatorBaseData()
   {
   }
 
@@ -520,10 +520,10 @@ struct ConvectiveOperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>>
+class ConvectiveOperator : public OperatorBase<dim, Number, 1>
 {
 private:
-  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, 1> Base;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
@@ -535,15 +535,10 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &                           matrix_free,
-         AffineConstraints<double> const &                         constraint_matrix,
-         ConvectiveOperatorData<dim> const &                       data,
-         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
+  initialize(MatrixFree<dim, Number> const &                           matrix_free,
+             AffineConstraints<double> const &                         constraint_matrix,
+             ConvectiveOperatorData<dim> const &                       data,
+             std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -591,6 +586,8 @@ private:
   void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
+
+  ConvectiveOperatorData<dim> operator_data;
 
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };

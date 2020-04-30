@@ -59,6 +59,7 @@ SET( TARGET_SRC
      include/postprocessor/kinetic_energy_spectrum.cpp
      include/postprocessor/kinetic_energy_calculation.cpp
      include/postprocessor/statistics_manager.cpp
+     include/operators/operator_base.cpp
      include/operators/mass_matrix_operator.cpp
      # Poisson equation
      include/poisson/user_interface/enum_types.cpp

@@ -6,28 +6,15 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix_free,
-                                       AffineConstraints<double> const &  constraint_matrix,
-                                       DiffusiveOperatorData<dim> const & data)
-{
-  (void)matrix_free;
-  (void)constraint_matrix;
-  (void)data;
-
-  AssertThrow(false,
-              ExcMessage(
-                "This reinit() function can not be used to initialize the diffusive operator."));
-}
-
-template<int dim, typename Number>
-void
-DiffusiveOperator<dim, Number>::reinit(
+DiffusiveOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                          matrix_free,
   AffineConstraints<double> const &                        constraint_matrix,
   DiffusiveOperatorData<dim> const &                       data,
-  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel_in)
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel)
 {
-  kernel = kernel_in;
+  operator_data = data;
+
+  this->kernel = kernel;
 
   Base::reinit(matrix_free, constraint_matrix, data);
 
@@ -38,7 +25,7 @@ template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::update()
 {
-  kernel->calculate_penalty_parameter(*this->matrix_free, this->data.dof_index);
+  kernel->calculate_penalty_parameter(*this->matrix_free, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -167,7 +154,7 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                                      OperatorType const &       operator_type,
                                                      types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -179,7 +166,7 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                               operator_type,
                                               boundary_type,
                                               boundary_id,
-                                              this->data.bc,
+                                              operator_data.bc,
                                               this->time);
 
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m, value_p);
@@ -192,7 +179,7 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                                                   operator_type,
                                                                   boundary_type,
                                                                   boundary_id,
-                                                                  this->data.bc,
+                                                                  operator_data.bc,
                                                                   this->time);
 
     scalar value_flux =

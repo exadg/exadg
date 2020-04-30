@@ -80,6 +80,10 @@ Operator<dim, Number>::distribute_dofs()
   }
   constraint_matrix.close();
 
+  // no constraints for mass matrix operator
+  constraints_mass.clear();
+  constraints_mass.close();
+
   pcout << std::endl
         << "Continuous Galerkin finite element discretization:" << std::endl
         << std::endl;
@@ -98,6 +102,13 @@ Operator<dim, Number>::get_dof_name() const
 
 template<int dim, typename Number>
 std::string
+Operator<dim, Number>::get_dof_name_mass() const
+{
+  return field + "_" + dof_index_mass;
+}
+
+template<int dim, typename Number>
+std::string
 Operator<dim, Number>::get_quad_name() const
 {
   return field + "_" + quad_index;
@@ -108,6 +119,13 @@ unsigned int
 Operator<dim, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_dof_index_mass() const
+{
+  return matrix_free_data->get_dof_index(get_dof_name_mass());
 }
 
 template<int dim, typename Number>
@@ -133,6 +151,12 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
 
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name_mass());
+    matrix_free_data.insert_constraint(&constraints_mass, get_dof_name_mass());
+  }
+
   // Quadrature
   matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 }
@@ -157,20 +181,21 @@ Operator<dim, Number>::setup_operators()
 
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.reinit(*matrix_free, constraint_matrix, operator_data);
+    elasticity_operator_nonlinear.initialize(*matrix_free, constraint_matrix, operator_data);
   }
   else
   {
-    elasticity_operator_linear.reinit(*matrix_free, constraint_matrix, operator_data);
+    elasticity_operator_linear.initialize(*matrix_free, constraint_matrix, operator_data);
   }
 
   // mass matrix operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
     MassMatrixOperatorData<dim> mass_data;
-    mass_data.dof_index  = get_dof_index();
+    mass_data.dof_index  = get_dof_index_mass();
     mass_data.quad_index = get_quad_index();
-    mass.reinit(*matrix_free, constraint_matrix, mass_data);
+    mass.initialize(*matrix_free, constraints_mass, mass_data);
+
     mass.set_scaling_factor(param.density);
 
     // preconditioner and solver for mass matrix have to be initialized in
@@ -211,7 +236,7 @@ Operator<dim, Number>::setup_operators()
     body_force_data.pull_back_body_force = param.pull_back_body_force;
   else
     body_force_data.pull_back_body_force = false;
-  body_force_operator.reinit(*matrix_free, body_force_data);
+  body_force_operator.initialize(*matrix_free, body_force_data);
 }
 
 template<int dim, typename Number>
@@ -427,7 +452,7 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     rhs *= -1.0;
 
     // Neumann BCs and inhomogeneous Dirichlet BCs
-    // (has already the correction sign, since rhs_add())
+    // (has already the correct sign, since rhs_add())
     elasticity_operator_linear.rhs_add(rhs);
 
     // body force

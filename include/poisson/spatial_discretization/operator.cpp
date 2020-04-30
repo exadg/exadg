@@ -411,7 +411,7 @@ Operator<dim, Number, n_components>::setup_operators()
   laplace_operator_data.bc                    = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
   laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
-  laplace_operator.reinit(*matrix_free, constraint_matrix, laplace_operator_data);
+  laplace_operator.initialize(*matrix_free, constraint_matrix, laplace_operator_data);
 
   // rhs operator
   if(param.right_hand_side)
@@ -420,7 +420,7 @@ Operator<dim, Number, n_components>::setup_operators()
     rhs_operator_data.dof_index     = get_dof_index();
     rhs_operator_data.quad_index    = get_quad_index();
     rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
-    rhs_operator.reinit(*matrix_free, rhs_operator_data);
+    rhs_operator.initialize(*matrix_free, rhs_operator_data);
   }
 }
 

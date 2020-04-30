@@ -63,9 +63,9 @@ public:
              InverseMassMatrixOperator<dim, dim, Number> const & inv_mass_matrix_operator_in);
 
   void
-  reinit_multigrid(MatrixFree<dim, Number> const &            matrix_free,
-                   AffineConstraints<double> const &          constraint_matrix,
-                   CompatibleLaplaceOperatorData<dim> const & operator_data);
+  initialize(MatrixFree<dim, Number> const &            matrix_free,
+             AffineConstraints<double> const &          constraint_matrix,
+             CompatibleLaplaceOperatorData<dim> const & operator_data);
 
   virtual void
   update_block_diagonal_preconditioner() const

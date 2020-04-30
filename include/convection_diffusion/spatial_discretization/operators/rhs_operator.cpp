@@ -16,8 +16,8 @@ RHSOperator<dim, Number, n_components>::RHSOperator() : matrix_free(nullptr), ti
 
 template<int dim, typename Number, int n_components>
 void
-RHSOperator<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & matrix_free_in,
-                                               RHSOperatorData<dim> const &    data_in)
+RHSOperator<dim, Number, n_components>::initialize(MatrixFree<dim, Number> const & matrix_free_in,
+                                                   RHSOperatorData<dim> const &    data_in)
 {
   this->matrix_free = &matrix_free_in;
   this->data        = data_in;

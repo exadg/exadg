@@ -136,11 +136,11 @@ private:
       this->pde_operator->get_continuity_kernel_data();
     conti_kernel_data.degree = this->level_info[level].degree();
 
-    pde_operator_level->reinit(*this->matrix_free_objects[level],
-                               *this->constraints[level],
-                               data,
-                               div_kernel_data,
-                               conti_kernel_data);
+    pde_operator_level->initialize(*this->matrix_free_objects[level],
+                                   *this->constraints[level],
+                                   data,
+                                   div_kernel_data,
+                                   conti_kernel_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));

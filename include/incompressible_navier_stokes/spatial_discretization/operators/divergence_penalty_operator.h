@@ -238,9 +238,9 @@ public:
   DivergencePenaltyOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free,
-         DivergencePenaltyData const &   data,
-         std::shared_ptr<Kernel> const   kernel);
+  initialize(MatrixFree<dim, Number> const & matrix_free,
+             DivergencePenaltyData const &   data,
+             std::shared_ptr<Kernel> const   kernel);
 
   void
   update(VectorType const & velocity);

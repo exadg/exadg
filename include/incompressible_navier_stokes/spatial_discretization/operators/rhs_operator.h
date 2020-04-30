@@ -134,7 +134,7 @@ public:
   RHSOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free_in, RHSOperatorData<dim> const & data_in);
+  initialize(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
 
   void
   evaluate(VectorType & dst, Number const evaluation_time) const;

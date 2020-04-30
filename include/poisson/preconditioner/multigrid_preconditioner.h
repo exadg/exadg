@@ -154,7 +154,7 @@ private:
     data.dof_index  = this->matrix_free_data_objects[level]->get_dof_index("laplace_dof_handler");
     data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("laplace_quadrature");
 
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+    pde_operator->initialize(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));

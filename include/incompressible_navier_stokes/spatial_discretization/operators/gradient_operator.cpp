@@ -17,8 +17,8 @@ GradientOperator<dim, Number>::GradientOperator()
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free_in,
-                                      GradientOperatorData<dim> const & data_in)
+GradientOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free_in,
+                                          GradientOperatorData<dim> const & data_in)
 {
   matrix_free = &matrix_free_in;
   data        = data_in;

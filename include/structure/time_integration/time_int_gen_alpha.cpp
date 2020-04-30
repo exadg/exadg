@@ -14,6 +14,7 @@ template<int dim, typename Number>
 TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
   std::shared_ptr<Operator<dim, Number>>      operator_,
   std::shared_ptr<PostProcessor<dim, Number>> postprocessor_,
+  unsigned int const                          refine_steps_time_,
   InputParameters const &                     param_,
   MPI_Comm const &                            mpi_comm_)
   : TimeIntGenAlphaBase<Number>(param_.start_time,
@@ -25,6 +26,7 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
                                 mpi_comm_),
     pde_operator(operator_),
     postprocessor(postprocessor_),
+    refine_steps_time(refine_steps_time_),
     param(param_),
     mpi_comm(mpi_comm_),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0)
@@ -56,11 +58,11 @@ TimeIntGenAlpha<dim, Number>::setup(bool const do_restart)
   }
   else
   {
-    this->set_current_time_step_size(param.time_step_size);
+    this->set_current_time_step_size(param.time_step_size / std::pow(2.0, refine_steps_time));
 
     pde_operator->prescribe_initial_displacement(displacement_n, this->get_time());
     pde_operator->prescribe_initial_velocity(velocity_n, this->get_time());
-    // solve momentum equation to obtain initial accelerations
+    // solve momentum equation to obtain initial acceleration
     pde_operator->compute_initial_acceleration(acceleration_n, displacement_n, this->get_time());
   }
 

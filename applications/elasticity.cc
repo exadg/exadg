@@ -13,6 +13,7 @@
 #include "./structure/bar/bar.h"
 #include "./structure/beam/beam.h"
 #include "./structure/can/can.h"
+#include "./structure/manufactured/manufactured.h"
 
 class ApplicationSelector
 {
@@ -38,6 +39,8 @@ public:
         app.reset(new Structure::Beam::Application<dim, Number>());
       else if(name == "Can")
         app.reset(new Structure::Can::Application<dim, Number>());
+      else if(name == "Manufactured")
+        app.reset(new Structure::Manufactured::Application<dim, Number>());
       else
         AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -60,6 +63,8 @@ public:
       app.reset(new Structure::Beam::Application<dim, Number>(input_file));
     else if(name == "Can")
       app.reset(new Structure::Can::Application<dim, Number>(input_file));
+    else if(name == "Manufactured")
+      app.reset(new Structure::Manufactured::Application<dim, Number>(input_file));
     else
       AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -102,6 +107,7 @@ void
 run(std::string const & input_file,
     unsigned int const  degree,
     unsigned int const  refine_space,
+    unsigned int const  refine_time,
     MPI_Comm const &    mpi_comm)
 {
   Timer timer;
@@ -115,7 +121,7 @@ run(std::string const & input_file,
   std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
     selector.get_application<dim, Number>(input_file);
 
-  solver->setup(application, degree, refine_space);
+  solver->setup(application, degree, refine_space, refine_time);
 
   solver->solve();
 
@@ -163,17 +169,22 @@ main(int argc, char ** argv)
     for(unsigned int refine_space = study.refine_space_min; refine_space <= study.refine_space_max;
         ++refine_space)
     {
-      // run the simulation
-      if(study.dim == 2 && study.precision == "float")
-        run<2, float>(input_file, degree, refine_space, mpi_comm);
-      else if(study.dim == 2 && study.precision == "double")
-        run<2, double>(input_file, degree, refine_space, mpi_comm);
-      else if(study.dim == 3 && study.precision == "float")
-        run<3, float>(input_file, degree, refine_space, mpi_comm);
-      else if(study.dim == 3 && study.precision == "double")
-        run<3, double>(input_file, degree, refine_space, mpi_comm);
-      else
-        AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+      // dt-refinement
+      for(unsigned int refine_time = study.refine_time_min; refine_time <= study.refine_time_max;
+          ++refine_time)
+      {
+        // run the simulation
+        if(study.dim == 2 && study.precision == "float")
+          run<2, float>(input_file, degree, refine_space, refine_time, mpi_comm);
+        else if(study.dim == 2 && study.precision == "double")
+          run<2, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+        else if(study.dim == 3 && study.precision == "float")
+          run<3, float>(input_file, degree, refine_space, refine_time, mpi_comm);
+        else if(study.dim == 3 && study.precision == "double")
+          run<3, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+        else
+          AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+      }
     }
   }
 

@@ -203,18 +203,18 @@ private:
     if(nonlinear)
     {
       std::shared_ptr<PDEOperatorNonlinearMG> pde_operator_level(new PDEOperatorNonlinearMG());
-      pde_operator_level->reinit(*this->matrix_free_objects[level],
-                                 *this->constraints[level],
-                                 data);
+      pde_operator_level->initialize(*this->matrix_free_objects[level],
+                                     *this->constraints[level],
+                                     data);
 
       mg_operator_level.reset(new MGOperatorNonlinear(pde_operator_level));
     }
     else // linear
     {
       std::shared_ptr<PDEOperatorLinearMG> pde_operator_level(new PDEOperatorLinearMG());
-      pde_operator_level->reinit(*this->matrix_free_objects[level],
-                                 *this->constraints[level],
-                                 data);
+      pde_operator_level->initialize(*this->matrix_free_objects[level],
+                                     *this->constraints[level],
+                                     data);
 
       mg_operator_level.reset(new MGOperatorLinear(pde_operator_level));
     }

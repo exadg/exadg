@@ -955,8 +955,7 @@ private:
 template<int dim>
 struct ConvectiveOperatorData : public OperatorBaseData
 {
-  ConvectiveOperatorData()
-    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */), quad_index_nonlinear(0)
+  ConvectiveOperatorData() : OperatorBaseData(), quad_index_nonlinear(0)
   {
   }
 
@@ -980,7 +979,7 @@ struct ConvectiveOperatorData : public OperatorBaseData
 
 
 template<int dim, typename Number>
-class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>, dim>
+class ConvectiveOperator : public OperatorBase<dim, Number, dim>
 {
 public:
   typedef VectorizedArray<Number>                 scalar;
@@ -989,7 +988,7 @@ public:
 
   typedef ConvectiveOperator<dim, Number> This;
 
-  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>, dim> Base;
+  typedef OperatorBase<dim, Number, dim> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::Range          Range;
@@ -1010,15 +1009,10 @@ public:
   get_velocity() const;
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &                           matrix_free,
-         AffineConstraints<double> const &                         constraint_matrix,
-         ConvectiveOperatorData<dim> const &                       data,
-         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
+  initialize(MatrixFree<dim, Number> const &                           matrix_free,
+             AffineConstraints<double> const &                         constraint_matrix,
+             ConvectiveOperatorData<dim> const &                       data,
+             std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
   /*
    * Evaluate nonlinear operator.
@@ -1184,6 +1178,8 @@ private:
   do_boundary_integral(IntegratorFace &           integrator,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  ConvectiveOperatorData<dim> operator_data;
 
   // OIF substepping
   mutable VectorType const * velocity_linear_transport;

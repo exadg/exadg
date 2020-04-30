@@ -105,7 +105,7 @@ public:
    * Initialization.
    */
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
 
   /*
    * Evaluate operator and overwrite dst-vector.

@@ -9,11 +9,13 @@ namespace Poisson
 {
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit(
+LaplaceOperator<dim, Number, n_components>::initialize(
   MatrixFree<dim, Number> const &        matrix_free,
   AffineConstraints<double> const &      constraint_matrix,
   LaplaceOperatorData<rank, dim> const & data)
 {
+  operator_data = data;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
   kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
@@ -187,7 +189,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -199,7 +201,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
                                                                               operator_type,
                                                                               boundary_type,
                                                                               boundary_id,
-                                                                              this->data.bc,
+                                                                              operator_data.bc,
                                                                               this->time);
 
     value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
@@ -215,7 +217,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
                                                                           operator_type,
                                                                           boundary_type,
                                                                           boundary_id,
-                                                                          this->data.bc,
+                                                                          operator_data.bc,
                                                                           this->time);
 
     value value_flux =
@@ -232,12 +234,12 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   IntegratorFace &           integrator_m,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
-      q, integrator_m, boundary_type, boundary_id, this->data.bc, this->time);
+      q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
 
     integrator_m.submit_value(-neumann_value, q);
   }
@@ -263,18 +265,18 @@ LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
   std::map<types::global_dof_index, double> & boundary_values,
   double const                                time) const
 {
-  for(auto dbc : this->data.bc->dirichlet_bc)
+  for(auto dbc : operator_data.bc->dirichlet_bc)
   {
     dbc.second->set_time(time);
 
     ComponentMask mask     = ComponentMask();
-    auto          dbc_mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first);
-    if(dbc_mask != this->data.bc->dirichlet_bc_component_mask.end())
+    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
       mask = dbc_mask->second;
 
     VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
                                              this->matrix_free->get_dof_handler(
-                                               this->data.dof_index),
+                                               operator_data.dof_index),
                                              dbc.first,
                                              *dbc.second,
                                              boundary_values,
@@ -283,7 +285,7 @@ LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
 
   // TODO extend to dirichlet_mortar_bc
   AssertThrow(
-    this->data.bc->dirichlet_mortar_bc.empty(),
+    operator_data.bc->dirichlet_mortar_bc.empty(),
     ExcMessage(
       "Dirichlet boundary conditions of mortar type are currently not implemented for continuous elements."));
 }
@@ -295,7 +297,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -334,7 +336,7 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
                                                                           operator_type,
                                                                           boundary_type,
                                                                           boundary_id,
-                                                                          this->data.bc,
+                                                                          operator_data.bc,
                                                                           this->time);
 
     value value_flux =

@@ -293,10 +293,16 @@ private:
   get_dof_name() const;
 
   std::string
+  get_dof_name_mass() const;
+
+  std::string
   get_quad_name() const;
 
   unsigned int
   get_dof_index() const;
+
+  unsigned int
+  get_dof_index_mass() const;
 
   unsigned int
   get_quad_index() const;
@@ -352,9 +358,12 @@ private:
   FESystem<dim>             fe;
   DoFHandler<dim>           dof_handler;
   AffineConstraints<double> constraint_matrix;
+  // constraints for mass matrix operator (i.e., do not apply any constraints)
+  AffineConstraints<double> constraints_mass;
 
-  std::string const dof_index  = "dof";
-  std::string const quad_index = "quad";
+  std::string const dof_index      = "dof";
+  std::string const dof_index_mass = "dof_mass";
+  std::string const quad_index     = "quad";
 
   /*
    * Matrix-free operator evaluation.
@@ -371,6 +380,11 @@ private:
   NonLinearOperator<dim, Number> elasticity_operator_nonlinear;
   OperatorData<dim>              operator_data;
 
+  // The mass matrix operator is only relevant for unsteady problems:
+  // it is used to compute the initial acceleration and to evaluate
+  // the mass matrix term applied to a constant vector (independent
+  // of new displacements) appearing on the right-hand side for linear
+  // problems and in the residual for nonlinear problems.
   MassMatrixOperator<dim, dim, Number> mass;
 
   /*

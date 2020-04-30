@@ -167,7 +167,7 @@ private:
 template<int rank, int dim>
 struct LaplaceOperatorData : public OperatorBaseData
 {
-  LaplaceOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  LaplaceOperatorData() : OperatorBaseData()
   {
   }
 
@@ -177,21 +177,14 @@ struct LaplaceOperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number, int n_components>
-class LaplaceOperator
-  : public OperatorBase<
-      dim,
-      Number,
-      LaplaceOperatorData<
-        ((n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int)),
-        dim>,
-      n_components>
+class LaplaceOperator : public OperatorBase<dim, Number, n_components>
 {
 private:
   static unsigned int const rank =
     (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
 
-  typedef OperatorBase<dim, Number, LaplaceOperatorData<rank, dim>, n_components> Base;
-  typedef LaplaceOperator<dim, Number, n_components>                              This;
+  typedef OperatorBase<dim, Number, n_components>    Base;
+  typedef LaplaceOperator<dim, Number, n_components> This;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
@@ -200,14 +193,21 @@ private:
 
   typedef Tensor<rank, dim, VectorizedArray<Number>> value;
 
-public:
-  typedef Number                    value_type;
   typedef typename Base::VectorType VectorType;
 
+public:
+  typedef Number value_type;
+
   void
-  reinit(MatrixFree<dim, Number> const &        matrix_free,
-         AffineConstraints<double> const &      constraint_matrix,
-         LaplaceOperatorData<rank, dim> const & data);
+  initialize(MatrixFree<dim, Number> const &        matrix_free,
+             AffineConstraints<double> const &      constraint_matrix,
+             LaplaceOperatorData<rank, dim> const & data);
+
+  LaplaceOperatorData<rank, dim> const &
+  get_data() const
+  {
+    return operator_data;
+  }
 
   void
   calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
@@ -289,6 +289,8 @@ private:
   do_boundary_integral_dirichlet_bc_from_dof_vector(IntegratorFace &           integrator_m,
                                                     OperatorType const &       operator_type,
                                                     types::boundary_id const & boundary_id) const;
+
+  LaplaceOperatorData<rank, dim> operator_data;
 
   Operators::LaplaceKernel<dim, Number, n_components> kernel;
 };

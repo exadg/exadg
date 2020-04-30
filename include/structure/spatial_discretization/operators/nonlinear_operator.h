@@ -32,14 +32,14 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         operator_data) override
+  initialize(MatrixFree<dim, Number> const &   matrix_free,
+             AffineConstraints<double> const & constraint_matrix,
+             OperatorData<dim> const &         data) override
   {
-    Base::reinit(matrix_free, constraint_matrix, operator_data);
+    Base::initialize(matrix_free, constraint_matrix, data);
 
     integrator_lin.reset(new IntegratorCell(*this->matrix_free));
-    this->matrix_free->initialize_dof_vector(displacement_lin, operator_data.dof_index);
+    this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index);
     displacement_lin.update_ghost_values();
   }
 
@@ -92,18 +92,20 @@ private:
                       VectorType const &              src,
                       Range const &                   range) const
   {
-    IntegratorCell integrator(matrix_free, this->data.dof_index, this->data.quad_index);
+    IntegratorCell integrator(matrix_free,
+                              this->operator_data.dof_index,
+                              this->operator_data.quad_index);
 
     for(auto cell = range.first; cell < range.second; ++cell)
     {
       reinit_cell_nonlinear(integrator, cell);
 
       integrator.read_dof_values_plain(src);
-      integrator.evaluate(this->data.unsteady, true, false);
+      integrator.evaluate(this->operator_data.unsteady, true, false);
 
       do_cell_integral_nonlinear(integrator);
 
-      integrator.integrate_scatter(this->data.unsteady, true, dst);
+      integrator.integrate_scatter(this->operator_data.unsteady, true, dst);
     }
   }
 
@@ -134,10 +136,13 @@ private:
 
       // In case of a pull-back of the traction vector, we need to evaluate
       // the displacement gradient to obtain the surface area ratio da/dA.
-      // We explicitly write the integrator flags in this case since they
+      // We write the integrator flags explicitly in this case since they
       // depend on the parameter pull_back_traction.
-      if(this->data.pull_back_traction)
-        this->integrator_m->gather_evaluate(src, false, true);
+      if(this->operator_data.pull_back_traction)
+      {
+        this->integrator_m->read_dof_values_plain(src);
+        this->integrator_m->evaluate(false, true);
+      }
 
       do_boundary_integral_continuous(*this->integrator_m, matrix_free.get_boundary_id(face));
 
@@ -199,8 +204,8 @@ private:
       // Grad_v : P
       integrator.submit_gradient(P, q);
 
-      if(this->data.unsteady)
-        integrator.submit_value(this->scaling_factor_mass * this->data.density *
+      if(this->operator_data.unsteady)
+        integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
                                   integrator.get_value(q),
                                 q);
     }
@@ -221,16 +226,16 @@ private:
    */
   void
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  types::boundary_id const & boundary_id) const
+                                  types::boundary_id const & boundary_id) const override
   {
-    BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+    BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
       auto traction = calculate_neumann_value<dim, Number>(
-        q, integrator_m, boundary_type, boundary_id, this->data.bc, this->time);
+        q, integrator_m, boundary_type, boundary_id, this->operator_data.bc, this->time);
 
-      if(this->data.pull_back_traction)
+      if(this->operator_data.pull_back_traction)
       {
         tensor F = get_F<dim, Number>(integrator_m.get_gradient(q));
         vector N = integrator_m.get_normal_vector(q);
@@ -282,7 +287,7 @@ private:
    *  the area ratio da/dA = function(d) is neglected in the linearization.
    */
   void
-  do_cell_integral(IntegratorCell & integrator) const
+  do_cell_integral(IntegratorCell & integrator) const override
   {
     integrator_lin->read_dof_values_plain(displacement_lin);
     integrator_lin->evaluate(false, true);
@@ -318,8 +323,8 @@ private:
       // Grad_v : delta_P
       integrator.submit_gradient(delta_P, q);
 
-      if(this->data.unsteady)
-        integrator.submit_value(this->scaling_factor_mass * this->data.density *
+      if(this->operator_data.unsteady)
+        integrator.submit_value(this->scaling_factor_mass * this->operator_data.density *
                                   integrator.get_value(q),
                                 q);
     }

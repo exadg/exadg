@@ -185,7 +185,9 @@ private:
     }
     data.quad_index = this->matrix_free_data_objects[level]->get_quad_index("std_quadrature");
 
-    pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+    pde_operator_level->initialize(*this->matrix_free_objects[level],
+                                   *this->constraints[level],
+                                   data);
 
     // make sure that scaling factor of time derivative term has been set before the smoothers are
     // initialized
@@ -243,7 +245,7 @@ private:
   void
   update_operators()
   {
-    TypeVelocityField velocity_type = pde_operator->get_data().convective_kernel_data.velocity_type;
+    TypeVelocityField velocity_type = data.convective_kernel_data.velocity_type;
 
     if(velocity_type == TypeVelocityField::DoFVector &&
        (mg_operator_type == MultigridOperatorType::ReactionConvection ||

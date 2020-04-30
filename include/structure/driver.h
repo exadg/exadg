@@ -45,7 +45,8 @@ public:
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const &                          degree,
-        unsigned int const &                          refine_space);
+        unsigned int const &                          refine_space,
+        unsigned int const &                          refine_time);
 
   void
   solve() const;

@@ -257,11 +257,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim>
 struct OperatorData : public OperatorBaseData
 {
-  OperatorData()
-    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
-      pull_back_traction(false),
-      unsteady(false),
-      density(1.0)
+  OperatorData() : OperatorBaseData(), pull_back_traction(false), unsteady(false), density(1.0)
   {
   }
 
@@ -281,14 +277,14 @@ struct OperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class ElasticityOperatorBase : public OperatorBase<dim, Number, OperatorData<dim>, dim>
+class ElasticityOperatorBase : public OperatorBase<dim, Number, dim>
 {
 public:
   typedef Number value_type;
 
 protected:
-  typedef OperatorBase<dim, Number, OperatorData<dim>, dim> Base;
-  typedef typename Base::VectorType                         VectorType;
+  typedef OperatorBase<dim, Number, dim> Base;
+  typedef typename Base::VectorType      VectorType;
 
 public:
   ElasticityOperatorBase() : scaling_factor_mass(1.0)
@@ -328,15 +324,23 @@ public:
   }
 
   virtual void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         operator_data)
+  initialize(MatrixFree<dim, Number> const &   matrix_free,
+             AffineConstraints<double> const & constraint_matrix,
+             OperatorData<dim> const &         data)
   {
-    Base::reinit(matrix_free, constraint_matrix, operator_data);
+    operator_data = data;
 
-    this->integrator_flags = this->get_integrator_flags(operator_data.unsteady);
+    Base::reinit(matrix_free, constraint_matrix, data);
 
-    material_handler.initialize(this->get_data().material_descriptor);
+    this->integrator_flags = this->get_integrator_flags(data.unsteady);
+
+    material_handler.initialize(data.material_descriptor);
+  }
+
+  OperatorData<dim> const &
+  get_data() const
+  {
+    return operator_data;
   }
 
   void
@@ -366,6 +370,8 @@ protected:
     this->material_handler.reinit(*this->matrix_free, cell);
   }
 
+  OperatorData<dim> operator_data;
+
   mutable MaterialHandler<dim, Number> material_handler;
 
   mutable double scaling_factor_mass;
@@ -375,14 +381,14 @@ private:
   fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
                                    double const                                time) const
   {
-    for(auto dbc : this->data.bc->dirichlet_bc)
+    for(auto dbc : operator_data.bc->dirichlet_bc)
     {
       dbc.second->set_time(time);
-      ComponentMask mask = this->data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
+      ComponentMask mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
 
       VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
                                                this->matrix_free->get_dof_handler(
-                                                 this->data.dof_index),
+                                                 operator_data.dof_index),
                                                dbc.first,
                                                *dbc.second,
                                                boundary_values,

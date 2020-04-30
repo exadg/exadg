@@ -19,9 +19,9 @@ ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator()
 
 template<int dim, typename Number>
 void
-ContinuityPenaltyOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix_free,
-                                               ContinuityPenaltyData<dim> const & data,
-                                               std::shared_ptr<Kernel> const      kernel)
+ContinuityPenaltyOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &    matrix_free,
+                                                   ContinuityPenaltyData<dim> const & data,
+                                                   std::shared_ptr<Kernel> const      kernel)
 {
   this->matrix_free = &matrix_free;
   this->data        = data;

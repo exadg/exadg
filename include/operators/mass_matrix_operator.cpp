@@ -14,7 +14,7 @@ MassMatrixOperator<dim, n_components, Number>::MassMatrixOperator() : scaling_fa
 
 template<int dim, int n_components, typename Number>
 void
-MassMatrixOperator<dim, n_components, Number>::reinit(
+MassMatrixOperator<dim, n_components, Number>::initialize(
   MatrixFree<dim, Number> const &     matrix_free,
   AffineConstraints<double> const &   constraint_matrix,
   MassMatrixOperatorData<dim> const & data)

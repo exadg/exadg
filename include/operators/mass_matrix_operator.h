@@ -18,19 +18,18 @@ using namespace dealii;
 template<int dim>
 struct MassMatrixOperatorData : public OperatorBaseData
 {
-  MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  MassMatrixOperatorData() : OperatorBaseData()
   {
   }
 };
 
 template<int dim, int n_components, typename Number>
-class MassMatrixOperator
-  : public OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components>
+class MassMatrixOperator : public OperatorBase<dim, Number, n_components>
 {
 public:
   typedef Number value_type;
 
-  typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components> Base;
+  typedef OperatorBase<dim, Number, n_components> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::IntegratorCell IntegratorCell;
@@ -38,9 +37,9 @@ public:
   MassMatrixOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         MassMatrixOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const &     matrix_free,
+             AffineConstraints<double> const &   constraint_matrix,
+             MassMatrixOperatorData<dim> const & data);
 
   void
   set_scaling_factor(Number const & number);

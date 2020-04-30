@@ -14,7 +14,7 @@ CompatibleLaplaceOperator<dim, Number>::CompatibleLaplaceOperator()
 
 template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
+CompatibleLaplaceOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &            matrix_free,
   AffineConstraints<double> const &          constraint_matrix,
   CompatibleLaplaceOperatorData<dim> const & operator_data)
@@ -22,10 +22,10 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
   (void)constraint_matrix;
 
   // setup own gradient operator
-  own_gradient_operator_storage.reinit(matrix_free, operator_data.gradient_operator_data);
+  own_gradient_operator_storage.initialize(matrix_free, operator_data.gradient_operator_data);
 
   // setup own divergence operator
-  own_divergence_operator_storage.reinit(matrix_free, operator_data.divergence_operator_data);
+  own_divergence_operator_storage.initialize(matrix_free, operator_data.divergence_operator_data);
 
   // setup own inverse mass matrix operator
   own_inv_mass_matrix_operator_storage.initialize(matrix_free,

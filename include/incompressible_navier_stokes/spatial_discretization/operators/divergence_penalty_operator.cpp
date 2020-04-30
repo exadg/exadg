@@ -16,9 +16,9 @@ DivergencePenaltyOperator<dim, Number>::DivergencePenaltyOperator() : matrix_fre
 
 template<int dim, typename Number>
 void
-DivergencePenaltyOperator<dim, Number>::reinit(MatrixFree<dim, Number> const & matrix_free,
-                                               DivergencePenaltyData const &   data,
-                                               std::shared_ptr<Kernel> const   kernel)
+DivergencePenaltyOperator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free,
+                                                   DivergencePenaltyData const &   data,
+                                                   std::shared_ptr<Kernel> const   kernel)
 {
   this->matrix_free = &matrix_free;
   this->data        = data;

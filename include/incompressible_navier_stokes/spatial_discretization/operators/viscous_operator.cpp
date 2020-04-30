@@ -12,39 +12,26 @@ namespace IncNS
 {
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
-                                     AffineConstraints<double> const & constraint_matrix,
-                                     ViscousOperatorData<dim> const &  data)
+ViscousOperator<dim, Number>::initialize(
+  MatrixFree<dim, Number> const &                        matrix_free,
+  AffineConstraints<double> const &                      constraint_matrix,
+  ViscousOperatorData<dim> const &                       data,
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel)
 {
-  (void)matrix_free;
-  (void)constraint_matrix;
-  (void)data;
+  operator_data = data;
 
-  AssertThrow(false,
-              ExcMessage(
-                "This reinit() function can not be used to initialize the viscous operator."));
+  kernel = viscous_kernel;
+
+  Base::reinit(matrix_free, constraint_matrix, data);
+
+  this->integrator_flags = kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::update()
 {
-  kernel->calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
-}
-
-template<int dim, typename Number>
-void
-ViscousOperator<dim, Number>::reinit(
-  MatrixFree<dim, Number> const &                        matrix_free,
-  AffineConstraints<double> const &                      constraint_matrix,
-  ViscousOperatorData<dim> const &                       data,
-  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel)
-{
-  kernel = viscous_kernel;
-
-  Base::reinit(matrix_free, constraint_matrix, data);
-
-  this->integrator_flags = kernel->get_integrator_flags();
+  kernel->calculate_penalty_parameter(this->get_matrix_free(), operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -184,13 +171,19 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                                    OperatorType const &       operator_type,
                                                    types::boundary_id const & boundary_id) const
 {
-  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector value_m = calculate_interior_value(q, integrator, operator_type);
-    vector value_p = calculate_exterior_value(
-      value_m, q, integrator, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
+    vector value_p = calculate_exterior_value(value_m,
+                                              q,
+                                              integrator,
+                                              operator_type,
+                                              boundary_type,
+                                              boundary_id,
+                                              operator_data.bc,
+                                              this->time);
 
     vector normal = integrator.get_normal_vector(q);
 
@@ -208,7 +201,7 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                          operator_type,
                                          boundary_type,
                                          boundary_id,
-                                         this->data.bc,
+                                         operator_data.bc,
                                          this->time,
                                          kernel->get_data().variable_normal_vector);
 

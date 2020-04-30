@@ -171,6 +171,8 @@ public:
   {
     unsigned int const length = get_length();
 
+    pcout << std::endl;
+
     do_print_plain(pcout, 0, length);
   }
 
@@ -188,6 +190,8 @@ public:
   print_level(ConditionalOStream const & pcout, unsigned int const level) const
   {
     unsigned int const length = get_length();
+
+    pcout << std::endl;
 
     do_print_level(pcout, level, 0, length);
   }

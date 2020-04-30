@@ -60,7 +60,7 @@ public:
    * Initialization.
    */
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, BodyForceData<dim> const & data)
+  initialize(MatrixFree<dim, Number> const & matrix_free, BodyForceData<dim> const & data)
   {
     this->matrix_free = &matrix_free;
     this->data        = data;
@@ -103,7 +103,8 @@ private:
 
       if(data.pull_back_body_force)
       {
-        integrator.gather_evaluate(src, false, true, false);
+        integrator.read_dof_values_plain(src);
+        integrator.evaluate(false, true);
       }
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
