@@ -11,18 +11,62 @@
 #include "../../../include/structure/user_interface/application_base.h"
 
 /*
- * Manufactured solution for nonlinear elasticity problem with St. Venant Kirchhoff
+ * Manufactured solution for nonlinear elasticity problem with St. Venant-Kirchhoff
  * material. The test case can be used in both 2d and 3d, as well as for testing both
  * steady and unsteady solvers.
+ *
+ * Consider the following displacement field
+ *
+ *     / X \   / f(t) g(X) \
+ * x = | Y | + |   0       |
+ *     \ Z /   \   0       /
+ *
+ * with function f(t) in time, and g(X) a one-dimensional displacement constant in Y, Z.
+ *
+ * If g(X) is a linear function, the Green-Lagrange strains and Piola-Kirchhoff stresses
+ * are constant in space, so that the stress term vanishes in the balance equation. Moreover,
+ * a linear function can be represented exactly by piecewise linear shape functions (or
+ * shape functions of higher degree). Hence, this setup is well suited to measure temporal
+ * discretization errors.
  */
 namespace Structure
 {
 namespace Manufactured
 {
+/*
+ * Different formulations of function f(t).
+ */
+enum class FunctionTypeTime
+{
+  Sine,
+  SineSquared
+};
+
+FunctionTypeTime function_type_time = FunctionTypeTime::SineSquared;
+
+/*
+ * Different formulations of function g(X).
+ */
+enum class FunctionTypeSpace
+{
+  Linear,
+  Sine,
+  Exponential
+};
+
+FunctionTypeSpace function_type_space = FunctionTypeSpace::Exponential;
+
 double
 time_function(double const time, double const frequency)
 {
-  double time_factor = std::sin(time * frequency);
+  double time_factor = 1.0;
+
+  if(function_type_time == FunctionTypeTime::Sine)
+    time_factor = std::sin(time * frequency);
+  else if(function_type_time == FunctionTypeTime::SineSquared)
+    time_factor = std::pow(std::sin(time * frequency), 2.0);
+  else
+    AssertThrow(false, ExcMessage("not implemented"));
 
   return time_factor;
 }
@@ -30,7 +74,14 @@ time_function(double const time, double const frequency)
 double
 time_derivative(double const time, double const frequency)
 {
-  double time_factor = frequency * std::cos(time * frequency);
+  double time_factor = 1.0;
+
+  if(function_type_time == FunctionTypeTime::Sine)
+    time_factor = frequency * std::cos(time * frequency);
+  else if(function_type_time == FunctionTypeTime::SineSquared)
+    time_factor = 2.0 * std::sin(time * frequency) * frequency * std::cos(time * frequency);
+  else
+    AssertThrow(false, ExcMessage("not implemented"));
 
   return time_factor;
 }
@@ -38,9 +89,72 @@ time_derivative(double const time, double const frequency)
 double
 time_2nd_derivative(double const time, double const frequency)
 {
-  double time_factor = -std::pow(frequency, 2.0) * std::sin(time * frequency);
+  double time_factor = 1.0;
+
+  if(function_type_time == FunctionTypeTime::Sine)
+    time_factor = -std::pow(frequency, 2.0) * std::sin(time * frequency);
+  else if(function_type_time == FunctionTypeTime::SineSquared)
+    time_factor =
+      2.0 * frequency * frequency *
+      (std::pow(std::cos(time * frequency), 2.0) - std::pow(std::sin(time * frequency), 2.0));
+  else
+    AssertThrow(false, ExcMessage("not implemented"));
 
   return time_factor;
+}
+
+double
+space_function(double const x, double const length, double const max_displacement)
+{
+  double space_factor = 1.0;
+
+  if(function_type_space == FunctionTypeSpace::Linear)
+    space_factor = max_displacement * x / length;
+  else if(function_type_space == FunctionTypeSpace::Sine)
+    space_factor = max_displacement * std::sin(x * length * 2.0 * numbers::PI);
+  else if(function_type_space == FunctionTypeSpace::Exponential)
+    space_factor = max_displacement * (std::exp(x / length) - 1.0) / (std::exp(1.0) - 1.0);
+  else
+    AssertThrow(false, ExcMessage("not implemented"));
+
+  return space_factor;
+}
+
+double
+space_derivative(double const x, double const length, double const max_displacement)
+{
+  double space_factor = 1.0;
+
+  if(function_type_space == FunctionTypeSpace::Linear)
+    space_factor = max_displacement / length;
+  else if(function_type_space == FunctionTypeSpace::Sine)
+    space_factor =
+      max_displacement * 2.0 * numbers::PI / length * std::cos(x / length * 2.0 * numbers::PI);
+  else if(function_type_space == FunctionTypeSpace::Exponential)
+    space_factor = max_displacement / length * (std::exp(x / length)) / (std::exp(1.0) - 1.0);
+  else
+    AssertThrow(false, ExcMessage("not implemented"));
+
+  return space_factor;
+}
+
+double
+space_2nd_derivative(double const x, double const length, double const max_displacement)
+{
+  double space_factor = 1.0;
+
+  if(function_type_space == FunctionTypeSpace::Linear)
+    space_factor = 0.0;
+  else if(function_type_space == FunctionTypeSpace::Sine)
+    space_factor = -max_displacement * std::pow(2.0 * numbers::PI / length, 2.0) *
+                   std::sin(x / length * 2.0 * numbers::PI);
+  else if(function_type_space == FunctionTypeSpace::Exponential)
+    space_factor =
+      max_displacement / (length * length) * (std::exp(x / length)) / (std::exp(1.0) - 1.0);
+  else
+    AssertThrow(false, ExcMessage("not implemented"));
+
+  return space_factor;
 }
 
 template<int dim>
@@ -50,25 +164,24 @@ public:
   Solution(double const max_displacement,
            double const length,
            bool const   unsteady,
-           double const end_time)
+           double const frequency)
     : Function<dim>(dim),
       max_displacement(max_displacement),
       length(length),
       unsteady(unsteady),
-      end_time(end_time)
+      frequency(frequency)
   {
   }
 
   double
   value(const Point<dim> & p, const unsigned int c) const
   {
-    double time_factor = 1.0;
-
-    if(unsteady)
-      time_factor = time_function(this->get_time(), 2.0 * numbers::PI / end_time);
-
     if(c == 0)
-      return max_displacement * (p[0] / length) * time_factor;
+    {
+      double const time_factor = time_function(this->get_time(), frequency);
+
+      return space_function(p[0], length, max_displacement) * (unsteady ? time_factor : 1.0);
+    }
     else
       return 0.0;
   }
@@ -76,7 +189,7 @@ public:
 private:
   double const max_displacement, length;
   bool const   unsteady;
-  double const end_time;
+  double const frequency;
 };
 
 template<int dim>
@@ -86,25 +199,26 @@ public:
   InitialVelocity(double const max_displacement,
                   double const length,
                   bool const   unsteady,
-                  double const end_time)
+                  double const frequency)
     : Function<dim>(dim),
       max_displacement(max_displacement),
       length(length),
       unsteady(unsteady),
-      end_time(end_time)
+      frequency(frequency)
   {
   }
 
   double
   value(const Point<dim> & p, const unsigned int c) const
   {
-    double time_factor = 0.0;
-
-    if(unsteady)
-      time_factor = time_derivative(this->get_time(), 2.0 * numbers::PI / end_time);
-
     if(c == 0)
-      return max_displacement * (p[0] / length) * time_factor;
+    {
+      double time_factor = 0.0;
+      if(unsteady)
+        time_factor = time_derivative(this->get_time(), frequency);
+
+      return space_function(p[0], length, max_displacement) * time_factor;
+    }
     else
       return 0.0;
   }
@@ -112,7 +226,7 @@ public:
 private:
   double const max_displacement, length;
   bool const   unsteady;
-  double const end_time;
+  double const frequency;
 };
 
 template<int dim>
@@ -123,26 +237,38 @@ public:
               double const length,
               double const density,
               bool const   unsteady,
-              double const end_time)
+              double const frequency,
+              double const f0)
     : Function<dim>(dim),
       max_displacement(max_displacement),
       length(length),
       density(density),
       unsteady(unsteady),
-      end_time(end_time)
+      frequency(frequency),
+      f0(f0)
   {
   }
 
   double
   value(const Point<dim> & p, const unsigned int c) const
   {
-    double time_factor = 0.0;
-
-    if(unsteady)
-      time_factor = time_2nd_derivative(this->get_time(), 2.0 * numbers::PI / end_time);
-
     if(c == 0)
-      return +density * max_displacement * (p[0] / length) * time_factor;
+    {
+      double const time_2nd    = time_2nd_derivative(this->get_time(), frequency);
+      double const time_factor = time_function(this->get_time(), frequency);
+
+      double const acceleration_term =
+        density * space_function(p[0], length, max_displacement) * (unsteady ? time_2nd : 0.0);
+      double const elasticity_term =
+        f0 / 2.0 *
+        (3.0 * std::pow(1.0 + (unsteady ? time_factor : 1.0) *
+                                space_derivative(p[0], length, max_displacement),
+                        2.0) -
+         1.0) *
+        (unsteady ? time_factor : 1.0) * space_2nd_derivative(p[0], length, max_displacement);
+
+      return (acceleration_term - elasticity_term);
+    }
     else
       return 0.0;
   }
@@ -151,7 +277,8 @@ private:
   double const max_displacement, length;
   double const density;
   bool const   unsteady;
-  double const end_time;
+  double const frequency;
+  double const f0;
 };
 
 template<int dim, typename Number>
@@ -169,20 +296,23 @@ public:
     // clang-format on
   }
 
-  std::string output_directory = "output/bar/vtu/", output_name = "test";
+  std::string output_directory = "output/manufactured/vtu/", output_name = "test";
 
   double length = 1.0, height = 1.0, width = 1.0;
 
   // mesh parameters
   unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;
 
-  double const E_modul = 200.0;
+  double const E_modul = 1.0;
+  double const poisson = 0.3;
+  double const f0      = E_modul * (1.0 - poisson) / (1 + poisson) / (1.0 - 2.0 * poisson);
 
   double const density = 1.0;
 
   bool const   unsteady         = true;
   double const max_displacement = 0.1 * length;
   double const end_time         = 1.0;
+  double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
 
   Application() : ApplicationBase<dim, Number>("")
   {
@@ -209,15 +339,15 @@ public:
 
     parameters.start_time                           = 0.0;
     parameters.end_time                             = end_time;
-    parameters.time_step_size                       = end_time / 10.;
+    parameters.time_step_size                       = end_time;
     parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
     parameters.spectral_radius                      = 0.8;
-    parameters.solver_info_data.interval_time_steps = 2;
+    parameters.solver_info_data.interval_time_steps = 1e4;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
-    parameters.newton_solver_data  = Newton::SolverData(1e4, 1.e-12, 1.e-10);
+    parameters.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
     parameters.solver              = Solver::CG;
     parameters.solver_data         = SolverData(1e4, 1.e-12, 1.e-6, 100);
     parameters.preconditioner      = Preconditioner::Multigrid;
@@ -267,7 +397,7 @@ public:
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(0, new Solution<dim>(max_displacement, length, unsteady, end_time)));
+      pair(0, new Solution<dim>(max_displacement, length, unsteady, frequency)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, ComponentMask()));
   }
 
@@ -276,21 +406,21 @@ public:
   {
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = E_modul, nu = 0.3;
+    MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlainStress;
 
-    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, nu, two_dim_type)));
+    material_descriptor.insert(
+      Pair(0, new StVenantKirchhoffData(type, E_modul, poisson, two_dim_type)));
   }
 
   void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     field_functions->right_hand_side.reset(
-      new VolumeForce<dim>(max_displacement, length, density, unsteady, end_time));
+      new VolumeForce<dim>(max_displacement, length, density, unsteady, frequency, f0));
     field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(
-      new InitialVelocity<dim>(max_displacement, length, unsteady, end_time));
+      new InitialVelocity<dim>(max_displacement, length, unsteady, frequency));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
@@ -299,7 +429,7 @@ public:
     (void)param;
 
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output         = true;
+    pp_data.output_data.write_output         = false; // true;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
     pp_data.output_data.output_start_time    = param.start_time;
@@ -311,7 +441,7 @@ public:
     pp_data.error_data.error_calc_start_time         = param.start_time;
     pp_data.error_data.error_calc_interval_time      = param.end_time - param.start_time;
     pp_data.error_data.analytical_solution.reset(
-      new Solution<dim>(max_displacement, length, unsteady, end_time));
+      new Solution<dim>(max_displacement, length, unsteady, frequency));
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
       new PostProcessor<dim, Number>(pp_data, mpi_comm));
