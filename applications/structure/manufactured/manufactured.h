@@ -311,6 +311,7 @@ public:
 
   bool const   unsteady         = true;
   double const max_displacement = 0.1 * length;
+  double const start_time       = 0.0;
   double const end_time         = 1.0;
   double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
 
@@ -337,7 +338,7 @@ public:
 
     parameters.density = density;
 
-    parameters.start_time                           = 0.0;
+    parameters.start_time                           = start_time;
     parameters.end_time                             = end_time;
     parameters.time_step_size                       = end_time;
     parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
@@ -424,22 +425,21 @@ public:
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  construct_postprocessor(InputParameters & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
-
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = false; // true;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.degree               = degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.calculate_relative_errors     = false;
-    pp_data.error_data.error_calc_start_time         = param.start_time;
-    pp_data.error_data.error_calc_interval_time      = param.end_time - param.start_time;
+    pp_data.error_data.error_calc_start_time         = start_time;
+    pp_data.error_data.error_calc_interval_time      = end_time - start_time;
     pp_data.error_data.analytical_solution.reset(
       new Solution<dim>(max_displacement, length, unsteady, frequency));
 

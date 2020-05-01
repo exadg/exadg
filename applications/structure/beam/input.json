@@ -17,6 +17,6 @@
 	"Height": "100.0",
 	"Width": "20.0",
 	"BoundaryType": "BendingMoment",
-	"Force": "25000.0"
+	"Force": "2500.0"
     }
 }

@@ -111,7 +111,7 @@ public:
     prm.add_parameter("Height",           height,           "Height.");
     prm.add_parameter("UseVolumeForce",   use_volume_force, "Use volume force.");
     prm.add_parameter("VolumeForce",      volume_force,     "Volume force.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary conditin, Dirichlet vs Neumann.", Patterns::Selection("Dirichlet|Neumann"));
+    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.", Patterns::Selection("Dirichlet|Neumann"));
     prm.add_parameter("Displacement",     displacement,     "Diplacement of right boundary in case of Dirichlet BC.");
     prm.add_parameter("Traction",         area_force,       "Traction acting on right boundary in case of Neumann BC.");
     prm.leave_subsection();
@@ -146,15 +146,30 @@ public:
   void
   set_input_parameters(InputParameters & parameters)
   {
-    parameters.problem_type      = ProblemType::Steady;
-    parameters.body_force        = use_volume_force;
-    parameters.large_deformation = false;
+    parameters.problem_type         = ProblemType::QuasiStatic; // Steady;
+    parameters.body_force           = use_volume_force;
+    parameters.large_deformation    = true;
+    parameters.pull_back_body_force = false;
+    parameters.pull_back_traction   = false;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
 
-    parameters.solver         = Solver::CG;
-    parameters.preconditioner = Preconditioner::AMG;
+    parameters.load_increment            = 0.01;
+    parameters.adjust_load_increment     = false; // true;
+    parameters.desired_newton_iterations = 10;
+
+    parameters.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
+    parameters.solver                                 = Solver::CG;
+    parameters.solver_data                            = SolverData(1e3, 1.e-14, 1.e-6, 100);
+    parameters.preconditioner                         = Preconditioner::Multigrid;
+    parameters.update_preconditioner                  = true;
+    parameters.update_preconditioner_every_time_steps = 1;
+    parameters.update_preconditioner_every_newton_iterations = 1;
+    parameters.multigrid_data.type                           = MultigridType::hpMG;
+    parameters.multigrid_data.coarse_problem.solver          = MultigridCoarseGridSolver::CG;
+    parameters.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
 
     this->param = parameters;
   }
@@ -209,7 +224,7 @@ public:
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
     // Dirichlet BC at the bottom (boundary_id = 0)
-    // std::vector<bool> mask_lower = {false, false, true}; // let boundary slide in x-y-plane
+    //     std::vector<bool> mask_lower = {false, false, true}; // let boundary slide in x-y-plane
     std::vector<bool> mask_lower = {true, true, true}; // clamp boundary, i.e., fix all directions
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask_lower));
@@ -218,8 +233,9 @@ public:
     bool const incremental_loading = (this->param.problem_type == ProblemType::QuasiStatic);
     if(boundary_type == "Dirichlet")
     {
-      // std::vector<bool> mask_upper = {false, false, true}; // let boundary slide in x-y-plane
-      std::vector<bool> mask_upper = {true, true, true}; // clamp boundary, i.e., fix all directions
+      std::vector<bool> mask_upper = {false, false, true}; // let boundary slide in x-y-plane
+      //      std::vector<bool> mask_upper = {true, true, true}; // clamp boundary, i.e., fix all
+      //      directions
       boundary_descriptor->dirichlet_bc.insert(
         pair(1, new DisplacementDBC<dim>(displacement, incremental_loading)));
       boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_upper));
@@ -263,17 +279,14 @@ public:
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  construct_postprocessor(InputParameters & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
-
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = true;
     pp_data.output_data.output_folder      = output_directory;
     pp_data.output_data.output_name        = output_name;
     pp_data.output_data.write_higher_order = false;
-
-    pp_data.error_data.analytical_solution_available = false;
+    pp_data.output_data.degree             = degree;
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
       new PostProcessor<dim, Number>(pp_data, mpi_comm));

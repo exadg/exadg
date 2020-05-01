@@ -67,6 +67,7 @@ public:
 private:
   double const volume_force;
 };
+
 template<int dim>
 class AreaForce : public Function<dim>
 {
@@ -182,7 +183,8 @@ public:
 
   double const E_modul = 200.0;
 
-  double const end_time = 100.0;
+  double const start_time = 0.0;
+  double const end_time   = 100.0;
 
   double const density = 0.001;
 
@@ -201,7 +203,7 @@ public:
   void
   set_input_parameters(InputParameters & parameters)
   {
-    parameters.problem_type         = ProblemType::Unsteady;
+    parameters.problem_type         = ProblemType::Steady;
     parameters.body_force           = use_volume_force;
     parameters.large_deformation    = true;
     parameters.pull_back_body_force = false;
@@ -209,12 +211,12 @@ public:
 
     parameters.density = density;
 
-    parameters.start_time                           = 0.0;
+    parameters.start_time                           = start_time;
     parameters.end_time                             = end_time;
     parameters.time_step_size                       = end_time / 200.;
     parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
     parameters.spectral_radius                      = 0.8;
-    parameters.solver_info_data.interval_time_steps = 1;
+    parameters.solver_info_data.interval_time_steps = 2;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Affine;
@@ -290,17 +292,21 @@ public:
 
     // left face
     std::vector<bool> mask = {true, false};
+    if(dim == 3)
+    {
+      mask.resize(3);
+      mask[2] = true;
+    }
     boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask));
 
     // right face
     if(boundary_type == "Dirichlet")
     {
-      std::vector<bool> mask     = {true, true};
-      bool const        unsteady = (this->param.problem_type == ProblemType::Unsteady);
+      bool const unsteady = (this->param.problem_type == ProblemType::Unsteady);
       boundary_descriptor->dirichlet_bc.insert(
         pair(2, new DisplacementDBC<dim>(displacement, unsteady, end_time)));
-      boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, ComponentMask(mask)));
+      boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, ComponentMask()));
     }
     else if(boundary_type == "Neumann")
     {
@@ -337,17 +343,16 @@ public:
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  construct_postprocessor(InputParameters & param, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    (void)param;
-
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory;
     pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.output_start_time    = param.start_time;
-    pp_data.output_data.output_interval_time = (param.end_time - param.start_time) / 20;
+    pp_data.output_data.output_start_time    = start_time;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.degree               = degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.calculate_relative_errors     = true;

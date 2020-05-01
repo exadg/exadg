@@ -116,7 +116,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   pde_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
-  postprocessor = application->construct_postprocessor(param, mpi_comm);
+  postprocessor = application->construct_postprocessor(degree, mpi_comm);
   postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
 
   // initialize time integrator/driver
