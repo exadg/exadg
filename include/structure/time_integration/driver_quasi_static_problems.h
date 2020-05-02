@@ -38,6 +38,9 @@ public:
   void
   solve_problem();
 
+  void
+  print_iterations() const;
+
   std::shared_ptr<TimerTree>
   get_timings() const;
 
@@ -54,7 +57,7 @@ private:
   void
   output_solver_info_header(double const load_factor);
 
-  unsigned int
+  std::tuple<unsigned int, unsigned int>
   solve_step(double const load_factor);
 
   void
@@ -77,6 +80,8 @@ private:
   unsigned int step_number;
 
   std::shared_ptr<TimerTree> timer_tree;
+
+  unsigned int iterations_linear, iterations_nonlinear;
 };
 
 } // namespace Structure

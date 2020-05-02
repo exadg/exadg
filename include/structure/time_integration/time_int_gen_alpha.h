@@ -35,6 +35,9 @@ public:
   void
   setup(bool const do_restart) override;
 
+  void
+  print_iterations() const;
+
 private:
   void
   solve_timestep() override;
@@ -72,6 +75,8 @@ private:
   VectorType displacement_n, displacement_np;
   VectorType velocity_n, velocity_np;
   VectorType acceleration_n, acceleration_np;
+
+  unsigned int iterations_linear, iterations_nonlinear;
 };
 
 } // namespace Structure

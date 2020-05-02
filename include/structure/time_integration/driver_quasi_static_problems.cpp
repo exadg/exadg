@@ -22,7 +22,9 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     step_number(1),
-    timer_tree(new TimerTree())
+    timer_tree(new TimerTree()),
+    iterations_linear(0),
+    iterations_nonlinear(0)
 {
 }
 
@@ -56,6 +58,49 @@ DriverQuasiStatic<dim, Number>::solve_problem()
 }
 
 template<int dim, typename Number>
+void
+DriverQuasiStatic<dim, Number>::print_iterations() const
+{
+  std::vector<std::string> names;
+  std::vector<double>      iterations_avg;
+
+  unsigned int const N_time_steps = step_number - 1;
+
+  if(param.large_deformation)
+  {
+    names = {"Nonlinear iterations",
+             "Linear iterations (accumulated)",
+             "Linear iterations (per nonlinear it.)"};
+
+    iterations_avg.resize(3);
+    iterations_avg[0] = (double)iterations_nonlinear / (double)N_time_steps;
+    iterations_avg[1] = (double)iterations_linear / (double)N_time_steps;
+    if(iterations_avg[0] > std::numeric_limits<double>::min())
+      iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
+    else
+      iterations_avg[2] = iterations_avg[1];
+  }
+  else // linear
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
+  {
+    length = length > names[i].length() ? length : names[i].length();
+  }
+
+  // print
+  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
+  {
+    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
+                << std::endl;
+  }
+}
+
+template<int dim, typename Number>
 std::shared_ptr<TimerTree>
 DriverQuasiStatic<dim, Number>::get_timings() const
 {
@@ -77,7 +122,7 @@ DriverQuasiStatic<dim, Number>::solve()
   double const eps            = 1.e-10;
   while(load_factor < 1.0 - eps)
   {
-    unsigned int iterations = 0;
+    std::tuple<unsigned int, unsigned int> iterations;
 
     // compute displacement for new load factor
     if(param.adjust_load_increment)
@@ -108,6 +153,9 @@ DriverQuasiStatic<dim, Number>::solve()
       iterations = solve_step(load_factor + load_increment);
     }
 
+    iterations_nonlinear += std::get<0>(iterations);
+    iterations_linear += std::get<1>(iterations);
+
     // increment load factor
     load_factor += load_increment;
     ++step_number;
@@ -115,9 +163,9 @@ DriverQuasiStatic<dim, Number>::solve()
     // adjust increment for next load step
     if(param.adjust_load_increment)
     {
-      if(iterations > 0)
+      if(std::get<0>(iterations) > 0)
         load_increment *=
-          std::pow((double)param.desired_newton_iterations / (double)iterations, 0.5);
+          std::pow((double)param.desired_newton_iterations / (double)std::get<0>(iterations), 0.5);
     }
 
     // make sure to hit maximum load exactly
@@ -161,7 +209,7 @@ DriverQuasiStatic<dim, Number>::output_solver_info_header(double const load_fact
 }
 
 template<int dim, typename Number>
-unsigned int
+std::tuple<unsigned int, unsigned int>
 DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
 {
   Timer timer;
@@ -178,12 +226,9 @@ DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
   auto const iter = pde_operator->solve_nonlinear(
     solution, const_vector, 0.0 /*no mass term*/, load_factor /* = time */, update_preconditioner);
 
-  unsigned int const N_iter_nonlinear = std::get<0>(iter);
-  unsigned int const N_iter_linear    = std::get<1>(iter);
+  print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
 
-  print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
-
-  return N_iter_nonlinear;
+  return iter;
 }
 
 template<int dim, typename Number>
