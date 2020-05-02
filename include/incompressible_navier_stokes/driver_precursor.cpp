@@ -318,7 +318,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                           matrix_free_data_pre->get_dof_handler_vector(),
                           matrix_free_data_pre->get_constraint_vector(),
                           matrix_free_data_pre->get_quadrature_vector(),
-                          matrix_free_data->data);
+                          matrix_free_data_pre->data);
 
   // initialize matrix_free
   matrix_free_data.reset(new MatrixFreeData<dim, Number>());
