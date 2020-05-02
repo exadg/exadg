@@ -1067,7 +1067,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
 {
-  unsigned int const N_time_steps = this->get_time_step_number() - 1;
+  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
 
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
 

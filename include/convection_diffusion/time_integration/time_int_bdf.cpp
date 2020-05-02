@@ -755,20 +755,19 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::print_iterations() const
 {
-  // names
+  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
+
   std::vector<std::string> names = {"Linear system"};
+
+  std::vector<double> iterations_avg;
+  iterations_avg.resize(1);
+  iterations_avg[0] = (double)iterations / (double)N_time_steps;
 
   unsigned int length = 1;
   for(unsigned int i = 0; i < names.size(); ++i)
   {
     length = length > names[i].length() ? length : names[i].length();
   }
-
-  // iterations
-  unsigned int const  N_time_steps = this->get_time_step_number() - 1;
-  std::vector<double> iterations_avg;
-  iterations_avg.resize(1);
-  iterations_avg[0] = (double)iterations / (double)N_time_steps;
 
   // print
   for(unsigned int i = 0; i < iterations_avg.size(); ++i)
