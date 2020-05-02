@@ -6,17 +6,21 @@
  */
 
 #include "time_int_gen_alpha.h"
+
 #include "../../utilities/print_throughput.h"
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/interface.h"
+#include "../user_interface/input_parameters.h"
 
 namespace Structure
 {
 template<int dim, typename Number>
 TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
-  std::shared_ptr<Operator<dim, Number>>      operator_,
-  std::shared_ptr<PostProcessor<dim, Number>> postprocessor_,
-  unsigned int const                          refine_steps_time_,
-  InputParameters const &                     param_,
-  MPI_Comm const &                            mpi_comm_)
+  std::shared_ptr<Interface::Operator<Number>> operator_,
+  std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
+  unsigned int const                           refine_steps_time_,
+  InputParameters const &                      param_,
+  MPI_Comm const &                             mpi_comm_)
   : TimeIntGenAlphaBase<Number>(param_.start_time,
                                 param_.end_time,
                                 param_.max_number_of_time_steps,

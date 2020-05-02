@@ -8,6 +8,7 @@
 #include "driver_steady_problems.h"
 
 #include "../../utilities/print_throughput.h"
+#include "../postprocessor/postprocessor_base.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 

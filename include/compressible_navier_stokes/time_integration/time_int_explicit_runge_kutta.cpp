@@ -11,6 +11,8 @@
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 
+#include "../postprocessor/postprocessor_base.h"
+
 #include "../../utilities/print_throughput.h"
 
 namespace CompNS

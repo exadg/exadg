@@ -100,7 +100,6 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.cpp
-     include/incompressible_navier_stokes/spatial_discretization/interface.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp 
@@ -142,10 +141,11 @@ SET( TARGET_SRC
      include/structure/spatial_discretization/operators/nonlinear_operator.cpp
      include/structure/spatial_discretization/operators/linear_operator.cpp
      include/structure/spatial_discretization/operators/body_force_operator.cpp
+     include/structure/spatial_discretization/operator.cpp
+     include/structure/spatial_discretization/interface.cpp
      include/structure/time_integration/driver_steady_problems.cpp
      include/structure/time_integration/driver_quasi_static_problems.cpp
      include/structure/time_integration/time_int_gen_alpha.cpp
-     include/structure/spatial_discretization/operator.cpp
      include/structure/postprocessor/output_generator.cpp
      include/structure/postprocessor/postprocessor.cpp
      include/structure/driver.cpp

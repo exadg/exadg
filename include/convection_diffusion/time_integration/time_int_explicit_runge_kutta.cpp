@@ -9,6 +9,7 @@
 
 #include "time_integration/time_step_calculation.h"
 
+#include "../postprocessor/postprocessor_base.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 

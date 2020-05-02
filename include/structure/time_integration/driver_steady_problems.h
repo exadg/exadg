@@ -12,24 +12,34 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../postprocessor/postprocessor.h"
-#include "../spatial_discretization/operator.h"
 #include "utilities/timings_hierarchical.h"
 
 using namespace dealii;
 
 namespace Structure
 {
+// forward declarations
+class InputParameters;
+
+template<typename Number>
+class PostProcessorBase;
+
+namespace Interface
+{
+template<typename Number>
+class Operator;
+}
+
 template<int dim, typename Number>
 class DriverSteady
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  DriverSteady(std::shared_ptr<Operator<dim, Number>>      operator_in,
-               std::shared_ptr<PostProcessor<dim, Number>> postprocessor_in,
-               InputParameters const &                     param_in,
-               MPI_Comm const &                            mpi_comm_in);
+  DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_in,
+               std::shared_ptr<PostProcessorBase<Number>>   postprocessor_in,
+               InputParameters const &                      param_in,
+               MPI_Comm const &                             mpi_comm_in);
 
   void
   setup();
@@ -53,9 +63,9 @@ private:
   void
   postprocessing() const;
 
-  std::shared_ptr<Operator<dim, Number>> pde_operator;
+  std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
-  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
+  std::shared_ptr<PostProcessorBase<Number>> postprocessor;
 
   InputParameters const & param;
 

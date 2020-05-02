@@ -30,6 +30,7 @@
 // general functionalities
 #include "../functions_and_boundary_conditions/verify_boundary_conditions.h"
 #include "../grid/mapping_degree.h"
+#include "../grid/mesh.h"
 #include "../utilities/print_general_infos.h"
 
 namespace IncNS

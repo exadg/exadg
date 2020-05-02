@@ -559,7 +559,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
                                        VectorType const & rhs,
                                        double const       factor,
                                        double const       time,
-                                       bool const         update_preconditioner)
+                                       bool const         update_preconditioner) const
 {
   // update operators
   residual_operator.update(rhs, factor, time);
@@ -587,7 +587,7 @@ unsigned int
 Operator<dim, Number>::solve_linear(VectorType &       sol,
                                     VectorType const & rhs,
                                     double const       factor,
-                                    double const       time)
+                                    double const       time) const
 {
   // unsteady problems
   elasticity_operator_linear.set_scaling_factor_mass(factor);

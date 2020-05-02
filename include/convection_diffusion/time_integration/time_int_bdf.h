@@ -8,36 +8,44 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
-#include "grid/moving_mesh.h"
-
-#include "../postprocessor/postprocessor_base.h"
-
-#include "../spatial_discretization/dg_operator.h"
-
 using namespace dealii;
+
+// forward declarations
+template<int dim, typename Number>
+class MovingMeshBase;
 
 namespace ConvDiff
 {
-// forward declarations
 class InputParameters;
+
+template<int dim, typename Number>
+class DGOperator;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {
 template<typename Number>
 class OperatorOIF;
 } // namespace Interface
+} // namespace ConvDiff
 
+
+namespace ConvDiff
+{
 template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
   typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
-
 
   typedef DGOperator<dim, Number> Operator;
 

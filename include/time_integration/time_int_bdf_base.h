@@ -15,8 +15,6 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../incompressible_navier_stokes/spatial_discretization/interface.h"
-
 using namespace dealii;
 
 template<typename Number>

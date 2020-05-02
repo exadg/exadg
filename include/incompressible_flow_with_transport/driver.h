@@ -16,6 +16,7 @@
 
 #include "../functions_and_boundary_conditions/verify_boundary_conditions.h"
 #include "../grid/mapping_degree.h"
+#include "../grid/moving_mesh.h"
 #include "../matrix_free/matrix_free_wrapper.h"
 #include "../utilities/print_functions.h"
 #include "../utilities/timings_hierarchical.h"
@@ -77,19 +78,6 @@ private:
 
   void
   synchronize_time_step_size() const;
-
-  // TODO
-  //  double
-  //  analyze_computing_times_fluid(double const overall_time) const;
-  //
-  //  void
-  //  analyze_iterations_fluid() const;
-  //
-  //  double
-  //  analyze_computing_times_transport(double const overall_time) const;
-  //
-  //  void
-  //  analyze_iterations_transport() const;
 
   // MPI communicator
   MPI_Comm const & mpi_comm;
@@ -171,9 +159,6 @@ private:
    * Computation time (wall clock time).
    */
   mutable TimerTree timer_tree;
-
-  // TODO
-  //  unsigned int const length = 15;
 };
 
 } // namespace FTI

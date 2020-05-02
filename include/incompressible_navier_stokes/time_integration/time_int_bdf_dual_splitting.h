@@ -8,9 +8,6 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 
-#include <deal.II/lac/la_parallel_block_vector.h>
-
-#include "../spatial_discretization/dg_dual_splitting.h"
 #include "time_int_bdf.h"
 
 using namespace dealii;
@@ -21,12 +18,13 @@ using namespace dealii;
 namespace IncNS
 {
 // forward declarations
-class InputParameters;
+template<int dim, typename Number>
+class DGNavierStokesDualSplitting;
 
 template<int dim, typename Number>
 class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
 {
-public:
+private:
   typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType      VectorType;
@@ -34,11 +32,12 @@ public:
 
   typedef DGNavierStokesDualSplitting<dim, Number> Operator;
 
+public:
   TimeIntBDFDualSplitting(std::shared_ptr<Operator>                       pde_operator_in,
                           InputParameters const &                         param_in,
                           unsigned int const                              refine_steps_time_in,
                           MPI_Comm const &                                mpi_comm_in,
-                          std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+                          std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
                           std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
                           std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 

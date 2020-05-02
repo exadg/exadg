@@ -6,9 +6,11 @@
  */
 
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/timer.h>
 
 #include "driver_steady_problems.h"
+
+#include "../postprocessor/postprocessor_interface.h"
+#include "../spatial_discretization/dg_coupled_solver.h"
 
 #include "../../utilities/print_throughput.h"
 #include "../user_interface/input_parameters.h"
@@ -20,7 +22,7 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
   MPI_Comm const &                                mpi_comm_in,
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : pde_operator(operator_in),
     param(param_in),
     mpi_comm(mpi_comm_in),

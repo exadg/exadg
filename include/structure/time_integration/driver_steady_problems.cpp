@@ -6,16 +6,19 @@
  */
 
 #include "driver_steady_problems.h"
+
 #include "../../utilities/print_throughput.h"
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/interface.h"
+#include "../user_interface/input_parameters.h"
 
 namespace Structure
 {
 template<int dim, typename Number>
-DriverSteady<dim, Number>::DriverSteady(
-  std::shared_ptr<Operator<dim, Number>>      operator_in,
-  std::shared_ptr<PostProcessor<dim, Number>> postprocessor_in,
-  InputParameters const &                     param_in,
-  MPI_Comm const &                            mpi_comm_in)
+DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_in,
+                                        std::shared_ptr<PostProcessorBase<Number>> postprocessor_in,
+                                        InputParameters const &                    param_in,
+                                        MPI_Comm const &                           mpi_comm_in)
   : pde_operator(operator_in),
     postprocessor(postprocessor_in),
     param(param_in),

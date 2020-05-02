@@ -8,11 +8,11 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 #include "../../utilities/timings_hierarchical.h"
-#include "../postprocessor/postprocessor_base.h"
 
 using namespace dealii;
 
@@ -20,6 +20,9 @@ namespace ConvDiff
 {
 // forward declaration
 class InputParameters;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {

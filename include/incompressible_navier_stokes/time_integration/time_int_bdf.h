@@ -10,20 +10,33 @@
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
-#include "../postprocessor/postprocessor_base.h"
-#include "../spatial_discretization/dg_navier_stokes_base.h"
-#include "grid/moving_mesh.h"
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
 using namespace dealii;
 
+// forward declarations
+template<int dim, typename Number>
+class MovingMeshBase;
+
 namespace IncNS
 {
-// forward declarations
 class InputParameters;
 
+template<int dim, typename Number>
+class DGNavierStokesBase;
+
+template<int dim, typename Number>
+class OperatorOIF;
+
+template<typename Number>
+class PostProcessorInterface;
+} // namespace IncNS
+
+namespace IncNS
+{
 template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
@@ -37,7 +50,7 @@ public:
              InputParameters const &                         param_in,
              unsigned int const                              refine_steps_time_in,
              MPI_Comm const &                                mpi_comm_in,
-             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
              std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
              std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
@@ -164,14 +177,13 @@ private:
   postprocessing() const;
 
   // Operator-integration-factor splitting for convective term
-  std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;
+  std::shared_ptr<OperatorOIF<dim, Number>> convective_operator_OIF;
 
   // OIF splitting
-  std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
-    time_integrator_OIF;
+  std::shared_ptr<ExplicitTimeIntegrator<OperatorOIF<dim, Number>, VectorType>> time_integrator_OIF;
 
   // postprocessor
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   // ALE
   VectorType              grid_velocity;

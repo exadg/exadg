@@ -10,7 +10,9 @@
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
-#include "../spatial_discretization/interface.h"
+#include "../../grid/moving_mesh_base.h"
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/dg_operator.h"
 #include "../user_interface/input_parameters.h"
 
 #include "../../utilities/print_throughput.h"

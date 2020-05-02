@@ -1,13 +1,13 @@
 /*
- * operator.cpp
+ * interface.cpp
  *
- *  Created on: Nov 15, 2018
+ *  Created on: 02.05.2020
  *      Author: fehn
  */
 
 #include "interface.h"
 
-namespace IncNS
+namespace Structure
 {
 namespace Interface
 {
@@ -16,9 +16,9 @@ namespace Interface
 
 // instantiations
 
-template class OperatorOIF<float>;
-template class OperatorOIF<double>;
+template class Operator<float>;
+template class Operator<double>;
 
 } // namespace Interface
 
-} // namespace IncNS
+} // namespace Structure

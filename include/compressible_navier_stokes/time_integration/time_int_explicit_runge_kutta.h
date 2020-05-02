@@ -8,15 +8,13 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "time_integration/time_int_explicit_runge_kutta_base.h"
-
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/ssp_runge_kutta.h"
-
-#include "../postprocessor/postprocessor_base.h"
+#include "time_integration/time_int_explicit_runge_kutta_base.h"
 
 using namespace dealii;
 
@@ -24,6 +22,9 @@ namespace CompNS
 {
 // forward declarations
 class InputParameters;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {

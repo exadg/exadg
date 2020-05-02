@@ -7,13 +7,11 @@
 
 #include "time_int_bdf_coupled_solver.h"
 
+#include "../../utilities/print_throughput.h"
+#include "../spatial_discretization/dg_coupled_solver.h"
+#include "../user_interface/input_parameters.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
-
-#include "../spatial_discretization/interface.h"
-#include "../user_interface/input_parameters.h"
-
-#include "../../utilities/print_throughput.h"
 
 namespace IncNS
 {
@@ -23,7 +21,7 @@ TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
   : Base(operator_in,

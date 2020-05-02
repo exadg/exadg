@@ -25,6 +25,7 @@
 #include "../user_interface/input_parameters.h"
 
 // operators
+#include "interface.h"
 #include "operators/body_force_operator.h"
 #include "operators/linear_operator.h"
 #include "operators/nonlinear_operator.h"
@@ -158,7 +159,7 @@ private:
 };
 
 template<int dim, typename Number>
-class Operator : public dealii::Subscriptor
+class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
   typedef float MultigridNumber;
@@ -262,10 +263,13 @@ public:
                   VectorType const & rhs,
                   double const       factor,
                   double const       time,
-                  bool const         update_preconditioner);
+                  bool const         update_preconditioner) const;
 
   unsigned int
-  solve_linear(VectorType & sol, VectorType const & rhs, double const factor, double const time);
+  solve_linear(VectorType &       sol,
+               VectorType const & rhs,
+               double const       factor,
+               double const       time) const;
 
   /*
    * Setters and getters.
@@ -392,8 +396,8 @@ private:
    */
 
   // operators required for Newton solver
-  ResidualOperator<dim, Number>   residual_operator;
-  LinearizedOperator<dim, Number> linearized_operator;
+  mutable ResidualOperator<dim, Number>   residual_operator;
+  mutable LinearizedOperator<dim, Number> linearized_operator;
 
   typedef Newton::Solver<VectorType,
                          ResidualOperator<dim, Number>,

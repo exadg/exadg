@@ -8,13 +8,12 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_explicit_runge_kutta_base.h"
-
-#include "../postprocessor/postprocessor_base.h"
 
 using namespace dealii;
 
@@ -22,6 +21,9 @@ namespace ConvDiff
 {
 // forward declarations
 class InputParameters;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {

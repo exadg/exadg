@@ -11,6 +11,8 @@
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "postprocessor_base.h"
+
 #include "../../postprocessor/error_calculation.h"
 #include "../../postprocessor/output_data.h"
 
@@ -26,10 +28,10 @@ struct PostProcessorData
 };
 
 template<int dim, typename Number>
-class PostProcessor
+class PostProcessor : public PostProcessorBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef typename PostProcessorBase<Number>::VectorType VectorType;
 
 public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
