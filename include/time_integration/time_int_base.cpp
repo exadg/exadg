@@ -52,7 +52,7 @@ TimeIntBase::advance_one_timestep_pre_solve()
   Timer timer;
   timer.restart();
 
-  if(started())
+  if(started() && !finished())
   {
     if(time_step_number == 1)
     {
@@ -63,17 +63,7 @@ TimeIntBase::advance_one_timestep_pre_solve()
       postprocessing();
     }
 
-    // advance one time step and perform postprocessing
-    if(!finished())
-    {
-      do_timestep_pre_solve();
-    }
-  }
-  else
-  {
-    // If the time integrator has not yet started, simply increment physical time without solving
-    // the current time step.
-    time += get_time_step_size();
+    do_timestep_pre_solve();
   }
 
   timer_tree->insert({"Timeloop"}, timer.wall_time());
@@ -104,6 +94,11 @@ TimeIntBase::advance_one_timestep_post_solve()
     do_timestep_post_solve();
 
     postprocessing();
+  }
+  else
+  {
+    // If the time integrator is not "active", simply increment time.
+    time += get_time_step_size();
   }
 
   timer_tree->insert({"Timeloop"}, timer.wall_time());
