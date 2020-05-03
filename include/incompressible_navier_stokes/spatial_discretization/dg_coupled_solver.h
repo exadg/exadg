@@ -163,7 +163,6 @@ private:
   typedef DGNavierStokesBase<dim, Number>    Base;
   typedef DGNavierStokesCoupled<dim, Number> This;
 
-  typedef typename Base::MultigridNumber  MultigridNumber;
   typedef typename Base::MultigridPoisson MultigridPoisson;
 
   typedef typename Base::VectorType VectorType;

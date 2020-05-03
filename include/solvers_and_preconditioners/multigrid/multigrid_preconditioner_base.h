@@ -8,12 +8,6 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 
-#include <deal.II/fe/fe.h>
-#include <deal.II/fe/fe_tools.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_gmres.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-
 // matrix-free
 #include "../../matrix_free/matrix_free_wrapper.h"
 
@@ -24,10 +18,6 @@
 #include "levels_hybrid_multigrid.h"
 
 // smoother
-#include "smoothers/cg_smoother.h"
-#include "smoothers/chebyshev_smoother.h"
-#include "smoothers/gmres_smoother.h"
-#include "smoothers/jacobi_smoother.h"
 #include "smoothers/smoother_base.h"
 
 // transfer
@@ -42,13 +32,11 @@
 // parameters
 #include "multigrid_input_parameters.h"
 
-template<int dim, typename Number, typename MultigridNumber>
+template<int dim, typename Number>
 class MultigridPreconditionerBase : public PreconditionerBase<Number>
 {
-private:
-  typedef MultigridOperatorBase<dim, MultigridNumber> Operator;
-
-  typedef std::vector<std::pair<unsigned int, unsigned int>> Levels;
+public:
+  typedef float MultigridNumber;
 
 protected:
   typedef std::map<types::boundary_id, std::shared_ptr<Function<dim>>> Map;
@@ -58,16 +46,27 @@ protected:
   typedef LinearAlgebra::distributed::Vector<Number>          VectorType;
   typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
 
-public:
-  MultigridPreconditionerBase(MPI_Comm const & comm)
-    : mapping(nullptr), n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm)
-  {
-  }
+private:
+  typedef MultigridOperatorBase<dim, MultigridNumber> Operator;
 
+  typedef std::vector<std::pair<unsigned int, unsigned int>> Levels;
+
+public:
+  /*
+   * Constructor.
+   */
+  MultigridPreconditionerBase(MPI_Comm const & comm);
+
+  /*
+   * Destructor.
+   */
   virtual ~MultigridPreconditionerBase()
   {
   }
 
+  /*
+   * Initialization function.
+   */
   void
   initialize(MultigridData const &                    data,
              parallel::TriangulationBase<dim> const * tria,
@@ -89,6 +88,10 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * This function applies the smoother on the fine level as a means to test the
+   * multigrid ingredients.
+   */
   virtual void
   apply_smoother_on_fine_level(VectorTypeMG & dst, VectorTypeMG const & src) const;
 

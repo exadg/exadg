@@ -66,6 +66,7 @@ SET( TARGET_SRC
      include/poisson/user_interface/input_parameters.cpp
      include/poisson/spatial_discretization/operator.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp
+     include/poisson/preconditioner/multigrid_preconditioner.cpp
      include/poisson/driver.cpp
      # convection-diffusion equation
      include/convection_diffusion/user_interface/enum_types.cpp
@@ -76,6 +77,7 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
      include/convection_diffusion/spatial_discretization/dg_operator.cpp
      include/convection_diffusion/spatial_discretization/interface.cpp
+     include/convection_diffusion/preconditioners/multigrid_preconditioner.cpp
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
@@ -106,6 +108,9 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp 
      include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
+     include/incompressible_navier_stokes/preconditioners/compatible_laplace_multigrid_preconditioner.cpp
+     include/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.cpp
+     include/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
@@ -144,6 +149,7 @@ SET( TARGET_SRC
      include/structure/spatial_discretization/operators/body_force_operator.cpp
      include/structure/spatial_discretization/operator.cpp
      include/structure/spatial_discretization/interface.cpp
+     include/structure/preconditioners/multigrid_preconditioner.cpp
      include/structure/time_integration/driver_steady_problems.cpp
      include/structure/time_integration/driver_quasi_static_problems.cpp
      include/structure/time_integration/time_int_gen_alpha.cpp

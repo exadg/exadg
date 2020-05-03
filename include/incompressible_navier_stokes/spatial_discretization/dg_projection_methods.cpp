@@ -157,12 +157,12 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     MultigridData mg_data;
     mg_data = this->param.multigrid_data_pressure_poisson;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, 1> Multigrid;
 
-    preconditioner_pressure_poisson.reset(new MULTIGRID(this->mpi_comm));
+    preconditioner_pressure_poisson.reset(new Multigrid(this->mpi_comm));
 
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(preconditioner_pressure_poisson);
 
     parallel::TriangulationBase<dim> const * tria =
       dynamic_cast<const parallel::TriangulationBase<dim> *>(

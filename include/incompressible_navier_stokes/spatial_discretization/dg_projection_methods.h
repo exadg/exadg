@@ -23,7 +23,6 @@ protected:
   typedef DGNavierStokesBase<dim, Number> Base;
 
   typedef typename Base::VectorType       VectorType;
-  typedef typename Base::MultigridNumber  MultigridNumber;
   typedef typename Base::MultigridPoisson MultigridPoisson;
 
 public:

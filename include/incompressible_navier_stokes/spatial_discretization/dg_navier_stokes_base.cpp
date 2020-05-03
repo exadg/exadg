@@ -1394,7 +1394,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {
-      typedef MultigridPreconditionerProjection<dim, Number, MultigridNumber> MULTIGRID;
+      typedef MultigridPreconditionerProjection<dim, Number> MULTIGRID;
 
       preconditioner_projection.reset(new MULTIGRID(this->mpi_comm));
 

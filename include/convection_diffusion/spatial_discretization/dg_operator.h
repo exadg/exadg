@@ -39,8 +39,6 @@ template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
-  typedef float MultigridNumber;
-
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>

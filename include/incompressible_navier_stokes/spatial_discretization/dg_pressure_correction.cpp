@@ -107,12 +107,12 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    momentum_preconditioner.reset(new MULTIGRID(this->mpi_comm));
+    momentum_preconditioner.reset(new Multigrid(this->mpi_comm));
 
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(momentum_preconditioner);
 
 
     auto & dof_handler = this->get_dof_handler_u();

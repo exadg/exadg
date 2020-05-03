@@ -487,7 +487,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 {
-  typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+  typedef MultigridPreconditioner<dim, Number> MULTIGRID;
 
   preconditioner_momentum.reset(new MULTIGRID(this->mpi_comm));
 
@@ -660,7 +660,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   {
     MultigridData mg_data = this->param.multigrid_data_pressure_block;
 
-    typedef CompatibleLaplaceMultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef CompatibleLaplaceMultigridPreconditioner<dim, Number> MULTIGRID;
 
     multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
 

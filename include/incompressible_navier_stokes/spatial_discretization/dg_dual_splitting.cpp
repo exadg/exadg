@@ -99,7 +99,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number> MULTIGRID;
 
     helmholtz_preconditioner.reset(new MULTIGRID(this->mpi_comm));
 

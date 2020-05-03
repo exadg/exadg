@@ -37,10 +37,6 @@ private:
   static unsigned int const rank =
     (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
 
-  typedef float MultigridNumber;
-  // use this line for double-precision multigrid
-  //  typedef Number MultigridNumber;
-
   typedef LaplaceOperator<dim, Number, n_components> Laplace;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;

@@ -429,11 +429,11 @@ DGOperator<dim, Number>::initialize_preconditioner()
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    preconditioner.reset(new MULTIGRID(this->mpi_comm));
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+    preconditioner.reset(new Multigrid(this->mpi_comm));
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
     parallel::TriangulationBase<dim> const * tria =
       dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());

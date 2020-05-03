@@ -131,10 +131,7 @@ protected:
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
-  typedef float MultigridNumber;
-
-  typedef typename Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1>
-    MultigridPoisson;
+  typedef typename Poisson::MultigridPreconditioner<dim, Number, 1> MultigridPoisson;
 
 public:
   /*

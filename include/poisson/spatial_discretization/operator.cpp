@@ -104,7 +104,7 @@ Operator<dim, Number, n_components>::setup_solver()
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
+    typedef MultigridPreconditioner<dim, Number, n_components> Multigrid;
 
     preconditioner.reset(new Multigrid(this->mpi_comm));
 
@@ -228,13 +228,14 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
   // only activate if desired
   if(false)
   {
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
+    typedef MultigridPreconditioner<dim, Number, n_components> Multigrid;
 
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    CheckMultigrid<dim, Number, Laplace, Multigrid, MultigridNumber> check_multigrid(
-      laplace_operator, mg_preconditioner, mpi_comm);
+    CheckMultigrid<dim, Number, Laplace, Multigrid> check_multigrid(laplace_operator,
+                                                                    mg_preconditioner,
+                                                                    mpi_comm);
 
     check_multigrid.check();
   }

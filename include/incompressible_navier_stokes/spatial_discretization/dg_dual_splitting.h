@@ -23,8 +23,7 @@ private:
   typedef DGNavierStokesProjectionMethods<dim, Number> ProjBase;
   typedef DGNavierStokesDualSplitting<dim, Number>     This;
 
-  typedef typename Base::VectorType      VectorType;
-  typedef typename Base::MultigridNumber MultigridNumber;
+  typedef typename Base::VectorType VectorType;
 
   typedef typename Base::scalar scalar;
   typedef typename Base::vector vector;

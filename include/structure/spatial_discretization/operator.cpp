@@ -288,7 +288,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
     if(param.large_deformation)
     {
-      typedef MultigridPreconditioner<dim, Number, MultigridNumber, true /* nonlinear */> Multigrid;
+      typedef MultigridPreconditioner<dim, Number> Multigrid;
 
       preconditioner.reset(new Multigrid(mpi_comm));
       std::shared_ptr<Multigrid> mg_preconditioner =
@@ -299,12 +299,13 @@ Operator<dim, Number>::initialize_preconditioner()
                                     fe,
                                     mapping,
                                     elasticity_operator_nonlinear,
+                                    true,
                                     &elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
                                     &this->periodic_face_pairs);
     }
     else
     {
-      typedef MultigridPreconditioner<dim, Number, MultigridNumber, false /* linear */> Multigrid;
+      typedef MultigridPreconditioner<dim, Number> Multigrid;
 
       preconditioner.reset(new Multigrid(mpi_comm));
       std::shared_ptr<Multigrid> mg_preconditioner =
@@ -315,6 +316,7 @@ Operator<dim, Number>::initialize_preconditioner()
                                     fe,
                                     mapping,
                                     elasticity_operator_linear,
+                                    false,
                                     &elasticity_operator_linear.get_data().bc->dirichlet_bc,
                                     &this->periodic_face_pairs);
     }
