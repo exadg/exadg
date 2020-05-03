@@ -138,6 +138,7 @@ SET( TARGET_SRC
      # elasticity
      include/structure/user_interface/enum_types.cpp
      include/structure/material/library/st_venant_kirchhoff.cpp
+     include/structure/spatial_discretization/operators/elasticity_operator_base.cpp
      include/structure/spatial_discretization/operators/nonlinear_operator.cpp
      include/structure/spatial_discretization/operators/linear_operator.cpp
      include/structure/spatial_discretization/operators/body_force_operator.cpp
