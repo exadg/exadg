@@ -7,6 +7,12 @@
 
 #include "dg_operator.h"
 
+// deal.II
+#include <deal.II/base/timer.h>
+#include <deal.II/numerics/vector_tools.h>
+
+#include "time_integration/time_step_calculation.h"
+
 namespace CompNS
 {
 template<int dim, typename Number>

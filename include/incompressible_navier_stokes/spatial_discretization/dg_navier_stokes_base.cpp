@@ -7,6 +7,15 @@
 
 #include "dg_navier_stokes_base.h"
 
+// deal.II
+#include <deal.II/numerics/vector_tools.h>
+
+// time integration
+#include "time_integration/time_step_calculation.h"
+
+// solvers/preconditioners
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_projection.h"
 
 namespace IncNS

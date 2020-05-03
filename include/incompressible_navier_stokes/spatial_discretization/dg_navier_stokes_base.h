@@ -9,14 +9,9 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_
 
 // deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-
-#include <deal.II/matrix_free/operators.h>
 
 // matrix-free
 #include "../../matrix_free/matrix_free_wrapper.h"
@@ -48,17 +43,12 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-// preconditioners and solvers
+// solvers/preconditioners
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
-#include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioners/multigrid_preconditioner_momentum.h"
+#include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
 // time integration
 #include "../../time_integration/interpolate.h"
-#include "time_integration/time_step_calculation.h"
 
 using namespace dealii;
 

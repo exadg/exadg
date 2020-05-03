@@ -7,8 +7,15 @@
 
 #include "operator.h"
 
+// deal.II
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/numerics/vector_tools.h>
+
+// solvers and preconditioners
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_amg.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
+#include "../preconditioners/amg_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner.h"
 
 namespace Structure

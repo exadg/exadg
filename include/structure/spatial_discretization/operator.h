@@ -9,12 +9,8 @@
 #define INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
 
 // deal.II
-#include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // matrix-free
 #include "../../matrix_free/matrix_free_wrapper.h"
@@ -33,11 +29,9 @@
 #include "../../operators/inverse_mass_matrix.h"
 #include "../../operators/mass_matrix_operator.h"
 
-// solvers
+// solvers and preconditioners
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioners/amg_preconditioner.h"
 
 using namespace dealii;
 

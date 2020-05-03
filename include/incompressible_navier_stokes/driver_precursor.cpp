@@ -6,6 +6,7 @@
  */
 
 #include "driver_precursor.h"
+#include "../time_integration/time_step_calculation.h"
 #include "../utilities/print_throughput.h"
 
 namespace IncNS

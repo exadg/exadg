@@ -11,14 +11,8 @@
 #include "dg_navier_stokes_base.h"
 
 #include "../../convection_diffusion/spatial_discretization/operators/combined_operator.h"
-
-#include "../../poisson/preconditioner/multigrid_preconditioner.h"
-#include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/util/check_multigrid.h"
-#include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
-#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {

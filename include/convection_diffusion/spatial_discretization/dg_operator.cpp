@@ -7,8 +7,18 @@
 
 #include "dg_operator.h"
 
+// deal.II
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/numerics/vector_tools.h>
+
 #include "project_velocity.h"
 #include "time_integration/time_step_calculation.h"
+
+// solvers and preconditioners
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
+#include "../preconditioners/multigrid_preconditioner.h"
 
 namespace ConvDiff
 {

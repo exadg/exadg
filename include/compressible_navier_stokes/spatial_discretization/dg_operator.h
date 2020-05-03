@@ -9,13 +9,13 @@
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_OPERATOR_H_
 
 // deal.II
-#include <deal.II/base/timer.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/numerics/vector_tools.h>
+
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
 
 // user interface
 #include "../../compressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -26,16 +26,9 @@
 #include "comp_navier_stokes_calculators.h"
 #include "comp_navier_stokes_operators.h"
 #include "operators/inverse_mass_matrix.h"
-#include "operators/mapping_flags.h"
 
 // interface
 #include "interface.h"
-
-// time step calculation
-#include "time_integration/time_step_calculation.h"
-
-// matrix-free
-#include "../../matrix_free/matrix_free_wrapper.h"
 
 namespace CompNS
 {

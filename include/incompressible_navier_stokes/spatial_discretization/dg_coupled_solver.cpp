@@ -7,6 +7,12 @@
 
 #include "dg_coupled_solver.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
+#include "../../poisson/spatial_discretization/laplace_operator.h"
+#include "../../solvers_and_preconditioners/util/check_multigrid.h"
+#include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
+
 namespace IncNS
 {
 template<int dim, typename Number>

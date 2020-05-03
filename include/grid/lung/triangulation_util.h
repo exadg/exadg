@@ -1,6 +1,7 @@
 #ifndef LUNG_TRIA_UTIL
 #define LUNG_TRIA_UTIL
 
+#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/numerics/data_out.h>
 
 void print_triangulation_3_1(std::vector<Point<3>> & points, std::vector<CellData<1>> & cells)

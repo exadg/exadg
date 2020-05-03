@@ -9,11 +9,7 @@
 #define INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
 
 // deal.II
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // matrix-free
 #include "../../matrix_free/matrix_free_wrapper.h"
@@ -24,10 +20,7 @@
 #include "laplace_operator.h"
 
 // solvers/preconditioners
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioner/multigrid_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
 // user interface
 #include "../user_interface/analytical_solution.h"
@@ -48,8 +41,7 @@ private:
   // use this line for double-precision multigrid
   //  typedef Number MultigridNumber;
 
-  typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
-  typedef LaplaceOperator<dim, Number, n_components>                          Laplace;
+  typedef LaplaceOperator<dim, Number, n_components> Laplace;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 #ifdef DEAL_II_WITH_TRILINOS

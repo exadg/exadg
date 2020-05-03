@@ -1,11 +1,18 @@
 
+#include "operator.h"
+
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/numerics/vector_tools.h>
 
-#include "operator.h"
-
+// solvers/preconditioners
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
+#include "../preconditioner/multigrid_preconditioner.h"
 
 namespace Poisson
 {
@@ -96,6 +103,8 @@ Operator<dim, Number, n_components>::setup_solver()
   {
     MultigridData mg_data;
     mg_data = param.multigrid_data;
+
+    typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
 
     preconditioner.reset(new Multigrid(this->mpi_comm));
 
@@ -219,6 +228,8 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
   // only activate if desired
   if(false)
   {
+    typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
+
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
