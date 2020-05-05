@@ -244,6 +244,95 @@ Driver<dim, Number>::print_statistics(double const total_time) const
         << std::endl;
 }
 
+template<int dim, typename Number>
+std::tuple<unsigned int, types::global_dof_index, double>
+Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
+                                    unsigned int const  n_repetitions_inner,
+                                    unsigned int const  n_repetitions_outer) const
+{
+  pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
+
+  OperatorType operator_type;
+  string_to_enum(operator_type, operator_type_string);
+
+  LinearAlgebra::distributed::Vector<Number> dst, src, linearization;
+  pde_operator->initialize_dof_vector(src);
+  pde_operator->initialize_dof_vector(dst);
+  src = 1.0;
+
+  if(param.large_deformation && operator_type == OperatorType::Linearized)
+  {
+    pde_operator->initialize_dof_vector(linearization);
+    linearization = 1.0;
+  }
+
+  // Timer and wall times
+  Timer  timer;
+  double wall_time = std::numeric_limits<double>::max();
+
+  for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  {
+    double current_wall_time = 0.0;
+
+    // apply matrix-vector product several times
+    for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+    {
+      timer.restart();
+
+      if(param.large_deformation)
+      {
+        if(operator_type == OperatorType::Nonlinear)
+        {
+          pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
+        }
+        else if(operator_type == OperatorType::Linearized)
+        {
+          pde_operator->set_solution_linearization(linearization);
+          pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
+        }
+      }
+      else
+      {
+        pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
+      }
+
+      current_wall_time += timer.wall_time();
+    }
+
+    // compute average wall time
+    current_wall_time /= (double)n_repetitions_inner;
+
+    wall_time = std::min(wall_time, current_wall_time);
+  }
+
+  if(wall_time * n_repetitions_inner * n_repetitions_outer < 1.0 /*wall time in seconds*/)
+  {
+    this->pcout
+      << std::endl
+      << "WARNING: One should use a larger number of matrix-vector products to obtain reproducible results."
+      << std::endl;
+  }
+
+  types::global_dof_index dofs = pde_operator->get_number_of_dofs();
+
+  double dofs_per_walltime = (double)dofs / wall_time;
+
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  // clang-format off
+  pcout << std::endl
+        << std::scientific << std::setprecision(4)
+        << "DoFs/sec:        " << dofs_per_walltime << std::endl
+        << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
+  // clang-format on
+
+  pcout << std::endl << " ... done." << std::endl << std::endl;
+
+  return std::tuple<unsigned int, types::global_dof_index, double>(pde_operator->get_degree(),
+                                                                   dofs,
+                                                                   dofs_per_walltime);
+}
+
 template class Driver<2, float>;
 template class Driver<3, float>;
 

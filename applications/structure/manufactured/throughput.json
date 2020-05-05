@@ -1,0 +1,21 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "3",
+        "RunType": "FixedProblemSize",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3",
+        "DofsMin": "3000000",
+        "DofsMax": "10000000"
+    },
+    "Throughput": {
+	"OperatorType": "Linearized",
+	"RepetitionsInner": "100",
+	"RepetitionsOuter": "3"
+    },
+    "Application": {
+       	"Name": "Manufactured"
+    }
+}

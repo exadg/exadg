@@ -36,6 +36,51 @@ using namespace dealii;
 
 namespace Structure
 {
+enum class OperatorType
+{
+  Nonlinear,
+  Linearized
+};
+
+inline std::string
+enum_to_string(OperatorType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    // clang-format off
+    case OperatorType::Nonlinear:  string_type = "Nonlinear";  break;
+    case OperatorType::Linearized: string_type = "Linearized"; break;
+    default: AssertThrow(false, ExcMessage("Not implemented.")); break;
+      // clang-format on
+  }
+
+  return string_type;
+}
+
+inline void
+string_to_enum(OperatorType & enum_type, std::string const string_type)
+{
+  // clang-format off
+  if     (string_type == "Nonlinear")  enum_type = OperatorType::Nonlinear;
+  else if(string_type == "Linearized") enum_type = OperatorType::Linearized;
+  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  // clang-format on
+}
+
+inline unsigned int
+get_dofs_per_element(std::string const & operator_type_string,
+                     unsigned int const  dim,
+                     unsigned int const  degree)
+{
+  (void)operator_type_string;
+
+  unsigned int const dofs_per_element = std::pow(degree, dim) * dim;
+
+  return dofs_per_element;
+}
+
 template<int dim, typename Number>
 class Driver
 {
@@ -53,6 +98,11 @@ public:
 
   void
   print_statistics(double const total_time) const;
+
+  std::tuple<unsigned int, types::global_dof_index, double>
+  apply_operator(std::string const & operator_type_string,
+                 unsigned int const  n_repetitions_inner,
+                 unsigned int const  n_repetitions_outer) const;
 
 private:
   void

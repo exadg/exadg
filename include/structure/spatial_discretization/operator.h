@@ -247,6 +247,18 @@ public:
                             double const       time) const;
 
   void
+  apply_nonlinear_operator(VectorType &       dst,
+                           VectorType const & src,
+                           double const       factor,
+                           double const       time) const;
+
+  void
+  apply_linear_operator(VectorType &       dst,
+                        VectorType const & src,
+                        double const       factor,
+                        double const       time) const;
+
+  void
   set_constrained_values_to_zero(VectorType & vector) const;
 
   /*
@@ -279,6 +291,9 @@ public:
 
   types::global_dof_index
   get_number_of_dofs() const;
+
+  unsigned int
+  get_degree() const;
 
 private:
   /*

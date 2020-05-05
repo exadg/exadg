@@ -32,12 +32,14 @@ SET( SOURCE_FILES
 
      # Elasticity
      elasticity.cc
+     elasticity_throughput.cc
 
      # Fluid-structure interaction
      fluid_structure_interaction.cc
 
      # Other
      gmres_test.cc
+     #timer.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

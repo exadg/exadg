@@ -71,9 +71,17 @@ public:
   virtual std::shared_ptr<PostProcessor<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
+  void
+  set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)
+  {
+    n_subdivisions_1d_hypercube = n_subdivisions_1d;
+  }
+
 protected:
   InputParameters param;
   std::string     parameter_file;
+
+  unsigned int n_subdivisions_1d_hypercube;
 };
 
 } // namespace Structure

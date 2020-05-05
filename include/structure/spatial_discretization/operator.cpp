@@ -576,6 +576,30 @@ Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
 
 template<int dim, typename Number>
 void
+Operator<dim, Number>::apply_nonlinear_operator(VectorType &       dst,
+                                                VectorType const & src,
+                                                double const       factor,
+                                                double const       time) const
+{
+  elasticity_operator_nonlinear.set_scaling_factor_mass(factor);
+  elasticity_operator_nonlinear.set_time(time);
+  elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
+                                             VectorType const & src,
+                                             double const       factor,
+                                             double const       time) const
+{
+  elasticity_operator_linear.set_scaling_factor_mass(factor);
+  elasticity_operator_linear.set_time(time);
+  elasticity_operator_linear.vmult(dst, src);
+}
+
+template<int dim, typename Number>
+void
 Operator<dim, Number>::set_constrained_values_to_zero(VectorType & vector) const
 {
   if(param.large_deformation)
@@ -659,6 +683,13 @@ types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_degree() const
+{
+  return degree;
 }
 
 template class Operator<2, float>;
