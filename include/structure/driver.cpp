@@ -182,11 +182,16 @@ Driver<dim, Number>::print_statistics(double const total_time) const
   pcout << "Performance results for elasticity solver:" << std::endl;
 
   // Iterations
-  pcout << std::endl << "Average number of iterations:" << std::endl;
   if(param.problem_type == ProblemType::QuasiStatic)
+  {
+    pcout << std::endl << "Average number of iterations:" << std::endl;
     driver_quasi_static->print_iterations();
+  }
   else if(param.problem_type == ProblemType::Unsteady)
+  {
+    pcout << std::endl << "Average number of iterations:" << std::endl;
     time_integrator->print_iterations();
+  }
 
   timer_tree.insert({"Elasticity"}, total_time);
 

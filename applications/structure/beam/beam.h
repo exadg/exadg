@@ -170,7 +170,7 @@ public:
     parameters.desired_newton_iterations = 20;
 
     parameters.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
-    parameters.solver                                 = Solver::CG;
+    parameters.solver                                 = Solver::FGMRES;
     parameters.solver_data                            = SolverData(1e3, 1.e-14, 1.e-6, 100);
     parameters.preconditioner                         = Preconditioner::Multigrid;
     parameters.update_preconditioner                  = true;

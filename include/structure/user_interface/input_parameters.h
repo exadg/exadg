@@ -186,17 +186,19 @@ public:
   {
     pcout << std::endl << "Solver:" << std::endl;
 
-    print_parameter(pcout, "Solver", enum_to_string(solver));
-
+    // nonlinear solver
     if(large_deformation)
     {
       pcout << std::endl << "Newton:" << std::endl;
       newton_solver_data.print(pcout);
     }
 
+    // linear solver
     pcout << std::endl << "Linear solver:" << std::endl;
+    print_parameter(pcout, "Solver", enum_to_string(solver));
     solver_data.print(pcout);
 
+    // preconditioner for linear system of equations
     print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
 
     if(preconditioner == Preconditioner::Multigrid)

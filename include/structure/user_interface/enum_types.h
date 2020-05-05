@@ -94,7 +94,8 @@ enum_to_string(MaterialType const enum_type);
 enum class Solver
 {
   Undefined,
-  CG
+  CG,
+  FGMRES
 };
 
 std::string

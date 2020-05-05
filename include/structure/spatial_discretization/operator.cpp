@@ -366,6 +366,28 @@ Operator<dim, Number>::initialize_solver()
         new CGSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
           elasticity_operator_linear, *preconditioner, solver_data));
   }
+  else if(param.solver == Solver::FGMRES)
+  {
+    // initialize solver_data
+    FGMRESSolverData solver_data;
+    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+    solver_data.max_iter             = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors    = param.solver_data.max_krylov_size;
+
+    if(param.preconditioner != Preconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // initialize solver
+    if(param.large_deformation)
+      linear_solver.reset(
+        new FGMRESSolver<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+          elasticity_operator_nonlinear, *preconditioner, solver_data));
+    else
+      linear_solver.reset(
+        new FGMRESSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+          elasticity_operator_linear, *preconditioner, solver_data));
+  }
   else
   {
     AssertThrow(false, ExcMessage("Specified solver is not implemented!"));

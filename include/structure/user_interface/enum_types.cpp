@@ -142,6 +142,9 @@ enum_to_string(Solver const enum_type)
     case Solver::CG:
       string_type = "CG";
       break;
+    case Solver::FGMRES:
+      string_type = "FGMRES";
+      break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
       break;
