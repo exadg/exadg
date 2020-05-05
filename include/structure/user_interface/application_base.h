@@ -42,7 +42,8 @@ public:
     // in order to generate a default input file
   }
 
-  ApplicationBase(std::string parameter_file) : parameter_file(parameter_file)
+  ApplicationBase(std::string parameter_file)
+    : parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
   {
   }
 

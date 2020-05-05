@@ -31,26 +31,18 @@ template<int dim, typename Number>
 class StVenantKirchhoff : public Material<dim, Number>
 {
 public:
-  static const int s = (dim == 2 ? 3 : 6);
-
   StVenantKirchhoff(StVenantKirchhoffData const & data);
 
-  void
-  reinit(const Tensor<1, s, VectorizedArray<Number>> & vec_in) const;
+  Tensor<2, dim, VectorizedArray<Number>>
+    evaluate_stress(Tensor<2, dim, VectorizedArray<Number>> const & E) const;
 
-  Tensor<1, s, VectorizedArray<Number>>
-  get_S() const;
-
-  const Tensor<2, s, VectorizedArray<Number>> &
-  get_dSdE() const;
+  Tensor<2, dim, VectorizedArray<Number>>
+    apply_C(Tensor<2, dim, VectorizedArray<Number>> const & E) const;
 
 private:
   VectorizedArray<Number> f0;
   VectorizedArray<Number> f1;
   VectorizedArray<Number> f2;
-
-  mutable Tensor<2, s, VectorizedArray<Number>> C;
-  mutable Tensor<1, s, VectorizedArray<Number>> E;
 };
 } // namespace Structure
 

@@ -22,12 +22,9 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
   {
     // engineering strains (material tensor is symmetric)
     tensor const gradient = integrator.get_gradient(q);
-    auto const   eps      = tensor_to_vector<dim, Number>(gradient);
 
     // Cauchy stresses
-    material->reinit(eps);
-    auto const   C     = material->get_dSdE();
-    tensor const sigma = vector_to_tensor<dim, Number>(C * eps);
+    tensor const sigma = material->apply_C(gradient);
 
     // test with gradients
     integrator.submit_gradient(sigma, q);

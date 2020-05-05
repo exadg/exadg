@@ -30,65 +30,42 @@ StVenantKirchhoff<dim, Number>::StVenantKirchhoff(StVenantKirchhoffData const & 
                                                 (type_two_dim == Type2D::PlainStress ?
                                                    E * (1 - nu) / 2 / (1 - nu * nu) :
                                                    E * (1 - 2 * nu) / 2 / (1 + nu) / (1 - 2 * nu)));
-
-  for(int i = 0; i < dim; i++)
-    for(int j = 0; j < dim; j++)
-      if(i == j)
-        C[i][j] = f0;
-      else
-        C[i][j] = f1;
-
-  for(int i = dim; i < s; i++)
-    C[i][i] = f2;
 }
 
 template<int dim, typename Number>
-void
-StVenantKirchhoff<dim, Number>::reinit(
-  const Tensor<1, StVenantKirchhoff<dim, Number>::s, VectorizedArray<Number>> & E) const
+Tensor<2, dim, VectorizedArray<Number>> StVenantKirchhoff<dim, Number>::evaluate_stress(
+  Tensor<2, dim, VectorizedArray<Number>> const & E) const
 {
-  this->E = E;
-}
-
-template<int dim, typename Number>
-Tensor<1, StVenantKirchhoff<dim, Number>::s, VectorizedArray<Number>>
-StVenantKirchhoff<dim, Number>::get_S() const
-{
-#ifdef false
-  const VectorizedArray<Number> f0 = this->f0;
-  const VectorizedArray<Number> f1 = this->f1;
-  const VectorizedArray<Number> f2 = this->f2;
-
-  Tensor<1, s, VectorizedArray<Number>> vec_out;
+  Tensor<2, dim, VectorizedArray<Number>> S;
 
   if(dim == 3)
   {
-    vec_out[0] = f0 * E[0] + f1 * E[1] + f1 * E[2];
-    vec_out[1] = f1 * E[0] + f0 * E[1] + f1 * E[2];
-    vec_out[2] = f1 * E[0] + f1 * E[1] + f0 * E[2];
-    vec_out[3] = f2 * E[3];
-    vec_out[4] = f2 * E[4];
-    vec_out[5] = f2 * E[5];
+    S[0][0] = f0 * E[0][0] + f1 * E[1][1] + f1 * E[2][2];
+    S[1][1] = f1 * E[0][0] + f0 * E[1][1] + f1 * E[2][2];
+    S[2][2] = f1 * E[0][0] + f1 * E[1][1] + f0 * E[2][2];
+    S[0][1] = f2 * (E[0][1] + E[1][0]);
+    S[1][2] = f2 * (E[1][2] + E[2][1]);
+    S[0][2] = f2 * (E[0][2] + E[2][0]);
+    S[1][0] = f2 * (E[0][1] + E[1][0]);
+    S[2][1] = f2 * (E[1][2] + E[2][1]);
+    S[2][0] = f2 * (E[0][2] + E[2][0]);
   }
   else
   {
-    vec_out[0] = f0 * E[0] + f1 * E[1];
-    vec_out[1] = f1 * E[0] + f0 * E[1];
-    vec_out[2] = f2 * E[2];
+    S[0][0] = f0 * E[0][0] + f1 * E[1][1];
+    S[1][1] = f1 * E[0][0] + f0 * E[1][1];
+    S[0][1] = f2 * (E[0][1] + E[1][0]);
+    S[1][0] = f2 * (E[0][1] + E[1][0]);
   }
 
-  return vec_out;
-#else
-  return C * E;
-#endif
+  return S;
 }
 
 template<int dim, typename Number>
-
-const Tensor<2, StVenantKirchhoff<dim, Number>::s, VectorizedArray<Number>> &
-StVenantKirchhoff<dim, Number>::get_dSdE() const
+Tensor<2, dim, VectorizedArray<Number>>
+  StVenantKirchhoff<dim, Number>::apply_C(Tensor<2, dim, VectorizedArray<Number>> const & E) const
 {
-  return C;
+  return evaluate_stress(E);
 }
 
 template class StVenantKirchhoff<2, float>;

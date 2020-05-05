@@ -300,9 +300,6 @@ public:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  // mesh parameters
-  unsigned int const repetitions0 = 1, repetitions1 = 1, repetitions2 = 1;
-
   double const E_modul = 1.0;
   double const poisson = 0.3;
   double const f0      = E_modul * (1.0 - poisson) / (1 + poisson) / (1.0 - 2.0 * poisson);
@@ -381,10 +378,10 @@ public:
       p2[2] = this->width;
 
     std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = this->repetitions0;
-    repetitions[1] = this->repetitions1;
+    repetitions[0] = this->n_subdivisions_1d_hypercube;
+    repetitions[1] = this->n_subdivisions_1d_hypercube;
     if(dim == 3)
-      repetitions[2] = this->repetitions2;
+      repetitions[2] = this->n_subdivisions_1d_hypercube;
 
     GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, p1, p2);
 

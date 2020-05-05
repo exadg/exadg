@@ -83,7 +83,7 @@ private:
    *
    * with 1st Piola-Kirchhoff stress tensor P_h
    *
-   *  P_h = F * S_h ,
+   *  P_h = F_h * S_h ,
    *
    * 2nd Piola-Kirchhoff stress tensor S_h
    *
