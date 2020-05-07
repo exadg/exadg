@@ -151,6 +151,57 @@ public:
 
     return pp;
   }
+
+  // Structure
+  virtual void
+  set_input_parameters_structure(Structure::InputParameters & parameters)
+  {
+    (void)parameters;
+  }
+
+  virtual void
+  create_grid_structure(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+      periodic_faces)
+  {
+    (void)triangulation;
+    (void)n_refine_space;
+    (void)periodic_faces;
+  }
+
+  virtual void
+  set_boundary_conditions_structure(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    (void)boundary_descriptor;
+  }
+
+  virtual void
+  set_material_structure(Structure::MaterialDescriptor & material_descriptor)
+  {
+    (void)material_descriptor;
+  }
+
+  virtual void
+  set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  {
+    (void)field_functions;
+  }
+
+  virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm)
+  {
+    (void)degree;
+
+    Structure::PostProcessorData<dim>                      pp_data;
+    std::shared_ptr<Structure::PostProcessor<dim, Number>> pp;
+
+    pp.reset(new Structure::PostProcessor<dim, Number>(pp_data, mpi_comm));
+
+    return pp;
+  }
 };
 
 } // namespace Template

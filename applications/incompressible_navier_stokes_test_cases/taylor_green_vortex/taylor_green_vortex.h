@@ -231,6 +231,9 @@ public:
     else
       param.mapping = MappingType::Isoparametric;
 
+    if(param.ale_formulation)
+      param.mapping = MappingType::Isoparametric;
+
     // convective term
     if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       param.upwind_factor = 0.5; // allows using larger CFL values for explicit formulations

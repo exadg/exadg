@@ -24,6 +24,12 @@
 // postprocessor
 #include "../postprocessor/postprocessor.h"
 
+// mesh movement
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../../poisson/user_interface/analytical_solution.h"
+#include "../../poisson/user_interface/field_functions.h"
+#include "../../poisson/user_interface/input_parameters.h"
+
 using namespace dealii;
 
 namespace IncNS
@@ -70,6 +76,7 @@ public:
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
+  // Moving mesh (analytical function)
   virtual std::shared_ptr<Function<dim>>
   set_mesh_movement_function()
   {
@@ -78,6 +85,38 @@ public:
 
     return mesh_motion;
   }
+
+  // Moving mesh (Poisson problem)
+  virtual void
+  set_input_parameters_poisson(Poisson::InputParameters & parameters)
+  {
+    (void)parameters;
+
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
+
+  virtual void set_boundary_conditions_poisson(
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
+  {
+    (void)boundary_descriptor;
+
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
+
+  virtual void
+  set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+  {
+    (void)field_functions;
+
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
+
 
   void
   set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)

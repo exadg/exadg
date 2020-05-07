@@ -300,6 +300,7 @@ public:
 
     // ALE
     param.ale_formulation                     = ALE;
+    param.mesh_movement_type                  = MeshMovementType::Analytical;
     param.neumann_with_variable_normal_vector = ALE;
 
     // PHYSICAL QUANTITIES
@@ -309,9 +310,8 @@ public:
 
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type = SolverType::Unsteady;
-    param.temporal_discretization =
-      TemporalDiscretization::BDFDualSplittingScheme; // BDFCoupledSolution;
+    param.solver_type                  = SolverType::Unsteady;
+    param.temporal_discretization      = TemporalDiscretization::BDFDualSplittingScheme;
     param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator        = 2;
     param.start_with_low_order         = false;
@@ -471,9 +471,8 @@ public:
       MultigridCoarseGridSolver::Chebyshev; // GMRES;
 
     // preconditioner Schur-complement block
-    param.preconditioner_pressure_block =
-      SchurComplementPreconditioner::PressureConvectionDiffusion;
-    param.discretization_of_laplacian = DiscretizationOfLaplacian::Classical;
+    param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
+    param.discretization_of_laplacian   = DiscretizationOfLaplacian::Classical;
   }
 
   void
@@ -631,26 +630,6 @@ public:
     triangulation->refine_global(n_refine_space);
   }
 
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function() override
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-
-    MeshMovementData<dim> data;
-    data.temporal                       = MeshMovementAdvanceInTime::Sin;
-    data.shape                          = MeshMovementShape::Sin; // SineAligned;
-    data.dimensions[0]                  = std::abs(right - left);
-    data.dimensions[1]                  = std::abs(right - left);
-    data.amplitude                      = 0.08 * (right - left); // A_max = (RIGHT-LEFT)/(2*pi)
-    data.period                         = 4.0 * end_time;
-    data.t_start                        = 0.0;
-    data.t_end                          = end_time;
-    data.spatial_number_of_oscillations = 1.0;
-    mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
-
-    return mesh_motion;
-  }
-
   void
   set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
                           std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
@@ -684,6 +663,76 @@ public:
     field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(u_x_max, viscosity));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+  }
+
+  std::shared_ptr<Function<dim>>
+  set_mesh_movement_function() override
+  {
+    std::shared_ptr<Function<dim>> mesh_motion;
+
+    MeshMovementData<dim> data;
+    data.temporal                       = MeshMovementAdvanceInTime::Sin;
+    data.shape                          = MeshMovementShape::Sin; // SineAligned;
+    data.dimensions[0]                  = std::abs(right - left);
+    data.dimensions[1]                  = std::abs(right - left);
+    data.amplitude                      = 0.08 * (right - left); // A_max = (RIGHT-LEFT)/(2*pi)
+    data.period                         = 4.0 * end_time;
+    data.t_start                        = 0.0;
+    data.t_end                          = end_time;
+    data.spatial_number_of_oscillations = 1.0;
+    mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+    return mesh_motion;
+  }
+
+  void
+  set_input_parameters_poisson(Poisson::InputParameters & param) override
+  {
+    using namespace Poisson;
+
+    // MATHEMATICAL MODEL
+    param.right_hand_side = false;
+
+    // SPATIAL DISCRETIZATION
+    param.triangulation_type     = TriangulationType::Distributed;
+    param.mapping                = MappingType::Affine; // initial mesh is a hypercube
+    param.spatial_discretization = SpatialDiscretization::CG;
+    param.IP_factor              = 1.0e0;
+
+    // SOLVER
+    param.solver                    = Poisson::Solver::CG;
+    param.solver_data.abs_tol       = 1.e-20;
+    param.solver_data.rel_tol       = 1.e-10;
+    param.solver_data.max_iter      = 1e4;
+    param.preconditioner            = Preconditioner::Multigrid;
+    param.multigrid_data.type       = MultigridType::cphMG;
+    param.multigrid_data.p_sequence = PSequenceType::Bisect;
+    // MG smoother
+    param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
+    param.multigrid_data.smoother_data.iterations      = 5;
+    param.multigrid_data.smoother_data.smoothing_range = 20;
+    // MG coarse grid solver
+    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
+    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+    param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
+  }
+
+  void set_boundary_conditions_poisson(
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) override
+  {
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+
+    std::shared_ptr<Function<dim>> bc = this->set_mesh_movement_function();
+    boundary_descriptor->dirichlet_bc.insert(pair(0, bc));
+    boundary_descriptor->dirichlet_bc.insert(pair(1, bc));
+  }
+
+  void
+  set_field_functions_poisson(
+    std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) override
+  {
+    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

@@ -19,6 +19,7 @@
 // functionalities
 #include "../../../include/utilities/parse_input.h"
 
+
 // Fluid
 
 // user interface
@@ -29,11 +30,27 @@
 // postprocessor
 #include "../../incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-// Poisson (mesh movement)
+// Fluid - mesh movement
 #include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 #include "../../poisson/user_interface/analytical_solution.h"
 #include "../../poisson/user_interface/field_functions.h"
 #include "../../poisson/user_interface/input_parameters.h"
+
+
+
+// Structure
+
+// user interface
+#include "../../structure/user_interface/boundary_descriptor.h"
+#include "../../structure/user_interface/field_functions.h"
+#include "../../structure/user_interface/input_parameters.h"
+#include "../../structure/user_interface/material_descriptor.h"
+
+// material
+#include "../../structure/material/library/st_venant_kirchhoff.h"
+
+// postprocessor
+#include "../../structure/postprocessor/postprocessor.h"
 
 using namespace dealii;
 
@@ -101,6 +118,32 @@ public:
 
   virtual void
   set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;
+
+
+  // Structure
+  virtual void
+  set_input_parameters_structure(Structure::InputParameters & parameters) = 0;
+
+  virtual void
+  create_grid_structure(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+      periodic_faces) = 0;
+
+  virtual void
+  set_boundary_conditions_structure(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+
+  virtual void
+  set_material_structure(Structure::MaterialDescriptor & material_descriptor) = 0;
+
+  virtual void
+  set_field_functions_structure(
+    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) = 0;
+
+  virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
 protected:
   std::string parameter_file;

@@ -40,7 +40,13 @@ struct BoundaryDescriptor
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
 
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false,
+                ExcMessage("Could not find a boundary type to the specified boundary_id = " +
+                           std::to_string(boundary_id) +
+                           ". A possible reason is that you "
+                           "forgot to define a boundary condition for this boundary_id, or "
+                           "that the boundary type associated to this boundary has not been "
+                           "implemented."));
 
     return BoundaryType::Undefined;
   }

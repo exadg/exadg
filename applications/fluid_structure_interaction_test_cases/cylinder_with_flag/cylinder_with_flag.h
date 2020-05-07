@@ -18,35 +18,30 @@ namespace CylinderWithFlag
 double const U_X_MAX   = 1.0;
 double const VISCOSITY = 0.01;
 
+double const DENSITY_STRUCTURE = 1.0;
+
+double const END_TIME = 8.0;
+
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
 double const Y_0    = 0.0;  // origin (y-coordinate)
-double const L      = 2.5;  // x-coordinate of outflow boundary (=length for 3d test cases)
+double const L      = 2.5;  // x-coordinate of outflow boundary
 double const H      = 0.41; // height of channel
 double const X_C    = 0.2;  // center of cylinder (x-coordinate)
 double const Y_C    = 0.2;  // center of cylinder (y-coordinate)
 double const X_2    = 2.0 * X_C;
-double const D      = 0.1;     // cylinder diameter
-double const R      = D / 2.0; // cylinder radius
-double const T      = 0.02;    // thickness of flag
-double const L_FLAG = 0.35;    // length of flag
-double const X_3    = X_C + R + L_FLAG * 1.6;
-double const Y_3    = H / 3.0;
+double const D      = 0.1;                    // cylinder diameter
+double const R      = D / 2.0;                // cylinder radius
+double const T      = 0.02;                   // thickness of flag
+double const L_FLAG = 0.35;                   // length of flag
+double const X_3    = X_C + R + L_FLAG * 1.6; // only relevant for mesh
+double const Y_3    = H / 3.0;                // only relevant for mesh
 
+unsigned int const BOUNDARY_ID_WALLS    = 0;
+unsigned int const BOUNDARY_ID_INFLOW   = 1;
+unsigned int const BOUNDARY_ID_OUTFLOW  = 2;
 unsigned int const BOUNDARY_ID_CYLINDER = 3;
 unsigned int const BOUNDARY_ID_FLAG     = 4;
-
-// manifold ID of spherical manifold
-unsigned int const MANIFOLD_ID = 10;
-
-// vectors of manifold_ids and face_ids
-std::vector<unsigned int> manifold_ids;
-std::vector<unsigned int> face_ids;
-
-double const END_TIME = 8.0;
-
-// moving mesh
-bool const ALE = true;
 
 double
 function_space(double const x)
@@ -181,7 +176,8 @@ public:
     param.right_hand_side                = false;
 
     // ALE
-    param.ale_formulation                     = ALE;
+    param.ale_formulation                     = true;
+    param.mesh_movement_type                  = MeshMovementType::Poisson;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -377,7 +373,7 @@ public:
     param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
-  void create_triangulation(Triangulation<2> & tria)
+  void create_triangulation_fluid(Triangulation<2> & tria)
   {
     std::vector<Triangulation<2>> tria_vec;
     tria_vec.resize(11);
@@ -415,12 +411,12 @@ public:
                                  Point<2>(X_2, H)});
 
     GridGenerator::subdivided_hyper_rectangle(tria_vec[5],
-                                              {1, 1} /* refinements x,y */,
+                                              {1, 1} /* subdivisions x,y */,
                                               Point<2>(X_2, 0.0),
                                               Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0));
 
     GridGenerator::subdivided_hyper_rectangle(tria_vec[6],
-                                              {1, 1} /* refinements x,y */,
+                                              {1, 1} /* subdivisions x,y */,
                                               Point<2>(X_2, Y_C + T / 2.0),
                                               Point<2>(X_C + R + L_FLAG, H));
 
@@ -443,7 +439,7 @@ public:
                                  Point<2>(X_3, 2.0 * Y_3)});
 
     GridGenerator::subdivided_hyper_rectangle(tria_vec[10],
-                                              {8, 3} /* refinements x,y */,
+                                              {8, 3} /* subdivisions x,y */,
                                               Point<2>(X_3, 0.0),
                                               Point<2>(L, H));
 
@@ -454,7 +450,7 @@ public:
     GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
-  void create_triangulation(Triangulation<3> & tria)
+  void create_triangulation_fluid(Triangulation<3> & tria)
   {
     (void)tria;
 
@@ -470,9 +466,14 @@ public:
   {
     (void)periodic_faces;
 
-    create_triangulation(*triangulation);
+    create_triangulation_fluid(*triangulation);
 
     triangulation->set_all_manifold_ids(0);
+
+    // vectors of manifold_ids and face_ids
+    unsigned int const        manifold_id_start = 10;
+    std::vector<unsigned int> manifold_ids;
+    std::vector<unsigned int> face_ids;
 
     Point<dim> center;
     center[0] = X_C;
@@ -486,16 +487,19 @@ public:
         double const y   = cell->face(f)->center()(1);
         double const TOL = 1.e-12;
 
-        // TODO
-        // inflow: set boundary ID to 1
+        if(std::fabs(y - Y_0) < TOL || std::fabs(y - H) < TOL)
+        {
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
+        }
+
         if(std::fabs(x - X_0) < TOL)
         {
-          cell->face(f)->set_boundary_id(1);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
         }
 
         if(std::fabs(x - L) < TOL)
         {
-          cell->face(f)->set_boundary_id(2);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
         }
 
         if(std::fabs(cell->face(f)->center().distance(center)) < R + TOL)
@@ -510,35 +514,21 @@ public:
         }
 
         // manifold IDs
-        bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+        for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
         {
-          if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
-            face_at_sphere_boundary = false;
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
-        }
-      }
-
-      for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
-      {
-        bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
-        {
-          if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
-            face_at_sphere_boundary = false;
-        }
-        if(face_at_sphere_boundary)
-        {
-          face_ids.push_back(f);
-          unsigned int manifold_id = MANIFOLD_ID + manifold_ids.size() + 1;
-          cell->set_all_manifold_ids(manifold_id);
-          manifold_ids.push_back(manifold_id);
+          bool face_at_sphere_boundary = cell->face(f)->at_boundary();
+          for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          {
+            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+              face_at_sphere_boundary = false;
+          }
+          if(face_at_sphere_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+          }
         }
       }
     }
@@ -569,19 +559,21 @@ public:
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    // these lines show exemplarily how the boundary descriptors are filled
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(pair(3, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(pair(4, new MeshMotion<dim>()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(pair(BOUNDARY_ID_FLAG, new MeshMotion<dim>()));
   }
 
 
   void
   set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
   {
-    // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
@@ -595,19 +587,27 @@ public:
 
     // fill boundary descriptor velocity
     boundary_descriptor_velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_velocity->dirichlet_bc.insert(pair(1, new InflowBC<dim>()));
-    boundary_descriptor_velocity->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>()));
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor_velocity->dirichlet_bc.insert(
-      pair(3, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_velocity->dirichlet_bc.insert(pair(4, new VelocityBendingWall<dim>()));
+      pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
+    boundary_descriptor_velocity->neumann_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>()));
+    boundary_descriptor_velocity->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_velocity->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_FLAG, new VelocityBendingWall<dim>()));
 
     // fill boundary descriptor pressure
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor_pressure->neumann_bc.insert(pair(3, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->neumann_bc.insert(pair(4, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_FLAG, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -627,17 +627,340 @@ public:
     // write output for visualization of results
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.output_name          = output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs   = true;
     pp_data.output_data.output_start_time    = 0.0;
     pp_data.output_data.output_interval_time = END_TIME / 100;
     pp_data.output_data.write_higher_order   = false;
-    pp_data.output_data.degree               = degree;
+    pp_data.output_data.degree               = 2 * degree; // TODO
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
+  }
+
+  // Structure
+  void
+  set_input_parameters_structure(Structure::InputParameters & parameters)
+  {
+    using namespace Structure;
+
+    parameters.problem_type         = ProblemType::Unsteady;
+    parameters.body_force           = false;
+    parameters.pull_back_body_force = false;
+    parameters.large_deformation    = true;
+    parameters.pull_back_traction   = false; // TODO true;
+
+    parameters.density = DENSITY_STRUCTURE;
+
+    parameters.start_time                           = 0.0;
+    parameters.end_time                             = END_TIME;
+    parameters.time_step_size                       = END_TIME / 100.0;
+    parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
+    parameters.spectral_radius                      = 0.8;
+    parameters.solver_info_data.interval_time_steps = 1;
+
+    parameters.triangulation_type = TriangulationType::Distributed;
+    parameters.mapping            = MappingType::Isoparametric;
+
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    parameters.solver                               = Structure::Solver::FGMRES;
+    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    parameters.preconditioner                       = Preconditioner::Multigrid;
+    parameters.multigrid_data.type                  = MultigridType::phMG;
+    parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    parameters.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
+
+    parameters.update_preconditioner                         = true;
+    parameters.update_preconditioner_every_time_steps        = 1;
+    parameters.update_preconditioner_every_newton_iterations = 1;
+  }
+
+  void create_triangulation_structure(Triangulation<2> & tria)
+  {
+    std::vector<Triangulation<2>> tria_vec;
+    tria_vec.resize(12);
+
+    GridGenerator::general_cell(
+      tria_vec[0],
+      {Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+       Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+       Point<2>(X_C + T / 2.0, Y_C - T),
+       Point<2>(X_C + T / 2.0 +
+                  (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                Y_C - T / 4.0)});
+
+    GridGenerator::general_cell(
+      tria_vec[1],
+      {Point<2>(X_C + T / 2.0, Y_C - T),
+       Point<2>(X_C + T / 2.0 +
+                  (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                Y_C - T / 4.0),
+       Point<2>(X_C + T / 2.0, Y_C + T),
+       Point<2>(X_C + T / 2.0 +
+                  (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                Y_C + T / 4.0)});
+
+    GridGenerator::general_cell(
+      tria_vec[2],
+      {Point<2>(X_C + T / 2.0 +
+                  (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                Y_C - T / 4.0),
+       Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+       Point<2>(X_C + T / 2.0 +
+                  (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                Y_C + T / 4.0),
+       Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0)});
+
+    GridGenerator::general_cell(
+      tria_vec[3],
+      {Point<2>(X_C + T / 2.0 +
+                  (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                Y_C + T / 4.0),
+       Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+       Point<2>(X_C + T / 2.0, Y_C + T),
+       Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
+
+    GridGenerator::general_cell(tria_vec[4],
+                                {Point<2>(X_C - T / 2.0, Y_C - T),
+                                 Point<2>(X_C + T / 2.0, Y_C - T),
+                                 Point<2>(X_C - T / 2.0, Y_C + T),
+                                 Point<2>(X_C + T / 2.0, Y_C + T)});
+
+    GridGenerator::general_cell(tria_vec[5],
+                                {Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+                                 Point<2>(X_C - T / 2.0, Y_C - T),
+                                 Point<2>(X_C + T / 2.0, Y_C - T)});
+
+    GridGenerator::general_cell(tria_vec[6],
+                                {Point<2>(X_C - T / 2.0, Y_C + T),
+                                 Point<2>(X_C + T / 2.0, Y_C + T),
+                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
+
+    // two different mesh variants (TODO decide later which one to choose)
+    if(false)
+    {
+      GridGenerator::general_cell(tria_vec[7],
+                                  {Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+                                   Point<2>(X_C - T / 2.0, Y_C - T),
+                                   Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+                                   Point<2>(X_C - T / 2.0, Y_C + T)});
+
+      GridGenerator::subdivided_hyper_rectangle(
+        tria_vec[8],
+        {8, 1} /* subdivisions x,y */,
+        Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+        Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
+    }
+    else
+    {
+      GridGenerator::general_cell(
+        tria_vec[7],
+        {Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+         Point<2>(X_C - T / 2.0, Y_C - T),
+         Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+         Point<2>(X_C - T / 2.0 -
+                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                  Y_C - T / 4.0)});
+
+      GridGenerator::general_cell(
+        tria_vec[8],
+        {Point<2>(X_C - T / 2.0 -
+                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                  Y_C - T / 4.0),
+         Point<2>(X_C - T / 2.0, Y_C - T),
+         Point<2>(X_C - T / 2.0 -
+                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                  Y_C + T / 4.0),
+         Point<2>(X_C - T / 2.0, Y_C + T)});
+
+      GridGenerator::general_cell(
+        tria_vec[9],
+        {Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+         Point<2>(X_C - T / 2.0 -
+                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                  Y_C - T / 4.0),
+         Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+         Point<2>(X_C - T / 2.0 -
+                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                  Y_C + T / 4.0)});
+
+      GridGenerator::general_cell(
+        tria_vec[10],
+        {Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+         Point<2>(X_C - T / 2.0 -
+                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                  Y_C + T / 4.0),
+         Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+         Point<2>(X_C - T / 2.0, Y_C + T)});
+
+      GridGenerator::subdivided_hyper_rectangle(
+        tria_vec[11],
+        {8, 1} /* subdivisions x,y */,
+        Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+        Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
+    }
+
+    std::vector<Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
+    for(unsigned int i = 0; i < tria_vec.size(); ++i)
+      tria_vec_ptr[i] = &tria_vec[i];
+
+    GridGenerator::merge_triangulations(tria_vec_ptr, tria);
+  }
+
+  void create_triangulation_structure(Triangulation<3> & tria)
+  {
+    (void)tria;
+
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  void
+  create_grid_structure(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+      periodic_faces)
+  {
+    (void)periodic_faces;
+
+    create_triangulation_structure(*triangulation);
+
+    triangulation->set_all_manifold_ids(0);
+
+    // vectors of manifold_ids and face_ids
+    unsigned int const        manifold_id_start = 10;
+    std::vector<unsigned int> manifold_ids;
+    std::vector<unsigned int> face_ids;
+
+    Point<dim> center;
+    center[0] = X_C;
+    center[1] = Y_C;
+
+    for(auto cell : triangulation->active_cell_iterators())
+    {
+      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        double const x   = cell->face(f)->center()(0);
+        double const TOL = 1.e-12;
+
+
+        if(cell->face(f)->at_boundary() && (x < X_C + R * std::cos(std::asin(T / (2.0 * R)))))
+        {
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_CYLINDER);
+        }
+
+        if(cell->face(f)->at_boundary() && (x > X_C + R * std::cos(std::asin(T / (2.0 * R)))))
+        {
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
+        }
+
+        // manifold IDs
+        for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+        {
+          bool face_at_sphere_boundary = cell->face(f)->at_boundary();
+          for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          {
+            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
+              face_at_sphere_boundary = false;
+          }
+          if(face_at_sphere_boundary)
+          {
+            face_ids.push_back(f);
+            unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
+            cell->set_all_manifold_ids(manifold_id);
+            manifold_ids.push_back(manifold_id);
+          }
+        }
+      }
+    }
+
+    // generate vector of manifolds and apply manifold to all cells that have been marked
+    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+    manifold_vec.resize(manifold_ids.size());
+
+    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
+    {
+      for(auto cell : triangulation->active_cell_iterators())
+      {
+        if(cell->manifold_id() == manifold_ids[i])
+        {
+          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
+            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+          triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+        }
+      }
+    }
+
+    triangulation->refine_global(n_refine_space);
+  }
+
+  void
+  set_boundary_conditions_structure(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_CYLINDER, ComponentMask()));
+
+    // currently use analytical motion (TODO)
+    boundary_descriptor->dirichlet_bc.insert(pair(BOUNDARY_ID_FLAG, new MeshMotion<dim>()));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_FLAG, ComponentMask()));
+  }
+
+  void
+  set_material_structure(Structure::MaterialDescriptor & material_descriptor)
+  {
+    using namespace Structure;
+
+    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+
+    MaterialType const type = MaterialType::StVenantKirchhoff;
+    double const       E = 200.0e3, nu = 0.3; // TODO
+    Type2D const       two_dim_type = Type2D::PlainStress;
+
+    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, nu, two_dim_type)));
+  }
+
+  void
+  set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  {
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    // TODO: currently use analytical motion
+    field_functions->initial_velocity.reset(new VelocityBendingWall<dim>());
+    // finally, use this
+    //    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  }
+
+  std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm)
+  {
+    using namespace Structure;
+
+    PostProcessorData<dim> pp_data;
+    pp_data.output_data.write_output         = true;
+    pp_data.output_data.output_folder        = output_directory + "vtu/";
+    pp_data.output_data.output_name          = output_name + "_structure";
+    pp_data.output_data.output_start_time    = 0.0;
+    pp_data.output_data.output_interval_time = END_TIME / 100;
+    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.degree               = 2 * degree; // TODO
+
+    std::shared_ptr<PostProcessor<dim, Number>> post(
+      new PostProcessor<dim, Number>(pp_data, mpi_comm));
+
+    return post;
   }
 };
 

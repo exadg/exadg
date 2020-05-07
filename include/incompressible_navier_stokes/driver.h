@@ -161,6 +161,9 @@ private:
   void
   print_header() const;
 
+  void
+  ale_update() const;
+
   // MPI communicator
   MPI_Comm const & mpi_comm;
 
@@ -181,10 +184,28 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>                         mesh;
-  std::shared_ptr<MovingMeshAnalytical<dim, Number>> moving_mesh;
+  // mapping for static mesh
+  std::shared_ptr<Mesh<dim>> mesh;
 
+  // mapping for moving mesh
+  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
+
+  // solve mesh deformation by a Poisson problem
+  Poisson::InputParameters poisson_param;
+
+  std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
+
+  // static mesh for Poisson problem
+  std::shared_ptr<Mesh<dim>> poisson_mesh;
+
+  std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;
+  std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator;
+
+  /*
+   * Functions and boundary conditions
+   */
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;

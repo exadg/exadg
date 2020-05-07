@@ -87,9 +87,75 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   if(param.ale_formulation) // moving mesh
   {
-    std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
-      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, param.start_time));
+    if(param.mesh_movement_type == MeshMovementType::Analytical)
+    {
+      std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
+
+      moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
+        *triangulation, mapping_degree, mapping_degree, mpi_comm, mesh_motion, param.start_time));
+    }
+    else if(param.mesh_movement_type == MeshMovementType::Poisson)
+    {
+      application->set_input_parameters_poisson(poisson_param);
+      poisson_param.check_input_parameters();
+      poisson_param.print(pcout, "List of input parameters for Poisson solver (moving mesh):");
+
+      poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
+      application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
+      verify_boundary_conditions(*poisson_boundary_descriptor, *triangulation, periodic_faces);
+
+      poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
+      application->set_field_functions_poisson(poisson_field_functions);
+
+      AssertThrow(poisson_param.right_hand_side == false,
+                  ExcMessage("Poisson problem is used for mesh movement. Hence, "
+                             "the right-hand side has to be zero for the Poisson problem."));
+
+      // static mapping for Poisson solver is defined by poisson_param
+      unsigned int const mapping_degree_poisson =
+        get_mapping_degree(poisson_param.mapping, mapping_degree);
+      poisson_mesh.reset(new Mesh<dim>(mapping_degree_poisson));
+
+      // initialize Poisson operator
+      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*triangulation,
+                                                                     poisson_mesh->get_mapping(),
+                                                                     mapping_degree,
+                                                                     periodic_faces,
+                                                                     poisson_boundary_descriptor,
+                                                                     poisson_field_functions,
+                                                                     poisson_param,
+                                                                     "Poisson",
+                                                                     mpi_comm));
+
+      // initialize matrix_free
+      poisson_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+      poisson_matrix_free_data->data.tasks_parallel_scheme =
+        MatrixFree<dim, Number>::AdditionalData::partition_partition;
+      if(poisson_param.enable_cell_based_face_loops)
+      {
+        auto tria =
+          std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+        Categorization::do_cell_based_loops(*tria, poisson_matrix_free_data->data);
+      }
+      poisson_operator->fill_matrix_free_data(*poisson_matrix_free_data);
+
+      poisson_matrix_free.reset(new MatrixFree<dim, Number>());
+      poisson_matrix_free->reinit(poisson_mesh->get_mapping(),
+                                  poisson_matrix_free_data->get_dof_handler_vector(),
+                                  poisson_matrix_free_data->get_constraint_vector(),
+                                  poisson_matrix_free_data->get_quadrature_vector(),
+                                  poisson_matrix_free_data->data);
+
+      poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
+      poisson_operator->setup_solver();
+
+      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
+        mapping_degree, mpi_comm, poisson_operator, param.start_time));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
 
     mesh = moving_mesh;
   }
@@ -274,6 +340,37 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
 template<int dim, typename Number>
 void
+Driver<dim, Number>::ale_update() const
+{
+  // move the mesh and update dependent data structures
+  Timer timer;
+  timer.restart();
+
+  Timer sub_timer;
+
+  sub_timer.restart();
+  moving_mesh->move_mesh(time_integrator->get_next_time());
+  timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
+
+  sub_timer.restart();
+  matrix_free->update_mapping(moving_mesh->get_mapping());
+  timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
+
+  sub_timer.restart();
+  navier_stokes_operator->update_after_mesh_movement();
+  timer_tree.insert({"Incompressible flow", "ALE", "Update operator"}, sub_timer.wall_time());
+
+  sub_timer.restart();
+  time_integrator->ale_update();
+  timer_tree.insert({"Incompressible flow", "ALE", "Update time integrator"},
+                    sub_timer.wall_time());
+
+  timer_tree.insert({"Incompressible flow", "ALE"}, timer.wall_time());
+}
+
+
+template<int dim, typename Number>
+void
 Driver<dim, Number>::solve() const
 {
   if(this->param.problem_type == ProblemType::Unsteady)
@@ -283,25 +380,16 @@ Driver<dim, Number>::solve() const
 
     if(this->param.ale_formulation == true)
     {
-      do
+      while(!time_integrator->finished())
       {
         time_integrator->advance_one_timestep_pre_solve();
 
-        // move the mesh and update dependent data structures
-        Timer timer;
-        timer.restart();
-
-        moving_mesh->move_mesh(time_integrator->get_next_time());
-        matrix_free->update_mapping(moving_mesh->get_mapping());
-        navier_stokes_operator->update_after_mesh_movement();
-        time_integrator->ale_update();
-
-        timer_tree.insert({"Incompressible flow", "ALE update"}, timer.wall_time());
+        ale_update();
 
         time_integrator->advance_one_timestep_solve();
 
         time_integrator->advance_one_timestep_post_solve();
-      } while(!time_integrator->finished());
+      }
     }
     else
     {

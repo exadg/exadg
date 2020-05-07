@@ -125,6 +125,8 @@ public:
   // with fixed mesh will be used
   bool ale_formulation;
 
+  MeshMovementType mesh_movement_type;
+
   bool neumann_with_variable_normal_vector;
 
   /**************************************************************************************/

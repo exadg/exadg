@@ -24,6 +24,7 @@ InputParameters::InputParameters()
 
     // ALE
     ale_formulation(false),
+    mesh_movement_type(MeshMovementType::Analytical),
     neumann_with_variable_normal_vector(false),
 
     // PHYSICAL QUANTITIES
@@ -586,7 +587,11 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Boussinesq term", boussinesq_term);
 
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
-  print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
+  if(ale_formulation)
+  {
+    print_parameter(pcout, "Mesh movement type", enum_to_string(mesh_movement_type));
+    print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
+  }
 }
 
 

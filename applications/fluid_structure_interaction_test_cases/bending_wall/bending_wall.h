@@ -16,6 +16,8 @@ namespace BendingWall
 double const U_X_MAX   = 1.0;
 double const VISCOSITY = 0.01;
 
+double const DENSITY_STRUCTURE = 1.0;
+
 double const L_F = 3.0;
 double const B_F = 1.0;
 double const H_F = 0.5;
@@ -25,6 +27,11 @@ double const B_S = 0.6;
 double const H_S = 0.4;
 
 double const L_IN = 0.6;
+
+unsigned int const N_CELLS_X_INFLOW  = 3;
+unsigned int const N_CELLS_X_OUTFLOW = 10;
+unsigned int const N_CELLS_Y_LOWER   = 3;
+unsigned int const N_CELLS_Z_MIDDLE  = 3;
 
 double const END_TIME = 20.0;
 
@@ -154,6 +161,7 @@ public:
 
     // ALE
     param.ale_formulation                     = ALE;
+    param.mesh_movement_type                  = MeshMovementType::Poisson;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -190,7 +198,7 @@ public:
     // SPATIAL DISCRETIZATION
     param.triangulation_type = TriangulationType::Distributed;
     param.degree_p           = DegreePressure::MixedOrder;
-    param.mapping            = MappingType::Affine; // Isoparametric;
+    param.mapping            = MappingType::Isoparametric;
 
     // convective term
     param.upwind_factor = 1.0;
@@ -360,11 +368,6 @@ public:
 
   void create_triangulation(Triangulation<3> & tria)
   {
-    unsigned int const N_CELLS_X_INFLOW  = 3;
-    unsigned int const N_CELLS_X_OUTFLOW = 10;
-    unsigned int const N_CELLS_Y_LOWER   = 3;
-    unsigned int const N_CELLS_Z_MIDDLE  = 3;
-
     std::vector<Triangulation<3>> tria_vec;
     tria_vec.resize(17);
 
@@ -612,7 +615,7 @@ public:
     // write output for visualization of results
     pp_data.output_data.write_output              = true;
     pp_data.output_data.output_folder             = output_directory + "vtu/";
-    pp_data.output_data.output_name               = output_name;
+    pp_data.output_data.output_name               = output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs        = true;
     pp_data.output_data.output_start_time         = 0.0;
     pp_data.output_data.output_interval_time      = END_TIME / 20;
@@ -628,6 +631,151 @@ public:
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
+  }
+
+  // Structure
+  void
+  set_input_parameters_structure(Structure::InputParameters & parameters)
+  {
+    using namespace Structure;
+
+    parameters.problem_type         = ProblemType::Unsteady;
+    parameters.body_force           = false;
+    parameters.pull_back_body_force = false;
+    parameters.large_deformation    = true;
+    parameters.pull_back_traction   = false; // TODO true;
+
+    parameters.density = DENSITY_STRUCTURE;
+
+    parameters.start_time                           = 0.0;
+    parameters.end_time                             = END_TIME;
+    parameters.time_step_size                       = END_TIME / 100.0;
+    parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
+    parameters.spectral_radius                      = 0.8;
+    parameters.solver_info_data.interval_time_steps = 1;
+
+    parameters.triangulation_type = TriangulationType::Distributed;
+    parameters.mapping            = MappingType::Isoparametric;
+
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    parameters.solver                               = Structure::Solver::FGMRES;
+    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    parameters.preconditioner                       = Preconditioner::Multigrid;
+    parameters.multigrid_data.type                  = MultigridType::phMG;
+    parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    parameters.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
+
+    parameters.update_preconditioner                         = true;
+    parameters.update_preconditioner_every_time_steps        = 10;
+    parameters.update_preconditioner_every_newton_iterations = 10;
+  }
+
+  void
+  create_grid_structure(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+      periodic_faces)
+  {
+    (void)periodic_faces;
+
+    Point<dim> p1, p2;
+
+    p1[0] = L_IN;
+    p1[1] = -H_F / 2.0;
+    p1[2] = -B_S / 2.0;
+
+    p2[0] = L_IN + T_S;
+    p2[1] = H_S - H_F / 2.0;
+    p2[2] = B_S / 2.0;
+
+    std::vector<unsigned int> repetitions(dim);
+    repetitions[0] = 1;
+    repetitions[1] = N_CELLS_Y_LOWER;
+    repetitions[2] = N_CELLS_Z_MIDDLE;
+
+    GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, p1, p2);
+
+    for(auto cell : triangulation->active_cell_iterators())
+    {
+      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        double const y   = cell->face(f)->center()(1);
+        double const TOL = 1.e-10;
+
+        // lower boundary: set boundary ID to 1
+        if(std::fabs(y - (-H_F / 2.0)) < TOL)
+        {
+          cell->face(f)->set_boundary_id(1);
+        }
+      }
+    }
+
+    triangulation->refine_global(n_refine_space);
+  }
+
+  void
+  set_boundary_conditions_structure(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+
+    // lower boundary is clamped
+    boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, ComponentMask()));
+
+    // all other boundaries belong to the fluid-structure interface
+    // currently use analytical motion (TODO)
+    boundary_descriptor->dirichlet_bc.insert(pair(0, new MeshMotion<dim>()));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, ComponentMask()));
+  }
+
+  void
+  set_material_structure(Structure::MaterialDescriptor & material_descriptor)
+  {
+    using namespace Structure;
+
+    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+
+    MaterialType const type = MaterialType::StVenantKirchhoff;
+    double const       E = 200.0e3, nu = 0.3; // TODO
+    Type2D const       two_dim_type = Type2D::PlainStress;
+
+    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, nu, two_dim_type)));
+  }
+
+  void
+  set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  {
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    // TODO: currently use analytical motion
+    field_functions->initial_velocity.reset(new VelocityBendingWall<dim>());
+    // finally, use this
+    //    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  }
+
+  std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm)
+  {
+    using namespace Structure;
+
+    PostProcessorData<dim> pp_data;
+    pp_data.output_data.write_output         = true;
+    pp_data.output_data.output_folder        = output_directory + "vtu/";
+    pp_data.output_data.output_name          = output_name + "_structure";
+    pp_data.output_data.output_start_time    = 0.0;
+    pp_data.output_data.output_interval_time = END_TIME / 20;
+    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.degree               = degree;
+
+    std::shared_ptr<PostProcessor<dim, Number>> post(
+      new PostProcessor<dim, Number>(pp_data, mpi_comm));
+
+    return post;
   }
 };
 

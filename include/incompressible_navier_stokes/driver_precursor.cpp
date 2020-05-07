@@ -114,6 +114,9 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   param.check_input_parameters(pcout);
   param.print(pcout, "List of input parameters for actual domain:");
 
+  AssertThrow(param_pre.ale_formulation == false, ExcMessage("not implemented."));
+  AssertThrow(param.ale_formulation == false, ExcMessage("not implemented."));
+
   // triangulation
   if(param_pre.triangulation_type == TriangulationType::Distributed)
   {

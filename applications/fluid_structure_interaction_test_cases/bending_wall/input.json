@@ -3,12 +3,14 @@
 	"Precision": "double",
         "Dim": "3",
         "DegreeFluid": "3",
-        "DegreeMeshMotion":"3",
-        "RefineSpace": "0"
+        "DegreeALE": "3",
+	"DegreeStructure": "1",
+        "RefineFluid": "0",
+	"RefineStructure": "0"
     },
     "Application": {
        	"Name": "BendingWall",
 	"OutputDirectory": "output/bending_wall/",
-	"OutputName": "test"
+	"OutputName": "fsi_test"
     }
 }

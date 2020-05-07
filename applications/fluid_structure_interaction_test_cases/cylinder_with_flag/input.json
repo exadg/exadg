@@ -3,8 +3,10 @@
 	"Precision": "double",
         "Dim": "2",
         "DegreeFluid": "3",
-        "DegreeMeshMotion":"3",
-        "RefineSpace": "0"
+        "DegreeALE": "3",
+	"DegreeStructure": "3",
+        "RefineFluid": "0",
+	"RefineStructure": "0"
     },
     "Application": {
        	"Name": "CylinderWithFlag",

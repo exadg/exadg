@@ -60,6 +60,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // parameters fluid
   application->set_input_parameters(fluid_param);
   fluid_param.check_input_parameters(pcout);
+  AssertThrow(fluid_param.problem_type == IncNS::ProblemType::Unsteady,
+              ExcMessage("ProblemType must be unsteady!"));
+
   fluid_param.print(pcout, "List of input parameters for fluid solver:");
 
   // parameters scalar
@@ -120,6 +123,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                   ExcMessage(
                     "Parameter ale_formulation is different for fluid field and scalar field"));
     }
+
+    AssertThrow(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Analytical,
+                ExcMessage("not implemented."));
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
@@ -597,16 +603,30 @@ Driver<dim, Number>::solve() const
       scalar_time_integrator[i]->advance_one_timestep_pre_solve();
 
     /*
-     * ALE
+     * ALE: move the mesh and update dependent data structures
      */
     if(fluid_param.ale_formulation) // moving mesh
     {
-      // move the mesh and update dependent data structures
+      Timer timer;
+      timer.restart();
+
+      Timer sub_timer;
+
+      sub_timer.restart();
       moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+      timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
+
+      sub_timer.restart();
       matrix_free->update_mapping(moving_mesh->get_mapping());
+      timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
+
+      sub_timer.restart();
       navier_stokes_operator->update_after_mesh_movement();
       for(unsigned int i = 0; i < n_scalars; ++i)
         conv_diff_operator[i]->update_after_mesh_movement();
+      timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
+
+      sub_timer.restart();
       fluid_time_integrator->ale_update();
       for(unsigned int i = 0; i < n_scalars; ++i)
       {
@@ -614,6 +634,10 @@ Driver<dim, Number>::solve() const
           std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
         time_int_bdf->ale_update();
       }
+      timer_tree.insert({"Flow + transport", "ALE", "Update all time integrators"},
+                        sub_timer.wall_time());
+
+      timer_tree.insert({"Flow + transport", "ALE"}, timer.wall_time());
     }
 
     /*

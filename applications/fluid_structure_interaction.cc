@@ -19,10 +19,6 @@
 // template
 #include "fluid_structure_interaction_test_cases/template/template.h"
 
-// fluid problem with analytical mesh deformation (on boundary)
-#include "fluid_structure_interaction_test_cases/vortex/vortex.h"
-
-// fluid-structure-interaction problems
 #include "fluid_structure_interaction_test_cases/bending_wall/bending_wall.h"
 #include "fluid_structure_interaction_test_cases/cylinder_with_flag/cylinder_with_flag.h"
 
@@ -46,8 +42,6 @@ public:
       std::shared_ptr<FSI::ApplicationBase<dim, Number>> app;
       if(name == "Template")
         app.reset(new FSI::Template::Application<dim, Number>());
-      else if(name == "Vortex")
-        app.reset(new FSI::Vortex::Application<dim, Number>());
       else if(name == "CylinderWithFlag")
         app.reset(new FSI::CylinderWithFlag::Application<dim, Number>());
       else if(name == "BendingWall")
@@ -70,8 +64,6 @@ public:
     std::shared_ptr<FSI::ApplicationBase<dim, Number>> app;
     if(name == "Template")
       app.reset(new FSI::Template::Application<dim, Number>(input_file));
-    else if(name == "Vortex")
-      app.reset(new FSI::Vortex::Application<dim, Number>(input_file));
     else if(name == "CylinderWithFlag")
       app.reset(new FSI::CylinderWithFlag::Application<dim, Number>(input_file));
     else if(name == "BendingWall")
@@ -113,11 +105,13 @@ struct Study
   {
     // clang-format off
     prm.enter_subsection("General");
-      prm.add_parameter("Precision",        precision,    "Floating point precision.",                   Patterns::Selection("float|double"));
-      prm.add_parameter("Dim",              dim,          "Number of space dimension.",                  Patterns::Integer(2,3));
-      prm.add_parameter("DegreeFluid",      degree_fluid, "Polynomial degree of velocity (fluid).",      Patterns::Integer(1,15));
-      prm.add_parameter("DegreeMeshMotion", degree_mesh,  "Polynomial degree of mesh motion equation.",  Patterns::Integer(1,15));
-      prm.add_parameter("RefineSpace",      refine_space, "Number of global, uniform mesh refinements.", Patterns::Integer(0,20));
+      prm.add_parameter("Precision",       precision,        "Floating point precision.",                Patterns::Selection("float|double"));
+      prm.add_parameter("Dim",             dim,              "Number of space dimension.",               Patterns::Integer(2,3));
+      prm.add_parameter("DegreeFluid",     degree_fluid,     "Polynomial degree of fluid (velocity).",   Patterns::Integer(1,15));
+      prm.add_parameter("DegreeALE",       degree_ale,       "Polynomial degree of ALE mesh motion.",    Patterns::Integer(1,15));
+      prm.add_parameter("DegreeStructure", degree_structure, "Polynomial degree of structural problem.", Patterns::Integer(1,15));
+      prm.add_parameter("RefineFluid",     refine_fluid,     "Number of mesh refinements (fluid).",      Patterns::Integer(0,20));
+      prm.add_parameter("RefineStructure", refine_structure, "Number of mesh refinements (structure).",  Patterns::Integer(0,20));
     prm.leave_subsection();
     // clang-format on
   }
@@ -126,9 +120,9 @@ struct Study
 
   unsigned int dim = 2;
 
-  unsigned int degree_fluid = 3, degree_mesh = 3;
+  unsigned int degree_fluid = 3, degree_ale = 3, degree_structure = 3;
 
-  unsigned int refine_space = 0;
+  unsigned int refine_fluid = 0, refine_structure = 0;
 };
 
 void
@@ -152,11 +146,7 @@ create_input_file(std::string const & name_of_application = "")
 
 template<int dim, typename Number>
 void
-run(std::string const & input_file,
-    unsigned int const  degree_fluid,
-    unsigned int const  degree_mesh,
-    unsigned int const  refine_space,
-    MPI_Comm const &    mpi_comm)
+run(std::string const & input_file, Study const & study, MPI_Comm const & mpi_comm)
 {
   Timer timer;
   timer.restart();
@@ -169,7 +159,12 @@ run(std::string const & input_file,
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     selector.get_application<dim, Number>(input_file);
 
-  driver->setup(application, degree_fluid, degree_mesh, refine_space);
+  driver->setup(application,
+                study.degree_fluid,
+                study.degree_ale,
+                study.degree_structure,
+                study.refine_fluid,
+                study.refine_structure);
 
   driver->solve();
 
@@ -212,13 +207,13 @@ main(int argc, char ** argv)
 
   // run the simulation
   if(study.dim == 2 && study.precision == "float")
-    run<2, float>(input_file, study.degree_fluid, study.degree_mesh, study.refine_space, mpi_comm);
+    run<2, float>(input_file, study, mpi_comm);
   else if(study.dim == 2 && study.precision == "double")
-    run<2, double>(input_file, study.degree_fluid, study.degree_mesh, study.refine_space, mpi_comm);
+    run<2, double>(input_file, study, mpi_comm);
   else if(study.dim == 3 && study.precision == "float")
-    run<3, float>(input_file, study.degree_fluid, study.degree_mesh, study.refine_space, mpi_comm);
+    run<3, float>(input_file, study, mpi_comm);
   else if(study.dim == 3 && study.precision == "double")
-    run<3, double>(input_file, study.degree_fluid, study.degree_mesh, study.refine_space, mpi_comm);
+    run<3, double>(input_file, study, mpi_comm);
   else
     AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
 

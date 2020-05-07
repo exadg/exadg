@@ -27,6 +27,12 @@
 // Poisson: spatial discretization
 #include "../poisson/spatial_discretization/operator.h"
 
+// Structure: spatial discretization
+#include "../structure/spatial_discretization/operator.h"
+
+// Structure: time integration
+#include "../structure/time_integration/time_int_gen_alpha.h"
+
 // grid
 #include "../grid/mapping_degree.h"
 #include "../grid/moving_mesh.h"
@@ -51,8 +57,10 @@ public:
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const &                          degree_fluid,
-        unsigned int const &                          degree_poisson,
-        unsigned int const &                          refine_space);
+        unsigned int const &                          degree_ale,
+        unsigned int const &                          degree_structure,
+        unsigned int const &                          refine_space_fluid,
+        unsigned int const &                          refine_space_structure);
 
   void
   solve() const;
@@ -63,6 +71,12 @@ public:
 private:
   void
   print_header() const;
+
+  void
+  set_start_time() const;
+
+  void
+  synchronize_time_step_size() const;
 
   // MPI communicator
   MPI_Comm const & mpi_comm;
@@ -106,35 +120,58 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
 
-  // Spatial discretization
-  typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
-  typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;
-  typedef IncNS::DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
-  typedef IncNS::DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
+  // spatial discretization
+  std::shared_ptr<IncNS::DGNavierStokesBase<dim, Number>>          fluid_operator;
+  std::shared_ptr<IncNS::DGNavierStokesCoupled<dim, Number>>       fluid_operator_coupled;
+  std::shared_ptr<IncNS::DGNavierStokesDualSplitting<dim, Number>> fluid_operator_dual_splitting;
+  std::shared_ptr<IncNS::DGNavierStokesPressureCorrection<dim, Number>>
+    fluid_operator_pressure_correction;
 
-  std::shared_ptr<DGBase>               fluid_operator;
-  std::shared_ptr<DGCoupled>            fluid_operator_coupled;
-  std::shared_ptr<DGDualSplitting>      fluid_operator_dual_splitting;
-  std::shared_ptr<DGPressureCorrection> fluid_operator_pressure_correction;
-
-  // Temporal discretization
-  typedef IncNS::TimeIntBDF<dim, Number>                   TimeInt;
-  typedef IncNS::TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef IncNS::TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeInt> fluid_time_integrator;
+  // temporal discretization
+  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;
 
   // Postprocessor
-  typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
-  std::shared_ptr<Postprocessor>                fluid_postprocessor;
+  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> fluid_postprocessor;
 
   /****************************************** FLUID *******************************************/
 
 
   /**************************************** STRUCTURE *****************************************/
 
-  // TODO
+  // input parameters
+  Structure::InputParameters structure_param;
+
+  // triangulation
+  std::shared_ptr<parallel::TriangulationBase<dim>> structure_triangulation;
+
+  // mapping
+  std::shared_ptr<Mesh<dim>> structure_mesh;
+
+  // periodic boundaries
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    structure_periodic_faces;
+
+  // material descriptor
+  std::shared_ptr<Structure::MaterialDescriptor> structure_material_descriptor;
+
+  // boundary conditions
+  std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
+
+  // field functions
+  std::shared_ptr<Structure::FieldFunctions<dim>> structure_field_functions;
+
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>> structure_matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     structure_matrix_free;
+
+  // spatial discretization
+  std::shared_ptr<Structure::Operator<dim, Number>> structure_operator;
+
+  // temporal discretization
+  std::shared_ptr<Structure::TimeIntGenAlpha<dim, Number>> structure_time_integrator;
+
+  // postprocessor
+  std::shared_ptr<Structure::PostProcessor<dim, Number>> structure_postprocessor;
 
   /**************************************** STRUCTURE *****************************************/
 
