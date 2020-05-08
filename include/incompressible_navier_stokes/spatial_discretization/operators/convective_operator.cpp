@@ -382,7 +382,8 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
                                                     operator_data.kernel_data.type_dirichlet_bc,
                                                     boundary_id,
                                                     operator_data.bc,
-                                                    this->time);
+                                                    this->time,
+                                                    operator_data.quad_index_nonlinear);
 
     vector normal_m = integrator.get_normal_vector(q);
 
@@ -646,7 +647,8 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_linear_transport(
                                                     operator_data.kernel_data.type_dirichlet_bc,
                                                     boundary_id,
                                                     operator_data.bc,
-                                                    this->time);
+                                                    this->time,
+                                                    operator_data.quad_index_nonlinear);
 
     // concerning the transport velocity w, use the same value for interior and
     // exterior states, i.e., do not prescribe boundary conditions
@@ -854,7 +856,8 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                                     operator_data.kernel_data.type_dirichlet_bc,
                                                     boundary_id,
                                                     operator_data.bc,
-                                                    this->time);
+                                                    this->time,
+                                                    operator_data.quad_index);
 
     vector delta_u_m = integrator.get_value(q);
     vector delta_u_p =

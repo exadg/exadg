@@ -71,7 +71,8 @@ inline DEAL_II_ALWAYS_INLINE //
                              BoundaryTypeU const &                           boundary_type,
                              types::boundary_id const                        boundary_id,
                              std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
-                             double const &                                  time)
+                             double const &                                  time,
+                             unsigned int const                              quad_index)
 {
   // element e⁺
   Tensor<1, dim, VectorizedArray<Number>> value_p;
@@ -91,12 +92,9 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else if(boundary_type == BoundaryTypeU::DirichletMortar)
       {
-        // TODO get face and quad_index from integrator
-        AssertThrow(false, ExcMessage("not implemented."));
-        auto               bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
-        unsigned int const face       = 0;
-        unsigned int const quad_index = 0;
-        g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
+        auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        g =
+          FunctionEvaluator<1, dim, Number>::value(bc, integrator.get_face_index(), q, quad_index);
       }
       else
       {
@@ -154,7 +152,8 @@ inline DEAL_II_ALWAYS_INLINE //
       TypeDirichletBCs const &                        type_dirichlet_bc,
       types::boundary_id const                        boundary_id,
       std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
-      double const &                                  time)
+      double const &                                  time,
+      unsigned int const                              quad_index)
 {
   Tensor<1, dim, VectorizedArray<Number>> u_p;
 
@@ -171,12 +170,8 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else if(boundary_type == BoundaryTypeU::DirichletMortar)
     {
-      // TODO get face and quad_index from integrator
-      AssertThrow(false, ExcMessage("not implemented."));
-      auto               bc   = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
-      unsigned int const face = 0;
-      unsigned int const quad_index = 0;
-      g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
+      auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+      g = FunctionEvaluator<1, dim, Number>::value(bc, integrator.get_face_index(), q, quad_index);
     }
     else
     {

@@ -271,7 +271,8 @@ ProjectionOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                             boundary_type,
                                             boundary_id,
                                             operator_data.bc,
-                                            this->time);
+                                            this->time,
+                                            operator_data.quad_index);
       vector normal_m = integrator_m.get_normal_vector(q);
 
       vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);

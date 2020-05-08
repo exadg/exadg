@@ -22,6 +22,8 @@ double const DENSITY_STRUCTURE = 1.0;
 
 double const END_TIME = 8.0;
 
+double const OUTPUT_INTERVAL_TIME = END_TIME / 100;
+
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
 double const Y_0    = 0.0;  // origin (y-coordinate)
@@ -199,7 +201,8 @@ public:
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
-    param.solver_info_data.interval_time = 0.1 * (param.end_time - param.start_time);
+    param.solver_info_data.interval_time       = 0.1 * (param.end_time - param.start_time);
+    param.solver_info_data.interval_time_steps = 1;
 
     // restart
     param.restarted_simulation             = false;
@@ -584,6 +587,8 @@ public:
     std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
 
     // fill boundary descriptor velocity
     boundary_descriptor_velocity->dirichlet_bc.insert(
@@ -594,8 +599,12 @@ public:
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>()));
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_velocity->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_FLAG, new VelocityBendingWall<dim>()));
+    // fluid-structure interface
+    // TODO
+    //    boundary_descriptor_velocity->dirichlet_bc.insert(
+    //      pair(BOUNDARY_ID_FLAG, new VelocityBendingWall<dim>()));
+    boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
 
     // fill boundary descriptor pressure
     boundary_descriptor_pressure->neumann_bc.insert(
@@ -630,7 +639,7 @@ public:
     pp_data.output_data.output_name          = output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs   = true;
     pp_data.output_data.output_start_time    = 0.0;
-    pp_data.output_data.output_interval_time = END_TIME / 100;
+    pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order   = false;
     pp_data.output_data.degree               = 2 * degree; // TODO
 
@@ -953,7 +962,7 @@ public:
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name + "_structure";
     pp_data.output_data.output_start_time    = 0.0;
-    pp_data.output_data.output_interval_time = END_TIME / 100;
+    pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order   = false;
     pp_data.output_data.degree               = 2 * degree; // TODO
 

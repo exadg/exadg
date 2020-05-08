@@ -24,6 +24,10 @@ private:
   typedef std::map<Id, std::vector<Tensor<rank, dim, Number>>>                      ArraySolution;
 
 public:
+  FunctionInterpolation() : map_solution(nullptr)
+  {
+  }
+
   Tensor<rank, dim, Number>
   tensor_value(unsigned int const face,
                unsigned int const q,
@@ -31,10 +35,12 @@ public:
                unsigned int const quad_index) const
   {
     Assert(map_solution != nullptr, ExcMessage("Pointer map_solution is not initialized."));
-
-    Id id = std::make_tuple(face, q, v);
+    Assert(map_solution->find(quad_index) != map_solution->end(),
+           ExcMessage("Specified quad_index does not exist in map_solution."));
 
     ArraySolution const & array_solution = map_solution->find(quad_index)->second;
+
+    Id id = std::make_tuple(face, q, v);
 
     std::vector<Tensor<rank, dim, Number>> const & vector_solution =
       array_solution.find(id)->second;
@@ -45,7 +51,8 @@ public:
       result += (*solution);
     }
 
-    result *= 1.0 / Number(vector_solution.size());
+    if(vector_solution.size() > 0)
+      result *= 1.0 / Number(vector_solution.size());
 
     return result;
   }

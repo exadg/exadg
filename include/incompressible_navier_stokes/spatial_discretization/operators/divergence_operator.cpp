@@ -220,8 +220,15 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
     vector value_p;
     if(data.use_boundary_data == true)
     {
-      value_p = calculate_exterior_value(
-        value_m, q, velocity, operator_type, boundary_type, boundary_id, data.bc, time);
+      value_p = calculate_exterior_value(value_m,
+                                         q,
+                                         velocity,
+                                         operator_type,
+                                         boundary_type,
+                                         boundary_id,
+                                         data.bc,
+                                         time,
+                                         data.quad_index);
     }
     else // use_boundary_data == false
     {

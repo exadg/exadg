@@ -568,7 +568,8 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
                                            operator_data.convective_kernel_data.type_dirichlet_bc,
                                            boundary_id,
                                            operator_data.bc,
-                                           this->time);
+                                           this->time,
+                                           operator_data.quad_index);
 
       value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
         u_m, u_p, value_m, value_p, normal_m, boundary_type, q);
@@ -584,7 +585,8 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
                                          boundary_type,
                                          boundary_id,
                                          operator_data.bc,
-                                         this->time);
+                                         this->time,
+                                         operator_data.quad_index);
 
       scalar viscosity =
         viscous_kernel->get_viscosity_boundary_face(integrator.get_face_index(), q);

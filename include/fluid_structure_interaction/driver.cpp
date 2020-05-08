@@ -49,6 +49,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
+  /****************************************** FLUID *******************************************/
+
   // parameters fluid
   application->set_input_parameters_fluid(fluid_param);
   fluid_param.check_input_parameters(pcout);
@@ -244,59 +246,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   fluid_postprocessor = application->construct_postprocessor_fluid(degree_fluid, mpi_comm);
   fluid_postprocessor->setup(*fluid_operator);
 
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
-  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
-              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-
-  // initialize fluid_operator
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    fluid_time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(fluid_operator_coupled,
-                                                                          fluid_param,
-                                                                          0 /* refine_time */,
-                                                                          mpi_comm,
-                                                                          fluid_postprocessor,
-                                                                          fluid_moving_mesh,
-                                                                          fluid_matrix_free));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    fluid_time_integrator.reset(
-      new IncNS::TimeIntBDFDualSplitting<dim, Number>(fluid_operator_dual_splitting,
-                                                      fluid_param,
-                                                      0 /* refine_time */,
-                                                      mpi_comm,
-                                                      fluid_postprocessor,
-                                                      fluid_moving_mesh,
-                                                      fluid_matrix_free));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    fluid_time_integrator.reset(
-      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(fluid_operator_pressure_correction,
-                                                           fluid_param,
-                                                           0 /* refine_time */,
-                                                           mpi_comm,
-                                                           fluid_postprocessor,
-                                                           fluid_moving_mesh,
-                                                           fluid_matrix_free));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  fluid_time_integrator->setup(fluid_param.restarted_simulation);
-
-  fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-                                fluid_time_integrator->get_velocity());
+  /****************************************** FLUID *******************************************/
 
 
-  // Structure
+
+  /**************************************** STRUCTURE *****************************************/
 
   application->set_input_parameters_structure(structure_param);
   structure_param.check_input_parameters();
@@ -382,12 +336,94 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   structure_postprocessor->setup(structure_operator->get_dof_handler(),
                                  structure_mesh->get_mapping());
 
+  /**************************************** STRUCTURE *****************************************/
+
+
+  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
+
+  std::vector<unsigned int> quad_indices;
+  quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_linear());
+  quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_nonlinear());
+  quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_gauss_lobatto());
+
+  VectorType velocity_structure;
+  structure_operator->initialize_dof_vector(velocity_structure);
+  structure_to_fluid.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+  structure_to_fluid->setup(fluid_matrix_free,
+                            fluid_operator->get_dof_index_velocity(),
+                            quad_indices,
+                            fluid_boundary_descriptor_velocity->dirichlet_mortar_bc,
+                            structure_operator->get_dof_handler(),
+                            structure_mesh->get_mapping(),
+                            velocity_structure);
+
+  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
+
+
+  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
+
+  // fluid
+
+  // setup time integrator before calling setup_solvers (this is necessary since the setup
+  // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
+  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
+              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+
+  // initialize fluid_operator
+  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
+  {
+    fluid_time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(fluid_operator_coupled,
+                                                                          fluid_param,
+                                                                          0 /* refine_time */,
+                                                                          mpi_comm,
+                                                                          fluid_postprocessor,
+                                                                          fluid_moving_mesh,
+                                                                          fluid_matrix_free));
+  }
+  else if(this->fluid_param.temporal_discretization ==
+          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    fluid_time_integrator.reset(
+      new IncNS::TimeIntBDFDualSplitting<dim, Number>(fluid_operator_dual_splitting,
+                                                      fluid_param,
+                                                      0 /* refine_time */,
+                                                      mpi_comm,
+                                                      fluid_postprocessor,
+                                                      fluid_moving_mesh,
+                                                      fluid_matrix_free));
+  }
+  else if(this->fluid_param.temporal_discretization ==
+          IncNS::TemporalDiscretization::BDFPressureCorrection)
+  {
+    fluid_time_integrator.reset(
+      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(fluid_operator_pressure_correction,
+                                                           fluid_param,
+                                                           0 /* refine_time */,
+                                                           mpi_comm,
+                                                           fluid_postprocessor,
+                                                           fluid_moving_mesh,
+                                                           fluid_matrix_free));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  fluid_time_integrator->setup(fluid_param.restarted_simulation);
+
+  fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+                                fluid_time_integrator->get_velocity());
+
+  // Structure
+
   // initialize time integrator
   structure_time_integrator.reset(new Structure::TimeIntGenAlpha<dim, Number>(
     structure_operator, structure_postprocessor, 0 /* refine_time */, structure_param, mpi_comm));
   structure_time_integrator->setup(structure_param.restarted_simulation);
 
   structure_operator->setup_solver();
+
+  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
   timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
 }
@@ -430,16 +466,20 @@ Driver<dim, Number>::solve() const
     for(unsigned int iter = 0; iter < N_ITER_MAX; ++iter)
     {
       // TODO
-      LinearAlgebra::distributed::Vector<Number> vec_displacements, vec_velocity;
+      VectorType vec_displacement, vec_velocity;
       if(iter == 0)
       {
-        // extrapolate structural displacements and fluid velocity at interface
+        structure_time_integrator->extrapolate_displacement_to_np(vec_displacement);
+        structure_time_integrator->extrapolate_velocity_to_np(vec_velocity);
       }
       else
       {
-        // use structural displacements of last iteration and compute
-        // fluid velocity at interface using the new structural displacements
+        vec_displacement = structure_time_integrator->get_displacement_np();
+        vec_velocity     = structure_time_integrator->get_velocity_np();
       }
+
+      // TODO set explicitly to zero for testing
+      //      vec_velocity = 0.0;
 
       // move the fluid mesh and update dependent data structures
       {
@@ -471,7 +511,7 @@ Driver<dim, Number>::solve() const
       }
 
       // TODO update boundary conditions for fluid
-      // structure_to_fluid->update_data(vec_velocity);
+      structure_to_fluid->update_data(vec_velocity);
 
       // solve fluid problem
       fluid_time_integrator->advance_one_timestep_solve();

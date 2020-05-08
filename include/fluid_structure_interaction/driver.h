@@ -51,6 +51,9 @@ namespace FSI
 template<int dim, typename Number>
 class Driver
 {
+private:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
 public:
   Driver(MPI_Comm const & comm);
 

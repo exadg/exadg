@@ -11,8 +11,6 @@
 #include "../postprocessor/evaluate_solution_in_given_point.h"
 #include "function_interpolation.h"
 
-#include "../matrix_free/matrix_free_wrapper.h"
-
 using namespace dealii;
 
 template<int dim, int n_components, typename Number>
@@ -25,13 +23,16 @@ private:
   typedef InterfaceCoupling<dim, n_components, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
   typedef FaceIntegrator<dim, n_components, Number>  Integrator;
   typedef std::pair<unsigned int, unsigned int>      Range;
 
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
-  typedef std::pair<unsigned int, std::vector<Number>>         DofIndexAndShapeValues;
+  typedef std::pair<unsigned int, std::vector<double>>         DofIndexAndShapeValues;
   typedef std::map<Id, std::vector<DofIndexAndShapeValues>>    ArrayBookmarks;
-  typedef std::map<Id, std::vector<Tensor<rank, dim, Number>>> ArraySolution;
+  typedef std::map<Id, std::vector<Tensor<rank, dim, double>>> ArraySolution;
+
+  typedef unsigned int quad_index;
 
 public:
   InterfaceCoupling(MPI_Comm const & mpi_comm)
@@ -42,63 +43,107 @@ public:
   }
 
   void
-  setup(
-    std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_dst_in,
-    std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_dst_in,
-    std::vector<std::string> const &             quadrature_rules_dst_in,
-    unsigned int &                               dof_index_dst_in,
-    std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>> const & bc_in,
-    DoFHandler<dim> const & dof_handler_src_in,
-    Mapping<dim> const &    mapping_src_in,
-    VectorType const &      dof_vector_src)
+  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst_in,
+        unsigned int const                       dof_index_dst_in,
+        std::vector<quad_index> const &          quad_indices_dst_in,
+        std::map<types::boundary_id,
+                 std::shared_ptr<FunctionInterpolation<rank, dim, double>>> const & map_bc_in,
+        DoFHandler<dim> const & dof_handler_src_in,
+        Mapping<dim> const &    mapping_src_in,
+        VectorType const &      dof_vector_src_in)
   {
-    matrix_free_dst      = matrix_free_dst_in;
-    matrix_free_data_dst = matrix_free_data_dst_in;
-    quadrature_rules_dst = quadrature_rules_dst_in;
-    dof_index_dst        = dof_index_dst_in;
-    bc                   = bc_in;
+    matrix_free_dst  = matrix_free_dst_in;
+    dof_index_dst    = dof_index_dst_in;
+    quad_indices_dst = quad_indices_dst_in;
+    map_bc           = map_bc_in;
+    dof_handler_src  = &dof_handler_src_in;
+    mapping_src      = &mapping_src_in;
 
-    dof_handler_src = &dof_handler_src_in;
-    mapping_src     = &mapping_src_in;
+    // initialize maps
+    for(auto boundary = map_bc.begin(); boundary != map_bc.end(); ++boundary)
+    {
+      types::boundary_id const boundary_id = boundary->first;
 
+      global_map_bookmarks.emplace(boundary_id, std::map<quad_index, ArrayBookmarks>());
+      global_map_solution.emplace(boundary_id, std::map<quad_index, ArraySolution>());
+
+      std::map<quad_index, ArrayBookmarks> & map_bookmarks =
+        global_map_bookmarks.find(boundary_id)->second;
+      std::map<quad_index, ArraySolution> & map_solution =
+        global_map_solution.find(boundary_id)->second;
+
+      for(auto quad = quad_indices_dst.begin(); quad != quad_indices_dst.end(); ++quad)
+      {
+        quad_index const quad_id = *quad;
+
+        map_bookmarks.emplace(quad_id, ArrayBookmarks());
+        map_solution.emplace(quad_id, ArraySolution());
+      }
+    }
+
+    // fill maps with data
     VectorType dst_dummy;
     matrix_free_dst->loop(&This::cell_loop_empty,
                           &This::face_loop_empty,
                           &This::boundary_face_loop,
                           this,
                           dst_dummy,
-                          dof_vector_src);
+                          dof_vector_src_in);
+
+
+    for(auto boundary = map_bc.begin(); boundary != map_bc.end(); ++boundary)
+    {
+      types::boundary_id const boundary_id = boundary->first;
+
+      // give boundary condition access to the data
+      boundary->second->set_data_pointer(global_map_solution.find(boundary_id)->second);
+    }
   }
 
   void
   update_data(VectorType const & dof_vector_src)
   {
-    for(auto boundary = bc.begin(); boundary != bc.end(); ++boundary)
+    VectorTypeDouble         dof_vector_src_double_copy;
+    VectorTypeDouble const * dof_vector_src_double_ptr;
+    if(std::is_same<double, Number>::value)
     {
-      std::map<unsigned int, ArrayBookmarks> & map_bookmarks =
-        global_map_bookmarks.find(boundary->first)->second;
-      std::map<unsigned int, ArraySolution> & map_solution =
-        global_map_solution.find(boundary->first)->second;
+      dof_vector_src_double_ptr = reinterpret_cast<VectorTypeDouble const *>(&dof_vector_src);
+    }
+    else
+    {
+      dof_vector_src_double_copy = dof_vector_src;
+      dof_vector_src_double_ptr  = &dof_vector_src_double_copy;
+    }
 
-      for(auto quad = quadrature_rules_dst.begin(); quad != quadrature_rules_dst.end(); ++quad)
+    for(auto boundary = map_bc.begin(); boundary != map_bc.end(); ++boundary)
+    {
+      types::boundary_id const boundary_id = boundary->first;
+
+      std::map<quad_index, ArrayBookmarks> & map_bookmarks =
+        global_map_bookmarks.find(boundary_id)->second;
+      std::map<quad_index, ArraySolution> & map_solution =
+        global_map_solution.find(boundary_id)->second;
+
+      for(auto quad = quad_indices_dst.begin(); quad != quad_indices_dst.end(); ++quad)
       {
-        unsigned int quad_index = matrix_free_data_dst->get_quad_index(*quad);
+        quad_index const quad_id = *quad;
 
-        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_index)->second;
-        ArraySolution &  array_solution  = map_solution.find(quad_index)->second;
+        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_id)->second;
+        ArraySolution &  array_solution  = map_solution.find(quad_id)->second;
 
         for(auto q_point = array_solution.begin(); q_point != array_solution.end(); ++q_point)
         {
           Id id = q_point->first;
 
-          std::vector<Tensor<rank, dim, Number>> & solution = array_solution.find(id)->second;
+          std::vector<Tensor<rank, dim, double>> & solution = array_solution.find(id)->second;
           std::vector<DofIndexAndShapeValues> &    bookmark = array_bookmarks.find(id)->second;
 
           for(unsigned int i = 0; i < solution.size(); ++i)
           {
             // interpolate solution from dof vector and overwrite data
-            solution[i] = Interpolator<rank, dim, Number>::value(*dof_handler_src,
-                                                                 dof_vector_src,
+            // TODO: does not work for continuous elements
+            solution[i] = Interpolator<rank, dim, double>::value(*dof_handler_src,
+                                                                 *dof_vector_src_double_ptr,
                                                                  bookmark[i].first,
                                                                  bookmark[i].second);
           }
@@ -130,72 +175,87 @@ private:
                      VectorType const &              dof_vector_src,
                      Range const &                   face_range) const
   {
+    VectorTypeDouble         dof_vector_src_double_copy;
+    VectorTypeDouble const * dof_vector_src_double_ptr;
+    if(std::is_same<double, Number>::value)
+    {
+      dof_vector_src_double_ptr = reinterpret_cast<VectorTypeDouble const *>(&dof_vector_src);
+    }
+    else
+    {
+      dof_vector_src_double_copy = dof_vector_src;
+      dof_vector_src_double_ptr  = &dof_vector_src_double_copy;
+    }
+
     (void)dst;
 
-    for(auto boundary = bc.begin(); boundary != bc.end(); ++boundary)
+    for(auto boundary = map_bc.begin(); boundary != map_bc.end(); ++boundary)
     {
-      std::map<unsigned int, ArrayBookmarks> map_bookmarks;
-      std::map<unsigned int, ArraySolution>  map_solution;
+      types::boundary_id const boundary_id = boundary->first;
 
-      for(auto quad = quadrature_rules_dst.begin(); quad != quadrature_rules_dst.end(); ++quad)
+      std::map<quad_index, ArrayBookmarks> & map_bookmarks =
+        global_map_bookmarks.find(boundary_id)->second;
+      std::map<quad_index, ArraySolution> & map_solution =
+        global_map_solution.find(boundary_id)->second;
+
+      for(auto quad = quad_indices_dst.begin(); quad != quad_indices_dst.end(); ++quad)
       {
-        unsigned int quad_index = matrix_free_data_dst->get_quad_index(*quad);
+        quad_index const quad_id = *quad;
 
-        Integrator integrator(matrix_free, true, dof_index_dst, quad_index);
+        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_id)->second;
+        ArraySolution &  array_solution  = map_solution.find(quad_id)->second;
 
-        ArrayBookmarks array_bookmarks;
-        ArraySolution  array_solution;
+        Integrator integrator(matrix_free, true, dof_index_dst, quad_id);
+
         for(unsigned int face = face_range.first; face < face_range.second; face++)
         {
           integrator.reinit(face);
 
-          for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+          if(boundary_id == matrix_free.get_boundary_id(face))
           {
-            Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
-
-            for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
+            for(unsigned int q = 0; q < integrator.n_q_points; ++q)
             {
-              Point<dim> q_point;
-              for(unsigned int d = 0; d < dim; ++d)
-                q_point[d] = q_points[d][v];
+              Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
-              std::vector<DofIndexAndShapeValues> bookmark;
-              get_dof_index_and_shape_values(
-                *dof_handler_src, *mapping_src, dof_vector_src, q_point, bookmark);
+              for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
+              {
+                Point<dim> q_point;
+                for(unsigned int d = 0; d < dim; ++d)
+                  q_point[d] = q_points[d][v];
 
-              std::vector<Tensor<rank, dim, Number>> solution;
-              solution.resize(bookmark.size());
+                std::vector<DofIndexAndShapeValues> bookmark;
+                get_dof_index_and_shape_values(
+                  *dof_handler_src, *mapping_src, *dof_vector_src_double_ptr, q_point, bookmark);
 
-              Id id = std::make_tuple(face, q, v);
-              array_bookmarks.emplace(id, bookmark);
-              array_solution.emplace(id, solution);
+                // TODO
+                AssertThrow(bookmark.size() > 0, ExcMessage("bookmark vector is empty."));
+
+                std::vector<Tensor<rank, dim, double>> solution(bookmark.size(),
+                                                                Tensor<rank, dim, double>());
+
+                Id id = std::make_tuple(face, q, v);
+                array_bookmarks.emplace(id, bookmark);
+                array_solution.emplace(id, solution);
+              }
             }
           }
         }
-
-        map_bookmarks.emplace(quad_index, array_bookmarks);
-        map_solution.emplace(quad_index, array_solution);
       }
-
-      boundary->second->set_data_pointer(map_solution);
-
-      global_map_bookmarks.emplace(boundary->first, map_bookmarks);
-      global_map_solution.emplace(boundary->first, map_solution);
     }
   }
 
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_dst;
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_dst;
-  std::vector<std::string>                     quadrature_rules_dst;
-  unsigned int                                 dof_index_dst;
+  std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst;
+  unsigned int                             dof_index_dst;
+  std::vector<quad_index>                  quad_indices_dst;
 
-  mutable std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>> bc;
+  mutable std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim, double>>>
+    map_bc;
 
   DoFHandler<dim> const * dof_handler_src;
   Mapping<dim> const *    mapping_src;
 
-  std::map<unsigned int, std::map<unsigned int, ArrayBookmarks>> global_map_bookmarks;
-  std::map<unsigned int, std::map<unsigned int, ArraySolution>>  global_map_solution;
+  mutable std::map<types::boundary_id, std::map<quad_index, ArrayBookmarks>> global_map_bookmarks;
+  mutable std::map<types::boundary_id, std::map<quad_index, ArraySolution>>  global_map_solution;
 };
 
 
