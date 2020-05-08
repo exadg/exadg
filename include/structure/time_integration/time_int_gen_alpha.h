@@ -51,39 +51,19 @@ public:
   print_iterations() const;
 
   void
-  extrapolate_displacement_to_np(VectorType & displacement)
-  {
-    // D_np = D_n + dt * V_n + 1/2 dt^2 * A_n
-    displacement = displacement_n;
-    displacement.add(this->get_time_step_size(), velocity_n);
-    displacement.add(std::pow(this->get_time_step_size(), 2.0) / 2.0, acceleration_n);
-  }
+  extrapolate_displacement_to_np(VectorType & displacement);
 
   VectorType const &
-  get_displacement_np()
-  {
-    return displacement_np;
-  }
+  get_displacement_np();
 
   void
-  extrapolate_velocity_to_np(VectorType & velocity)
-  {
-    // V_np = V_n + dt * A_n
-    velocity = velocity_n;
-    velocity.add(this->get_time_step_size(), acceleration_n);
-  }
+  extrapolate_velocity_to_np(VectorType & velocity);
 
   VectorType const &
-  get_velocity_n()
-  {
-    return velocity_n;
-  }
+  get_velocity_n();
 
   VectorType const &
-  get_velocity_np()
-  {
-    return velocity_np;
-  }
+  get_velocity_np();
 
 private:
   void

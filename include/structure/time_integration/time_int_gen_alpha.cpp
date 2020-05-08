@@ -162,6 +162,46 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
 
 template<int dim, typename Number>
 void
+TimeIntGenAlpha<dim, Number>::extrapolate_displacement_to_np(VectorType & displacement)
+{
+  // D_np = D_n + dt * V_n + 1/2 dt^2 * A_n
+  displacement = displacement_n;
+  displacement.add(this->get_time_step_size(), velocity_n);
+  displacement.add(std::pow(this->get_time_step_size(), 2.0) / 2.0, acceleration_n);
+}
+
+template<int dim, typename Number>
+typename TimeIntGenAlpha<dim, Number>::VectorType const &
+TimeIntGenAlpha<dim, Number>::get_displacement_np()
+{
+  return displacement_np;
+}
+
+template<int dim, typename Number>
+void
+TimeIntGenAlpha<dim, Number>::extrapolate_velocity_to_np(VectorType & velocity)
+{
+  // V_np = V_n + dt * A_n
+  velocity = velocity_n;
+  velocity.add(this->get_time_step_size(), acceleration_n);
+}
+
+template<int dim, typename Number>
+typename TimeIntGenAlpha<dim, Number>::VectorType const &
+TimeIntGenAlpha<dim, Number>::get_velocity_n()
+{
+  return velocity_n;
+}
+
+template<int dim, typename Number>
+typename TimeIntGenAlpha<dim, Number>::VectorType const &
+TimeIntGenAlpha<dim, Number>::get_velocity_np()
+{
+  return velocity_np;
+}
+
+template<int dim, typename Number>
+void
 TimeIntGenAlpha<dim, Number>::prepare_vectors_for_next_timestep()
 {
   displacement_n.swap(displacement_np);
