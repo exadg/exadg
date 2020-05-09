@@ -864,8 +864,7 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
         GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
       },
       tria.get_communicator(),
-      1 /*group size*/,
-      true /*construct multigrid levels*/);
+      1 /*group size*/);
   tria.create_triangulation(construction_data);
   update_mapping(tria, deform);
 

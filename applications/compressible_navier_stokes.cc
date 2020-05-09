@@ -130,7 +130,9 @@ create_input_file(std::string const & name_of_application = "")
   ApplicationSelector selector;
   selector.add_parameters<Dim, Number>(prm, name_of_application);
 
-  prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::JSON, false);
+  prm.print_parameters(std::cout,
+                       dealii::ParameterHandler::JSON | dealii::ParameterHandler::Short |
+                         dealii::ParameterHandler::KeepDeclarationOrder);
 }
 
 template<int dim, typename Number>

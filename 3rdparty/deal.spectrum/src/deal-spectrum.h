@@ -148,9 +148,8 @@ public:
         indices_want.push_back(numbers::invalid_dof_index); // z-padding
     }
 
-    nonconti = std::make_shared<Utilities::MPI::NoncontiguousPartitioner<double>>(indices_has,
-                                                                                  indices_want,
-                                                                                  comm);
+    nonconti =
+      std::make_shared<Utilities::MPI::NoncontiguousPartitioner>(indices_has, indices_want, comm);
   }
 
   /**
@@ -182,14 +181,14 @@ public:
 
       // ... permute
       timer.start("Permutation");
-      ArrayView<double> dst(
+      ArrayView<const double> dst(
         fftw.u_real,
         s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
       ArrayView<double> src_(ipol.dst,
                              s.dim *
                                pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst),
                                     s.dim));
-      nonconti->update_values(dst, src_);
+      nonconti->export_to_ghosted_array(dst, src_);
 
       timer.append("Permutation");
 
@@ -276,7 +275,7 @@ private:
   // Timer
   DealSpectrumTimer timer;
 
-  std::shared_ptr<Utilities::MPI::NoncontiguousPartitioner<double>> nonconti;
+  std::shared_ptr<Utilities::MPI::NoncontiguousPartitioner> nonconti;
 };
 
 } // namespace dealspectrum

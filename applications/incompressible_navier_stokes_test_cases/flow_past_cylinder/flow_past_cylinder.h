@@ -532,8 +532,7 @@ public:
             //            tria);
           },
           tria_fully_dist->get_communicator(),
-          1 /* group size */,
-          true /* construct multigrid levels */);
+          1 /* group size */);
       tria_fully_dist->create_triangulation(construction_data);
     }
     else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
