@@ -140,12 +140,13 @@ void evaluate_vectorial_quantity_in_point(
  */
 template<int dim, typename Number>
 void
-get_dof_index_and_shape_values(
-  DoFHandler<dim> const &                                     dof_handler,
-  Mapping<dim> const &                                        mapping,
-  LinearAlgebra::distributed::Vector<Number> const &          solution,
-  Point<dim> const &                                          point,
-  std::vector<std::pair<unsigned int, std::vector<Number>>> & dof_index_and_shape_values)
+get_dof_indices_and_shape_values(
+  DoFHandler<dim> const &                            dof_handler,
+  Mapping<dim> const &                               mapping,
+  LinearAlgebra::distributed::Vector<Number> const & solution,
+  Point<dim> const &                                 point,
+  std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>> &
+    dof_index_and_shape_values)
 {
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
 
@@ -161,21 +162,23 @@ get_dof_index_and_shape_values(
     if(cell->first->is_locally_owned())
     {
       Assert(GeometryInfo<dim>::distance_to_unit_cell(cell->second) < 1e-10, ExcInternalError());
-
-      const FiniteElement<dim> & fe = dof_handler.get_fe();
-
       const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(cell->second));
 
-      FEValues<dim> fe_values(mapping, fe, quadrature, update_values);
+      const FiniteElement<dim> & fe = dof_handler.get_fe();
+      FEValues<dim>              fe_values(mapping, fe, quadrature, update_values);
       fe_values.reinit(cell->first);
       std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
       cell->first->get_dof_indices(dof_indices);
-      unsigned int dof_index_begin = solution.get_partitioner()->global_to_local(dof_indices[0]);
+
+      std::vector<types::global_dof_index> dof_indices_global(fe.dofs_per_cell);
+      for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+        dof_indices_global[i] = solution.get_partitioner()->global_to_local(dof_indices[i]);
+
       std::vector<Number> fe_shape_values(fe.dofs_per_cell);
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         fe_shape_values[i] = fe_values.shape_value(i, 0);
 
-      dof_index_and_shape_values.emplace_back(dof_index_begin, fe_shape_values);
+      dof_index_and_shape_values.emplace_back(dof_indices_global, fe_shape_values);
     }
   }
 }
@@ -191,12 +194,12 @@ struct Interpolator
     Tensor<rank, dim, Number>
     value(DoFHandler<dim> const &                            dof_handler,
           LinearAlgebra::distributed::Vector<Number> const & solution,
-          unsigned int const &                               dof_index_begin,
+          std::vector<types::global_dof_index> const &       dof_indices,
           std::vector<Number> const &                        fe_shape_values)
   {
     (void)dof_handler;
     (void)solution;
-    (void)dof_index_begin;
+    (void)dof_indices;
     (void)fe_shape_values;
 
     AssertThrow(false, ExcMessage("not implemented."));
@@ -216,22 +219,17 @@ struct Interpolator<0, dim, Number>
     Tensor<0, dim, Number>
     value(DoFHandler<dim> const &                            dof_handler,
           LinearAlgebra::distributed::Vector<Number> const & solution,
-          unsigned int const &                               dof_index_begin,
+          std::vector<types::global_dof_index> const &       dof_indices,
           std::vector<Number> const &                        fe_shape_values)
   {
     Assert(dof_handler.get_fe().dofs_per_cell == fe_shape_values.size(),
            ExcMessage("Vector fe_shape_values has wrong size."));
-    Assert(!(dof_handler.get_fe().dofs_per_vertex > 0),
-           ExcMessage("Interpolator::value() only implemented for discontinuous elements."));
 
     Number result = Number(0.0);
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
-
-    Number const * sol_ptr = solution.begin() + dof_index_begin;
-
     for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-      result += sol_ptr[i] * fe_shape_values[i];
+      result += solution.local_element(dof_indices[i]) * fe_shape_values[i];
 
     Tensor<0, dim, Number> result_tensor = result;
 
@@ -240,7 +238,7 @@ struct Interpolator<0, dim, Number>
 };
 
 /*
- * The quantity to be evaluated is of type Tensor<1,dim,Number>.
+ * The quantity to be evaluated is of type Tensor<1, dim, Number>.
  */
 template<int dim, typename Number>
 struct Interpolator<1, dim, Number>
@@ -249,22 +247,18 @@ struct Interpolator<1, dim, Number>
     Tensor<1, dim, Number>
     value(DoFHandler<dim> const &                            dof_handler,
           LinearAlgebra::distributed::Vector<Number> const & solution,
-          unsigned int const &                               dof_index_begin,
+          std::vector<types::global_dof_index> const &       dof_indices,
           std::vector<Number> const &                        fe_shape_values)
   {
     Assert(dof_handler.get_fe().dofs_per_cell == fe_shape_values.size(),
            ExcMessage("Vector fe_shape_values has wrong size."));
-    Assert(!(dof_handler.get_fe().dofs_per_vertex > 0),
-           ExcMessage("Interpolator::value() only implemented for discontinuous elements."));
 
     Tensor<1, dim, Number> result;
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
-
-    Number const * sol_ptr = solution.begin() + dof_index_begin;
-
     for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-      result[fe.system_to_component_index(i).first] += sol_ptr[i] * fe_shape_values[i];
+      result[fe.system_to_component_index(i).first] +=
+        solution.local_element(dof_indices[i]) * fe_shape_values[i];
 
     return result;
   }

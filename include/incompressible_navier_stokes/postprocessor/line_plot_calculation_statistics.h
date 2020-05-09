@@ -107,12 +107,14 @@ private:
 
   // For all lines: for all points along the line: for all relevant cells: dof index of first dof of
   // current cell and all shape function values
-  std::vector<std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>>
+  std::vector<
+    std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>>
     cells_global_velocity;
 
   // For all lines: for all points along the line: for all relevant cells: dof index of first dof of
   // current cell and all shape function values
-  std::vector<std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>>
+  std::vector<
+    std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>>
     cells_global_pressure;
 
   // number of samples for averaging in time

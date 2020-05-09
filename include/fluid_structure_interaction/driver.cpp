@@ -255,10 +255,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_input_parameters_structure(structure_param);
   structure_param.check_input_parameters();
   // Some FSI specific Asserts
-  // TODO needs to be currently deactivated due to problems with
-  // read_dof_values_plain(), which is called in case of pull_back_traction = true.
-  //  AssertThrow(structure_param.pull_back_traction == true,
-  //              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+  AssertThrow(structure_param.pull_back_traction == true,
+              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
   structure_param.print(pcout, "List of input parameters for structure:");
 
   // triangulation
@@ -465,21 +463,17 @@ Driver<dim, Number>::solve() const
     unsigned int const N_ITER_MAX = 1;
     for(unsigned int iter = 0; iter < N_ITER_MAX; ++iter)
     {
-      // TODO
-      VectorType vec_displacement, vec_velocity;
+      VectorType displacement_structure, velocity_structure;
       if(iter == 0)
       {
-        structure_time_integrator->extrapolate_displacement_to_np(vec_displacement);
-        structure_time_integrator->extrapolate_velocity_to_np(vec_velocity);
+        structure_time_integrator->extrapolate_displacement_to_np(displacement_structure);
+        structure_time_integrator->extrapolate_velocity_to_np(velocity_structure);
       }
       else
       {
-        vec_displacement = structure_time_integrator->get_displacement_np();
-        vec_velocity     = structure_time_integrator->get_velocity_np();
+        displacement_structure = structure_time_integrator->get_displacement_np();
+        velocity_structure     = structure_time_integrator->get_velocity_np();
       }
-
-      // TODO set explicitly to zero for testing
-      //      vec_velocity = 0.0;
 
       // move the fluid mesh and update dependent data structures
       {
@@ -489,7 +483,7 @@ Driver<dim, Number>::solve() const
         Timer sub_timer;
 
         // TODO
-        // structure_to_moving_mesh->update_data(vec_displacements);
+        // structure_to_ale->update_data(displacement_structure);
 
         sub_timer.restart();
         fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
@@ -510,8 +504,8 @@ Driver<dim, Number>::solve() const
         timer_tree.insert({"FSI", "ALE"}, timer.wall_time());
       }
 
-      // TODO update boundary conditions for fluid
-      structure_to_fluid->update_data(vec_velocity);
+      // update boundary conditions for fluid
+      structure_to_fluid->update_data(velocity_structure);
 
       // solve fluid problem
       fluid_time_integrator->advance_one_timestep_solve();

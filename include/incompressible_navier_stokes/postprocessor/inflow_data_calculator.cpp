@@ -25,7 +25,7 @@ InflowDataCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_vel
   dof_handler_velocity = &dof_handler_velocity_in;
   mapping              = &mapping_in;
 
-  array_dof_index_and_shape_values.resize(inflow_data.n_points_y * inflow_data.n_points_z);
+  array_dof_indices_and_shape_values.resize(inflow_data.n_points_y * inflow_data.n_points_z);
   array_counter.resize(inflow_data.n_points_y * inflow_data.n_points_z);
 }
 
@@ -66,13 +66,14 @@ InflowDataCalculator<dim, Number>::calculate(
             AssertThrow(false, ExcMessage("Not implemented."));
           }
 
-          std::vector<std::pair<unsigned int, std::vector<Number>>> dof_index_and_shape_values;
-          get_dof_index_and_shape_values(
-            *dof_handler_velocity, *mapping, velocity, point, dof_index_and_shape_values);
+          std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+            dof_indices_and_shape_values;
+          get_dof_indices_and_shape_values(
+            *dof_handler_velocity, *mapping, velocity, point, dof_indices_and_shape_values);
 
           unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
-          array_dof_index_and_shape_values[array_index] = dof_index_and_shape_values;
+          array_dof_indices_and_shape_values[array_index] = dof_indices_and_shape_values;
         }
       }
 
@@ -91,8 +92,7 @@ InflowDataCalculator<dim, Number>::calculate(
         (*inflow_data.array)[array_index] = 0.0;
         array_counter[array_index]        = 0;
 
-        std::vector<std::pair<unsigned int, std::vector<Number>>> & vector(
-          array_dof_index_and_shape_values[array_index]);
+        auto & vector(array_dof_indices_and_shape_values[array_index]);
 
         // loop over all adjacent, locally owned cells for the current point
         for(auto iter = vector.begin(); iter != vector.end(); ++iter)

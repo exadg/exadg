@@ -213,18 +213,14 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         if(velocity_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          std::vector<std::pair<unsigned int, std::vector<Number>>>
-            dof_index_first_dof_and_shape_values;
+          std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+            dof_indices_and_shape_values;
 
-          get_dof_index_and_shape_values(dof_handler_velocity,
-                                         mapping,
-                                         velocity,
-                                         *point_it,
-                                         dof_index_first_dof_and_shape_values);
+          get_dof_indices_and_shape_values(
+            dof_handler_velocity, mapping, velocity, *point_it, dof_indices_and_shape_values);
 
-          for(typename std::vector<std::pair<unsigned int, std::vector<Number>>>::iterator iter =
-                dof_index_first_dof_and_shape_values.begin();
-              iter != dof_index_first_dof_and_shape_values.end();
+          for(auto iter = dof_indices_and_shape_values.begin();
+              iter != dof_indices_and_shape_values.end();
               ++iter)
           {
             cells_global_velocity[line_iterator][p].push_back(*iter);
@@ -234,18 +230,14 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         if(pressure_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          std::vector<std::pair<unsigned int, std::vector<Number>>>
-            dof_index_first_dof_and_shape_values;
+          std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+            dof_indices_and_shape_values;
 
-          get_dof_index_and_shape_values(dof_handler_pressure,
-                                         mapping,
-                                         pressure,
-                                         *point_it,
-                                         dof_index_first_dof_and_shape_values);
+          get_dof_indices_and_shape_values(
+            dof_handler_pressure, mapping, pressure, *point_it, dof_indices_and_shape_values);
 
-          for(typename std::vector<std::pair<unsigned int, std::vector<Number>>>::iterator iter =
-                dof_index_first_dof_and_shape_values.begin();
-              iter != dof_index_first_dof_and_shape_values.end();
+          for(auto iter = dof_indices_and_shape_values.begin();
+              iter != dof_indices_and_shape_values.end();
               ++iter)
           {
             cells_global_pressure[line_iterator][p].push_back(*iter);
@@ -333,8 +325,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
 
   for(unsigned int p = 0; p < line.n_points; ++p)
   {
-    std::vector<std::pair<unsigned int, std::vector<Number>>> & adjacent_cells(
-      cells_global_velocity[line_iterator][p]);
+    auto & adjacent_cells(cells_global_velocity[line_iterator][p]);
 
     // loop over all adjacent, locally owned cells for the current point
     for(auto iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
@@ -419,8 +410,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
 
   for(unsigned int p = 0; p < line.n_points; ++p)
   {
-    std::vector<std::pair<unsigned int, std::vector<Number>>> & adjacent_cells(
-      cells_global_pressure[line_iterator][p]);
+    auto & adjacent_cells(cells_global_pressure[line_iterator][p]);
 
     // loop over all adjacent, locally owned cells for the current point
     for(auto iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)

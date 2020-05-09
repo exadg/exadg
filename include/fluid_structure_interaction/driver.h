@@ -181,9 +181,8 @@ private:
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
-  // TODO
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_fluid;
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_moving_mesh;
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_ale;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> fluid_to_structure;
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/

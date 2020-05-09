@@ -28,8 +28,8 @@ private:
   typedef std::pair<unsigned int, unsigned int>      Range;
 
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
-  typedef std::pair<unsigned int, std::vector<double>>         DofIndexAndShapeValues;
-  typedef std::map<Id, std::vector<DofIndexAndShapeValues>>    ArrayBookmarks;
+  typedef std::pair<std::vector<types::global_dof_index>, std::vector<double>> InterpolationData;
+  typedef std::map<Id, std::vector<InterpolationData>>         ArrayInterpolationData;
   typedef std::map<Id, std::vector<Tensor<rank, dim, double>>> ArraySolution;
 
   typedef unsigned int quad_index;
@@ -64,11 +64,12 @@ public:
     {
       types::boundary_id const boundary_id = boundary->first;
 
-      global_map_bookmarks.emplace(boundary_id, std::map<quad_index, ArrayBookmarks>());
+      global_map_interpolation_data.emplace(boundary_id,
+                                            std::map<quad_index, ArrayInterpolationData>());
       global_map_solution.emplace(boundary_id, std::map<quad_index, ArraySolution>());
 
-      std::map<quad_index, ArrayBookmarks> & map_bookmarks =
-        global_map_bookmarks.find(boundary_id)->second;
+      std::map<quad_index, ArrayInterpolationData> & map_interpolation_data =
+        global_map_interpolation_data.find(boundary_id)->second;
       std::map<quad_index, ArraySolution> & map_solution =
         global_map_solution.find(boundary_id)->second;
 
@@ -76,7 +77,7 @@ public:
       {
         quad_index const quad_id = *quad;
 
-        map_bookmarks.emplace(quad_id, ArrayBookmarks());
+        map_interpolation_data.emplace(quad_id, ArrayInterpolationData());
         map_solution.emplace(quad_id, ArraySolution());
       }
     }
@@ -91,12 +92,10 @@ public:
                           dof_vector_src_in);
 
 
+    // give boundary condition access to the data
     for(auto boundary = map_bc.begin(); boundary != map_bc.end(); ++boundary)
     {
-      types::boundary_id const boundary_id = boundary->first;
-
-      // give boundary condition access to the data
-      boundary->second->set_data_pointer(global_map_solution.find(boundary_id)->second);
+      boundary->second->set_data_pointer(global_map_solution.find(boundary->first)->second);
     }
   }
 
@@ -119,8 +118,8 @@ public:
     {
       types::boundary_id const boundary_id = boundary->first;
 
-      std::map<quad_index, ArrayBookmarks> & map_bookmarks =
-        global_map_bookmarks.find(boundary_id)->second;
+      std::map<quad_index, ArrayInterpolationData> & map_interpolation_data =
+        global_map_interpolation_data.find(boundary_id)->second;
       std::map<quad_index, ArraySolution> & map_solution =
         global_map_solution.find(boundary_id)->second;
 
@@ -128,24 +127,25 @@ public:
       {
         quad_index const quad_id = *quad;
 
-        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_id)->second;
-        ArraySolution &  array_solution  = map_solution.find(quad_id)->second;
+        ArrayInterpolationData & array_interpolation_data =
+          map_interpolation_data.find(quad_id)->second;
+        ArraySolution & array_solution = map_solution.find(quad_id)->second;
 
         for(auto q_point = array_solution.begin(); q_point != array_solution.end(); ++q_point)
         {
           Id id = q_point->first;
 
           std::vector<Tensor<rank, dim, double>> & solution = array_solution.find(id)->second;
-          std::vector<DofIndexAndShapeValues> &    bookmark = array_bookmarks.find(id)->second;
+          std::vector<InterpolationData> &         interpolation_data =
+            array_interpolation_data.find(id)->second;
 
           for(unsigned int i = 0; i < solution.size(); ++i)
           {
-            // interpolate solution from dof vector and overwrite data
-            // TODO: does not work for continuous elements
+            // interpolate solution from dof vector using cached data
             solution[i] = Interpolator<rank, dim, double>::value(*dof_handler_src,
                                                                  *dof_vector_src_double_ptr,
-                                                                 bookmark[i].first,
-                                                                 bookmark[i].second);
+                                                                 interpolation_data[i].first,
+                                                                 interpolation_data[i].second);
           }
         }
       }
@@ -193,8 +193,8 @@ private:
     {
       types::boundary_id const boundary_id = boundary->first;
 
-      std::map<quad_index, ArrayBookmarks> & map_bookmarks =
-        global_map_bookmarks.find(boundary_id)->second;
+      std::map<quad_index, ArrayInterpolationData> & map_interpolation_data =
+        global_map_interpolation_data.find(boundary_id)->second;
       std::map<quad_index, ArraySolution> & map_solution =
         global_map_solution.find(boundary_id)->second;
 
@@ -202,8 +202,9 @@ private:
       {
         quad_index const quad_id = *quad;
 
-        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_id)->second;
-        ArraySolution &  array_solution  = map_solution.find(quad_id)->second;
+        ArrayInterpolationData & array_interpolation_data =
+          map_interpolation_data.find(quad_id)->second;
+        ArraySolution & array_solution = map_solution.find(quad_id)->second;
 
         Integrator integrator(matrix_free, true, dof_index_dst, quad_id);
 
@@ -223,18 +224,23 @@ private:
                 for(unsigned int d = 0; d < dim; ++d)
                   q_point[d] = q_points[d][v];
 
-                std::vector<DofIndexAndShapeValues> bookmark;
-                get_dof_index_and_shape_values(
-                  *dof_handler_src, *mapping_src, *dof_vector_src_double_ptr, q_point, bookmark);
+                std::vector<InterpolationData> interpolation_data;
+                get_dof_indices_and_shape_values(*dof_handler_src,
+                                                 *mapping_src,
+                                                 *dof_vector_src_double_ptr,
+                                                 q_point,
+                                                 interpolation_data);
 
-                // TODO
-                AssertThrow(bookmark.size() > 0, ExcMessage("bookmark vector is empty."));
+                AssertThrow(
+                  interpolation_data.size() > 0,
+                  ExcMessage(
+                    "interpolation_data is empty. Check why no adjacent points have been found."));
 
-                std::vector<Tensor<rank, dim, double>> solution(bookmark.size(),
+                std::vector<Tensor<rank, dim, double>> solution(interpolation_data.size(),
                                                                 Tensor<rank, dim, double>());
 
                 Id id = std::make_tuple(face, q, v);
-                array_bookmarks.emplace(id, bookmark);
+                array_interpolation_data.emplace(id, interpolation_data);
                 array_solution.emplace(id, solution);
               }
             }
@@ -254,8 +260,9 @@ private:
   DoFHandler<dim> const * dof_handler_src;
   Mapping<dim> const *    mapping_src;
 
-  mutable std::map<types::boundary_id, std::map<quad_index, ArrayBookmarks>> global_map_bookmarks;
-  mutable std::map<types::boundary_id, std::map<quad_index, ArraySolution>>  global_map_solution;
+  mutable std::map<types::boundary_id, std::map<quad_index, ArrayInterpolationData>>
+                                                                            global_map_interpolation_data;
+  mutable std::map<types::boundary_id, std::map<quad_index, ArraySolution>> global_map_solution;
 };
 
 

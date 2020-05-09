@@ -600,7 +600,7 @@ public:
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
-    // TODO
+    // TODO remove once FSI implementation is complete
     //    boundary_descriptor_velocity->dirichlet_bc.insert(
     //      pair(BOUNDARY_ID_FLAG, new VelocityBendingWall<dim>()));
     boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
@@ -659,7 +659,7 @@ public:
     parameters.body_force           = false;
     parameters.pull_back_body_force = false;
     parameters.large_deformation    = true;
-    parameters.pull_back_traction   = false; // TODO true;
+    parameters.pull_back_traction   = true;
 
     parameters.density = DENSITY_STRUCTURE;
 

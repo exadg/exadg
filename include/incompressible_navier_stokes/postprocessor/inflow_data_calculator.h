@@ -97,8 +97,8 @@ private:
 
   MPI_Comm const & mpi_comm;
 
-  std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>
-    array_dof_index_and_shape_values;
+  std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>
+    array_dof_indices_and_shape_values;
 
   std::vector<unsigned int> array_counter;
 };

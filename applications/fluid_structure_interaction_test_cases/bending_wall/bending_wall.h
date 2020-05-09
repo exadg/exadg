@@ -566,6 +566,8 @@ public:
     std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
 
     // fill boundary descriptor velocity
 
@@ -580,8 +582,11 @@ public:
     boundary_descriptor_velocity->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    boundary_descriptor_velocity->dirichlet_bc.insert(pair(3, new VelocityBendingWall<dim>()));
-
+    // TODO remove once FSI implementation is complete
+    //    boundary_descriptor_velocity->dirichlet_bc.insert(pair(3, new
+    //    VelocityBendingWall<dim>()));
+    boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
+      pair_fsi(3, new FunctionInterpolation<1, dim>()));
 
     // fill boundary descriptor pressure
 
@@ -643,7 +648,7 @@ public:
     parameters.body_force           = false;
     parameters.pull_back_body_force = false;
     parameters.large_deformation    = true;
-    parameters.pull_back_traction   = false; // TODO true;
+    parameters.pull_back_traction   = true;
 
     parameters.density = DENSITY_STRUCTURE;
 
