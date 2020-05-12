@@ -31,6 +31,7 @@ InputParameters::InputParameters()
     start_time(0.),
     end_time(-1.),
     viscosity(-1.),
+    density(1.),
     thermal_expansion_coefficient(1.0),
     reference_temperature(0.0),
 
@@ -609,6 +610,9 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
 
   // viscosity
   print_parameter(pcout, "Viscosity", viscosity);
+
+  // density
+  print_parameter(pcout, "Density", density);
 
   if(boussinesq_term)
   {

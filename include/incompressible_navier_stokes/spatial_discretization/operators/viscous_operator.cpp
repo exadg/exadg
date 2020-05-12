@@ -183,8 +183,7 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                               boundary_type,
                                               boundary_id,
                                               operator_data.bc,
-                                              this->time,
-                                              operator_data.quad_index);
+                                              this->time);
 
     vector normal = integrator.get_normal_vector(q);
 

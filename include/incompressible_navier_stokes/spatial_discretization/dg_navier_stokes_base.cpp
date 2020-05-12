@@ -1677,11 +1677,15 @@ DGNavierStokesBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
         // compute traction acting on structure with normal vector in opposite direction
         // as compared to the fluid domain
-        vector normal = -integrator_u.get_normal_vector(q);
+        vector normal = integrator_u.get_normal_vector(q);
         tensor grad_u = integrator_u.get_gradient(q);
         scalar p      = integrator_p.get_value(q);
 
-        vector traction = param.viscosity * (grad_u + transpose(grad_u)) * normal - p * normal;
+        // incompressible flow solver is formulated in terms of kinematic viscosity and kinematic
+        // pressure
+        // -> multiply by density to get true traction in N/m^2.
+        vector traction =
+          param.density * (param.viscosity * (grad_u + transpose(grad_u)) * normal - p * normal);
 
         integrator_u.submit_dof_value(traction, index);
       }

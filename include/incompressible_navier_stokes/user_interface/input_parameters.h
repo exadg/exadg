@@ -144,6 +144,10 @@ public:
   // kinematic viscosity
   double viscosity;
 
+  // density (not required by fluid solver which is formulated in terms of the kinematic
+  // viscosity only, but for the calculation of the fluid stress for FSI problems)
+  double density;
+
   // Boussinesg term
   double thermal_expansion_coefficient;
   double reference_temperature;

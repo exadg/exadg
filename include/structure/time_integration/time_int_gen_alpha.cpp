@@ -161,16 +161,6 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
 }
 
 template<int dim, typename Number>
-void
-TimeIntGenAlpha<dim, Number>::extrapolate_displacement_to_np(VectorType & displacement)
-{
-  // D_np = D_n + dt * V_n + 1/2 dt^2 * A_n
-  displacement = displacement_n;
-  displacement.add(this->get_time_step_size(), velocity_n);
-  displacement.add(std::pow(this->get_time_step_size(), 2.0) / 2.0, acceleration_n);
-}
-
-template<int dim, typename Number>
 typename TimeIntGenAlpha<dim, Number>::VectorType const &
 TimeIntGenAlpha<dim, Number>::get_displacement_np()
 {
@@ -179,11 +169,19 @@ TimeIntGenAlpha<dim, Number>::get_displacement_np()
 
 template<int dim, typename Number>
 void
+TimeIntGenAlpha<dim, Number>::extrapolate_displacement_to_np(VectorType & displacement)
+{
+  // D_np = D_n + dt * V_n
+  displacement = displacement_n;
+  displacement.add(this->get_time_step_size(), velocity_n);
+}
+
+template<int dim, typename Number>
+void
 TimeIntGenAlpha<dim, Number>::extrapolate_velocity_to_np(VectorType & velocity)
 {
-  // V_np = V_n + dt * A_n
+  // use old velocity solution as guess for velocity_np
   velocity = velocity_n;
-  velocity.add(this->get_time_step_size(), acceleration_n);
 }
 
 template<int dim, typename Number>
@@ -198,6 +196,21 @@ typename TimeIntGenAlpha<dim, Number>::VectorType const &
 TimeIntGenAlpha<dim, Number>::get_velocity_np()
 {
   return velocity_np;
+}
+
+template<int dim, typename Number>
+void
+TimeIntGenAlpha<dim, Number>::relax_displacement(double const       omega,
+                                                 VectorType const & displacement_previous)
+{
+  displacement_np *= omega;
+  displacement_np.add(1.0 - omega, displacement_previous);
+
+  // velocity_np, acceleration_np depend on displacement_np, so we need to
+  // update these vectors as well
+  this->update_velocity(velocity_np, displacement_np, displacement_n, velocity_n, acceleration_n);
+  this->update_acceleration(
+    acceleration_np, displacement_np, displacement_n, velocity_n, acceleration_n);
 }
 
 template<int dim, typename Number>

@@ -195,28 +195,35 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_pressure_on_boundary()
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_velocity() const
 {
   return velocity[0];
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_velocity_np() const
 {
   return velocity_np;
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
+TimeIntBDFPressureCorrection<dim, Number>::get_pressure_np() const
+{
+  return pressure_np;
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_pressure(unsigned int i) const
 {
   return pressure[i];

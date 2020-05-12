@@ -98,28 +98,35 @@ TimeIntBDFCoupled<dim, Number>::setup_derived()
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_velocity() const
 {
   return solution[0].block(0);
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_velocity(unsigned int i) const
 {
   return solution[i].block(0);
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_velocity_np() const
 {
   return solution_np.block(0);
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
+TimeIntBDFCoupled<dim, Number>::get_pressure_np() const
+{
+  return solution_np.block(1);
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_pressure(unsigned int i) const
 {
   return solution[i].block(1);

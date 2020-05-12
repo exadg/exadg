@@ -85,12 +85,11 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else if(boundary_type == BoundaryType::DirichletMortar)
       {
-        // TODO get face and quad_index from integrator
-        AssertThrow(false, ExcMessage("not implemented."));
-        auto               bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
-        unsigned int const face       = 0;
-        unsigned int const quad_index = 0;
-        g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
+        auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        g       = FunctionEvaluator<rank, dim, Number>::value(bc,
+                                                        integrator.get_face_index(),
+                                                        q,
+                                                        integrator.quadrature_formula_index());
       }
       else
       {

@@ -65,6 +65,9 @@ public:
   VectorType const &
   get_velocity_np();
 
+  void
+  relax_displacement(double const omega, VectorType const & displacement_previous);
+
 private:
   void
   solve_timestep() override;

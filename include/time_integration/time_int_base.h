@@ -105,7 +105,7 @@ public:
   /*
    * Get number of computed time steps
    */
-  double
+  unsigned int
   get_number_of_time_steps() const;
 
   std::shared_ptr<TimerTree>

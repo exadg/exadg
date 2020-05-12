@@ -14,15 +14,52 @@ namespace FSI
 {
 namespace CylinderWithFlag
 {
-// set problem specific parameters like physical dimensions, etc.
-double const U_X_MAX   = 1.0;
-double const VISCOSITY = 0.01;
+// set problem specific parameters
 
-double const DENSITY_STRUCTURE = 1.0;
+// my-FSI
+double const U_X_MAX         = 1.5 * 1.0;
+double const FLUID_VISCOSITY = 1.0e-3;
+double const FLUID_DENSITY   = 1.0;
+
+double const DENSITY_STRUCTURE       = 1.0e3;
+double const POISSON_RATIO_STRUCTURE = 0.4;
+double const E_STRUCTURE             = 2.0e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+double const g                       = 0.01;
+
+// FSI 1
+// double const U_X_MAX   = 1.5*0.2;
+// double const FLUID_VISCOSITY = 1.0e-3;
+// double const FLUID_DENSITY = 1.0e3;
+//
+// double const DENSITY_STRUCTURE = 1.0e3;
+// double const POISSON_RATIO_STRUCTURE = 0.4;
+// double const E_STRUCTURE = 0.5e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
+// double const g = 2.0;
+
+// FSI 2
+// double const U_X_MAX   = 1.5*1.0;
+// double const FLUID_VISCOSITY = 1.0e-3;
+// double const FLUID_DENSITY = 1.0e3;
+//
+// double const DENSITY_STRUCTURE = 1.0e4;
+// double const POISSON_RATIO_STRUCTURE = 0.4;
+// double const E_STRUCTURE = 0.5e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
+// double const g = 0.0;
+
+// FSI 3
+// double const U_X_MAX   = 1.5*2.0;
+// double const FLUID_VISCOSITY = 1.0e-3;
+// double const FLUID_DENSITY = 1.0e3;
+//
+// double const DENSITY_STRUCTURE = 1.0e3;
+// double const POISSON_RATIO_STRUCTURE = 0.4;
+// double const E_STRUCTURE = 2.0e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
+// double const g = 2.0;
 
 double const END_TIME = 8.0;
 
-double const OUTPUT_INTERVAL_TIME = END_TIME / 100;
+double const OUTPUT_INTERVAL_TIME                = END_TIME / 100;
+double const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e4;
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
@@ -39,59 +76,12 @@ double const L_FLAG = 0.35;                   // length of flag
 double const X_3    = X_C + R + L_FLAG * 1.6; // only relevant for mesh
 double const Y_3    = H / 3.0;                // only relevant for mesh
 
-unsigned int const BOUNDARY_ID_WALLS    = 0;
-unsigned int const BOUNDARY_ID_INFLOW   = 1;
-unsigned int const BOUNDARY_ID_OUTFLOW  = 2;
-unsigned int const BOUNDARY_ID_CYLINDER = 3;
-unsigned int const BOUNDARY_ID_FLAG     = 4;
-
-double
-function_space(double const x)
-{
-  double const AMPLITUDE = 2.0 * T;
-  if(x > X_C + R)
-  {
-    return AMPLITUDE * (std::pow((x - (X_C + R)) / L_FLAG, 2.0) -
-                        (1 - std::cos((x - (X_C + R)) / L_FLAG * 2.0 * numbers::PI)) / 4.0);
-  }
-  else
-    return 0.0;
-}
-
-double
-function(double const t)
-{
-  double const T = END_TIME;
-  return std::sin(2.0 * numbers::PI * t / T);
-}
-
-double
-dfdt(double const t)
-{
-  double const T = END_TIME;
-  return 2.0 * numbers::PI * std::cos(2.0 * numbers::PI * t / T);
-}
-
-template<int dim>
-class MeshMotion : public Function<dim>
-{
-public:
-  MeshMotion() : Function<dim>(dim, 0.0)
-  {
-  }
-
-  double
-  value(const Point<dim> & p, const unsigned int component = 0) const
-  {
-    double t      = this->get_time();
-    double result = 0.0;
-
-    if(component == 1)
-      result = function_space(p[0]) * function(t);
-
-    return result;
-  }
-};
+// boundary conditions
+types::boundary_id const BOUNDARY_ID_WALLS    = 0;
+types::boundary_id const BOUNDARY_ID_INFLOW   = 1;
+types::boundary_id const BOUNDARY_ID_OUTFLOW  = 2;
+types::boundary_id const BOUNDARY_ID_CYLINDER = 3;
+types::boundary_id const BOUNDARY_ID_FLAG     = 4;
 
 template<int dim>
 class InflowBC : public Function<dim>
@@ -107,29 +97,11 @@ public:
     (void)p;
     double result = 0.0;
 
+    double const t = this->get_time();
+    double const T = 2.0;
+
     if(component == 0)
-      result = U_X_MAX;
-
-    return result;
-  }
-};
-
-template<int dim>
-class VelocityBendingWall : public Function<dim>
-{
-public:
-  VelocityBendingWall() : Function<dim>(dim, 0.0)
-  {
-  }
-
-  double
-  value(const Point<dim> & p, const unsigned int component = 0) const
-  {
-    double t      = this->get_time();
-    double result = 0.0;
-
-    if(component == 1)
-      result = function_space(p[0]) * dfdt(t);
+      result = U_X_MAX * ((t < T) ? 0.5 * (1.0 - std::cos(t / T * numbers::PI)) : 1.0);
 
     return result;
   }
@@ -185,24 +157,28 @@ public:
     // PHYSICAL QUANTITIES
     param.start_time = 0.0;
     param.end_time   = END_TIME;
-    param.viscosity  = VISCOSITY;
+    param.viscosity  = FLUID_VISCOSITY;
+    param.density    = FLUID_DENSITY;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
-    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    param.solver_type = SolverType::Unsteady;
+    param.temporal_discretization =
+      TemporalDiscretization::BDFDualSplittingScheme; // BDFPressureCorrection; //TODO
+                                                      // BDFDualSplittingScheme;
+    param.treatment_of_convective_term =
+      TreatmentOfConvectiveTerm::Explicit; // Implicit; //TODO Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
     param.adaptive_time_stepping          = true;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL; // UserSpecified; //CFL;
     param.time_step_size                  = END_TIME;
     param.max_velocity                    = U_X_MAX;
-    param.cfl                             = 1.5;
+    param.cfl                             = 0.5;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
     param.solver_info_data.interval_time       = 0.1 * (param.end_time - param.start_time);
-    param.solver_info_data.interval_time_steps = 1;
+    param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     // restart
     param.restarted_simulation             = false;
@@ -290,7 +266,7 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-6);
 
     // linear solver
     param.solver_momentum                = SolverMomentum::FGMRES;
@@ -355,12 +331,12 @@ public:
     // SPATIAL DISCRETIZATION
     param.triangulation_type     = TriangulationType::Distributed;
     param.mapping                = MappingType::Isoparametric;
-    param.spatial_discretization = SpatialDiscretization::CG;
-    param.IP_factor              = 1.0e0;
+    param.spatial_discretization = SpatialDiscretization::DG; // CG;
+    param.IP_factor              = 1.0e4;                     // TODO
 
     // SOLVER
     param.solver                    = Poisson::Solver::CG;
-    param.solver_data.abs_tol       = 1.e-20;
+    param.solver_data.abs_tol       = 1.e-12;
     param.solver_data.rel_tol       = 1.e-10;
     param.solver_data.max_iter      = 1e4;
     param.preconditioner            = Preconditioner::Multigrid;
@@ -561,6 +537,8 @@ public:
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
@@ -570,7 +548,10 @@ public:
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(pair(BOUNDARY_ID_FLAG, new MeshMotion<dim>()));
+
+    // fluid-structure interface
+    boundary_descriptor->dirichlet_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
   }
 
 
@@ -596,13 +577,10 @@ public:
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
     boundary_descriptor_velocity->neumann_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>()));
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
-    // TODO remove once FSI implementation is complete
-    //    boundary_descriptor_velocity->dirichlet_bc.insert(
-    //      pair(BOUNDARY_ID_FLAG, new VelocityBendingWall<dim>()));
     boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
 
@@ -656,7 +634,7 @@ public:
     using namespace Structure;
 
     parameters.problem_type         = ProblemType::Unsteady;
-    parameters.body_force           = false;
+    parameters.body_force           = true; // TODO //false;
     parameters.pull_back_body_force = false;
     parameters.large_deformation    = true;
     parameters.pull_back_traction   = true;
@@ -668,12 +646,12 @@ public:
     parameters.time_step_size                       = END_TIME / 100.0;
     parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
     parameters.spectral_radius                      = 0.8;
-    parameters.solver_info_data.interval_time_steps = 1;
+    parameters.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-6);
     parameters.solver                               = Structure::Solver::FGMRES;
     parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
@@ -915,15 +893,31 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
+
     boundary_descriptor->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
       pair_mask(BOUNDARY_ID_CYLINDER, ComponentMask()));
 
-    // currently use analytical motion (TODO)
-    boundary_descriptor->dirichlet_bc.insert(pair(BOUNDARY_ID_FLAG, new MeshMotion<dim>()));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_FLAG, ComponentMask()));
+    // fluid-structure interface
+    boundary_descriptor->neumann_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
+  }
+
+  void
+  set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  {
+    // TODO
+    //    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+    std::vector<double> gravity = std::vector<double>(dim, 0.0);
+    gravity[1]                  = -g * DENSITY_STRUCTURE;
+    field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(gravity));
+
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -933,23 +927,11 @@ public:
 
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = 200.0e3, nu = 0.3; // TODO
+    MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlainStress;
 
-    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, nu, two_dim_type)));
-  }
-
-  void
-  set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
-  {
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    // TODO: currently use analytical motion
-    field_functions->initial_velocity.reset(new VelocityBendingWall<dim>());
-    // finally, use this
-    //    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    material_descriptor.insert(
+      Pair(0, new StVenantKirchhoffData(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>

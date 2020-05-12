@@ -29,14 +29,23 @@ inline DEAL_II_ALWAYS_INLINE //
                           std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
                           double const &                                 time)
 {
-  Tensor<1, dim, VectorizedArray<Number>> normal_gradient;
+  Tensor<1, dim, VectorizedArray<Number>> traction;
 
   if(boundary_type == BoundaryType::Neumann)
   {
     auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
     auto q_points = integrator.quadrature_point(q);
 
-    normal_gradient = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
+    traction = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
+  }
+  else if(boundary_type == BoundaryType::NeumannMortar)
+  {
+    auto bc = boundary_descriptor->neumann_mortar_bc.find(boundary_id)->second;
+
+    traction = FunctionEvaluator<1, dim, Number>::value(bc,
+                                                        integrator.get_face_index(),
+                                                        q,
+                                                        integrator.quadrature_formula_index());
   }
   else
   {
@@ -46,7 +55,7 @@ inline DEAL_II_ALWAYS_INLINE //
                 ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
-  return normal_gradient;
+  return traction;
 }
 
 } // namespace Structure

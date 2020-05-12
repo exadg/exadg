@@ -131,7 +131,7 @@ TimeIntBase::get_time() const
   return time;
 }
 
-double
+unsigned int
 TimeIntBase::get_number_of_time_steps() const
 {
   return this->get_time_step_number() - 1;

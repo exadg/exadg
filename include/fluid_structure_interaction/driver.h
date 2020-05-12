@@ -81,6 +81,21 @@ private:
   void
   synchronize_time_step_size() const;
 
+  void
+  coupling_structure_to_ale(VectorType & displacement_structure, bool const extrapolate) const;
+
+  void
+  solve_ale() const;
+
+  void
+  coupling_structure_to_fluid(bool const extrapolate) const;
+
+  void
+  coupling_fluid_to_structure() const;
+
+  void
+  print_partitioned_iterations() const;
+
   // MPI communicator
   MPI_Comm const & mpi_comm;
 
@@ -191,6 +206,8 @@ private:
    * Computation time (wall clock time).
    */
   mutable TimerTree timer_tree;
+
+  mutable unsigned int partitioned_iterations;
 };
 
 } // namespace FSI

@@ -27,8 +27,7 @@ class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
 private:
   typedef TimeIntBDF<dim, Number> Base;
 
-  typedef typename Base::VectorType      VectorType;
-  typedef typename Base::BlockVectorType BlockVectorType;
+  typedef typename Base::VectorType VectorType;
 
   typedef DGNavierStokesDualSplitting<dim, Number> Operator;
 
@@ -50,6 +49,12 @@ public:
 
   void
   print_iterations() const;
+
+  VectorType const &
+  get_velocity_np() const;
+
+  VectorType const &
+  get_pressure_np() const;
 
 private:
   void
@@ -118,16 +123,13 @@ private:
   double
   evaluate_residual();
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
-  get_velocity_np() const;
-
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   void

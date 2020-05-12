@@ -61,6 +61,12 @@ public:
   virtual VectorType const &
   get_velocity() const = 0;
 
+  virtual VectorType const &
+  get_velocity_np() const = 0;
+
+  virtual VectorType const &
+  get_pressure_np() const = 0;
+
   void
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
@@ -160,9 +166,6 @@ private:
 
   virtual VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const = 0;
-
-  virtual VectorType const &
-  get_velocity_np() const = 0;
 
   virtual VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const = 0;

@@ -46,6 +46,12 @@ public:
   void
   print_iterations() const;
 
+  VectorType const &
+  get_velocity_np() const;
+
+  VectorType const &
+  get_pressure_np() const;
+
 private:
   void
   setup_derived() override;
@@ -74,16 +80,13 @@ private:
   void
   prepare_vectors_for_next_timestep() override;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
-  get_velocity_np() const;
-
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   void

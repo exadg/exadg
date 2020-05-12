@@ -12,7 +12,7 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
-using namespace dealii;
+#include "../../functions_and_boundary_conditions/function_interpolation.h"
 
 namespace Structure
 {
@@ -20,7 +20,8 @@ enum class BoundaryType
 {
   Undefined,
   Dirichlet,
-  Neumann
+  Neumann,
+  NeumannMortar
 };
 
 template<int dim>
@@ -31,6 +32,12 @@ struct BoundaryDescriptor
 
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
+  // another type of Neumann boundary condition where the traction force comes
+  // from the solution on another domain that is in contact with the actual domain
+  // of interest at the given boundary (this type of Neumann boundary condition
+  // is required for fluid-structure interaction problems)
+  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>> neumann_mortar_bc;
+
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType
     get_boundary_type(types::boundary_id const & boundary_id) const
@@ -39,6 +46,8 @@ struct BoundaryDescriptor
       return BoundaryType::Dirichlet;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
+    else if(this->neumann_mortar_bc.find(boundary_id) != this->neumann_mortar_bc.end())
+      return BoundaryType::NeumannMortar;
 
     AssertThrow(false,
                 ExcMessage("Could not find a boundary type to the specified boundary_id = " +
@@ -68,6 +77,9 @@ struct BoundaryDescriptor
     }
 
     if(neumann_bc.find(boundary_id) != neumann_bc.end())
+      counter++;
+
+    if(neumann_mortar_bc.find(boundary_id) != neumann_mortar_bc.end())
       counter++;
 
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())

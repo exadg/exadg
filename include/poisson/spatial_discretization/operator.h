@@ -101,6 +101,12 @@ public:
   unsigned int
   get_degree() const;
 
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
@@ -120,12 +126,6 @@ private:
 
   std::string
   get_quad_name() const;
-
-  unsigned int
-  get_dof_index() const;
-
-  unsigned int
-  get_quad_index() const;
 
   void
   distribute_dofs();

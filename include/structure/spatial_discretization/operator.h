@@ -295,6 +295,12 @@ public:
   unsigned int
   get_degree() const;
 
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
+
 private:
   /*
    * Initializes DoFHandler.
@@ -312,13 +318,7 @@ private:
   get_quad_name() const;
 
   unsigned int
-  get_dof_index() const;
-
-  unsigned int
   get_dof_index_mass() const;
-
-  unsigned int
-  get_quad_index() const;
 
   /*
    * Initializes operators.

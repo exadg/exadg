@@ -272,28 +272,35 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_acceleration_and_velocity_on_bo
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFDualSplitting<dim, Number>::VectorType const &
 TimeIntBDFDualSplitting<dim, Number>::get_velocity() const
 {
   return velocity[0];
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFDualSplitting<dim, Number>::VectorType const &
 TimeIntBDFDualSplitting<dim, Number>::get_velocity_np() const
 {
   return velocity_np;
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFDualSplitting<dim, Number>::VectorType const &
+TimeIntBDFDualSplitting<dim, Number>::get_pressure_np() const
+{
+  return pressure_np;
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFDualSplitting<dim, Number>::VectorType const &
 TimeIntBDFDualSplitting<dim, Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFDualSplitting<dim, Number>::VectorType const &
 TimeIntBDFDualSplitting<dim, Number>::get_pressure(unsigned int i) const
 {
   return pressure[i];
