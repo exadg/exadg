@@ -230,64 +230,63 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
-  IntegratorFace &           integrator_m,
-  types::boundary_id const & boundary_id) const
+LaplaceOperator<dim, Number, n_components>::cell_loop_empty(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
 {
-  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
+  (void)matrix_free;
+  (void)dst;
+  (void)src;
+  (void)range;
 
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-  {
-    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
-      q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
-
-    integrator_m.submit_value(-neumann_value, q);
-  }
+  // do nothing
 }
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::set_dirichlet_values_continuous(VectorType & dst,
-                                                                            double const time) const
+LaplaceOperator<dim, Number, n_components>::face_loop_empty(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
 {
-  std::map<types::global_dof_index, double> boundary_values;
-  fill_dirichlet_values_continuous(boundary_values, time);
+  (void)matrix_free;
+  (void)dst;
+  (void)src;
+  (void)range;
 
-  // set Dirichlet values in solution vector
-  for(auto m : boundary_values)
-    if(dst.get_partitioner()->in_local_range(m.first))
-      dst[m.first] = m.second;
+  // do nothing
 }
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
-  std::map<types::global_dof_index, double> & boundary_values,
-  double const                                time) const
+LaplaceOperator<dim, Number, n_components>::
+  boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
+    MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                    dst,
+    VectorType const &              src,
+    Range const &                   range) const
 {
-  for(auto dbc : operator_data.bc->dirichlet_bc)
+  for(unsigned int face = range.first; face < range.second; face++)
   {
-    dbc.second->set_time(time);
+    this->reinit_boundary_face(face);
 
-    ComponentMask mask     = ComponentMask();
-    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
-    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
-      mask = dbc_mask->second;
+    // deviating from the standard function boundary_face_loop_inhom_operator()
+    // because the boundary condition comes from the vector src
+    this->integrator_m->gather_evaluate(src,
+                                        this->integrator_flags.face_evaluate.value,
+                                        this->integrator_flags.face_evaluate.gradient);
 
-    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
-                                             this->matrix_free->get_dof_handler(
-                                               operator_data.dof_index),
-                                             dbc.first,
-                                             *dbc.second,
-                                             boundary_values,
-                                             mask);
+    do_boundary_integral_dirichlet_bc_from_dof_vector(*this->integrator_m,
+                                                      OperatorType::inhomogeneous,
+                                                      matrix_free.get_boundary_id(face));
+
+    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
+                                          this->integrator_flags.face_integrate.gradient,
+                                          dst);
   }
-
-  // TODO extend to dirichlet_mortar_bc
-  AssertThrow(
-    operator_data.bc->dirichlet_mortar_bc.empty(),
-    ExcMessage(
-      "Dirichlet boundary conditions of mortar type are currently not implemented for continuous elements."));
 }
 
 template<int dim, typename Number, int n_components>
@@ -349,62 +348,115 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::cell_loop_empty(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
+  IntegratorFace &           integrator_m,
+  types::boundary_id const & boundary_id) const
 {
-  (void)matrix_free;
-  (void)dst;
-  (void)src;
-  (void)range;
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-  // do nothing
-}
-
-template<int dim, typename Number, int n_components>
-void
-LaplaceOperator<dim, Number, n_components>::face_loop_empty(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
-{
-  (void)matrix_free;
-  (void)dst;
-  (void)src;
-  (void)range;
-
-  // do nothing
-}
-
-template<int dim, typename Number, int n_components>
-void
-LaplaceOperator<dim, Number, n_components>::
-  boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   range) const
-{
-  for(unsigned int face = range.first; face < range.second; face++)
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    this->reinit_boundary_face(face);
+    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
+      q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
 
-    // deviating from the standard function boundary_face_loop_inhom_operator()
-    // because the boundary condition comes from the vector src
-    this->integrator_m->gather_evaluate(src,
-                                        this->integrator_flags.face_evaluate.value,
-                                        this->integrator_flags.face_evaluate.gradient);
+    integrator_m.submit_value(-neumann_value, q);
+  }
+}
 
-    do_boundary_integral_dirichlet_bc_from_dof_vector(*this->integrator_m,
-                                                      OperatorType::inhomogeneous,
-                                                      matrix_free.get_boundary_id(face));
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & dst,
+                                                                   double const time) const
+{
+  // standard Dirichlet boundary conditions
+  std::map<types::global_dof_index, double> boundary_values;
+  fill_dirichlet_values_map(boundary_values, time);
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
-                                          this->integrator_flags.face_integrate.gradient,
-                                          dst);
+  // set Dirichlet values in solution vector
+  for(auto m : boundary_values)
+    if(dst.get_partitioner()->in_local_range(m.first))
+      dst[m.first] = m.second;
+
+  // Dirichlet mortar type boundary conditions
+  if(not(operator_data.bc->dirichlet_mortar_bc.empty()))
+  {
+    unsigned int const dof_index  = operator_data.dof_index;
+    unsigned int const quad_index = operator_data.quad_index_gauss_lobatto;
+
+    IntegratorFace integrator(*this->matrix_free, true, dof_index, quad_index);
+
+    for(unsigned int face = this->matrix_free->n_inner_face_batches();
+        face <
+        this->matrix_free->n_inner_face_batches() + this->matrix_free->n_boundary_face_batches();
+        ++face)
+    {
+      types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
+
+      BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
+
+      if(boundary_type == BoundaryType::DirichletMortar)
+      {
+        integrator.reinit(face);
+        integrator.read_dof_values(dst);
+
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          unsigned int const local_face_number =
+            this->matrix_free->get_face_info(face).interior_face_no;
+
+          unsigned int const index = this->matrix_free->get_shape_info(dof_index, quad_index)
+                                       .face_to_cell_index_nodal[local_face_number][q];
+
+          Tensor<rank, dim, VectorizedArray<Number>> g;
+
+          if(boundary_type == BoundaryType::DirichletMortar)
+          {
+            auto bc = operator_data.bc->dirichlet_mortar_bc.find(boundary_id)->second;
+
+            g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
+          }
+          else
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+
+          integrator.submit_dof_value(g, index);
+        }
+
+        integrator.set_dof_values_plain(dst);
+      }
+      else
+      {
+        AssertThrow(boundary_type == BoundaryType::Dirichlet ||
+                      boundary_type == BoundaryType::Neumann,
+                    ExcMessage("BoundaryType not implemented."));
+      }
+    }
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_map(
+  std::map<types::global_dof_index, double> & boundary_values,
+  double const                                time) const
+{
+  for(auto dbc : operator_data.bc->dirichlet_bc)
+  {
+    dbc.second->set_time(time);
+
+    ComponentMask mask     = ComponentMask();
+    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
+      mask = dbc_mask->second;
+
+    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                             this->matrix_free->get_dof_handler(
+                                               operator_data.dof_index),
+                                             dbc.first,
+                                             *dbc.second,
+                                             boundary_values,
+                                             mask);
   }
 }
 

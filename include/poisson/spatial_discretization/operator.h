@@ -107,6 +107,9 @@ public:
   unsigned int
   get_quad_index() const;
 
+  unsigned int
+  get_quad_index_gauss_lobatto() const;
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
@@ -126,6 +129,9 @@ private:
 
   std::string
   get_quad_name() const;
+
+  std::string
+  get_quad_gauss_lobatto_name() const;
 
   void
   distribute_dofs();
@@ -169,10 +175,11 @@ private:
 
   DoFHandler<dim> dof_handler;
 
-  mutable AffineConstraints<double> constraint_matrix;
+  mutable AffineConstraints<double> affine_constraints;
 
-  std::string const dof_index  = "laplace";
-  std::string const quad_index = "laplace";
+  std::string const dof_index                = "laplace";
+  std::string const quad_index               = "laplace";
+  std::string const quad_index_gauss_lobatto = "laplace_gauss_lobatto";
 
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;

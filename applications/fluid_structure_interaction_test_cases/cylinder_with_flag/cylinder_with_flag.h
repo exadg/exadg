@@ -331,22 +331,18 @@ public:
     // SPATIAL DISCRETIZATION
     param.triangulation_type     = TriangulationType::Distributed;
     param.mapping                = MappingType::Isoparametric;
-    param.spatial_discretization = SpatialDiscretization::DG; // CG;
-    param.IP_factor              = 1.0e4;                     // TODO
+    param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
-    param.solver                    = Poisson::Solver::CG;
-    param.solver_data.abs_tol       = 1.e-12;
-    param.solver_data.rel_tol       = 1.e-10;
-    param.solver_data.max_iter      = 1e4;
-    param.preconditioner            = Preconditioner::Multigrid;
-    param.multigrid_data.type       = MultigridType::cphMG;
-    param.multigrid_data.p_sequence = PSequenceType::Bisect;
-    // MG smoother
+    param.solver               = Poisson::Solver::CG;
+    param.solver_data.abs_tol  = 1.e-12;
+    param.solver_data.rel_tol  = 1.e-6;
+    param.solver_data.max_iter = 1e4;
+    param.preconditioner       = Preconditioner::Multigrid;
+
+    param.multigrid_data.type                          = MultigridType::phMG;
+    param.multigrid_data.p_sequence                    = PSequenceType::Bisect;
     param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
-    param.multigrid_data.smoother_data.iterations      = 5;
-    param.multigrid_data.smoother_data.smoothing_range = 20;
-    // MG coarse grid solver
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
     param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
     param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
@@ -653,7 +649,7 @@ public:
 
     parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-6);
     parameters.solver                               = Structure::Solver::FGMRES;
-    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
@@ -661,8 +657,8 @@ public:
       MultigridCoarseGridPreconditioner::AMG;
 
     parameters.update_preconditioner                         = true;
-    parameters.update_preconditioner_every_time_steps        = 1;
-    parameters.update_preconditioner_every_newton_iterations = 1;
+    parameters.update_preconditioner_every_time_steps        = 10;
+    parameters.update_preconditioner_every_newton_iterations = 10;
   }
 
   void create_triangulation_structure(Triangulation<2> & tria)

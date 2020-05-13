@@ -78,11 +78,11 @@ ElasticityOperatorBase<dim, Number>::set_scaling_factor_mass(double const factor
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::set_dirichlet_values_continuous(VectorType & dst,
-                                                                     double const time) const
+ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
+                                                            double const time) const
 {
   std::map<types::global_dof_index, double> boundary_values;
-  fill_dirichlet_values_continuous(boundary_values, time);
+  fill_dirichlet_values_map(boundary_values, time);
 
   // set Dirichlet values in solution vector
   for(auto m : boundary_values)
@@ -101,7 +101,7 @@ ElasticityOperatorBase<dim, Number>::reinit_cell(unsigned int const cell) const
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::fill_dirichlet_values_continuous(
+ElasticityOperatorBase<dim, Number>::fill_dirichlet_values_map(
   std::map<types::global_dof_index, double> & boundary_values,
   double const                                time) const
 {

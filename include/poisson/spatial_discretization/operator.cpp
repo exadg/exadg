@@ -54,7 +54,8 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
   // append mapping flags
 
   // for continuous FE discretizations, we need to evaluate inhomogeneous Neumann
-  // boundary conditions which is why the second argument is always true
+  // boundary conditions or set constrained Dirichlet values, which is why the
+  // second argument is always true
   matrix_free_data.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number, n_components>::get_mapping_flags(
       param.spatial_discretization == SpatialDiscretization::DG, true));
@@ -64,8 +65,19 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
       ConvDiff::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
-  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
+  matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
   matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
+
+  // In order to set constrained degrees of freedom for continuous Galerkin
+  // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
+  // quadrature rule has to be constructed for the mortar type boundary conditions
+  // (so that the values stored in the mortar boundary condition can be directly
+  // injected into the DoF vector)
+  if(param.spatial_discretization == SpatialDiscretization::CG &&
+     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+  {
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree + 1), get_quad_gauss_lobatto_name());
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -245,7 +257,7 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
   // apply Dirichlet boundary conditions in case of continuous elements
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    laplace_operator.set_dirichlet_values_continuous(sol, time);
+    laplace_operator.set_constrained_values(sol, time);
   }
 
   return iterations;
@@ -332,6 +344,13 @@ Operator<dim, Number, n_components>::get_quad_name() const
 }
 
 template<int dim, typename Number, int n_components>
+std::string
+Operator<dim, Number, n_components>::get_quad_gauss_lobatto_name() const
+{
+  return field + "_" + quad_index_gauss_lobatto;
+}
+
+template<int dim, typename Number, int n_components>
 unsigned int
 Operator<dim, Number, n_components>::get_dof_index() const
 {
@@ -343,6 +362,13 @@ unsigned int
 Operator<dim, Number, n_components>::get_quad_index() const
 {
   return matrix_free_data->get_quad_index(get_quad_name());
+}
+
+template<int dim, typename Number, int n_components>
+unsigned int
+Operator<dim, Number, n_components>::get_quad_index_gauss_lobatto() const
+{
+  return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
 }
 
 template<int dim, typename Number, int n_components>
@@ -376,10 +402,12 @@ Operator<dim, Number, n_components>::distribute_dofs()
 
   dof_handler.distribute_mg_dofs();
 
-  // AffineConstraints
+  // affine constraints only relevant for continuous FE discretization
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {
-    constraint_matrix.clear();
+    affine_constraints.clear();
+
+    // standard Dirichlet boundaries
     for(auto it : this->boundary_descriptor->dirichlet_bc)
     {
       ComponentMask mask    = ComponentMask();
@@ -387,9 +415,17 @@ Operator<dim, Number, n_components>::distribute_dofs()
       if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
         mask = it_mask->second;
 
-      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, constraint_matrix, mask);
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
     }
-    constraint_matrix.close();
+
+    // mortar type Dirichlet boundaries
+    for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
+    {
+      ComponentMask mask = ComponentMask();
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+    }
+
+    affine_constraints.close();
   }
 
   unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
@@ -418,12 +454,15 @@ Operator<dim, Number, n_components>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
-  laplace_operator_data.dof_index             = get_dof_index();
-  laplace_operator_data.quad_index            = get_quad_index();
+  laplace_operator_data.dof_index  = get_dof_index();
+  laplace_operator_data.quad_index = get_quad_index();
+  if(param.spatial_discretization == SpatialDiscretization::CG &&
+     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+    laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   laplace_operator_data.bc                    = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
   laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
-  laplace_operator.initialize(*matrix_free, constraint_matrix, laplace_operator_data);
+  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
 
   // rhs operator
   if(param.right_hand_side)

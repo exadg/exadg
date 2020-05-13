@@ -74,7 +74,7 @@ public:
   set_scaling_factor_mass(double const factor) const;
 
   void
-  set_dirichlet_values_continuous(VectorType & dst, double const time) const;
+  set_constrained_values(VectorType & dst, double const time) const override;
 
 protected:
   virtual void
@@ -88,8 +88,8 @@ protected:
 
 private:
   void
-  fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
-                                   double const                                time) const;
+  fill_dirichlet_values_map(std::map<types::global_dof_index, double> & boundary_values,
+                            double const                                time) const;
 };
 
 } // namespace Structure

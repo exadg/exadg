@@ -146,6 +146,9 @@ public:
   void
   initialize_dof_vector(VectorType & vector) const;
 
+  virtual void
+  set_constrained_values(VectorType & solution, double const time) const;
+
   void
   set_constrained_values_to_zero(VectorType & vector) const;
 
@@ -288,10 +291,6 @@ protected:
   virtual void
   do_boundary_integral_continuous(IntegratorFace &           integrator,
                                   types::boundary_id const & boundary_id) const;
-
-  virtual void
-  fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
-                                   double const                                time) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)

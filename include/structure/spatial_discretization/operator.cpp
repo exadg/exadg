@@ -621,7 +621,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   linearized_operator.update(factor, time);
 
   // set inhomogeneous Dirichlet values
-  elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
+  elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   // call Newton solver
   Newton::UpdateData update;
@@ -632,7 +632,7 @@ Operator<dim, Number>::solve_nonlinear(VectorType &       sol,
   auto const iter = newton_solver->solve(sol, update);
 
   // set inhomogeneous Dirichlet values
-  elasticity_operator_nonlinear.set_dirichlet_values_continuous(sol, time);
+  elasticity_operator_nonlinear.set_constrained_values(sol, time);
 
   return iter;
 }
@@ -652,7 +652,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
   unsigned int const iterations = linear_solver->solve(sol, rhs, false);
 
   // set Dirichlet values
-  elasticity_operator_linear.set_dirichlet_values_continuous(sol, time);
+  elasticity_operator_linear.set_constrained_values(sol, time);
 
   return iterations;
 }

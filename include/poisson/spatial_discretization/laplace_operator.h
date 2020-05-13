@@ -167,11 +167,16 @@ private:
 template<int rank, int dim>
 struct LaplaceOperatorData : public OperatorBaseData
 {
-  LaplaceOperatorData() : OperatorBaseData()
+  LaplaceOperatorData() : OperatorBaseData(), quad_index_gauss_lobatto(0)
   {
   }
 
   Operators::LaplaceKernelData kernel_data;
+
+  // continuous FE:
+  // for Dirichlet mortar boundary conditions, another quadrature rule
+  // is needed to set the constrained DoFs.
+  unsigned int quad_index_gauss_lobatto;
 
   std::shared_ptr<BoundaryDescriptor<rank, dim>> bc;
 };
@@ -217,15 +222,14 @@ public:
   update_after_mesh_movement();
 
   // Some more functionality on top of what is provided by the base class.
-  // This function evaluates the inhomogeneous boundary face integrals where the
+  // This function evaluates the inhomogeneous boundary face integrals in DG where the
   // Dirichlet boundary condition is extracted from a dof vector instead of a Function<dim>.
   void
   rhs_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
-  // This function sets the Dirichlet boundary values in dst vector in case of
-  // continuous elements.
+  // continuous FE: This function sets the constrained Dirichlet boundary values.
   void
-  set_dirichlet_values_continuous(VectorType & dst, double const time) const;
+  set_constrained_values(VectorType & solution, double const time) const override;
 
 private:
   void
@@ -257,16 +261,6 @@ private:
                        types::boundary_id const & boundary_id) const;
 
   void
-  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  types::boundary_id const & boundary_id) const;
-
-  // fills a map with Dirichlet boundary values in case of continuous elements
-  void
-  fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
-                                   double const                                time) const;
-
-  // Some more functionality on top of what is provided by the base class.
-  void
   cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
                   VectorType &                    dst,
                   VectorType const &              src,
@@ -278,6 +272,7 @@ private:
                   VectorType const &              src,
                   Range const &                   range) const;
 
+  // DG
   void
   boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
     MatrixFree<dim, Number> const & matrix_free,
@@ -285,10 +280,21 @@ private:
     VectorType const &              src,
     Range const &                   range) const;
 
+  // DG
   void
   do_boundary_integral_dirichlet_bc_from_dof_vector(IntegratorFace &           integrator_m,
                                                     OperatorType const &       operator_type,
                                                     types::boundary_id const & boundary_id) const;
+
+  // continuous FE: calculates Neumann boundary integral
+  void
+  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
+                                  types::boundary_id const & boundary_id) const;
+
+  // continuous FE: fills a map with Dirichlet boundary values
+  void
+  fill_dirichlet_values_map(std::map<types::global_dof_index, double> & boundary_values,
+                            double const                                time) const;
 
   LaplaceOperatorData<rank, dim> operator_data;
 

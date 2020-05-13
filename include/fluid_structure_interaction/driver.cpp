@@ -249,7 +249,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // structure to ALE
   {
     std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(poisson_operator->get_quad_index());
+    if(poisson_param.spatial_discretization == Poisson::SpatialDiscretization::DG)
+      quad_indices.emplace_back(poisson_operator->get_quad_index());
+    else if(poisson_param.spatial_discretization == Poisson::SpatialDiscretization::CG)
+      quad_indices.emplace_back(poisson_operator->get_quad_index_gauss_lobatto());
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
 
     VectorType displacement_structure;
     structure_operator->initialize_dof_vector(displacement_structure);

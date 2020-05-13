@@ -277,18 +277,18 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::rhs(VectorType & dst) const
+OperatorBase<dim, Number, n_components>::rhs(VectorType & rhs) const
 {
-  dst = 0;
-  this->rhs_add(dst);
+  rhs = 0;
+  this->rhs_add(rhs);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::rhs_add(VectorType & dst) const
+OperatorBase<dim, Number, n_components>::rhs_add(VectorType & rhs) const
 {
   VectorType tmp;
-  tmp.reinit(dst, false);
+  tmp.reinit(rhs, false);
 
   matrix_free->loop(&This::cell_loop_empty,
                     &This::face_loop_empty,
@@ -298,33 +298,25 @@ OperatorBase<dim, Number, n_components>::rhs_add(VectorType & dst) const
                     tmp);
 
   // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
-  dst.add(-1.0, tmp);
+  rhs.add(-1.0, tmp);
 
   if(!is_dg)
   {
-    // compute values at Dirichlet boundaries
-    std::map<types::global_dof_index, double> boundary_values;
-    fill_dirichlet_values_continuous(boundary_values, time);
-
-    // create temporal vectors
-    VectorType temp1, temp2;
+    // set values on Dirichlet boundaries
+    VectorType temp1;
     matrix_free->initialize_dof_vector(temp1, data.dof_index);
+    set_constrained_values(temp1, time);
+
+    // perform matrix-vector product and shift vector to right-hand side
+    VectorType temp2;
     matrix_free->initialize_dof_vector(temp2, data.dof_index);
-
-    // fill dbc-values into a zero-vector
-    for(auto m : boundary_values)
-      if(dst.get_partitioner()->in_local_range(m.first))
-        temp1[m.first] = m.second;
-
-    // perform matrix-vector multiplication and ...
     matrix_free->cell_loop(&This::cell_loop_dbc, this, temp2, temp1);
-    // ... shift vector to right-hand side
-    dst -= temp2;
+    rhs -= temp2;
 
-    // set dbc-values in rhs-vector directly
-    for(auto m : boundary_values)
-      if(dst.get_partitioner()->in_local_range(m.first))
-        dst[m.first] = m.second;
+    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+    {
+      rhs.local_element(constrained_indices[i]) = temp1.local_element(constrained_indices[i]);
+    }
   }
 }
 
@@ -791,17 +783,15 @@ OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::fill_dirichlet_values_continuous(
-  std::map<types::global_dof_index, double> & boundary_values,
-  double const                                time) const
+OperatorBase<dim, Number, n_components>::set_constrained_values(VectorType & solution,
+                                                                double const time) const
 {
-  (void)boundary_values;
+  (void)solution;
   (void)time;
 
-  AssertThrow(
-    false,
-    ExcMessage(
-      "OperatorBase::fill_dirichlet_values_continuous() has to be overwritten by derived class!"));
+  AssertThrow(false,
+              ExcMessage(
+                "OperatorBase::set_constrained_values() has to be overwritten by derived class!"));
 }
 
 template<int dim, typename Number, int n_components>
