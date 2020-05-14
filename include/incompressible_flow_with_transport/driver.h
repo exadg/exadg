@@ -16,7 +16,7 @@
 
 #include "../functions_and_boundary_conditions/verify_boundary_conditions.h"
 #include "../grid/mapping_degree.h"
-#include "../grid/moving_mesh.h"
+#include "../grid/moving_mesh_function.h"
 #include "../matrix_free/matrix_free_wrapper.h"
 #include "../utilities/print_functions.h"
 #include "../utilities/timings_hierarchical.h"
@@ -103,8 +103,8 @@ private:
     periodic_faces;
 
   // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>                         mesh;
-  std::shared_ptr<MovingMeshAnalytical<dim, Number>> moving_mesh;
+  std::shared_ptr<Mesh<dim>>                       mesh;
+  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mesh;
 
   bool use_adaptive_time_stepping;
 

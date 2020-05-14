@@ -16,15 +16,13 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 
+#include "../grid/moving_mesh_function.h"
 // matrix-free
 #include "../include/matrix_free/matrix_free_wrapper.h"
 
 // grid
-#include "../include/grid/mapping_degree.h"
-#include "../include/grid/moving_mesh.h"
-
-// general functionalities
 #include "../include/functions_and_boundary_conditions/verify_boundary_conditions.h"
+#include "../include/grid/mapping_degree.h"
 
 // spatial discretization
 #include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
@@ -142,8 +140,8 @@ private:
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
   // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>                         mesh;
-  std::shared_ptr<MovingMeshAnalytical<dim, Number>> moving_mesh;
+  std::shared_ptr<Mesh<dim>>                       mesh;
+  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mesh;
 
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>

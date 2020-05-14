@@ -91,7 +91,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
-      moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
+      moving_mesh.reset(new MovingMeshFunction<dim, Number>(
         *triangulation, mapping_degree, mapping_degree, mpi_comm, mesh_motion, param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)

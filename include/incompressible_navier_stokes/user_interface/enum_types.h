@@ -81,7 +81,8 @@ enum_to_string(FormulationConvectiveTerm const enum_type);
 enum class MeshMovementType
 {
   Analytical,
-  Poisson
+  Poisson,
+  Elasticity
 };
 
 std::string

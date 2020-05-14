@@ -20,6 +20,7 @@ enum class BoundaryType
 {
   Undefined,
   Dirichlet,
+  DirichletMortar,
   Neumann,
   NeumannMortar
 };
@@ -29,6 +30,12 @@ struct BoundaryDescriptor
 {
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
   std::map<types::boundary_id, ComponentMask>                  dirichlet_bc_component_mask;
+
+  // another type of Dirichlet boundary condition where the Dirichlet values come
+  // from the solution on another domain that is in contact with the actual domain
+  // of interest at the given boundary (this type of Dirichlet boundary condition
+  // is required for fluid-structure interaction problems)
+  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>> dirichlet_mortar_bc;
 
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
@@ -44,6 +51,8 @@ struct BoundaryDescriptor
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryType::Dirichlet;
+    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+      return BoundaryType::DirichletMortar;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
     else if(this->neumann_mortar_bc.find(boundary_id) != this->neumann_mortar_bc.end())
@@ -75,6 +84,9 @@ struct BoundaryDescriptor
         ExcMessage(
           "dirichlet_bc_component_mask must contain the same boundary IDs as dirichlet_bc."));
     }
+
+    if(dirichlet_mortar_bc.find(boundary_id) != dirichlet_mortar_bc.end())
+      counter++;
 
     if(neumann_bc.find(boundary_id) != neumann_bc.end())
       counter++;

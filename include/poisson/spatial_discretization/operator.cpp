@@ -48,6 +48,83 @@ Operator<dim, Number, n_components>::Operator(
 
 template<int dim, typename Number, int n_components>
 void
+Operator<dim, Number, n_components>::distribute_dofs()
+{
+  if(n_components == 1)
+  {
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      fe.reset(new FE_DGQ<dim>(degree));
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      fe.reset(new FE_Q<dim>(degree));
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+  }
+  else if(n_components == dim)
+  {
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      fe.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      fe.reset(new FESystem<dim>(FE_Q<dim>(degree), dim));
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  dof_handler.distribute_dofs(*fe);
+
+  dof_handler.distribute_mg_dofs();
+
+  // affine constraints only relevant for continuous FE discretization
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    affine_constraints.clear();
+
+    // standard Dirichlet boundaries
+    for(auto it : this->boundary_descriptor->dirichlet_bc)
+    {
+      ComponentMask mask    = ComponentMask();
+      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
+        mask = it_mask->second;
+
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+    }
+
+    // mortar type Dirichlet boundaries
+    for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
+    {
+      ComponentMask mask = ComponentMask();
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+    }
+
+    affine_constraints.close();
+  }
+
+  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
+
+  pcout << std::endl;
+
+  if(param.spatial_discretization == SpatialDiscretization::DG)
+    pcout << std::endl
+          << "Discontinuous Galerkin finite element discretization:" << std::endl
+          << std::endl;
+  else if(param.spatial_discretization == SpatialDiscretization::CG)
+    pcout << std::endl
+          << "Continuous Galerkin finite element discretization:" << std::endl
+          << std::endl;
+  else
+    AssertThrow(false, ExcMessage("Not implemented."));
+
+  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+}
+
+template<int dim, typename Number, int n_components>
+void
 Operator<dim, Number, n_components>::fill_matrix_free_data(
   MatrixFreeData<dim, Number> & matrix_free_data) const
 {
@@ -77,6 +154,33 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
      not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
     matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree + 1), get_quad_gauss_lobatto_name());
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+Operator<dim, Number, n_components>::setup_operators()
+{
+  // Laplace operator
+  Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
+  laplace_operator_data.dof_index  = get_dof_index();
+  laplace_operator_data.quad_index = get_quad_index();
+  if(param.spatial_discretization == SpatialDiscretization::CG &&
+     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+    laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
+  laplace_operator_data.bc                    = boundary_descriptor;
+  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
+  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
+  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
+
+  // rhs operator
+  if(param.right_hand_side)
+  {
+    ConvDiff::RHSOperatorData<dim> rhs_operator_data;
+    rhs_operator_data.dof_index     = get_dof_index();
+    rhs_operator_data.quad_index    = get_quad_index();
+    rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
+    rhs_operator.initialize(*matrix_free, rhs_operator_data);
   }
 }
 
@@ -369,110 +473,6 @@ unsigned int
 Operator<dim, Number, n_components>::get_quad_index_gauss_lobatto() const
 {
   return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
-}
-
-template<int dim, typename Number, int n_components>
-void
-Operator<dim, Number, n_components>::distribute_dofs()
-{
-  if(n_components == 1)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FE_DGQ<dim>(degree));
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FE_Q<dim>(degree));
-    else
-      AssertThrow(false, ExcMessage("not implemented."));
-  }
-  else if(n_components == dim)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FESystem<dim>(FE_Q<dim>(degree), dim));
-    else
-      AssertThrow(false, ExcMessage("not implemented."));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
-
-  dof_handler.distribute_dofs(*fe);
-
-  dof_handler.distribute_mg_dofs();
-
-  // affine constraints only relevant for continuous FE discretization
-  if(param.spatial_discretization == SpatialDiscretization::CG)
-  {
-    affine_constraints.clear();
-
-    // standard Dirichlet boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_bc)
-    {
-      ComponentMask mask    = ComponentMask();
-      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
-      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
-        mask = it_mask->second;
-
-      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
-    }
-
-    // mortar type Dirichlet boundaries
-    for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
-    {
-      ComponentMask mask = ComponentMask();
-      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
-    }
-
-    affine_constraints.close();
-  }
-
-  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
-
-  pcout << std::endl;
-
-  if(param.spatial_discretization == SpatialDiscretization::DG)
-    pcout << std::endl
-          << "Discontinuous Galerkin finite element discretization:" << std::endl
-          << std::endl;
-  else if(param.spatial_discretization == SpatialDiscretization::CG)
-    pcout << std::endl
-          << "Continuous Galerkin finite element discretization:" << std::endl
-          << std::endl;
-  else
-    AssertThrow(false, ExcMessage("Not implemented."));
-
-  print_parameter(pcout, "degree of 1D polynomials", degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-}
-
-template<int dim, typename Number, int n_components>
-void
-Operator<dim, Number, n_components>::setup_operators()
-{
-  // Laplace operator
-  Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
-  laplace_operator_data.dof_index  = get_dof_index();
-  laplace_operator_data.quad_index = get_quad_index();
-  if(param.spatial_discretization == SpatialDiscretization::CG &&
-     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
-    laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
-  laplace_operator_data.bc                    = boundary_descriptor;
-  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
-  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
-  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
-
-  // rhs operator
-  if(param.right_hand_side)
-  {
-    ConvDiff::RHSOperatorData<dim> rhs_operator_data;
-    rhs_operator_data.dof_index     = get_dof_index();
-    rhs_operator_data.quad_index    = get_quad_index();
-    rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
-    rhs_operator.initialize(*matrix_free, rhs_operator_data);
-  }
 }
 
 template class Operator<2, float, 1>;

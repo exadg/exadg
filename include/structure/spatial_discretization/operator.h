@@ -301,6 +301,9 @@ public:
   unsigned int
   get_quad_index() const;
 
+  unsigned int
+  get_quad_index_gauss_lobatto() const;
+
 private:
   /*
    * Initializes DoFHandler.
@@ -316,6 +319,9 @@ private:
 
   std::string
   get_quad_name() const;
+
+  std::string
+  get_quad_gauss_lobatto_name() const;
 
   unsigned int
   get_dof_index_mass() const;
@@ -374,9 +380,10 @@ private:
   // constraints for mass matrix operator (i.e., do not apply any constraints)
   AffineConstraints<double> constraints_mass;
 
-  std::string const dof_index      = "dof";
-  std::string const dof_index_mass = "dof_mass";
-  std::string const quad_index     = "quad";
+  std::string const dof_index                = "dof";
+  std::string const dof_index_mass           = "dof_mass";
+  std::string const quad_index               = "quad";
+  std::string const quad_index_gauss_lobatto = "quad_gauss_lobatto";
 
   /*
    * Matrix-free operator evaluation.

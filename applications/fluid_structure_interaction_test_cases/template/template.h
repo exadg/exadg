@@ -69,7 +69,7 @@ public:
   }
 
   void
-  set_input_parameters_poisson(Poisson::InputParameters & param)
+  set_input_parameters_ale(Poisson::InputParameters & param)
   {
     (void)param;
 
@@ -119,7 +119,7 @@ public:
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
-  void set_boundary_conditions_poisson(
+  void set_boundary_conditions_ale(
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
@@ -130,11 +130,36 @@ public:
   }
 
   void
-  set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
   {
     // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+  }
+
+  void
+  set_input_parameters_ale(Structure::InputParameters & parameters)
+  {
+    (void)parameters;
+  }
+
+  void
+  set_boundary_conditions_ale(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    (void)boundary_descriptor;
+  }
+
+  void
+  set_material_ale(Structure::MaterialDescriptor & material_descriptor)
+  {
+    (void)material_descriptor;
+  }
+
+  void
+  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  {
+    (void)field_functions;
   }
 
 
@@ -153,13 +178,13 @@ public:
   }
 
   // Structure
-  virtual void
+  void
   set_input_parameters_structure(Structure::InputParameters & parameters)
   {
     (void)parameters;
   }
 
-  virtual void
+  void
   create_grid_structure(
     std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
     unsigned int const                                n_refine_space,
@@ -171,26 +196,26 @@ public:
     (void)periodic_faces;
   }
 
-  virtual void
+  void
   set_boundary_conditions_structure(
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
   {
     (void)boundary_descriptor;
   }
 
-  virtual void
+  void
   set_material_structure(Structure::MaterialDescriptor & material_descriptor)
   {
     (void)material_descriptor;
   }
 
-  virtual void
+  void
   set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
   {
     (void)field_functions;
   }
 
-  virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
+  std::shared_ptr<Structure::PostProcessor<dim, Number>>
   construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     (void)degree;

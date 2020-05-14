@@ -320,34 +320,6 @@ public:
     param.discretization_of_laplacian = DiscretizationOfLaplacian::Classical;
   }
 
-  void
-  set_input_parameters_poisson(Poisson::InputParameters & param)
-  {
-    using namespace Poisson;
-
-    // MATHEMATICAL MODEL
-    param.right_hand_side = false;
-
-    // SPATIAL DISCRETIZATION
-    param.triangulation_type     = TriangulationType::Distributed;
-    param.mapping                = MappingType::Isoparametric;
-    param.spatial_discretization = SpatialDiscretization::CG;
-
-    // SOLVER
-    param.solver               = Poisson::Solver::CG;
-    param.solver_data.abs_tol  = 1.e-12;
-    param.solver_data.rel_tol  = 1.e-6;
-    param.solver_data.max_iter = 1e4;
-    param.preconditioner       = Preconditioner::Multigrid;
-
-    param.multigrid_data.type                          = MultigridType::phMG;
-    param.multigrid_data.p_sequence                    = PSequenceType::Bisect;
-    param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
-    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
-    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
-  }
-
   void create_triangulation_fluid(Triangulation<2> & tria)
   {
     std::vector<Triangulation<2>> tria_vec;
@@ -528,36 +500,6 @@ public:
     triangulation->refine_global(n_refine_space);
   }
 
-
-  void set_boundary_conditions_poisson(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
-  {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
-      pair_fsi;
-
-    boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
-
-    // fluid-structure interface
-    boundary_descriptor->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
-  }
-
-
-  void
-  set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
-  {
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-  }
-
   void
   set_boundary_conditions_fluid(
     std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -621,6 +563,145 @@ public:
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
+  }
+
+  void
+  set_input_parameters_ale(Poisson::InputParameters & param)
+  {
+    using namespace Poisson;
+
+    // MATHEMATICAL MODEL
+    param.right_hand_side = false;
+
+    // SPATIAL DISCRETIZATION
+    param.triangulation_type     = TriangulationType::Distributed;
+    param.mapping                = MappingType::Isoparametric;
+    param.spatial_discretization = SpatialDiscretization::CG;
+
+    // SOLVER
+    param.solver               = Poisson::Solver::CG;
+    param.solver_data.abs_tol  = 1.e-12;
+    param.solver_data.rel_tol  = 1.e-6;
+    param.solver_data.max_iter = 1e4;
+    param.preconditioner       = Preconditioner::Multigrid;
+
+    param.multigrid_data.type                          = MultigridType::phMG;
+    param.multigrid_data.p_sequence                    = PSequenceType::Bisect;
+    param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
+    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
+    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+    param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
+  }
+
+  void set_boundary_conditions_ale(
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
+  {
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
+
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+
+    // fluid-structure interface
+    boundary_descriptor->dirichlet_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
+  }
+
+
+  void
+  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+  {
+    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+  }
+
+  void
+  set_input_parameters_ale(Structure::InputParameters & parameters)
+  {
+    using namespace Structure;
+
+    parameters.problem_type         = ProblemType::Steady;
+    parameters.body_force           = false;
+    parameters.pull_back_body_force = false;
+    parameters.large_deformation    = true;
+    parameters.pull_back_traction   = false;
+
+    parameters.triangulation_type = TriangulationType::Distributed;
+    parameters.mapping            = MappingType::Isoparametric;
+
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-6);
+    parameters.solver                               = Structure::Solver::FGMRES;
+    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    parameters.preconditioner                       = Preconditioner::Multigrid;
+    parameters.multigrid_data.type                  = MultigridType::phMG;
+    parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    parameters.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
+
+    parameters.update_preconditioner                         = true;
+    parameters.update_preconditioner_every_newton_iterations = 10;
+  }
+
+  void
+  set_boundary_conditions_ale(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
+
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_WALLS, ComponentMask()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_INFLOW, ComponentMask()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_OUTFLOW, ComponentMask()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_CYLINDER, ComponentMask()));
+
+    // fluid-structure interface
+    boundary_descriptor->dirichlet_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FLAG, new FunctionInterpolation<1, dim>()));
+  }
+
+  void
+  set_material_ale(Structure::MaterialDescriptor & material_descriptor)
+  {
+    using namespace Structure;
+
+    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+
+    MaterialType const type         = MaterialType::StVenantKirchhoff;
+    Type2D const       two_dim_type = Type2D::PlainStress;
+
+    double const E       = 1.0;
+    double const poisson = 0.3;
+    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, poisson, two_dim_type)));
+  }
+
+  void
+  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  {
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   // Structure

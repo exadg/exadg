@@ -370,7 +370,23 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
 {
   // standard Dirichlet boundary conditions
   std::map<types::global_dof_index, double> boundary_values;
-  fill_dirichlet_values_map(boundary_values, time);
+  for(auto dbc : operator_data.bc->dirichlet_bc)
+  {
+    dbc.second->set_time(time);
+
+    ComponentMask mask     = ComponentMask();
+    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
+      mask = dbc_mask->second;
+
+    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                             this->matrix_free->get_dof_handler(
+                                               operator_data.dof_index),
+                                             dbc.first,
+                                             *dbc.second,
+                                             boundary_values,
+                                             mask);
+  }
 
   // set Dirichlet values in solution vector
   for(auto m : boundary_values)
@@ -432,31 +448,6 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
                     ExcMessage("BoundaryType not implemented."));
       }
     }
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
-LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_map(
-  std::map<types::global_dof_index, double> & boundary_values,
-  double const                                time) const
-{
-  for(auto dbc : operator_data.bc->dirichlet_bc)
-  {
-    dbc.second->set_time(time);
-
-    ComponentMask mask     = ComponentMask();
-    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
-    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
-      mask = dbc_mask->second;
-
-    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
-                                             this->matrix_free->get_dof_handler(
-                                               operator_data.dof_index),
-                                             dbc.first,
-                                             *dbc.second,
-                                             boundary_values,
-                                             mask);
   }
 }
 

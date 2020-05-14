@@ -36,7 +36,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree_fluid,
-                           unsigned int const &                          degree_poisson,
+                           unsigned int const &                          degree_ale,
                            unsigned int const &                          degree_structure,
                            unsigned int const &                          refine_space_fluid,
                            unsigned int const &                          refine_space_structure)
@@ -93,7 +93,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   structure_material_descriptor.reset(new Structure::MaterialDescriptor);
   application->set_material_structure(*structure_material_descriptor);
 
-  // field functions and boundary conditions
+  // field functions
   structure_field_functions.reset(new Structure::FieldFunctions<dim>());
   application->set_field_functions_structure(structure_field_functions);
 
@@ -188,90 +188,195 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
   application->set_field_functions_fluid(fluid_field_functions);
 
-  // Poisson
-  AssertThrow(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson,
-              ExcMessage("not implemented."));
+  // ALE
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+  {
+    application->set_input_parameters_ale(ale_poisson_param);
+    ale_poisson_param.check_input_parameters();
+    AssertThrow(ale_poisson_param.right_hand_side == false,
+                ExcMessage("Parameter does not make sense in context of FSI."));
+    ale_poisson_param.print(pcout, "List of input parameters for ALE solver (Poisson):");
 
-  application->set_input_parameters_poisson(poisson_param);
-  poisson_param.check_input_parameters();
-  poisson_param.print(pcout, "List of input parameters for ALE solver (Poisson):");
+    ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
+    application->set_boundary_conditions_ale(ale_poisson_boundary_descriptor);
+    verify_boundary_conditions(*ale_poisson_boundary_descriptor,
+                               *fluid_triangulation,
+                               fluid_periodic_faces);
 
-  poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
-  application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
-  verify_boundary_conditions(*poisson_boundary_descriptor,
-                             *fluid_triangulation,
-                             fluid_periodic_faces);
+    ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
+    application->set_field_functions_ale(ale_poisson_field_functions);
 
-  poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
-  application->set_field_functions_poisson(poisson_field_functions);
+    // mapping for ALE solver (static mesh)
+    unsigned int const mapping_degree_ale =
+      get_mapping_degree(ale_poisson_param.mapping, degree_ale);
+    ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
 
-  AssertThrow(poisson_param.right_hand_side == false,
-              ExcMessage("Parameter does not make sense in context of FSI."));
+    // initialize Poisson operator
+    ale_poisson_operator.reset(
+      new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
+                                              ale_mesh->get_mapping(),
+                                              degree_ale,
+                                              fluid_periodic_faces,
+                                              ale_poisson_boundary_descriptor,
+                                              ale_poisson_field_functions,
+                                              ale_poisson_param,
+                                              "Poisson",
+                                              mpi_comm));
+  }
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    application->set_input_parameters_ale(ale_elasticity_param);
+    ale_elasticity_param.check_input_parameters();
+    AssertThrow(ale_elasticity_param.body_force == false,
+                ExcMessage("Parameter does not make sense in context of FSI."));
+    ale_elasticity_param.print(pcout, "List of input parameters for ALE solver (elasticity):");
 
-  // mapping for Poisson solver (static mesh)
-  unsigned int const mapping_degree_poisson =
-    get_mapping_degree(poisson_param.mapping, degree_poisson);
-  poisson_mesh.reset(new Mesh<dim>(mapping_degree_poisson));
+    // boundary conditions
+    ale_elasticity_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
+    application->set_boundary_conditions_ale(ale_elasticity_boundary_descriptor);
+    verify_boundary_conditions(*ale_elasticity_boundary_descriptor,
+                               *fluid_triangulation,
+                               fluid_periodic_faces);
 
-  // initialize Poisson operator
-  poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
-                                                                 poisson_mesh->get_mapping(),
-                                                                 degree_poisson,
-                                                                 fluid_periodic_faces,
-                                                                 poisson_boundary_descriptor,
-                                                                 poisson_field_functions,
-                                                                 poisson_param,
-                                                                 "Poisson",
-                                                                 mpi_comm));
+    // material_descriptor
+    ale_elasticity_material_descriptor.reset(new Structure::MaterialDescriptor);
+    application->set_material_ale(*ale_elasticity_material_descriptor);
+
+    // field functions
+    ale_elasticity_field_functions.reset(new Structure::FieldFunctions<dim>());
+    application->set_field_functions_ale(ale_elasticity_field_functions);
+
+    // mapping for ALE solver (static mesh)
+    unsigned int const mapping_degree_ale =
+      get_mapping_degree(ale_elasticity_param.mapping, degree_ale);
+    ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
+
+    // setup spatial operator
+    ale_elasticity_operator.reset(
+      new Structure::Operator<dim, Number>(*fluid_triangulation,
+                                           ale_mesh->get_mapping(),
+                                           degree_ale,
+                                           fluid_periodic_faces,
+                                           ale_elasticity_boundary_descriptor,
+                                           ale_elasticity_field_functions,
+                                           ale_elasticity_material_descriptor,
+                                           ale_elasticity_param,
+                                           "ale_elasticity",
+                                           mpi_comm));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
 
   // initialize matrix_free
-  poisson_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  poisson_matrix_free_data->data.tasks_parallel_scheme =
+  ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  ale_matrix_free_data->data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(poisson_param.enable_cell_based_face_loops)
+
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
-      fluid_triangulation);
-    Categorization::do_cell_based_loops(*tria, poisson_matrix_free_data->data);
+    if(ale_poisson_param.enable_cell_based_face_loops)
+    {
+      auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
+        fluid_triangulation);
+      Categorization::do_cell_based_loops(*tria, ale_matrix_free_data->data);
+    }
+    ale_poisson_operator->fill_matrix_free_data(*ale_matrix_free_data);
   }
-  poisson_operator->fill_matrix_free_data(*poisson_matrix_free_data);
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    ale_elasticity_operator->fill_matrix_free_data(*ale_matrix_free_data);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
 
-  poisson_matrix_free.reset(new MatrixFree<dim, Number>());
-  poisson_matrix_free->reinit(poisson_mesh->get_mapping(),
-                              poisson_matrix_free_data->get_dof_handler_vector(),
-                              poisson_matrix_free_data->get_constraint_vector(),
-                              poisson_matrix_free_data->get_quadrature_vector(),
-                              poisson_matrix_free_data->data);
+  ale_matrix_free.reset(new MatrixFree<dim, Number>());
+  ale_matrix_free->reinit(ale_mesh->get_mapping(),
+                          ale_matrix_free_data->get_dof_handler_vector(),
+                          ale_matrix_free_data->get_constraint_vector(),
+                          ale_matrix_free_data->get_quadrature_vector(),
+                          ale_matrix_free_data->data);
 
-  poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
-  poisson_operator->setup_solver();
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+  {
+    ale_poisson_operator->setup(ale_matrix_free, ale_matrix_free_data);
+    ale_poisson_operator->setup_solver();
+  }
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    ale_elasticity_operator->setup(ale_matrix_free, ale_matrix_free_data);
+    ale_elasticity_operator->setup_solver();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
 
-  // structure to ALE
+  // coupling: structure to ALE
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
     std::vector<unsigned int> quad_indices;
-    if(poisson_param.spatial_discretization == Poisson::SpatialDiscretization::DG)
-      quad_indices.emplace_back(poisson_operator->get_quad_index());
-    else if(poisson_param.spatial_discretization == Poisson::SpatialDiscretization::CG)
-      quad_indices.emplace_back(poisson_operator->get_quad_index_gauss_lobatto());
+    if(ale_poisson_param.spatial_discretization == Poisson::SpatialDiscretization::DG)
+      quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
+    else if(ale_poisson_param.spatial_discretization == Poisson::SpatialDiscretization::CG)
+      quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
     else
       AssertThrow(false, ExcMessage("not implemented."));
 
     VectorType displacement_structure;
     structure_operator->initialize_dof_vector(displacement_structure);
     structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
-    structure_to_ale->setup(poisson_matrix_free,
-                            poisson_operator->get_dof_index(),
+    structure_to_ale->setup(ale_matrix_free,
+                            ale_poisson_operator->get_dof_index(),
                             quad_indices,
-                            poisson_boundary_descriptor->dirichlet_mortar_bc,
+                            ale_poisson_boundary_descriptor->dirichlet_mortar_bc,
                             structure_operator->get_dof_handler(),
                             structure_mesh->get_mapping(),
                             displacement_structure);
   }
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    std::vector<unsigned int> quad_indices;
+    quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
+
+    VectorType displacement_structure;
+    structure_operator->initialize_dof_vector(displacement_structure);
+    structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+    structure_to_ale->setup(ale_matrix_free,
+                            ale_elasticity_operator->get_dof_index(),
+                            quad_indices,
+                            ale_elasticity_boundary_descriptor->dirichlet_mortar_bc,
+                            structure_operator->get_dof_handler(),
+                            structure_mesh->get_mapping(),
+                            displacement_structure);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
 
   // mapping for fluid problem (moving mesh)
   unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
-  fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-    mapping_degree_fluid, mpi_comm, poisson_operator, fluid_param.start_time));
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+  {
+    fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
+      mapping_degree_fluid, mpi_comm, ale_poisson_operator, fluid_param.start_time));
+  }
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(mapping_degree_fluid,
+                                                                  mpi_comm,
+                                                                  ale_elasticity_operator,
+                                                                  ale_elasticity_param,
+                                                                  fluid_param.start_time));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
 
   fluid_mesh = fluid_moving_mesh;
 

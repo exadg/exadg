@@ -20,7 +20,12 @@ namespace Structure
 template<int dim>
 struct OperatorData : public OperatorBaseData
 {
-  OperatorData() : OperatorBaseData(), pull_back_traction(false), unsteady(false), density(1.0)
+  OperatorData()
+    : OperatorBaseData(),
+      pull_back_traction(false),
+      unsteady(false),
+      density(1.0),
+      quad_index_gauss_lobatto(0)
   {
   }
 
@@ -37,6 +42,10 @@ struct OperatorData : public OperatorBaseData
 
   // density
   double density;
+
+  // for Dirichlet mortar boundary conditions, another quadrature rule
+  // is needed to set the constrained DoFs.
+  unsigned int quad_index_gauss_lobatto;
 };
 
 template<int dim, typename Number>
@@ -48,6 +57,7 @@ public:
 protected:
   typedef OperatorBase<dim, Number, dim> Base;
   typedef typename Base::VectorType      VectorType;
+  typedef typename Base::IntegratorFace  IntegratorFace;
 
 public:
   ElasticityOperatorBase();
@@ -85,11 +95,6 @@ protected:
   mutable MaterialHandler<dim, Number> material_handler;
 
   mutable double scaling_factor_mass;
-
-private:
-  void
-  fill_dirichlet_values_map(std::map<types::global_dof_index, double> & boundary_values,
-                            double const                                time) const;
 };
 
 } // namespace Structure

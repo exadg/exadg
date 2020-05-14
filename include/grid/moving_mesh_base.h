@@ -16,6 +16,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q_cache.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/multigrid/mg_transfer_matrix_free.h>
 
 #include "mesh.h"
 
@@ -129,6 +130,114 @@ public:
   }
 
 protected:
+  void
+  initialize_mapping_q_cache(Mapping<dim> const &           mapping,
+                             Triangulation<dim> const &     triangulation,
+                             std::shared_ptr<Function<dim>> displacement_function)
+  {
+    // dummy FE for compatibility with interface of FEValues
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(mapping,
+                            dummy_fe,
+                            QGaussLobatto<dim>(this->mapping_ale->get_degree() + 1),
+                            update_quadrature_points);
+
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
+    this->mapping_ale->initialize(
+      triangulation,
+      [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
+        fe_values.reinit(cell);
+
+        // compute displacement and add to original position
+        std::vector<Point<dim>> points_moved(fe_values.n_quadrature_points);
+        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+        {
+          // need to adjust for hierarchic numbering of MappingQCache
+          Point<dim> const point =
+            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          Point<dim> displacement;
+          for(unsigned int d = 0; d < dim; ++d)
+            displacement[d] = displacement_function->value(point, d);
+
+          points_moved[i] = point + displacement;
+        }
+
+        return points_moved;
+      });
+  }
+
+  void
+  initialize_mapping_q_cache(Mapping<dim> const &    mapping,
+                             DoFHandler<dim> const & dof_handler,
+                             VectorType const &      dof_vector)
+  {
+    // we have to project the solution onto all coarse levels of the triangulation
+    // (required for initialization of MappingQCache)
+    MGLevelObject<VectorType> dof_vector_all_levels;
+    unsigned int const        n_levels = dof_handler.get_triangulation().n_global_levels();
+    dof_vector_all_levels.resize(0, n_levels - 1);
+
+    MGTransferMatrixFree<dim, Number> transfer;
+    transfer.build(dof_handler);
+    transfer.interpolate_to_mg(dof_handler, dof_vector_all_levels, dof_vector);
+    for(unsigned int level = 0; level < n_levels; level++)
+      dof_vector_all_levels[level].update_ghost_values();
+
+    FiniteElement<dim> const & fe = dof_handler.get_fe();
+    AssertThrow(fe.element_multiplicity(0) == dim,
+                ExcMessage("Expected finite element with dim components."));
+
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(mapping,
+                            dummy_fe,
+                            QGaussLobatto<dim>(fe.degree + 1),
+                            update_quadrature_points);
+
+    // update mapping according to mesh deformation computed above
+    this->mapping_ale->initialize(
+      dof_handler.get_triangulation(),
+      [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
+        unsigned int const level = cell_tria->level();
+
+        typename DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
+                                                     level,
+                                                     cell_tria->index(),
+                                                     &dof_handler);
+
+        unsigned int const scalar_dofs_per_cell = Utilities::pow(fe.degree + 1, dim);
+
+        std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
+
+        if(cell->level_subdomain_id() != numbers::artificial_subdomain_id)
+        {
+          fe_values.reinit(typename Triangulation<dim>::cell_iterator(cell));
+          std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+          cell->get_mg_dof_indices(dof_indices);
+
+          // extract displacement and add to original position
+          for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
+          {
+            points_moved[i] =
+              fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          }
+
+          for(unsigned int i = 0; i < dof_indices.size(); ++i)
+          {
+            std::pair<unsigned int, unsigned int> const id = fe.system_to_component_index(i);
+
+            if(fe.dofs_per_vertex > 0) // FE_Q
+              points_moved[id.second][id.first] += dof_vector_all_levels[level](dof_indices[i]);
+            else // FE_DGQ
+              points_moved[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
+                dof_vector_all_levels[level](dof_indices[i]);
+          }
+        }
+
+        return points_moved;
+      });
+  }
+
   std::shared_ptr<MappingQCache<dim>> mapping_ale;
   std::vector<unsigned int>           hierarchic_to_lexicographic_numbering;
   std::vector<unsigned int>           lexicographic_to_hierarchic_numbering;

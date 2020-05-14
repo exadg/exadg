@@ -51,7 +51,8 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     // do nothing
 
-    AssertThrow(boundary_type == BoundaryType::Dirichlet,
+    AssertThrow(boundary_type == BoundaryType::Dirichlet ||
+                boundary_type == BoundaryType::DirichletMortar,
                 ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 

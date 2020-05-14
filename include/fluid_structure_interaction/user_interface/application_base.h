@@ -109,16 +109,31 @@ public:
   virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
   construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
-  // Moving mesh (Poisson problem)
-  virtual void
-  set_input_parameters_poisson(Poisson::InputParameters & parameters) = 0;
+  // Moving mesh
 
-  virtual void set_boundary_conditions_poisson(
+  // Poisson type mesh smoothing
+  virtual void
+  set_input_parameters_ale(Poisson::InputParameters & parameters) = 0;
+
+  virtual void set_boundary_conditions_ale(
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) = 0;
 
   virtual void
-  set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;
 
+  // elasticity type mesh smoothing
+  virtual void
+  set_input_parameters_ale(Structure::InputParameters & parameters) = 0;
+
+  virtual void
+  set_boundary_conditions_ale(
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+
+  virtual void
+  set_material_ale(Structure::MaterialDescriptor & material_descriptor) = 0;
+
+  virtual void
+  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) = 0;
 
   // Structure
   virtual void

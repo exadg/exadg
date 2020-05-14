@@ -35,7 +35,8 @@
 
 // grid
 #include "../grid/mapping_degree.h"
-#include "../grid/moving_mesh.h"
+#include "../grid/moving_mesh_elasticity.h"
+#include "../grid/moving_mesh_poisson.h"
 
 // matrix-free
 #include "../matrix_free/matrix_free_wrapper.h"
@@ -105,55 +106,6 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  /****************************************** FLUID *******************************************/
-
-  // triangulation
-  std::shared_ptr<parallel::TriangulationBase<dim>> fluid_triangulation;
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    fluid_periodic_faces;
-
-  // solve mesh deformation by a Poisson problem
-  Poisson::InputParameters poisson_param;
-
-  std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
-  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
-
-  // static mesh for Poisson problem
-  std::shared_ptr<Mesh<dim>> poisson_mesh;
-
-  std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;
-  std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator;
-
-  IncNS::InputParameters fluid_param;
-
-  std::shared_ptr<IncNS::FieldFunctions<dim>>      fluid_field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> fluid_boundary_descriptor_velocity;
-  std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
-
-  // moving mesh for fluid problem
-  std::shared_ptr<Mesh<dim>>                   fluid_mesh;
-  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
-
-  std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
-
-  // spatial discretization
-  std::shared_ptr<IncNS::DGNavierStokesBase<dim, Number>>          fluid_operator;
-  std::shared_ptr<IncNS::DGNavierStokesCoupled<dim, Number>>       fluid_operator_coupled;
-  std::shared_ptr<IncNS::DGNavierStokesDualSplitting<dim, Number>> fluid_operator_dual_splitting;
-  std::shared_ptr<IncNS::DGNavierStokesPressureCorrection<dim, Number>>
-    fluid_operator_pressure_correction;
-
-  // temporal discretization
-  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;
-
-  // Postprocessor
-  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> fluid_postprocessor;
-
-  /****************************************** FLUID *******************************************/
-
-
   /**************************************** STRUCTURE *****************************************/
 
   // input parameters
@@ -192,6 +144,71 @@ private:
   std::shared_ptr<Structure::PostProcessor<dim, Number>> structure_postprocessor;
 
   /**************************************** STRUCTURE *****************************************/
+
+
+  /****************************************** FLUID *******************************************/
+
+  // triangulation
+  std::shared_ptr<parallel::TriangulationBase<dim>> fluid_triangulation;
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    fluid_periodic_faces;
+
+  // moving mesh for fluid problem
+  std::shared_ptr<Mesh<dim>>                   fluid_mesh;
+  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
+
+  // parameters
+  IncNS::InputParameters fluid_param;
+
+  std::shared_ptr<IncNS::FieldFunctions<dim>>      fluid_field_functions;
+  std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> fluid_boundary_descriptor_velocity;
+  std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
+
+  // matrix-free
+  std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
+
+  // spatial discretization
+  std::shared_ptr<IncNS::DGNavierStokesBase<dim, Number>>          fluid_operator;
+  std::shared_ptr<IncNS::DGNavierStokesCoupled<dim, Number>>       fluid_operator_coupled;
+  std::shared_ptr<IncNS::DGNavierStokesDualSplitting<dim, Number>> fluid_operator_dual_splitting;
+  std::shared_ptr<IncNS::DGNavierStokesPressureCorrection<dim, Number>>
+    fluid_operator_pressure_correction;
+
+  // temporal discretization
+  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;
+
+  // Postprocessor
+  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> fluid_postprocessor;
+
+  /****************************************** FLUID *******************************************/
+
+
+  /************************************ ALE - MOVING MESH *************************************/
+
+  // use a PDE solver for moving mesh problem
+  std::shared_ptr<Mesh<dim>>                   ale_mesh;
+  std::shared_ptr<MatrixFreeData<dim, Number>> ale_matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     ale_matrix_free;
+
+  // Poisson-type mesh smoothing
+  Poisson::InputParameters ale_poisson_param;
+
+  std::shared_ptr<Poisson::FieldFunctions<dim>>        ale_poisson_field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> ale_poisson_boundary_descriptor;
+
+  std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;
+
+  // elasticity-type mesh smoothing
+  Structure::InputParameters ale_elasticity_param;
+
+  std::shared_ptr<Structure::FieldFunctions<dim>>     ale_elasticity_field_functions;
+  std::shared_ptr<Structure::BoundaryDescriptor<dim>> ale_elasticity_boundary_descriptor;
+  std::shared_ptr<Structure::MaterialDescriptor>      ale_elasticity_material_descriptor;
+
+  std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
+
+  /************************************ ALE - MOVING MESH *************************************/
 
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/

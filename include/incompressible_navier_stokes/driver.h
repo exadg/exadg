@@ -31,7 +31,8 @@
 // general functionalities
 #include "../functions_and_boundary_conditions/verify_boundary_conditions.h"
 #include "../grid/mapping_degree.h"
-#include "../grid/moving_mesh.h"
+#include "../grid/moving_mesh_function.h"
+#include "../grid/moving_mesh_poisson.h"
 #include "../utilities/print_general_infos.h"
 
 namespace IncNS

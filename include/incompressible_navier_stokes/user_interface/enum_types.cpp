@@ -134,6 +134,9 @@ enum_to_string(MeshMovementType const enum_type)
     case MeshMovementType::Poisson:
       string_type = "Poisson";
       break;
+    case MeshMovementType::Elasticity:
+      string_type = "Elasticity";
+      break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
       break;

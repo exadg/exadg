@@ -129,7 +129,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
+    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
       *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, fluid_param.start_time));
 
     mesh = moving_mesh;

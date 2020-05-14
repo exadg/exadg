@@ -291,11 +291,6 @@ private:
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
                                   types::boundary_id const & boundary_id) const;
 
-  // continuous FE: fills a map with Dirichlet boundary values
-  void
-  fill_dirichlet_values_map(std::map<types::global_dof_index, double> & boundary_values,
-                            double const                                time) const;
-
   LaplaceOperatorData<rank, dim> operator_data;
 
   Operators::LaplaceKernel<dim, Number, n_components> kernel;

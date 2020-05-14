@@ -76,8 +76,10 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  // determine constrained dofs
+  // affine constraints
   constraint_matrix.clear();
+
+  // standard Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_bc)
   {
     ComponentMask mask =
@@ -85,6 +87,14 @@ Operator<dim, Number>::distribute_dofs()
 
     DoFTools::make_zero_boundary_constraints(this->dof_handler, it.first, constraint_matrix, mask);
   }
+
+  // mortar type Dirichlet boundaries
+  for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
+  {
+    ComponentMask mask = ComponentMask();
+    DoFTools::make_zero_boundary_constraints(dof_handler, it.first, constraint_matrix, mask);
+  }
+
   constraint_matrix.close();
 
   // no constraints for mass matrix operator
@@ -122,6 +132,13 @@ Operator<dim, Number>::get_quad_name() const
 }
 
 template<int dim, typename Number>
+std::string
+Operator<dim, Number>::get_quad_gauss_lobatto_name() const
+{
+  return field + "_" + quad_index_gauss_lobatto;
+}
+
+template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::get_dof_index() const
 {
@@ -140,6 +157,13 @@ unsigned int
 Operator<dim, Number>::get_quad_index() const
 {
   return matrix_free_data->get_quad_index(get_quad_name());
+}
+
+template<int dim, typename Number>
+unsigned int
+Operator<dim, Number>::get_quad_index_gauss_lobatto() const
+{
+  return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
 }
 
 template<int dim, typename Number>
@@ -166,6 +190,16 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
   // Quadrature
   matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
+
+  // In order to set constrained degrees of freedom for continuous Galerkin
+  // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
+  // quadrature rule has to be constructed for the mortar type boundary conditions
+  // (so that the values stored in the mortar boundary condition can be directly
+  // injected into the DoF vector)
+  if(not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+  {
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree + 1), get_quad_gauss_lobatto_name());
+  }
 }
 
 template<int dim, typename Number>
@@ -173,6 +207,10 @@ void
 Operator<dim, Number>::setup_operators()
 {
   // elasticity operator
+  operator_data.dof_index  = get_dof_index();
+  operator_data.quad_index = get_quad_index();
+  if(not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+    operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
