@@ -221,7 +221,7 @@ Driver<dim, Number>::solve()
     {
       do
       {
-        time_integrator->advance_one_timestep_pre_solve();
+        time_integrator->advance_one_timestep_pre_solve(true);
 
         // move the mesh and update dependent data structures
         std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =

@@ -91,7 +91,10 @@ private:
 
   std::shared_ptr<TimerTree> timer_tree;
 
-  unsigned int iterations_linear, iterations_nonlinear;
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
+    iterations;
 };
 
 } // namespace Structure

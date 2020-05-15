@@ -59,7 +59,7 @@ double const g                       = 0.01;
 double const END_TIME = 8.0;
 
 double const OUTPUT_INTERVAL_TIME                = END_TIME / 100;
-double const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e4;
+double const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
@@ -151,7 +151,7 @@ public:
 
     // ALE
     param.ale_formulation                     = true;
-    param.mesh_movement_type                  = MeshMovementType::Poisson;
+    param.mesh_movement_type                  = MeshMovementType::Elasticity;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -177,7 +177,6 @@ public:
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
-    param.solver_info_data.interval_time       = 0.1 * (param.end_time - param.start_time);
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     // restart
@@ -630,7 +629,7 @@ public:
     parameters.problem_type         = ProblemType::Steady;
     parameters.body_force           = false;
     parameters.pull_back_body_force = false;
-    parameters.large_deformation    = true;
+    parameters.large_deformation    = false;
     parameters.pull_back_traction   = false;
 
     parameters.triangulation_type = TriangulationType::Distributed;

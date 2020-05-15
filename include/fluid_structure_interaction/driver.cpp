@@ -596,7 +596,8 @@ Driver<dim, Number>::solve_ale() const
   Timer sub_timer;
 
   sub_timer.restart();
-  fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+  bool const print_solver_info = fluid_time_integrator->print_solver_info();
+  fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time(), print_solver_info);
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -687,8 +688,11 @@ Driver<dim, Number>::solve() const
   while(!fluid_time_integrator->finished())
   {
     // pre-solve
-    fluid_time_integrator->advance_one_timestep_pre_solve();
-    structure_time_integrator->advance_one_timestep_pre_solve();
+    fluid_time_integrator->advance_one_timestep_pre_solve(true);
+    structure_time_integrator->advance_one_timestep_pre_solve(false);
+
+    if(fluid_time_integrator->print_solver_info())
+      pcout << std::endl << "Solve strongly-coupled partitioned FSI problem:" << std::endl;
 
     // TODO
     // strongly-coupled partitioned iteration:
@@ -745,8 +749,6 @@ Driver<dim, Number>::solve() const
         }
         residual_last = residual;
 
-        // TODO
-        pcout << "omega = " << omega << std::endl;
         structure_time_integrator->relax_displacement(omega, displacement_last);
       }
 
@@ -754,11 +756,11 @@ Driver<dim, Number>::solve() const
       ++iter;
     }
 
-    partitioned_iterations += iter;
+    if(fluid_time_integrator->print_solver_info())
+      pcout << std::endl
+            << "Fixed-point iteration converged in " << iter << " iterations." << std::endl;
 
-    // TODO
-    pcout << "Partitioned iteration converged in " << iter << " iterations." << std::endl
-          << std::endl;
+    partitioned_iterations += iter;
 
     // post-solve
     fluid_time_integrator->advance_one_timestep_post_solve();
@@ -816,6 +818,9 @@ Driver<dim, Number>::print_statistics(double const total_time) const
 
   pcout << std::endl << "Fluid:" << std::endl;
   fluid_time_integrator->print_iterations();
+
+  pcout << std::endl << "ALE:" << std::endl;
+  fluid_moving_mesh->print_iterations();
 
   pcout << std::endl << "Structure:" << std::endl;
   structure_time_integrator->print_iterations();

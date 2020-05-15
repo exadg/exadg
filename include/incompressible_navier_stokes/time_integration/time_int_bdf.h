@@ -81,6 +81,9 @@ public:
   virtual void
   print_iterations() const = 0;
 
+  bool
+  print_solver_info() const;
+
 protected:
   virtual void
   allocate_vectors() override;
@@ -93,9 +96,6 @@ protected:
 
   virtual void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
-
-  bool
-  print_solver_info() const;
 
   virtual void
   prepare_vectors_for_next_timestep() override;

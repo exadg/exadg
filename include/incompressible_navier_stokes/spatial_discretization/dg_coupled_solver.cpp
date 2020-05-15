@@ -256,13 +256,11 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
 }
 
 template<int dim, typename Number>
-void
+std::tuple<unsigned int, unsigned int>
 DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
   BlockVectorType &  dst,
   VectorType const & rhs_vector,
-  bool const &       update_preconditioner,
-  unsigned int &     newton_iterations,
-  unsigned int &     linear_iterations)
+  bool const &       update_preconditioner)
 {
   // update nonlinear operator
   nonlinear_operator.update(rhs_vector, 0.0 /* time */, 1.0 /* scaling_factor */);
@@ -274,22 +272,19 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
   update.do_update             = update_preconditioner;
   update.threshold_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
 
-  std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(dst, update);
+  auto const iter = newton_solver->solve(dst, update);
 
-  newton_iterations = std::get<0>(iter);
-  linear_iterations = std::get<1>(iter);
+  return iter;
 }
 
 template<int dim, typename Number>
-void
+std::tuple<unsigned int, unsigned int>
 DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   BlockVectorType &  dst,
   VectorType const & rhs_vector,
   double const &     time,
   bool const &       update_preconditioner,
-  double const &     scaling_factor_mass_matrix_term,
-  unsigned int &     newton_iterations,
-  unsigned int &     linear_iterations)
+  double const &     scaling_factor_mass_matrix_term)
 {
   // Update nonlinear operator
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
@@ -304,8 +299,7 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
 
   std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(dst, update);
 
-  newton_iterations = std::get<0>(iter);
-  linear_iterations = std::get<1>(iter);
+  return iter;
 }
 
 template<int dim, typename Number>

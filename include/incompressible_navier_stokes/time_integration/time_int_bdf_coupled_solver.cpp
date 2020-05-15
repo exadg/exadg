@@ -33,9 +33,8 @@ TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
          matrix_free_in),
     pde_operator(operator_in),
     solution(this->order),
-    iterations_linear(0),
-    iterations_nonlinear(0),
-    iterations_penalty(0),
+    iterations({0, {0, 0}}),
+    iterations_penalty({0, 0}),
     scaling_factor_continuity(1.0),
     characteristic_element_length(1.0)
 {
@@ -152,9 +151,6 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
 {
   Timer timer;
   timer.restart();
-
-  if(this->print_solver_info())
-    this->output_solver_info_header();
 
   // update scaling factor of continuity equation
   if(this->param.use_scaling_continuity == true)
@@ -282,7 +278,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
                                                 this->get_next_time(),
                                                 this->get_scaling_factor_time_derivative_term());
 
-    iterations_linear += n_iter;
+    iterations.first += 1;
+    std::get<1>(iterations.second) += n_iter;
 
     // write output
     if(this->print_solver_info())
@@ -308,25 +305,25 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
       pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
     // Newton solver
-    unsigned int n_iter_nonlinear = 0;
-    unsigned int n_iter_linear    = 0;
+    auto const iter =
+      pde_operator->solve_nonlinear_problem(solution_np,
+                                            rhs,
+                                            this->get_next_time(),
+                                            update_preconditioner,
+                                            this->get_scaling_factor_time_derivative_term());
 
-    pde_operator->solve_nonlinear_problem(solution_np,
-                                          rhs,
-                                          this->get_next_time(),
-                                          update_preconditioner,
-                                          this->get_scaling_factor_time_derivative_term(),
-                                          n_iter_nonlinear,
-                                          n_iter_linear);
-
-    iterations_nonlinear += n_iter_nonlinear;
-    iterations_linear += n_iter_linear;
+    iterations.first += 1;
+    std::get<0>(iterations.second) += std::get<0>(iter);
+    std::get<1>(iterations.second) += std::get<1>(iter);
 
     // write output
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve nonlinear problem:";
-      print_solver_info_nonlinear(this->pcout, n_iter_nonlinear, n_iter_linear, timer.wall_time());
+      print_solver_info_nonlinear(this->pcout,
+                                  std::get<0>(iter),
+                                  std::get<1>(iter),
+                                  timer.wall_time());
     }
   }
 
@@ -405,7 +402,8 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
   unsigned int n_iter =
     pde_operator->solve_projection(solution_np.block(0), rhs, update_preconditioner);
 
-  iterations_penalty += n_iter;
+  iterations_penalty.first += 1;
+  iterations_penalty.second += n_iter;
 
   // write output
   if(this->print_solver_info())
@@ -614,8 +612,6 @@ template<int dim, typename Number>
 void
 TimeIntBDFCoupled<dim, Number>::print_iterations() const
 {
-  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
-
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
@@ -623,13 +619,8 @@ TimeIntBDFCoupled<dim, Number>::print_iterations() const
   {
     names = {"Coupled system"};
     iterations_avg.resize(1);
-    iterations_avg[0] = (double)iterations_linear / (double)N_time_steps;
-
-    if(this->param.apply_penalty_terms_in_postprocessing_step)
-    {
-      names.push_back("Penalty terms");
-      iterations_avg.push_back(iterations_penalty / (double)N_time_steps);
-    }
+    iterations_avg[0] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
   }
   else // nonlinear system of equations in momentum step
   {
@@ -638,34 +629,24 @@ TimeIntBDFCoupled<dim, Number>::print_iterations() const
              "Coupled system (linear per nonlinear)"};
 
     iterations_avg.resize(3);
-    iterations_avg[0] = (double)iterations_nonlinear / (double)N_time_steps;
-    iterations_avg[1] = (double)iterations_linear / (double)N_time_steps;
+    iterations_avg[0] =
+      (double)std::get<0>(iterations.second) / std::max(1., (double)iterations.first);
+    iterations_avg[1] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
     if(iterations_avg[0] > std::numeric_limits<double>::min())
       iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
     else
       iterations_avg[2] = iterations_avg[1];
-
-    if(this->param.apply_penalty_terms_in_postprocessing_step)
-    {
-      names.push_back("Penalty terms");
-      if(this->param.apply_penalty_terms_in_postprocessing_step)
-        iterations_avg.push_back((double)iterations_penalty / (double)N_time_steps);
-    }
   }
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
   {
-    length = length > names[i].length() ? length : names[i].length();
+    names.push_back("Penalty terms");
+    iterations_avg.push_back(iterations_penalty.second /
+                             std::max(1., (double)iterations_penalty.first));
   }
 
-  // print
-  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
-  {
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
-                << std::endl;
-  }
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 // instantiations

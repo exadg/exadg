@@ -18,7 +18,6 @@ class TimeIntGenAlphaBase : public TimeIntBase
 public:
   typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-
   TimeIntGenAlphaBase(double const &       start_time_,
                       double const &       end_time_,
                       unsigned int const   max_number_of_time_steps_,
@@ -65,10 +64,7 @@ protected:
 
 private:
   void
-  do_timestep_pre_solve() override
-  {
-    // nothing to do
-  }
+  do_timestep_pre_solve(bool const print_header) override;
 
   void
   do_timestep_post_solve() override;

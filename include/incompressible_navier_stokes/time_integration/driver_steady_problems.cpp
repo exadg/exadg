@@ -119,14 +119,13 @@ DriverSteadyProblems<dim, Number>::solve()
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, 0.0 /* time */);
 
-    unsigned int N_iter_nonlinear = 0;
-    unsigned int N_iter_linear    = 0;
-
     // Newton solver
-    pde_operator->solve_nonlinear_steady_problem(
-      solution, rhs, this->param.update_preconditioner_coupled, N_iter_nonlinear, N_iter_linear);
+    auto const iter =
+      pde_operator->solve_nonlinear_steady_problem(solution,
+                                                   rhs,
+                                                   this->param.update_preconditioner_coupled);
 
-    print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
+    print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
   }
 
   pde_operator->adjust_pressure_level_if_undefined(solution.block(1), 0.0 /* time */);

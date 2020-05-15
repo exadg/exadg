@@ -149,7 +149,13 @@ private:
   std::vector<VectorType> pressure_dbc;
 
   // iteration counts
-  unsigned int iterations_momentum_linear, iterations_momentum_nonlinear, iterations_pressure,
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+    iterations_momentum;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+    iterations_pressure;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
     iterations_projection;
 };
 

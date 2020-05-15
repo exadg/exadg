@@ -212,8 +212,11 @@ TimeIntBDFBase<Number>::set_current_time_step_size(double const & time_step_size
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::do_timestep_pre_solve()
+TimeIntBDFBase<Number>::do_timestep_pre_solve(bool const print_header)
 {
+  if(this->print_solver_info() && print_header)
+    this->output_solver_info_header();
+
   update_time_integrator_constants();
 }
 

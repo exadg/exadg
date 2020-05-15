@@ -37,10 +37,9 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     pressure_dbc(param_in.order_pressure_extrapolation),
-    iterations_momentum_linear(0),
-    iterations_momentum_nonlinear(0),
-    iterations_pressure(0),
-    iterations_projection(0)
+    iterations_momentum({0, {0, 0}}),
+    iterations_pressure({0, 0}),
+    iterations_projection({0, 0})
 {
 }
 
@@ -312,10 +311,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::solve_timestep()
 {
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
-  // perform the substeps of the pressure-correction scheme
+  // perform the sub-steps of the pressure-correction scheme
 
   momentum_step();
 
@@ -393,15 +389,11 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       }
 
       // solve linear system of equations
-      unsigned int n_iter = 0;
+      unsigned int n_iter = pde_operator->solve_linear_momentum_equation(
+        velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
 
-      pde_operator->solve_linear_momentum_equation(velocity_np,
-                                                   rhs,
-                                                   update_preconditioner,
-                                                   this->get_scaling_factor_time_derivative_term(),
-                                                   n_iter);
-
-      iterations_momentum_linear += n_iter;
+      iterations_momentum.first += 1;
+      std::get<1>(iterations_momentum.second) += n_iter;
 
       if(this->print_solver_info())
       {
@@ -435,16 +427,17 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     // solve non-linear system of equations
     unsigned int n_iter_linear    = 0;
     unsigned int n_iter_nonlinear = 0;
-    pde_operator->solve_nonlinear_momentum_equation(velocity_np,
-                                                    rhs,
-                                                    this->get_next_time(),
-                                                    update_preconditioner,
-                                                    this->get_scaling_factor_time_derivative_term(),
-                                                    n_iter_nonlinear,
-                                                    n_iter_linear);
 
-    iterations_momentum_linear += n_iter_linear;
-    iterations_momentum_nonlinear += n_iter_nonlinear;
+    auto const iter = pde_operator->solve_nonlinear_momentum_equation(
+      velocity_np,
+      rhs,
+      this->get_next_time(),
+      update_preconditioner,
+      this->get_scaling_factor_time_derivative_term());
+
+    iterations_momentum.first += 1;
+    std::get<0>(iterations_momentum.second) += std::get<0>(iter);
+    std::get<1>(iterations_momentum.second) += std::get<1>(iter);
 
     if(this->print_solver_info())
     {
@@ -603,7 +596,9 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
 
   unsigned int const n_iter =
     pde_operator->solve_pressure(pressure_increment, rhs, update_preconditioner);
-  iterations_pressure += n_iter;
+
+  iterations_pressure.first += 1;
+  iterations_pressure.second += n_iter;
 
   // calculate pressure p^{n+1} from pressure increment
   pressure_update(pressure_increment);
@@ -822,7 +817,9 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
 
     unsigned int const n_iter =
       pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
-    iterations_projection += n_iter;
+
+    iterations_projection.first += 1;
+    iterations_projection.second += n_iter;
 
     if(this->print_solver_info())
     {
@@ -1017,19 +1014,20 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
 {
-  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
-
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
   if(this->param.linear_problem_has_to_be_solved())
   {
-    names = {"Momentum", "Pressure", "Projection"};
+    names = {"Momentum step", "Pressure step", "Projection step"};
 
     iterations_avg.resize(3);
-    iterations_avg[0] = iterations_momentum_linear / (double)N_time_steps;
-    iterations_avg[1] = iterations_pressure / (double)N_time_steps;
-    iterations_avg[2] = iterations_projection / (double)N_time_steps;
+    iterations_avg[0] = (double)std::get<1>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
+    iterations_avg[1] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[2] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   }
   else // nonlinear system of equations in momentum step
   {
@@ -1040,29 +1038,21 @@ TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
              "Projection"};
 
     iterations_avg.resize(5);
-    iterations_avg[0] = (double)iterations_momentum_nonlinear / (double)N_time_steps;
-    iterations_avg[1] = (double)iterations_momentum_linear / (double)N_time_steps;
+    iterations_avg[0] = (double)std::get<0>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
+    iterations_avg[1] = (double)std::get<1>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
     if(iterations_avg[0] > std::numeric_limits<double>::min())
       iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
     else
       iterations_avg[2] = iterations_avg[1];
-    iterations_avg[3] = (double)iterations_pressure / (double)N_time_steps;
-    iterations_avg[4] = (double)iterations_projection / (double)N_time_steps;
+    iterations_avg[3] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[4] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   }
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  // print
-  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
-  {
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
-                << std::endl;
-  }
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 // instantiations

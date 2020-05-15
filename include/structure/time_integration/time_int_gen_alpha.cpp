@@ -34,8 +34,7 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
     param(param_),
     mpi_comm(mpi_comm_),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
-    iterations_linear(0),
-    iterations_nonlinear(0)
+    iterations({0, {0, 0}})
 {
 }
 
@@ -79,9 +78,6 @@ template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::solve_timestep()
 {
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
   // compute right-hand side in case of linear problems or "constant vector"
   // in case of nonlinear problems
   Timer timer;
@@ -127,24 +123,32 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
                                                     this->get_mid_time(),
                                                     update_preconditioner);
 
-    iterations_nonlinear += std::get<0>(iter);
-    iterations_linear += std::get<1>(iter);
+    iterations.first += 1;
+    std::get<0>(iterations.second) += std::get<0>(iter);
+    std::get<1>(iterations.second) += std::get<1>(iter);
 
     if(this->print_solver_info())
+    {
+      this->pcout << std::endl << "Solve nonlinear elasticity problem:";
       print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+    }
   }
   else // linear case
   {
     // solve linear system of equations
-    unsigned int const N_iter_linear = pde_operator->solve_linear(displacement_np,
-                                                                  rhs,
-                                                                  this->get_scaling_factor_mass(),
-                                                                  this->get_mid_time());
+    unsigned int const iter = pde_operator->solve_linear(displacement_np,
+                                                         rhs,
+                                                         this->get_scaling_factor_mass(),
+                                                         this->get_mid_time());
 
-    iterations_linear += N_iter_linear;
+    iterations.first += 1;
+    std::get<1>(iterations.second) += iter;
 
     if(this->print_solver_info())
-      print_solver_info_linear(pcout, N_iter_linear, timer.wall_time());
+    {
+      this->pcout << std::endl << "Solve linear elasticity problem:";
+      print_solver_info_linear(pcout, iter, timer.wall_time());
+    }
   }
 
   this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());
@@ -263,8 +267,6 @@ template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::print_iterations() const
 {
-  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
-
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
@@ -275,8 +277,10 @@ TimeIntGenAlpha<dim, Number>::print_iterations() const
              "Linear iterations (per nonlinear it.)"};
 
     iterations_avg.resize(3);
-    iterations_avg[0] = (double)iterations_nonlinear / (double)N_time_steps;
-    iterations_avg[1] = (double)iterations_linear / (double)N_time_steps;
+    iterations_avg[0] =
+      (double)std::get<0>(iterations.second) / std::max(1., (double)iterations.first);
+    iterations_avg[1] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
     if(iterations_avg[0] > std::numeric_limits<double>::min())
       iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
     else
@@ -286,22 +290,11 @@ TimeIntGenAlpha<dim, Number>::print_iterations() const
   {
     names = {"Linear iterations"};
     iterations_avg.resize(1);
-    iterations_avg[0] = (double)iterations_linear / (double)N_time_steps;
+    iterations_avg[0] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
   }
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  // print
-  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
-  {
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
-                << std::endl;
-  }
+  print_list_of_iterations(pcout, names, iterations_avg);
 }
 
 template class TimeIntGenAlpha<2, float>;

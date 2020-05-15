@@ -155,8 +155,12 @@ private:
   VectorType              velocity_dbc_np;
 
   // iteration counts
-  unsigned int iterations_convection, iterations_pressure, iterations_projection,
-    iterations_viscous, iterations_penalty;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+    iterations_pressure;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+                                                                                 iterations_projection;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_viscous;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;

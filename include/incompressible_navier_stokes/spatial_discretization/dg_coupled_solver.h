@@ -255,24 +255,20 @@ public:
   /*
    * This function solves the nonlinear problem for steady problems.
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear_steady_problem(BlockVectorType &  dst,
                                  VectorType const & rhs_vector,
-                                 bool const &       update_preconditioner,
-                                 unsigned int &     newton_iterations,
-                                 unsigned int &     linear_iterations);
+                                 bool const &       update_preconditioner);
 
   /*
    * This function solves the nonlinear problem for unsteady problems.
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & rhs_vector,
                           double const &     time,
                           bool const &       update_preconditioner,
-                          double const &     scaling_factor_mass_matrix_term,
-                          unsigned int &     newton_iterations,
-                          unsigned int &     linear_iterations);
+                          double const &     scaling_factor_mass_matrix_term);
 
 
   /*

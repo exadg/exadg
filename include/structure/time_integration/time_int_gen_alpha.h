@@ -106,7 +106,10 @@ private:
   VectorType velocity_n, velocity_np;
   VectorType acceleration_n, acceleration_np;
 
-  unsigned int iterations_linear, iterations_nonlinear;
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
+    iterations;
 };
 
 } // namespace Structure

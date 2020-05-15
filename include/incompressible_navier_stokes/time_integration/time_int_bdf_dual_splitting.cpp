@@ -38,11 +38,10 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
     acceleration(this->param.order_extrapolation_pressure_nbc),
 #endif
     velocity_dbc(this->order),
-    iterations_convection(0),
-    iterations_pressure(0),
-    iterations_projection(0),
-    iterations_viscous(0),
-    iterations_penalty(0),
+    iterations_pressure({0, 0}),
+    iterations_projection({0, 0}),
+    iterations_viscous({0, 0}),
+    iterations_penalty({0, 0}),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
                        this->param.start_with_low_order)
 {
@@ -389,16 +388,13 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::solve_timestep()
 {
-  if(this->print_solver_info())
-    this->output_solver_info_header();
-
 #ifndef EXTRAPOLATE_ACCELERATION
   // pre-computations
   if(this->param.store_previous_boundary_values)
     update_velocity_dbc();
 #endif
 
-  // perform the four sub-steps of the dual-splitting method
+  // perform the sub-steps of the dual-splitting method
   convective_step();
 
   pressure_step();
@@ -537,7 +533,8 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
      0);
 
   unsigned int const n_iter = pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
-  iterations_pressure += n_iter;
+  iterations_pressure.first += 1;
+  iterations_pressure.second += n_iter;
 
   // special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
@@ -729,7 +726,8 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
        0);
 
     n_iter = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
-    iterations_projection += n_iter;
+    iterations_projection.first += 1;
+    iterations_projection.second += n_iter;
 
     if(this->print_solver_info())
     {
@@ -816,7 +814,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
     unsigned int const n_iter = pde_operator->solve_viscous(
       velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
-    iterations_viscous += n_iter;
+    iterations_viscous.first += 1;
+    iterations_viscous.second += n_iter;
 
     // write output
     if(this->print_solver_info())
@@ -887,7 +886,8 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
     // use solution of previous step as initial guess
     unsigned int const n_iter =
       pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
-    iterations_penalty += n_iter;
+    iterations_penalty.first += 1;
+    iterations_penalty.second += n_iter;
 
     // write output
     if(this->print_solver_info())
@@ -1073,36 +1073,29 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::print_iterations() const
 {
-  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
-
-  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
+  std::vector<std::string> names = {"Convective step",
+                                    "Pressure step",
+                                    "Projection step",
+                                    "Viscous step"};
 
   std::vector<double> iterations_avg;
   iterations_avg.resize(4);
-  iterations_avg[0] = (double)this->iterations_convection / (double)N_time_steps;
-  iterations_avg[1] = (double)this->iterations_pressure / (double)N_time_steps;
-  iterations_avg[2] = (double)this->iterations_projection / (double)N_time_steps;
-  iterations_avg[3] = (double)this->iterations_viscous / (double)N_time_steps;
+  iterations_avg[0] = 0.0;
+  iterations_avg[1] =
+    (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+  iterations_avg[2] =
+    (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
+  iterations_avg[3] =
+    (double)iterations_viscous.second / std::max(1., (double)iterations_viscous.first);
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
   {
-    names.push_back("Penalty terms");
-    iterations_avg.push_back((double)this->iterations_penalty / (double)N_time_steps);
+    names.push_back("Penalty step");
+    iterations_avg.push_back((double)iterations_penalty.second /
+                             std::max(1., (double)iterations_penalty.first));
   }
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  // print
-  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
-  {
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
-                << std::endl;
-  }
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 // instantiations

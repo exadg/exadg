@@ -66,9 +66,10 @@ TimeIntExplRKBase<Number>::setup(bool const do_restart)
 
 template<typename Number>
 void
-TimeIntExplRKBase<Number>::do_timestep_pre_solve()
+TimeIntExplRKBase<Number>::do_timestep_pre_solve(bool const print_header)
 {
-  // nothing to do
+  if(this->print_solver_info() && print_header)
+    this->output_solver_info_header();
 }
 
 template<typename Number>

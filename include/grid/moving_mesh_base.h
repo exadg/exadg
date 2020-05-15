@@ -9,6 +9,7 @@
 #define INCLUDE_GRID_MOVING_MESH_BASE_H_
 
 // deal.II
+#include <deal.II/base/conditional_ostream.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_nothing.h>
 #include <deal.II/fe/fe_system.h>
@@ -45,7 +46,7 @@ public:
   }
 
   virtual void
-  move_mesh(double const time) = 0;
+  move_mesh(double const time, bool const print_solver_info = false) = 0;
 
   Mapping<dim> const &
   get_mapping() const override
@@ -127,6 +128,12 @@ public:
     }
 
     vector.update_ghost_values();
+  }
+
+  virtual void
+  print_iterations() const
+  {
+    AssertThrow(false, ExcMessage("Has to be overwritten by derived classes."));
   }
 
 protected:

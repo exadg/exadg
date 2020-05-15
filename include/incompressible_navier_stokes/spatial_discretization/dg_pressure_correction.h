@@ -127,12 +127,11 @@ public:
   /*
    * Stokes equations or convective term treated explicitly: solve linear system of equations
    */
-  void
+  unsigned int
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
                                  bool const &       update_preconditioner,
-                                 double const &     scaling_factor_mass_matrix_term,
-                                 unsigned int &     linear_iterations);
+                                 double const &     scaling_factor_mass_matrix_term);
 
   /*
    * Calculation of right-hand side vector:
@@ -145,14 +144,12 @@ public:
   /*
    * Convective term treated implicitly: solve non-linear system of equations
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
                                     double const &     time,
                                     bool const &       update_preconditioner,
-                                    double const &     scaling_factor_mass_matrix_term,
-                                    unsigned int &     newton_iterations,
-                                    unsigned int &     linear_iterations);
+                                    double const &     scaling_factor_mass_matrix_term);
 
   /*
    * This function evaluates the nonlinear residual.

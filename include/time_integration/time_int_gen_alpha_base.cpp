@@ -141,6 +141,14 @@ TimeIntGenAlphaBase<Number>::update_acceleration(VectorType &       acceleration
 
 template<typename Number>
 void
+TimeIntGenAlphaBase<Number>::do_timestep_pre_solve(bool const print_header)
+{
+  if(this->print_solver_info() && print_header)
+    this->output_solver_info_header();
+}
+
+template<typename Number>
+void
 TimeIntGenAlphaBase<Number>::do_timestep_post_solve()
 {
   prepare_vectors_for_next_timestep();

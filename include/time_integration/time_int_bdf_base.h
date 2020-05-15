@@ -97,10 +97,10 @@ protected:
    * current time step.
    */
   virtual void
-  do_timestep_pre_solve();
+  do_timestep_pre_solve(bool const print_header) override;
 
   void
-  do_timestep_post_solve();
+  do_timestep_post_solve() override;
 
   /*
    * Update the time integrator constants.

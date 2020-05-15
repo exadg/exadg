@@ -67,7 +67,7 @@ public:
    * Perform only one time step (which is used when coupling different solvers, equations, etc.).
    */
   void
-  advance_one_timestep_pre_solve();
+  advance_one_timestep_pre_solve(bool const print_header);
 
   void
   advance_one_timestep_solve();
@@ -123,7 +123,7 @@ protected:
    * e.g., update of time integrator constants
    */
   virtual void
-  do_timestep_pre_solve() = 0;
+  do_timestep_pre_solve(bool const print_header) = 0;
 
   virtual void
   solve_timestep() = 0;

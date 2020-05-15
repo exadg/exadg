@@ -382,7 +382,7 @@ Driver<dim, Number>::solve() const
     {
       while(!time_integrator->finished())
       {
-        time_integrator->advance_one_timestep_pre_solve();
+        time_integrator->advance_one_timestep_pre_solve(true);
 
         ale_update();
 

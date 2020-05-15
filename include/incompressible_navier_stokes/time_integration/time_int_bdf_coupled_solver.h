@@ -101,7 +101,11 @@ private:
   BlockVectorType              solution_np;
 
   // iteration counts
-  unsigned int iterations_linear, iterations_nonlinear, iterations_penalty;
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+                                                                                 iterations;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
 
   // scaling factor continuity equation
   double scaling_factor_continuity;

@@ -598,9 +598,9 @@ Driver<dim, Number>::solve() const
     /*
      * pre solve
      */
-    fluid_time_integrator->advance_one_timestep_pre_solve();
+    fluid_time_integrator->advance_one_timestep_pre_solve(true);
     for(unsigned int i = 0; i < n_scalars; ++i)
-      scalar_time_integrator[i]->advance_one_timestep_pre_solve();
+      scalar_time_integrator[i]->advance_one_timestep_pre_solve(false);
 
     /*
      * ALE: move the mesh and update dependent data structures

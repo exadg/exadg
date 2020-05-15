@@ -225,13 +225,12 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_matrix_operato
 }
 
 template<int dim, typename Number>
-void
+unsigned int
 DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   VectorType &       solution,
   VectorType const & rhs,
   bool const &       update_preconditioner,
-  double const &     scaling_factor_mass_matrix_term,
-  unsigned int &     linear_iterations)
+  double const &     scaling_factor_mass_matrix_term)
 {
   this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
@@ -239,7 +238,9 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   // in this because because this function is only called if the convective term is not considered
   // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
 
-  linear_iterations = momentum_linear_solver->solve(solution, rhs, update_preconditioner);
+  auto linear_iterations = momentum_linear_solver->solve(solution, rhs, update_preconditioner);
+
+  return linear_iterations;
 }
 
 template<int dim, typename Number>
@@ -251,15 +252,13 @@ DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(VectorType &
 }
 
 template<int dim, typename Number>
-void
+std::tuple<unsigned int, unsigned int>
 DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
   VectorType &       dst,
   VectorType const & rhs_vector,
   double const &     time,
   bool const &       update_preconditioner,
-  double const &     scaling_factor_mass_matrix_term,
-  unsigned int &     newton_iterations,
-  unsigned int &     linear_iterations)
+  double const &     scaling_factor_mass_matrix_term)
 {
   // update nonlinear operator
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
@@ -275,8 +274,7 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
 
   std::tuple<unsigned int, unsigned int> iter = momentum_newton_solver->solve(dst, update);
 
-  newton_iterations = std::get<0>(iter);
-  linear_iterations = std::get<1>(iter);
+  return iter;
 }
 
 template<int dim, typename Number>

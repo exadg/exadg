@@ -205,5 +205,24 @@ print_solver_info_explicit(ConditionalOStream const & pcout, double const wall_t
   // clang-format on
 }
 
+inline void
+print_list_of_iterations(ConditionalOStream const &       pcout,
+                         std::vector<std::string> const & names,
+                         std::vector<double> const &      iterations_avg)
+{
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
+  {
+    length = length > names[i].length() ? length : names[i].length();
+  }
+
+  // print
+  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
+  {
+    pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+          << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i] << std::endl;
+  }
+}
+
 
 #endif /* INCLUDE_UTILITIES_PRINT_THROUGHPUT_H_ */

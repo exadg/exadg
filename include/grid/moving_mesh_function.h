@@ -29,8 +29,10 @@ public:
    * the initial mesh position has to be used for this function.
    */
   void
-  move_mesh(double const time)
+  move_mesh(double const time, bool const print_solver_info = false)
   {
+    (void)print_solver_info;
+
     mesh_movement_function->set_time(time);
 
     this->initialize_mapping_q_cache(*this->mapping, triangulation, mesh_movement_function);

@@ -42,7 +42,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
     solution(param_in.order_time_integrator),
     vec_convective_term(param_in.order_time_integrator),
-    iterations(0.0),
+    iterations({0, 0}),
     cfl_oif(param.cfl_oif / std::pow(2.0, refine_steps_time_in)),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator),
@@ -647,7 +647,8 @@ TimeIntBDF<dim, Number>::solve_timestep()
                         this->get_next_time(),
                         &velocity);
 
-  iterations += N_iter;
+  iterations.first += 1;
+  iterations.second += N_iter;
 
   // evaluate convective term at end time t_{n+1} at which we know the boundary condition
   // g_u(t_{n+1})
@@ -674,7 +675,6 @@ TimeIntBDF<dim, Number>::solve_timestep()
 
   if(print_solver_info())
   {
-    this->output_solver_info_header();
     this->pcout << std::endl << "Solve scalar convection-diffusion equation:";
     print_solver_info_linear(this->pcout, N_iter, timer.wall_time());
   }
@@ -757,27 +757,13 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::print_iterations() const
 {
-  unsigned int const N_time_steps = std::max(1, int(this->get_time_step_number()) - 1);
-
   std::vector<std::string> names = {"Linear system"};
 
   std::vector<double> iterations_avg;
   iterations_avg.resize(1);
-  iterations_avg[0] = (double)iterations / (double)N_time_steps;
+  iterations_avg[0] = (double)iterations.second / std::max(1., (double)iterations.first);
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  // print
-  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
-  {
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i]
-                << std::endl;
-  }
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 template<int dim, typename Number>

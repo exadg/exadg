@@ -158,8 +158,8 @@ private:
   std::vector<VectorType const *> velocities;
   std::vector<double>             times;
 
-  // iteration counts and solver time
-  double iterations;
+  // iteration counts
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
 
   // Operator-integration-factor (OIF) splitting
 

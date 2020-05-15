@@ -364,7 +364,6 @@ TimeIntExplRK<Number>::solve_timestep()
 
   if(print_solver_info())
   {
-    this->output_solver_info_header();
     this->pcout << std::endl << "Solve scalar convection-diffusion equation explicitly:";
     print_solver_info_explicit(this->pcout, timer.wall_time());
   }
