@@ -154,6 +154,11 @@ private:
   std::vector<VectorType> velocity_dbc;
   VectorType              velocity_dbc_np;
 
+  // required for strongly-coupled partitioned FSI
+  VectorType pressure_last_iter;
+  VectorType velocity_projection_last_iter;
+  VectorType velocity_viscous_last_iter;
+
   // iteration counts
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
     iterations_pressure;

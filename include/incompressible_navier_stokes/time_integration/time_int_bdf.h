@@ -41,7 +41,8 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
-  typedef typename TimeIntBDFBase<Number>::VectorType     VectorType;
+  typedef TimeIntBDFBase<Number>                          Base;
+  typedef typename Base::VectorType                       VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef DGNavierStokesBase<dim, Number> OperatorBase;
@@ -77,6 +78,9 @@ public:
 
   void
   ale_update();
+
+  void
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation, bool const store_solution);
 
   virtual void
   print_iterations() const = 0;
@@ -133,6 +137,10 @@ protected:
   // convective term formulated explicitly
   std::vector<VectorType> vec_convective_term;
   VectorType              convective_term_np;
+
+  // required for strongly-coupled partitioned iteration
+  bool use_extrapolation;
+  bool store_solution;
 
 private:
   void

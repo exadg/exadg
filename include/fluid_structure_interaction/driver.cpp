@@ -697,7 +697,7 @@ Driver<dim, Number>::solve() const
     // TODO
     // strongly-coupled partitioned iteration:
     // fixed-point iteration with dynamic relaxation (Aitken relaxation)
-    double const       TOL        = 1.e-6;
+    double const       TOL        = 1.e-10;
     unsigned int const N_ITER_MAX = 100;
     unsigned int       iter       = 0;
     bool               converged  = false;
@@ -715,13 +715,13 @@ Driver<dim, Number>::solve() const
       coupling_structure_to_fluid(iter == 0);
 
       // solve fluid problem
-      fluid_time_integrator->advance_one_timestep_solve();
+      fluid_time_integrator->advance_one_timestep_partitioned_solve(iter == 0, true);
 
       // update stress boundary condition for solid
       coupling_fluid_to_structure();
 
       // solve structural problem
-      structure_time_integrator->advance_one_timestep_solve();
+      structure_time_integrator->advance_one_timestep_partitioned_solve(iter == 0, true);
 
       // compute residual and check convergence
       VectorType residual;

@@ -334,6 +334,20 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   Timer timer;
   timer.restart();
 
+  // Extrapolate old solutionsto get a good initial estimate for the solver.
+  if(this->use_extrapolation)
+  {
+    velocity_np = 0.0;
+    for(unsigned int i = 0; i < velocity.size(); ++i)
+    {
+      velocity_np.add(this->extra.get_beta(i), velocity[i]);
+    }
+  }
+  else
+  {
+    velocity_np = velocity_momentum_last_iter;
+  }
+
   /*
    *  if a turbulence model is used:
    *  update turbulence model before calculating rhs_momentum
@@ -342,12 +356,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   {
     Timer timer_turbulence;
     timer_turbulence.restart();
-
-    velocity_np = 0.0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-    {
-      velocity_np.add(this->extra.get_beta(i), velocity[i]);
-    }
 
     pde_operator->update_turbulence_model(velocity_np);
 
@@ -381,13 +389,6 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   {
     if(this->param.viscous_problem())
     {
-      // Extrapolate old solution to get a good initial estimate for the solver.
-      velocity_np = 0.0;
-      for(unsigned int i = 0; i < velocity.size(); ++i)
-      {
-        velocity_np.add(this->extra.get_beta(i), velocity[i]);
-      }
-
       // solve linear system of equations
       unsigned int n_iter = pde_operator->solve_linear_momentum_equation(
         velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
@@ -417,17 +418,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   {
     AssertThrow(this->param.nonlinear_problem_has_to_be_solved(), ExcMessage("Logical error."));
 
-    // Extrapolate old solution to get a good initial estimate for the solver.
-    velocity_np = 0.0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-    {
-      velocity_np.add(this->extra.get_beta(i), velocity[i]);
-    }
-
     // solve non-linear system of equations
-    unsigned int n_iter_linear    = 0;
-    unsigned int n_iter_nonlinear = 0;
-
     auto const iter = pde_operator->solve_nonlinear_momentum_equation(
       velocity_np,
       rhs,
@@ -442,9 +433,15 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve momentum step:";
-      print_solver_info_nonlinear(this->pcout, n_iter_nonlinear, n_iter_linear, timer.wall_time());
+      print_solver_info_nonlinear(this->pcout,
+                                  std::get<0>(iter),
+                                  std::get<1>(iter),
+                                  timer.wall_time());
     }
   }
+
+  if(this->store_solution)
+    velocity_momentum_last_iter = velocity_np;
 
   this->timer_tree->insert({"Timeloop", "Momentum step"}, timer.wall_time());
 }
@@ -560,31 +557,35 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
   VectorType rhs(pressure_np);
   rhs_pressure(rhs);
 
-  // extrapolate old solution to get a good initial estimate for the solver
-
   // calculate initial guess for pressure solve
-
-  // extrapolate old solution to get a good initial estimate for the
-  // pressure solution p_{n+1} at time t^{n+1}
-  for(unsigned int i = 0; i < pressure.size(); ++i)
+  if(this->use_extrapolation)
   {
-    pressure_increment.add(this->extra.get_beta(i), pressure[i]);
-  }
-
-  // incremental formulation
-  if(extra_pressure_gradient.get_order() > 0)
-  {
-    // Subtract extrapolation of pressure since the PPE is solved for the
-    // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i),
-    // where p_{n+1} is approximated by an extrapolation of order J (=order of BDF scheme).
-    // Note that the divergence correction term in case of the rotational formulation is not
-    // considered when calculating a good initial guess for the solution of the PPE,
-    // which will slightly increase the number of iterations compared to the standard
-    // formulation of the pressure-correction scheme.
-    for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+    // extrapolate old solution to get a good initial estimate for the
+    // pressure solution p_{n+1} at time t^{n+1}
+    for(unsigned int i = 0; i < pressure.size(); ++i)
     {
-      pressure_increment.add(-extra_pressure_gradient.get_beta(i), pressure[i]);
+      pressure_increment.add(this->extra.get_beta(i), pressure[i]);
     }
+
+    // incremental formulation
+    if(extra_pressure_gradient.get_order() > 0)
+    {
+      // Subtract extrapolation of pressure since the PPE is solved for the
+      // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i),
+      // where p_{n+1} is approximated by an extrapolation of order J (=order of BDF scheme).
+      // Note that the divergence correction term in case of the rotational formulation is not
+      // considered when calculating a good initial guess for the solution of the PPE,
+      // which will slightly increase the number of iterations compared to the standard
+      // formulation of the pressure-correction scheme.
+      for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+      {
+        pressure_increment.add(-extra_pressure_gradient.get_beta(i), pressure[i]);
+      }
+    }
+  }
+  else
+  {
+    pressure_increment = pressure_increment_last_iter;
   }
 
   // solve linear system of equations
@@ -599,6 +600,9 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
 
   iterations_pressure.first += 1;
   iterations_pressure.second += n_iter;
+
+  if(this->store_solution)
+    pressure_increment_last_iter = pressure_increment;
 
   // calculate pressure p^{n+1} from pressure increment
   pressure_update(pressure_increment);
@@ -796,9 +800,16 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
     // extrapolate velocity to time t_{n+1} and use this velocity field to
     // calculate the penalty parameter for the divergence and continuity penalty terms
     VectorType velocity_extrapolated;
-    velocity_extrapolated.reinit(velocity[0]);
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-      velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+    if(this->use_extrapolation)
+    {
+      velocity_extrapolated.reinit(velocity[0]);
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+    }
+    else
+    {
+      velocity_extrapolated = velocity_projection_last_iter;
+    }
 
     pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
 
@@ -815,11 +826,17 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
 
+    if(this->use_extrapolation == false)
+      velocity_np = velocity_projection_last_iter;
+
     unsigned int const n_iter =
       pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
 
     iterations_projection.first += 1;
     iterations_projection.second += n_iter;
+
+    if(this->store_solution)
+      velocity_projection_last_iter = velocity_np;
 
     if(this->print_solver_info())
     {
@@ -827,7 +844,7 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
       print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
-  else
+  else // no penalty terms
   {
     if(this->print_solver_info())
     {

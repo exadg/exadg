@@ -39,6 +39,8 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     cfl_oif(param_in.cfl_oif / std::pow(2.0, refine_steps_time_in)),
     operator_base(operator_in),
     vec_convective_term(this->order),
+    use_extrapolation(true),
+    store_solution(false),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator),
     moving_mesh(moving_mesh_in),
@@ -159,6 +161,20 @@ TimeIntBDF<dim, Number>::ale_update()
 
   // and hand grid velocity over to spatial discretization
   operator_base->set_grid_velocity(grid_velocity);
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation,
+                                                                bool const store_solution)
+{
+  if(this->use_extrapolation == false)
+    AssertThrow(this->store_solution == true, ExcMessage("Invalid parameters."));
+
+  this->use_extrapolation = use_extrapolation;
+  this->store_solution    = store_solution;
+
+  Base::advance_one_timestep_solve();
 }
 
 template<int dim, typename Number>

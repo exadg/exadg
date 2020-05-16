@@ -519,10 +519,17 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   rhs_pressure(rhs);
 
   // extrapolate old solution to get a good initial estimate for the solver
-  pressure_np = 0;
-  for(unsigned int i = 0; i < pressure.size(); ++i)
+  if(this->use_extrapolation)
   {
-    pressure_np.add(this->extra.get_beta(i), pressure[i]);
+    pressure_np = 0;
+    for(unsigned int i = 0; i < pressure.size(); ++i)
+    {
+      pressure_np.add(this->extra.get_beta(i), pressure[i]);
+    }
+  }
+  else
+  {
+    pressure_np = pressure_last_iter;
   }
 
   // solve linear system of equations
@@ -540,6 +547,9 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
   pde_operator->adjust_pressure_level_if_undefined(pressure_np, this->get_next_time());
+
+  if(this->store_solution)
+    pressure_last_iter = pressure_np;
 
   // write output
   if(this->print_solver_info())
@@ -689,21 +699,6 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   Timer timer;
   timer.restart();
 
-  // extrapolate velocity to time t_n+1 and use this velocity field to
-  // calculate the penalty parameter for the divergence and continuity penalty term
-  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
-  {
-    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
-    {
-      VectorType velocity_extrapolated;
-      velocity_extrapolated.reinit(velocity[0]);
-      for(unsigned int i = 0; i < velocity.size(); ++i)
-        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-
-      pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
-    }
-  }
-
   // compute right-hand-side vector
   VectorType rhs(velocity_np);
   rhs_projection(rhs);
@@ -713,11 +708,25 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
 
   // penalty terms
-  unsigned int n_iter = 0;
-
   if(this->param.apply_penalty_terms_in_postprocessing_step == false &&
      (this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true))
   {
+    // extrapolate velocity to time t_n+1 and use this velocity field to
+    // calculate the penalty parameter for the divergence and continuity penalty term
+    VectorType velocity_extrapolated;
+    if(this->use_extrapolation)
+    {
+      velocity_extrapolated.reinit(velocity[0]);
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+    }
+    else
+    {
+      velocity_extrapolated = velocity_projection_last_iter;
+    }
+
+    pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
+
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_projection &&
@@ -725,9 +734,15 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
 
-    n_iter = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+    if(this->use_extrapolation == false)
+      velocity_np = velocity_projection_last_iter;
+
+    unsigned int n_iter = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
     iterations_projection.first += 1;
     iterations_projection.second += n_iter;
+
+    if(this->store_solution)
+      velocity_projection_last_iter = velocity_np;
 
     if(this->print_solver_info())
     {
@@ -735,7 +750,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
       print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
-  else
+  else // no penalty terms
   {
     if(this->print_solver_info())
     {
@@ -771,40 +786,47 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
   Timer timer;
   timer.restart();
 
-  // if a turbulence model is used:
-  // update turbulence model before calculating rhs_viscous
-  if(this->param.use_turbulence_model == true)
-  {
-    Timer timer_turbulence;
-    timer_turbulence.restart();
-
-    // extrapolate velocity to time t_n+1 and use this velocity field to
-    // update the turbulence model (to recalculate the turbulent viscosity)
-    VectorType velocity_extrapolated(velocity[0]);
-    velocity_extrapolated = 0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-      velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-
-    pde_operator->update_turbulence_model(velocity_extrapolated);
-
-    if(this->print_solver_info())
-    {
-      this->pcout << std::endl << "Update of turbulent viscosity:";
-      print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
-    }
-  }
-
   if(this->param.viscous_problem())
   {
+    // if a turbulence model is used:
+    // update turbulence model before calculating rhs_viscous
+    if(this->param.use_turbulence_model == true)
+    {
+      Timer timer_turbulence;
+      timer_turbulence.restart();
+
+      // extrapolate velocity to time t_n+1 and use this velocity field to
+      // update the turbulence model (to recalculate the turbulent viscosity)
+      VectorType velocity_extrapolated(velocity[0]);
+      velocity_extrapolated = 0;
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+
+      pde_operator->update_turbulence_model(velocity_extrapolated);
+
+      if(this->print_solver_info())
+      {
+        this->pcout << std::endl << "Update of turbulent viscosity:";
+        print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
+      }
+    }
+
     VectorType rhs(velocity_np);
     // compute right-hand-side vector
     rhs_viscous(rhs);
 
     // Extrapolate old solution to get a good initial estimate for the solver.
     // Note that this has to be done after calling rhs_viscous()!
-    velocity_np = 0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-      velocity_np.add(this->extra.get_beta(i), velocity[i]);
+    if(this->use_extrapolation)
+    {
+      velocity_np = 0;
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_np.add(this->extra.get_beta(i), velocity[i]);
+    }
+    else
+    {
+      velocity_np = velocity_viscous_last_iter;
+    }
 
     // solve linear system of equations
     bool const update_preconditioner =
@@ -816,6 +838,9 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
     iterations_viscous.first += 1;
     iterations_viscous.second += n_iter;
+
+    if(this->store_solution)
+      velocity_viscous_last_iter = velocity_np;
 
     // write output
     if(this->print_solver_info())
@@ -858,18 +883,18 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
     Timer timer;
     timer.restart();
 
+    // compute right-hand-side vector
+    VectorType rhs(velocity_np);
+    pde_operator->apply_mass_matrix(rhs, velocity_np);
+
     // extrapolate velocity to time t_n+1 and use this velocity field to
     // calculate the penalty parameter for the divergence and continuity penalty term
-    VectorType velocity_extrapolated;
-    velocity_extrapolated.reinit(velocity[0]);
+    VectorType velocity_extrapolated(velocity_np);
+    velocity_extrapolated = 0.0;
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
     pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
-
-    // compute right-hand-side vector
-    VectorType rhs(velocity_np);
-    pde_operator->apply_mass_matrix(rhs, velocity_np);
 
     // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
     // rhs-vector if desired
@@ -883,11 +908,17 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
 
-    // use solution of previous step as initial guess
+    if(this->use_extrapolation == false)
+      velocity_np = velocity_projection_last_iter;
+
     unsigned int const n_iter =
       pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+
     iterations_penalty.first += 1;
     iterations_penalty.second += n_iter;
+
+    if(this->store_solution)
+      velocity_projection_last_iter = velocity_np;
 
     // write output
     if(this->print_solver_info())

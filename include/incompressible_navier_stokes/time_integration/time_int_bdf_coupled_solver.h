@@ -100,6 +100,10 @@ private:
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;
 
+  // required for strongly-coupled partitioned FSI
+  BlockVectorType solution_last_iter;
+  VectorType      velocity_penalty_last_iter;
+
   // iteration counts
   std::pair<
     unsigned int /* calls */,

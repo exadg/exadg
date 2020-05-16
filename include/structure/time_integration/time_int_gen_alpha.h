@@ -68,6 +68,9 @@ public:
   void
   relax_displacement(double const omega, VectorType const & displacement_previous);
 
+  void
+  advance_one_timestep_partitioned_solve(bool const use_extrapolation, bool const store_solution);
+
 private:
   void
   solve_timestep() override;
@@ -105,6 +108,11 @@ private:
   VectorType displacement_n, displacement_np;
   VectorType velocity_n, velocity_np;
   VectorType acceleration_n, acceleration_np;
+
+  // required for strongly-coupled partitioned FSI
+  bool       use_extrapolation;
+  bool       store_solution;
+  VectorType displacement_last_iter;
 
   std::pair<
     unsigned int /* calls */,

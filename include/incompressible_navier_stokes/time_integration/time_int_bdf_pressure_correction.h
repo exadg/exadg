@@ -148,6 +148,11 @@ private:
   // stores pressure Dirichlet boundary values at previous times
   std::vector<VectorType> pressure_dbc;
 
+  // required for strongly-coupled partitioned FSI
+  VectorType pressure_increment_last_iter;
+  VectorType velocity_momentum_last_iter;
+  VectorType velocity_projection_last_iter;
+
   // iteration counts
   std::pair<
     unsigned int /* calls */,

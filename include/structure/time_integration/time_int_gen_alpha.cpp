@@ -34,6 +34,8 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
     param(param_),
     mpi_comm(mpi_comm_),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    use_extrapolation(true),
+    store_solution(false),
     iterations({0, {0, 0}})
 {
 }
@@ -76,6 +78,20 @@ TimeIntGenAlpha<dim, Number>::setup(bool const do_restart)
 
 template<int dim, typename Number>
 void
+TimeIntGenAlpha<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_extrapolation,
+                                                                     bool const store_solution)
+{
+  if(this->use_extrapolation == false)
+    AssertThrow(this->store_solution == true, ExcMessage("Invalid parameters."));
+
+  this->use_extrapolation = use_extrapolation;
+  this->store_solution    = store_solution;
+
+  this->advance_one_timestep_solve();
+}
+
+template<int dim, typename Number>
+void
 TimeIntGenAlpha<dim, Number>::solve_timestep()
 {
   // compute right-hand side in case of linear problems or "constant vector"
@@ -109,7 +125,10 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
   timer.restart();
 
   // initial guess
-  displacement_np = displacement_n;
+  if(use_extrapolation)
+    displacement_np = displacement_n;
+  else
+    displacement_np = displacement_last_iter;
 
   if(param.large_deformation) // nonlinear case
   {
@@ -155,6 +174,9 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
 
   // compute vectors at time t_{n+1}
   timer.restart();
+
+  if(this->store_solution)
+    displacement_last_iter = displacement_np;
 
   this->update_displacement(displacement_np, displacement_n);
   this->update_velocity(velocity_np, displacement_np, displacement_n, velocity_n, acceleration_n);

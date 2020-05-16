@@ -152,22 +152,19 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  // update scaling factor of continuity equation
-  if(this->param.use_scaling_continuity == true)
+  // extrapolate old solutions to obtain a good initial guess for the solver, or
+  // to update the turbulence model or the penalty parameters based on this
+  // extrapolated solution
+  if(this->use_extrapolation)
   {
-    scaling_factor_continuity = this->param.scaling_factor_continuity *
-                                characteristic_element_length / this->get_time_step_size();
-    pde_operator->set_scaling_factor_continuity(scaling_factor_continuity);
+    solution_np.equ(this->extra.get_beta(0), solution[0]);
+    for(unsigned int i = 1; i < solution.size(); ++i)
+      solution_np.add(this->extra.get_beta(i), solution[i]);
   }
-  else // use_scaling_continuity == false
+  else if(this->param.apply_penalty_terms_in_postprocessing_step == true)
   {
-    scaling_factor_continuity = 1.0;
+    solution_np = solution_last_iter;
   }
-
-  // extrapolate old solution to obtain a good initial guess for the solver
-  solution_np.equ(this->extra.get_beta(0), solution[0]);
-  for(unsigned int i = 1; i < solution.size(); ++i)
-    solution_np.add(this->extra.get_beta(i), solution[i]);
 
   // update of turbulence model
   if(this->param.use_turbulence_model == true)
@@ -184,33 +181,34 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     }
   }
 
-  // calculate auxiliary variable p^{*} = 1/scaling_factor * p
-  solution_np.block(1) *= 1.0 / scaling_factor_continuity;
-
   // Update divergence and continuity penalty operator in case
-  // that these terms are added to the monolithic system of equations
-  // instead of applying these terms in a postprocessing step.
+  // that these terms are added to the monolithic system of equations.
   if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+    if(this->param.use_divergence_penalty == true)
     {
-      // extrapolate velocity to time t_n+1 and use this velocity field to
-      // calculate the penalty parameter for the divergence and continuity penalty term
-      VectorType velocity_extrapolated(solution[0].block(0));
-      velocity_extrapolated = 0;
-      for(unsigned int i = 0; i < solution.size(); ++i)
-        velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
-
-      if(this->param.use_divergence_penalty == true)
-      {
-        pde_operator->update_divergence_penalty_operator(velocity_extrapolated);
-      }
-      if(this->param.use_continuity_penalty == true)
-      {
-        pde_operator->update_continuity_penalty_operator(velocity_extrapolated);
-      }
+      pde_operator->update_divergence_penalty_operator(solution_np.block(0));
+    }
+    if(this->param.use_continuity_penalty == true)
+    {
+      pde_operator->update_continuity_penalty_operator(solution_np.block(0));
     }
   }
+
+  // update scaling factor of continuity equation
+  if(this->param.use_scaling_continuity == true)
+  {
+    scaling_factor_continuity = this->param.scaling_factor_continuity *
+                                characteristic_element_length / this->get_time_step_size();
+    pde_operator->set_scaling_factor_continuity(scaling_factor_continuity);
+  }
+  else // use_scaling_continuity == false
+  {
+    scaling_factor_continuity = 1.0;
+  }
+
+  // calculate auxiliary variable p^{*} = 1/scaling_factor * p
+  solution_np.block(1) *= 1.0 / scaling_factor_continuity;
 
   bool const update_preconditioner =
     this->param.update_preconditioner_coupled &&
@@ -335,6 +333,11 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
   pde_operator->adjust_pressure_level_if_undefined(solution_np.block(1), this->get_next_time());
 
+  if(this->store_solution && this->param.apply_penalty_terms_in_postprocessing_step == true)
+  {
+    solution_last_iter = solution_np;
+  }
+
   this->timer_tree->insert({"Timeloop", "Coupled system"}, timer.wall_time());
 
   // If the penalty terms are applied in a postprocessing step
@@ -374,19 +377,26 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
   Timer timer;
   timer.restart();
 
-  // extrapolate velocity to time t_n+1 and use this velocity field to
-  // calculate the penalty parameter for the divergence and continuity penalty term
-  VectorType velocity_extrapolated(solution[0].block(0));
-  velocity_extrapolated = 0;
-  for(unsigned int i = 0; i < solution.size(); ++i)
-    velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
-
-  // update projection operator
-  pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
-
   // right-hand side term: apply mass matrix
   VectorType rhs(solution_np.block(0));
   pde_operator->apply_mass_matrix(rhs, solution_np.block(0));
+
+  // extrapolate velocity to time t_n+1 and use this velocity field to
+  // calculate the penalty parameter for the divergence and continuity penalty term
+  VectorType velocity_extrapolated(solution_np.block(0));
+  if(this->use_extrapolation)
+  {
+    velocity_extrapolated = 0.0;
+    for(unsigned int i = 0; i < solution.size(); ++i)
+      velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
+  }
+  else
+  {
+    velocity_extrapolated = velocity_penalty_last_iter;
+  }
+
+  // update projection operator
+  pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
 
   // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
   // rhs-vector if desired
@@ -398,9 +408,15 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
     ((this->time_step_number - 1) % this->param.update_preconditioner_projection_every_time_steps ==
      0);
 
-  // solve projection (and update preconditioner if desired)
+  // solve projection step
+  if(this->use_extrapolation == false)
+    solution_np.block(0) = velocity_penalty_last_iter;
+
   unsigned int n_iter =
     pde_operator->solve_projection(solution_np.block(0), rhs, update_preconditioner);
+
+  if(this->store_solution)
+    velocity_penalty_last_iter = solution_np.block(0);
 
   iterations_penalty.first += 1;
   iterations_penalty.second += n_iter;
