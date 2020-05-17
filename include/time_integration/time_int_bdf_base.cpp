@@ -108,20 +108,6 @@ TimeIntBDFBase<Number>::get_scaling_factor_time_derivative_term() const
 
 template<typename Number>
 double
-TimeIntBDFBase<Number>::get_next_time() const
-{
-  /*
-   *   time t
-   *  -------->   t_{n-2}   t_{n-1}   t_{n}      t_{n+1}
-   *  _______________|_________|________|___________|___________\
-   *                 |         |        |           |           /
-   *  time_steps-vec:   dt[2]     dt[1]    dt[0]
-   */
-  return this->time + this->time_steps[0];
-}
-
-template<typename Number>
-double
 TimeIntBDFBase<Number>::get_previous_time(int const i /* t_{n-i} */) const
 {
   /*

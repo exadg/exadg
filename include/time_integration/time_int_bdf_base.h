@@ -43,6 +43,13 @@ public:
   }
 
   /*
+   * Setup function where allocations/initializations are done. Calls another function
+   * setup_derived() in which the setup of derived classes can be performed.
+   */
+  void
+  setup(bool const do_restart) override;
+
+  /*
    * Pseudo-time-stepping for steady-state problems.
    */
   void
@@ -58,7 +65,7 @@ public:
    * Get the time step size.
    */
   double
-  get_time_step_size() const;
+  get_time_step_size() const override;
 
   double
   get_time_step_size(int const index) const;
@@ -70,20 +77,7 @@ public:
    * size.
    */
   void
-  set_current_time_step_size(double const & time_step_size);
-
-  /*
-   * Setup function where allocations/initializations are done. Calls another function
-   * setup_derived() in which the setup of derived classes can be performed.
-   */
-  void
-  setup(bool const do_restart);
-
-  /*
-   * Get time at the end of the current time step t_{n+1}.
-   */
-  double
-  get_next_time() const;
+  set_current_time_step_size(double const & time_step_size) override;
 
   /*
    * Get time at the end of the current time step.

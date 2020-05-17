@@ -131,6 +131,12 @@ TimeIntBase::get_time() const
   return time;
 }
 
+double
+TimeIntBase::get_next_time() const
+{
+  return this->get_time() + this->get_time_step_size();
+}
+
 unsigned int
 TimeIntBase::get_number_of_time_steps() const
 {
@@ -209,9 +215,9 @@ TimeIntBase::output_solver_info_header() const
   pcout << std::endl
         << "______________________________________________________________________" << std::endl
         << std::endl
-        << " Number of TIME STEPS: " << std::left << std::setw(8) << time_step_number
-        << "t_n = " << std::scientific << std::setprecision(4) << time
-        << " -> t_n+1 = " << time + get_time_step_size() << std::endl
+        << " Time step number = " << std::left << std::setw(8) << time_step_number
+        << "t = " << std::scientific << std::setprecision(5) << time
+        << " -> t + dt = " << time + get_time_step_size() << std::endl
         << "______________________________________________________________________" << std::endl;
 }
 

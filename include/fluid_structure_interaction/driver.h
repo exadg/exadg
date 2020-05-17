@@ -49,6 +49,18 @@
 
 namespace FSI
 {
+struct FixedPointData
+{
+  FixedPointData() : abs_tol(1.e-12), rel_tol(1.e-3), omega_init(0.1), partitioned_iter_max(100)
+  {
+  }
+
+  double       abs_tol;
+  double       rel_tol;
+  double       omega_init;
+  unsigned int partitioned_iter_max;
+};
+
 template<int dim, typename Number>
 class Driver
 {
@@ -56,7 +68,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Driver(MPI_Comm const & comm);
+  Driver(std::string const & input_file, MPI_Comm const & comm);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
@@ -93,6 +105,21 @@ private:
 
   void
   coupling_fluid_to_structure() const;
+
+  double
+  calculate_residual(VectorType & residual) const;
+
+  void
+  update_relaxation_parameter(double &           omega,
+                              unsigned int const i,
+                              VectorType const & residual,
+                              VectorType const & residual_last) const;
+
+  void
+  print_solver_info_header(unsigned int const i) const;
+
+  void
+  print_solver_info_converged(unsigned int const i) const;
 
   void
   print_partitioned_iterations() const;
@@ -220,11 +247,19 @@ private:
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
   /*
+   *  Fixed-point iteration.
+   */
+  FixedPointData fixed_point_data;
+
+  mutable VectorType residual_last;
+  mutable VectorType displacement_last;
+
+  /*
    * Computation time (wall clock time).
    */
   mutable TimerTree timer_tree;
 
-  mutable unsigned int partitioned_iterations;
+  mutable std::pair<unsigned int, unsigned long long> partitioned_iterations;
 };
 
 } // namespace FSI

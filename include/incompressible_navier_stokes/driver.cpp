@@ -380,7 +380,7 @@ Driver<dim, Number>::solve() const
 
     if(this->param.ale_formulation == true)
     {
-      while(!time_integrator->finished())
+      while(not time_integrator->finished())
       {
         time_integrator->advance_one_timestep_pre_solve(true);
 

@@ -11,11 +11,39 @@
 namespace FSI
 {
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm)
+Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & comm)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
-    partitioned_iterations(0)
+    partitioned_iterations({0, 0})
 {
+  dealii::ParameterHandler prm;
+
+  // clang-format off
+  prm.enter_subsection("FSI");
+    prm.add_parameter("AbsTol",
+                      fixed_point_data.abs_tol,
+                      "Absolute solver tolerance.",
+                      Patterns::Double(0.0,1.0),
+                      true);
+    prm.add_parameter("RelTol",
+                      fixed_point_data.rel_tol,
+                      "Relative solver tolerance.",
+                      Patterns::Double(0.0,1.0),
+                      true);
+    prm.add_parameter("OmegaInit",
+                      fixed_point_data.omega_init,
+                      "Initial relaxation parameter.",
+                      Patterns::Double(0.0,1.0),
+                      true);
+    prm.add_parameter("PartitionedIterMax",
+                      fixed_point_data.partitioned_iter_max,
+                      "Maximum number of fixed-point iterations.",
+                      Patterns::Integer(1,1000),
+                      true);
+  prm.leave_subsection();
+  // clang-format on
+
+  prm.parse_input(input_file, "", true, true);
 }
 
 template<int dim, typename Number>
@@ -566,6 +594,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
+
+  structure_operator->initialize_dof_vector(residual_last);
+  structure_operator->initialize_dof_vector(displacement_last);
+
   timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
 }
 
@@ -621,9 +653,8 @@ Driver<dim, Number>::coupling_structure_to_ale(VectorType & displacement_structu
                                                bool const   extrapolate) const
 {
   Timer sub_timer;
-
   sub_timer.restart();
-  structure_operator->initialize_dof_vector(displacement_structure);
+
   if(extrapolate)
     structure_time_integrator->extrapolate_displacement_to_np(displacement_structure);
   else
@@ -672,17 +703,76 @@ Driver<dim, Number>::coupling_fluid_to_structure() const
 }
 
 template<int dim, typename Number>
+double
+Driver<dim, Number>::calculate_residual(VectorType & residual) const
+{
+  residual = structure_time_integrator->get_displacement_np();
+  residual.add(-1.0, displacement_last);
+  double const residual_norm = residual.l2_norm();
+  double const ref_norm_abs  = std::sqrt(structure_operator->get_number_of_dofs());
+  double const ref_norm_rel  = structure_time_integrator->get_velocity_np().l2_norm() *
+                              structure_time_integrator->get_time_step_size();
+
+  bool const converged = (residual_norm < fixed_point_data.abs_tol * ref_norm_abs) ||
+                         (residual_norm < fixed_point_data.rel_tol * ref_norm_rel);
+
+  return converged;
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::update_relaxation_parameter(double &           omega,
+                                                 unsigned int const i,
+                                                 VectorType const & residual,
+                                                 VectorType const & residual_last) const
+{
+  if(i == 0)
+  {
+    omega = fixed_point_data.omega_init;
+  }
+  else
+  {
+    VectorType residual_increment;
+    structure_operator->initialize_dof_vector(residual_increment);
+    residual_increment = residual;
+    residual_increment.add(-1.0, residual_last);
+    double const norm_residual_increment_sqr = residual_increment.norm_sqr();
+    double const inner_product               = residual_last * residual_increment;
+    omega *= -inner_product / norm_residual_increment_sqr;
+  }
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::print_solver_info_header(unsigned int const i) const
+{
+  if(fluid_time_integrator->print_solver_info())
+  {
+    pcout << std::endl
+          << "======================================================================" << std::endl
+          << " Partitioned FSI: Fixed-point iteration counter = " << std::left << std::setw(8) << i
+          << std::endl
+          << "======================================================================" << std::endl;
+  }
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::print_solver_info_converged(unsigned int const i) const
+{
+  if(fluid_time_integrator->print_solver_info())
+  {
+    pcout << std::endl << "Fixed-point iteration converged in " << i << " iterations." << std::endl;
+  }
+}
+
+template<int dim, typename Number>
 void
 Driver<dim, Number>::solve() const
 {
   set_start_time();
 
   synchronize_time_step_size();
-
-  // relaxation factor
-  double const OMEGA_MAX        = 0.1;
-  double       omega            = OMEGA_MAX;
-  double const residual_scaling = std::sqrt(structure_operator->get_number_of_dofs());
 
   // The fluid domain is the master that dictates when the time loop is finished
   while(!fluid_time_integrator->finished())
@@ -691,76 +781,54 @@ Driver<dim, Number>::solve() const
     fluid_time_integrator->advance_one_timestep_pre_solve(true);
     structure_time_integrator->advance_one_timestep_pre_solve(false);
 
-    if(fluid_time_integrator->print_solver_info())
-      pcout << std::endl << "Solve strongly-coupled partitioned FSI problem:" << std::endl;
-
-    // TODO
     // strongly-coupled partitioned iteration:
     // fixed-point iteration with dynamic relaxation (Aitken relaxation)
-    double const       TOL        = 1.e-10;
-    unsigned int const N_ITER_MAX = 100;
-    unsigned int       iter       = 0;
-    bool               converged  = false;
-    VectorType         residual_last;
-    structure_operator->initialize_dof_vector(residual_last);
-    while(not converged and iter < N_ITER_MAX)
+    unsigned int i         = 0;
+    bool         converged = false;
+    double       omega     = 1.0;
+    while(not converged and i < fixed_point_data.partitioned_iter_max)
     {
-      VectorType displacement_last;
-      coupling_structure_to_ale(displacement_last, iter == 0);
+      print_solver_info_header(i);
+
+      coupling_structure_to_ale(displacement_last, i == 0);
 
       // move the fluid mesh and update dependent data structures
       solve_ale();
 
       // update velocity boundary condition for fluid
-      coupling_structure_to_fluid(iter == 0);
+      coupling_structure_to_fluid(i == 0);
 
       // solve fluid problem
-      fluid_time_integrator->advance_one_timestep_partitioned_solve(iter == 0, true);
+      fluid_time_integrator->advance_one_timestep_partitioned_solve(i == 0, true);
 
       // update stress boundary condition for solid
       coupling_fluid_to_structure();
 
       // solve structural problem
-      structure_time_integrator->advance_one_timestep_partitioned_solve(iter == 0, true);
+      structure_time_integrator->advance_one_timestep_partitioned_solve(i == 0, true);
 
       // compute residual and check convergence
-      VectorType residual;
-      structure_operator->initialize_dof_vector(residual);
-      residual = structure_time_integrator->get_displacement_np();
-      residual.add(-1.0, displacement_last);
-      converged = (residual.l2_norm() < TOL * residual_scaling);
+      VectorType residual(residual_last);
+      converged = calculate_residual(residual);
 
-      // relaxation step
+      // relaxation
       if(not(converged))
       {
-        if(iter == 0)
-        {
-          omega = OMEGA_MAX; // std::max(omega, OMEGA_MAX);
-        }
-        else
-        {
-          VectorType residual_increment;
-          structure_operator->initialize_dof_vector(residual_increment);
-          residual_increment = residual;
-          residual_increment.add(-1.0, residual_last);
-          double const norm_residual_increment_sqr = residual_increment.norm_sqr();
-          double const inner_product               = residual_last * residual_increment;
-          omega *= -inner_product / norm_residual_increment_sqr;
-        }
+        update_relaxation_parameter(omega, i, residual, residual_last);
+
         residual_last = residual;
 
         structure_time_integrator->relax_displacement(omega, displacement_last);
       }
 
       // increment counter of partitioned iteration
-      ++iter;
+      ++i;
     }
 
-    if(fluid_time_integrator->print_solver_info())
-      pcout << std::endl
-            << "Fixed-point iteration converged in " << iter << " iterations." << std::endl;
+    partitioned_iterations.first += 1;
+    partitioned_iterations.second += i;
 
-    partitioned_iterations += iter;
+    print_solver_info_converged(i);
 
     // post-solve
     fluid_time_integrator->advance_one_timestep_post_solve();
@@ -775,28 +843,15 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::print_partitioned_iterations() const
 {
-  unsigned int const N_time_steps =
-    std::max(1, (int)fluid_time_integrator->get_number_of_time_steps());
-
   std::vector<std::string> names;
   std::vector<double>      iterations_avg;
 
   names = {"Partitioned iterations"};
   iterations_avg.resize(1);
-  iterations_avg[0] = (double)partitioned_iterations / (double)N_time_steps;
+  iterations_avg[0] =
+    (double)partitioned_iterations.second / std::max(1.0, (double)partitioned_iterations.first);
 
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  // print
-  for(unsigned int i = 0; i < iterations_avg.size(); ++i)
-  {
-    pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-          << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i] << std::endl;
-  }
+  print_list_of_iterations(pcout, names, iterations_avg);
 }
 
 template<int dim, typename Number>

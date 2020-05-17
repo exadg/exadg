@@ -27,10 +27,10 @@ public:
                       MPI_Comm const &     mpi_comm_);
 
   double
-  get_time_step_size() const;
+  get_time_step_size() const override;
 
   void
-  set_current_time_step_size(double const & time_step_size);
+  set_current_time_step_size(double const & time_step_size) override;
 
 protected:
   double

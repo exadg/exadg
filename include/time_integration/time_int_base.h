@@ -103,6 +103,12 @@ public:
   get_time() const;
 
   /*
+   * Get time at the end of the current time step t_{n+1}.
+   */
+  double
+  get_next_time() const;
+
+  /*
    * Get number of computed time steps
    */
   unsigned int

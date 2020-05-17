@@ -213,6 +213,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
 template<int dim, typename Number>
 void
+Driver<dim, Number>::ale_update() const
+{
+  // move the mesh and update dependent data structures
+  moving_mesh->move_mesh(time_integrator->get_next_time());
+  matrix_free->update_mapping(moving_mesh->get_mapping());
+  conv_diff_operator->update_after_mesh_movement();
+  std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
+    std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+  time_int_bdf->ale_update();
+}
+
+template<int dim, typename Number>
+void
 Driver<dim, Number>::solve()
 {
   if(param.problem_type == ProblemType::Unsteady)
@@ -223,13 +236,7 @@ Driver<dim, Number>::solve()
       {
         time_integrator->advance_one_timestep_pre_solve(true);
 
-        // move the mesh and update dependent data structures
-        std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
-          std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
-        moving_mesh->move_mesh(time_int_bdf->get_next_time());
-        matrix_free->update_mapping(moving_mesh->get_mapping());
-        conv_diff_operator->update_after_mesh_movement();
-        time_int_bdf->ale_update();
+        ale_update();
 
         time_integrator->advance_one_timestep_solve();
 

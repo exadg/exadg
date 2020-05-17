@@ -154,7 +154,7 @@ run(std::string const & input_file, Study const & study, MPI_Comm const & mpi_co
   timer.restart();
 
   std::shared_ptr<FSI::Driver<dim, Number>> driver;
-  driver.reset(new FSI::Driver<dim, Number>(mpi_comm));
+  driver.reset(new FSI::Driver<dim, Number>(input_file, mpi_comm));
 
   ApplicationSelector selector;
 

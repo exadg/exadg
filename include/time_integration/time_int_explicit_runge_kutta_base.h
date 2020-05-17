@@ -28,13 +28,13 @@ public:
                     MPI_Comm const &    mpi_comm_);
 
   void
-  setup(bool const do_restart = false);
+  setup(bool const do_restart) override;
 
   double
-  get_time_step_size() const;
+  get_time_step_size() const override;
 
   void
-  set_current_time_step_size(double const & time_step_size);
+  set_current_time_step_size(double const & time_step_size) override;
 
 protected:
   // solution vectors

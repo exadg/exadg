@@ -68,6 +68,9 @@ private:
   print_header() const;
 
   void
+  ale_update() const;
+
+  void
   communicate_scalar_to_fluid() const;
 
   void

@@ -127,6 +127,9 @@ private:
   void
   print_header();
 
+  void
+  ale_update() const;
+
   // MPI communicator
   MPI_Comm const & mpi_comm;
 

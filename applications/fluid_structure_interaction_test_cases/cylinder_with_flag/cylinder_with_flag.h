@@ -16,18 +16,20 @@ namespace CylinderWithFlag
 {
 // set problem specific parameters
 
-// my-FSI
-double const U_X_MAX         = 1.5 * 1.0;
+// my-FSI (density ratio 1/1000)
+double const U_MEAN          = 1.0;
 double const FLUID_VISCOSITY = 1.0e-3;
-double const FLUID_DENSITY   = 1.0;
+double const FLUID_DENSITY   = 1.0e0;
 
 double const DENSITY_STRUCTURE       = 1.0e3;
 double const POISSON_RATIO_STRUCTURE = 0.4;
 double const E_STRUCTURE             = 2.0e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
 double const g                       = 0.01;
+// double const E_STRUCTURE             = 1.8e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+// double const g                       = 0.0;
 
 // FSI 1
-// double const U_X_MAX   = 1.5*0.2;
+// double const U_MEAN   = 0.2;
 // double const FLUID_VISCOSITY = 1.0e-3;
 // double const FLUID_DENSITY = 1.0e3;
 //
@@ -37,7 +39,7 @@ double const g                       = 0.01;
 // double const g = 2.0;
 
 // FSI 2
-// double const U_X_MAX   = 1.5*1.0;
+// double const U_MEAN   = 1.0;
 // double const FLUID_VISCOSITY = 1.0e-3;
 // double const FLUID_DENSITY = 1.0e3;
 //
@@ -47,19 +49,14 @@ double const g                       = 0.01;
 // double const g = 0.0;
 
 // FSI 3
-// double const U_X_MAX   = 1.5*2.0;
+// double const U_MEAN         = 2.0;
 // double const FLUID_VISCOSITY = 1.0e-3;
-// double const FLUID_DENSITY = 1.0e3;
+// double const FLUID_DENSITY   = 1.0e3;
 //
-// double const DENSITY_STRUCTURE = 1.0e3;
+// double const DENSITY_STRUCTURE       = 1.0e3;
 // double const POISSON_RATIO_STRUCTURE = 0.4;
-// double const E_STRUCTURE = 2.0e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
-// double const g = 2.0;
-
-double const END_TIME = 8.0;
-
-double const OUTPUT_INTERVAL_TIME                = END_TIME / 100;
-double const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
+// double const E_STRUCTURE             = 2.0e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+// double const g                       = 0.0;
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
@@ -83,6 +80,12 @@ types::boundary_id const BOUNDARY_ID_OUTFLOW  = 2;
 types::boundary_id const BOUNDARY_ID_CYLINDER = 3;
 types::boundary_id const BOUNDARY_ID_FLAG     = 4;
 
+double const U_X_MAX  = 1.5 * U_MEAN;
+double const END_TIME = 4.0 * L / U_MEAN;
+
+double const OUTPUT_INTERVAL_TIME                = END_TIME / 100;
+double const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
+
 template<int dim>
 class InflowBC : public Function<dim>
 {
@@ -98,7 +101,7 @@ public:
     double result = 0.0;
 
     double const t = this->get_time();
-    double const T = 2.0;
+    double const T = END_TIME / 10.0;
 
     if(component == 0)
       result = U_X_MAX * ((t < T) ? 0.5 * (1.0 - std::cos(t / T * numbers::PI)) : 1.0);
@@ -151,7 +154,7 @@ public:
 
     // ALE
     param.ale_formulation                     = true;
-    param.mesh_movement_type                  = MeshMovementType::Elasticity;
+    param.mesh_movement_type                  = MeshMovementType::Poisson;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -161,16 +164,13 @@ public:
     param.density    = FLUID_DENSITY;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type = SolverType::Unsteady;
-    param.temporal_discretization =
-      TemporalDiscretization::BDFDualSplittingScheme; // BDFPressureCorrection; //TODO
-                                                      // BDFDualSplittingScheme;
-    param.treatment_of_convective_term =
-      TreatmentOfConvectiveTerm::Explicit; // Implicit; //TODO Explicit;
+    param.solver_type                     = SolverType::Unsteady;
+    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
     param.adaptive_time_stepping          = true;
-    param.calculation_of_time_step_size   = TimeStepCalculation::CFL; // UserSpecified; //CFL;
+    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.time_step_size                  = END_TIME;
     param.max_velocity                    = U_X_MAX;
     param.cfl                             = 0.5;
@@ -589,7 +589,6 @@ public:
     param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
     param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
   void set_boundary_conditions_ale(
@@ -644,7 +643,7 @@ public:
     parameters.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
 
-    parameters.update_preconditioner                         = true;
+    parameters.update_preconditioner                         = parameters.large_deformation;
     parameters.update_preconditioner_every_newton_iterations = 10;
   }
 
@@ -727,7 +726,7 @@ public:
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-6);
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-3);
     parameters.solver                               = Structure::Solver::FGMRES;
     parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;

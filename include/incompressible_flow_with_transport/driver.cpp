@@ -585,6 +585,43 @@ Driver<dim, Number>::communicate_fluid_to_all_scalars() const
 
 template<int dim, typename Number>
 void
+Driver<dim, Number>::ale_update() const
+{
+  Timer timer;
+  timer.restart();
+
+  Timer sub_timer;
+
+  sub_timer.restart();
+  moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+  timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
+
+  sub_timer.restart();
+  matrix_free->update_mapping(moving_mesh->get_mapping());
+  timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
+
+  sub_timer.restart();
+  navier_stokes_operator->update_after_mesh_movement();
+  for(unsigned int i = 0; i < n_scalars; ++i)
+    conv_diff_operator[i]->update_after_mesh_movement();
+  timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
+
+  sub_timer.restart();
+  fluid_time_integrator->ale_update();
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
+      std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
+    time_int_bdf->ale_update();
+  }
+  timer_tree.insert({"Flow + transport", "ALE", "Update all time integrators"},
+                    sub_timer.wall_time());
+
+  timer_tree.insert({"Flow + transport", "ALE"}, timer.wall_time());
+}
+
+template<int dim, typename Number>
+void
 Driver<dim, Number>::solve() const
 {
   set_start_time();
@@ -593,7 +630,7 @@ Driver<dim, Number>::solve() const
 
   // time loop
   bool finished = false;
-  do
+  while(not finished)
   {
     /*
      * pre solve
@@ -606,39 +643,7 @@ Driver<dim, Number>::solve() const
      * ALE: move the mesh and update dependent data structures
      */
     if(fluid_param.ale_formulation) // moving mesh
-    {
-      Timer timer;
-      timer.restart();
-
-      Timer sub_timer;
-
-      sub_timer.restart();
-      moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-      timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
-
-      sub_timer.restart();
-      matrix_free->update_mapping(moving_mesh->get_mapping());
-      timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
-
-      sub_timer.restart();
-      navier_stokes_operator->update_after_mesh_movement();
-      for(unsigned int i = 0; i < n_scalars; ++i)
-        conv_diff_operator[i]->update_after_mesh_movement();
-      timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
-
-      sub_timer.restart();
-      fluid_time_integrator->ale_update();
-      for(unsigned int i = 0; i < n_scalars; ++i)
-      {
-        std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
-          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
-        time_int_bdf->ale_update();
-      }
-      timer_tree.insert({"Flow + transport", "ALE", "Update all time integrators"},
-                        sub_timer.wall_time());
-
-      timer_tree.insert({"Flow + transport", "ALE"}, timer.wall_time());
-    }
+      ale_update();
 
     /*
      *  solve
@@ -672,7 +677,7 @@ Driver<dim, Number>::solve() const
     finished = fluid_time_integrator->finished();
     for(unsigned int i = 0; i < n_scalars; ++i)
       finished = finished && scalar_time_integrator[i]->finished();
-  } while(!finished);
+  }
 }
 
 template<int dim, typename Number>
