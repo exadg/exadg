@@ -21,10 +21,11 @@ class FunctionInterpolation
 {
 private:
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
-  typedef std::map<Id, std::vector<Tensor<rank, dim, Number>>>                      ArraySolution;
+  typedef std::map<Id, types::global_dof_index>                                     MapVectorIndex;
+  typedef std::vector<Tensor<rank, dim, Number>>                                    ArraySolution;
 
 public:
-  FunctionInterpolation() : map_solution(nullptr)
+  FunctionInterpolation() : global_map_vector_index(nullptr), map_solution(nullptr)
   {
   }
 
@@ -34,37 +35,35 @@ public:
                unsigned int const v,
                unsigned int const quad_index) const
   {
+    Assert(global_map_vector_index != nullptr,
+           ExcMessage("Pointer global_map_vector_index is not initialized."));
+    Assert(global_map_vector_index->find(quad_index) != global_map_vector_index->end(),
+           ExcMessage("Specified quad_index does not exist in global_map_vector_index."));
+
     Assert(map_solution != nullptr, ExcMessage("Pointer map_solution is not initialized."));
     Assert(map_solution->find(quad_index) != map_solution->end(),
            ExcMessage("Specified quad_index does not exist in map_solution."));
 
-    ArraySolution const & array_solution = map_solution->find(quad_index)->second;
+    MapVectorIndex const & map_vector_index = global_map_vector_index->find(quad_index)->second;
+    ArraySolution const &  array_solution   = map_solution->find(quad_index)->second;
 
-    Id id = std::make_tuple(face, q, v);
+    Id                      id    = std::make_tuple(face, q, v);
+    types::global_dof_index index = map_vector_index.find(id)->second;
 
-    std::vector<Tensor<rank, dim, Number>> const & vector_solution =
-      array_solution.find(id)->second;
-
-    Tensor<rank, dim, Number> result;
-    for(auto solution = vector_solution.begin(); solution != vector_solution.end(); ++solution)
-    {
-      result += (*solution);
-    }
-
-    if(vector_solution.size() > 0)
-      result *= 1.0 / Number(vector_solution.size());
-
-    return result;
+    return array_solution[index];
   }
 
   void
-  set_data_pointer(std::map<unsigned int, ArraySolution> const & map_solution_in)
+  set_data_pointer(std::map<unsigned int, MapVectorIndex> const & global_map_vector_index_in,
+                   std::map<unsigned int, ArraySolution> const &  map_solution_in)
   {
-    map_solution = &map_solution_in;
+    global_map_vector_index = &global_map_vector_index_in;
+    map_solution            = &map_solution_in;
   }
 
 private:
-  std::map<unsigned int, ArraySolution> const * map_solution;
+  std::map<unsigned int, MapVectorIndex> const * global_map_vector_index;
+  std::map<unsigned int, ArraySolution> const *  map_solution;
 };
 
 #endif /* INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_ */
