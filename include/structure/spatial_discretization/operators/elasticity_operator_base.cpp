@@ -41,7 +41,7 @@ ElasticityOperatorBase<dim, Number>::get_mapping_flags()
 {
   MappingFlags flags;
 
-  flags.cells = update_gradients | update_JxW_values;
+  flags.cells = update_gradients | update_JxW_values | update_quadrature_points;
 
   flags.boundary_faces =
     update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
@@ -61,7 +61,8 @@ ElasticityOperatorBase<dim, Number>::initialize(MatrixFree<dim, Number> const & 
 
   this->integrator_flags = this->get_integrator_flags(data.unsteady);
 
-  material_handler.initialize(data.material_descriptor);
+  material_handler.initialize(
+    matrix_free, data.n_q_points_1d, data.dof_index, data.quad_index, data.material_descriptor);
 }
 
 template<int dim, typename Number>

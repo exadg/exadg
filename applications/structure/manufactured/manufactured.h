@@ -408,7 +408,7 @@ public:
     Type2D const       two_dim_type = Type2D::PlainStress;
 
     material_descriptor.insert(
-      Pair(0, new StVenantKirchhoffData(type, E_modul, poisson, two_dim_type)));
+      Pair(0, new StVenantKirchhoffData<dim>(type, E_modul, poisson, two_dim_type)));
   }
 
   void

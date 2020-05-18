@@ -27,10 +27,14 @@ public:
   }
 
   virtual Tensor<2, dim, VectorizedArray<Number>>
-    evaluate_stress(Tensor<2, dim, VectorizedArray<Number>> const & E) const = 0;
+    evaluate_stress(Tensor<2, dim, VectorizedArray<Number>> const & E,
+                    unsigned int const                              cell,
+                    unsigned int const                              q) const = 0;
 
   virtual Tensor<2, dim, VectorizedArray<Number>>
-    apply_C(Tensor<2, dim, VectorizedArray<Number>> const & E) const = 0;
+    apply_C(Tensor<2, dim, VectorizedArray<Number>> const & E,
+            unsigned int const                              cell,
+            unsigned int const                              q) const = 0;
 };
 
 } // namespace Structure

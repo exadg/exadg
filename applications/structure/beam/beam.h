@@ -290,7 +290,7 @@ public:
     double const E = 200e3, nu = 0.3;
     Type2D const two_dim_type = Type2D::PlainStress;
 
-    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, nu, two_dim_type)));
+    material_descriptor.insert(Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
   }
 
   void

@@ -17,16 +17,14 @@ namespace CylinderWithFlag
 // set problem specific parameters
 
 // my-FSI (density ratio 1/1000)
-double const U_MEAN          = 1.0;
-double const FLUID_VISCOSITY = 1.0e-3;
-double const FLUID_DENSITY   = 1.0e0;
-
-double const DENSITY_STRUCTURE       = 1.0e3;
-double const POISSON_RATIO_STRUCTURE = 0.4;
-double const E_STRUCTURE             = 2.0e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
-double const g                       = 0.01;
-// double const E_STRUCTURE             = 1.8e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
-// double const g                       = 0.0;
+// double const U_MEAN          = 1.0;
+// double const FLUID_VISCOSITY = 1.0e-3;
+// double const FLUID_DENSITY   = 1.0e0;
+//
+// double const DENSITY_STRUCTURE       = 1.0e3;
+// double const POISSON_RATIO_STRUCTURE = 0.4;
+// double const E_STRUCTURE             = 0.5e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+//// double const E_STRUCTURE             = 2.0e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
 
 // FSI 1
 // double const U_MEAN   = 0.2;
@@ -36,17 +34,15 @@ double const g                       = 0.01;
 // double const DENSITY_STRUCTURE = 1.0e3;
 // double const POISSON_RATIO_STRUCTURE = 0.4;
 // double const E_STRUCTURE = 0.5e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
-// double const g = 2.0;
 
 // FSI 2
-// double const U_MEAN   = 1.0;
-// double const FLUID_VISCOSITY = 1.0e-3;
-// double const FLUID_DENSITY = 1.0e3;
-//
-// double const DENSITY_STRUCTURE = 1.0e4;
-// double const POISSON_RATIO_STRUCTURE = 0.4;
-// double const E_STRUCTURE = 0.5e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
-// double const g = 0.0;
+double const U_MEAN          = 1.0;
+double const FLUID_VISCOSITY = 1.0e-3;
+double const FLUID_DENSITY   = 1.0e3;
+
+double const DENSITY_STRUCTURE       = 1.0e4;
+double const POISSON_RATIO_STRUCTURE = 0.4;
+double const E_STRUCTURE             = 0.5e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
 
 // FSI 3
 // double const U_MEAN         = 2.0;
@@ -56,7 +52,6 @@ double const g                       = 0.01;
 // double const DENSITY_STRUCTURE       = 1.0e3;
 // double const POISSON_RATIO_STRUCTURE = 0.4;
 // double const E_STRUCTURE             = 2.0e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
-// double const g                       = 0.0;
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
@@ -110,6 +105,27 @@ public:
   }
 };
 
+template<int dim>
+class SpatiallyVaryingE : public Function<dim>
+{
+public:
+  SpatiallyVaryingE() : Function<dim>(1, 0.0)
+  {
+  }
+
+  double
+  value(const Point<dim> & p, const unsigned int component = 0) const
+  {
+    (void)component;
+
+    double const sine =
+      (std::abs(p[1] - H / 2.) < H / 8.) ? std::cos(4.0 * p[1] / H * numbers::PI) : 0.0;
+    double result = 1. + 100. * sine * sine;
+
+    return result;
+  }
+};
+
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -154,7 +170,7 @@ public:
 
     // ALE
     param.ale_formulation                     = true;
-    param.mesh_movement_type                  = MeshMovementType::Poisson;
+    param.mesh_movement_type                  = MeshMovementType::Elasticity;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -689,9 +705,12 @@ public:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlainStress;
 
-    double const E       = 1.0;
-    double const poisson = 0.3;
-    material_descriptor.insert(Pair(0, new StVenantKirchhoffData(type, E, poisson, two_dim_type)));
+    double const                   E       = 1.0;
+    double const                   poisson = 0.3;
+    std::shared_ptr<Function<dim>> E_function;
+    E_function.reset(new SpatiallyVaryingE<dim>());
+    material_descriptor.insert(
+      Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
   }
 
   void
@@ -709,7 +728,7 @@ public:
     using namespace Structure;
 
     parameters.problem_type         = ProblemType::Unsteady;
-    parameters.body_force           = true; // TODO //false;
+    parameters.body_force           = false;
     parameters.pull_back_body_force = false;
     parameters.large_deformation    = true;
     parameters.pull_back_traction   = true;
@@ -984,12 +1003,7 @@ public:
   void
   set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
   {
-    // TODO
-    //    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-    std::vector<double> gravity = std::vector<double>(dim, 0.0);
-    gravity[1]                  = -g * DENSITY_STRUCTURE;
-    field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(gravity));
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 
     field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
@@ -1005,8 +1019,8 @@ public:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlainStress;
 
-    material_descriptor.insert(
-      Pair(0, new StVenantKirchhoffData(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
+    material_descriptor.insert(Pair(
+      0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>

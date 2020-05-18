@@ -213,6 +213,7 @@ Operator<dim, Number>::setup_operators()
     operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;
+  operator_data.n_q_points_1d       = degree + 1;
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
   operator_data.density             = param.density;
   if(param.large_deformation)
