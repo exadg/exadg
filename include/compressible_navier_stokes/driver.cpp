@@ -36,7 +36,8 @@ void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
                            unsigned int const &                          refine_space,
-                           unsigned int const &                          refine_time)
+                           unsigned int const &                          refine_time,
+                           bool const &                                  is_throughput_study)
 {
   Timer timer;
   timer.restart();
@@ -123,13 +124,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   comp_navier_stokes_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
-  postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  postprocessor->setup(*comp_navier_stokes_operator);
+  if(!is_throughput_study)
+  {
+    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor->setup(*comp_navier_stokes_operator);
 
-  // initialize time integrator
-  time_integrator.reset(new TimeIntExplRK<Number>(
-    comp_navier_stokes_operator, param, refine_time, mpi_comm, postprocessor));
-  time_integrator->setup(param.restarted_simulation);
+    // initialize time integrator
+    time_integrator.reset(new TimeIntExplRK<Number>(
+      comp_navier_stokes_operator, param, refine_time, mpi_comm, postprocessor));
+    time_integrator->setup(param.restarted_simulation);
+  }
 
   timer_tree.insert({"Compressible flow", "Setup"}, timer.wall_time());
 }

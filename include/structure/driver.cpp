@@ -35,7 +35,8 @@ void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
                            unsigned int const &                          refine_space,
-                           unsigned int const &                          refine_time)
+                           unsigned int const &                          refine_time,
+                           bool const &                                  is_throughput_study)
 {
   Timer timer;
   timer.restart();
@@ -115,35 +116,38 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   pde_operator->setup(matrix_free, matrix_free_data);
 
-  // initialize postprocessor
-  postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
+  if(!is_throughput_study)
+  {
+    // initialize postprocessor
+    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
 
-  // initialize time integrator/driver
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    time_integrator.reset(
-      new TimeIntGenAlpha<dim, Number>(pde_operator, postprocessor, refine_time, param, mpi_comm));
-    time_integrator->setup(param.restarted_simulation);
-  }
-  else if(param.problem_type == ProblemType::Steady)
-  {
-    driver_steady.reset(
-      new DriverSteady<dim, Number>(pde_operator, postprocessor, param, mpi_comm));
-    driver_steady->setup();
-  }
-  else if(param.problem_type == ProblemType::QuasiStatic)
-  {
-    driver_quasi_static.reset(
-      new DriverQuasiStatic<dim, Number>(pde_operator, postprocessor, param, mpi_comm));
-    driver_quasi_static->setup();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+    // initialize time integrator/driver
+    if(param.problem_type == ProblemType::Unsteady)
+    {
+      time_integrator.reset(new TimeIntGenAlpha<dim, Number>(
+        pde_operator, postprocessor, refine_time, param, mpi_comm));
+      time_integrator->setup(param.restarted_simulation);
+    }
+    else if(param.problem_type == ProblemType::Steady)
+    {
+      driver_steady.reset(
+        new DriverSteady<dim, Number>(pde_operator, postprocessor, param, mpi_comm));
+      driver_steady->setup();
+    }
+    else if(param.problem_type == ProblemType::QuasiStatic)
+    {
+      driver_quasi_static.reset(
+        new DriverQuasiStatic<dim, Number>(pde_operator, postprocessor, param, mpi_comm));
+      driver_quasi_static->setup();
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
 
-  pde_operator->setup_solver();
+    pde_operator->setup_solver();
+  }
 
   timer_tree.insert({"Elasticity", "Setup"}, timer.wall_time());
 }

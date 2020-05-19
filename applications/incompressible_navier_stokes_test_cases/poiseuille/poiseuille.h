@@ -151,16 +151,12 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application() : ApplicationBase<dim, Number>("")
-  {
-  }
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    this->add_parameters(prm);
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
   }
 
   void

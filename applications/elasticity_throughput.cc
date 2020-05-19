@@ -1,5 +1,5 @@
 /*
- * poisson_throughput.cc
+ * elasticity_throughput.cc
  *
  *  Created on: 25.03.2020
  *      Author: fehn
@@ -23,36 +23,10 @@ class ApplicationSelector
 {
 public:
   template<int dim, typename Number>
-  void
-  add_parameters(dealii::ParameterHandler & prm, std::string name_of_application = "")
-  {
-    // application is unknown -> only add name of application to parameters
-    if(name_of_application.length() == 0)
-    {
-      this->add_name_parameter(prm);
-    }
-    else // application is known -> add also application-specific parameters
-    {
-      name = name_of_application;
-      this->add_name_parameter(prm);
-
-      std::shared_ptr<Structure::ApplicationBase<dim, Number>> app;
-      if(name == "Manufactured")
-        app.reset(new Structure::Manufactured::Application<dim, Number>());
-      else
-        AssertThrow(false, ExcMessage("This application does not exist!"));
-
-      app->add_parameters(prm);
-    }
-  }
-
-  template<int dim, typename Number>
   std::shared_ptr<Structure::ApplicationBase<dim, Number>>
   get_application(std::string input_file)
   {
-    dealii::ParameterHandler prm;
-    this->add_name_parameter(prm);
-    parse_input(input_file, prm, true, true);
+    parse_name_parameter(input_file);
 
     std::shared_ptr<Structure::ApplicationBase<dim, Number>> app;
     if(name == "Manufactured")
@@ -61,6 +35,24 @@ public:
       AssertThrow(false, ExcMessage("This application does not exist!"));
 
     return app;
+  }
+
+  template<int dim, typename Number>
+  void
+  add_parameters(dealii::ParameterHandler & prm, std::string const & input_file)
+  {
+    // if application is known, also add application-specific parameters
+    try
+    {
+      std::shared_ptr<Structure::ApplicationBase<dim, Number>> app =
+        get_application<dim, Number>(input_file);
+
+      app->add_parameters(prm);
+    }
+    catch(...) // if application is unknown, only add name of application to parameters
+    {
+      add_name_parameter(prm);
+    }
   }
 
 private:
@@ -72,11 +64,19 @@ private:
     prm.leave_subsection();
   }
 
+  void
+  parse_name_parameter(std::string input_file)
+  {
+    dealii::ParameterHandler prm;
+    add_name_parameter(prm);
+    prm.parse_input(input_file, "", true, true);
+  }
+
   std::string name = "MyApp";
 };
 
 void
-create_input_file(std::string const & name_of_application = "")
+create_input_file(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
 
@@ -92,10 +92,10 @@ create_input_file(std::string const & name_of_application = "")
   typedef double     Number;
 
   ApplicationSelector selector;
-  selector.add_parameters<Dim, Number>(prm, name_of_application);
+  selector.add_parameters<Dim, Number>(prm, input_file);
 
-  prm.print_parameters(std::cout,
-                       dealii::ParameterHandler::JSON | dealii::ParameterHandler::Short |
+  prm.print_parameters(input_file,
+                       dealii::ParameterHandler::Short |
                          dealii::ParameterHandler::KeepDeclarationOrder);
 }
 
@@ -117,7 +117,7 @@ run(ThroughputStudy const & throughput,
     selector.get_application<dim, Number>(input_file);
   application->set_subdivisions_hypercube(n_cells_1d);
 
-  driver->setup(application, degree, refine_space, 0 /* refine time */);
+  driver->setup(application, degree, refine_space, 0 /* refine time */, true);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,
@@ -134,31 +134,31 @@ main(int argc, char ** argv)
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
-  // check if parameter file is provided
+  std::string input_file;
 
-  // ./poisson_throughput
-  AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
-
-  // ./elasticity_throughput --help
-  if(argc == 2 && std::string(argv[1]) == "--help")
+  if(argc == 1)
   {
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      create_input_file();
+    {
+      std::cout << "To run the program, use:      ./elasticity input_file" << std::endl
+                << "To setup the input file, use: ./elasticity input_file --help" << std::endl;
+    }
 
     return 0;
   }
-  // ./elasticity_throughput --help NameOfApplication
-  else if(argc == 3 && std::string(argv[1]) == "--help")
+  else if(argc >= 2)
   {
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      create_input_file(argv[2]);
+    input_file = std::string(argv[1]);
 
-    return 0;
+    if(argc == 3 && std::string(argv[2]) == "--help")
+    {
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        create_input_file(input_file);
+
+      return 0;
+    }
   }
 
-  // the second argument is the input-file
-  // ./poisson_throughput InputFile
-  std::string     input_file = std::string(argv[1]);
   ParameterStudy  study(input_file);
   ThroughputStudy throughput(input_file);
 

@@ -38,7 +38,8 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
-                           unsigned int const &                          refine_space)
+                           unsigned int const &                          refine_space,
+                           bool const &                                  is_throughput_study)
 {
   Timer timer;
   timer.restart();
@@ -128,9 +129,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   poisson_operator->setup(matrix_free, matrix_free_data);
   poisson_operator->setup_solver();
 
-  // initialize postprocessor
-  postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
+  if(!is_throughput_study)
+  {
+    // initialize postprocessor
+    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
+  }
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());
 }

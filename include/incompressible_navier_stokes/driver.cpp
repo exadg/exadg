@@ -36,7 +36,8 @@ void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
                            unsigned int const &                          refine_space,
-                           unsigned int const &                          refine_time)
+                           unsigned int const &                          refine_time,
+                           bool const &                                  is_throughput_study)
 {
   Timer timer;
   timer.restart();
@@ -260,79 +261,83 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // setup Navier-Stokes operator
   navier_stokes_operator->setup(matrix_free, matrix_free_data);
 
-  // setup postprocessor
-  postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  postprocessor->setup(*navier_stokes_operator);
-
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
-  if(param.solver_type == SolverType::Unsteady)
+  if(!is_throughput_study)
   {
-    // initialize navier_stokes_operator
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    // setup postprocessor
+    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor->setup(*navier_stokes_operator);
+
+    // setup time integrator before calling setup_solvers
+    // (this is necessary since the setup of the solvers
+    // depends on quantities such as the time_step_size or gamma0!!!)
+    if(param.solver_type == SolverType::Unsteady)
     {
-      time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
-                                               param,
-                                               refine_time,
-                                               mpi_comm,
-                                               postprocessor,
-                                               moving_mesh,
-                                               matrix_free));
+      // initialize navier_stokes_operator
+      if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+      {
+        time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
+                                                 param,
+                                                 refine_time,
+                                                 mpi_comm,
+                                                 postprocessor,
+                                                 moving_mesh,
+                                                 matrix_free));
+      }
+      else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+      {
+        time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
+                                                       param,
+                                                       refine_time,
+                                                       mpi_comm,
+                                                       postprocessor,
+                                                       moving_mesh,
+                                                       matrix_free));
+      }
+      else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+      {
+        time_integrator.reset(
+          new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
+                                        param,
+                                        refine_time,
+                                        mpi_comm,
+                                        postprocessor,
+                                        moving_mesh,
+                                        matrix_free));
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
     }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    else if(param.solver_type == SolverType::Steady)
     {
-      time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
-                                                     param,
-                                                     refine_time,
-                                                     mpi_comm,
-                                                     postprocessor,
-                                                     moving_mesh,
-                                                     matrix_free));
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      time_integrator.reset(
-        new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
-                                      param,
-                                      refine_time,
-                                      mpi_comm,
-                                      postprocessor,
-                                      moving_mesh,
-                                      matrix_free));
+      // initialize driver for steady state problem that depends on navier_stokes_operator
+      driver_steady.reset(
+        new DriverSteady(navier_stokes_operator_coupled, param, mpi_comm, postprocessor));
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
-  }
-  else if(param.solver_type == SolverType::Steady)
-  {
-    // initialize driver for steady state problem that depends on navier_stokes_operator
-    driver_steady.reset(
-      new DriverSteady(navier_stokes_operator_coupled, param, mpi_comm, postprocessor));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
 
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    time_integrator->setup(param.restarted_simulation);
+    if(param.solver_type == SolverType::Unsteady)
+    {
+      time_integrator->setup(param.restarted_simulation);
 
-    navier_stokes_operator->setup_solvers(
-      time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
-  }
-  else if(param.solver_type == SolverType::Steady)
-  {
-    driver_steady->setup();
+      navier_stokes_operator->setup_solvers(
+        time_integrator->get_scaling_factor_time_derivative_term(),
+        time_integrator->get_velocity());
+    }
+    else if(param.solver_type == SolverType::Steady)
+    {
+      driver_steady->setup();
 
-    navier_stokes_operator->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
+      navier_stokes_operator->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
 
   timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());

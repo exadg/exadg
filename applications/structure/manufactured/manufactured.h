@@ -285,6 +285,14 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
+  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  {
+    // parse application-specific parameters
+    ParameterHandler prm;
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
+  }
+
   void
   add_parameters(ParameterHandler & prm)
   {
@@ -311,18 +319,6 @@ public:
   double const start_time       = 0.0;
   double const end_time         = 1.0;
   double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
-
-  Application() : ApplicationBase<dim, Number>("")
-  {
-  }
-
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
-  {
-    // parse application-specific parameters
-    ParameterHandler prm;
-    this->add_parameters(prm);
-    parse_input(input_file, prm, true, true);
-  }
 
   void
   set_input_parameters(InputParameters & parameters)

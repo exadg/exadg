@@ -30,52 +30,10 @@ class ApplicationSelector
 {
 public:
   template<int dim, typename Number>
-  void
-  add_parameters(dealii::ParameterHandler & prm, std::string name_of_application = "")
-  {
-    // application is unknown -> only add name of application to parameters
-    if(name_of_application.length() == 0)
-    {
-      this->add_name_parameter(prm);
-    }
-    else // application is known -> add also application-specific parameters
-    {
-      name = name_of_application;
-      this->add_name_parameter(prm);
-
-      std::shared_ptr<CompNS::ApplicationBase<dim, Number>> app;
-      if(name == "Template")
-        app.reset(new CompNS::Template::Application<dim, Number>());
-      else if(name == "EulerVortex")
-        app.reset(new CompNS::EulerVortex::Application<dim, Number>());
-      else if(name == "Couette")
-        app.reset(new CompNS::Couette::Application<dim, Number>());
-      else if(name == "Poiseuille")
-        app.reset(new CompNS::Poiseuille::Application<dim, Number>());
-      else if(name == "ShearFlow")
-        app.reset(new CompNS::ShearFlow::Application<dim, Number>());
-      else if(name == "ManufacturedSolution")
-        app.reset(new CompNS::ManufacturedSolution::Application<dim, Number>());
-      else if(name == "FlowPastCylinder")
-        app.reset(new CompNS::FlowPastCylinder::Application<dim, Number>());
-      else if(name == "TaylorGreen")
-        app.reset(new CompNS::TaylorGreen::Application<dim, Number>());
-      else if(name == "TurbulentChannel")
-        app.reset(new CompNS::TurbulentChannel::Application<dim, Number>());
-      else
-        AssertThrow(false, ExcMessage("This application does not exist!"));
-
-      app->add_parameters(prm);
-    }
-  }
-
-  template<int dim, typename Number>
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
   get_application(std::string input_file)
   {
-    dealii::ParameterHandler prm;
-    this->add_name_parameter(prm);
-    parse_input(input_file, prm, true, true);
+    parse_name_parameter(input_file);
 
     std::shared_ptr<CompNS::ApplicationBase<dim, Number>> app;
     if(name == "Template")
@@ -102,6 +60,24 @@ public:
     return app;
   }
 
+  template<int dim, typename Number>
+  void
+  add_parameters(dealii::ParameterHandler & prm, std::string const & input_file)
+  {
+    // if application is known, also add application-specific parameters
+    try
+    {
+      std::shared_ptr<CompNS::ApplicationBase<dim, Number>> app =
+        get_application<dim, Number>(input_file);
+
+      app->add_parameters(prm);
+    }
+    catch(...) // if application is unknown, only add name of application to parameters
+    {
+      add_name_parameter(prm);
+    }
+  }
+
 private:
   void
   add_name_parameter(ParameterHandler & prm)
@@ -111,11 +87,19 @@ private:
     prm.leave_subsection();
   }
 
+  void
+  parse_name_parameter(std::string input_file)
+  {
+    dealii::ParameterHandler prm;
+    add_name_parameter(prm);
+    prm.parse_input(input_file, "", true, true);
+  }
+
   std::string name = "MyApp";
 };
 
 void
-create_input_file(std::string const & name_of_application = "")
+create_input_file(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
 
@@ -128,10 +112,10 @@ create_input_file(std::string const & name_of_application = "")
   typedef double     Number;
 
   ApplicationSelector selector;
-  selector.add_parameters<Dim, Number>(prm, name_of_application);
+  selector.add_parameters<Dim, Number>(prm, input_file);
 
-  prm.print_parameters(std::cout,
-                       dealii::ParameterHandler::JSON | dealii::ParameterHandler::Short |
+  prm.print_parameters(input_file,
+                       dealii::ParameterHandler::Short |
                          dealii::ParameterHandler::KeepDeclarationOrder);
 }
 
@@ -168,31 +152,33 @@ main(int argc, char ** argv)
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
-  // check if parameter file is provided
+  std::string input_file;
 
-  // ./compressible_navier_stokes
-  AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
-
-  // ./compressible_navier_stokes --help
-  if(argc == 2 && std::string(argv[1]) == "--help")
+  if(argc == 1)
   {
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      create_input_file();
+    {
+      // clang-format off
+      std::cout << "To run the program, use:      ./compressible_navier_stokes input_file" << std::endl
+                << "To setup the input file, use: ./compressible_navier_stokes input_file --help" << std::endl;
+      // clang-format on
+    }
 
     return 0;
   }
-  // ./compressible_navier_stokes --help NameOfApplication
-  else if(argc == 3 && std::string(argv[1]) == "--help")
+  else if(argc >= 2)
   {
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      create_input_file(argv[2]);
+    input_file = std::string(argv[1]);
 
-    return 0;
+    if(argc == 3 && std::string(argv[2]) == "--help")
+    {
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        create_input_file(input_file);
+
+      return 0;
+    }
   }
 
-  // the second argument is the input-file
-  // ./compressible_navier_stokes InputFile
-  std::string      input_file = std::string(argv[1]);
   ConvergenceStudy study(input_file);
 
   // k-refinement

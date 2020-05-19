@@ -8,6 +8,9 @@
 #ifndef INCLUDE_UTILITIES_PARAMETER_STUDY_H_
 #define INCLUDE_UTILITIES_PARAMETER_STUDY_H_
 
+// deal.II
+#include <deal.II/base/parameter_handler.h>
+
 /*
  * study throughput as a function of polynomial degree or problem size
  */
@@ -151,9 +154,8 @@ struct ParameterStudy
   ParameterStudy(const std::string & input_file)
   {
     dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
 
     string_to_enum(run_type, run_type_string);
 
@@ -165,15 +167,51 @@ struct ParameterStudy
   {
     // clang-format off
     prm.enter_subsection("General");
-      prm.add_parameter("Precision",        precision,            "Floating point precision.",                     Patterns::Selection("float|double"));
-      prm.add_parameter("Dim",              dim,                  "Number of space dimension.",                    Patterns::Integer(2,3));
-      prm.add_parameter("RunType",          run_type_string,      "Type of throughput study.",                     Patterns::Selection("RefineHAndP|FixedProblemSize|IncreasingProblemSize"));
-      prm.add_parameter("DegreeMin",        degree_min,           "Minimal polynomial degree of shape functions.", Patterns::Integer(1,15));
-      prm.add_parameter("DegreeMax",        degree_max,           "Maximal polynomial degree of shape functions.", Patterns::Integer(1,15));
-      prm.add_parameter("RefineSpaceMin",   refine_space_min,     "Minimal number of mesh refinements.",           Patterns::Integer(0,20));
-      prm.add_parameter("RefineSpaceMax",   refine_space_max,     "Maximal number of mesh refinements.",           Patterns::Integer(0,20));
-      prm.add_parameter("DofsMin",          n_dofs_min,           "Minimal number of degrees of freedom.",         Patterns::Integer(1));
-      prm.add_parameter("DofsMax",          n_dofs_max,           "Maximal number of degrees of freedom.",         Patterns::Integer(1));
+      prm.add_parameter("Precision",
+                        precision,
+                        "Floating point precision.",
+                        Patterns::Selection("float|double"),
+                        false);
+      prm.add_parameter("Dim",
+                        dim,
+                        "Number of space dimension.",
+                        Patterns::Integer(2,3),
+                        true);
+      prm.add_parameter("RunType",
+                        run_type_string,
+                        "Type of throughput study.",
+                        Patterns::Selection("RefineHAndP|FixedProblemSize|IncreasingProblemSize"),
+                        true);
+      prm.add_parameter("DegreeMin",
+                        degree_min,
+                        "Minimal polynomial degree of shape functions.",
+                        Patterns::Integer(1,15),
+                        true);
+      prm.add_parameter("DegreeMax",
+                        degree_max,
+                        "Maximal polynomial degree of shape functions.",
+                        Patterns::Integer(1,15),
+                        true);
+      prm.add_parameter("RefineSpaceMin",
+                        refine_space_min,
+                        "Minimal number of mesh refinements.",
+                        Patterns::Integer(0,20),
+                        true);
+      prm.add_parameter("RefineSpaceMax",
+                        refine_space_max,
+                        "Maximal number of mesh refinements.",
+                        Patterns::Integer(0,20),
+                        true);
+      prm.add_parameter("DofsMin",
+                        n_dofs_min,
+                        "Minimal number of degrees of freedom.",
+                        Patterns::Integer(1),
+                        true);
+      prm.add_parameter("DofsMax",
+                        n_dofs_max,
+                        "Maximal number of degrees of freedom.",
+                        Patterns::Integer(1),
+                        true);
     prm.leave_subsection();
     // clang-format on
   }

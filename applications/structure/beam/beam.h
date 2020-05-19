@@ -111,6 +111,14 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
+  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  {
+    // parse application-specific parameters
+    ParameterHandler prm;
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
+  }
+
   void
   add_parameters(ParameterHandler & prm)
   {
@@ -142,18 +150,6 @@ public:
 
   // number of subdivisions in each direction
   unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
-
-  Application() : ApplicationBase<dim, Number>("")
-  {
-  }
-
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
-  {
-    // parse application-specific parameters
-    ParameterHandler prm;
-    this->add_parameters(prm);
-    parse_input(input_file, prm, true, true);
-  }
 
   void
   set_input_parameters(InputParameters & parameters)

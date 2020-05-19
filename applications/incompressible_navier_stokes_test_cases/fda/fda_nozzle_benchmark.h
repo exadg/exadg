@@ -149,16 +149,12 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
-  Application() : ApplicationBasePrecursor<dim, Number>("")
-  {
-  }
-
   Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    this->add_parameters(prm);
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
 
     flow_rate_controller.reset(new FlowRateController(target_flow_rate,
                                                       viscosity,
@@ -181,8 +177,8 @@ public:
         prm.add_parameter("RefineSpaceMin", refine_space, "Number of mesh refinements.",           Patterns::Integer(0,20));
       prm.leave_subsection();
       // clang-format on
+      prm.parse_input(input_file, "", true, true);
 
-      parse_input(input_file, prm, true, true);
       n_points = 20 * (degree + 1) * std::pow(2.0, refine_space);
     }
 

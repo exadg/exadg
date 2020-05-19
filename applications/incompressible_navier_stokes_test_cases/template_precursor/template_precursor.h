@@ -14,16 +14,12 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
-  Application() : ApplicationBasePrecursor<dim, Number>("")
-  {
-  }
-
   Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    this->add_parameters(prm);
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
   }
 
   void

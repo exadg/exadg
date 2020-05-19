@@ -99,16 +99,12 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application() : ApplicationBase<dim, Number>("")
-  {
-  }
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    this->add_parameters(prm);
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
 
     string_to_enum(mesh_type, mesh_type_string);
   }
@@ -290,6 +286,7 @@ public:
     pp_data.kinetic_energy_spectrum_data.filename = output_directory + output_name + "_spectrum";
     pp_data.kinetic_energy_spectrum_data.degree   = degree;
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1) * 1;
+    pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = false;
 
     std::shared_ptr<CompNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));

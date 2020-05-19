@@ -8,6 +8,9 @@
 #ifndef INCLUDE_UTILITIES_THROUGHPUT_STUDY_H_
 #define INCLUDE_UTILITIES_THROUGHPUT_STUDY_H_
 
+// deal.II
+#include <deal.II/base/parameter_handler.h>
+
 #include "../utilities/print_throughput.h"
 
 struct ThroughputStudy
@@ -19,9 +22,8 @@ struct ThroughputStudy
   ThroughputStudy(const std::string & input_file)
   {
     dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
   }
 
   void
@@ -29,9 +31,21 @@ struct ThroughputStudy
   {
     // clang-format off
     prm.enter_subsection("Throughput");
-      prm.add_parameter("OperatorType",     operator_type,        "Type of operator.");
-      prm.add_parameter("RepetitionsInner", n_repetitions_inner,  "Number of operator evaluations.",               Patterns::Integer(1));
-      prm.add_parameter("RepetitionsOuter", n_repetitions_outer,  "Number of runs (taking minimum wall time).",    Patterns::Integer(1,10));
+      prm.add_parameter("OperatorType",
+                        operator_type,
+                        "Type of operator.",
+                        Patterns::Anything(),
+                        true);
+      prm.add_parameter("RepetitionsInner",
+                        n_repetitions_inner,
+                        "Number of operator evaluations.",
+                        Patterns::Integer(1),
+                        true);
+      prm.add_parameter("RepetitionsOuter",
+                        n_repetitions_outer,
+                        "Number of runs (taking minimum wall time).",
+                        Patterns::Integer(1,10),
+                        true);
     prm.leave_subsection();
     // clang-format on
   }

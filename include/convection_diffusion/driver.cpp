@@ -36,7 +36,8 @@ void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree,
                            unsigned int const &                          refine_space,
-                           unsigned int const &                          refine_time)
+                           unsigned int const &                          refine_time,
+                           bool const &                                  is_throughput_study)
 {
   Timer timer;
   timer.restart();
@@ -127,85 +128,93 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // setup convection-diffusion operator
   conv_diff_operator->setup(matrix_free, matrix_free_data);
 
-  // initialize postprocessor
-  postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  postprocessor->setup(conv_diff_operator->get_dof_handler(), mesh->get_mapping());
-
-  // initialize time integrator or driver for steady problems
-  if(param.problem_type == ProblemType::Unsteady)
+  if(!is_throughput_study)
   {
-    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    // initialize postprocessor
+    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor->setup(conv_diff_operator->get_dof_handler(), mesh->get_mapping());
+
+    // initialize time integrator or driver for steady problems
+    if(param.problem_type == ProblemType::Unsteady)
     {
-      time_integrator.reset(
-        new TimeIntExplRK<Number>(conv_diff_operator, param, refine_time, mpi_comm, postprocessor));
+      if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+      {
+        time_integrator.reset(new TimeIntExplRK<Number>(
+          conv_diff_operator, param, refine_time, mpi_comm, postprocessor));
+      }
+      else if(param.temporal_discretization == TemporalDiscretization::BDF)
+      {
+        time_integrator.reset(new TimeIntBDF<dim, Number>(conv_diff_operator,
+                                                          param,
+                                                          refine_time,
+                                                          mpi_comm,
+                                                          postprocessor,
+                                                          moving_mesh,
+                                                          matrix_free));
+      }
+      else
+      {
+        AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
+                      param.temporal_discretization == TemporalDiscretization::BDF,
+                    ExcMessage("Specified time integration scheme is not implemented!"));
+      }
+
+      time_integrator->setup(param.restarted_simulation);
     }
-    else if(param.temporal_discretization == TemporalDiscretization::BDF)
+    else if(param.problem_type == ProblemType::Steady)
     {
-      time_integrator.reset(new TimeIntBDF<dim, Number>(
-        conv_diff_operator, param, refine_time, mpi_comm, postprocessor, moving_mesh, matrix_free));
+      driver_steady.reset(
+        new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
+      driver_steady->setup();
     }
     else
     {
-      AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
-                    param.temporal_discretization == TemporalDiscretization::BDF,
-                  ExcMessage("Specified time integration scheme is not implemented!"));
+      AssertThrow(false, ExcMessage("Not implemented"));
     }
 
-    time_integrator->setup(param.restarted_simulation);
-  }
-  else if(param.problem_type == ProblemType::Steady)
-  {
-    driver_steady.reset(
-      new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
-    driver_steady->setup();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
+    // setup solvers in case of BDF time integration or steady problems
+    typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+    VectorType const *                                 velocity_ptr = nullptr;
+    VectorType                                         velocity;
 
-  // setup solvers in case of BDF time integration or steady problems
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  VectorType const *                                 velocity_ptr = nullptr;
-  VectorType                                         velocity;
-
-  if(param.problem_type == ProblemType::Unsteady)
-  {
-    if(param.temporal_discretization == TemporalDiscretization::BDF)
+    if(param.problem_type == ProblemType::Unsteady)
     {
-      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+      if(param.temporal_discretization == TemporalDiscretization::BDF)
+      {
+        std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+          std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
+        if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+        {
+          conv_diff_operator->initialize_dof_vector_velocity(velocity);
+          conv_diff_operator->interpolate_velocity(velocity, time_integrator->get_time());
+          velocity_ptr = &velocity;
+        }
+
+        conv_diff_operator->setup_solver(
+          time_integrator_bdf->get_scaling_factor_time_derivative_term(), velocity_ptr);
+      }
+      else
+      {
+        AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK,
+                    ExcMessage("Not implemented."));
+      }
+    }
+    else if(param.problem_type == ProblemType::Steady)
+    {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
         conv_diff_operator->initialize_dof_vector_velocity(velocity);
-        conv_diff_operator->interpolate_velocity(velocity, time_integrator->get_time());
+        conv_diff_operator->interpolate_velocity(velocity, 0.0 /* time */);
         velocity_ptr = &velocity;
       }
 
-      conv_diff_operator->setup_solver(
-        time_integrator_bdf->get_scaling_factor_time_derivative_term(), velocity_ptr);
+      conv_diff_operator->setup_solver(1.0 /* scaling_factor_time_derivative_term */, velocity_ptr);
     }
     else
     {
-      AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK,
-                  ExcMessage("Not implemented."));
+      AssertThrow(false, ExcMessage("Not implemented"));
     }
-  }
-  else if(param.problem_type == ProblemType::Steady)
-  {
-    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    {
-      conv_diff_operator->initialize_dof_vector_velocity(velocity);
-      conv_diff_operator->interpolate_velocity(velocity, 0.0 /* time */);
-      velocity_ptr = &velocity;
-    }
-
-    conv_diff_operator->setup_solver(1.0 /* scaling_factor_time_derivative_term */, velocity_ptr);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
   }
 
   timer_tree.insert({"Convection-diffusion", "Setup"}, timer.wall_time());

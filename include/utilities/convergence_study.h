@@ -8,9 +8,8 @@
 #ifndef INCLUDE_UTILITIES_CONVERGENCE_STUDY_H_
 #define INCLUDE_UTILITIES_CONVERGENCE_STUDY_H_
 
+// deal.II
 #include <deal.II/base/parameter_handler.h>
-
-#include "../utilities/parse_input.h"
 
 using namespace dealii;
 
@@ -23,9 +22,8 @@ struct ConvergenceStudy
   ConvergenceStudy(const std::string & input_file)
   {
     dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-
-    parse_input(input_file, prm, true, true);
+    add_parameters(prm);
+    prm.parse_input(input_file, "", true, true);
   }
 
   void
@@ -33,14 +31,46 @@ struct ConvergenceStudy
   {
     // clang-format off
     prm.enter_subsection("General");
-      prm.add_parameter("Precision",      precision,        "Floating point precision.",                     Patterns::Selection("float|double"));
-      prm.add_parameter("Dim",            dim,              "Number of space dimension.",                    Patterns::Integer(2,3));
-      prm.add_parameter("DegreeMin",      degree_min,       "Minimal polynomial degree of shape functions.", Patterns::Integer(1,15));
-      prm.add_parameter("DegreeMax",      degree_max,       "Maximal polynomial degree of shape functions.", Patterns::Integer(1,15));
-      prm.add_parameter("RefineSpaceMin", refine_space_min, "Minimal number of mesh refinements.",           Patterns::Integer(0,20));
-      prm.add_parameter("RefineSpaceMax", refine_space_max, "Maximal number of mesh refinements.",           Patterns::Integer(0,20));
-      prm.add_parameter("RefineTimeMin",  refine_time_min,  "Minimal number of time refinements.",           Patterns::Integer(0,20));
-      prm.add_parameter("RefineTimeMax",  refine_time_max,  "Maximal number of time refinements.",           Patterns::Integer(0,20));
+      prm.add_parameter("Precision",
+                        precision,
+                        "Floating point precision.",
+                        Patterns::Selection("float|double"),
+                        false);
+      prm.add_parameter("Dim",
+                        dim,
+                        "Number of space dimension.",
+                        Patterns::Integer(2,3),
+                        true);
+      prm.add_parameter("DegreeMin",
+                        degree_min,
+                        "Minimal polynomial degree of shape functions.",
+                        Patterns::Integer(1,15),
+                        true);
+      prm.add_parameter("DegreeMax",
+                        degree_max,
+                        "Maximal polynomial degree of shape functions.",
+                        Patterns::Integer(1,15),
+                        true);
+      prm.add_parameter("RefineSpaceMin",
+                        refine_space_min,
+                        "Minimal number of mesh refinements.",
+                        Patterns::Integer(0,20),
+                        true);
+      prm.add_parameter("RefineSpaceMax",
+                        refine_space_max,
+                        "Maximal number of mesh refinements.",
+                        Patterns::Integer(0,20),
+                        true);
+      prm.add_parameter("RefineTimeMin",
+                        refine_time_min,
+                        "Minimal number of time refinements.",
+                        Patterns::Integer(0,20),
+                        true);
+      prm.add_parameter("RefineTimeMax",
+                        refine_time_max,
+                        "Maximal number of time refinements.",
+                        Patterns::Integer(0,20),
+                        true);
     prm.leave_subsection();
     // clang-format on
   }
