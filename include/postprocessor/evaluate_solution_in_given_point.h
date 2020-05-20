@@ -19,26 +19,25 @@ using namespace dealii;
 
 template<int dim, typename Number>
 void
-my_point_value(Vector<Number> &                                       value,
+my_point_value(Vector<Number> &                                       result,
                Mapping<dim> const &                                   mapping,
                DoFHandler<dim> const &                                dof_handler,
-               LinearAlgebra::distributed::Vector<Number> const &     solution,
+               LinearAlgebra::distributed::Vector<Number> const &     dof_vector,
                typename DoFHandler<dim>::active_cell_iterator const & cell,
                Point<dim> const &                                     point_in_ref_coord)
 {
   Assert(GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord) < 1e-10, ExcInternalError());
 
-  const FiniteElement<dim> & fe = dof_handler.get_fe();
+  Quadrature<dim> const quadrature(GeometryInfo<dim>::project_to_unit_cell(point_in_ref_coord));
 
-  const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(point_in_ref_coord));
-
-  FEValues<dim> fe_values(mapping, fe, quadrature, update_values);
+  FiniteElement<dim> const & fe = dof_handler.get_fe();
+  FEValues<dim>              fe_values(mapping, fe, quadrature, update_values);
   fe_values.reinit(cell);
 
   // then use this to get the values of the given fe_function at this point
-  std::vector<Vector<Number>> solution_value(1, Vector<Number>(fe.n_components()));
-  fe_values.get_function_values(solution, solution_value);
-  value = solution_value[0];
+  std::vector<Vector<Number>> solution_vector(1, Vector<Number>(fe.n_components()));
+  fe_values.get_function_values(dof_vector, solution_vector);
+  result = solution_vector[0];
 }
 
 template<int dim, typename Number>
@@ -49,28 +48,26 @@ evaluate_scalar_quantity_in_point(
   Mapping<dim> const &                               mapping,
   LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
   Point<dim> const &                                 point,
-  MPI_Comm const &                                   mpi_comm)
+  MPI_Comm const &                                   mpi_comm,
+  double const                                       tolerance = 1.e-10)
 {
+  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+
+  std::vector<Pair> adjacent_cells =
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
-
-  solution_value = 0.0;
-
-  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> MY_PAIR;
-
-  std::vector<MY_PAIR> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, 1.e-10);
+  solution_value       = 0.0;
 
   // loop over all adjacent cells
-  for(typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin();
-      cell != adjacent_cells.end();
-      ++cell)
+  for(auto cell : adjacent_cells)
   {
     // go on only if cell is owned by the processor
-    if(cell->first->is_locally_owned())
+    if(cell.first->is_locally_owned())
     {
       Vector<Number> value(1);
-      my_point_value(value, mapping, dof_handler, numerical_solution, cell->first, cell->second);
+      my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);
 
       solution_value += value(0);
       ++counter;
@@ -92,28 +89,26 @@ void evaluate_vectorial_quantity_in_point(
   Mapping<dim> const &                               mapping,
   LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
   Point<dim> const &                                 point,
-  MPI_Comm const &                                   mpi_comm)
+  MPI_Comm const &                                   mpi_comm,
+  double const                                       tolerance = 1.e-10)
 {
+  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+
+  std::vector<Pair> adjacent_cells =
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
-
-  solution_value = 0.0;
-
-  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> MY_PAIR;
-
-  std::vector<MY_PAIR> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point);
+  solution_value       = 0.0;
 
   // loop over all adjacent cells
-  for(typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin();
-      cell != adjacent_cells.end();
-      ++cell)
+  for(auto cell : adjacent_cells)
   {
     // go on only if cell is owned by the processor
-    if(cell->first->is_locally_owned())
+    if(cell.first->is_locally_owned())
     {
       Vector<Number> value(dim);
-      my_point_value(value, mapping, dof_handler, numerical_solution, cell->first, cell->second);
+      my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);
 
       for(unsigned int d = 0; d < dim; ++d)
         solution_value[d] += value(d);
@@ -131,6 +126,33 @@ void evaluate_vectorial_quantity_in_point(
   solution_value /= (double)counter;
 }
 
+template<int dim>
+unsigned int
+n_locally_owned_active_cells_around_point(DoFHandler<dim> const & dof_handler,
+                                          Mapping<dim> const &    mapping,
+                                          Point<dim> const &      point,
+                                          double const            tolerance = 1.e-10)
+{
+  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+
+  std::vector<Pair> adjacent_cells =
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+
+  // count locally owned active cells
+  unsigned int counter = 0;
+  for(auto cell : adjacent_cells)
+  {
+    if(cell.first->is_locally_owned())
+    {
+      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell.second) < 1e-10, ExcInternalError());
+
+      ++counter;
+    }
+  }
+
+  return counter;
+}
+
 /*
  * For a given point in physical space, find all locally owned, adjacent cells and store the
  * dof index of the first dof of the cell as well as the shape function values of all dofs
@@ -139,36 +161,36 @@ void evaluate_vectorial_quantity_in_point(
  * to one adjacent, locally-owned cell.
  */
 template<int dim, typename Number>
-void
-get_dof_indices_and_shape_values(
-  DoFHandler<dim> const &                            dof_handler,
-  Mapping<dim> const &                               mapping,
-  LinearAlgebra::distributed::Vector<Number> const & solution,
-  Point<dim> const &                                 point,
-  std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>> &
-    dof_index_and_shape_values)
+std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+get_dof_indices_and_shape_values(DoFHandler<dim> const &                            dof_handler,
+                                 Mapping<dim> const &                               mapping,
+                                 LinearAlgebra::distributed::Vector<Number> const & solution,
+                                 Point<dim> const &                                 point,
+                                 double const tolerance = 1.e-10)
 {
+  std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+    dof_indices_and_shape_values;
+
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
 
   std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point);
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
 
   // loop over all adjacent cells
-  for(typename std::vector<Pair>::iterator cell = adjacent_cells.begin();
-      cell != adjacent_cells.end();
-      ++cell)
+  for(auto cell : adjacent_cells)
   {
     // go on only if cell is owned by the processor
-    if(cell->first->is_locally_owned())
+    if(cell.first->is_locally_owned())
     {
       Assert(GeometryInfo<dim>::distance_to_unit_cell(cell->second) < 1e-10, ExcInternalError());
-      const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(cell->second));
+
+      const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(cell.second));
 
       const FiniteElement<dim> & fe = dof_handler.get_fe();
       FEValues<dim>              fe_values(mapping, fe, quadrature, update_values);
-      fe_values.reinit(cell->first);
+      fe_values.reinit(cell.first);
       std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-      cell->first->get_dof_indices(dof_indices);
+      cell.first->get_dof_indices(dof_indices);
 
       std::vector<types::global_dof_index> dof_indices_global(fe.dofs_per_cell);
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
@@ -178,9 +200,11 @@ get_dof_indices_and_shape_values(
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         fe_shape_values[i] = fe_values.shape_value(i, 0);
 
-      dof_index_and_shape_values.emplace_back(dof_indices_global, fe_shape_values);
+      dof_indices_and_shape_values.emplace_back(dof_indices_global, fe_shape_values);
     }
   }
+
+  return dof_indices_and_shape_values;
 }
 
 /*

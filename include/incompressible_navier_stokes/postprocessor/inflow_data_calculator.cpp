@@ -66,14 +66,10 @@ InflowDataCalculator<dim, Number>::calculate(
             AssertThrow(false, ExcMessage("Not implemented."));
           }
 
-          std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
-            dof_indices_and_shape_values;
-          get_dof_indices_and_shape_values(
-            *dof_handler_velocity, *mapping, velocity, point, dof_indices_and_shape_values);
-
           unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
-          array_dof_indices_and_shape_values[array_index] = dof_indices_and_shape_values;
+          array_dof_indices_and_shape_values[array_index] =
+            get_dof_indices_and_shape_values(*dof_handler_velocity, *mapping, velocity, point);
         }
       }
 

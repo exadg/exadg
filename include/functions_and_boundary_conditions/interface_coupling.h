@@ -27,6 +27,9 @@ private:
   typedef FaceIntegrator<dim, n_components, Number>  Integrator;
   typedef std::pair<unsigned int, unsigned int>      Range;
 
+  typedef std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim, double>>>
+    MapBoundaryCondition;
+
   typedef unsigned int quad_index;
   typedef unsigned int mpi_rank;
 
@@ -52,11 +55,10 @@ public:
   setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst_in,
         unsigned int const                       dof_index_dst_in,
         std::vector<quad_index> const &          quad_indices_dst_in,
-        std::map<types::boundary_id,
-                 std::shared_ptr<FunctionInterpolation<rank, dim, double>>> const & map_bc_in,
-        DoFHandler<dim> const & dof_handler_src_in,
-        Mapping<dim> const &    mapping_src_in,
-        VectorType const &      dof_vector_src_in)
+        MapBoundaryCondition const &             map_bc_in,
+        DoFHandler<dim> const &                  dof_handler_src_in,
+        Mapping<dim> const &                     mapping_src_in,
+        VectorType const &                       dof_vector_src_in)
   {
     matrix_free_dst = matrix_free_dst_in;
     dof_index_dst   = dof_index_dst_in;
@@ -78,16 +80,16 @@ public:
       dof_vector_src_double_ptr  = &dof_vector_src_double_copy;
     }
 
-    for(auto quadrature = quad_rules_dst.begin(); quadrature != quad_rules_dst.end(); ++quadrature)
+    for(auto quadrature : quad_rules_dst)
     {
       // initialize maps
-      map_index_dst.emplace(*quadrature, MapIndex());
-      map_q_points_dst.emplace(*quadrature, ArrayQuadraturePoints());
-      map_solution_dst.emplace(*quadrature, ArrayVectorTensor());
+      map_index_dst.emplace(quadrature, MapIndex());
+      map_q_points_dst.emplace(quadrature, ArrayQuadraturePoints());
+      map_solution_dst.emplace(quadrature, ArrayVectorTensor());
 
-      MapIndex &              map_index          = map_index_dst.find(*quadrature)->second;
-      ArrayQuadraturePoints & array_q_points_dst = map_q_points_dst.find(*quadrature)->second;
-      ArrayVectorTensor &     array_solution_dst = map_solution_dst.find(*quadrature)->second;
+      MapIndex &              map_index          = map_index_dst.find(quadrature)->second;
+      ArrayQuadraturePoints & array_q_points_dst = map_q_points_dst.find(quadrature)->second;
+      ArrayVectorTensor &     array_solution_dst = map_solution_dst.find(quadrature)->second;
 
 
       /*
@@ -101,7 +103,7 @@ public:
         // only consider relevant boundary IDs
         if(map_bc.find(matrix_free_dst->get_boundary_id(face)) != map_bc.end())
         {
-          Integrator integrator(*matrix_free_dst, true, dof_index_dst, *quadrature);
+          Integrator integrator(*matrix_free_dst, true, dof_index_dst, quadrature);
           integrator.reinit(face);
 
           for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -123,60 +125,98 @@ public:
         }
       }
 
+      map_q_points_src.emplace(quadrature, std::map<mpi_rank, ArrayQuadraturePoints>());
+      map_multiplicity_src.emplace(quadrature, std::map<mpi_rank, std::vector<unsigned int>>());
+      map_cache_src.emplace(quadrature, std::map<mpi_rank, ArrayVectorCache>());
+      map_solution_src.emplace(quadrature, std::map<mpi_rank, ArrayVectorTensor>());
+
+      std::map<mpi_rank, ArrayQuadraturePoints> & mpi_map_q_points_src =
+        map_q_points_src.find(quadrature)->second;
+      std::map<mpi_rank, std::vector<unsigned int>> & mpi_map_multiplicity_src =
+        map_multiplicity_src.find(quadrature)->second;
+      std::map<mpi_rank, ArrayVectorCache> & mpi_map_cache_src =
+        map_cache_src.find(quadrature)->second;
+      std::map<mpi_rank, ArrayVectorTensor> & mpi_map_solution_src =
+        map_solution_src.find(quadrature)->second;
+
 
       /*
        * TODO
        * 2. Communication: receive and cache quadrature points of other ranks,
        *    redundantly store own q-points (those that are needed)
        */
-      map_q_points_src.emplace(*quadrature, std::map<mpi_rank, ArrayQuadraturePoints>());
-      map_cache_src.emplace(*quadrature, std::map<mpi_rank, ArrayVectorCache>());
-      map_solution_src.emplace(*quadrature, std::map<mpi_rank, ArrayVectorTensor>());
-
-      std::map<mpi_rank, ArrayQuadraturePoints> & map_mpi_q_points_src =
-        map_q_points_src.find(*quadrature)->second;
-      std::map<mpi_rank, ArrayVectorCache> & map_mpi_cache_src =
-        map_cache_src.find(*quadrature)->second;
-      std::map<mpi_rank, ArrayVectorTensor> & map_mpi_solution_src =
-        map_solution_src.find(*quadrature)->second;
-
       // for the serial case, simply copy array of quadrature points
-      map_mpi_q_points_src.emplace(0, array_q_points_dst);
+      mpi_map_q_points_src.emplace(0, array_q_points_dst);
 
-      map_mpi_cache_src.emplace(0, ArrayVectorCache());
+      // determine multiplicity for all quadrature points
+      for(auto it : mpi_map_q_points_src)
+      {
+        mpi_rank const          proc               = it.first;
+        ArrayQuadraturePoints & array_q_points_src = it.second;
 
-      map_mpi_solution_src.emplace(0, ArrayVectorTensor());
+        mpi_map_multiplicity_src.emplace(proc,
+                                         std::vector<unsigned int>(array_q_points_src.size(), 0));
+
+        std::vector<unsigned int> & array_multiplicity =
+          mpi_map_multiplicity_src.find(proc)->second;
+
+        for(types::global_dof_index q = 0; q < array_q_points_src.size(); ++q)
+        {
+          array_multiplicity[q] = n_locally_owned_active_cells_around_point(*dof_handler_src,
+                                                                            *mapping_src,
+                                                                            array_q_points_src[q],
+                                                                            tolerance);
+
+          AssertThrow(array_multiplicity[q] > 0, ExcMessage("No adjacent points have been found."));
+        }
+      }
+
+      // initialize results vector on src-side according to multiplicity vector
+      for(auto it : mpi_map_multiplicity_src)
+      {
+        mpi_rank const              proc                   = it.first;
+        std::vector<unsigned int> & array_multiplicity_src = it.second;
+
+        mpi_map_solution_src.emplace(proc, ArrayVectorTensor());
+        ArrayVectorTensor & array_solution_src = mpi_map_solution_src.find(proc)->second;
+        array_solution_src.resize(array_multiplicity_src.size());
+
+        for(types::global_dof_index q = 0; q < array_multiplicity_src.size(); ++q)
+        {
+          array_solution_src[q] =
+            std::vector<Tensor<rank, dim, double>>(array_multiplicity_src[q],
+                                                   Tensor<rank, dim, double>());
+        }
+      }
 
 
       /*
        * 3. Compute dof indices and shape values for all quadrature points
        */
-      for(auto it_mpi = map_mpi_q_points_src.begin(); it_mpi != map_mpi_q_points_src.end();
-          ++it_mpi)
+      for(auto it : mpi_map_q_points_src)
       {
-        mpi_rank const          proc               = it_mpi->first;
-        ArrayQuadraturePoints & array_q_points_src = it_mpi->second;
-        ArrayVectorCache &      array_cache_src    = map_mpi_cache_src.find(proc)->second;
-        ArrayVectorTensor &     array_solution_src = map_mpi_solution_src.find(proc)->second;
+        mpi_rank const          proc               = it.first;
+        ArrayQuadraturePoints & array_q_points_src = it.second;
 
+        mpi_map_cache_src.emplace(proc, ArrayVectorCache());
+        ArrayVectorCache & array_cache_src = mpi_map_cache_src.find(proc)->second;
         array_cache_src.resize(array_q_points_src.size());
-        array_solution_src.resize(array_q_points_src.size());
+
+        std::vector<unsigned int> const & array_multiplicity =
+          mpi_map_multiplicity_src.find(proc)->second;
 
         for(types::global_dof_index q = 0; q < array_q_points_src.size(); ++q)
         {
-          std::vector<Cache> cache;
-          get_dof_indices_and_shape_values(*dof_handler_src,
-                                           *mapping_src,
-                                           *dof_vector_src_double_ptr,
-                                           array_q_points_src[q],
-                                           cache);
+          array_cache_src[q] = get_dof_indices_and_shape_values(*dof_handler_src,
+                                                                *mapping_src,
+                                                                *dof_vector_src_double_ptr,
+                                                                array_q_points_src[q],
+                                                                tolerance);
 
-          AssertThrow(cache.size() > 0,
-                      ExcMessage("cache is empty. Check why no adjacent points have been found."));
-
-          array_cache_src[q] = cache;
-          array_solution_src[q] =
-            std::vector<Tensor<rank, dim, double>>(cache.size(), Tensor<rank, dim, double>());
+          AssertThrow(array_cache_src[q].size() > 0,
+                      ExcMessage("No adjacent points have been found."));
+          AssertThrow(array_cache_src[q].size() == array_multiplicity[q],
+                      ExcMessage("Number of adjacent points do not match."));
         }
       }
 
@@ -185,13 +225,13 @@ public:
        * 4. Communication: transfer results back to dst-side
        */
       // serial case: mpi_rank = 0, simply copy data
-      array_solution_dst = map_mpi_solution_src.find(0)->second;
+      array_solution_dst = mpi_map_solution_src.find(0)->second;
     }
 
     // finally, give boundary condition access to the data
-    for(auto boundary = map_bc.begin(); boundary != map_bc.end(); ++boundary)
+    for(auto boundary : map_bc)
     {
-      boundary->second->set_data_pointer(map_index_dst, map_solution_dst);
+      boundary.second->set_data_pointer(map_index_dst, map_solution_dst);
     }
   }
 
@@ -210,20 +250,20 @@ public:
       dof_vector_src_double_ptr  = &dof_vector_src_double_copy;
     }
 
-    for(auto quadrature = quad_rules_dst.begin(); quadrature != quad_rules_dst.end(); ++quadrature)
+    for(auto quadrature : quad_rules_dst)
     {
-      ArrayVectorTensor & array_solution_dst = map_solution_dst.find(*quadrature)->second;
+      ArrayVectorTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;
 
-      std::map<mpi_rank, ArrayVectorCache> & map_mpi_cache_src =
-        map_cache_src.find(*quadrature)->second;
-      std::map<mpi_rank, ArrayVectorTensor> & map_mpi_solution_src =
-        map_solution_src.find(*quadrature)->second;
+      std::map<mpi_rank, ArrayVectorCache> & mpi_map_cache_src =
+        map_cache_src.find(quadrature)->second;
+      std::map<mpi_rank, ArrayVectorTensor> & mpi_map_solution_src =
+        map_solution_src.find(quadrature)->second;
 
-      for(auto it_mpi = map_mpi_cache_src.begin(); it_mpi != map_mpi_cache_src.end(); ++it_mpi)
+      for(auto it : mpi_map_cache_src)
       {
-        mpi_rank const      proc               = it_mpi->first;
-        ArrayVectorCache &  array_cache_src    = map_mpi_cache_src.find(proc)->second;
-        ArrayVectorTensor & array_solution_src = map_mpi_solution_src.find(proc)->second;
+        mpi_rank const      proc               = it.first;
+        ArrayVectorCache &  array_cache_src    = mpi_map_cache_src.find(proc)->second;
+        ArrayVectorTensor & array_solution_src = mpi_map_solution_src.find(proc)->second;
 
         for(types::global_dof_index q = 0; q < array_cache_src.size(); ++q)
         {
@@ -242,10 +282,11 @@ public:
       }
 
       /*
+       * TODO
        * Communication: transfer results back to dst-side
        */
       // serial case: mpi_rank = 0, simply copy data
-      array_solution_dst = map_mpi_solution_src.find(0)->second;
+      array_solution_dst = mpi_map_solution_src.find(0)->second;
     }
   }
 
@@ -270,9 +311,12 @@ private:
   DoFHandler<dim> const * dof_handler_src;
   Mapping<dim> const *    mapping_src;
 
-  mutable std::map<quad_index, std::map<mpi_rank, ArrayQuadraturePoints>> map_q_points_src;
-  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorCache>>      map_cache_src;
-  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorTensor>>     map_solution_src;
+  mutable std::map<quad_index, std::map<mpi_rank, ArrayQuadraturePoints>>     map_q_points_src;
+  mutable std::map<quad_index, std::map<mpi_rank, std::vector<unsigned int>>> map_multiplicity_src;
+  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorCache>>          map_cache_src;
+  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorTensor>>         map_solution_src;
+
+  double const tolerance = 1.e-10;
 };
 
 
