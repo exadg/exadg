@@ -80,8 +80,8 @@ bool STRUCTURE_COVERS_FLAG_ONLY = true;
 double const U_X_MAX  = 1.5 * U_MEAN;
 double const END_TIME = 4.0 * L / U_MEAN;
 
-double const OUTPUT_INTERVAL_TIME                = END_TIME / 100;
-double const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
+double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
+unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 template<int dim>
 class InflowBC : public Function<dim>
@@ -120,9 +120,9 @@ public:
   {
     (void)component;
 
-    double const sine =
+    double const value =
       (std::abs(p[1] - H / 2.) < H / 8.) ? std::cos(4.0 * p[1] / H * numbers::PI) : 0.0;
-    double result = 1. + 100. * sine * sine;
+    double result = 1. + 100. * value * value;
 
     return result;
   }
@@ -649,7 +649,7 @@ public:
     parameters.mapping            = MappingType::Isoparametric;
 
     parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-2);
-    parameters.solver                               = Structure::Solver::FGMRES;
+    parameters.solver                               = Structure::Solver::CG;
     parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;

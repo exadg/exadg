@@ -2,11 +2,17 @@
     "General": {
 	"Precision": "double",
         "Dim": "3",
-        "DegreeFluid": "3",
-        "DegreeALE": "3",
+        "DegreeFluid": "2",
+        "DegreeALE": "2",
 	"DegreeStructure": "1",
         "RefineFluid": "0",
-	"RefineStructure": "0"
+	"RefineStructure": "1"
+    },
+    "FSI" : {
+	"AbsTol": "1.e-12",
+	"RelTol": "1.e-3",
+	"OmegaInit": "0.1",
+	"PartitionedIterMax": "100"
     },
     "Application": {
        	"Name": "BendingWall",

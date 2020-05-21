@@ -13,10 +13,13 @@ namespace FSI
 namespace BendingWall
 {
 // set problem specific parameters like physical dimensions, etc.
-double const U_X_MAX   = 1.0;
-double const VISCOSITY = 0.01;
+double const U_X_MAX         = 1.0;
+double const FLUID_VISCOSITY = 0.01;
+double const FLUID_DENSITY   = 0.01;
 
-double const DENSITY_STRUCTURE = 1.0;
+double const DENSITY_STRUCTURE       = 1.0;
+double const POISSON_RATIO_STRUCTURE = 0.3;
+double const E_STRUCTURE             = 20.0;
 
 double const L_F = 3.0;
 double const B_F = 1.0;
@@ -33,43 +36,39 @@ unsigned int const N_CELLS_X_OUTFLOW = 10;
 unsigned int const N_CELLS_Y_LOWER   = 3;
 unsigned int const N_CELLS_Z_MIDDLE  = 3;
 
-double const END_TIME = 20.0;
+unsigned int const N_CELLS_STRUCTURE_X = 1;
+unsigned int const N_CELLS_STRUCTURE_Y = 4;
+unsigned int const N_CELLS_STRUCTURE_Z = 4;
 
-double const AMPLITUDE = 2.0 * T_S;
+// boundary conditions
+types::boundary_id const BOUNDARY_ID_WALLS   = 0;
+types::boundary_id const BOUNDARY_ID_INFLOW  = 1;
+types::boundary_id const BOUNDARY_ID_OUTFLOW = 2;
+types::boundary_id const BOUNDARY_ID_FSI     = 3;
 
-// moving mesh
-bool const ALE = true;
+double const END_TIME = 1.0;
 
-double
-function(double const t)
-{
-  double const T = END_TIME;
-  return std::sin(2.0 * numbers::PI * t / T);
-}
-
-double
-dfdt(double const t)
-{
-  double const T = END_TIME;
-  return 2.0 * numbers::PI * std::cos(2.0 * numbers::PI * t / T);
-}
+double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
+unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 template<int dim>
-class MeshMotion : public Function<dim>
+class SpatiallyVaryingE : public Function<dim>
 {
 public:
-  MeshMotion() : Function<dim>(dim, 0.0)
+  SpatiallyVaryingE() : Function<dim>(1, 0.0)
   {
   }
 
   double
   value(const Point<dim> & p, const unsigned int component = 0) const
   {
-    double t      = this->get_time();
-    double result = 0.0;
+    (void)component;
 
-    if(component == 0)
-      result = AMPLITUDE * std::pow((p[1] - (-H_F / 2.0)) / H_S, 2.0) * function(t);
+    double const length_scale = 2.0 * T_S;
+    double const x            = p[0] - (L_IN + T_S / 2.);
+    double const value =
+      (std::abs(x) < length_scale) ? std::cos(x / length_scale * 0.5 * numbers::PI) : 0.0;
+    double result = 1. + 100. * value * value;
 
     return result;
   }
@@ -91,27 +90,6 @@ public:
     if(component == 0)
       result =
         U_X_MAX * (1. - 4. * p[1] * p[1] / (H_F * H_F)) * (1. - 4. * p[2] * p[2] / (B_F * B_F));
-
-    return result;
-  }
-};
-
-template<int dim>
-class VelocityBendingWall : public Function<dim>
-{
-public:
-  VelocityBendingWall() : Function<dim>(dim, 0.0)
-  {
-  }
-
-  double
-  value(const Point<dim> & p, const unsigned int component = 0) const
-  {
-    double t      = this->get_time();
-    double result = 0.0;
-
-    if(component == 0)
-      result = AMPLITUDE * std::pow((p[1] - (-H_F / 2.0)) / H_S, 2.0) * dfdt(t);
 
     return result;
   }
@@ -156,31 +134,32 @@ public:
     param.right_hand_side                = false;
 
     // ALE
-    param.ale_formulation                     = ALE;
-    param.mesh_movement_type                  = MeshMovementType::Poisson;
+    param.ale_formulation                     = true;
+    param.mesh_movement_type                  = MeshMovementType::Elasticity;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
     param.start_time = 0.0;
     param.end_time   = END_TIME;
-    param.viscosity  = VISCOSITY;
+    param.viscosity  = FLUID_VISCOSITY;
+    param.density    = FLUID_DENSITY;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
-    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator           = 2;
-    param.start_with_low_order            = true;
-    param.adaptive_time_stepping          = true;
+    param.solver_type = SolverType::Unsteady;
+    param.temporal_discretization =
+      TemporalDiscretization::BDFPressureCorrection; // BDFDualSplittingScheme;
+    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; // Explicit;
+    param.order_time_integrator        = 2;
+    param.start_with_low_order         = true;
+    param.adaptive_time_stepping       = true;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL; // UserSpecified; //CFL;
     param.time_step_size                  = END_TIME;
     param.max_velocity                    = U_X_MAX;
-    param.cfl                             = 0.4;
+    param.cfl                             = 4.0; // 0.4;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
-    param.solver_info_data.interval_time_steps = 1;
-    param.solver_info_data.interval_time       = 0.1 * (param.end_time - param.start_time);
+    param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     // restart
     param.restarted_simulation             = false;
@@ -227,7 +206,7 @@ public:
 
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-2, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -240,7 +219,7 @@ public:
 
     // projection step
     param.solver_projection                        = SolverProjection::CG;
-    param.solver_data_projection                   = SolverData(1000, 1.e-12, 1.e-6);
+    param.solver_data_projection                   = SolverData(1000, 1.e-12, 1.e-2);
     param.preconditioner_projection                = PreconditionerProjection::InverseMassMatrix;
     param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
     param.solver_data_block_diagonal_projection    = SolverData(1000, 1.e-12, 1.e-2, 1000);
@@ -254,7 +233,7 @@ public:
 
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
+    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-2);
     param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
 
@@ -268,20 +247,14 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-2);
 
     // linear solver
     param.solver_momentum                = SolverMomentum::FGMRES;
-    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-2, 100);
     param.update_preconditioner_momentum = false;
     param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
     param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
-
-    // Jacobi smoother data
-    //  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    //  param.multigrid_data_momentum.smoother_data.preconditioner =
-    //  PreconditionerSmoother::BlockJacobi; param.multigrid_data_momentum.smoother_data.iterations
-    //  = 5; param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
     // Chebyshev smoother data
     param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -292,11 +265,11 @@ public:
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-6);
+    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-2);
 
     // linear solver
     param.solver_coupled      = SolverCoupled::FGMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -457,33 +430,33 @@ public:
         double const z   = cell->face(f)->center()(2);
         double const TOL = 1.e-10;
 
-        // inflow: set boundary ID to 1
+        // inflow
         if(std::fabs(x - 0.0) < TOL)
         {
-          cell->face(f)->set_boundary_id(1);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
         }
 
-        // outflow: set boundary ID to 2
+        // outflow
         if(std::fabs(x - L_F) < TOL)
         {
-          cell->face(f)->set_boundary_id(2);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
         }
 
-        // fluid-structure interface: set boundary ID to 3
+        // fluid-structure interface
         if((std::fabs(x - L_IN) < TOL || std::fabs(x - (L_IN + T_S)) < TOL) &&
            y < H_S - H_F / 2.0 + TOL && std::fabs(z) < B_S / 2.0 + TOL)
         {
-          cell->face(f)->set_boundary_id(3);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
         }
         if((std::fabs(z - (-B_S / 2.0)) < TOL || std::fabs(z - (+B_S / 2.0)) < TOL) &&
            y < H_S - H_F / 2.0 + TOL && std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL)
         {
-          cell->face(f)->set_boundary_id(3);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
         }
         if(std::fabs(y - (H_S - H_F / 2.0)) < TOL &&
            std::fabs(x - (L_IN + T_S / 2.0)) < T_S / 2.0 + TOL && std::fabs(z) < B_S / 2.0 + TOL)
         {
-          cell->face(f)->set_boundary_id(3);
+          cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
         }
       }
     }
@@ -504,34 +477,37 @@ public:
 
     // channel walls
     boundary_descriptor_velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
 
     // inflow
-    boundary_descriptor_velocity->dirichlet_bc.insert(pair(1, new InflowBC<dim>()));
+    boundary_descriptor_velocity->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
 
     // outflow
-    boundary_descriptor_velocity->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_velocity->neumann_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    // TODO remove once FSI implementation is complete
-    //    boundary_descriptor_velocity->dirichlet_bc.insert(pair(3, new
-    //    VelocityBendingWall<dim>()));
     boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
-      pair_fsi(3, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
 
     // fill boundary descriptor pressure
 
     // channel walls
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
 
     // inflow
-    boundary_descriptor_pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
 
     // outflow
-    boundary_descriptor_pressure->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor_pressure->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
 
     // fluid-structure interface
-    boundary_descriptor_pressure->neumann_bc.insert(pair(3, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(
+      pair(BOUNDARY_ID_FSI, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -553,15 +529,16 @@ public:
     pp_data.output_data.output_folder             = output_directory + "vtu/";
     pp_data.output_data.output_name               = output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs        = true;
+    pp_data.output_data.write_surface_mesh        = true;
     pp_data.output_data.output_start_time         = 0.0;
-    pp_data.output_data.output_interval_time      = END_TIME / 20;
+    pp_data.output_data.output_interval_time      = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_processor_id        = true;
     pp_data.output_data.write_higher_order        = false;
-    pp_data.output_data.degree                    = degree;
+    pp_data.output_data.degree                    = 2 * degree;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
@@ -580,26 +557,21 @@ public:
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type     = TriangulationType::Distributed;
-    param.mapping                = MappingType::Affine; // Isoparametric;
+    param.mapping                = MappingType::Isoparametric;
     param.spatial_discretization = SpatialDiscretization::CG;
-    param.IP_factor              = 1.0e0;
 
     // SOLVER
-    param.solver                    = Poisson::Solver::CG;
-    param.solver_data.abs_tol       = 1.e-12;
-    param.solver_data.rel_tol       = 1.e-6;
-    param.solver_data.max_iter      = 1e4;
-    param.preconditioner            = Preconditioner::Multigrid;
-    param.multigrid_data.type       = MultigridType::phMG;
-    param.multigrid_data.p_sequence = PSequenceType::Bisect;
-    // MG smoother
+    param.solver               = Poisson::Solver::CG;
+    param.solver_data.abs_tol  = 1.e-12;
+    param.solver_data.rel_tol  = 1.e-2;
+    param.solver_data.max_iter = 1e4;
+    param.preconditioner       = Preconditioner::Multigrid;
+
+    param.multigrid_data.type                          = MultigridType::phMG;
+    param.multigrid_data.p_sequence                    = PSequenceType::Bisect;
     param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
-    param.multigrid_data.smoother_data.iterations      = 5;
-    param.multigrid_data.smoother_data.smoothing_range = 20;
-    // MG coarse grid solver
     param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
     param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
   void set_boundary_conditions_ale(
@@ -608,22 +580,30 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
+
     // let the mesh slide along the outer walls
     std::vector<bool> mask = {false, true, true};
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_WALLS, mask));
 
     // inflow
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, ComponentMask()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_INFLOW, ComponentMask()));
 
     // outflow
-    boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(2, ComponentMask()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_OUTFLOW, ComponentMask()));
 
     // fluid-structure interface
-    boundary_descriptor->dirichlet_bc.insert(pair(3, new MeshMotion<dim>()));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(3, ComponentMask()));
+    boundary_descriptor->dirichlet_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
   }
 
 
@@ -637,30 +617,87 @@ public:
   void
   set_input_parameters_ale(Structure::InputParameters & parameters)
   {
-    (void)parameters;
-    AssertThrow(false, ExcMessage("not implemented."));
+    using namespace Structure;
+
+    parameters.problem_type         = ProblemType::Steady;
+    parameters.body_force           = false;
+    parameters.pull_back_body_force = false;
+    parameters.large_deformation    = false;
+    parameters.pull_back_traction   = false;
+
+    parameters.triangulation_type = TriangulationType::Distributed;
+    parameters.mapping            = MappingType::Isoparametric;
+
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-2);
+    parameters.solver                               = Structure::Solver::CG;
+    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    parameters.preconditioner                       = Preconditioner::Multigrid;
+    parameters.multigrid_data.type                  = MultigridType::phMG;
+    parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    parameters.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
+
+    parameters.update_preconditioner                         = parameters.large_deformation;
+    parameters.update_preconditioner_every_newton_iterations = 10;
   }
 
   void
   set_boundary_conditions_ale(
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
   {
-    (void)boundary_descriptor;
-    AssertThrow(false, ExcMessage("not implemented."));
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
+
+    // let the mesh slide along the outer walls
+    std::vector<bool> mask = {false, true, true};
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(BOUNDARY_ID_WALLS, mask));
+
+    // inflow
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_INFLOW, ComponentMask()));
+
+    // outflow
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_OUTFLOW, ComponentMask()));
+
+    // fluid-structure interface
+    boundary_descriptor->dirichlet_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
   }
 
   void
   set_material_ale(Structure::MaterialDescriptor & material_descriptor)
   {
-    (void)material_descriptor;
-    AssertThrow(false, ExcMessage("not implemented."));
+    using namespace Structure;
+
+    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+
+    MaterialType const type         = MaterialType::StVenantKirchhoff;
+    Type2D const       two_dim_type = Type2D::PlainStress;
+
+    double const                   E       = 1.0;
+    double const                   poisson = 0.3;
+    std::shared_ptr<Function<dim>> E_function;
+    E_function.reset(new SpatiallyVaryingE<dim>());
+    material_descriptor.insert(
+      Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
   }
 
   void
   set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
   {
-    (void)field_functions;
-    AssertThrow(false, ExcMessage("not implemented."));
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
 
@@ -683,14 +720,14 @@ public:
     parameters.time_step_size                       = END_TIME / 100.0;
     parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
     parameters.spectral_radius                      = 0.8;
-    parameters.solver_info_data.interval_time_steps = 1;
+    parameters.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-10);
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-3);
     parameters.solver                               = Structure::Solver::FGMRES;
-    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
@@ -722,9 +759,9 @@ public:
     p2[2] = B_S / 2.0;
 
     std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = 1;
-    repetitions[1] = N_CELLS_Y_LOWER;
-    repetitions[2] = N_CELLS_Z_MIDDLE;
+    repetitions[0] = N_CELLS_STRUCTURE_X;
+    repetitions[1] = N_CELLS_STRUCTURE_Y;
+    repetitions[2] = N_CELLS_STRUCTURE_Z;
 
     GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, p1, p2);
 
@@ -732,13 +769,20 @@ public:
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        double const y   = cell->face(f)->center()(1);
-        double const TOL = 1.e-10;
-
-        // lower boundary: set boundary ID to 1
-        if(std::fabs(y - (-H_F / 2.0)) < TOL)
+        if(cell->face(f)->at_boundary())
         {
-          cell->face(f)->set_boundary_id(1);
+          double const y   = cell->face(f)->center()(1);
+          double const TOL = 1.e-10;
+
+          // lower boundary
+          if(std::fabs(y - (-H_F / 2.0)) < TOL)
+          {
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
+          }
+          else // all other boundaries at FSI interface
+          {
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_FSI);
+          }
         }
       }
     }
@@ -753,14 +797,18 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    // lower boundary is clamped
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, ComponentMask()));
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+      pair_fsi;
 
-    // all other boundaries belong to the fluid-structure interface
-    // currently use analytical motion (TODO)
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new MeshMotion<dim>()));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, ComponentMask()));
+    // lower boundary is clamped
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(BOUNDARY_ID_WALLS, ComponentMask()));
+
+    // fluid-structure interface
+    boundary_descriptor->neumann_mortar_bc.insert(
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
   }
 
   void
@@ -770,23 +818,19 @@ public:
 
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
-    MaterialType const type = MaterialType::StVenantKirchhoff;
-    double const       E = 200.0e3, nu = 0.3; // TODO
+    MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlainStress;
 
-    material_descriptor.insert(Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+    material_descriptor.insert(Pair(
+      0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
   }
 
   void
   set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
   {
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
     field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    // TODO: currently use analytical motion
-    field_functions->initial_velocity.reset(new VelocityBendingWall<dim>());
-    // finally, use this
-    //    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>
@@ -799,7 +843,7 @@ public:
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name + "_structure";
     pp_data.output_data.output_start_time    = 0.0;
-    pp_data.output_data.output_interval_time = END_TIME / 20;
+    pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order   = false;
     pp_data.output_data.degree               = degree;
 
