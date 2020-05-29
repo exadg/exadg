@@ -66,7 +66,7 @@ public:
   get_velocity_np();
 
   void
-  relax_displacement(double const omega, VectorType const & displacement_previous);
+  set_displacement(VectorType const & displacement);
 
   void
   advance_one_timestep_partitioned_solve(bool const use_extrapolation, bool const store_solution);

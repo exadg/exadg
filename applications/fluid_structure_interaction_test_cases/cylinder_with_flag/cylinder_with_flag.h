@@ -83,6 +83,8 @@ double const END_TIME = 4.0 * L / U_MEAN;
 double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
+double const REL_TOL = 1.e-2;
+
 template<int dim>
 class InflowBC : public Function<dim>
 {
@@ -238,7 +240,7 @@ public:
 
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-2, 100);
+    param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, REL_TOL, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -251,7 +253,7 @@ public:
 
     // projection step
     param.solver_projection                        = SolverProjection::CG;
-    param.solver_data_projection                   = SolverData(1000, 1.e-12, 1.e-2);
+    param.solver_data_projection                   = SolverData(1000, 1.e-12, REL_TOL);
     param.preconditioner_projection                = PreconditionerProjection::InverseMassMatrix;
     param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
     param.solver_data_block_diagonal_projection    = SolverData(1000, 1.e-12, 1.e-2, 1000);
@@ -265,7 +267,7 @@ public:
 
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-2);
+    param.solver_data_viscous    = SolverData(1000, 1.e-12, REL_TOL);
     param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
 
@@ -279,11 +281,11 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-6);
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, REL_TOL);
 
     // linear solver
     param.solver_momentum                = SolverMomentum::FGMRES;
-    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_data_momentum           = SolverData(1e4, 1.e-12, REL_TOL, 100);
     param.update_preconditioner_momentum = false;
     param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
     param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
@@ -303,11 +305,11 @@ public:
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, 1.e-2);
+    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, REL_TOL);
 
     // linear solver
     param.solver_coupled      = SolverCoupled::FGMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-12, REL_TOL, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -594,7 +596,7 @@ public:
     // SOLVER
     param.solver               = Poisson::Solver::CG;
     param.solver_data.abs_tol  = 1.e-12;
-    param.solver_data.rel_tol  = 1.e-2;
+    param.solver_data.rel_tol  = REL_TOL;
     param.solver_data.max_iter = 1e4;
     param.preconditioner       = Preconditioner::Multigrid;
 
@@ -648,9 +650,9 @@ public:
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-2);
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, REL_TOL);
     parameters.solver                               = Structure::Solver::CG;
-    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    parameters.solver_data                          = SolverData(1e4, 1.e-10, REL_TOL, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
@@ -743,9 +745,9 @@ public:
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, 1.e-3);
+    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, REL_TOL);
     parameters.solver                               = Structure::Solver::FGMRES;
-    parameters.solver_data                          = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    parameters.solver_data                          = SolverData(1e4, 1.e-10, REL_TOL, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;

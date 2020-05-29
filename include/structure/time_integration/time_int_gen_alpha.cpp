@@ -226,11 +226,9 @@ TimeIntGenAlpha<dim, Number>::get_velocity_np()
 
 template<int dim, typename Number>
 void
-TimeIntGenAlpha<dim, Number>::relax_displacement(double const       omega,
-                                                 VectorType const & displacement_previous)
+TimeIntGenAlpha<dim, Number>::set_displacement(VectorType const & displacement)
 {
-  displacement_np *= omega;
-  displacement_np.add(1.0 - omega, displacement_previous);
+  displacement_np = displacement;
 
   // velocity_np, acceleration_np depend on displacement_np, so we need to
   // update these vectors as well

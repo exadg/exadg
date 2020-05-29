@@ -9,6 +9,7 @@
 	"RefineStructure": "1"
     },
     "FSI" : {
+        "Method": "IQN-ILS",
 	"AbsTol": "1.e-12",
 	"RelTol": "1.e-3",
 	"OmegaInit": "0.1",

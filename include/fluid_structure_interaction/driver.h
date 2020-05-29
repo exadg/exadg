@@ -49,12 +49,115 @@
 
 namespace FSI
 {
-struct FixedPointData
+/*
+ * Own implementation of matrix class.
+ */
+template<typename Number>
+class Matrix
 {
-  FixedPointData() : abs_tol(1.e-12), rel_tol(1.e-3), omega_init(0.1), partitioned_iter_max(100)
+public:
+  // Constructor.
+  Matrix(unsigned int const size) : M(size)
+  {
+    data.resize(M * M);
+
+    init();
+  }
+
+  void
+  init()
+  {
+    for(unsigned int i = 0; i < M; ++i)
+      for(unsigned int j = 0; j < M; ++j)
+        data[i * M + j] = Number(0.0);
+  }
+
+  Number
+  get(unsigned int const i, unsigned int const j) const
+  {
+    AssertThrow(i < M && j < M, ExcMessage("Index exceeds matrix dimensions."));
+
+    return data[i * M + j];
+  }
+
+  void
+  set(Number const value, unsigned int const i, unsigned int const j)
+  {
+    AssertThrow(i < M && j < M, ExcMessage("Index exceeds matrix dimensions."));
+
+    data[i * M + j] = value;
+  }
+
+private:
+  // number of rows and columns of matrix
+  unsigned int const  M;
+  std::vector<Number> data;
+};
+
+template<typename VectorType, typename Number>
+void
+compute_QR_decomposition(std::vector<VectorType> & Q, Matrix<Number> & R, Number const eps = 1.e-2)
+{
+  for(unsigned int i = 0; i < Q.size(); ++i)
+  {
+    Number const norm_initial = Number(Q[i].l2_norm());
+
+    // orthogonalize
+    for(unsigned int j = 0; j < i; ++j)
+    {
+      Number r_ji = Q[j] * Q[i];
+      R.set(r_ji, j, i);
+      Q[i].add(-r_ji, Q[j]);
+    }
+
+    // normalize or drop if linear dependent
+    Number r_ii = Number(Q[i].l2_norm());
+    if(r_ii < eps * norm_initial)
+    {
+      Q[i] = 0.0;
+      for(unsigned int j = 0; j < i; ++j)
+        R.set(0.0, j, i);
+      R.set(1.0, i, i);
+    }
+    else
+    {
+      R.set(r_ii, i, i);
+      Q[i] *= 1. / r_ii;
+    }
+  }
+}
+
+/*
+ *  Matrix has to be upper triangular with d_ii != 0 for all 0 <= i < n
+ */
+template<typename Number>
+void
+backward_substitution(Matrix<Number> const &      matrix,
+                      std::vector<Number> &       dst,
+                      std::vector<Number> const & rhs)
+{
+  int const n = dst.size();
+
+  for(int i = n - 1; i >= 0; --i)
+  {
+    double value = rhs[i];
+    for(int j = i + 1; j < n; ++j)
+    {
+      value -= matrix.get(i, j) * dst[j];
+    }
+
+    dst[i] = value / matrix.get(i, i);
+  }
+}
+
+struct PartitionedFSIData
+{
+  PartitionedFSIData()
+    : method("Aitken"), abs_tol(1.e-12), rel_tol(1.e-3), omega_init(0.1), partitioned_iter_max(100)
   {
   }
 
+  std::string  method;
   double       abs_tol;
   double       rel_tol;
   double       omega_init;
@@ -94,8 +197,11 @@ private:
   void
   synchronize_time_step_size() const;
 
+  unsigned int
+  solve_partitioned_problem() const;
+
   void
-  coupling_structure_to_ale(VectorType & displacement_structure, bool const extrapolate) const;
+  coupling_structure_to_ale(VectorType const & displacement_structure) const;
 
   void
   solve_ale() const;
@@ -106,8 +212,11 @@ private:
   void
   coupling_fluid_to_structure() const;
 
-  double
-  calculate_residual(VectorType & residual) const;
+  void
+  apply_dirichlet_neumann_scheme(VectorType & displacement_last, unsigned int iteration) const;
+
+  bool
+  check_convergence(VectorType const & residual) const;
 
   void
   update_relaxation_parameter(double &           omega,
@@ -249,10 +358,7 @@ private:
   /*
    *  Fixed-point iteration.
    */
-  FixedPointData fixed_point_data;
-
-  mutable VectorType residual_last;
-  mutable VectorType displacement_last;
+  PartitionedFSIData fsi_data;
 
   /*
    * Computation time (wall clock time).

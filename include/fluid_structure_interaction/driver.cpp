@@ -20,23 +20,28 @@ Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & com
 
   // clang-format off
   prm.enter_subsection("FSI");
+    prm.add_parameter("Method",
+                      fsi_data.method,
+                      "Acceleration method.",
+                      Patterns::Selection("Aitken|IQN-ILS"),
+                      true);
     prm.add_parameter("AbsTol",
-                      fixed_point_data.abs_tol,
+                      fsi_data.abs_tol,
                       "Absolute solver tolerance.",
                       Patterns::Double(0.0,1.0),
                       true);
     prm.add_parameter("RelTol",
-                      fixed_point_data.rel_tol,
+                      fsi_data.rel_tol,
                       "Relative solver tolerance.",
                       Patterns::Double(0.0,1.0),
                       true);
     prm.add_parameter("OmegaInit",
-                      fixed_point_data.omega_init,
+                      fsi_data.omega_init,
                       "Initial relaxation parameter.",
                       Patterns::Double(0.0,1.0),
                       true);
     prm.add_parameter("PartitionedIterMax",
-                      fixed_point_data.partitioned_iter_max,
+                      fsi_data.partitioned_iter_max,
                       "Maximum number of fixed-point iterations.",
                       Patterns::Integer(1,1000),
                       true);
@@ -595,9 +600,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
 
-  structure_operator->initialize_dof_vector(residual_last);
-  structure_operator->initialize_dof_vector(displacement_last);
-
   timer_tree.insert({"FSI", "Setup"}, timer.wall_time());
 }
 
@@ -649,16 +651,10 @@ Driver<dim, Number>::solve_ale() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::coupling_structure_to_ale(VectorType & displacement_structure,
-                                               bool const   extrapolate) const
+Driver<dim, Number>::coupling_structure_to_ale(VectorType const & displacement_structure) const
 {
   Timer sub_timer;
   sub_timer.restart();
-
-  if(extrapolate)
-    structure_time_integrator->extrapolate_displacement_to_np(displacement_structure);
-  else
-    displacement_structure = structure_time_integrator->get_displacement_np();
 
   structure_to_ale->update_data(displacement_structure);
   timer_tree.insert({"FSI", "Coupling structure -> ALE"}, sub_timer.wall_time());
@@ -703,18 +699,39 @@ Driver<dim, Number>::coupling_fluid_to_structure() const
 }
 
 template<int dim, typename Number>
-double
-Driver<dim, Number>::calculate_residual(VectorType & residual) const
+void
+Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType & displacement_last,
+                                                    unsigned int iteration) const
 {
-  residual = structure_time_integrator->get_displacement_np();
-  residual.add(-1.0, displacement_last);
+  coupling_structure_to_ale(displacement_last);
+
+  // move the fluid mesh and update dependent data structures
+  solve_ale();
+
+  // update velocity boundary condition for fluid
+  coupling_structure_to_fluid(iteration == 0);
+
+  // solve fluid problem
+  fluid_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0, true);
+
+  // update stress boundary condition for solid
+  coupling_fluid_to_structure();
+
+  // solve structural problem
+  structure_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0, true);
+}
+
+template<int dim, typename Number>
+bool
+Driver<dim, Number>::check_convergence(VectorType const & residual) const
+{
   double const residual_norm = residual.l2_norm();
   double const ref_norm_abs  = std::sqrt(structure_operator->get_number_of_dofs());
   double const ref_norm_rel  = structure_time_integrator->get_velocity_np().l2_norm() *
                               structure_time_integrator->get_time_step_size();
 
-  bool const converged = (residual_norm < fixed_point_data.abs_tol * ref_norm_abs) ||
-                         (residual_norm < fixed_point_data.rel_tol * ref_norm_rel);
+  bool const converged = (residual_norm < fsi_data.abs_tol * ref_norm_abs) ||
+                         (residual_norm < fsi_data.rel_tol * ref_norm_rel);
 
   return converged;
 }
@@ -722,13 +739,13 @@ Driver<dim, Number>::calculate_residual(VectorType & residual) const
 template<int dim, typename Number>
 void
 Driver<dim, Number>::update_relaxation_parameter(double &           omega,
-                                                 unsigned int const i,
+                                                 unsigned int const iteration,
                                                  VectorType const & residual,
                                                  VectorType const & residual_last) const
 {
-  if(i == 0)
+  if(iteration == 0)
   {
-    omega = fixed_point_data.omega_init;
+    omega = fsi_data.omega_init;
   }
   else
   {
@@ -744,26 +761,155 @@ Driver<dim, Number>::update_relaxation_parameter(double &           omega,
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_solver_info_header(unsigned int const i) const
+Driver<dim, Number>::print_solver_info_header(unsigned int const iteration) const
 {
   if(fluid_time_integrator->print_solver_info())
   {
     pcout << std::endl
           << "======================================================================" << std::endl
-          << " Partitioned FSI: Fixed-point iteration counter = " << std::left << std::setw(8) << i
-          << std::endl
+          << " Partitioned FSI: Fixed-point iteration counter = " << std::left << std::setw(8)
+          << iteration << std::endl
           << "======================================================================" << std::endl;
   }
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_solver_info_converged(unsigned int const i) const
+Driver<dim, Number>::print_solver_info_converged(unsigned int const iteration) const
 {
   if(fluid_time_integrator->print_solver_info())
   {
-    pcout << std::endl << "Fixed-point iteration converged in " << i << " iterations." << std::endl;
+    pcout << std::endl
+          << "Fixed-point iteration converged in " << iteration << " iterations." << std::endl;
   }
+}
+
+template<int dim, typename Number>
+unsigned int
+Driver<dim, Number>::solve_partitioned_problem() const
+{
+  // iteration counter
+  unsigned int k = 0;
+
+  // fixed-point iteration with dynamic relaxation (Aitken relaxation)
+  if(fsi_data.method == "Aitken")
+  {
+    VectorType residual_last, displacement_last;
+    structure_operator->initialize_dof_vector(residual_last);
+    structure_operator->initialize_dof_vector(displacement_last);
+
+    bool   converged = false;
+    double omega     = 1.0;
+    while(not converged and k < fsi_data.partitioned_iter_max)
+    {
+      print_solver_info_header(k);
+
+      if(k == 0)
+        structure_time_integrator->extrapolate_displacement_to_np(displacement_last);
+      else
+        displacement_last = structure_time_integrator->get_displacement_np();
+
+      apply_dirichlet_neumann_scheme(displacement_last, k);
+
+      // compute residual and check convergence
+      VectorType residual(residual_last);
+      residual = structure_time_integrator->get_displacement_np();
+      residual.add(-1.0, displacement_last);
+      converged = check_convergence(residual);
+
+      // relaxation
+      if(not(converged))
+      {
+        update_relaxation_parameter(omega, k, residual, residual_last);
+
+        residual_last = residual;
+
+        displacement_last.add(omega, residual);
+        structure_time_integrator->set_displacement(displacement_last);
+      }
+
+      // increment counter of partitioned iteration
+      ++k;
+    }
+  }
+  else if(fsi_data.method == "IQN-ILS")
+  {
+    VectorType displacement;
+    structure_operator->initialize_dof_vector(displacement);
+
+    // vector for all previous displacements and residuals
+    std::vector<VectorType> residual_vector, displacement_vector;
+
+    bool converged = false;
+    while(not converged and k < fsi_data.partitioned_iter_max)
+    {
+      print_solver_info_header(k);
+
+      if(k == 0)
+        structure_time_integrator->extrapolate_displacement_to_np(displacement);
+      else
+        displacement = structure_time_integrator->get_displacement_np();
+
+      apply_dirichlet_neumann_scheme(displacement, k);
+
+      displacement_vector.push_back(structure_time_integrator->get_displacement_np());
+
+      // compute residual and check convergence
+      residual_vector.push_back(displacement_vector[k]);
+      residual_vector[k].add(-1.0, displacement);
+      converged = check_convergence(residual_vector[k]);
+
+      // relaxation
+      if(not(converged))
+      {
+        if(k == 0)
+        {
+          displacement.add(fsi_data.omega_init, residual_vector[k]);
+        }
+        else
+        {
+          // fill D_k, R_k matrices
+          std::vector<VectorType> D(k), R(k);
+          for(unsigned int i = 0; i < k; ++i)
+          {
+            D[i] = displacement_vector[k - 1 - i];
+            D[i].add(-1.0, displacement_vector[k]);
+
+            R[i] = residual_vector[k - 1 - i];
+            R[i].add(-1.0, residual_vector[k]);
+          }
+
+          // compute QR-decomposition
+          Matrix<Number> U(k);
+          compute_QR_decomposition(R /* = "Q" */, U /* = "R" */);
+
+          std::vector<Number> rhs(k, 0.0);
+          for(unsigned int i = 0; i < k; ++i)
+            rhs[i] = -Number(R[i] * residual_vector[k]);
+
+          // alpha = U^{-1} rhs
+          std::vector<Number> alpha(k, 0.0);
+          backward_substitution(U, alpha, rhs);
+
+          // d_{k+1} = d_tilde_{k} + delta d_tilde
+          displacement = displacement_vector[k];
+          for(unsigned int i = 0; i < k; ++i)
+            displacement.add(alpha[i], D[i]);
+        }
+
+        structure_time_integrator->set_displacement(displacement);
+      }
+
+      // increment counter of partitioned iteration
+      ++k;
+    }
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("This method is not implemented."));
+  }
+
+  return k;
 }
 
 template<int dim, typename Number>
@@ -781,54 +927,13 @@ Driver<dim, Number>::solve() const
     fluid_time_integrator->advance_one_timestep_pre_solve(true);
     structure_time_integrator->advance_one_timestep_pre_solve(false);
 
-    // strongly-coupled partitioned iteration:
-    // fixed-point iteration with dynamic relaxation (Aitken relaxation)
-    unsigned int i         = 0;
-    bool         converged = false;
-    double       omega     = 1.0;
-    while(not converged and i < fixed_point_data.partitioned_iter_max)
-    {
-      print_solver_info_header(i);
-
-      coupling_structure_to_ale(displacement_last, i == 0);
-
-      // move the fluid mesh and update dependent data structures
-      solve_ale();
-
-      // update velocity boundary condition for fluid
-      coupling_structure_to_fluid(i == 0);
-
-      // solve fluid problem
-      fluid_time_integrator->advance_one_timestep_partitioned_solve(i == 0, true);
-
-      // update stress boundary condition for solid
-      coupling_fluid_to_structure();
-
-      // solve structural problem
-      structure_time_integrator->advance_one_timestep_partitioned_solve(i == 0, true);
-
-      // compute residual and check convergence
-      VectorType residual(residual_last);
-      converged = calculate_residual(residual);
-
-      // relaxation
-      if(not(converged))
-      {
-        update_relaxation_parameter(omega, i, residual, residual_last);
-
-        residual_last = residual;
-
-        structure_time_integrator->relax_displacement(omega, displacement_last);
-      }
-
-      // increment counter of partitioned iteration
-      ++i;
-    }
+    // solve (using strongly-coupled partitioned scheme)
+    unsigned int iterations = solve_partitioned_problem();
 
     partitioned_iterations.first += 1;
-    partitioned_iterations.second += i;
+    partitioned_iterations.second += iterations;
 
-    print_solver_info_converged(i);
+    print_solver_info_converged(iterations);
 
     // post-solve
     fluid_time_integrator->advance_one_timestep_post_solve();
