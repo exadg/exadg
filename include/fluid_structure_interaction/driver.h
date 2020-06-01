@@ -150,10 +150,69 @@ backward_substitution(Matrix<Number> const &      matrix,
   }
 }
 
+template<typename Number, typename VectorType>
+void
+backward_substitution_multiple_rhs(Matrix<Number> const &          matrix,
+                                   std::vector<VectorType> &       dst,
+                                   std::vector<VectorType> const & rhs)
+{
+  int const n = dst.size();
+
+  for(int i = n - 1; i >= 0; --i)
+  {
+    VectorType value = rhs[i];
+    for(int j = i + 1; j < n; ++j)
+    {
+      value.add(-matrix.get(i, j), dst[j]);
+    }
+
+    dst[i].equ(1.0 / matrix.get(i, i), value);
+  }
+}
+
+template<typename VectorType>
+void
+inv_jacobian_times_residual(VectorType &                                                  b,
+                            std::vector<std::shared_ptr<std::vector<VectorType>>> const & D_history,
+                            std::vector<std::shared_ptr<std::vector<VectorType>>> const & R_history,
+                            std::vector<std::shared_ptr<std::vector<VectorType>>> const & Z_history,
+                            VectorType const &                                            residual)
+{
+  VectorType a = residual;
+
+  // reset
+  b = 0.0;
+
+  for(int idx = Z_history.size() - 1; idx >= 0; --idx)
+  {
+    std::shared_ptr<std::vector<VectorType>> D = D_history[idx];
+    std::shared_ptr<std::vector<VectorType>> R = R_history[idx];
+    std::shared_ptr<std::vector<VectorType>> Z = Z_history[idx];
+
+    int const           k = Z->size();
+    std::vector<double> Z_times_a(k, 0.0);
+    for(int i = 0; i < k; ++i)
+      Z_times_a[i] = (*Z)[i] * a;
+
+    // add to b
+    for(int i = 0; i < k; ++i)
+      b.add(Z_times_a[i], (*D)[i]);
+
+    // add to a
+    for(int i = 0; i < k; ++i)
+      a.add(-Z_times_a[i], (*R)[i]);
+  }
+}
+
 struct PartitionedFSIData
 {
   PartitionedFSIData()
-    : method("Aitken"), abs_tol(1.e-12), rel_tol(1.e-3), omega_init(0.1), partitioned_iter_max(100)
+    : method("Aitken"),
+      abs_tol(1.e-12),
+      rel_tol(1.e-3),
+      omega_init(0.1),
+      reused_time_steps(0),
+      partitioned_iter_max(100)
   {
   }
 
@@ -161,6 +220,7 @@ struct PartitionedFSIData
   double       abs_tol;
   double       rel_tol;
   double       omega_init;
+  unsigned int reused_time_steps;
   unsigned int partitioned_iter_max;
 };
 
@@ -213,16 +273,12 @@ private:
   coupling_fluid_to_structure() const;
 
   void
-  apply_dirichlet_neumann_scheme(VectorType & displacement_last, unsigned int iteration) const;
+  apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
+                                 VectorType const & d,
+                                 unsigned int       iteration) const;
 
   bool
   check_convergence(VectorType const & residual) const;
-
-  void
-  update_relaxation_parameter(double &           omega,
-                              unsigned int const i,
-                              VectorType const & residual,
-                              VectorType const & residual_last) const;
 
   void
   print_solver_info_header(unsigned int const i) const;
@@ -359,6 +415,9 @@ private:
    *  Fixed-point iteration.
    */
   PartitionedFSIData fsi_data;
+
+  // required for quasi-Newton methods
+  mutable std::vector<std::shared_ptr<std::vector<VectorType>>> D_history, R_history, Z_history;
 
   /*
    * Computation time (wall clock time).

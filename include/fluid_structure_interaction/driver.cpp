@@ -23,7 +23,7 @@ Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & com
     prm.add_parameter("Method",
                       fsi_data.method,
                       "Acceleration method.",
-                      Patterns::Selection("Aitken|IQN-ILS"),
+                      Patterns::Selection("Aitken|IQN-ILS|IQN-IMVLS"),
                       true);
     prm.add_parameter("AbsTol",
                       fsi_data.abs_tol,
@@ -40,6 +40,11 @@ Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & com
                       "Initial relaxation parameter.",
                       Patterns::Double(0.0,1.0),
                       true);
+    prm.add_parameter("ReusedTimeSteps",
+                      fsi_data.reused_time_steps,
+                      "Number of time steps reused for acceleration.",
+                      Patterns::Integer(0, 100),
+                      false);
     prm.add_parameter("PartitionedIterMax",
                       fsi_data.partitioned_iter_max,
                       "Maximum number of fixed-point iterations.",
@@ -700,10 +705,11 @@ Driver<dim, Number>::coupling_fluid_to_structure() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType & displacement_last,
-                                                    unsigned int iteration) const
+Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType &       d_tilde,
+                                                    VectorType const & d,
+                                                    unsigned int       iteration) const
 {
-  coupling_structure_to_ale(displacement_last);
+  coupling_structure_to_ale(d);
 
   // move the fluid mesh and update dependent data structures
   solve_ale();
@@ -719,6 +725,8 @@ Driver<dim, Number>::apply_dirichlet_neumann_scheme(VectorType & displacement_la
 
   // solve structural problem
   structure_time_integrator->advance_one_timestep_partitioned_solve(iteration == 0, true);
+
+  d_tilde = structure_time_integrator->get_displacement_np();
 }
 
 template<int dim, typename Number>
@@ -734,29 +742,6 @@ Driver<dim, Number>::check_convergence(VectorType const & residual) const
                          (residual_norm < fsi_data.rel_tol * ref_norm_rel);
 
   return converged;
-}
-
-template<int dim, typename Number>
-void
-Driver<dim, Number>::update_relaxation_parameter(double &           omega,
-                                                 unsigned int const iteration,
-                                                 VectorType const & residual,
-                                                 VectorType const & residual_last) const
-{
-  if(iteration == 0)
-  {
-    omega = fsi_data.omega_init;
-  }
-  else
-  {
-    VectorType residual_increment;
-    structure_operator->initialize_dof_vector(residual_increment);
-    residual_increment = residual;
-    residual_increment.add(-1.0, residual_last);
-    double const norm_residual_increment_sqr = residual_increment.norm_sqr();
-    double const inner_product               = residual_last * residual_increment;
-    omega *= -inner_product / norm_residual_increment_sqr;
-  }
 }
 
 template<int dim, typename Number>
@@ -794,9 +779,9 @@ Driver<dim, Number>::solve_partitioned_problem() const
   // fixed-point iteration with dynamic relaxation (Aitken relaxation)
   if(fsi_data.method == "Aitken")
   {
-    VectorType residual_last, displacement_last;
-    structure_operator->initialize_dof_vector(residual_last);
-    structure_operator->initialize_dof_vector(displacement_last);
+    VectorType r_old, d;
+    structure_operator->initialize_dof_vector(r_old);
+    structure_operator->initialize_dof_vector(d);
 
     bool   converged = false;
     double omega     = 1.0;
@@ -805,27 +790,41 @@ Driver<dim, Number>::solve_partitioned_problem() const
       print_solver_info_header(k);
 
       if(k == 0)
-        structure_time_integrator->extrapolate_displacement_to_np(displacement_last);
+        structure_time_integrator->extrapolate_displacement_to_np(d);
       else
-        displacement_last = structure_time_integrator->get_displacement_np();
+        d = structure_time_integrator->get_displacement_np();
 
-      apply_dirichlet_neumann_scheme(displacement_last, k);
+      VectorType d_tilde(d);
+      apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
       // compute residual and check convergence
-      VectorType residual(residual_last);
-      residual = structure_time_integrator->get_displacement_np();
-      residual.add(-1.0, displacement_last);
-      converged = check_convergence(residual);
+      VectorType r = d_tilde;
+      r.add(-1.0, d);
+      converged = check_convergence(r);
 
       // relaxation
       if(not(converged))
       {
-        update_relaxation_parameter(omega, k, residual, residual_last);
+        Timer timer;
+        timer.restart();
 
-        residual_last = residual;
+        if(k == 0)
+        {
+          omega = fsi_data.omega_init;
+        }
+        else
+        {
+          VectorType delta_r = r;
+          delta_r.add(-1.0, r_old);
+          omega *= -(r_old * delta_r) / delta_r.norm_sqr();
+        }
 
-        displacement_last.add(omega, residual);
-        structure_time_integrator->set_displacement(displacement_last);
+        r_old = r;
+
+        d.add(omega, r);
+        structure_time_integrator->set_displacement(d);
+
+        timer_tree.insert({"FSI", "Aitken"}, timer.wall_time());
       }
 
       // increment counter of partitioned iteration
@@ -834,11 +833,146 @@ Driver<dim, Number>::solve_partitioned_problem() const
   }
   else if(fsi_data.method == "IQN-ILS")
   {
-    VectorType displacement;
-    structure_operator->initialize_dof_vector(displacement);
+    std::shared_ptr<std::vector<VectorType>> D, R;
+    D.reset(new std::vector<VectorType>());
+    R.reset(new std::vector<VectorType>());
 
-    // vector for all previous displacements and residuals
-    std::vector<VectorType> residual_vector, displacement_vector;
+    VectorType d, d_tilde, d_tilde_old, r, r_old;
+    structure_operator->initialize_dof_vector(d);
+    structure_operator->initialize_dof_vector(d_tilde);
+    structure_operator->initialize_dof_vector(d_tilde_old);
+    structure_operator->initialize_dof_vector(r);
+    structure_operator->initialize_dof_vector(r_old);
+
+    unsigned int const q = fsi_data.reused_time_steps;
+    unsigned int const n = fluid_time_integrator->get_number_of_time_steps();
+
+    bool converged = false;
+    while(not(converged) and k < fsi_data.partitioned_iter_max)
+    {
+      print_solver_info_header(k);
+
+      if(k == 0)
+        structure_time_integrator->extrapolate_displacement_to_np(d);
+      else
+        d = structure_time_integrator->get_displacement_np();
+
+      apply_dirichlet_neumann_scheme(d_tilde, d, k);
+
+      // compute residual and check convergence
+      r = d_tilde;
+      r.add(-1.0, d);
+      converged = check_convergence(r);
+
+      // relaxation
+      if(not(converged))
+      {
+        Timer timer;
+        timer.restart();
+
+        if(k == 0 and (q == 0 or n == 0))
+        {
+          d.add(fsi_data.omega_init, r);
+        }
+        else
+        {
+          if(k >= 1)
+          {
+            // append D, R matrices
+            VectorType delta_d_tilde = d_tilde;
+            delta_d_tilde.add(-1.0, d_tilde_old);
+            D->push_back(delta_d_tilde);
+
+            VectorType delta_r = r;
+            delta_r.add(-1.0, r_old);
+            R->push_back(delta_r);
+          }
+
+          // fill vectors (including reuse)
+          std::vector<VectorType> Q = *R;
+          for(auto R_q : R_history)
+            for(auto delta_r : *R_q)
+              Q.push_back(delta_r);
+          std::vector<VectorType> D_all = *D;
+          for(auto D_q : D_history)
+            for(auto delta_d : *D_q)
+              D_all.push_back(delta_d);
+
+          AssertThrow(D_all.size() == Q.size(), ExcMessage("D, Q vectors must have same size."));
+
+          unsigned int const k_all = Q.size();
+          if(k_all >= 1)
+          {
+            // compute QR-decomposition
+            Matrix<Number> U(k_all);
+            compute_QR_decomposition(Q, U);
+
+            std::vector<Number> rhs(k_all, 0.0);
+            for(unsigned int i = 0; i < k_all; ++i)
+              rhs[i] = -Number(Q[i] * r);
+
+            // alpha = U^{-1} rhs
+            std::vector<Number> alpha(k_all, 0.0);
+            backward_substitution(U, alpha, rhs);
+
+            // d_{k+1} = d_tilde_{k} + delta d_tilde
+            d = d_tilde;
+            for(unsigned int i = 0; i < k_all; ++i)
+              d.add(alpha[i], D_all[i]);
+          }
+          else // despite reuse, the vectors might be empty
+          {
+            d.add(fsi_data.omega_init, r);
+          }
+        }
+
+        d_tilde_old = d_tilde;
+        r_old       = r;
+
+        structure_time_integrator->set_displacement(d);
+
+        timer_tree.insert({"FSI", "IQN-ILS"}, timer.wall_time());
+      }
+
+      // increment counter of partitioned iteration
+      ++k;
+    }
+
+    Timer timer;
+    timer.restart();
+
+    // Update history
+    D_history.push_back(D);
+    R_history.push_back(R);
+    if(D_history.size() > q)
+      D_history.erase(D_history.begin());
+    if(R_history.size() > q)
+      R_history.erase(R_history.begin());
+
+    timer_tree.insert({"FSI", "IQN-ILS"}, timer.wall_time());
+  }
+  else if(fsi_data.method == "IQN-IMVLS")
+  {
+    std::shared_ptr<std::vector<VectorType>> D, R;
+    D.reset(new std::vector<VectorType>());
+    R.reset(new std::vector<VectorType>());
+
+    std::vector<VectorType> B;
+
+    VectorType d, d_tilde, d_tilde_old, r, r_old, b, b_old;
+    structure_operator->initialize_dof_vector(d);
+    structure_operator->initialize_dof_vector(d_tilde);
+    structure_operator->initialize_dof_vector(d_tilde_old);
+    structure_operator->initialize_dof_vector(r);
+    structure_operator->initialize_dof_vector(r_old);
+    structure_operator->initialize_dof_vector(b);
+    structure_operator->initialize_dof_vector(b_old);
+
+    std::shared_ptr<Matrix<Number>> U;
+    std::vector<VectorType>         Q;
+
+    unsigned int const q = fsi_data.reused_time_steps;
+    unsigned int const n = fluid_time_integrator->get_number_of_time_steps();
 
     bool converged = false;
     while(not converged and k < fsi_data.partitioned_iter_max)
@@ -846,63 +980,103 @@ Driver<dim, Number>::solve_partitioned_problem() const
       print_solver_info_header(k);
 
       if(k == 0)
-        structure_time_integrator->extrapolate_displacement_to_np(displacement);
+        structure_time_integrator->extrapolate_displacement_to_np(d);
       else
-        displacement = structure_time_integrator->get_displacement_np();
+        d = structure_time_integrator->get_displacement_np();
 
-      apply_dirichlet_neumann_scheme(displacement, k);
-
-      displacement_vector.push_back(structure_time_integrator->get_displacement_np());
+      apply_dirichlet_neumann_scheme(d_tilde, d, k);
 
       // compute residual and check convergence
-      residual_vector.push_back(displacement_vector[k]);
-      residual_vector[k].add(-1.0, displacement);
-      converged = check_convergence(residual_vector[k]);
+      r = d_tilde;
+      r.add(-1.0, d);
+      converged = check_convergence(r);
 
       // relaxation
       if(not(converged))
       {
-        if(k == 0)
+        Timer timer;
+        timer.restart();
+
+        // compute b vector
+        inv_jacobian_times_residual(b, D_history, R_history, Z_history, r);
+
+        if(k == 0 and (q == 0 or n == 0))
         {
-          displacement.add(fsi_data.omega_init, residual_vector[k]);
+          d.add(fsi_data.omega_init, r);
         }
         else
         {
-          // fill D_k, R_k matrices
-          std::vector<VectorType> D(k), R(k);
-          for(unsigned int i = 0; i < k; ++i)
+          d = d_tilde;
+          d.add(-1.0, b);
+
+          if(k >= 1)
           {
-            D[i] = displacement_vector[k - 1 - i];
-            D[i].add(-1.0, displacement_vector[k]);
+            // append D, R, B matrices
+            VectorType delta_d_tilde = d_tilde;
+            delta_d_tilde.add(-1.0, d_tilde_old);
+            D->push_back(delta_d_tilde);
 
-            R[i] = residual_vector[k - 1 - i];
-            R[i].add(-1.0, residual_vector[k]);
+            VectorType delta_r = r;
+            delta_r.add(-1.0, r_old);
+            R->push_back(delta_r);
+
+            VectorType delta_b = delta_d_tilde;
+            delta_b.add(1.0, b_old);
+            delta_b.add(-1.0, b);
+            B.push_back(delta_b);
+
+            // compute QR-decomposition
+            U.reset(new Matrix<Number>(k));
+            Q = *R;
+            compute_QR_decomposition(Q, *U);
+
+            std::vector<Number> rhs(k, 0.0);
+            for(unsigned int i = 0; i < k; ++i)
+              rhs[i] = -Number(Q[i] * r);
+
+            // alpha = U^{-1} rhs
+            std::vector<Number> alpha(k, 0.0);
+            backward_substitution(*U, alpha, rhs);
+
+            for(unsigned int i = 0; i < k; ++i)
+              d.add(alpha[i], B[i]);
           }
-
-          // compute QR-decomposition
-          Matrix<Number> U(k);
-          compute_QR_decomposition(R /* = "Q" */, U /* = "R" */);
-
-          std::vector<Number> rhs(k, 0.0);
-          for(unsigned int i = 0; i < k; ++i)
-            rhs[i] = -Number(R[i] * residual_vector[k]);
-
-          // alpha = U^{-1} rhs
-          std::vector<Number> alpha(k, 0.0);
-          backward_substitution(U, alpha, rhs);
-
-          // d_{k+1} = d_tilde_{k} + delta d_tilde
-          displacement = displacement_vector[k];
-          for(unsigned int i = 0; i < k; ++i)
-            displacement.add(alpha[i], D[i]);
         }
 
-        structure_time_integrator->set_displacement(displacement);
+        d_tilde_old = d_tilde;
+        r_old       = r;
+        b_old       = b;
+
+        structure_time_integrator->set_displacement(d);
+
+        timer_tree.insert({"FSI", "IQN-IMVLS"}, timer.wall_time());
       }
 
       // increment counter of partitioned iteration
       ++k;
     }
+
+    Timer timer;
+    timer.restart();
+
+    // Update history
+    D_history.push_back(D);
+    R_history.push_back(R);
+    if(D_history.size() > q)
+      D_history.erase(D_history.begin());
+    if(R_history.size() > q)
+      R_history.erase(R_history.begin());
+
+    // compute Z and add to Z_history
+    std::shared_ptr<std::vector<VectorType>> Z;
+    Z.reset(new std::vector<VectorType>());
+    *Z = Q; // make sure that Z has correct size
+    backward_substitution_multiple_rhs(*U, *Z, Q);
+    Z_history.push_back(Z);
+    if(Z_history.size() > q)
+      Z_history.erase(Z_history.begin());
+
+    timer_tree.insert({"FSI", "IQN-IMVLS"}, timer.wall_time());
   }
   else
   {
