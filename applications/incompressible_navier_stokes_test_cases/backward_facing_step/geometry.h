@@ -139,7 +139,7 @@ public:
   std::unique_ptr<Manifold<dim>>
   clone() const override
   {
-    return std_cxx14::make_unique<MyManifold<dim>>();
+    return std::make_unique<MyManifold<dim>>();
   }
 };
 

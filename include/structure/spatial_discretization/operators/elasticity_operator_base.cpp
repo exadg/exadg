@@ -105,6 +105,8 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
     if(dst.get_partitioner()->in_local_range(m.first))
       dst[m.first] = m.second;
 
+  dst.update_ghost_values();
+
   // Dirichlet mortar type boundary conditions
   if(not(operator_data.bc->dirichlet_mortar_bc.empty()))
   {

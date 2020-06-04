@@ -128,15 +128,15 @@ void evaluate_vectorial_quantity_in_point(
 
 template<int dim>
 unsigned int
-n_locally_owned_active_cells_around_point(DoFHandler<dim> const & dof_handler,
-                                          Mapping<dim> const &    mapping,
-                                          Point<dim> const &      point,
-                                          double const            tolerance = 1.e-10)
+n_locally_owned_active_cells_around_point(const Triangulation<dim> & tria,
+                                          const Mapping<dim> &       mapping,
+                                          const Point<dim> &         point,
+                                          const double               tolerance)
 {
-  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+  using Pair = std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>>;
 
   std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+    GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance);
 
   // count locally owned active cells
   unsigned int counter = 0;
@@ -182,7 +182,7 @@ get_dof_indices_and_shape_values(DoFHandler<dim> const &                        
     // go on only if cell is owned by the processor
     if(cell.first->is_locally_owned())
     {
-      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell->second) < 1e-10, ExcInternalError());
+      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell.second) < 1e-10, ExcInternalError());
 
       const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(cell.second));
 

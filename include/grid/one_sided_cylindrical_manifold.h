@@ -298,7 +298,7 @@ public:
   std::unique_ptr<Manifold<dim>>
   clone() const override
   {
-    return std_cxx14::make_unique<OneSidedCylindricalManifold<dim>>(cell, face, center);
+    return std::make_unique<OneSidedCylindricalManifold<dim>>(cell, face, center);
   }
 
 private:
@@ -617,7 +617,7 @@ public:
   std::unique_ptr<Manifold<dim>>
   clone() const override
   {
-    return std_cxx14::make_unique<OneSidedConicalManifold<dim>>(cell, face, center, r_0, r_1);
+    return std::make_unique<OneSidedConicalManifold<dim>>(cell, face, center, r_0, r_1);
   }
 
 
@@ -712,7 +712,7 @@ public:
   std::unique_ptr<Manifold<dim>>
   clone() const override
   {
-    return std_cxx14::make_unique<MyCylindricalManifold<dim, spacedim>>(center);
+    return std::make_unique<MyCylindricalManifold<dim, spacedim>>(center);
   }
 
 

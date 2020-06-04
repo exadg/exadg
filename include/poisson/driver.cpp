@@ -93,7 +93,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*triangulation, mesh->get_mapping(), quadrature);
+    AR = GridTools::compute_maximum_aspect_ratio(mesh->get_mapping(), *triangulation, quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 

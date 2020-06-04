@@ -106,7 +106,7 @@ public:
   std::unique_ptr<Manifold<dim>>
   clone() const override
   {
-    return std_cxx14::make_unique<PeriodicHillManifold<dim>>(H, LENGTH, HEIGHT, GRID_STRETCH_FAC);
+    return std::make_unique<PeriodicHillManifold<dim>>(H, LENGTH, HEIGHT, GRID_STRETCH_FAC);
   }
 
 private:

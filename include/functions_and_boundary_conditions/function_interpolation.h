@@ -50,6 +50,8 @@ public:
     Id                      id    = std::make_tuple(face, q, v);
     types::global_dof_index index = map_vector_index.find(id)->second;
 
+    Assert(index < array_solution.size(), ExcMessage("Index exceeds dimensions of vector."));
+
     std::vector<Tensor<rank, dim, double>> solutions = array_solution[index];
 
     // average

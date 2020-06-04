@@ -88,7 +88,7 @@ public:
   std::unique_ptr<Manifold<dim>>
   clone() const override
   {
-    return std_cxx14::make_unique<DeformedCubeManifold<dim>>(left, right, deformation, frequency);
+    return std::make_unique<DeformedCubeManifold<dim>>(left, right, deformation, frequency);
   }
 
 private:
