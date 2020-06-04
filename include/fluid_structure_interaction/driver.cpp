@@ -361,6 +361,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // coupling: structure to ALE
+  pcout << std::endl << "Setup interface coupling structure -> ALE ..." << std::endl;
+
   if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
     std::vector<unsigned int> quad_indices;
@@ -404,6 +406,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     AssertThrow(false, ExcMessage("not implemented."));
   }
+
+  pcout << std::endl << "... done!" << std::endl;
+
 
   // mapping for fluid problem (moving mesh)
   unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
@@ -511,6 +516,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // structure to fluid
   {
+    pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
+
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_linear());
     quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_nonlinear());
@@ -527,10 +534,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               structure_operator->get_dof_handler(),
                               structure_mesh->get_mapping(),
                               velocity_structure);
+
+    pcout << std::endl << "... done!" << std::endl;
   }
 
   // fluid to structure
   {
+    pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
+
     std::vector<unsigned int> quad_indices;
     quad_indices.emplace_back(structure_operator->get_quad_index());
 
@@ -545,6 +556,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               fluid_operator->get_dof_handler_u(),
                               fluid_mesh->get_mapping(),
                               stress_fluid);
+
+    pcout << std::endl << "... done!" << std::endl;
   }
 
   /****************************************** FLUID *******************************************/

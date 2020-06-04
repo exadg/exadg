@@ -62,7 +62,7 @@ public:
       const auto & point = quadrature_points[i];
       for(unsigned rank = 0; rank < global_bounding_boxes.size(); ++rank)
         for(const auto & box : global_bounding_boxes[rank])
-          if(box.point_inside(point))
+          if(box.point_inside(point, tolerance))
           {
             points_per_process[rank].emplace_back(point);
             points_per_process_offset[rank].emplace_back(i);
@@ -238,7 +238,8 @@ public:
   template<typename T>
   void
   process(const std::map<unsigned int, std::vector<std::vector<T>>> & input,
-          std::vector<std::vector<T>> &                               output) const
+          std::vector<std::vector<T>> &                               output,
+          const unsigned int                                          tag) const
   {
     // process remote quadrature points and send them away
     std::map<unsigned int, std::vector<char>> temp_map;
@@ -259,7 +260,7 @@ public:
 
       requests.resize(requests.size() + 1);
 
-      MPI_Isend(buffer.data(), buffer.size(), MPI_CHAR, vec.first, 11, comm, &requests.back());
+      MPI_Isend(buffer.data(), buffer.size(), MPI_CHAR, vec.first, tag, comm, &requests.back());
     }
 
     // receive result
@@ -276,7 +277,7 @@ public:
         continue;
 
       MPI_Status status;
-      MPI_Probe(MPI_ANY_SOURCE, 11, comm, &status);
+      MPI_Probe(MPI_ANY_SOURCE, tag, comm, &status);
 
       int message_length;
       MPI_Get_count(&status, MPI_CHAR, &message_length);
@@ -284,7 +285,7 @@ public:
       std::vector<char> buffer(message_length);
 
       MPI_Recv(
-        buffer.data(), buffer.size(), MPI_CHAR, status.MPI_SOURCE, 11, comm, MPI_STATUS_IGNORE);
+        buffer.data(), buffer.size(), MPI_CHAR, status.MPI_SOURCE, tag, comm, MPI_STATUS_IGNORE);
 
       temp_recv_map[status.MPI_SOURCE] = Utilities::unpack<std::vector<std::vector<T>>>(buffer);
     }
@@ -294,6 +295,9 @@ public:
     for(const auto & i : temp_recv_map)
     {
       const unsigned int rank = i.first;
+
+      Assert(indices_per_process.find(rank) != indices_per_process.end(),
+             ExcMessage("Map does not contain this rank."));
 
       auto it = indices_per_process.at(rank).begin();
 
@@ -312,8 +316,6 @@ public:
   {
     output.resize(quadrature_points_count.size());
 
-    //    for (unsigned int i = 0; i < quadrature_points_count.size(); ++i)
-    //      output[i].resize(quadrature_points_count[i]);
     for(unsigned int i = 0; i < quadrature_points_count.size(); ++i)
       output[i] = std::vector<T>(quadrature_points_count[i], T());
   }
@@ -328,8 +330,6 @@ public:
 
       std::vector<std::vector<T>> temp(i.second.size());
 
-      //        for (unsigned int j = 0; j < i.second.size(); ++j)
-      //          temp[j].resize(i.second[j]);
       for(unsigned int j = 0; j < i.second.size(); ++j)
         temp[j] = std::vector<T>(i.second[j], T());
 
@@ -590,7 +590,7 @@ public:
       /*
        * Communication: transfer results back to dst-side
        */
-      communicator.process(mpi_map_solution_src, array_solution_dst);
+      communicator.process(mpi_map_solution_src, array_solution_dst, 11 + quadrature);
 #else
       /*
        * serial case: mpi_rank = 0, simply copy data
@@ -660,7 +660,7 @@ public:
        */
       InterfaceCommunicator<dim, dim> & communicator = map_communicator.find(quadrature)->second;
 
-      communicator.process(mpi_map_solution_src, array_solution_dst);
+      communicator.process(mpi_map_solution_src, array_solution_dst, 11 + quadrature);
 #else
       /*
        * serial case: mpi_rank = 0, simply copy data
