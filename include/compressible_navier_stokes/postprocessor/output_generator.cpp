@@ -9,7 +9,8 @@
 #include <deal.II/numerics/data_out.h>
 
 #include "../../postprocessor/write_output.h"
-#include "write_output.h"
+
+#include "output_generator.h"
 
 namespace CompNS
 {
@@ -78,18 +79,6 @@ write_output(OutputData const &                              output_data,
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-
-  // write surface mesh
-  if(output_data.write_surface_mesh)
-  {
-    write_surface_mesh(dof_handler.get_triangulation(),
-                       mapping,
-                       output_data.degree,
-                       folder,
-                       file + "_surface",
-                       output_counter,
-                       mpi_comm);
-  }
 }
 
 template<int dim, typename Number>
@@ -120,6 +109,29 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
                        output_data.output_folder,
                        output_data.output_name,
                        mpi_comm);
+  }
+
+  // write surface mesh
+  if(output_data.write_surface_mesh)
+  {
+    write_surface_mesh(dof_handler->get_triangulation(),
+                       *mapping,
+                       output_data.degree,
+                       output_data.output_folder,
+                       output_data.output_name,
+                       output_counter,
+                       mpi_comm);
+  }
+
+
+  // processor_id
+  if(output_data.write_processor_id)
+  {
+    GridOut grid_out;
+
+    grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
+                                             output_data.output_folder + output_data.output_name +
+                                               "_processor_id");
   }
 }
 

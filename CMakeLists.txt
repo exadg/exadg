@@ -137,7 +137,7 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/compressible_navier_stokes/spatial_discretization/interface.cpp
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
-     include/compressible_navier_stokes/postprocessor/write_output.cpp
+     include/compressible_navier_stokes/postprocessor/output_generator.cpp
      include/compressible_navier_stokes/postprocessor/postprocessor.cpp
      include/compressible_navier_stokes/driver.cpp
      # elasticity

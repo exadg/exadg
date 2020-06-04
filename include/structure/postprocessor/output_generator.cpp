@@ -6,9 +6,12 @@
  */
 
 // deal.II
+#include <deal.II/grid/grid_out.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/data_out_dof_data.h>
 
+
+#include "../../postprocessor/write_output.h"
 #include "output_generator.h"
 
 namespace Structure
@@ -49,16 +52,49 @@ OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler,
-                                    Mapping<dim> const &    mapping,
-                                    OutputDataBase const &  output_data)
+OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
+                                    Mapping<dim> const &    mapping_in,
+                                    OutputDataBase const &  output_data_in)
 {
-  this->dof_handler = &dof_handler;
-  this->mapping     = &mapping;
-  this->output_data = output_data;
+  dof_handler = &dof_handler_in;
+  mapping     = &mapping_in;
+  output_data = output_data_in;
 
   // reset output counter
   output_counter = output_data.output_counter_start;
+
+  // Visualize boundary IDs:
+  // since boundary IDs typically do not change during the simulation, we only do this
+  // once at the beginning of the simulation (i.e., in the setup function).
+  if(output_data.write_boundary_IDs)
+  {
+    write_boundary_IDs(dof_handler->get_triangulation(),
+                       output_data.output_folder,
+                       output_data.output_name,
+                       mpi_comm);
+  }
+
+  // write surface mesh
+  if(output_data.write_surface_mesh)
+  {
+    write_surface_mesh(dof_handler->get_triangulation(),
+                       *mapping,
+                       output_data.degree,
+                       output_data.output_folder,
+                       output_data.output_name,
+                       0,
+                       mpi_comm);
+  }
+
+  // processor_id
+  if(output_data.write_processor_id)
+  {
+    GridOut grid_out;
+
+    grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
+                                             output_data.output_folder + output_data.output_name +
+                                               "_processor_id");
+  }
 }
 
 template<int dim, typename Number>

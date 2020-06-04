@@ -56,7 +56,6 @@ struct OutputData : public OutputDataBase
       write_vorticity_magnitude(false),
       write_streamfunction(false),
       write_q_criterion(false),
-      write_processor_id(false),
       mean_velocity(OutputDataMeanVelocity())
   {
   }
@@ -72,7 +71,6 @@ struct OutputData : public OutputDataBase
     print_parameter(pcout, "Write vorticity magnitude", write_vorticity_magnitude);
     print_parameter(pcout, "Write streamfunction", write_streamfunction);
     print_parameter(pcout, "Write Q criterion", write_q_criterion);
-    print_parameter(pcout, "Write processor ID", write_processor_id);
 
     mean_velocity.print(pcout, unsteady);
   }
@@ -100,10 +98,6 @@ struct OutputData : public OutputDataBase
 
   // write Q criterion
   bool write_q_criterion;
-
-  // write processor ID to scalar field in order to visualize the
-  // distribution of cells to processors
-  bool write_processor_id;
 
   // calculate mean velocity field (averaged over time)
   OutputDataMeanVelocity mean_velocity;
@@ -140,9 +134,6 @@ private:
   initialize_additional_fields();
 
   void
-  compute_processor_id(VectorType & dst) const;
-
-  void
   compute_mean_velocity(VectorType &       mean_velocity,
                         VectorType const & velocity,
                         double const       time,
@@ -172,7 +163,6 @@ private:
   VectorType   vorticity_magnitude;
   VectorType   streamfunction;
   VectorType   q_criterion;
-  VectorType   processor_id;
   VectorType   mean_velocity; // velocity field averaged over time
   unsigned int counter_mean_velocity;
 

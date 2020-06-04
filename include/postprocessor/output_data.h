@@ -23,6 +23,7 @@ struct OutputDataBase
       output_interval_time(std::numeric_limits<double>::max()),
       write_surface_mesh(false),
       write_boundary_IDs(false),
+      write_processor_id(false),
       write_higher_order(true),
       degree(1)
   {
@@ -48,6 +49,8 @@ struct OutputDataBase
 
       print_parameter(pcout, "Write surface mesh", write_surface_mesh);
       print_parameter(pcout, "Write boundary IDs", write_boundary_IDs);
+
+      print_parameter(pcout, "Write processor ID", write_processor_id);
 
       print_parameter(pcout, "Write higher order", write_higher_order);
       print_parameter(pcout, "Polynomial degree", degree);
@@ -79,6 +82,10 @@ struct OutputDataBase
   // version of deal.II, boundaries with ID = 0 (default) are not visible, but only those with
   // ID != 0.
   bool write_boundary_IDs;
+
+  // write processor ID to scalar field in order to visualize the
+  // distribution of cells to processors
+  bool write_processor_id;
 
   // write higher order output (NOTE: requires at least ParaView version 5.5, switch off if ParaView
   // version is lower)

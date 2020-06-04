@@ -621,6 +621,8 @@ public:
       dof_vector_src_double_ptr  = &dof_vector_src_double_copy;
     }
 
+    dof_vector_src_double_ptr->update_ghost_values();
+
     for(auto quadrature : quad_rules_dst)
     {
       ArrayVectorTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;

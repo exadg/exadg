@@ -52,7 +52,7 @@ public:
 
     Assert(index < array_solution.size(), ExcMessage("Index exceeds dimensions of vector."));
 
-    std::vector<Tensor<rank, dim, double>> solutions = array_solution[index];
+    std::vector<Tensor<rank, dim, double>> const & solutions = array_solution[index];
 
     // average
     unsigned int              counter = 0;
@@ -62,6 +62,9 @@ public:
       solution += solutions[i];
       ++counter;
     }
+
+    Assert(counter > 0, ExcMessage("Vector must contain at least one value."));
+
     solution *= 1.0 / (double)counter;
 
     return solution;

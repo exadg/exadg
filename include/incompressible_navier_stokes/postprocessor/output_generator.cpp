@@ -79,18 +79,6 @@ write_output(OutputData const &                                 output_data,
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-
-  // write surface mesh
-  if(output_data.write_surface_mesh)
-  {
-    write_surface_mesh(dof_handler_velocity.get_triangulation(),
-                       mapping,
-                       output_data.degree,
-                       folder,
-                       file + "_surface",
-                       output_counter,
-                       mpi_comm);
-  }
 }
 
 template<int dim, typename Number>
@@ -127,6 +115,28 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
                        output_data.output_folder,
                        output_data.output_name,
                        mpi_comm);
+  }
+
+  // write surface mesh
+  if(output_data.write_surface_mesh)
+  {
+    write_surface_mesh(dof_handler_velocity->get_triangulation(),
+                       *mapping,
+                       output_data.degree,
+                       output_data.output_folder,
+                       output_data.output_name,
+                       0,
+                       mpi_comm);
+  }
+
+  // processor_id
+  if(output_data.write_processor_id)
+  {
+    GridOut grid_out;
+
+    grid_out.write_mesh_per_processor_as_vtu(dof_handler_velocity->get_triangulation(),
+                                             output_data.output_folder + output_data.output_name +
+                                               "_processor_id");
   }
 }
 
@@ -289,19 +299,6 @@ OutputGenerator<dim, Number>::initialize_additional_fields()
       this->additional_fields.push_back(sol);
     }
 
-    // processor id
-    if(output_data.write_processor_id == true)
-    {
-      navier_stokes_operator->initialize_vector_velocity_scalar(processor_id);
-
-      SolutionField<dim, Number> sol;
-      sol.type        = SolutionFieldType::scalar;
-      sol.name        = "processor_id";
-      sol.dof_handler = &navier_stokes_operator->get_dof_handler_u_scalar();
-      sol.vector      = &processor_id;
-      this->additional_fields.push_back(sol);
-    }
-
     // mean velocity
     if(output_data.mean_velocity.calculate == true)
     {
@@ -315,13 +312,6 @@ OutputGenerator<dim, Number>::initialize_additional_fields()
       this->additional_fields.push_back(sol);
     }
   }
-}
-
-template<int dim, typename Number>
-void
-OutputGenerator<dim, Number>::compute_processor_id(VectorType & dst) const
-{
-  dst = Utilities::MPI::this_mpi_process(mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -356,14 +346,17 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
       navier_stokes_operator->compute_vorticity(vorticity, velocity);
       vorticity_is_up_to_date = true;
     }
+
     if(output_data.write_divergence == true)
     {
       navier_stokes_operator->compute_divergence(divergence, velocity);
     }
+
     if(output_data.write_velocity_magnitude == true)
     {
       navier_stokes_operator->compute_velocity_magnitude(velocity_magnitude, velocity);
     }
+
     if(output_data.write_vorticity_magnitude == true)
     {
       AssertThrow(vorticity_is_up_to_date == true,
@@ -371,6 +364,7 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
 
       navier_stokes_operator->compute_vorticity_magnitude(vorticity_magnitude, vorticity);
     }
+
     if(output_data.write_streamfunction == true)
     {
       AssertThrow(vorticity_is_up_to_date == true,
@@ -378,14 +372,12 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
 
       navier_stokes_operator->compute_streamfunction(streamfunction, vorticity);
     }
+
     if(output_data.write_q_criterion == true)
     {
       navier_stokes_operator->compute_q_criterion(q_criterion, velocity);
     }
-    if(output_data.write_processor_id == true)
-    {
-      compute_processor_id(processor_id);
-    }
+
     if(output_data.mean_velocity.calculate == true)
     {
       if(time_step_number >= 0) // unsteady problems

@@ -13,9 +13,9 @@
 #include "../../postprocessor/kinetic_energy_spectrum.h"
 #include "../../postprocessor/lift_and_drag_calculation.h"
 #include "../../postprocessor/pressure_difference_calculation.h"
+#include "output_generator.h"
 
 #include "postprocessor_base.h"
-#include "write_output.h"
 
 namespace CompNS
 {
