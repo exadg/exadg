@@ -158,6 +158,9 @@ create_input_file(std::string const & input_file)
   unsigned int const Dim = 2;
   typedef double     Number;
 
+  FSI::PartitionedFSIData fsi_data;
+  FSI::Driver<Dim, Number>::add_parameters(prm, fsi_data);
+
   ApplicationSelector selector;
   selector.add_parameters<Dim, Number>(prm, input_file);
 

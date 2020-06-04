@@ -18,6 +18,15 @@ Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & com
 {
   dealii::ParameterHandler prm;
 
+  add_parameters(prm, fsi_data);
+
+  prm.parse_input(input_file, "", true, true);
+}
+
+template<int dim, typename Number>
+void
+Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedFSIData & fsi_data)
+{
   // clang-format off
   prm.enter_subsection("FSI");
     prm.add_parameter("Method",
@@ -52,8 +61,6 @@ Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & com
                       true);
   prm.leave_subsection();
   // clang-format on
-
-  prm.parse_input(input_file, "", true, true);
 }
 
 template<int dim, typename Number>

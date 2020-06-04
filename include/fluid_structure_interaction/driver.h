@@ -233,6 +233,9 @@ private:
 public:
   Driver(std::string const & input_file, MPI_Comm const & comm);
 
+  static void
+  add_parameters(dealii::ParameterHandler & prm, PartitionedFSIData & fsi_data);
+
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const &                          degree_fluid,
