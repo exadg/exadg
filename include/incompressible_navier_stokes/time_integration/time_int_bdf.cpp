@@ -355,7 +355,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   {
     time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
-    this->pcout << "User specified time step size:" << std::endl << std::endl;
+    this->pcout << std::endl << "User specified time step size:" << std::endl << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
@@ -365,7 +365,8 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     double time_step_global = calculate_time_step_cfl_global(
       cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
 
-    this->pcout << "Calculation of time step size according to CFL condition:" << std::endl
+    this->pcout << std::endl
+                << "Calculation of time step size according to CFL condition:" << std::endl
                 << std::endl;
     print_parameter(this->pcout, "h_min", h_min);
     print_parameter(this->pcout, "U_max", param.max_velocity);
@@ -411,7 +412,9 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
-    this->pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
+    this->pcout << std::endl
+                << "Calculation of time step size (max efficiency):" << std::endl
+                << std::endl;
     print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, refine_steps_time));
     print_parameter(this->pcout, "Time step size", time_step);
   }

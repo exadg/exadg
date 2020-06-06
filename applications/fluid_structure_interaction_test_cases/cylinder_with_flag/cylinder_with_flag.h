@@ -77,6 +77,8 @@ types::boundary_id const BOUNDARY_ID_FLAG     = 4;
 
 bool STRUCTURE_COVERS_FLAG_ONLY = true;
 
+unsigned int N_CELLS_FLAG_X = 16;
+
 double const U_X_MAX  = 1.5 * U_MEAN;
 double const END_TIME = 4.0 * L / U_MEAN;
 
@@ -84,6 +86,10 @@ double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 double const REL_TOL = 1.e-2;
+double const ABS_TOL = 1.e-12;
+
+double const REL_TOL_LINEARIZED = 1.e-2;
+double const ABS_TOL_LINEARIZED = 1.e-12;
 
 template<int dim>
 class InflowBC : public Function<dim>
@@ -189,7 +195,7 @@ public:
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.time_step_size                  = END_TIME;
     param.max_velocity                    = U_X_MAX;
-    param.cfl                             = 0.5;
+    param.cfl                             = 1.0; // 0.5;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information
@@ -240,7 +246,7 @@ public:
 
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, REL_TOL, 100);
+    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -249,14 +255,11 @@ public:
     param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data_pressure_poisson.coarse_problem.solver_data.rel_tol = 1.e-3;
 
     // projection step
-    param.solver_projection                        = SolverProjection::CG;
-    param.solver_data_projection                   = SolverData(1000, 1.e-12, REL_TOL);
-    param.preconditioner_projection                = PreconditionerProjection::InverseMassMatrix;
-    param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
-    param.solver_data_block_diagonal_projection    = SolverData(1000, 1.e-12, 1.e-2, 1000);
+    param.solver_projection         = SolverProjection::CG;
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -267,7 +270,7 @@ public:
 
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, REL_TOL);
+    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
     param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
 
@@ -281,53 +284,37 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, REL_TOL);
+    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_momentum                = SolverMomentum::FGMRES;
-    param.solver_data_momentum           = SolverData(1e4, 1.e-12, REL_TOL, 100);
+    param.solver_momentum = SolverMomentum::FGMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+    else
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     param.update_preconditioner_momentum = false;
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
-
-    // Jacobi smoother data
-    //  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-    //  param.multigrid_data_momentum.smoother_data.preconditioner =
-    //  PreconditionerSmoother::BlockJacobi; param.multigrid_data_momentum.smoother_data.iterations
-    //  = 5; param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
-
-    // Chebyshev smoother data
-    param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    param.multigrid_data_momentum.coarse_problem.solver  = MultigridCoarseGridSolver::Chebyshev;
+    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
 
 
     // COUPLED NAVIER-STOKES SOLVER
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-10, REL_TOL);
+    param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled      = SolverCoupled::FGMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, REL_TOL, 100);
+    param.solver_coupled = SolverCoupled::FGMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+    else
+      param.solver_data_coupled = SolverData(1e4, ABS_TOL, REL_TOL, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
     param.update_preconditioner_coupled = false;
 
     // preconditioner momentum block
-    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
-    param.multigrid_data_velocity_block.type     = MultigridType::phMG;
-    param.multigrid_data_velocity_block.smoother_data.smoother =
-      MultigridSmoother::Chebyshev; // GMRES;
-    param.multigrid_data_velocity_block.smoother_data.preconditioner =
-      PreconditionerSmoother::BlockJacobi;
-    param.multigrid_data_velocity_block.smoother_data.iterations        = 5;
-    param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
-    // coarse grid solver
-    param.multigrid_data_velocity_block.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev; // GMRES;
+    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
     // preconditioner Schur-complement block
     param.preconditioner_pressure_block =
@@ -569,10 +556,11 @@ public:
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs   = true;
+    pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.output_start_time    = 0.0;
     pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-    pp_data.output_data.write_higher_order   = false;
-    pp_data.output_data.degree               = 2 * degree; // TODO
+    pp_data.output_data.write_higher_order   = true;
+    pp_data.output_data.degree               = degree;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
@@ -594,11 +582,9 @@ public:
     param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
-    param.solver               = Poisson::Solver::CG;
-    param.solver_data.abs_tol  = 1.e-12;
-    param.solver_data.rel_tol  = REL_TOL;
-    param.solver_data.max_iter = 1e4;
-    param.preconditioner       = Preconditioner::Multigrid;
+    param.solver         = Poisson::Solver::FGMRES;
+    param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    param.preconditioner = Preconditioner::Multigrid;
 
     param.multigrid_data.type                          = MultigridType::phMG;
     param.multigrid_data.p_sequence                    = PSequenceType::Bisect;
@@ -650,9 +636,12 @@ public:
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, REL_TOL);
-    parameters.solver                               = Structure::Solver::CG;
-    parameters.solver_data                          = SolverData(1e4, 1.e-10, REL_TOL, 100);
+    parameters.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
+    parameters.solver             = Structure::Solver::FGMRES;
+    if(parameters.large_deformation)
+      parameters.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+    else
+      parameters.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
@@ -745,9 +734,12 @@ public:
     parameters.triangulation_type = TriangulationType::Distributed;
     parameters.mapping            = MappingType::Isoparametric;
 
-    parameters.newton_solver_data                   = Newton::SolverData(1e4, 1.e-10, REL_TOL);
-    parameters.solver                               = Structure::Solver::FGMRES;
-    parameters.solver_data                          = SolverData(1e4, 1.e-10, REL_TOL, 100);
+    parameters.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
+    parameters.solver             = Structure::Solver::FGMRES;
+    if(parameters.large_deformation)
+      parameters.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+    else
+      parameters.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     parameters.preconditioner                       = Preconditioner::Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
@@ -765,7 +757,7 @@ public:
     {
       GridGenerator::subdivided_hyper_rectangle(
         tria,
-        {8, 1} /* subdivisions x,y */,
+        {N_CELLS_FLAG_X, 1} /* subdivisions x,y */,
         Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
         Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
     }
@@ -1036,10 +1028,11 @@ public:
     pp_data.output_data.write_output         = true;
     pp_data.output_data.output_folder        = output_directory + "vtu/";
     pp_data.output_data.output_name          = output_name + "_structure";
+    pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.output_start_time    = 0.0;
     pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-    pp_data.output_data.write_higher_order   = false;
-    pp_data.output_data.degree               = 2 * degree; // TODO
+    pp_data.output_data.write_higher_order   = true;
+    pp_data.output_data.degree               = degree;
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
       new PostProcessor<dim, Number>(pp_data, mpi_comm));

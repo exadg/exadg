@@ -30,7 +30,7 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::setup(bool const do_restart)
 {
-  this->pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
+  this->pcout << std::endl << "Setup BDF time integrator ..." << std::endl << std::flush;
 
   // operator-integration-factor splitting
   initialize_oif();

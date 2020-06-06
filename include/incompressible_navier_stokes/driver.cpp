@@ -150,8 +150,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-        mapping_degree, mpi_comm, poisson_operator, param.start_time));
+      moving_mesh.reset(
+        new MovingMeshPoisson<dim, Number>(mapping_degree, mpi_comm, poisson_operator));
     }
     else
     {

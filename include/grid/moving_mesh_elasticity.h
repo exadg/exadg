@@ -22,8 +22,7 @@ public:
   MovingMeshElasticity(unsigned int const                                mapping_degree_static,
                        MPI_Comm const &                                  mpi_comm,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
-                       Structure::InputParameters const &                structure_parameters,
-                       double const &                                    start_time)
+                       Structure::InputParameters const &                structure_parameters)
     : MovingMeshBase<dim, Number>(mapping_degree_static,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
@@ -36,7 +35,7 @@ public:
     pde_operator->initialize_dof_vector(displacement);
 
     // make sure that the mapping is initialized
-    move_mesh(start_time);
+    this->initialize_mapping_q_cache(*this->mapping, pde_operator->get_dof_handler(), displacement);
   }
 
   void

@@ -144,8 +144,6 @@ n_locally_owned_active_cells_around_point(const Triangulation<dim> & tria,
   {
     if(cell.first->is_locally_owned())
     {
-      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell.second) < 1e-10, ExcInternalError());
-
       ++counter;
     }
   }
@@ -182,8 +180,6 @@ get_dof_indices_and_shape_values(DoFHandler<dim> const &                        
     // go on only if cell is owned by the processor
     if(cell.first->is_locally_owned())
     {
-      Assert(GeometryInfo<dim>::distance_to_unit_cell(cell.second) < 1e-10, ExcInternalError());
-
       const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(cell.second));
 
       const FiniteElement<dim> & fe = dof_handler.get_fe();

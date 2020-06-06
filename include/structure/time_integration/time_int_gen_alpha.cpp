@@ -44,7 +44,7 @@ template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::setup(bool const do_restart)
 {
-  this->pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl << std::flush;
+  this->pcout << std::endl << "Setup elasticity time integrator ..." << std::endl << std::flush;
 
   // allocate vectors
   pde_operator->initialize_dof_vector(displacement_n);

@@ -270,7 +270,9 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   {
     time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
-    this->pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
+    this->pcout << std::endl
+                << "Calculation of time step size (user-specified):" << std::endl
+                << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
@@ -293,7 +295,8 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     double time_step_global = calculate_time_step_cfl_global(
       cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    this->pcout << "Calculation of time step size according to CFL condition:" << std::endl
+    this->pcout << std::endl
+                << "Calculation of time step size according to CFL condition:" << std::endl
                 << std::endl;
     print_parameter(this->pcout, "h_min", h_min);
     print_parameter(this->pcout, "U_max", max_velocity);

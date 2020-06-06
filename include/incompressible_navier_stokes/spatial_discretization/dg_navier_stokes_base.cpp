@@ -57,7 +57,9 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     velocity_ptr(nullptr),
     pressure_ptr(nullptr)
 {
-  pcout << std::endl << "Construct Navier-Stokes operator ..." << std::endl << std::flush;
+  pcout << std::endl
+        << "Construct incompressible Navier-Stokes operator ..." << std::endl
+        << std::flush;
 
   initialize_boundary_descriptor_laplace();
 
@@ -159,7 +161,9 @@ DGNavierStokesBase<dim, Number>::setup(
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
   std::string const &                          dof_index_temperature)
 {
-  pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
+  pcout << std::endl
+        << "Setup incompressible Navier-Stokes operator ..." << std::endl
+        << std::flush;
 
   // MatrixFree
   matrix_free      = matrix_free_in;

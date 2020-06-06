@@ -21,8 +21,7 @@ public:
 
   MovingMeshPoisson(unsigned int const                                   mapping_degree_static,
                     MPI_Comm const &                                     mpi_comm,
-                    std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator,
-                    double const &                                       start_time)
+                    std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
     : MovingMeshBase<dim, Number>(mapping_degree_static,
                                   // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
@@ -34,7 +33,7 @@ public:
     poisson->initialize_dof_vector(displacement);
 
     // make sure that the mapping is initialized
-    move_mesh(start_time);
+    this->initialize_mapping_q_cache(*this->mapping, poisson->get_dof_handler(), displacement);
   }
 
   void

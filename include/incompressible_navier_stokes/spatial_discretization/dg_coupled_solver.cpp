@@ -65,7 +65,7 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
   double const &     scaling_factor_time_derivative_term,
   VectorType const & velocity)
 {
-  this->pcout << std::endl << "Setup solvers ..." << std::endl;
+  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
   Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
 

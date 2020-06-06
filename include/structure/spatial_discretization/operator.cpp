@@ -58,7 +58,7 @@ void
 Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
                              std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
 {
-  pcout << std::endl << "Setup spatial discretization operator ..." << std::endl;
+  pcout << std::endl << "Setup elasticity operator ..." << std::endl;
 
   matrix_free      = matrix_free_in;
   matrix_free_data = matrix_free_data_in;
@@ -289,7 +289,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::setup_solver()
 {
-  pcout << std::endl << "Setup solver ..." << std::endl;
+  pcout << std::endl << "Setup elasticity solver ..." << std::endl;
 
   initialize_preconditioner();
 

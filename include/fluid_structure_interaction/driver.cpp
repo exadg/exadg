@@ -97,425 +97,450 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application = app;
 
   /**************************************** STRUCTURE *****************************************/
-
-  application->set_input_parameters_structure(structure_param);
-  structure_param.check_input_parameters();
-  // Some FSI specific Asserts
-  AssertThrow(structure_param.pull_back_traction == true,
-              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-  structure_param.print(pcout, "List of input parameters for structure:");
-
-  // triangulation
-  if(structure_param.triangulation_type == TriangulationType::Distributed)
   {
-    structure_triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+    Timer timer_local;
+    timer_local.restart();
+
+    application->set_input_parameters_structure(structure_param);
+    structure_param.check_input_parameters();
+    // Some FSI specific Asserts
+    AssertThrow(structure_param.pull_back_traction == true,
+                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+    structure_param.print(pcout, "List of input parameters for structure:");
+
+    // triangulation
+    if(structure_param.triangulation_type == TriangulationType::Distributed)
+    {
+      structure_triangulation.reset(new parallel::distributed::Triangulation<dim>(
+        mpi_comm,
+        dealii::Triangulation<dim>::none,
+        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+    }
+    else if(structure_param.triangulation_type == TriangulationType::FullyDistributed)
+    {
+      structure_triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+    }
+
+    application->create_grid_structure(structure_triangulation,
+                                       refine_space_structure,
+                                       structure_periodic_faces);
+    print_grid_data(pcout, refine_space_structure, *structure_triangulation);
+
+    // boundary conditions
+    structure_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
+    application->set_boundary_conditions_structure(structure_boundary_descriptor);
+    verify_boundary_conditions(*structure_boundary_descriptor,
+                               *structure_triangulation,
+                               structure_periodic_faces);
+
+    // material_descriptor
+    structure_material_descriptor.reset(new Structure::MaterialDescriptor);
+    application->set_material_structure(*structure_material_descriptor);
+
+    // field functions
+    structure_field_functions.reset(new Structure::FieldFunctions<dim>());
+    application->set_field_functions_structure(structure_field_functions);
+
+    // mapping
+    unsigned int const mapping_degree_structure =
+      get_mapping_degree(structure_param.mapping, degree_structure);
+    structure_mesh.reset(new Mesh<dim>(mapping_degree_structure));
+
+    // setup spatial operator
+    structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
+                                                                  structure_mesh->get_mapping(),
+                                                                  degree_structure,
+                                                                  structure_periodic_faces,
+                                                                  structure_boundary_descriptor,
+                                                                  structure_field_functions,
+                                                                  structure_material_descriptor,
+                                                                  structure_param,
+                                                                  "elasticity",
+                                                                  mpi_comm));
+
+    // initialize matrix_free
+    structure_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+    structure_matrix_free_data->data.tasks_parallel_scheme =
+      MatrixFree<dim, Number>::AdditionalData::partition_partition;
+    structure_operator->fill_matrix_free_data(*structure_matrix_free_data);
+
+    structure_matrix_free.reset(new MatrixFree<dim, Number>());
+    structure_matrix_free->reinit(structure_mesh->get_mapping(),
+                                  structure_matrix_free_data->get_dof_handler_vector(),
+                                  structure_matrix_free_data->get_constraint_vector(),
+                                  structure_matrix_free_data->get_quadrature_vector(),
+                                  structure_matrix_free_data->data);
+
+    structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
+
+    // initialize postprocessor
+    structure_postprocessor =
+      application->construct_postprocessor_structure(degree_structure, mpi_comm);
+    structure_postprocessor->setup(structure_operator->get_dof_handler(),
+                                   structure_mesh->get_mapping());
+
+    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
-  else if(structure_param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    structure_triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
-
-  application->create_grid_structure(structure_triangulation,
-                                     refine_space_structure,
-                                     structure_periodic_faces);
-  print_grid_data(pcout, refine_space_structure, *structure_triangulation);
-
-  // boundary conditions
-  structure_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
-  application->set_boundary_conditions_structure(structure_boundary_descriptor);
-  verify_boundary_conditions(*structure_boundary_descriptor,
-                             *structure_triangulation,
-                             structure_periodic_faces);
-
-  // material_descriptor
-  structure_material_descriptor.reset(new Structure::MaterialDescriptor);
-  application->set_material_structure(*structure_material_descriptor);
-
-  // field functions
-  structure_field_functions.reset(new Structure::FieldFunctions<dim>());
-  application->set_field_functions_structure(structure_field_functions);
-
-  // mapping
-  unsigned int const mapping_degree_structure =
-    get_mapping_degree(structure_param.mapping, degree_structure);
-  structure_mesh.reset(new Mesh<dim>(mapping_degree_structure));
-
-  // setup spatial operator
-  structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
-                                                                structure_mesh->get_mapping(),
-                                                                degree_structure,
-                                                                structure_periodic_faces,
-                                                                structure_boundary_descriptor,
-                                                                structure_field_functions,
-                                                                structure_material_descriptor,
-                                                                structure_param,
-                                                                "elasticity",
-                                                                mpi_comm));
-
-  // initialize matrix_free
-  structure_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  structure_matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  structure_operator->fill_matrix_free_data(*structure_matrix_free_data);
-
-  structure_matrix_free.reset(new MatrixFree<dim, Number>());
-  structure_matrix_free->reinit(structure_mesh->get_mapping(),
-                                structure_matrix_free_data->get_dof_handler_vector(),
-                                structure_matrix_free_data->get_constraint_vector(),
-                                structure_matrix_free_data->get_quadrature_vector(),
-                                structure_matrix_free_data->data);
-
-  structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
-
-  // initialize postprocessor
-  structure_postprocessor =
-    application->construct_postprocessor_structure(degree_structure, mpi_comm);
-  structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                 structure_mesh->get_mapping());
 
   /**************************************** STRUCTURE *****************************************/
 
 
   /****************************************** FLUID *******************************************/
 
-  // parameters fluid
-  application->set_input_parameters_fluid(fluid_param);
-  fluid_param.check_input_parameters(pcout);
-  fluid_param.print(pcout, "List of input parameters for incompressible flow solver:");
-
-  // Some FSI specific Asserts
-  AssertThrow(fluid_param.problem_type == IncNS::ProblemType::Unsteady,
-              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-  AssertThrow(fluid_param.ale_formulation == true,
-              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-
-  // triangulation
-  if(fluid_param.triangulation_type == TriangulationType::Distributed)
   {
-    fluid_triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(fluid_param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    fluid_triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+    Timer timer_local;
+    timer_local.restart();
 
-  application->create_grid_fluid(fluid_triangulation, refine_space_fluid, fluid_periodic_faces);
-  print_grid_data(pcout, refine_space_fluid, *fluid_triangulation);
+    // parameters fluid
+    application->set_input_parameters_fluid(fluid_param);
+    fluid_param.check_input_parameters(pcout);
+    fluid_param.print(pcout, "List of input parameters for incompressible flow solver:");
 
-  // field functions and boundary conditions
+    // Some FSI specific Asserts
+    AssertThrow(fluid_param.problem_type == IncNS::ProblemType::Unsteady,
+                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+    AssertThrow(fluid_param.ale_formulation == true,
+                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
-  // fluid
-  fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
-  fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
-  application->set_boundary_conditions_fluid(fluid_boundary_descriptor_velocity,
-                                             fluid_boundary_descriptor_pressure);
-  verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
-                             *fluid_triangulation,
-                             fluid_periodic_faces);
-  verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
-                             *fluid_triangulation,
-                             fluid_periodic_faces);
+    // triangulation
+    if(fluid_param.triangulation_type == TriangulationType::Distributed)
+    {
+      fluid_triangulation.reset(new parallel::distributed::Triangulation<dim>(
+        mpi_comm,
+        dealii::Triangulation<dim>::none,
+        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+    }
+    else if(fluid_param.triangulation_type == TriangulationType::FullyDistributed)
+    {
+      fluid_triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+    }
 
-  fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
-  application->set_field_functions_fluid(fluid_field_functions);
+    application->create_grid_fluid(fluid_triangulation, refine_space_fluid, fluid_periodic_faces);
+    print_grid_data(pcout, refine_space_fluid, *fluid_triangulation);
 
-  // ALE
-  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    application->set_input_parameters_ale(ale_poisson_param);
-    ale_poisson_param.check_input_parameters();
-    AssertThrow(ale_poisson_param.right_hand_side == false,
-                ExcMessage("Parameter does not make sense in context of FSI."));
-    ale_poisson_param.print(pcout, "List of input parameters for ALE solver (Poisson):");
+    // field functions and boundary conditions
 
-    ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
-    application->set_boundary_conditions_ale(ale_poisson_boundary_descriptor);
-    verify_boundary_conditions(*ale_poisson_boundary_descriptor,
+    // fluid
+    fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
+    fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
+    application->set_boundary_conditions_fluid(fluid_boundary_descriptor_velocity,
+                                               fluid_boundary_descriptor_pressure);
+    verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
+                               *fluid_triangulation,
+                               fluid_periodic_faces);
+    verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
                                *fluid_triangulation,
                                fluid_periodic_faces);
 
-    ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
-    application->set_field_functions_ale(ale_poisson_field_functions);
+    fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
+    application->set_field_functions_fluid(fluid_field_functions);
 
-    // mapping for ALE solver (static mesh)
-    unsigned int const mapping_degree_ale =
-      get_mapping_degree(ale_poisson_param.mapping, degree_ale);
-    ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
+    // ALE
+    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    {
+      application->set_input_parameters_ale(ale_poisson_param);
+      ale_poisson_param.check_input_parameters();
+      AssertThrow(ale_poisson_param.right_hand_side == false,
+                  ExcMessage("Parameter does not make sense in context of FSI."));
+      ale_poisson_param.print(pcout, "List of input parameters for ALE solver (Poisson):");
 
-    // initialize Poisson operator
-    ale_poisson_operator.reset(
-      new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
-                                              ale_mesh->get_mapping(),
-                                              degree_ale,
-                                              fluid_periodic_faces,
-                                              ale_poisson_boundary_descriptor,
-                                              ale_poisson_field_functions,
-                                              ale_poisson_param,
-                                              "Poisson",
-                                              mpi_comm));
-  }
-  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    application->set_input_parameters_ale(ale_elasticity_param);
-    ale_elasticity_param.check_input_parameters();
-    AssertThrow(ale_elasticity_param.body_force == false,
-                ExcMessage("Parameter does not make sense in context of FSI."));
-    ale_elasticity_param.print(pcout, "List of input parameters for ALE solver (elasticity):");
+      ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
+      application->set_boundary_conditions_ale(ale_poisson_boundary_descriptor);
+      verify_boundary_conditions(*ale_poisson_boundary_descriptor,
+                                 *fluid_triangulation,
+                                 fluid_periodic_faces);
 
-    // boundary conditions
-    ale_elasticity_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
-    application->set_boundary_conditions_ale(ale_elasticity_boundary_descriptor);
-    verify_boundary_conditions(*ale_elasticity_boundary_descriptor,
-                               *fluid_triangulation,
-                               fluid_periodic_faces);
+      ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
+      application->set_field_functions_ale(ale_poisson_field_functions);
 
-    // material_descriptor
-    ale_elasticity_material_descriptor.reset(new Structure::MaterialDescriptor);
-    application->set_material_ale(*ale_elasticity_material_descriptor);
+      // mapping for ALE solver (static mesh)
+      unsigned int const mapping_degree_ale =
+        get_mapping_degree(ale_poisson_param.mapping, degree_ale);
+      ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
 
-    // field functions
-    ale_elasticity_field_functions.reset(new Structure::FieldFunctions<dim>());
-    application->set_field_functions_ale(ale_elasticity_field_functions);
+      // initialize Poisson operator
+      ale_poisson_operator.reset(
+        new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
+                                                ale_mesh->get_mapping(),
+                                                degree_ale,
+                                                fluid_periodic_faces,
+                                                ale_poisson_boundary_descriptor,
+                                                ale_poisson_field_functions,
+                                                ale_poisson_param,
+                                                "Poisson",
+                                                mpi_comm));
+    }
+    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    {
+      application->set_input_parameters_ale(ale_elasticity_param);
+      ale_elasticity_param.check_input_parameters();
+      AssertThrow(ale_elasticity_param.body_force == false,
+                  ExcMessage("Parameter does not make sense in context of FSI."));
+      ale_elasticity_param.print(pcout, "List of input parameters for ALE solver (elasticity):");
 
-    // mapping for ALE solver (static mesh)
-    unsigned int const mapping_degree_ale =
-      get_mapping_degree(ale_elasticity_param.mapping, degree_ale);
-    ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
+      // boundary conditions
+      ale_elasticity_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
+      application->set_boundary_conditions_ale(ale_elasticity_boundary_descriptor);
+      verify_boundary_conditions(*ale_elasticity_boundary_descriptor,
+                                 *fluid_triangulation,
+                                 fluid_periodic_faces);
 
-    // setup spatial operator
-    ale_elasticity_operator.reset(
-      new Structure::Operator<dim, Number>(*fluid_triangulation,
-                                           ale_mesh->get_mapping(),
-                                           degree_ale,
-                                           fluid_periodic_faces,
-                                           ale_elasticity_boundary_descriptor,
-                                           ale_elasticity_field_functions,
-                                           ale_elasticity_material_descriptor,
-                                           ale_elasticity_param,
-                                           "ale_elasticity",
-                                           mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
+      // material_descriptor
+      ale_elasticity_material_descriptor.reset(new Structure::MaterialDescriptor);
+      application->set_material_ale(*ale_elasticity_material_descriptor);
 
-  // initialize matrix_free
-  ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  ale_matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+      // field functions
+      ale_elasticity_field_functions.reset(new Structure::FieldFunctions<dim>());
+      application->set_field_functions_ale(ale_elasticity_field_functions);
 
-  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    if(ale_poisson_param.enable_cell_based_face_loops)
+      // mapping for ALE solver (static mesh)
+      unsigned int const mapping_degree_ale =
+        get_mapping_degree(ale_elasticity_param.mapping, degree_ale);
+      ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
+
+      // setup spatial operator
+      ale_elasticity_operator.reset(
+        new Structure::Operator<dim, Number>(*fluid_triangulation,
+                                             ale_mesh->get_mapping(),
+                                             degree_ale,
+                                             fluid_periodic_faces,
+                                             ale_elasticity_boundary_descriptor,
+                                             ale_elasticity_field_functions,
+                                             ale_elasticity_material_descriptor,
+                                             ale_elasticity_param,
+                                             "ale_elasticity",
+                                             mpi_comm));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    // initialize matrix_free
+    ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+    ale_matrix_free_data->data.tasks_parallel_scheme =
+      MatrixFree<dim, Number>::AdditionalData::partition_partition;
+
+    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    {
+      if(ale_poisson_param.enable_cell_based_face_loops)
+      {
+        auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
+          fluid_triangulation);
+        Categorization::do_cell_based_loops(*tria, ale_matrix_free_data->data);
+      }
+      ale_poisson_operator->fill_matrix_free_data(*ale_matrix_free_data);
+    }
+    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    {
+      ale_elasticity_operator->fill_matrix_free_data(*ale_matrix_free_data);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    ale_matrix_free.reset(new MatrixFree<dim, Number>());
+    ale_matrix_free->reinit(ale_mesh->get_mapping(),
+                            ale_matrix_free_data->get_dof_handler_vector(),
+                            ale_matrix_free_data->get_constraint_vector(),
+                            ale_matrix_free_data->get_quadrature_vector(),
+                            ale_matrix_free_data->data);
+
+    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    {
+      ale_poisson_operator->setup(ale_matrix_free, ale_matrix_free_data);
+      ale_poisson_operator->setup_solver();
+    }
+    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    {
+      ale_elasticity_operator->setup(ale_matrix_free, ale_matrix_free_data);
+      ale_elasticity_operator->setup_solver();
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    // mapping for fluid problem (moving mesh)
+    unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
+    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    {
+      fluid_moving_mesh.reset(
+        new MovingMeshPoisson<dim, Number>(mapping_degree_fluid, mpi_comm, ale_poisson_operator));
+    }
+    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    {
+      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(
+        mapping_degree_fluid, mpi_comm, ale_elasticity_operator, ale_elasticity_param));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    fluid_mesh = fluid_moving_mesh;
+
+    // initialize fluid_operator
+    if(this->fluid_param.temporal_discretization ==
+       IncNS::TemporalDiscretization::BDFCoupledSolution)
+    {
+      fluid_operator_coupled.reset(
+        new IncNS::DGNavierStokesCoupled<dim, Number>(*fluid_triangulation,
+                                                      fluid_mesh->get_mapping(),
+                                                      degree_fluid,
+                                                      fluid_periodic_faces,
+                                                      fluid_boundary_descriptor_velocity,
+                                                      fluid_boundary_descriptor_pressure,
+                                                      fluid_field_functions,
+                                                      fluid_param,
+                                                      "fluid",
+                                                      mpi_comm));
+
+      fluid_operator = fluid_operator_coupled;
+    }
+    else if(this->fluid_param.temporal_discretization ==
+            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      fluid_operator_dual_splitting.reset(
+        new IncNS::DGNavierStokesDualSplitting<dim, Number>(*fluid_triangulation,
+                                                            fluid_mesh->get_mapping(),
+                                                            degree_fluid,
+                                                            fluid_periodic_faces,
+                                                            fluid_boundary_descriptor_velocity,
+                                                            fluid_boundary_descriptor_pressure,
+                                                            fluid_field_functions,
+                                                            fluid_param,
+                                                            "fluid",
+                                                            mpi_comm));
+
+      fluid_operator = fluid_operator_dual_splitting;
+    }
+    else if(this->fluid_param.temporal_discretization ==
+            IncNS::TemporalDiscretization::BDFPressureCorrection)
+    {
+      fluid_operator_pressure_correction.reset(
+        new IncNS::DGNavierStokesPressureCorrection<dim, Number>(*fluid_triangulation,
+                                                                 fluid_mesh->get_mapping(),
+                                                                 degree_fluid,
+                                                                 fluid_periodic_faces,
+                                                                 fluid_boundary_descriptor_velocity,
+                                                                 fluid_boundary_descriptor_pressure,
+                                                                 fluid_field_functions,
+                                                                 fluid_param,
+                                                                 "fluid",
+                                                                 mpi_comm));
+
+      fluid_operator = fluid_operator_pressure_correction;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    // initialize matrix_free
+    fluid_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+    fluid_matrix_free_data->data.tasks_parallel_scheme =
+      MatrixFree<dim, Number>::AdditionalData::partition_partition;
+    if(fluid_param.use_cell_based_face_loops)
     {
       auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
         fluid_triangulation);
-      Categorization::do_cell_based_loops(*tria, ale_matrix_free_data->data);
+      Categorization::do_cell_based_loops(*tria, fluid_matrix_free_data->data);
     }
-    ale_poisson_operator->fill_matrix_free_data(*ale_matrix_free_data);
-  }
-  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    ale_elasticity_operator->fill_matrix_free_data(*ale_matrix_free_data);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
+    fluid_operator->fill_matrix_free_data(*fluid_matrix_free_data);
+
+    fluid_matrix_free.reset(new MatrixFree<dim, Number>());
+    fluid_matrix_free->reinit(fluid_mesh->get_mapping(),
+                              fluid_matrix_free_data->get_dof_handler_vector(),
+                              fluid_matrix_free_data->get_constraint_vector(),
+                              fluid_matrix_free_data->get_quadrature_vector(),
+                              fluid_matrix_free_data->data);
+
+    // setup Navier-Stokes operator
+    fluid_operator->setup(fluid_matrix_free, fluid_matrix_free_data);
+
+    // setup postprocessor
+    fluid_postprocessor = application->construct_postprocessor_fluid(degree_fluid, mpi_comm);
+    fluid_postprocessor->setup(*fluid_operator);
+
+    timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
   }
 
-  ale_matrix_free.reset(new MatrixFree<dim, Number>());
-  ale_matrix_free->reinit(ale_mesh->get_mapping(),
-                          ale_matrix_free_data->get_dof_handler_vector(),
-                          ale_matrix_free_data->get_constraint_vector(),
-                          ale_matrix_free_data->get_quadrature_vector(),
-                          ale_matrix_free_data->data);
+  /****************************************** FLUID *******************************************/
 
-  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    ale_poisson_operator->setup(ale_matrix_free, ale_matrix_free_data);
-    ale_poisson_operator->setup_solver();
-  }
-  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    ale_elasticity_operator->setup(ale_matrix_free, ale_matrix_free_data);
-    ale_elasticity_operator->setup_solver();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
 
-  // coupling: structure to ALE
-  pcout << std::endl << "Setup interface coupling structure -> ALE ..." << std::endl;
+  /*********************************** INTERFACE COUPLING *************************************/
 
-  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+  // structure to ALE
   {
-    std::vector<unsigned int> quad_indices;
-    if(ale_poisson_param.spatial_discretization == Poisson::SpatialDiscretization::DG)
-      quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
-    else if(ale_poisson_param.spatial_discretization == Poisson::SpatialDiscretization::CG)
-      quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
+    Timer timer_local;
+    timer_local.restart();
+
+    pcout << std::endl << "Setup interface coupling structure -> ALE ..." << std::endl;
+
+    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    {
+      std::vector<unsigned int> quad_indices;
+      if(ale_poisson_param.spatial_discretization == Poisson::SpatialDiscretization::DG)
+        quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
+      else if(ale_poisson_param.spatial_discretization == Poisson::SpatialDiscretization::CG)
+        quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
+      else
+        AssertThrow(false, ExcMessage("not implemented."));
+
+      VectorType displacement_structure;
+      structure_operator->initialize_dof_vector(displacement_structure);
+      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+      structure_to_ale->setup(ale_matrix_free,
+                              ale_poisson_operator->get_dof_index(),
+                              quad_indices,
+                              ale_poisson_boundary_descriptor->dirichlet_mortar_bc,
+                              structure_triangulation,
+                              structure_operator->get_dof_handler(),
+                              structure_mesh->get_mapping(),
+                              displacement_structure);
+    }
+    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    {
+      std::vector<unsigned int> quad_indices;
+      quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
+
+      VectorType displacement_structure;
+      structure_operator->initialize_dof_vector(displacement_structure);
+      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+      structure_to_ale->setup(ale_matrix_free,
+                              ale_elasticity_operator->get_dof_index(),
+                              quad_indices,
+                              ale_elasticity_boundary_descriptor->dirichlet_mortar_bc,
+                              structure_triangulation,
+                              structure_operator->get_dof_handler(),
+                              structure_mesh->get_mapping(),
+                              displacement_structure);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("not implemented."));
+    }
 
-    VectorType displacement_structure;
-    structure_operator->initialize_dof_vector(displacement_structure);
-    structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
-    structure_to_ale->setup(ale_matrix_free,
-                            ale_poisson_operator->get_dof_index(),
-                            quad_indices,
-                            ale_poisson_boundary_descriptor->dirichlet_mortar_bc,
-                            structure_triangulation,
-                            structure_operator->get_dof_handler(),
-                            structure_mesh->get_mapping(),
-                            displacement_structure);
+    pcout << std::endl << "... done!" << std::endl;
+
+    timer_tree.insert({"FSI", "Setup", "Coupling structure -> ALE"}, timer_local.wall_time());
   }
-  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    std::vector<unsigned int> quad_indices;
-    quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
-
-    VectorType displacement_structure;
-    structure_operator->initialize_dof_vector(displacement_structure);
-    structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
-    structure_to_ale->setup(ale_matrix_free,
-                            ale_elasticity_operator->get_dof_index(),
-                            quad_indices,
-                            ale_elasticity_boundary_descriptor->dirichlet_mortar_bc,
-                            structure_triangulation,
-                            structure_operator->get_dof_handler(),
-                            structure_mesh->get_mapping(),
-                            displacement_structure);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
-
-  pcout << std::endl << "... done!" << std::endl;
-
-
-  // mapping for fluid problem (moving mesh)
-  unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
-  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
-  {
-    fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-      mapping_degree_fluid, mpi_comm, ale_poisson_operator, fluid_param.start_time));
-  }
-  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(mapping_degree_fluid,
-                                                                  mpi_comm,
-                                                                  ale_elasticity_operator,
-                                                                  ale_elasticity_param,
-                                                                  fluid_param.start_time));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
-
-  fluid_mesh = fluid_moving_mesh;
-
-  // initialize fluid_operator
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    fluid_operator_coupled.reset(
-      new IncNS::DGNavierStokesCoupled<dim, Number>(*fluid_triangulation,
-                                                    fluid_mesh->get_mapping(),
-                                                    degree_fluid,
-                                                    fluid_periodic_faces,
-                                                    fluid_boundary_descriptor_velocity,
-                                                    fluid_boundary_descriptor_pressure,
-                                                    fluid_field_functions,
-                                                    fluid_param,
-                                                    "fluid",
-                                                    mpi_comm));
-
-    fluid_operator = fluid_operator_coupled;
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    fluid_operator_dual_splitting.reset(
-      new IncNS::DGNavierStokesDualSplitting<dim, Number>(*fluid_triangulation,
-                                                          fluid_mesh->get_mapping(),
-                                                          degree_fluid,
-                                                          fluid_periodic_faces,
-                                                          fluid_boundary_descriptor_velocity,
-                                                          fluid_boundary_descriptor_pressure,
-                                                          fluid_field_functions,
-                                                          fluid_param,
-                                                          "fluid",
-                                                          mpi_comm));
-
-    fluid_operator = fluid_operator_dual_splitting;
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    fluid_operator_pressure_correction.reset(
-      new IncNS::DGNavierStokesPressureCorrection<dim, Number>(*fluid_triangulation,
-                                                               fluid_mesh->get_mapping(),
-                                                               degree_fluid,
-                                                               fluid_periodic_faces,
-                                                               fluid_boundary_descriptor_velocity,
-                                                               fluid_boundary_descriptor_pressure,
-                                                               fluid_field_functions,
-                                                               fluid_param,
-                                                               "fluid",
-                                                               mpi_comm));
-
-    fluid_operator = fluid_operator_pressure_correction;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  // initialize matrix_free
-  fluid_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  fluid_matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(fluid_param.use_cell_based_face_loops)
-  {
-    auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
-      fluid_triangulation);
-    Categorization::do_cell_based_loops(*tria, fluid_matrix_free_data->data);
-  }
-  fluid_operator->fill_matrix_free_data(*fluid_matrix_free_data);
-
-  fluid_matrix_free.reset(new MatrixFree<dim, Number>());
-  fluid_matrix_free->reinit(fluid_mesh->get_mapping(),
-                            fluid_matrix_free_data->get_dof_handler_vector(),
-                            fluid_matrix_free_data->get_constraint_vector(),
-                            fluid_matrix_free_data->get_quadrature_vector(),
-                            fluid_matrix_free_data->data);
-
-  // setup Navier-Stokes operator
-  fluid_operator->setup(fluid_matrix_free, fluid_matrix_free_data);
-
-  // setup postprocessor
-  fluid_postprocessor = application->construct_postprocessor_fluid(degree_fluid, mpi_comm);
-  fluid_postprocessor->setup(*fluid_operator);
 
   // structure to fluid
   {
+    Timer timer_local;
+    timer_local.restart();
+
     pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
 
     std::vector<unsigned int> quad_indices;
@@ -536,10 +561,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               velocity_structure);
 
     pcout << std::endl << "... done!" << std::endl;
+
+    timer_tree.insert({"FSI", "Setup", "Coupling structure -> fluid"}, timer_local.wall_time());
   }
 
   // fluid to structure
   {
+    Timer timer_local;
+    timer_local.restart();
+
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
 
     std::vector<unsigned int> quad_indices;
@@ -558,73 +588,88 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               stress_fluid);
 
     pcout << std::endl << "... done!" << std::endl;
+
+    timer_tree.insert({"FSI", "Setup", "Coupling fluid -> structure"}, timer_local.wall_time());
   }
 
-  /****************************************** FLUID *******************************************/
+  /*********************************** INTERFACE COUPLING *************************************/
 
 
   /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
   // fluid
-
-  // setup time integrator before calling setup_solvers (this is necessary since the setup
-  // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
-  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
-              ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-
-  // initialize fluid_operator
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
-    fluid_time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(fluid_operator_coupled,
-                                                                          fluid_param,
-                                                                          0 /* refine_time */,
-                                                                          mpi_comm,
-                                                                          fluid_postprocessor,
-                                                                          fluid_moving_mesh,
-                                                                          fluid_matrix_free));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    fluid_time_integrator.reset(
-      new IncNS::TimeIntBDFDualSplitting<dim, Number>(fluid_operator_dual_splitting,
-                                                      fluid_param,
-                                                      0 /* refine_time */,
-                                                      mpi_comm,
-                                                      fluid_postprocessor,
-                                                      fluid_moving_mesh,
-                                                      fluid_matrix_free));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    fluid_time_integrator.reset(
-      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(fluid_operator_pressure_correction,
-                                                           fluid_param,
-                                                           0 /* refine_time */,
-                                                           mpi_comm,
-                                                           fluid_postprocessor,
-                                                           fluid_moving_mesh,
-                                                           fluid_matrix_free));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+    Timer timer_local;
+    timer_local.restart();
 
-  fluid_time_integrator->setup(fluid_param.restarted_simulation);
+    // setup time integrator before calling setup_solvers (this is necessary since the setup
+    // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
+    AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
+                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
-  fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-                                fluid_time_integrator->get_velocity());
+    // initialize fluid_operator
+    if(this->fluid_param.temporal_discretization ==
+       IncNS::TemporalDiscretization::BDFCoupledSolution)
+    {
+      fluid_time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(fluid_operator_coupled,
+                                                                            fluid_param,
+                                                                            0 /* refine_time */,
+                                                                            mpi_comm,
+                                                                            fluid_postprocessor,
+                                                                            fluid_moving_mesh,
+                                                                            fluid_matrix_free));
+    }
+    else if(this->fluid_param.temporal_discretization ==
+            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      fluid_time_integrator.reset(
+        new IncNS::TimeIntBDFDualSplitting<dim, Number>(fluid_operator_dual_splitting,
+                                                        fluid_param,
+                                                        0 /* refine_time */,
+                                                        mpi_comm,
+                                                        fluid_postprocessor,
+                                                        fluid_moving_mesh,
+                                                        fluid_matrix_free));
+    }
+    else if(this->fluid_param.temporal_discretization ==
+            IncNS::TemporalDiscretization::BDFPressureCorrection)
+    {
+      fluid_time_integrator.reset(
+        new IncNS::TimeIntBDFPressureCorrection<dim, Number>(fluid_operator_pressure_correction,
+                                                             fluid_param,
+                                                             0 /* refine_time */,
+                                                             mpi_comm,
+                                                             fluid_postprocessor,
+                                                             fluid_moving_mesh,
+                                                             fluid_matrix_free));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    fluid_time_integrator->setup(fluid_param.restarted_simulation);
+
+    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+                                  fluid_time_integrator->get_velocity());
+
+    timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
+  }
 
   // Structure
+  {
+    Timer timer_local;
+    timer_local.restart();
 
-  // initialize time integrator
-  structure_time_integrator.reset(new Structure::TimeIntGenAlpha<dim, Number>(
-    structure_operator, structure_postprocessor, 0 /* refine_time */, structure_param, mpi_comm));
-  structure_time_integrator->setup(structure_param.restarted_simulation);
+    // initialize time integrator
+    structure_time_integrator.reset(new Structure::TimeIntGenAlpha<dim, Number>(
+      structure_operator, structure_postprocessor, 0 /* refine_time */, structure_param, mpi_comm));
+    structure_time_integrator->setup(structure_param.restarted_simulation);
 
-  structure_operator->setup_solver();
+    structure_operator->setup_solver();
+
+    timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
+  }
 
   /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
@@ -1197,12 +1242,32 @@ Driver<dim, Number>::print_statistics(double const total_time) const
   pcout << std::endl << "Timings for level 2:" << std::endl;
   timer_tree.print_level(pcout, 2);
 
-  // computational costs in CPUh
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index DoFs =
+    fluid_operator->get_number_of_dofs() + structure_operator->get_number_of_dofs();
+
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+  {
+    DoFs += ale_poisson_operator->get_number_of_dofs();
+  }
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    DoFs += ale_elasticity_operator->get_number_of_dofs();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
   unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
   double const              total_time_avg  = total_time_data.avg;
 
+  unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
+  print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
+
+  // computational costs in CPUh
   print_costs(pcout, total_time_avg, N_mpi_processes);
 
   pcout << "_________________________________________________________________________________"
