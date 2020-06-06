@@ -18,6 +18,7 @@
 
 #include "fluid_structure_interaction_test_cases/bending_wall/bending_wall.h"
 #include "fluid_structure_interaction_test_cases/cylinder_with_flag/cylinder_with_flag.h"
+#include "fluid_structure_interaction_test_cases/pressure_wave/pressure_wave.h"
 
 class ApplicationSelector
 {
@@ -35,6 +36,8 @@ public:
       app.reset(new FSI::CylinderWithFlag::Application<dim, Number>(input_file));
     else if(name == "BendingWall")
       app.reset(new FSI::BendingWall::Application<dim, Number>(input_file));
+    else if(name == "PressureWave")
+      app.reset(new FSI::PressureWave::Application<dim, Number>(input_file));
     else
       AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -112,11 +115,6 @@ struct Study
                         "Polynomial degree of fluid (velocity).",
                         Patterns::Integer(1,15),
                         true);
-      prm.add_parameter("DegreeALE",
-                        degree_ale,
-                        "Polynomial degree of ALE mesh motion.",
-                        Patterns::Integer(1,15),
-                        true);
       prm.add_parameter("DegreeStructure",
                         degree_structure,
                         "Polynomial degree of structural problem.",
@@ -140,7 +138,7 @@ struct Study
 
   unsigned int dim = 2;
 
-  unsigned int degree_fluid = 3, degree_ale = 3, degree_structure = 3;
+  unsigned int degree_fluid = 3, degree_structure = 3;
 
   unsigned int refine_fluid = 0, refine_structure = 0;
 };
@@ -158,7 +156,7 @@ create_input_file(std::string const & input_file)
   unsigned int const Dim = 2;
   typedef double     Number;
 
-  FSI::PartitionedFSIData fsi_data;
+  FSI::PartitionedData fsi_data;
   FSI::Driver<Dim, Number>::add_parameters(prm, fsi_data);
 
   ApplicationSelector selector;
@@ -186,7 +184,6 @@ run(std::string const & input_file, Study const & study, MPI_Comm const & mpi_co
 
   driver->setup(application,
                 study.degree_fluid,
-                study.degree_ale,
                 study.degree_structure,
                 study.refine_fluid,
                 study.refine_structure);

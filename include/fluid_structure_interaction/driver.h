@@ -204,15 +204,16 @@ inv_jacobian_times_residual(VectorType &                                        
   }
 }
 
-struct PartitionedFSIData
+struct PartitionedData
 {
-  PartitionedFSIData()
+  PartitionedData()
     : method("Aitken"),
       abs_tol(1.e-12),
       rel_tol(1.e-3),
       omega_init(0.1),
       reused_time_steps(0),
-      partitioned_iter_max(100)
+      partitioned_iter_max(100),
+      geometric_tolerance(1.e-10)
   {
   }
 
@@ -222,6 +223,9 @@ struct PartitionedFSIData
   double       omega_init;
   unsigned int reused_time_steps;
   unsigned int partitioned_iter_max;
+
+  // tolerance used to locate points at the fluid-structure interface
+  double geometric_tolerance;
 };
 
 template<int dim, typename Number>
@@ -234,12 +238,11 @@ public:
   Driver(std::string const & input_file, MPI_Comm const & comm);
 
   static void
-  add_parameters(dealii::ParameterHandler & prm, PartitionedFSIData & fsi_data);
+  add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const &                          degree_fluid,
-        unsigned int const &                          degree_ale,
         unsigned int const &                          degree_structure,
         unsigned int const &                          refine_space_fluid,
         unsigned int const &                          refine_space_structure);
@@ -417,7 +420,7 @@ private:
   /*
    *  Fixed-point iteration.
    */
-  PartitionedFSIData fsi_data;
+  PartitionedData fsi_data;
 
   // required for quasi-Newton methods
   mutable std::vector<std::shared_ptr<std::vector<VectorType>>> D_history, R_history, Z_history;

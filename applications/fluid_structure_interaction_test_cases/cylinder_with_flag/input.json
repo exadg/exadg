@@ -2,14 +2,13 @@
   "General" : {
     "Precision": "double",
     "Dim": "2",
-    "DegreeFluid": "3",
-    "DegreeALE": "3",
+    "DegreeFluid": "6",
     "DegreeStructure": "2",
     "RefineFluid": "0",
     "RefineStructure": "0"
   },
   "FSI" : {
-    "Method": "IQN-ILS",
+    "Method": "IQN-IMVLS",
     "AbsTol": "1.e-12", 
     "RelTol": "1.e-3", 
     "OmegaInit": "0.3",

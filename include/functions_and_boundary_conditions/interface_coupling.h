@@ -409,7 +409,8 @@ public:
         std::shared_ptr<parallel::TriangulationBase<dim>> const & trianguation_src_in,
         DoFHandler<dim> const &                                   dof_handler_src_in,
         Mapping<dim> const &                                      mapping_src_in,
-        VectorType const &                                        dof_vector_src_in)
+        VectorType const &                                        dof_vector_src_in,
+        double const                                              tolerance)
   {
     matrix_free_dst   = matrix_free_dst_in;
     dof_index_dst     = dof_index_dst_in;
@@ -702,8 +703,6 @@ private:
 #endif
   mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorCache>>  map_cache_src;
   mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorTensor>> map_solution_src;
-
-  double const tolerance = 1.e-10;
 };
 
 

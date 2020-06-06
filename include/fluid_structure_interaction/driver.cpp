@@ -25,7 +25,7 @@ Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & com
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedFSIData & fsi_data)
+Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data)
 {
   // clang-format off
   prm.enter_subsection("FSI");
@@ -59,6 +59,11 @@ Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedF
                       "Maximum number of fixed-point iterations.",
                       Patterns::Integer(1,1000),
                       true);
+    prm.add_parameter("GeometricTolerance",
+                      fsi_data.geometric_tolerance,
+                      "Tolerance used to locate points at FSI interface.",
+                      Patterns::Double(0.0, 1.0),
+                      false);
   prm.leave_subsection();
   // clang-format on
 }
@@ -81,7 +86,6 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const &                          degree_fluid,
-                           unsigned int const &                          degree_ale,
                            unsigned int const &                          degree_structure,
                            unsigned int const &                          refine_space_fluid,
                            unsigned int const &                          refine_space_structure)
@@ -243,6 +247,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
     application->set_field_functions_fluid(fluid_field_functions);
 
+    unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
+
     // ALE
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
@@ -250,6 +256,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_poisson_param.check_input_parameters();
       AssertThrow(ale_poisson_param.right_hand_side == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
+      AssertThrow(ale_poisson_param.mapping == fluid_param.mapping,
+                  ExcMessage("Fluid and ALE must use the same mapping degree."));
       ale_poisson_param.print(pcout, "List of input parameters for ALE solver (Poisson):");
 
       ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
@@ -262,15 +270,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       application->set_field_functions_ale(ale_poisson_field_functions);
 
       // mapping for ALE solver (static mesh)
-      unsigned int const mapping_degree_ale =
-        get_mapping_degree(ale_poisson_param.mapping, degree_ale);
-      ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
+      ale_mesh.reset(new Mesh<dim>(mapping_degree_fluid));
 
       // initialize Poisson operator
       ale_poisson_operator.reset(
         new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
                                                 ale_mesh->get_mapping(),
-                                                degree_ale,
+                                                mapping_degree_fluid,
                                                 fluid_periodic_faces,
                                                 ale_poisson_boundary_descriptor,
                                                 ale_poisson_field_functions,
@@ -284,6 +290,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_elasticity_param.check_input_parameters();
       AssertThrow(ale_elasticity_param.body_force == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
+      AssertThrow(ale_elasticity_param.mapping == fluid_param.mapping,
+                  ExcMessage("Fluid and ALE must use the same mapping degree."));
       ale_elasticity_param.print(pcout, "List of input parameters for ALE solver (elasticity):");
 
       // boundary conditions
@@ -302,15 +310,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       application->set_field_functions_ale(ale_elasticity_field_functions);
 
       // mapping for ALE solver (static mesh)
-      unsigned int const mapping_degree_ale =
-        get_mapping_degree(ale_elasticity_param.mapping, degree_ale);
-      ale_mesh.reset(new Mesh<dim>(mapping_degree_ale));
+      ale_mesh.reset(new Mesh<dim>(mapping_degree_fluid));
 
       // setup spatial operator
       ale_elasticity_operator.reset(
         new Structure::Operator<dim, Number>(*fluid_triangulation,
                                              ale_mesh->get_mapping(),
-                                             degree_ale,
+                                             mapping_degree_fluid,
                                              fluid_periodic_faces,
                                              ale_elasticity_boundary_descriptor,
                                              ale_elasticity_field_functions,
@@ -371,7 +377,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
 
     // mapping for fluid problem (moving mesh)
-    unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       fluid_moving_mesh.reset(
@@ -507,7 +512,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               structure_triangulation,
                               structure_operator->get_dof_handler(),
                               structure_mesh->get_mapping(),
-                              displacement_structure);
+                              displacement_structure,
+                              fsi_data.geometric_tolerance);
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
@@ -524,7 +530,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               structure_triangulation,
                               structure_operator->get_dof_handler(),
                               structure_mesh->get_mapping(),
-                              displacement_structure);
+                              displacement_structure,
+                              fsi_data.geometric_tolerance);
     }
     else
     {
@@ -558,7 +565,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               structure_triangulation,
                               structure_operator->get_dof_handler(),
                               structure_mesh->get_mapping(),
-                              velocity_structure);
+                              velocity_structure,
+                              fsi_data.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
@@ -585,7 +593,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               fluid_triangulation,
                               fluid_operator->get_dof_handler_u(),
                               fluid_mesh->get_mapping(),
-                              stress_fluid);
+                              stress_fluid,
+                              fsi_data.geometric_tolerance);
 
     pcout << std::endl << "... done!" << std::endl;
 
@@ -821,8 +830,8 @@ Driver<dim, Number>::print_solver_info_header(unsigned int const iteration) cons
   {
     pcout << std::endl
           << "======================================================================" << std::endl
-          << " Partitioned FSI: Fixed-point iteration counter = " << std::left << std::setw(8)
-          << iteration << std::endl
+          << " Partitioned FSI: iteration counter = " << std::left << std::setw(8) << iteration
+          << std::endl
           << "======================================================================" << std::endl;
   }
 }
@@ -834,7 +843,7 @@ Driver<dim, Number>::print_solver_info_converged(unsigned int const iteration) c
   if(fluid_time_integrator->print_solver_info())
   {
     pcout << std::endl
-          << "Fixed-point iteration converged in " << iteration << " iterations." << std::endl;
+          << "Partitioned FSI iteration converged in " << iteration << " iterations." << std::endl;
   }
 }
 
