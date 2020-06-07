@@ -195,7 +195,7 @@ public:
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.time_step_size                  = END_TIME;
     param.max_velocity                    = U_X_MAX;
-    param.cfl                             = 1.0; // 0.5;
+    param.cfl                             = 0.5;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
     // output of solver information

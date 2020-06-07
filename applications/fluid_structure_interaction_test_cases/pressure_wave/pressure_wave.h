@@ -312,9 +312,7 @@ public:
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-        cell != triangulation->end();
-        ++cell)
+    for(auto cell : triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -343,9 +341,7 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-          cell != triangulation->end();
-          ++cell)
+      for(auto cell : triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
