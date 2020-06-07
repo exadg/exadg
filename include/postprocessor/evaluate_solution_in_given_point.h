@@ -128,15 +128,16 @@ void evaluate_vectorial_quantity_in_point(
 
 template<int dim>
 unsigned int
-n_locally_owned_active_cells_around_point(const Triangulation<dim> & tria,
-                                          const Mapping<dim> &       mapping,
-                                          const Point<dim> &         point,
-                                          const double               tolerance)
+n_locally_owned_active_cells_around_point(Triangulation<dim> const & tria,
+                                          Mapping<dim> const &       mapping,
+                                          Point<dim> const &         point,
+                                          double const               tolerance,
+                                          std::vector<bool> const &  marked_vertices)
 {
   using Pair = std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>>;
 
   std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance);
+    GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance, marked_vertices);
 
   // count locally owned active cells
   unsigned int counter = 0;
@@ -164,15 +165,16 @@ get_dof_indices_and_shape_values(DoFHandler<dim> const &                        
                                  Mapping<dim> const &                               mapping,
                                  LinearAlgebra::distributed::Vector<Number> const & solution,
                                  Point<dim> const &                                 point,
-                                 double const tolerance = 1.e-10)
+                                 double const              tolerance       = 1.e-10,
+                                 std::vector<bool> const & marked_vertices = {})
 {
   std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
     dof_indices_and_shape_values;
 
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
 
-  std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+  std::vector<Pair> adjacent_cells = GridTools::find_all_active_cells_around_point(
+    mapping, dof_handler, point, tolerance, marked_vertices);
 
   // loop over all adjacent cells
   for(auto cell : adjacent_cells)

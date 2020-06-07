@@ -10,6 +10,7 @@
 
 // deal.II
 #include <deal.II/base/bounding_box.h>
+#include <deal.II/base/geometry_info.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/mpi_consensus_algorithms.h>
 #include <deal.II/base/mpi_consensus_algorithms.templates.h>
@@ -32,7 +33,8 @@ public:
   InterfaceCommunicator(const std::vector<Point<spacedim>> &               quadrature_points,
                         const parallel::TriangulationBase<dim, spacedim> & tria,
                         const Mapping<dim, spacedim> &                     mapping,
-                        const double                                       tolerance)
+                        const double                                       tolerance,
+                        const std::vector<bool> &                          marked_vertices)
     : comm(tria.get_communicator())
   {
     // create bounding boxed of local active cells
@@ -101,7 +103,7 @@ public:
         for(unsigned int j = 0; j < potentially_local_points.size(); ++j)
         {
           const unsigned int counter = n_locally_owned_active_cells_around_point(
-            tria, mapping, potentially_relevant_points[j], tolerance);
+            tria, mapping, potentially_relevant_points[j], tolerance, marked_vertices);
 
           if(counter > 0)
           {
@@ -153,8 +155,8 @@ public:
           for(unsigned int j = 0; j < spacedim; ++j)
             point[j] = recv_buffer[i + j];
 
-          const unsigned int counter =
-            n_locally_owned_active_cells_around_point(tria, mapping, point, tolerance);
+          const unsigned int counter = n_locally_owned_active_cells_around_point(
+            tria, mapping, point, tolerance, marked_vertices);
 
           request_buffer[j] = counter;
 
@@ -420,6 +422,29 @@ public:
     dof_handler_src   = &dof_handler_src_in;
     mapping_src       = &mapping_src_in;
 
+    // mark vertices at interface in order to make search of active cells around point more
+    // efficient
+    std::vector<bool> marked_vertices(triangulation_src->n_vertices(), false);
+    for(auto cell : triangulation_src->active_cell_iterators())
+    {
+      if(!cell->is_artificial() && cell->at_boundary())
+      {
+        for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+        {
+          if(cell->face(f)->at_boundary())
+          {
+            if(map_bc.find(cell->face(f)->boundary_id()) != map_bc.end())
+            {
+              for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+              {
+                marked_vertices[cell->face(f)->vertex_index(v)] = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // implementation needs Number = double
     VectorTypeDouble         dof_vector_src_double_copy;
     VectorTypeDouble const * dof_vector_src_double_ptr;
@@ -446,7 +471,8 @@ public:
 
 
       /*
-       * 1. Setup: create map "ID <-> vector_index" and fill array of quadrature points
+       * 1. Setup: create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature
+       * points
        */
       for(unsigned int face = matrix_free_dst->n_inner_face_batches();
           face <
@@ -495,8 +521,11 @@ public:
        *    redundantly store own q-points (those that are needed)
        */
       map_communicator.emplace(quadrature,
-                               InterfaceCommunicator<dim, dim>(
-                                 array_q_points_dst, *triangulation_src, *mapping_src, tolerance));
+                               InterfaceCommunicator<dim, dim>(array_q_points_dst,
+                                                               *triangulation_src,
+                                                               *mapping_src,
+                                                               tolerance,
+                                                               marked_vertices));
 
       InterfaceCommunicator<dim, dim> & communicator = map_communicator.find(quadrature)->second;
 
@@ -532,8 +561,12 @@ public:
 
         for(types::global_dof_index q = 0; q < array_q_points_src.size(); ++q)
         {
-          array_multiplicity[q] = n_locally_owned_active_cells_around_point(
-            dof_handler_src->get_triangulation(), *mapping_src, array_q_points_src[q], tolerance);
+          array_multiplicity[q] =
+            n_locally_owned_active_cells_around_point(dof_handler_src->get_triangulation(),
+                                                      *mapping_src,
+                                                      array_q_points_src[q],
+                                                      tolerance,
+                                                      marked_vertices);
 
           AssertThrow(array_multiplicity[q] > 0, ExcMessage("No adjacent points have been found."));
         }
@@ -576,7 +609,8 @@ public:
                                                                 *mapping_src,
                                                                 *dof_vector_src_double_ptr,
                                                                 array_q_points_src[q],
-                                                                tolerance);
+                                                                tolerance,
+                                                                marked_vertices);
 
           AssertThrow(array_cache_src[q].size() > 0,
                       ExcMessage("No adjacent points have been found."));
@@ -589,7 +623,7 @@ public:
 
 #ifdef ENABLE_PARALLEL_COMPUTATION
       /*
-       * Communication: transfer results back to dst-side
+       * 4. Communication: transfer results back to dst-side
        */
       communicator.process(mpi_map_solution_src, array_solution_dst, 11 + quadrature);
 #else
@@ -624,6 +658,9 @@ public:
 
     dof_vector_src_double_ptr->update_ghost_values();
 
+    /*
+     * 1. Interpolate data on src-side
+     */
     for(auto quadrature : quad_rules_dst)
     {
       ArrayVectorTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;
@@ -657,7 +694,7 @@ public:
 
 #ifdef ENABLE_PARALLEL_COMPUTATION
       /*
-       * Communication: transfer results back to dst-side
+       * 2. Communication: transfer results back to dst-side
        */
       InterfaceCommunicator<dim, dim> & communicator = map_communicator.find(quadrature)->second;
 
