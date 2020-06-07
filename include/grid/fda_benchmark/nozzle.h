@@ -117,8 +117,7 @@ create_grid_and_set_boundary_ids_nozzle(
   GridTools::shift(offset_cone, tria_cone);
 
   // apply conical geometry: stretch vertex positions according to z-coordinate
-  for(typename Triangulation<dim>::cell_iterator cell = tria_cone.begin(); cell != tria_cone.end();
-      ++cell)
+  for(auto cell : tria_cone.active_cell_iterators())
   {
     for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
     {
@@ -214,9 +213,7 @@ create_grid_and_set_boundary_ids_nozzle(
   std::vector<double>       radius_0_cone;
   std::vector<double>       radius_1_cone;
 
-  for(typename Triangulation<dim>::cell_iterator cell = current_tria->begin();
-      cell != current_tria->end();
-      ++cell)
+  for(auto cell : current_tria->active_cell_iterators())
   {
     // INFLOW
     if(cell->center()[2] < Z2_INFLOW)
@@ -342,9 +339,7 @@ create_grid_and_set_boundary_ids_nozzle(
 
   for(unsigned int i = 0; i < manifold_ids.size(); ++i)
   {
-    for(typename Triangulation<dim>::cell_iterator cell = current_tria->begin();
-        cell != current_tria->end();
-        ++cell)
+    for(auto cell : current_tria->active_cell_iterators())
     {
       if(cell->manifold_id() == manifold_ids[i])
       {
@@ -362,9 +357,7 @@ create_grid_and_set_boundary_ids_nozzle(
 
   for(unsigned int i = 0; i < manifold_ids_cone.size(); ++i)
   {
-    for(typename Triangulation<dim>::cell_iterator cell = current_tria->begin();
-        cell != current_tria->end();
-        ++cell)
+    for(auto cell : current_tria->active_cell_iterators())
     {
       if(cell->manifold_id() == manifold_ids_cone[i])
       {
@@ -386,9 +379,7 @@ create_grid_and_set_boundary_ids_nozzle(
   /*
    *  BOUNDARY ID's
    */
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(),
-                                             endc = triangulation->end();
-  for(; cell != endc; ++cell)
+  for(auto cell : triangulation->active_cell_iterators())
   {
     for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
     {
