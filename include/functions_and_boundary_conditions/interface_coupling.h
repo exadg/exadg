@@ -21,8 +21,6 @@
 
 using namespace dealii;
 
-#define ENABLE_PARALLEL_COMPUTATION
-
 template<int dim, int spacedim>
 class InterfaceCommunicator
 {
@@ -356,7 +354,7 @@ private:
   std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int>>> indices_per_process;
   std::map<unsigned int, std::vector<Point<spacedim>>>                       map_recv;
 
-  // sender side (TODO: merge)
+  // sender side
   std::map<unsigned int, std::vector<Point<spacedim>>> relevant_remote_points_per_process;
   std::map<unsigned int, std::vector<unsigned int>>    relevant_remote_points_count_per_process;
 };
@@ -393,14 +391,8 @@ private:
   typedef std::vector<std::vector<Tensor<rank, dim, double>>> ArrayVectorTensor;
 
 public:
-  InterfaceCoupling(MPI_Comm const & mpi_comm)
-    : dof_index_dst(0), dof_handler_src(nullptr), mapping_src(nullptr)
+  InterfaceCoupling() : dof_index_dst(0), dof_handler_src(nullptr), mapping_src(nullptr)
   {
-    (void)mpi_comm;
-#ifndef ENABLE_PARALLEL_COMPUTATION
-    AssertThrow(Utilities::MPI::n_mpi_processes(mpi_comm) == 1,
-                ExcMessage("InterfaceCoupling is currently only implemented for serial case."));
-#endif
   }
 
   void
@@ -515,7 +507,7 @@ public:
       std::map<mpi_rank, ArrayVectorTensor> & mpi_map_solution_src =
         map_solution_src.find(quadrature)->second;
 
-#ifdef ENABLE_PARALLEL_COMPUTATION
+
       /*
        * 2. Communication: receive and cache quadrature points of other ranks,
        *    redundantly store own q-points (those that are needed)
@@ -530,66 +522,11 @@ public:
       InterfaceCommunicator<dim, dim> & communicator = map_communicator.find(quadrature)->second;
 
       mpi_map_q_points_src = communicator.get_remote_quadrature_points();
-#else
-      /*
-       * for the serial case, simply copy array of quadrature points
-       */
-      mpi_map_q_points_src.emplace(0, array_q_points_dst);
-#endif
 
-#ifdef ENABLE_PARALLEL_COMPUTATION
       communicator.init_solution_values(array_solution_dst);
 
       communicator.init_remote_solution_values(mpi_map_solution_src);
-#else
-      map_multiplicity_src.emplace(quadrature, std::map<mpi_rank, std::vector<unsigned int>>());
 
-      std::map<mpi_rank, std::vector<unsigned int>> & mpi_map_multiplicity_src =
-        map_multiplicity_src.find(quadrature)->second;
-
-      // determine multiplicity for all quadrature points
-      for(auto it : mpi_map_q_points_src)
-      {
-        mpi_rank const          proc               = it.first;
-        ArrayQuadraturePoints & array_q_points_src = it.second;
-
-        mpi_map_multiplicity_src.emplace(proc,
-                                         std::vector<unsigned int>(array_q_points_src.size(), 0));
-
-        std::vector<unsigned int> & array_multiplicity =
-          mpi_map_multiplicity_src.find(proc)->second;
-
-        for(types::global_dof_index q = 0; q < array_q_points_src.size(); ++q)
-        {
-          array_multiplicity[q] =
-            n_locally_owned_active_cells_around_point(dof_handler_src->get_triangulation(),
-                                                      *mapping_src,
-                                                      array_q_points_src[q],
-                                                      tolerance,
-                                                      marked_vertices);
-
-          AssertThrow(array_multiplicity[q] > 0, ExcMessage("No adjacent points have been found."));
-        }
-      }
-
-      // initialize results vector on src-side according to multiplicity vector
-      for(auto it : mpi_map_multiplicity_src)
-      {
-        mpi_rank const              proc                   = it.first;
-        std::vector<unsigned int> & array_multiplicity_src = it.second;
-
-        mpi_map_solution_src.emplace(proc, ArrayVectorTensor());
-        ArrayVectorTensor & array_solution_src = mpi_map_solution_src.find(proc)->second;
-        array_solution_src.resize(array_multiplicity_src.size());
-
-        for(types::global_dof_index q = 0; q < array_multiplicity_src.size(); ++q)
-        {
-          array_solution_src[q] =
-            std::vector<Tensor<rank, dim, double>>(array_multiplicity_src[q],
-                                                   Tensor<rank, dim, double>());
-        }
-      }
-#endif
 
       /*
        * 3. Compute dof indices and shape values for all quadrature points
@@ -614,24 +551,14 @@ public:
 
           AssertThrow(array_cache_src[q].size() > 0,
                       ExcMessage("No adjacent points have been found."));
-#ifndef ENABLE_PARALLEL_COMPUTATION
-          AssertThrow(array_cache_src[q].size() == mpi_map_multiplicity_src.find(proc)->second[q],
-                      ExcMessage("Number of adjacent points do not match."));
-#endif
         }
       }
 
-#ifdef ENABLE_PARALLEL_COMPUTATION
+
       /*
        * 4. Communication: transfer results back to dst-side
        */
       communicator.process(mpi_map_solution_src, array_solution_dst, 11 + quadrature);
-#else
-      /*
-       * serial case: mpi_rank = 0, simply copy data
-       */
-      array_solution_dst = mpi_map_solution_src.find(0)->second;
-#endif
     }
 
     // finally, give boundary condition access to the data
@@ -692,19 +619,12 @@ public:
         }
       }
 
-#ifdef ENABLE_PARALLEL_COMPUTATION
       /*
        * 2. Communication: transfer results back to dst-side
        */
       InterfaceCommunicator<dim, dim> & communicator = map_communicator.find(quadrature)->second;
 
       communicator.process(mpi_map_solution_src, array_solution_dst, 11 + quadrature);
-#else
-      /*
-       * serial case: mpi_rank = 0, simply copy data
-       */
-      array_solution_dst = mpi_map_solution_src.find(0)->second;
-#endif
     }
   }
 
@@ -720,9 +640,7 @@ private:
   mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points_dst;
   mutable std::map<quad_index, ArrayVectorTensor>     map_solution_dst;
 
-#ifdef ENABLE_PARALLEL_COMPUTATION
   std::map<quad_index, InterfaceCommunicator<dim, dim>> map_communicator;
-#endif
 
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim, double>>>
     map_bc;
@@ -735,11 +653,8 @@ private:
   Mapping<dim> const *                              mapping_src;
 
   mutable std::map<quad_index, std::map<mpi_rank, ArrayQuadraturePoints>> map_q_points_src;
-#ifndef ENABLE_PARALLEL_COMPUTATION
-  mutable std::map<quad_index, std::map<mpi_rank, std::vector<unsigned int>>> map_multiplicity_src;
-#endif
-  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorCache>>  map_cache_src;
-  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorTensor>> map_solution_src;
+  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorCache>>      map_cache_src;
+  mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorTensor>>     map_solution_src;
 };
 
 

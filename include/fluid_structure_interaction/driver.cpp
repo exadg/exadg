@@ -504,7 +504,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
-      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>());
       structure_to_ale->setup(ale_matrix_free,
                               ale_poisson_operator->get_dof_index(),
                               quad_indices,
@@ -522,7 +522,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
-      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>());
       structure_to_ale->setup(ale_matrix_free,
                               ale_elasticity_operator->get_dof_index(),
                               quad_indices,
@@ -557,7 +557,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     VectorType velocity_structure;
     structure_operator->initialize_dof_vector(velocity_structure);
-    structure_to_fluid.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+    structure_to_fluid.reset(new InterfaceCoupling<dim, dim, Number>());
     structure_to_fluid->setup(fluid_matrix_free,
                               fluid_operator->get_dof_index_velocity(),
                               quad_indices,
@@ -585,7 +585,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     VectorType stress_fluid;
     fluid_operator->initialize_vector_velocity(stress_fluid);
-    fluid_to_structure.reset(new InterfaceCoupling<dim, dim, Number>(mpi_comm));
+    fluid_to_structure.reset(new InterfaceCoupling<dim, dim, Number>());
     fluid_to_structure->setup(structure_matrix_free,
                               structure_operator->get_dof_index(),
                               quad_indices,
