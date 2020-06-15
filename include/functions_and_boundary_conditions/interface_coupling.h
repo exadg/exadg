@@ -14,6 +14,7 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/mpi_consensus_algorithms.h>
 #include <deal.II/base/mpi_consensus_algorithms.templates.h>
+#include <deal.II/grid/grid_tools_cache.h>
 #include <deal.II/numerics/rtree.h>
 
 #include "../postprocessor/evaluate_solution_in_given_point.h"
@@ -32,7 +33,8 @@ public:
                         const parallel::TriangulationBase<dim, spacedim> & tria,
                         const Mapping<dim, spacedim> &                     mapping,
                         const double                                       tolerance,
-                        const std::vector<bool> &                          marked_vertices)
+                        const std::vector<bool> &                          marked_vertices,
+                        std::shared_ptr<GridTools::Cache<dim, dim>> const  cache)
     : comm(tria.get_communicator())
   {
     // create bounding boxed of local active cells
@@ -98,10 +100,18 @@ public:
         const auto & potentially_relevant_points        = points_per_process[my_rank];
         const auto & potentially_relevant_points_offset = points_per_process_offset[my_rank];
 
+        typename Triangulation<dim, dim>::active_cell_iterator cell_hint =
+          typename Triangulation<dim, dim>::active_cell_iterator();
         for(unsigned int j = 0; j < potentially_local_points.size(); ++j)
         {
-          const unsigned int counter = n_locally_owned_active_cells_around_point(
-            tria, mapping, potentially_relevant_points[j], tolerance, marked_vertices);
+          const unsigned int counter =
+            n_locally_owned_active_cells_around_point(tria,
+                                                      mapping,
+                                                      potentially_relevant_points[j],
+                                                      tolerance,
+                                                      cell_hint,
+                                                      marked_vertices,
+                                                      cache);
 
           if(counter > 0)
           {
@@ -147,6 +157,8 @@ public:
         request_buffer.clear();
         request_buffer.resize(recv_buffer.size() / spacedim);
 
+        typename Triangulation<dim, dim>::active_cell_iterator cell_hint =
+          typename Triangulation<dim, dim>::active_cell_iterator();
         for(unsigned int i = 0, j = 0; i < recv_buffer.size(); i += spacedim, ++j)
         {
           Point<spacedim> point;
@@ -154,7 +166,7 @@ public:
             point[j] = recv_buffer[i + j];
 
           const unsigned int counter = n_locally_owned_active_cells_around_point(
-            tria, mapping, point, tolerance, marked_vertices);
+            tria, mapping, point, tolerance, cell_hint, marked_vertices, cache);
 
           request_buffer[j] = counter;
 
@@ -396,23 +408,26 @@ public:
   }
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>                  matrix_free_dst_in,
-        unsigned int const                                        dof_index_dst_in,
-        std::vector<quad_index> const &                           quad_indices_dst_in,
-        MapBoundaryCondition const &                              map_bc_in,
-        std::shared_ptr<parallel::TriangulationBase<dim>> const & trianguation_src_in,
-        DoFHandler<dim> const &                                   dof_handler_src_in,
-        Mapping<dim> const &                                      mapping_src_in,
-        VectorType const &                                        dof_vector_src_in,
-        double const                                              tolerance)
+  setup(std::shared_ptr<MatrixFree<dim, Number>>                matrix_free_dst_in,
+        unsigned int const                                      dof_index_dst_in,
+        std::vector<quad_index> const &                         quad_indices_dst_in,
+        MapBoundaryCondition const &                            map_bc_in,
+        std::shared_ptr<parallel::TriangulationBase<dim>> const triangulation_src_in,
+        DoFHandler<dim> const &                                 dof_handler_src_in,
+        Mapping<dim> const &                                    mapping_src_in,
+        VectorType const &                                      dof_vector_src_in,
+        double const                                            tolerance)
   {
     matrix_free_dst   = matrix_free_dst_in;
     dof_index_dst     = dof_index_dst_in;
     quad_rules_dst    = quad_indices_dst_in;
     map_bc            = map_bc_in;
-    triangulation_src = trianguation_src_in;
+    triangulation_src = triangulation_src_in;
     dof_handler_src   = &dof_handler_src_in;
     mapping_src       = &mapping_src_in;
+
+    std::shared_ptr<GridTools::Cache<dim, dim>> cache_src;
+    cache_src.reset(new GridTools::Cache<dim, dim>(*triangulation_src, *mapping_src));
 
     // mark vertices at interface in order to make search of active cells around point more
     // efficient
@@ -517,7 +532,8 @@ public:
                                                                *triangulation_src,
                                                                *mapping_src,
                                                                tolerance,
-                                                               marked_vertices));
+                                                               marked_vertices,
+                                                               cache_src));
 
       InterfaceCommunicator<dim, dim> & communicator = map_communicator.find(quadrature)->second;
 
@@ -531,6 +547,9 @@ public:
       /*
        * 3. Compute dof indices and shape values for all quadrature points
        */
+      typename Triangulation<dim, dim>::active_cell_iterator cell_hint =
+        typename Triangulation<dim, dim>::active_cell_iterator();
+
       for(auto it : mpi_map_q_points_src)
       {
         mpi_rank const          proc               = it.first;
@@ -542,12 +561,14 @@ public:
 
         for(types::global_dof_index q = 0; q < array_q_points_src.size(); ++q)
         {
-          array_cache_src[q] = get_dof_indices_and_shape_values(*dof_handler_src,
-                                                                *mapping_src,
-                                                                *dof_vector_src_double_ptr,
-                                                                array_q_points_src[q],
-                                                                tolerance,
-                                                                marked_vertices);
+          array_cache_src[q] = get_dof_indices_and_shape_values_hint(*dof_handler_src,
+                                                                     *mapping_src,
+                                                                     *dof_vector_src_double_ptr,
+                                                                     array_q_points_src[q],
+                                                                     tolerance,
+                                                                     cell_hint,
+                                                                     marked_vertices,
+                                                                     cache_src);
 
           AssertThrow(array_cache_src[q].size() > 0,
                       ExcMessage("No adjacent points have been found."));

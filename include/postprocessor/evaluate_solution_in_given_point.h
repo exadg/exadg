@@ -13,6 +13,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/grid_tools_cache.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 using namespace dealii;
@@ -128,16 +129,47 @@ void evaluate_vectorial_quantity_in_point(
 
 template<int dim>
 unsigned int
-n_locally_owned_active_cells_around_point(Triangulation<dim> const & tria,
-                                          Mapping<dim> const &       mapping,
-                                          Point<dim> const &         point,
-                                          double const               tolerance,
-                                          std::vector<bool> const &  marked_vertices)
+n_locally_owned_active_cells_around_point(
+  Triangulation<dim> const &                               tria,
+  Mapping<dim> const &                                     mapping,
+  Point<dim> const &                                       point,
+  double const                                             tolerance,
+  typename Triangulation<dim, dim>::active_cell_iterator & cell_hint,
+  std::vector<bool> const &                                marked_vertices = {},
+  std::shared_ptr<GridTools::Cache<dim, dim>> const        cache           = nullptr)
 {
   using Pair = std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>>;
 
-  std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance, marked_vertices);
+  std::vector<Pair> adjacent_cells;
+
+  try
+  {
+    typedef std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>> Pair;
+    // TODO
+    //    Pair first_cell =
+    //        GridTools::find_active_cell_around_point(mapping,
+    //                                                tria,
+    //                                                point,
+    //                                                cache->get_vertex_to_cell_map(),
+    //                                                cache->get_vertex_to_cell_centers_directions(),
+    //                                                cell_hint,
+    //                                                marked_vertices,
+    //                                                cache->get_used_vertices_rtree(),
+    //                                                tolerance);
+
+    (void)cache;
+    Pair first_cell =
+      GridTools::find_active_cell_around_point(mapping, tria, point, marked_vertices, tolerance);
+
+    // update cell_hint to have a good hint when the function is called next time
+    cell_hint = first_cell.first;
+
+    adjacent_cells =
+      GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance, first_cell);
+  }
+  catch(...)
+  {
+  }
 
   // count locally owned active cells
   unsigned int counter = 0;
@@ -165,18 +197,101 @@ get_dof_indices_and_shape_values(DoFHandler<dim> const &                        
                                  Mapping<dim> const &                               mapping,
                                  LinearAlgebra::distributed::Vector<Number> const & solution,
                                  Point<dim> const &                                 point,
-                                 double const              tolerance       = 1.e-10,
-                                 std::vector<bool> const & marked_vertices = {})
+                                 double const tolerance = 1.e-10)
 {
+  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+
+  std::vector<Pair> adjacent_cells =
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+
+  // fill dof_indices_and_shape_values
   std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
     dof_indices_and_shape_values;
 
+  for(auto cell : adjacent_cells)
+  {
+    // go on only if cell is owned by the processor
+    if(cell.first->is_locally_owned())
+    {
+      const Quadrature<dim> quadrature(GeometryInfo<dim>::project_to_unit_cell(cell.second));
+
+      const FiniteElement<dim> & fe = dof_handler.get_fe();
+      FEValues<dim>              fe_values(mapping, fe, quadrature, update_values);
+      fe_values.reinit(cell.first);
+      std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+      cell.first->get_dof_indices(dof_indices);
+
+      std::vector<types::global_dof_index> dof_indices_global(fe.dofs_per_cell);
+      for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+        dof_indices_global[i] = solution.get_partitioner()->global_to_local(dof_indices[i]);
+
+      std::vector<Number> fe_shape_values(fe.dofs_per_cell);
+      for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+        fe_shape_values[i] = fe_values.shape_value(i, 0);
+
+      dof_indices_and_shape_values.emplace_back(dof_indices_global, fe_shape_values);
+    }
+  }
+
+  return dof_indices_and_shape_values;
+}
+
+template<int dim, typename Number>
+std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+get_dof_indices_and_shape_values_hint(
+  DoFHandler<dim> const &                                  dof_handler,
+  Mapping<dim> const &                                     mapping,
+  LinearAlgebra::distributed::Vector<Number> const &       solution,
+  Point<dim> const &                                       point,
+  double const                                             tolerance,
+  typename Triangulation<dim, dim>::active_cell_iterator & cell_hint,
+  std::vector<bool> const &                                marked_vertices = {},
+  std::shared_ptr<GridTools::Cache<dim, dim>> const        cache           = nullptr)
+{
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+  std::vector<Pair>                                                             adjacent_cells;
 
-  std::vector<Pair> adjacent_cells = GridTools::find_all_active_cells_around_point(
-    mapping, dof_handler, point, tolerance, marked_vertices);
+  try
+  {
+    typedef std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>> PairTria;
+    // TODO
+    //    PairTria first_cell_tria = GridTools::find_active_cell_around_point(mapping,
+    //                                              dof_handler.get_triangulation(),
+    //                                              point,
+    //                                              cache->get_vertex_to_cell_map(),
+    //                                              cache->get_vertex_to_cell_centers_directions(),
+    //                                              cell_hint,
+    //                                              marked_vertices,
+    //                                              cache->get_used_vertices_rtree(),
+    //                                              tolerance);
 
-  // loop over all adjacent cells
+    (void)cache;
+    PairTria first_cell_tria = GridTools::find_active_cell_around_point(
+      mapping, dof_handler.get_triangulation(), point, marked_vertices, tolerance);
+
+    // update cell_hint to have a good hint when the function is called next time
+    cell_hint = first_cell_tria.first;
+
+    // transform Triangulation::active_cell_iterator into DoFHandler::active_cell_iterator,
+    // see constructor of DoFCellAccessor
+    typename DoFHandler<dim>::active_cell_iterator cell_iter = {&dof_handler.get_triangulation(),
+                                                                first_cell_tria.first->level(),
+                                                                first_cell_tria.first->index(),
+                                                                &dof_handler};
+
+    Pair first_cell(cell_iter, first_cell_tria.second);
+
+    adjacent_cells = GridTools::find_all_active_cells_around_point(
+      mapping, dof_handler, point, tolerance, first_cell);
+  }
+  catch(...)
+  {
+  }
+
+  // fill dof_indices_and_shape_values
+  std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>
+    dof_indices_and_shape_values;
+
   for(auto cell : adjacent_cells)
   {
     // go on only if cell is owned by the processor
@@ -206,8 +321,7 @@ get_dof_indices_and_shape_values(DoFHandler<dim> const &                        
 }
 
 /*
- * Interpolate solution from dof vector by using precomputed shape functions values (for
- * efficiency!). Note that we assume that we are dealing with discontinuous finite elements.
+ * Interpolate solution from dof vector by using precomputed shape function values.
  */
 template<int rank, int dim, typename Number>
 struct Interpolator
