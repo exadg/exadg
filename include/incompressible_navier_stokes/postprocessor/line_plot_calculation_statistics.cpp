@@ -213,8 +213,13 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         if(velocity_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          auto dof_indices_and_shape_values =
-            get_dof_indices_and_shape_values(dof_handler_velocity, mapping, velocity, *point_it);
+          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+            mapping, dof_handler_velocity.get_triangulation(), *point_it, 1.e-10);
+
+          auto dof_indices_and_shape_values = get_dof_indices_and_shape_values(adjacent_cells,
+                                                                               dof_handler_velocity,
+                                                                               mapping,
+                                                                               velocity);
 
           for(auto iter = dof_indices_and_shape_values.begin();
               iter != dof_indices_and_shape_values.end();
@@ -227,8 +232,13 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         if(pressure_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          auto dof_indices_and_shape_values =
-            get_dof_indices_and_shape_values(dof_handler_pressure, mapping, pressure, *point_it);
+          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+            mapping, dof_handler_pressure.get_triangulation(), *point_it, 1.e-10);
+
+          auto dof_indices_and_shape_values = get_dof_indices_and_shape_values(adjacent_cells,
+                                                                               dof_handler_pressure,
+                                                                               mapping,
+                                                                               pressure);
 
           for(auto iter = dof_indices_and_shape_values.begin();
               iter != dof_indices_and_shape_values.end();

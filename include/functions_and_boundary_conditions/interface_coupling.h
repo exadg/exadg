@@ -111,7 +111,7 @@ public:
                                                       tolerance,
                                                       cell_hint,
                                                       marked_vertices,
-                                                      cache);
+                                                      *cache);
 
           if(counter > 0)
           {
@@ -166,7 +166,7 @@ public:
             point[j] = recv_buffer[i + j];
 
           const unsigned int counter = n_locally_owned_active_cells_around_point(
-            tria, mapping, point, tolerance, cell_hint, marked_vertices, cache);
+            tria, mapping, point, tolerance, cell_hint, marked_vertices, *cache);
 
           request_buffer[j] = counter;
 
@@ -548,7 +548,7 @@ public:
        * 3. Compute dof indices and shape values for all quadrature points
        */
       typename Triangulation<dim, dim>::active_cell_iterator cell_hint =
-        typename Triangulation<dim, dim>::active_cell_iterator();
+        triangulation_src->begin_active();
 
       for(auto it : mpi_map_q_points_src)
       {
@@ -561,14 +561,19 @@ public:
 
         for(types::global_dof_index q = 0; q < array_q_points_src.size(); ++q)
         {
-          array_cache_src[q] = get_dof_indices_and_shape_values_hint(*dof_handler_src,
-                                                                     *mapping_src,
-                                                                     *dof_vector_src_double_ptr,
-                                                                     array_q_points_src[q],
-                                                                     tolerance,
-                                                                     cell_hint,
-                                                                     marked_vertices,
-                                                                     cache_src);
+          auto adjacent_cells =
+            find_all_active_cells_around_point(*mapping_src,
+                                               dof_handler_src->get_triangulation(),
+                                               array_q_points_src[q],
+                                               tolerance,
+                                               cell_hint,
+                                               marked_vertices,
+                                               *cache_src);
+
+          array_cache_src[q] = get_dof_indices_and_shape_values(adjacent_cells,
+                                                                *dof_handler_src,
+                                                                *mapping_src,
+                                                                *dof_vector_src_double_ptr);
 
           AssertThrow(array_cache_src[q].size() > 0,
                       ExcMessage("No adjacent points have been found."));

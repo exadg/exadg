@@ -68,8 +68,11 @@ InflowDataCalculator<dim, Number>::calculate(
 
           unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
-          array_dof_indices_and_shape_values[array_index] =
-            get_dof_indices_and_shape_values(*dof_handler_velocity, *mapping, velocity, point);
+          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+            *mapping, dof_handler_velocity->get_triangulation(), point, 1.e-10);
+
+          array_dof_indices_and_shape_values[array_index] = get_dof_indices_and_shape_values(
+            adjacent_cells, *dof_handler_velocity, *mapping, velocity);
         }
       }
 
