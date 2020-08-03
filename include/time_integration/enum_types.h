@@ -19,4 +19,15 @@ enum class CFLConditionType
 std::string
 enum_to_string(CFLConditionType const enum_type);
 
+enum class GenAlphaType
+{
+  Newmark,
+  GenAlpha,
+  HHTAlpha,
+  BossakAlpha
+};
+
+std::string
+enum_to_string(GenAlphaType const enum_type);
+
 #endif /* INCLUDE_TIME_INTEGRATION_ENUM_TYPES_H_ */

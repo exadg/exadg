@@ -9,17 +9,12 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_
 
 // deal.II
-#include <deal.II/numerics/vector_tools.h>
-
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 
-#include <deal.II/matrix_free/operators.h>
-
-// functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
 
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -48,26 +43,79 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-// interface
-#include "interface.h"
-
-// preconditioners and solvers
+// solvers/preconditioners
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
-#include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioners/multigrid_preconditioner_momentum.h"
+#include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
 // time integration
-#include "time_integration/time_step_calculation.h"
+#include "../../time_integration/interpolate.h"
 
 using namespace dealii;
 
 namespace IncNS
 {
 template<int dim, typename Number>
-class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
+class DGNavierStokesBase;
+/*
+ * Operator-integration-factor (OIF) sub-stepping.
+ */
+template<int dim, typename Number>
+class OperatorOIF
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  OperatorOIF(std::shared_ptr<DGNavierStokesBase<dim, Number>> operator_in)
+    : pde_operator(operator_in),
+      transport_with_interpolated_velocity(true) // TODO adjust this parameter manually
+  {
+    if(transport_with_interpolated_velocity)
+      initialize_dof_vector(solution_interpolated);
+  }
+
+  void
+  initialize_dof_vector(VectorType & src) const
+  {
+    pde_operator->initialize_vector_velocity(src);
+  }
+
+  // OIF splitting (transport with interpolated velocity)
+  void
+  set_solutions_and_times(std::vector<VectorType const *> const & solutions_in,
+                          std::vector<double> const &             times_in)
+  {
+    solutions = solutions_in;
+    times     = times_in;
+  }
+
+  void
+  evaluate(VectorType & dst, VectorType const & src, double const time) const
+  {
+    if(transport_with_interpolated_velocity)
+    {
+      interpolate(solution_interpolated, time, solutions, times);
+
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+        dst, src, time, solution_interpolated);
+    }
+    else // nonlinear transport (standard convective term)
+    {
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst, src, time);
+    }
+  }
+
+private:
+  std::shared_ptr<DGNavierStokesBase<dim, Number>> pde_operator;
+
+  // OIF splitting (transport with interpolated velocity)
+  bool                            transport_with_interpolated_velocity;
+  std::vector<VectorType const *> solutions;
+  std::vector<double>             times;
+  VectorType mutable solution_interpolated;
+};
+
+template<int dim, typename Number>
+class DGNavierStokesBase : public dealii::Subscriptor
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -83,25 +131,24 @@ protected:
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
-  typedef float MultigridNumber;
-
-  typedef typename Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1>
-    MultigridPoisson;
+  typedef typename Poisson::MultigridPreconditioner<dim, Number, 1> MultigridPoisson;
 
 public:
   /*
    * Constructor.
    */
   DGNavierStokesBase(
-    parallel::TriangulationBase<dim> const & triangulation_in,
-    Mapping<dim> const &                     mapping_in,
+    parallel::TriangulationBase<dim> const & triangulation,
+    Mapping<dim> const &                     mapping,
+    unsigned int const                       degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-    InputParameters const &                         parameters_in,
-    MPI_Comm const &                                mpi_comm_in);
+                                                    periodic_face_pairs,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+    InputParameters const &                         parameters,
+    std::string const &                             field,
+    MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.
@@ -109,8 +156,7 @@ public:
   virtual ~DGNavierStokesBase(){};
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field = "") const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -118,8 +164,9 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_temperature = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+        std::string const &                          dof_index_temperature = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -239,6 +286,13 @@ public:
   void
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
+  // FSI: coupling fluid -> structure
+  // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
+  void
+  interpolate_stress_bc(VectorType &       stress,
+                        VectorType const & velocity,
+                        VectorType const & pressure) const;
+
   /*
    * Time step calculation.
    */
@@ -254,24 +308,20 @@ public:
                           double const       exponent_degree) const;
 
   /*
-   * Special case: pure Dirichlet boundary conditions. For incompressible flows with pure Dirichlet
-   * boundary conditions for the velocity (or more precisely with no Dirichlet boundary conditions
-   * for the pressure), the pressure field is only defined up to an additive constant (since only
-   * the pressure gradient appears in the incompressible Navier-Stokes equations. Different options
-   * are available to fix the pressure level as described below.
+   * For certain setups and types of boundary conditions, the pressure field is only defined up to
+   * an additive constant which originates from the fact that only the derivative of the pressure
+   * appears in the incompressible Navier-Stokes equations. Examples of such a scenario are problems
+   * where the velocity is prescribed on the whole boundary or periodic boundaries.
    */
 
-  // If an analytical solution is available: shift pressure so that the numerical pressure solution
-  // coincides with the analytical pressure solution in an arbitrary point. Note that the parameter
-  // 'time' is only needed for unsteady problems.
-  void
-  shift_pressure(VectorType & pressure, double const & time = 0.0) const;
+  // This function can be used to query whether the pressure level is undefined.
+  bool
+  is_pressure_level_undefined() const;
 
-  // If an analytical solution is available: shift pressure so that the numerical pressure solution
-  // has a mean value identical to the "exact pressure solution" obtained by interpolation of
-  // analytical solution. Note that the parameter 'time' is only needed for unsteady problems.
+  // This function adjust the pressure level, where different options are available to fix the
+  // pressure level. The method selected by this function depends on the specified input parameter.
   void
-  shift_pressure_mean_value(VectorType & pressure, double const & time = 0.0) const;
+  adjust_pressure_level_if_undefined(VectorType & pressure, double const & time) const;
 
   /*
    *  Boussinesq approximation
@@ -410,9 +460,19 @@ protected:
   unsteady_problem_has_to_be_solved() const;
 
   /*
+   * Triangulation
+   */
+  parallel::TriangulationBase<dim> const & triangulation;
+
+  /*
    * Mapping
    */
   Mapping<dim> const & mapping;
+
+  /*
+   * Polynomial degree of velocity shape functions.
+   */
+  unsigned int const degree_u;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
@@ -429,6 +489,8 @@ protected:
    */
   InputParameters const & param;
 
+  std::string const field;
+
   /*
    * In case of projection type incompressible Navier-Stokes solvers this variable is needed to
    * solve the pressure Poisson equation. However, this variable is also needed in case of a
@@ -439,11 +501,11 @@ protected:
    * While the functions specified in BoundaryDescriptorLaplace are relevant for projection-type
    * solvers (pressure Poisson equation has to be solved), the function specified in
    * BoundaryDescriptorLaplace are irrelevant for a coupled solution approach (since the pressure
-   * Laplace operator is only needed for preconditioning, and hence, only the homogeneous part of
-   * the operator has to be evaluated).
+   * Poisson operator is only needed for preconditioning, and hence, only the homogeneous part of
+   * the operator has to be evaluated so that the boundary conditions are never applied).
    *
    */
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
+  std::shared_ptr<Poisson::BoundaryDescriptor<0, dim>> boundary_descriptor_laplace;
 
   /*
    * Special case: pure Dirichlet boundary conditions.
@@ -481,10 +543,10 @@ private:
   std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
   std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
 
-  mutable std::string field;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  bool pressure_level_is_undefined;
 
 protected:
   /*
@@ -605,6 +667,18 @@ private:
                                                         VectorType &                    dst,
                                                         VectorType const &              src,
                                                         Range const & face_range) const;
+
+  void
+  local_interpolate_stress_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                            VectorType &                    dst,
+                                            VectorType const &              src,
+                                            Range const &                   face_range) const;
+
+  // Interpolation of stress requires velocity and pressure, but the MatrixFree interface
+  // only provides one argument, so we store boundaries to have access to both velocity and
+  // pressure.
+  mutable VectorType const * velocity_ptr;
+  mutable VectorType const * pressure_ptr;
 
   /*
    * LES turbulence modeling.

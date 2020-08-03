@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "../../vector_tools/point_value.h"
 #include "../postprocessor/line_plot_data.h"
 
 /*
@@ -29,10 +29,10 @@ public:
   LinePlotCalculator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const &   dof_handler_velocity_in,
-        DoFHandler<dim> const &   dof_handler_pressure_in,
-        Mapping<dim> const &      mapping_in,
-        LinePlotData<dim> const & line_plot_data_in);
+  setup(DoFHandler<dim> const &                dof_handler_velocity_in,
+        DoFHandler<dim> const &                dof_handler_pressure_in,
+        Mapping<dim> const &                   mapping_in,
+        LinePlotDataInstantaneous<dim> const & line_plot_data_in);
 
   void
   evaluate(VectorType const & velocity, VectorType const & pressure) const;
@@ -46,7 +46,7 @@ private:
   SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
   SmartPointer<Mapping<dim> const>    mapping;
 
-  LinePlotData<dim> data;
+  LinePlotDataInstantaneous<dim> data;
 };
 
 

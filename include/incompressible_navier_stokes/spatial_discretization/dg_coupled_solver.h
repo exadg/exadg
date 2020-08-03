@@ -11,14 +11,8 @@
 #include "dg_navier_stokes_base.h"
 
 #include "../../convection_diffusion/spatial_discretization/operators/combined_operator.h"
-
-#include "../../poisson/preconditioner/multigrid_preconditioner.h"
-#include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/util/check_multigrid.h"
-#include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
-#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {
@@ -57,20 +51,10 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'initialize_vector_for_newton_solver'.
+   * 'evaluate_residual'.
    */
   void
-  initialize_vector_for_newton_solver(BlockVectorType & src) const
-  {
-    pde_operator->initialize_block_vector_velocity_pressure(src);
-  }
-
-  /*
-   * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual'.
-   */
-  void
-  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src) const
+  evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
   {
     pde_operator->evaluate_nonlinear_residual(
       dst, src, rhs_vector, time, scaling_factor_mass_matrix);
@@ -179,7 +163,6 @@ private:
   typedef DGNavierStokesBase<dim, Number>    Base;
   typedef DGNavierStokesCoupled<dim, Number> This;
 
-  typedef typename Base::MultigridNumber  MultigridNumber;
   typedef typename Base::MultigridPoisson MultigridPoisson;
 
   typedef typename Base::VectorType VectorType;
@@ -193,12 +176,14 @@ public:
   DGNavierStokesCoupled(
     parallel::TriangulationBase<dim> const & triangulation_in,
     Mapping<dim> const &                     mapping_in,
+    unsigned int const                       degree_u_in,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs_in,
     std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
     std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
     std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
     InputParameters const &                         parameters_in,
+    std::string const &                             field_in,
     MPI_Comm const &                                mpi_comm_in);
 
   /*
@@ -207,8 +192,9 @@ public:
   virtual ~DGNavierStokesCoupled();
 
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_temperature = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+        std::string const &                          dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
@@ -269,24 +255,20 @@ public:
   /*
    * This function solves the nonlinear problem for steady problems.
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear_steady_problem(BlockVectorType &  dst,
                                  VectorType const & rhs_vector,
-                                 bool const &       update_preconditioner,
-                                 unsigned int &     newton_iterations,
-                                 unsigned int &     linear_iterations);
+                                 bool const &       update_preconditioner);
 
   /*
    * This function solves the nonlinear problem for unsteady problems.
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & rhs_vector,
                           double const &     time,
                           bool const &       update_preconditioner,
-                          double const &     scaling_factor_mass_matrix_term,
-                          unsigned int &     newton_iterations,
-                          unsigned int &     linear_iterations);
+                          double const &     scaling_factor_mass_matrix_term);
 
 
   /*
@@ -396,10 +378,10 @@ private:
   NonlinearOperatorCoupled<dim, Number> nonlinear_operator;
 
   // Newton solver
-  std::shared_ptr<NewtonSolver<BlockVectorType,
-                               NonlinearOperatorCoupled<dim, Number>,
-                               LinearOperatorCoupled<dim, Number>,
-                               IterativeSolverBase<BlockVectorType>>>
+  std::shared_ptr<Newton::Solver<BlockVectorType,
+                                 NonlinearOperatorCoupled<dim, Number>,
+                                 LinearOperatorCoupled<dim, Number>,
+                                 IterativeSolverBase<BlockVectorType>>>
     newton_solver;
 
   // Linear operator
@@ -425,7 +407,7 @@ private:
 
   std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
 
-  std::shared_ptr<Poisson::LaplaceOperator<dim, Number>> laplace_operator_classical;
+  std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator_classical;
 
   std::shared_ptr<CompatibleLaplaceOperator<dim, Number>> laplace_operator_compatible;
 

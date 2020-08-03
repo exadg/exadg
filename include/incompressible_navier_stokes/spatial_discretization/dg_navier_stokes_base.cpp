@@ -7,6 +7,15 @@
 
 #include "dg_navier_stokes_base.h"
 
+// deal.II
+#include <deal.II/numerics/vector_tools.h>
+
+// time integration
+#include "time_integration/time_step_calculation.h"
+
+// solvers/preconditioners
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_projection.h"
 
 namespace IncNS
@@ -15,32 +24,42 @@ template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
+    triangulation(triangulation_in),
     mapping(mapping_in),
+    degree_u(degree_u_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor_velocity(boundary_descriptor_velocity_in),
     boundary_descriptor_pressure(boundary_descriptor_pressure_in),
     field_functions(field_functions_in),
     param(parameters_in),
+    field(field_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
-    fe_u(new FESystem<dim>(FE_DGQ<dim>(parameters_in.degree_u), dim)),
-    fe_p(parameters_in.get_degree_p()),
-    fe_u_scalar(parameters_in.degree_u),
+    fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u_in), dim)),
+    fe_p(parameters_in.get_degree_p(degree_u_in)),
+    fe_u_scalar(degree_u_in),
     dof_handler_u(triangulation_in),
     dof_handler_p(triangulation_in),
     dof_handler_u_scalar(triangulation_in),
+    pressure_level_is_undefined(false),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    velocity_ptr(nullptr),
+    pressure_ptr(nullptr)
 {
-  pcout << std::endl << "Construct Navier-Stokes operator ..." << std::endl << std::flush;
+  pcout << std::endl
+        << "Construct incompressible Navier-Stokes operator ..." << std::endl
+        << std::flush;
 
   initialize_boundary_descriptor_laplace();
 
@@ -50,10 +69,30 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   constraint_p.close();
   constraint_u_scalar.close();
 
-  if(param.pure_dirichlet_bc == true &&
-     param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+  // Erroneously, the boundary descriptor might contain too many boundary IDs which
+  // do not even exist in the triangulation. Here, we make sure that each entry of
+  // the boundary descriptor has indeed a counterpart in the triangulation.
+  std::vector<types::boundary_id> boundary_ids = triangulation.get_boundary_ids();
+  for(auto it = boundary_descriptor_pressure->dirichlet_bc.begin();
+      it != boundary_descriptor_pressure->dirichlet_bc.end();
+      ++it)
   {
-    initialization_pure_dirichlet_bc();
+    bool const triangulation_has_boundary_id =
+      std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
+
+    AssertThrow(triangulation_has_boundary_id,
+                ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
+                           "that are not part of the triangulation."));
+  }
+
+  pressure_level_is_undefined = boundary_descriptor_pressure->dirichlet_bc.empty();
+
+  if(is_pressure_level_undefined())
+  {
+    if(param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+    {
+      initialization_pure_dirichlet_bc();
+    }
   }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
@@ -61,74 +100,74 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+DGNavierStokesBase<dim, Number>::fill_matrix_free_data(
+  MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  this->field = field;
-
   // append mapping flags
-  matrix_free_wrapper.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
-  matrix_free_wrapper.append_mapping_flags(
+  matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+  matrix_free_data.append_mapping_flags(
     Operators::DivergenceKernel<dim, Number>::get_mapping_flags());
-  matrix_free_wrapper.append_mapping_flags(
+  matrix_free_data.append_mapping_flags(
     Operators::GradientKernel<dim, Number>::get_mapping_flags());
 
   if(param.convective_problem())
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
 
   if(param.viscous_problem())
-    matrix_free_wrapper.append_mapping_flags(
-      Operators::ViscousKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(
+      Operators::ViscousKernel<dim, Number>::get_mapping_flags(true, true));
 
   if(param.right_hand_side)
-    matrix_free_wrapper.append_mapping_flags(
-      Operators::RHSKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_divergence_penalty)
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_continuity_penalty)
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
   // dof handler
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_u, field + dof_index_u);
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_p, field + dof_index_p);
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_u_scalar, field + dof_index_u_scalar);
+  matrix_free_data.insert_dof_handler(&dof_handler_u, field + dof_index_u);
+  matrix_free_data.insert_dof_handler(&dof_handler_p, field + dof_index_p);
+  matrix_free_data.insert_dof_handler(&dof_handler_u_scalar, field + dof_index_u_scalar);
 
   // constraint
-  matrix_free_wrapper.insert_constraint(&constraint_u, field + dof_index_u);
-  matrix_free_wrapper.insert_constraint(&constraint_p, field + dof_index_p);
-  matrix_free_wrapper.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
+  matrix_free_data.insert_constraint(&constraint_u, field + dof_index_u);
+  matrix_free_data.insert_constraint(&constraint_p, field + dof_index_p);
+  matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree_u + 1), field + quad_index_u);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.get_degree_p() + 1), field + quad_index_p);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
-                                        field + quad_index_u_nonlinear);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree_u + 1), field + quad_index_u);
+  matrix_free_data.insert_quadrature(QGauss<1>(param.get_degree_p(degree_u) + 1),
+                                     field + quad_index_p);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree_u + (degree_u + 2) / 2),
+                                     field + quad_index_u_nonlinear);
   if(param.store_previous_boundary_values)
   {
-    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.degree_u + 1),
-                                          field + quad_index_u_gauss_lobatto);
-    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.get_degree_p() + 1),
-                                          field + quad_index_p_gauss_lobatto);
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree_u + 1),
+                                       field + quad_index_u_gauss_lobatto);
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(degree_u) + 1),
+                                       field + quad_index_p_gauss_lobatto);
   }
 }
 
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in,
-  std::string const &                             dof_index_temperature)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+  std::string const &                          dof_index_temperature)
 {
-  pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
+  pcout << std::endl
+        << "Setup incompressible Navier-Stokes operator ..." << std::endl
+        << std::flush;
 
   // MatrixFree
-  matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper_in->get_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   // initialize data structures depending on MatrixFree
   initialize_operators(dof_index_temperature);
@@ -159,7 +198,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
-  boundary_descriptor_laplace.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
   // Dirichlet BCs for pressure
   boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor_pressure->dirichlet_bc;
@@ -195,8 +234,9 @@ DGNavierStokesBase<dim, Number>::distribute_dofs()
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
-  unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
-  unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.get_degree_p() + 1, dim);
+  unsigned int const ndofs_per_cell_velocity = Utilities::pow(degree_u + 1, dim) * dim;
+  unsigned int const ndofs_per_cell_pressure =
+    Utilities::pow(param.get_degree_p(degree_u) + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -204,12 +244,12 @@ DGNavierStokesBase<dim, Number>::distribute_dofs()
         << std::flush;
 
   pcout << "Velocity:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", param.degree_u);
+  print_parameter(pcout, "degree of 1D polynomials", degree_u);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_velocity);
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
 
   pcout << "Pressure:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p());
+  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p(degree_u));
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_pressure);
   print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
 
@@ -263,7 +303,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   MassMatrixOperatorData<dim> mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index  = get_dof_index_velocity();
   mass_matrix_operator_data.quad_index = get_quad_index_velocity_linear();
-  mass_matrix_operator.reinit(*matrix_free, constraint_dummy, mass_matrix_operator_data);
+  mass_matrix_operator.initialize(*matrix_free, constraint_dummy, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_velocity.initialize(*matrix_free,
@@ -279,7 +319,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   RHSOperatorData<dim> rhs_data;
   rhs_data.dof_index = get_dof_index_velocity();
   if(param.boussinesq_term)
-    rhs_data.dof_index_scalar = matrix_free_wrapper->get_dof_index(dof_index_temperature);
+    rhs_data.dof_index_scalar = matrix_free_data->get_dof_index(dof_index_temperature);
   rhs_data.quad_index                                = get_quad_index_velocity_linear();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
@@ -287,7 +327,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
   rhs_data.kernel_data.gravitational_force           = field_functions->gravitational_force;
 
-  rhs_operator.reinit(*matrix_free, rhs_data);
+  rhs_operator.initialize(*matrix_free, rhs_data);
 
   // gradient operator
   GradientOperatorData<dim> gradient_operator_data;
@@ -298,7 +338,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   gradient_operator_data.formulation          = param.gradp_formulation;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
   gradient_operator_data.bc                   = boundary_descriptor_pressure;
-  gradient_operator.reinit(*matrix_free, gradient_operator_data);
+  gradient_operator.initialize(*matrix_free, gradient_operator_data);
 
   // divergence operator
   DivergenceOperatorData<dim> divergence_operator_data;
@@ -309,7 +349,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   divergence_operator_data.formulation          = param.divu_formulation;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
   divergence_operator_data.bc                   = boundary_descriptor_velocity;
-  divergence_operator.reinit(*matrix_free, divergence_operator_data);
+  divergence_operator.initialize(*matrix_free, divergence_operator_data);
 
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
@@ -319,10 +359,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.quad_index_nonlinear = get_quad_index_velocity_nonlinear();
   convective_operator_data.bc                   = boundary_descriptor_velocity;
-  convective_operator.reinit(*matrix_free,
-                             constraint_dummy,
-                             convective_operator_data,
-                             convective_kernel);
+  convective_operator.initialize(*matrix_free,
+                                 constraint_dummy,
+                                 convective_operator_data,
+                                 convective_kernel);
 
   // viscous operator
   ViscousOperatorData<dim> viscous_operator_data;
@@ -331,7 +371,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   viscous_operator_data.dof_index            = get_dof_index_velocity();
   viscous_operator_data.quad_index           = get_quad_index_velocity_linear();
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  viscous_operator.reinit(*matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
+  viscous_operator.initialize(*matrix_free,
+                              constraint_dummy,
+                              viscous_operator_data,
+                              viscous_kernel);
 
   // Momentum operator
   MomentumOperatorData<dim> data;
@@ -361,7 +404,8 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   data.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
   data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
 
-  momentum_operator.reinit(*matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
+  momentum_operator.initialize(
+    *matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
 
   if(param.use_divergence_penalty)
   {
@@ -369,7 +413,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     Operators::DivergencePenaltyKernelData div_penalty_data;
     div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
     div_penalty_data.viscosity              = param.viscosity;
-    div_penalty_data.degree                 = param.degree_u;
+    div_penalty_data.degree                 = degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
 
     div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
@@ -383,7 +427,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     operator_data.dof_index  = get_dof_index_velocity();
     operator_data.quad_index = get_quad_index_velocity_linear();
 
-    div_penalty_operator.reinit(*matrix_free, operator_data, div_penalty_kernel);
+    div_penalty_operator.initialize(*matrix_free, operator_data, div_penalty_kernel);
   }
 
   if(param.use_continuity_penalty)
@@ -394,7 +438,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     kernel_data.type_penalty_parameter = param.type_penalty_parameter;
     kernel_data.which_components       = param.continuity_penalty_components;
     kernel_data.viscosity              = param.viscosity;
-    kernel_data.degree                 = param.degree_u;
+    kernel_data.degree                 = degree_u;
     kernel_data.penalty_factor         = param.continuity_penalty_factor;
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
@@ -410,7 +454,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
     operator_data.use_boundary_data = param.continuity_penalty_use_boundary_data;
     operator_data.bc                = this->boundary_descriptor_velocity;
 
-    conti_penalty_operator.reinit(*matrix_free, operator_data, conti_penalty_kernel);
+    conti_penalty_operator.initialize(*matrix_free, operator_data, conti_penalty_kernel);
   }
 
   if(param.use_divergence_penalty || param.use_continuity_penalty)
@@ -437,7 +481,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
 
       projection_operator.reset(new PROJ_OPERATOR());
 
-      projection_operator->reinit(
+      projection_operator->initialize(
         *matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
     }
   }
@@ -454,7 +498,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.kinematic_viscosity = param.viscosity;
   model_data.dof_index           = get_dof_index_velocity();
   model_data.quad_index          = get_quad_index_velocity_linear();
-  model_data.degree              = param.degree_u;
+  model_data.degree              = degree_u;
   turbulence_model.initialize(*matrix_free, get_mapping(), viscous_kernel, model_data);
 }
 
@@ -544,56 +588,56 @@ template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity() const
 {
-  return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
+  return matrix_free_data->get_dof_index(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_pressure() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_p);
+  return matrix_free_data->get_dof_index(field + dof_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity_scalar() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_u_scalar);
+  return matrix_free_data->get_dof_index(field + dof_index_u_scalar);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linear() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_u);
+  return matrix_free_data->get_quad_index(field + quad_index_u);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_p);
+  return matrix_free_data->get_quad_index(field + quad_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_nonlinear() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_u_nonlinear);
+  return matrix_free_data->get_quad_index(field + quad_index_u_nonlinear);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_u_gauss_lobatto);
+  return matrix_free_data->get_quad_index(field + quad_index_u_gauss_lobatto);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_p_gauss_lobatto);
+  return matrix_free_data->get_quad_index(field + quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>
@@ -693,7 +737,7 @@ template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_polynomial_degree() const
 {
-  return param.degree_u;
+  return degree_u;
 }
 
 template<int dim, typename Number>
@@ -792,6 +836,29 @@ DGNavierStokesBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType & 
 }
 
 template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::interpolate_stress_bc(VectorType &       stress,
+                                                       VectorType const & velocity,
+                                                       VectorType const & pressure) const
+{
+  velocity_ptr = &velocity;
+  pressure_ptr = &pressure;
+
+  stress = 0.0;
+
+  VectorType src_dummy;
+  matrix_free->loop(&This::cell_loop_empty,
+                    &This::face_loop_empty,
+                    &This::local_interpolate_stress_bc_boundary_face,
+                    this,
+                    stress,
+                    src_dummy);
+
+  velocity_ptr = nullptr;
+  pressure_ptr = nullptr;
+}
+
+template<int dim, typename Number>
 double
 DGNavierStokesBase<dim, Number>::calculate_minimum_element_length() const
 {
@@ -809,7 +876,7 @@ DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velo
                                                     get_quad_index_velocity_linear(),
                                                     velocity,
                                                     cfl,
-                                                    param.degree_u,
+                                                    degree_u,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -831,47 +898,76 @@ DGNavierStokesBase<dim, Number>::apply_mass_matrix_add(VectorType &       dst,
 }
 
 template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::shift_pressure(VectorType & pressure, double const & time) const
+bool
+DGNavierStokesBase<dim, Number>::is_pressure_level_undefined() const
 {
-  VectorType vec1(pressure);
-  for(unsigned int i = 0; i < vec1.local_size(); ++i)
-    vec1.local_element(i) = 1.;
-  field_functions->analytical_solution_pressure->set_time(time);
-  double const exact   = field_functions->analytical_solution_pressure->value(first_point);
-  double       current = 0.;
-  if(pressure.locally_owned_elements().is_element(dof_index_first_point))
-    current = pressure(dof_index_first_point);
-  current = Utilities::MPI::sum(current, mpi_comm);
-  pressure.add(exact - current, vec1);
+  return pressure_level_is_undefined;
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressure,
-                                                           double const & time) const
+DGNavierStokesBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType &   pressure,
+                                                                    double const & time) const
 {
-  // one cannot use Number as template here since Number might be float
-  // while analytical_solution_pressure is of type Function<dim,double>
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  if(is_pressure_level_undefined())
+  {
+    // If an analytical solution is available: shift pressure so that the numerical pressure
+    // solution coincides with the analytical pressure solution in an arbitrary point. Note that the
+    // parameter 'time' is only needed for unsteady problems.
+    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+    {
+      field_functions->analytical_solution_pressure->set_time(time);
+      double const exact = field_functions->analytical_solution_pressure->value(first_point);
 
-  VectorTypeDouble vec_double;
-  vec_double = pressure; // initialize
+      double current = 0.;
+      if(pressure.locally_owned_elements().is_element(dof_index_first_point))
+        current = pressure(dof_index_first_point);
+      current = Utilities::MPI::sum(current, mpi_comm);
 
-  field_functions->analytical_solution_pressure->set_time(time);
-  VectorTools::interpolate(get_mapping(),
-                           dof_handler_p,
-                           *(field_functions->analytical_solution_pressure),
-                           vec_double);
+      VectorType vec_temp(pressure);
+      for(unsigned int i = 0; i < vec_temp.local_size(); ++i)
+        vec_temp.local_element(i) = 1.;
 
-  double const exact   = vec_double.mean_value();
-  double const current = pressure.mean_value();
+      pressure.add(exact - current, vec_temp);
+    }
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
+    {
+      LinearAlgebra::set_zero_mean_value(pressure);
+    }
+    // If an analytical solution is available: shift pressure so that the numerical pressure
+    // solution has a mean value identical to the "exact pressure solution" obtained by
+    // interpolation of analytical solution. Note that the parameter 'time' is only needed for
+    // unsteady problems.
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+    {
+      // one cannot use Number as template here since Number might be float
+      // while analytical_solution_pressure is of type Function<dim,double>
+      typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-  VectorType vec_temp2(pressure);
-  for(unsigned int i = 0; i < vec_temp2.local_size(); ++i)
-    vec_temp2.local_element(i) = 1.;
+      VectorTypeDouble vec_double;
+      vec_double = pressure; // initialize
 
-  pressure.add(exact - current, vec_temp2);
+      field_functions->analytical_solution_pressure->set_time(time);
+      VectorTools::interpolate(get_mapping(),
+                               dof_handler_p,
+                               *(field_functions->analytical_solution_pressure),
+                               vec_double);
+
+      double const exact   = vec_double.mean_value();
+      double const current = pressure.mean_value();
+
+      VectorType vec_temp(pressure);
+      for(unsigned int i = 0; i < vec_temp.local_size(); ++i)
+        vec_temp.local_element(i) = 1.;
+
+      pressure.add(exact - current, vec_temp);
+    }
+    else
+    {
+      AssertThrow(false,
+                  ExcMessage("Specified method to adjust pressure level is not implemented."));
+    }
+  }
 }
 
 template<int dim, typename Number>
@@ -953,12 +1049,12 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   rhs_operator.apply(rhs, src);
 
   // setup Laplace operator for scalar velocity vector
-  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
   laplace_operator_data.dof_index  = get_dof_index_velocity_scalar();
   laplace_operator_data.quad_index = get_quad_index_velocity_linear();
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_streamfunction;
-  boundary_descriptor_streamfunction.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  std::shared_ptr<Poisson::BoundaryDescriptor<0, dim>> boundary_descriptor_streamfunction;
+  boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
   // fill boundary descriptor: Assumption: only Dirichlet BC's
   boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor_velocity->dirichlet_bc;
@@ -974,10 +1070,10 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   laplace_operator_data.kernel_data.IP_factor = 1.0;
 
-  typedef Poisson::LaplaceOperator<dim, Number> Laplace;
-  Laplace                                       laplace_operator;
-  AffineConstraints<double>                     constraint_dummy;
-  laplace_operator.reinit(*matrix_free, constraint_dummy, laplace_operator_data);
+  typedef Poisson::LaplaceOperator<dim, Number, 1> Laplace;
+  Laplace                                          laplace_operator;
+  AffineConstraints<double>                        constraint_dummy;
+  laplace_operator.initialize(*matrix_free, constraint_dummy, laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
@@ -1302,7 +1398,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {
-      typedef MultigridPreconditionerProjection<dim, Number, MultigridNumber> MULTIGRID;
+      typedef MultigridPreconditionerProjection<dim, Number> MULTIGRID;
 
       preconditioner_projection.reset(new MULTIGRID(this->mpi_comm));
 
@@ -1449,7 +1545,7 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
     BoundaryTypeU const boundary_type =
       this->boundary_descriptor_velocity->get_boundary_type(boundary_id);
 
-    if(boundary_type == BoundaryTypeU::Dirichlet)
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
     {
       integrator.reinit(face);
       integrator.read_dof_values(dst);
@@ -1461,17 +1557,37 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
         unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
                                      .face_to_cell_index_nodal[local_face_number][q];
 
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+        vector g = vector();
 
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id);
+        if(boundary_type == BoundaryTypeU::Dirichlet)
+        {
+          auto bc = this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id)->second;
+          auto q_points = integrator.quadrature_point(q);
 
-        vector g =
-          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
+          g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
+        }
+        else if(boundary_type == BoundaryTypeU::DirichletMortar)
+        {
+          auto bc =
+            this->boundary_descriptor_velocity->dirichlet_mortar_bc.find(boundary_id)->second;
+
+          g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
+
         integrator.submit_dof_value(g, index);
       }
 
       integrator.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
+                    boundary_type == BoundaryTypeU::Symmetry,
+                  ExcMessage("BoundaryTypeU not implemented."));
     }
   }
 }
@@ -1508,17 +1624,84 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
         unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
                                      .face_to_cell_index_nodal[local_face_number][q];
 
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+        auto bc       = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id)->second;
+        auto q_points = integrator.quadrature_point(q);
 
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
-
-        scalar g =
-          FunctionEvaluator<dim, Number, 0>::value(it->second, q_points, this->evaluation_time);
+        scalar g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 
       integrator.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeP::Neumann,
+                  ExcMessage("BoundaryTypeP not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &,
+  Range const & face_range) const
+{
+  unsigned int const dof_index_u = this->get_dof_index_velocity();
+  unsigned int const dof_index_p = this->get_dof_index_pressure();
+  unsigned int const quad_index  = this->get_quad_index_velocity_gauss_lobatto();
+
+  FaceIntegratorU integrator_u(matrix_free, true, dof_index_u, quad_index);
+  FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+
+    BoundaryTypeU const boundary_type =
+      this->boundary_descriptor_velocity->get_boundary_type(boundary_id);
+
+    // a Dirichlet boundary for the fluid is a stress boundary for the structure
+    if(boundary_type == BoundaryTypeU::DirichletMortar)
+    {
+      integrator_u.reinit(face);
+      integrator_u.gather_evaluate(*velocity_ptr, false, true);
+
+      integrator_p.reinit(face);
+      integrator_p.gather_evaluate(*pressure_ptr, true, false);
+
+      for(unsigned int q = 0; q < integrator_u.n_q_points; ++q)
+      {
+        unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
+
+        unsigned int const index = matrix_free.get_shape_info(dof_index_u, quad_index)
+                                     .face_to_cell_index_nodal[local_face_number][q];
+
+        // compute traction acting on structure with normal vector in opposite direction
+        // as compared to the fluid domain
+        vector normal = integrator_u.get_normal_vector(q);
+        tensor grad_u = integrator_u.get_gradient(q);
+        scalar p      = integrator_p.get_value(q);
+
+        // incompressible flow solver is formulated in terms of kinematic viscosity and kinematic
+        // pressure
+        // -> multiply by density to get true traction in N/m^2.
+        vector traction =
+          param.density * (param.viscosity * (grad_u + transpose(grad_u)) * normal - p * normal);
+
+        integrator_u.submit_dof_value(traction, index);
+      }
+
+      integrator_u.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeU::Dirichlet ||
+                    boundary_type == BoundaryTypeU::Neumann ||
+                    boundary_type == BoundaryTypeU::Symmetry,
+                  ExcMessage("BoundaryTypeU not implemented."));
     }
   }
 }

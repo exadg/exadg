@@ -11,7 +11,7 @@ template<typename Number>
 TimeIntBDFBase<Number>::TimeIntBDFBase(double const        start_time_,
                                        double const        end_time_,
                                        unsigned int const  max_number_of_time_steps_,
-                                       double const        order_,
+                                       unsigned int const  order_,
                                        bool const          start_with_low_order_,
                                        bool const          adaptive_time_stepping_,
                                        RestartData const & restart_data_,
@@ -30,7 +30,7 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::setup(bool const do_restart)
 {
-  this->pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
+  this->pcout << std::endl << "Setup BDF time integrator ..." << std::endl << std::flush;
 
   // operator-integration-factor splitting
   initialize_oif();
@@ -108,20 +108,6 @@ TimeIntBDFBase<Number>::get_scaling_factor_time_derivative_term() const
 
 template<typename Number>
 double
-TimeIntBDFBase<Number>::get_next_time() const
-{
-  /*
-   *   time t
-   *  -------->   t_{n-2}   t_{n-1}   t_{n}      t_{n+1}
-   *  _______________|_________|________|___________|___________\
-   *                 |         |        |           |           /
-   *  time_steps-vec:   dt[2]     dt[1]    dt[0]
-   */
-  return this->time + this->time_steps[0];
-}
-
-template<typename Number>
-double
 TimeIntBDFBase<Number>::get_previous_time(int const i /* t_{n-i} */) const
 {
   /*
@@ -139,18 +125,6 @@ TimeIntBDFBase<Number>::get_previous_time(int const i /* t_{n-i} */) const
     t -= this->time_steps[k];
 
   return t;
-}
-
-template<typename Number>
-void
-TimeIntBDFBase<Number>::reset_time(double const & current_time)
-{
-  // Only allow overwriting the time to a value smaller than start_time (which is needed when
-  // coupling different solvers, different domains, etc.).
-  if(current_time <= start_time + eps)
-    this->time = current_time;
-  else
-    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
 }
 
 template<typename Number>
@@ -224,14 +198,17 @@ TimeIntBDFBase<Number>::set_current_time_step_size(double const & time_step_size
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::do_timestep_pre_solve()
+TimeIntBDFBase<Number>::do_timestep_pre_solve(bool const print_header)
 {
+  if(this->print_solver_info() && print_header)
+    this->output_solver_info_header();
+
   update_time_integrator_constants();
 }
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
+TimeIntBDFBase<Number>::do_timestep_post_solve()
 {
   prepare_vectors_for_next_timestep();
 
@@ -249,7 +226,10 @@ TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
     write_restart();
   }
 
-  output_remaining_time(do_write_output);
+  if(this->print_solver_info())
+  {
+    output_remaining_time();
+  }
 }
 
 template<typename Number>

@@ -16,7 +16,7 @@
 
 #include "../solvers/solver_data.h"
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 
 enum class MultigridType
 {

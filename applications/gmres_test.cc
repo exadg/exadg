@@ -300,7 +300,7 @@ gmres_test_2a()
 
   VectorizedArray<double> l2_norm2 = res2.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm2[v] << std::endl;
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
@@ -311,7 +311,7 @@ gmres_test_2a()
 
   VectorizedArray<double> l2_norm = res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
 }
 
@@ -357,7 +357,7 @@ gmres_test_2b()
 
   VectorizedArray<double> l2_norm2 = res2.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm2[v] << std::endl;
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
@@ -368,7 +368,7 @@ gmres_test_2b()
 
   VectorizedArray<double> l2_norm = res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
 }
 
@@ -401,7 +401,7 @@ gmres_test_2c()
   x.set_value(make_vectorized_array<double>(1.0), 1);
 
   VectorizedArray<double> inhom_array = make_vectorized_array<double>(1.0);
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     if(v > 1)
       inhom_array[v] = 0.0;
 
@@ -418,7 +418,7 @@ gmres_test_2c()
 
   VectorizedArray<double> l2_norm2 = res2.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm2[v] << std::endl;
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
@@ -429,7 +429,7 @@ gmres_test_2c()
 
   VectorizedArray<double> l2_norm = res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
+  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
 }
 

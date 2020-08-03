@@ -9,9 +9,9 @@
 
 //#define OUTPUT_DEBUG_INFO
 
-template<int dim>
-StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,
-                                          const Mapping<dim> &    mapping_in)
+template<int dim, typename Number>
+StatisticsManager<dim, Number>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,
+                                                  const Mapping<dim> &    mapping_in)
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
@@ -28,10 +28,10 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_ve
 }
 
 
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid_transform,
-                              TurbulentChannelData const &                  turb_channel_data_in)
+StatisticsManager<dim, Number>::setup(const std::function<double(double const &)> & grid_transform,
+                                      TurbulentChannelData const & turb_channel_data_in)
 {
   turb_channel_data = turb_channel_data_in;
 
@@ -264,11 +264,11 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::evaluate(const VectorType &   velocity,
-                                 double const &       time,
-                                 unsigned int const & time_step_number)
+StatisticsManager<dim, Number>::evaluate(VectorType const &   velocity,
+                                         double const &       time,
+                                         unsigned int const & time_step_number)
 {
   if(turb_channel_data.calculate_statistics == true)
   {
@@ -302,9 +302,9 @@ StatisticsManager<dim>::evaluate(const VectorType &   velocity,
 }
 
 
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::evaluate(const VectorType & velocity)
+StatisticsManager<dim, Number>::evaluate(VectorType const & velocity)
 {
   std::vector<const VectorType *> vecs;
   vecs.push_back(&velocity);
@@ -313,21 +313,21 @@ StatisticsManager<dim>::evaluate(const VectorType & velocity)
 
 
 
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::evaluate(const std::vector<VectorType> & velocity)
+StatisticsManager<dim, Number>::evaluate(std::vector<VectorType> const & velocity)
 {
-  std::vector<const VectorType *> vecs;
+  std::vector<VectorType const *> vecs;
   for(unsigned int i = 0; i < velocity.size(); ++i)
     vecs.push_back(&velocity[i]);
   do_evaluate(vecs);
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::write_output(const std::string output_prefix,
-                                     const double      dynamic_viscosity,
-                                     const double      density)
+StatisticsManager<dim, Number>::write_output(const std::string output_prefix,
+                                             const double      dynamic_viscosity,
+                                             const double      density)
 {
   if(Utilities::MPI::this_mpi_process(communicator) == 0)
   {
@@ -380,11 +380,9 @@ StatisticsManager<dim>::write_output(const std::string output_prefix,
   }
 }
 
-
-
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::reset()
+StatisticsManager<dim, Number>::reset()
 {
   for(unsigned int i = 0; i < dim; i++)
     std::fill(vel_glob[i].begin(), vel_glob[i].end(), 0.);
@@ -416,9 +414,9 @@ StatisticsManager<dim>::reset()
  *   - <u'v'> = <(u-<u>)*(v-<v>)> = <u*v> - <u*<v>> - <<u>*v> + <u><v> = <u*v> - <u><v>
  *            = <u*v> since <v> = 0
  */
-template<int dim>
+template<int dim, typename Number>
 void
-StatisticsManager<dim>::do_evaluate(const std::vector<const VectorType *> & velocity)
+StatisticsManager<dim, Number>::do_evaluate(const std::vector<const VectorType *> & velocity)
 {
   // Use local vectors xxx_loc in order to average/integrate over all
   // locally owned cells of current processor.
@@ -613,5 +611,8 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const VectorType *> & velo
 }
 
 
-template class StatisticsManager<2>;
-template class StatisticsManager<3>;
+template class StatisticsManager<2, float>;
+template class StatisticsManager<3, float>;
+
+template class StatisticsManager<2, double>;
+template class StatisticsManager<3, double>;

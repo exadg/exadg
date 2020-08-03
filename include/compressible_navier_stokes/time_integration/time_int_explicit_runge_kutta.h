@@ -8,15 +8,13 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "time_integration/time_int_explicit_runge_kutta_base.h"
-
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/ssp_runge_kutta.h"
-
-#include "../postprocessor/postprocessor_base.h"
+#include "time_integration/time_int_explicit_runge_kutta_base.h"
 
 using namespace dealii;
 
@@ -24,6 +22,9 @@ namespace CompNS
 {
 // forward declarations
 class InputParameters;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {
@@ -41,6 +42,7 @@ public:
 
   TimeIntExplRK(std::shared_ptr<Operator>                       operator_in,
                 InputParameters const &                         param_in,
+                unsigned int const                              refine_steps_time_in,
                 MPI_Comm const &                                mpi_comm_in,
                 std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
@@ -96,11 +98,9 @@ private:
 
   InputParameters const & param;
 
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
+  unsigned int const refine_steps_time;
 
-  // timer
-  mutable Timer  timer_postprocessing;
-  mutable double time_postprocessing;
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   // monitor the L2-norm of the solution vector in order to detect instabilities
   mutable double l2_norm;

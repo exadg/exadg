@@ -121,6 +121,30 @@ enum_to_string(FormulationConvectiveTerm const enum_type)
   return string_type;
 }
 
+std::string
+enum_to_string(MeshMovementType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case MeshMovementType::Analytical:
+      string_type = "Analytical";
+      break;
+    case MeshMovementType::Poisson:
+      string_type = "Poisson";
+      break;
+    case MeshMovementType::Elasticity:
+      string_type = "Elasticity";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 PHYSICAL QUANTITIES                                */

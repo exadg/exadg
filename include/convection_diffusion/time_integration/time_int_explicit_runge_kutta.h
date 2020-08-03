@@ -8,13 +8,12 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_explicit_runge_kutta_base.h"
-
-#include "../postprocessor/postprocessor_base.h"
 
 using namespace dealii;
 
@@ -22,6 +21,9 @@ namespace ConvDiff
 {
 // forward declarations
 class InputParameters;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {
@@ -43,11 +45,9 @@ public:
 
   TimeIntExplRK(std::shared_ptr<Operator>                       operator_in,
                 InputParameters const &                         param_in,
+                unsigned int const                              refine_steps_time_in,
                 MPI_Comm const &                                mpi_comm_in,
                 std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
-
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
   void
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
@@ -89,6 +89,8 @@ private:
 
   InputParameters const & param;
 
+  unsigned int const refine_steps_time;
+
   std::vector<VectorType const *> velocities;
   std::vector<double>             times;
 
@@ -98,8 +100,6 @@ private:
 
   double const cfl;
   double const diffusion_number;
-
-  double wall_time;
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 };

@@ -1,0 +1,17 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "DegreeMin": "5",
+        "DegreeMax": "5",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2",
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+       	"Name": "StokesGuermond",
+	"OutputDirectory": "output/stokes_guermond/",
+	"OutputName": "stokes_guermond"
+    }
+}

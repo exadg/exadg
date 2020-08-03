@@ -1,0 +1,11 @@
+{
+    "General": {
+	"Precision": "double",
+    "Dim": "3",
+    "Degree": "3",
+    "RefineSpace": "0"
+    },
+    "Application": {
+	"Name": "FDA"
+    }
+}

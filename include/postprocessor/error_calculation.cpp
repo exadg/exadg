@@ -28,6 +28,7 @@ calculate_error(MPI_Comm const &                     mpi_comm,
 
   LinearAlgebra::distributed::Vector<double> numerical_solution_double;
   numerical_solution_double = numerical_solution;
+  numerical_solution_double.update_ghost_values();
 
   // calculate error norm
   Vector<double> error_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
@@ -48,6 +49,8 @@ calculate_error(MPI_Comm const &                     mpi_comm,
     Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
     LinearAlgebra::distributed::Vector<double> zero_solution;
     zero_solution.reinit(numerical_solution);
+    zero_solution.update_ghost_values();
+
     VectorTools::integrate_difference(mapping,
                                       dof_handler,
                                       zero_solution,

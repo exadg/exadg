@@ -33,22 +33,11 @@ write_output(OutputDataBase const &  output_data,
   data_out.set_flags(flags);
 
   data_out.attach_dof_handler(dof_handler);
+  solution_vector.update_ghost_values();
   data_out.add_data_vector(solution_vector, "solution");
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
-
-  // write surface mesh
-  if(output_data.write_surface_mesh)
-  {
-    write_surface_mesh(dof_handler.get_triangulation(),
-                       mapping,
-                       output_data.degree,
-                       folder,
-                       file + "_surface",
-                       output_counter,
-                       mpi_comm);
-  }
 }
 
 template<int dim, typename Number>
@@ -79,6 +68,28 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
                        output_data.output_folder,
                        output_data.output_name,
                        mpi_comm);
+  }
+
+  // write surface mesh
+  if(output_data.write_surface_mesh)
+  {
+    write_surface_mesh(dof_handler->get_triangulation(),
+                       *mapping,
+                       output_data.degree,
+                       output_data.output_folder,
+                       output_data.output_name,
+                       0,
+                       mpi_comm);
+  }
+
+  // processor_id
+  if(output_data.write_processor_id)
+  {
+    GridOut grid_out;
+
+    grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
+                                             output_data.output_folder + output_data.output_name +
+                                               "_processor_id");
   }
 }
 

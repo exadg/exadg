@@ -12,36 +12,34 @@ INCLUDE_DIRECTORIES(
 SET( SOURCE_FILES
      # Poisson
      poisson.cc
-     #poisson_old.cc
-     #poisson_dual.cc
-     #multigrid_solver.cc
-     #poisson_lung.cc
-     #lung_tria.cc
-     #laplace_operator_matrix_free.cc
-     poisson_performance.cc
- 
+     poisson_throughput.cc
 
      # Scalar reaction-convection-diffusion
-     convection_diffusion_performance.cc
      convection_diffusion.cc
+     convection_diffusion_throughput.cc
 
      # Incompressible Navier-Stokes
-     incompressible_navier_stokes_performance.cc
      incompressible_navier_stokes.cc
-     incompressible_navier_stokes_two_domains.cc
+     incompressible_navier_stokes_throughput.cc
+     incompressible_navier_stokes_precursor.cc
 
-     # incompressible flow with scalar transport
+     # Incompressible flow with scalar transport
      incompressible_flow_with_transport.cc
 
-     # fluid-structure interaction
-     fluid_structure_interaction.cc
-
      # Compressible Navier-Stokes
-     compressible_navier_stokes_performance.cc 
-     compressible_navier_stokes.cc
+     compressible_navier_stokes.cc 
+     compressible_navier_stokes_throughput.cc
+
+     # Elasticity
+     elasticity.cc
+     elasticity_throughput.cc
+
+     # Fluid-structure interaction
+     fluid_structure_interaction.cc
 
      # Other
      gmres_test.cc
+     #timer.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

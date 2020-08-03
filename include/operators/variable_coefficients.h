@@ -11,6 +11,41 @@
 using namespace dealii;
 
 template<int dim, typename Number>
+class VariableCoefficientsCells
+{
+private:
+  typedef VectorizedArray<Number> scalar;
+
+public:
+  void
+  initialize(MatrixFree<dim, Number> const & matrix_free,
+             unsigned int const              degree,
+             Number const &                  constant_coefficient)
+  {
+    unsigned int const points_per_cell = Utilities::pow(degree + 1, dim);
+
+    coefficients_cell.reinit(matrix_free.n_cell_batches(), points_per_cell);
+    coefficients_cell.fill(make_vectorized_array<Number>(constant_coefficient));
+  }
+
+  scalar
+  get_coefficient(unsigned int const cell, unsigned int const q) const
+  {
+    return coefficients_cell[cell][q];
+  }
+
+  void
+  set_coefficient(unsigned int const cell, unsigned int const q, scalar const & value)
+  {
+    coefficients_cell[cell][q] = value;
+  }
+
+private:
+  // variable coefficients
+  Table<2, scalar> coefficients_cell;
+};
+
+template<int dim, typename Number>
 class VariableCoefficients
 {
 private:

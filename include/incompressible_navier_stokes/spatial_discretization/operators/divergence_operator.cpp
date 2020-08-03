@@ -17,8 +17,8 @@ DivergenceOperator<dim, Number>::DivergenceOperator()
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free_in,
-                                        DivergenceOperatorData<dim> const & data_in)
+DivergenceOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &     matrix_free_in,
+                                            DivergenceOperatorData<dim> const & data_in)
 {
   this->matrix_free = &matrix_free_in;
   this->data        = data_in;

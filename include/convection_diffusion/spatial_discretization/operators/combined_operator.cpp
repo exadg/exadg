@@ -6,7 +6,7 @@
  */
 
 #include "combined_operator.h"
-#include "verify_boundary_conditions.h"
+
 #include "weak_boundary_conditions.h"
 
 namespace ConvDiff
@@ -18,18 +18,20 @@ Operator<dim, Number>::Operator() : scaling_factor_mass_matrix(1.0)
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
-                              AffineConstraints<double> const & constraint_matrix,
-                              OperatorData<dim> const &         data)
+Operator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
+                                  AffineConstraints<double> const & constraint_matrix,
+                                  OperatorData<dim> const &         data)
 {
+  operator_data = data;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
-  if(this->data.unsteady_problem)
+  if(operator_data.unsteady_problem)
   {
     mass_kernel.reset(new MassMatrixKernel<dim, Number>());
   }
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
   {
     convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
     convective_kernel->reinit(matrix_free,
@@ -38,60 +40,69 @@ Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                               this->is_mg);
   }
 
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
   {
     diffusive_kernel.reset(new Operators::DiffusiveKernel<dim, Number>());
     diffusive_kernel->reinit(matrix_free, data.diffusive_kernel_data, data.dof_index);
   }
 
   // integrator flags
-  if(this->data.unsteady_problem)
+  if(operator_data.unsteady_problem)
     this->integrator_flags = this->integrator_flags || mass_kernel->get_integrator_flags();
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     this->integrator_flags = this->integrator_flags || convective_kernel->get_integrator_flags();
 
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
     this->integrator_flags = this->integrator_flags || diffusive_kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::reinit(
+Operator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
   AffineConstraints<double> const &                         constraint_matrix,
   OperatorData<dim> const &                                 data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel_in,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel_in)
 {
+  operator_data = data;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
-  if(this->data.unsteady_problem)
+  if(operator_data.unsteady_problem)
     mass_kernel.reset(new MassMatrixKernel<dim, Number>());
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel = convective_kernel_in;
 
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
     diffusive_kernel = diffusive_kernel_in;
 
   // integrator flags
-  if(this->data.unsteady_problem)
+  if(operator_data.unsteady_problem)
     this->integrator_flags = this->integrator_flags || mass_kernel->get_integrator_flags();
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     this->integrator_flags = this->integrator_flags || convective_kernel->get_integrator_flags();
 
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
     this->integrator_flags = this->integrator_flags || diffusive_kernel->get_integrator_flags();
+}
+
+template<int dim, typename Number>
+OperatorData<dim> const &
+Operator<dim, Number>::get_data() const
+{
+  return operator_data;
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::update_after_mesh_movement()
 {
-  if(this->data.diffusive_problem)
-    diffusive_kernel->calculate_penalty_parameter(*this->matrix_free, this->data.dof_index);
+  if(operator_data.diffusive_problem)
+    diffusive_kernel->calculate_penalty_parameter(*this->matrix_free, operator_data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -105,7 +116,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel->set_velocity_copy(velocity);
 }
 
@@ -113,7 +124,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel->set_velocity_ptr(velocity);
 }
 
@@ -137,7 +148,7 @@ Operator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
   Base::reinit_cell(cell);
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel->reinit_cell(cell);
 }
 
@@ -147,9 +158,9 @@ Operator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel->reinit_face(face);
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
     diffusive_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
 }
 
@@ -159,9 +170,9 @@ Operator<dim, Number>::reinit_boundary_face(unsigned int const face) const
 {
   Base::reinit_boundary_face(face);
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
     diffusive_kernel->reinit_boundary_face(*this->integrator_m);
 }
 
@@ -173,9 +184,9 @@ Operator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  if(this->data.convective_problem)
+  if(operator_data.convective_problem)
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
-  if(this->data.diffusive_problem)
+  if(operator_data.diffusive_problem)
     diffusive_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
 }
 
@@ -196,20 +207,20 @@ Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
     if(this->integrator_flags.cell_evaluate.gradient)
       gradient = integrator.get_gradient(q);
 
-    if(this->data.unsteady_problem)
+    if(operator_data.unsteady_problem)
     {
       value_flux += mass_kernel->get_volume_flux(scaling_factor_mass_matrix, value);
     }
 
-    if(this->data.convective_problem)
+    if(operator_data.convective_problem)
     {
-      if(this->data.convective_kernel_data.formulation ==
+      if(operator_data.convective_kernel_data.formulation ==
          FormulationConvectiveTerm::DivergenceFormulation)
       {
         gradient_flux +=
           convective_kernel->get_volume_flux_divergence_form(value, integrator, q, this->time);
       }
-      else if(this->data.convective_kernel_data.formulation ==
+      else if(operator_data.convective_kernel_data.formulation ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
         value_flux +=
@@ -221,7 +232,7 @@ Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
       }
     }
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       gradient_flux += diffusive_kernel->get_volume_flux(integrator, q);
     }
@@ -248,7 +259,7 @@ Operator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_flux_m = make_vectorized_array<Number>(0.0);
     scalar value_flux_p = make_vectorized_array<Number>(0.0);
 
-    if(this->data.convective_problem)
+    if(operator_data.convective_problem)
     {
       std::tuple<scalar, scalar> flux = convective_kernel->calculate_flux_interior_and_neighbor(
         q, integrator_m, value_m, value_p, normal_m, this->time, true);
@@ -257,7 +268,7 @@ Operator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       value_flux_p += std::get<1>(flux);
     }
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
       scalar normal_gradient_p = integrator_p.get_normal_derivative(q);
@@ -274,7 +285,7 @@ Operator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     integrator_m.submit_value(value_flux_m, q);
     integrator_p.submit_value(value_flux_p, q);
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
       integrator_m.submit_normal_derivative(gradient_flux, q);
@@ -300,13 +311,13 @@ Operator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
 
     scalar value_flux = make_vectorized_array<Number>(0.0);
 
-    if(this->data.convective_problem)
+    if(operator_data.convective_problem)
     {
       value_flux += convective_kernel->calculate_flux_interior(
         q, integrator_m, value_m, value_p, normal_m, this->time, true);
     }
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       // set exterior value to zero
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
@@ -320,7 +331,7 @@ Operator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
 
     integrator_m.submit_value(value_flux, q);
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
       integrator_m.submit_normal_derivative(gradient_flux, q);
@@ -347,7 +358,7 @@ Operator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrat
 
     scalar value_flux = make_vectorized_array<Number>(0.0);
 
-    if(this->data.convective_problem)
+    if(operator_data.convective_problem)
     {
       // TODO
       // The matrix-free implementation in deal.II does currently not allow to access neighboring
@@ -361,7 +372,7 @@ Operator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrat
         q, integrator_m, value_m, value_p, normal_m, this->time, exterior_velocity_available);
     }
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       // set exterior value to zero
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
@@ -375,7 +386,7 @@ Operator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrat
 
     integrator_m.submit_value(value_flux, q);
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
       integrator_m.submit_normal_derivative(gradient_flux, q);
@@ -401,13 +412,13 @@ Operator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
 
     scalar value_flux = make_vectorized_array<Number>(0.0);
 
-    if(this->data.convective_problem)
+    if(operator_data.convective_problem)
     {
       value_flux += convective_kernel->calculate_flux_interior(
         q, integrator_p, value_p, value_m, normal_p, this->time, true);
     }
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       // set gradient_m to zero
       scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
@@ -422,7 +433,7 @@ Operator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
 
     integrator_p.submit_value(value_flux, q);
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_p, value_m);
       // opposite sign since n⁺ = -n⁻
@@ -437,25 +448,25 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
                                             OperatorType const &       operator_type,
                                             types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value<dim, Number, 1, 0>(q, integrator_m, operator_type);
-    scalar value_p = calculate_exterior_value<dim, Number, 1, 0>(value_m,
-                                                                 q,
-                                                                 integrator_m,
-                                                                 operator_type,
-                                                                 boundary_type,
-                                                                 boundary_id,
-                                                                 this->data.bc,
-                                                                 this->time);
+    scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
+    scalar value_p = calculate_exterior_value(value_m,
+                                              q,
+                                              integrator_m,
+                                              operator_type,
+                                              boundary_type,
+                                              boundary_id,
+                                              operator_data.bc,
+                                              this->time);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
     scalar value_flux = make_vectorized_array<Number>(0.0);
 
-    if(this->data.convective_problem)
+    if(operator_data.convective_problem)
     {
       // In case of numerical velocity field:
       // Simply use velocity_p = velocity_m on boundary faces
@@ -464,19 +475,17 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
         q, integrator_m, value_m, value_p, normal_m, this->time, false);
     }
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
-      scalar normal_gradient_m =
-        calculate_interior_normal_gradient<dim, Number, 1, 0>(q, integrator_m, operator_type);
-      scalar normal_gradient_p =
-        calculate_exterior_normal_gradient<dim, Number, 1, 0>(normal_gradient_m,
-                                                              q,
-                                                              integrator_m,
-                                                              operator_type,
-                                                              boundary_type,
-                                                              boundary_id,
-                                                              this->data.bc,
-                                                              this->time);
+      scalar normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
+      scalar normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
+                                                                    q,
+                                                                    integrator_m,
+                                                                    operator_type,
+                                                                    boundary_type,
+                                                                    boundary_id,
+                                                                    operator_data.bc,
+                                                                    this->time);
 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
@@ -486,22 +495,12 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
 
     integrator_m.submit_value(value_flux, q);
 
-    if(this->data.diffusive_problem)
+    if(operator_data.diffusive_problem)
     {
       scalar gradient_flux = diffusive_kernel->calculate_gradient_flux(value_m, value_p);
       integrator_m.submit_normal_derivative(gradient_flux, q);
     }
   }
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  OperatorData<dim> const &            data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
-{
-  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class Operator<2, float>;

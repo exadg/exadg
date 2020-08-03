@@ -5,21 +5,15 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 #include "../multigrid/multigrid_input_parameters.h"
 #include "../preconditioner/preconditioner_base.h"
-
 
 template<typename Operator, typename TrilinosNumber>
 class PreconditionerAMG : public PreconditionerBase<TrilinosNumber>
 {
 private:
   typedef LinearAlgebra::distributed::Vector<TrilinosNumber> VectorTypeTrilinos;
-
-  // reference to matrix-free operator
-  Operator const & pde_operator;
-
-  AMGData amg_data;
 
 #ifdef DEAL_II_WITH_TRILINOS
 public:
@@ -31,10 +25,9 @@ private:
 #endif
 
 public:
-  PreconditionerAMG(Operator const & op, AMGData data = AMGData()) : pde_operator(op)
+  PreconditionerAMG(Operator const & op, AMGData data = AMGData())
+    : pde_operator(op), amg_data(data)
   {
-    amg_data = data;
-
 #ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix);
@@ -48,6 +41,14 @@ public:
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
   }
+
+#ifdef DEAL_II_WITH_TRILINOS
+  TrilinosWrappers::SparseMatrix const &
+  get_system_matrix()
+  {
+    return system_matrix;
+  }
+#endif
 
   void
   update()
@@ -77,6 +78,12 @@ public:
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
   }
+
+private:
+  // reference to matrix-free operator
+  Operator const & pde_operator;
+
+  AMGData amg_data;
 };
 
 #endif

@@ -7,8 +7,18 @@
 
 #include "dg_operator.h"
 
+// deal.II
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/numerics/vector_tools.h>
+
 #include "project_velocity.h"
 #include "time_integration/time_step_calculation.h"
+
+// solvers and preconditioners
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
+#include "../preconditioners/multigrid_preconditioner.h"
 
 namespace ConvDiff
 {
@@ -16,18 +26,22 @@ template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
   Mapping<dim> const &                           mapping_in,
+  unsigned int const                             degree_in,
   PeriodicFaces const                            periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
   InputParameters const &                        param_in,
+  std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
+    degree(degree_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
-    fe(param.degree),
+    field(field_in),
+    fe(degree_in),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -36,7 +50,7 @@ DGOperator<dim, Number>::DGOperator(
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
+    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
     dof_handler_velocity.reset(new DoFHandler<dim>(triangulation_in));
   }
 
@@ -50,66 +64,61 @@ DGOperator<dim, Number>::DGOperator(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
-  this->field = field;
-
   // append mapping flags
   if(param.problem_type == ProblemType::Unsteady)
   {
-    matrix_free_wrapper.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.right_hand_side)
   {
-    matrix_free_wrapper.append_mapping_flags(
-      Operators::RHSKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.convective_problem())
   {
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.diffusive_problem())
   {
-    matrix_free_wrapper.append_mapping_flags(
-      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(
+      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(true, true));
   }
 
   // DoFHandler, AffineConstraints
-  matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index_std);
-  matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_std);
+  matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
+  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
 
   if(needs_own_dof_handler_velocity())
   {
-    matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), field + dof_index_velocity);
-    matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_velocity);
+    matrix_free_data.insert_dof_handler(&(*dof_handler_velocity), get_dof_name_velocity());
+    matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name_velocity());
   }
 
   // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index_std);
+  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 
   if(param.use_overintegration)
   {
-    matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + (param.degree + 2) / 2),
-                                          field + quad_index_overintegration);
+    matrix_free_data.insert_quadrature(QGauss<1>(degree + (degree + 2) / 2),
+                                       get_quad_name_overintegration());
   }
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in,
-  std::string const &                             dof_index_velocity_external_in)
+DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+                               std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+                               std::string const & dof_index_velocity_external_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
-  matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper->get_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   dof_index_velocity_external = dof_index_velocity_external_in;
 
@@ -121,7 +130,7 @@ DGOperator<dim, Number>::setup(
   mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  mass_matrix_operator.reinit(*matrix_free, constraint_matrix, mass_matrix_operator_data);
+  mass_matrix_operator.initialize(*matrix_free, constraint_matrix, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_matrix_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
@@ -155,10 +164,10 @@ DGOperator<dim, Number>::setup(
       param.implement_block_diagonal_preconditioner_matrix_free;
     convective_operator_data.kernel_data = convective_kernel_data;
 
-    convective_operator.reinit(*matrix_free,
-                               constraint_matrix,
-                               convective_operator_data,
-                               convective_kernel);
+    convective_operator.initialize(*matrix_free,
+                                   constraint_matrix,
+                                   convective_operator_data,
+                                   convective_kernel);
   }
 
   // diffusive operator
@@ -181,10 +190,10 @@ DGOperator<dim, Number>::setup(
       param.implement_block_diagonal_preconditioner_matrix_free;
     diffusive_operator_data.kernel_data = diffusive_kernel_data;
 
-    diffusive_operator.reinit(*matrix_free,
-                              constraint_matrix,
-                              diffusive_operator_data,
-                              diffusive_kernel);
+    diffusive_operator.initialize(*matrix_free,
+                                  constraint_matrix,
+                                  diffusive_operator_data,
+                                  diffusive_kernel);
   }
 
   // rhs operator
@@ -192,7 +201,7 @@ DGOperator<dim, Number>::setup(
   rhs_operator_data.dof_index     = get_dof_index();
   rhs_operator_data.quad_index    = get_quad_index();
   rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
-  rhs_operator.reinit(*matrix_free, rhs_operator_data);
+  rhs_operator.initialize(*matrix_free, rhs_operator_data);
 
   // merged operator
   if(param.temporal_discretization == TemporalDiscretization::BDF ||
@@ -251,7 +260,7 @@ DGOperator<dim, Number>::setup(
         get_quad_index_overintegration() :
         get_quad_index();
 
-    combined_operator.reinit(
+    combined_operator.initialize(
       *matrix_free, constraint_matrix, combined_operator_data, convective_kernel, diffusive_kernel);
   }
 
@@ -272,13 +281,13 @@ DGOperator<dim, Number>::distribute_dofs()
     dof_handler_velocity->distribute_mg_dofs();
   }
 
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "degree of 1D polynomials", degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
@@ -288,6 +297,20 @@ std::string
 DGOperator<dim, Number>::get_dof_name() const
 {
   return field + dof_index_std;
+}
+
+template<int dim, typename Number>
+std::string
+DGOperator<dim, Number>::get_quad_name() const
+{
+  return field + quad_index_std;
+}
+
+template<int dim, typename Number>
+std::string
+DGOperator<dim, Number>::get_quad_name_overintegration() const
+{
+  return field + quad_index_overintegration;
 }
 
 template<int dim, typename Number>
@@ -301,7 +324,7 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index() const
 {
-  return matrix_free_wrapper->get_dof_index(get_dof_name());
+  return matrix_free_data->get_dof_index(get_dof_name());
 }
 
 template<int dim, typename Number>
@@ -323,7 +346,7 @@ unsigned int
 DGOperator<dim, Number>::get_dof_index_velocity() const
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
+    return matrix_free_data->get_dof_index(get_dof_name_velocity());
   else
     return numbers::invalid_unsigned_int;
 }
@@ -332,14 +355,14 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_std);
+  return matrix_free_data->get_quad_index(field + quad_index_std);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_overintegration() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index_overintegration);
+  return matrix_free_data->get_quad_index(field + quad_index_overintegration);
 }
 
 template<int dim, typename Number>
@@ -406,11 +429,11 @@ DGOperator<dim, Number>::initialize_preconditioner()
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    preconditioner.reset(new MULTIGRID(this->mpi_comm));
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+    preconditioner.reset(new Multigrid(this->mpi_comm));
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
     parallel::TriangulationBase<dim> const * tria =
       dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
@@ -420,14 +443,17 @@ DGOperator<dim, Number>::initialize_preconditioner()
     if(param.mg_operator_type == MultigridOperatorType::ReactionConvection ||
        param.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      unsigned int const degree_scalar = fe.degree;
-      unsigned int const degree_velocity =
-        matrix_free_wrapper->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
-      AssertThrow(
-        degree_scalar == degree_velocity,
-        ExcMessage(
-          "When using a multigrid preconditioner for the scalar convection-diffusion equation, "
-          "the scalar field and the velocity field must have the same polynomial degree."));
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+      {
+        unsigned int const degree_scalar = fe.degree;
+        unsigned int const degree_velocity =
+          matrix_free_data->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
+        AssertThrow(
+          degree_scalar == degree_velocity,
+          ExcMessage(
+            "When using a multigrid preconditioner for the scalar convection-diffusion equation, "
+            "the scalar field and the velocity field must have the same polynomial degree."));
+      }
     }
 
     OperatorData<dim> const & data = combined_operator.get_data();
@@ -815,7 +841,7 @@ DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
                                                     get_quad_index(),
                                                     velocity,
                                                     cfl,
-                                                    param.degree,
+                                                    degree,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -834,7 +860,7 @@ DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
                                                     field_functions->velocity,
                                                     time,
                                                     cfl,
-                                                    param.degree,
+                                                    degree,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -868,14 +894,14 @@ template<int dim, typename Number>
 DoFHandler<dim> const &
 DGOperator<dim, Number>::get_dof_handler_velocity() const
 {
-  return matrix_free_wrapper->get_dof_handler(get_dof_name_velocity());
+  return matrix_free_data->get_dof_handler(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_polynomial_degree() const
 {
-  return param.degree;
+  return degree;
 }
 
 template<int dim, typename Number>
@@ -895,19 +921,6 @@ DGOperator<dim, Number>::update_after_mesh_movement()
   {
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }
-}
-
-// TODO: implement filtering as a separate module
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::filter_solution(VectorType & solution) const
-{
-  typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
-
-  std::shared_ptr<MULTIGRID> mg_preconditioner =
-    std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-  if(mg_preconditioner.get() != 0)
-    mg_preconditioner->project_and_prolongate(solution);
 }
 
 template class DGOperator<2, float>;

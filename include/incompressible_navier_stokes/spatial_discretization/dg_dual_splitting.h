@@ -23,8 +23,7 @@ private:
   typedef DGNavierStokesProjectionMethods<dim, Number> ProjBase;
   typedef DGNavierStokesDualSplitting<dim, Number>     This;
 
-  typedef typename Base::VectorType      VectorType;
-  typedef typename Base::MultigridNumber MultigridNumber;
+  typedef typename Base::VectorType VectorType;
 
   typedef typename Base::scalar scalar;
   typedef typename Base::vector vector;
@@ -40,15 +39,17 @@ public:
    * Constructor.
    */
   DGNavierStokesDualSplitting(
-    parallel::TriangulationBase<dim> const & triangulation_in,
-    Mapping<dim> const &                     mapping_in,
+    parallel::TriangulationBase<dim> const & triangulation,
+    Mapping<dim> const &                     mapping,
+    unsigned int const                       degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-    InputParameters const &                         parameters_in,
-    MPI_Comm const &                                mpi_comm_in);
+                                                    periodic_face_pairs,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+    InputParameters const &                         parameters,
+    std::string const &                             field,
+    MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.
@@ -170,13 +171,6 @@ private:
 
   // Neumann boundary condition term
 
-  // body force term
-  void
-  local_rhs_ppe_nbc_body_force_term_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                      VectorType &                    dst,
-                                                      VectorType const &              src,
-                                                      Range const & face_range) const;
-
   // dg_u/dt term with analytical derivative
   void
   local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
@@ -192,6 +186,13 @@ private:
     VectorType &                    dst,
     VectorType const &              src,
     Range const &                   face_range) const;
+
+  // body force term
+  void
+  local_rhs_ppe_nbc_body_force_term_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                      VectorType &                    dst,
+                                                      VectorType const &              src,
+                                                      Range const & face_range) const;
 
   // convective term
   void

@@ -5,12 +5,14 @@
  *      Author: fehn
  */
 
+#include <deal.II/grid/grid_tools.h>
+
 #include "line_plot_calculation_statistics.h"
 
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "../../vector_tools/interpolate_solution.h"
 
-template<int dim>
-LinePlotCalculatorStatistics<dim>::LinePlotCalculatorStatistics(
+template<int dim, typename Number>
+LinePlotCalculatorStatistics<dim, Number>::LinePlotCalculatorStatistics(
   DoFHandler<dim> const & dof_handler_velocity_in,
   DoFHandler<dim> const & dof_handler_pressure_in,
   Mapping<dim> const &    mapping_in,
@@ -26,27 +28,29 @@ LinePlotCalculatorStatistics<dim>::LinePlotCalculatorStatistics(
 {
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::setup(LinePlotData<dim> const & line_plot_data_in)
+LinePlotCalculatorStatistics<dim, Number>::setup(
+  LinePlotDataStatistics<dim> const & line_plot_data_in)
 {
   // initialize data
   data = line_plot_data_in;
 
-  if(data.calculate)
+  if(data.statistics_data.calculate_statistics == true)
   {
-    AssertThrow(data.lines.size() > 0, ExcMessage("Empty data"));
+    AssertThrow(data.line_data.lines.size() > 0, ExcMessage("Empty data"));
 
     // allocate data structures
-    velocity_global.resize(data.lines.size());
-    pressure_global.resize(data.lines.size());
-    global_points.resize(data.lines.size());
-    cells_global_velocity.resize(data.lines.size());
-    cells_global_pressure.resize(data.lines.size());
+    velocity_global.resize(data.line_data.lines.size());
+    pressure_global.resize(data.line_data.lines.size());
+    global_points.resize(data.line_data.lines.size());
+    cells_global_velocity.resize(data.line_data.lines.size());
+    cells_global_pressure.resize(data.line_data.lines.size());
 
     unsigned int line_iterator = 0;
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
-        line != data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
+          data.line_data.lines.begin();
+        line != data.line_data.lines.end();
         ++line, ++line_iterator)
     {
       // Resize global variables for number of points on line
@@ -67,12 +71,12 @@ LinePlotCalculatorStatistics<dim>::setup(LinePlotData<dim> const & line_plot_dat
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::evaluate(VectorType const &   velocity,
-                                            VectorType const &   pressure,
-                                            double const &       time,
-                                            unsigned int const & time_step_number)
+LinePlotCalculatorStatistics<dim, Number>::evaluate(VectorType const &   velocity,
+                                                    VectorType const &   pressure,
+                                                    double const &       time,
+                                                    unsigned int const & time_step_number)
 {
   if(data.statistics_data.calculate_statistics == true)
   {
@@ -102,15 +106,16 @@ LinePlotCalculatorStatistics<dim>::evaluate(VectorType const &   velocity,
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::initialize_cell_data(VectorType const & velocity,
-                                                        VectorType const & pressure)
+LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const & velocity,
+                                                                VectorType const & pressure)
 {
   // Save data related to all adjacent cells for a given point along the line.
   unsigned int line_iterator = 0;
-  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
-      line != data.lines.end();
+  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
+        data.line_data.lines.begin();
+      line != data.line_data.lines.end();
       ++line, ++line_iterator)
   {
     // make sure that line type is correct
@@ -210,18 +215,16 @@ LinePlotCalculatorStatistics<dim>::initialize_cell_data(VectorType const & veloc
         if(velocity_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          std::vector<std::pair<unsigned int, std::vector<double>>>
-            dof_index_first_dof_and_shape_values_velocity;
+          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+            mapping, dof_handler_velocity.get_triangulation(), *point_it, 1.e-10);
 
-          get_global_dof_index_and_shape_values(dof_handler_velocity,
-                                                mapping,
-                                                velocity,
-                                                *point_it,
-                                                dof_index_first_dof_and_shape_values_velocity);
+          auto dof_indices_and_shape_values = get_dof_indices_and_shape_values(adjacent_cells,
+                                                                               dof_handler_velocity,
+                                                                               mapping,
+                                                                               velocity);
 
-          for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-                dof_index_first_dof_and_shape_values_velocity.begin();
-              iter != dof_index_first_dof_and_shape_values_velocity.end();
+          for(auto iter = dof_indices_and_shape_values.begin();
+              iter != dof_indices_and_shape_values.end();
               ++iter)
           {
             cells_global_velocity[line_iterator][p].push_back(*iter);
@@ -231,18 +234,16 @@ LinePlotCalculatorStatistics<dim>::initialize_cell_data(VectorType const & veloc
         if(pressure_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          std::vector<std::pair<unsigned int, std::vector<double>>>
-            dof_index_first_dof_and_shape_values_pressure;
+          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+            mapping, dof_handler_pressure.get_triangulation(), *point_it, 1.e-10);
 
-          get_global_dof_index_and_shape_values(dof_handler_pressure,
-                                                mapping,
-                                                pressure,
-                                                *point_it,
-                                                dof_index_first_dof_and_shape_values_pressure);
+          auto dof_indices_and_shape_values = get_dof_indices_and_shape_values(adjacent_cells,
+                                                                               dof_handler_pressure,
+                                                                               mapping,
+                                                                               pressure);
 
-          for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-                dof_index_first_dof_and_shape_values_pressure.begin();
-              iter != dof_index_first_dof_and_shape_values_pressure.end();
+          for(auto iter = dof_indices_and_shape_values.begin();
+              iter != dof_indices_and_shape_values.end();
               ++iter)
           {
             cells_global_pressure[line_iterator][p].push_back(*iter);
@@ -253,10 +254,10 @@ LinePlotCalculatorStatistics<dim>::initialize_cell_data(VectorType const & veloc
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
-                                               VectorType const & pressure)
+LinePlotCalculatorStatistics<dim, Number>::do_evaluate(VectorType const & velocity,
+                                                       VectorType const & pressure)
 {
   // increment number of samples
   number_of_samples++;
@@ -271,8 +272,9 @@ LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
 
   // Iterator for lines
   unsigned int line_iterator = 0;
-  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line = data.lines.begin();
-      line != data.lines.end();
+  for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
+        data.line_data.lines.begin();
+      line != data.line_data.lines.end();
       ++line, ++line_iterator)
   {
     bool evaluate_velocity = false;
@@ -314,29 +316,25 @@ LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & velocity,
-                                                        Line<dim> const &  line,
-                                                        unsigned int const line_iterator)
+LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const & velocity,
+                                                                Line<dim> const &  line,
+                                                                unsigned int const line_iterator)
 {
   // Local variables for the current line:
 
   // for all points along the line: velocity vector
-  std::vector<Tensor<1, dim, double>> velocity_vector_local(line.n_points);
+  std::vector<Tensor<1, dim, Number>> velocity_vector_local(line.n_points);
   // for all points along the line: counter
   std::vector<unsigned int> counter_vector_local(line.n_points);
 
   for(unsigned int p = 0; p < line.n_points; ++p)
   {
-    std::vector<std::pair<unsigned int, std::vector<double>>> & adjacent_cells(
-      cells_global_velocity[line_iterator][p]);
+    auto & adjacent_cells(cells_global_velocity[line_iterator][p]);
 
     // loop over all adjacent, locally owned cells for the current point
-    for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-          adjacent_cells.begin();
-        iter != adjacent_cells.end();
-        ++iter)
+    for(auto iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
     {
       // increment counter (because this is a locally owned cell)
       counter_vector_local[p] += 1;
@@ -349,9 +347,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
         if((*quantity)->type == QuantityType::Velocity)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, double> velocity_value;
-          interpolate_value_vectorial_quantity(
-            dof_handler_velocity, velocity, iter->first, iter->second, velocity_value);
+          Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
+            dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity values
           velocity_vector_local[p] += velocity_value;
@@ -377,9 +374,9 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
     if((*quantity)->type == QuantityType::Velocity)
     {
       Utilities::MPI::sum(
-        ArrayView<const double>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()),
+        ArrayView<const Number>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()),
         communicator,
-        ArrayView<double>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()));
+        ArrayView<Number>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()));
 
       // Accumulate instantaneous values into global vector.
       // When writing the output files, we calculate the time-averaged values
@@ -404,29 +401,25 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & pressure,
-                                                        Line<dim> const &  line,
-                                                        unsigned int const line_iterator)
+LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const & pressure,
+                                                                Line<dim> const &  line,
+                                                                unsigned int const line_iterator)
 {
   // Local variables for the current line:
 
   // for all points along the line: pressure value
-  std::vector<double> pressure_vector_local(line.n_points);
+  std::vector<Number> pressure_vector_local(line.n_points);
   // for all points along the line: counter
   std::vector<unsigned int> counter_vector_local(line.n_points);
 
   for(unsigned int p = 0; p < line.n_points; ++p)
   {
-    std::vector<std::pair<unsigned int, std::vector<double>>> & adjacent_cells(
-      cells_global_pressure[line_iterator][p]);
+    auto & adjacent_cells(cells_global_pressure[line_iterator][p]);
 
     // loop over all adjacent, locally owned cells for the current point
-    for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-          adjacent_cells.begin();
-        iter != adjacent_cells.end();
-        ++iter)
+    for(auto iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
     {
       // increment counter (because this is a locally owned cell)
       counter_vector_local[p] += 1;
@@ -439,9 +432,10 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
         if((*quantity)->type == QuantityType::Pressure)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          double pressure_value = 0.0;
-          interpolate_value_scalar_quantity(
-            dof_handler_pressure, pressure, iter->first, iter->second, pressure_value);
+          Number pressure_value = Interpolator<0, dim, Number>::value(dof_handler_pressure,
+                                                                      pressure,
+                                                                      iter->first,
+                                                                      iter->second);
 
           // add result to array with pressure values
           pressure_vector_local[p] += pressure_value;
@@ -487,21 +481,23 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
-LinePlotCalculatorStatistics<dim>::do_write_output() const
+LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
 {
-  if(Utilities::MPI::this_mpi_process(communicator) == 0 && data.calculate == true)
+  if(Utilities::MPI::this_mpi_process(communicator) == 0 &&
+     data.statistics_data.calculate_statistics == true)
   {
-    unsigned int const precision = data.precision;
+    unsigned int const precision = data.line_data.precision;
 
     // Iterator for lines
     unsigned int line_iterator = 0;
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line = data.lines.begin();
-        line != data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
+          data.line_data.lines.begin();
+        line != data.line_data.lines.end();
         ++line, ++line_iterator)
     {
-      std::string filename_prefix = data.directory + (*line)->name;
+      std::string filename_prefix = data.line_data.directory + (*line)->name;
 
       for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
             (*line)->quantities.begin();
@@ -608,5 +604,8 @@ LinePlotCalculatorStatistics<dim>::do_write_output() const
   }
 }
 
-template class LinePlotCalculatorStatistics<2>;
-template class LinePlotCalculatorStatistics<3>;
+template class LinePlotCalculatorStatistics<2, float>;
+template class LinePlotCalculatorStatistics<3, float>;
+
+template class LinePlotCalculatorStatistics<2, double>;
+template class LinePlotCalculatorStatistics<3, double>;

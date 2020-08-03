@@ -11,10 +11,10 @@
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/numerics/vector_tools.h>
+
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
 
 // user interface
 #include "../user_interface/boundary_descriptor.h"
@@ -24,23 +24,12 @@
 // operators
 #include "../../operators/inverse_mass_matrix.h"
 #include "../../operators/mass_matrix_operator.h"
+#include "interface.h"
+#include "operators/combined_operator.h"
 #include "operators/rhs_operator.h"
 
 // solvers and preconditioners
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioners/multigrid_preconditioner.h"
-
-// time integration and interface
-#include "interface.h"
-
-// functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
-
-// postprocessor
-#include "../postprocessor/postprocessor_base.h"
-#include "operators/combined_operator.h"
+#include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
 using namespace dealii;
 
@@ -50,8 +39,6 @@ template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
-  typedef float MultigridNumber;
-
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -63,16 +50,17 @@ public:
    */
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation,
              Mapping<dim> const &                           mapping,
+             unsigned int const                             degree,
              PeriodicFaces const                            periodic_face_pairs,
              std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
              std::shared_ptr<FieldFunctions<dim>> const     field_functions,
              InputParameters const &                        param,
+             std::string const &                            field,
              MPI_Comm const &                               mpi_comm);
 
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field = "") const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -80,8 +68,9 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_velocity_external_in = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+        std::string const &                          dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -271,10 +260,6 @@ public:
   void
   update_after_mesh_movement();
 
-  // TODO: implement filtering as a separate module
-  void
-  filter_solution(VectorType & solution) const;
-
 private:
   /*
    * Initializes DoFHandlers.
@@ -285,15 +270,21 @@ private:
   bool
   needs_own_dof_handler_velocity() const;
 
+  std::string
+  get_quad_name() const;
+
+  std::string
+  get_quad_name_overintegration() const;
+
+  std::string
+  get_dof_name_velocity() const;
+
   unsigned int
   get_dof_index() const;
 
   /*
    * Dof index for velocity (in case of numerical velocity field)
    */
-  std::string
-  get_dof_name_velocity() const;
-
   unsigned int
   get_dof_index_velocity() const;
 
@@ -321,6 +312,11 @@ private:
   Mapping<dim> const & mapping;
 
   /*
+   * Polynomial degree of shape function
+   */
+  unsigned int const degree;
+
+  /*
    * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
    */
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -336,6 +332,8 @@ private:
    * List of input parameters.
    */
   InputParameters const & param;
+
+  std::string const field;
 
   /*
    * Basic finite element ingredients.
@@ -360,15 +358,13 @@ private:
   std::string const quad_index_std             = "conv_diff";
   std::string const quad_index_overintegration = "conv_diff_overintegration";
 
-  mutable std::string field;
-
   std::string dof_index_velocity_external;
 
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
 
   /*
    * Basic operators.

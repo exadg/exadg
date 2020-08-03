@@ -5,7 +5,7 @@
 #include "../../operators/operator_base.h"
 #include "../../operators/operator_type.h"
 
-#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../user_interface/boundary_descriptor.h"
 
 namespace Poisson
 {
@@ -164,43 +164,55 @@ private:
 
 } // namespace Operators
 
-template<int dim>
+template<int rank, int dim>
 struct LaplaceOperatorData : public OperatorBaseData
 {
-  LaplaceOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  LaplaceOperatorData() : OperatorBaseData(), quad_index_gauss_lobatto(0)
   {
   }
 
   Operators::LaplaceKernelData kernel_data;
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
+  // continuous FE:
+  // for Dirichlet mortar boundary conditions, another quadrature rule
+  // is needed to set the constrained DoFs.
+  unsigned int quad_index_gauss_lobatto;
+
+  std::shared_ptr<BoundaryDescriptor<rank, dim>> bc;
 };
 
-template<int dim, typename Number, int n_components = 1>
-class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components>
+template<int dim, typename Number, int n_components>
+class LaplaceOperator : public OperatorBase<dim, Number, n_components>
 {
 private:
-  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components> Base;
-  typedef LaplaceOperator<dim, Number, n_components>                        This;
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
+  typedef OperatorBase<dim, Number, n_components>    Base;
+  typedef LaplaceOperator<dim, Number, n_components> This;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
   typedef typename Base::Range Range;
 
-  static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
-
   typedef Tensor<rank, dim, VectorizedArray<Number>> value;
 
-public:
-  typedef Number                    value_type;
   typedef typename Base::VectorType VectorType;
 
+public:
+  typedef Number value_type;
+
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         LaplaceOperatorData<dim> const &  data);
+  initialize(MatrixFree<dim, Number> const &        matrix_free,
+             AffineConstraints<double> const &      constraint_matrix,
+             LaplaceOperatorData<rank, dim> const & data);
+
+  LaplaceOperatorData<rank, dim> const &
+  get_data() const
+  {
+    return operator_data;
+  }
 
   void
   calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
@@ -210,10 +222,14 @@ public:
   update_after_mesh_movement();
 
   // Some more functionality on top of what is provided by the base class.
-  // This function evaluates the inhomogeneous boundary face integrals where the
+  // This function evaluates the inhomogeneous boundary face integrals in DG where the
   // Dirichlet boundary condition is extracted from a dof vector instead of a Function<dim>.
   void
   rhs_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
+
+  // continuous FE: This function sets the constrained Dirichlet boundary values.
+  void
+  set_constrained_values(VectorType & solution, double const time) const override;
 
 private:
   void
@@ -245,12 +261,6 @@ private:
                        types::boundary_id const & boundary_id) const;
 
   void
-  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  OperatorType const &       operator_type,
-                                  types::boundary_id const & boundary_id) const;
-
-  // Some more functionality on top of what is provided by the base class.
-  void
   cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
                   VectorType &                    dst,
                   VectorType const &              src,
@@ -262,6 +272,7 @@ private:
                   VectorType const &              src,
                   Range const &                   range) const;
 
+  // DG
   void
   boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
     MatrixFree<dim, Number> const & matrix_free,
@@ -269,15 +280,18 @@ private:
     VectorType const &              src,
     Range const &                   range) const;
 
+  // DG
   void
   do_boundary_integral_dirichlet_bc_from_dof_vector(IntegratorFace &           integrator_m,
                                                     OperatorType const &       operator_type,
                                                     types::boundary_id const & boundary_id) const;
 
+  // continuous FE: calculates Neumann boundary integral
   void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                LaplaceOperatorData<dim> const &     data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
+  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
+                                  types::boundary_id const & boundary_id) const;
+
+  LaplaceOperatorData<rank, dim> operator_data;
 
   Operators::LaplaceKernel<dim, Number, n_components> kernel;
 };

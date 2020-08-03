@@ -15,31 +15,21 @@
 
 using namespace dealii;
 
-// required for OperatorBase interface but is never used for the mass matrix operator
-template<int dim>
-struct BoundaryDescriptorDummy
-{
-  // Dirichlet: prescribe all components of the velocity
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
-};
-
 template<int dim>
 struct MassMatrixOperatorData : public OperatorBaseData
 {
-  MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  MassMatrixOperatorData() : OperatorBaseData()
   {
   }
-
-  // required by OperatorBase interface
-  std::shared_ptr<BoundaryDescriptorDummy<dim>> bc;
 };
 
 template<int dim, int n_components, typename Number>
-class MassMatrixOperator
-  : public OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components>
+class MassMatrixOperator : public OperatorBase<dim, Number, n_components>
 {
 public:
-  typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components> Base;
+  typedef Number value_type;
+
+  typedef OperatorBase<dim, Number, n_components> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::IntegratorCell IntegratorCell;
@@ -47,9 +37,9 @@ public:
   MassMatrixOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         MassMatrixOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const &     matrix_free,
+             AffineConstraints<double> const &   constraint_matrix,
+             MassMatrixOperatorData<dim> const & data);
 
   void
   set_scaling_factor(Number const & number);

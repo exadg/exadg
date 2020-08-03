@@ -15,6 +15,7 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
   : start_time(start_time_),
     end_time(end_time_),
     time(start_time_),
+    timer_tree(new TimerTree()),
     eps(1.e-10),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     time_step_number(1),
@@ -39,78 +40,89 @@ TimeIntBase::finished() const
 void
 TimeIntBase::timeloop()
 {
-  pcout << std::endl << "Starting time loop ..." << std::endl;
-
-  global_timer.restart();
-
-  postprocessing();
-
-  while(time < (end_time - eps) && time_step_number <= max_number_of_time_steps)
+  while(!finished())
   {
-    do_timestep();
-
-    postprocessing();
+    advance_one_timestep();
   }
-
-  pcout << std::endl << "... finished time loop!" << std::endl;
 }
 
 void
-TimeIntBase::advance_one_timestep_pre_solve()
+TimeIntBase::advance_one_timestep_pre_solve(bool const print_header)
 {
-  if(started())
+  Timer timer;
+  timer.restart();
+
+  if(started() && !finished())
   {
     if(time_step_number == 1)
     {
-      pcout << std::endl << "Starting time loop ..." << std::endl;
-
       global_timer.restart();
+
+      pcout << std::endl << "Starting time loop ..." << std::endl;
 
       postprocessing();
     }
 
-    // advance one time step and perform postprocessing
-    if(!finished())
-    {
-      do_timestep_pre_solve();
-    }
+    do_timestep_pre_solve(print_header);
   }
-  else
-  {
-    // If the time integrator has not yet started, simply increment physical time without solving
-    // the current time step.
-    time += get_time_step_size();
-  }
+
+  timer_tree->insert({"Timeloop"}, timer.wall_time());
 }
 
 void
 TimeIntBase::advance_one_timestep_solve()
 {
+  Timer timer;
+  timer.restart();
+
   if(started() && !finished())
   {
     solve_timestep();
   }
+
+  timer_tree->insert({"Timeloop"}, timer.wall_time());
 }
 
 void
 TimeIntBase::advance_one_timestep_post_solve()
 {
+  Timer timer;
+  timer.restart();
+
   if(started() && !finished())
   {
     do_timestep_post_solve();
 
     postprocessing();
   }
+  else
+  {
+    // If the time integrator is not "active", simply increment time.
+    time += get_time_step_size();
+  }
+
+  timer_tree->insert({"Timeloop"}, timer.wall_time());
 }
 
 void
 TimeIntBase::advance_one_timestep()
 {
-  advance_one_timestep_pre_solve();
+  advance_one_timestep_pre_solve(true);
 
   advance_one_timestep_solve();
 
   advance_one_timestep_post_solve();
+}
+
+void
+TimeIntBase::reset_time(double const & current_time)
+{
+  // Only allow overwriting the time to a value smaller than start_time
+  // (which is needed when coupling different solvers, different domains, etc.).
+  if(current_time <= start_time + eps)
+    time = current_time;
+  else
+    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
 }
 
 double
@@ -120,19 +132,31 @@ TimeIntBase::get_time() const
 }
 
 double
+TimeIntBase::get_next_time() const
+{
+  return this->get_time() + this->get_time_step_size();
+}
+
+unsigned int
 TimeIntBase::get_number_of_time_steps() const
 {
   return this->get_time_step_number() - 1;
 }
 
-void
-TimeIntBase::do_timestep(bool const do_write_output)
+std::shared_ptr<TimerTree>
+TimeIntBase::get_timings() const
 {
-  do_timestep_pre_solve();
+  return timer_tree;
+}
+
+void
+TimeIntBase::do_timestep()
+{
+  do_timestep_pre_solve(true);
 
   solve_timestep();
 
-  do_timestep_post_solve(do_write_output);
+  do_timestep_post_solve();
 }
 
 unsigned int
@@ -188,17 +212,13 @@ TimeIntBase::read_restart()
 void
 TimeIntBase::output_solver_info_header() const
 {
-  if(print_solver_info())
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Number of TIME STEPS: " << std::left << std::setw(8) << time_step_number
-          << "t_n = " << std::scientific << std::setprecision(4) << time
-          << " -> t_n+1 = " << time + get_time_step_size() << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl;
-  }
+  pcout << std::endl
+        << "______________________________________________________________________" << std::endl
+        << std::endl
+        << " Time step number = " << std::left << std::setw(8) << time_step_number
+        << "t = " << std::scientific << std::setprecision(5) << time
+        << " -> t + dt = " << time + get_time_step_size() << std::endl
+        << "______________________________________________________________________" << std::endl;
 }
 
 /*
@@ -207,22 +227,19 @@ TimeIntBase::output_solver_info_header() const
  *  current time.
  */
 void
-TimeIntBase::output_remaining_time(bool const do_write_output) const
+TimeIntBase::output_remaining_time() const
 {
-  if(print_solver_info() && do_write_output)
+  if(time > start_time)
   {
-    if(time > start_time)
-    {
-      double const remaining_time =
-        global_timer.wall_time() * (end_time - time) / (time - start_time);
+    double const remaining_time =
+      global_timer.wall_time() * (end_time - time) / (time - start_time);
 
-      int const hours   = int(remaining_time / 3600.0);
-      int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
-      int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
+    int const hours   = int(remaining_time / 3600.0);
+    int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
+    int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
 
-      pcout << std::endl
-            << "Estimated time until completion is " << hours << " h " << minutes << " min "
-            << seconds << " s." << std::endl;
-    }
+    pcout << std::endl
+          << "Estimated time until completion is " << hours << " h " << minutes << " min "
+          << seconds << " s." << std::endl;
   }
 }

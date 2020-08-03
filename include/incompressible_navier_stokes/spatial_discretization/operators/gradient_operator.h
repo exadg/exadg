@@ -125,7 +125,8 @@ public:
   GradientOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free_in, GradientOperatorData<dim> const & data_in);
+  initialize(MatrixFree<dim, Number> const &   matrix_free_in,
+             GradientOperatorData<dim> const & data_in);
 
   void
   set_scaling_factor_pressure(double const & scaling_factor);

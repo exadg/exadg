@@ -9,7 +9,7 @@
 
 #include "kinetic_energy_spectrum.h"
 
-#include "../functionalities/mirror_dof_vector_taylor_green.h"
+#include "../postprocessor/mirror_dof_vector_taylor_green.h"
 
 #ifdef USE_DEAL_SPECTRUM
 #  include "../../3rdparty/deal.spectrum/src/deal-spectrum.h"

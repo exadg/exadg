@@ -8,8 +8,8 @@
 #ifndef INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 #define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 
-#include "../../functionalities/enum_types.h"
-#include "../../functionalities/print_functions.h"
+#include "../../grid/enum_types.h"
+#include "../../utilities/print_functions.h"
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
@@ -50,10 +50,7 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // number of space dimensions
-  unsigned int dim;
-
-  // if the rhs f is unequal zero, set right_hand_side = true
+  // if the right-hand side f is unequal zero, set right_hand_side = true
   bool right_hand_side;
 
   /**************************************************************************************/
@@ -65,14 +62,8 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of shape functions
-  unsigned int degree;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
-
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
 
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;

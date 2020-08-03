@@ -18,7 +18,7 @@ template<int dim>
 struct OperatorData : public OperatorBaseData
 {
   OperatorData()
-    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
+    : OperatorBaseData(),
       unsteady_problem(false),
       convective_problem(false),
       diffusive_problem(false)
@@ -32,17 +32,17 @@ struct OperatorData : public OperatorBaseData
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   Operators::DiffusiveKernelData       diffusive_kernel_data;
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, typename Number>
-class Operator : public OperatorBase<dim, Number, OperatorData<dim>>
+class Operator : public OperatorBase<dim, Number, 1>
 {
 public:
   typedef Number value_type;
 
 private:
-  typedef OperatorBase<dim, Number, OperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, 1> Base;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
@@ -56,16 +56,19 @@ public:
   Operator();
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         data);
+  initialize(MatrixFree<dim, Number> const &   matrix_free,
+             AffineConstraints<double> const & constraint_matrix,
+             OperatorData<dim> const &         data);
 
   void
-  reinit(MatrixFree<dim, Number> const &                           matrix_free,
-         AffineConstraints<double> const &                         constraint_matrix,
-         OperatorData<dim> const &                                 data,
-         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel,
-         std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel);
+  initialize(MatrixFree<dim, Number> const &                           matrix_free,
+             AffineConstraints<double> const &                         constraint_matrix,
+             OperatorData<dim> const &                                 data,
+             std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel,
+             std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel);
+
+  OperatorData<dim> const &
+  get_data() const;
 
   void
   update_after_mesh_movement();
@@ -123,10 +126,7 @@ private:
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
 
-  void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                OperatorData<dim> const &            data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
+  OperatorData<dim> operator_data;
 
   std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;

@@ -1,25 +1,40 @@
+
 #include "operator.h"
 
-#include "../../functionalities/calculate_maximum_aspect_ratio.h"
+// deal.II
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/numerics/vector_tools.h>
+
+// solvers/preconditioners
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
+#include "../preconditioner/multigrid_preconditioner.h"
 
 namespace Poisson
 {
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
-  parallel::TriangulationBase<dim> const &                 triangulation_in,
-  Mapping<dim> const &                                     mapping_in,
-  PeriodicFaces const                                      periodic_face_pairs_in,
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> const boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const               field_functions_in,
-  Poisson::InputParameters const &                         param_in,
-  MPI_Comm const &                                         mpi_comm_in)
+  parallel::TriangulationBase<dim> const &             triangulation_in,
+  Mapping<dim> const &                                 mapping_in,
+  unsigned int const                                   degree_in,
+  PeriodicFaces const                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const           field_functions_in,
+  InputParameters const &                              param_in,
+  std::string const &                                  field_in,
+  MPI_Comm const &                                     mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
+    degree(degree_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
+    field(field_in),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -33,54 +48,152 @@ Operator<dim, Number, n_components>::Operator(
 
 template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number, n_components>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+Operator<dim, Number, n_components>::distribute_dofs()
 {
-  this->field = field;
+  if(n_components == 1)
+  {
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      fe.reset(new FE_DGQ<dim>(degree));
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      fe.reset(new FE_Q<dim>(degree));
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+  }
+  else if(n_components == dim)
+  {
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      fe.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      fe.reset(new FESystem<dim>(FE_Q<dim>(degree), dim));
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
 
+  dof_handler.distribute_dofs(*fe);
+
+  dof_handler.distribute_mg_dofs();
+
+  // affine constraints only relevant for continuous FE discretization
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    affine_constraints.clear();
+
+    // standard Dirichlet boundaries
+    for(auto it : this->boundary_descriptor->dirichlet_bc)
+    {
+      ComponentMask mask    = ComponentMask();
+      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+      if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
+        mask = it_mask->second;
+
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+    }
+
+    // mortar type Dirichlet boundaries
+    for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
+    {
+      ComponentMask mask = ComponentMask();
+      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+    }
+
+    affine_constraints.close();
+  }
+
+  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
+
+  pcout << std::endl;
+
+  if(param.spatial_discretization == SpatialDiscretization::DG)
+    pcout << std::endl
+          << "Discontinuous Galerkin finite element discretization:" << std::endl
+          << std::endl;
+  else if(param.spatial_discretization == SpatialDiscretization::CG)
+    pcout << std::endl
+          << "Continuous Galerkin finite element discretization:" << std::endl
+          << std::endl;
+  else
+    AssertThrow(false, ExcMessage("Not implemented."));
+
+  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+}
+
+template<int dim, typename Number, int n_components>
+void
+Operator<dim, Number, n_components>::fill_matrix_free_data(
+  MatrixFreeData<dim, Number> & matrix_free_data) const
+{
   // append mapping flags
 
   // for continuous FE discretizations, we need to evaluate inhomogeneous Neumann
-  // boundary conditions which is why the second argument is always true
-  matrix_free_wrapper.append_mapping_flags(
+  // boundary conditions or set constrained Dirichlet values, which is why the
+  // second argument is always true
+  matrix_free_data.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number, n_components>::get_mapping_flags(
       param.spatial_discretization == SpatialDiscretization::DG, true));
 
   if(param.right_hand_side)
-    matrix_free_wrapper.append_mapping_flags(
+    matrix_free_data.append_mapping_flags(
       ConvDiff::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
 
-  // DoFHandler
-  matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index);
+  matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
+  matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
+  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
 
-  // AffineConstraints
-  if(param.spatial_discretization == SpatialDiscretization::CG)
+  // In order to set constrained degrees of freedom for continuous Galerkin
+  // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
+  // quadrature rule has to be constructed for the mortar type boundary conditions
+  // (so that the values stored in the mortar boundary condition can be directly
+  // injected into the DoF vector)
+  if(param.spatial_discretization == SpatialDiscretization::CG &&
+     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
-    MGConstrainedDoFs            mg_constrained_dofs;
-    std::set<types::boundary_id> dirichlet_boundary;
-    for(auto it : boundary_descriptor->dirichlet_bc)
-      dirichlet_boundary.insert(it.first);
-    mg_constrained_dofs.initialize(dof_handler);
-    mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
-    constraint_matrix.add_lines(mg_constrained_dofs.get_boundary_indices(
-      dof_handler.get_triangulation().n_global_levels() - 1));
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree + 1), get_quad_gauss_lobatto_name());
   }
-  matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index);
+}
 
-  // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index);
+template<int dim, typename Number, int n_components>
+void
+Operator<dim, Number, n_components>::setup_operators()
+{
+  // Laplace operator
+  Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
+  laplace_operator_data.dof_index  = get_dof_index();
+  laplace_operator_data.quad_index = get_quad_index();
+  if(param.spatial_discretization == SpatialDiscretization::CG &&
+     not(boundary_descriptor->dirichlet_mortar_bc.empty()))
+    laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
+  laplace_operator_data.bc                    = boundary_descriptor;
+  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
+  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
+  laplace_operator.initialize(*matrix_free, affine_constraints, laplace_operator_data);
+
+  // rhs operator
+  if(param.right_hand_side)
+  {
+    ConvDiff::RHSOperatorData<dim> rhs_operator_data;
+    rhs_operator_data.dof_index     = get_dof_index();
+    rhs_operator_data.quad_index    = get_quad_index();
+    rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
+    rhs_operator.initialize(*matrix_free, rhs_operator_data);
+  }
 }
 
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
 {
   pcout << std::endl << "Setup Poisson operator ..." << std::endl;
 
-  matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper->get_matrix_free();
+  matrix_free      = matrix_free_in;
+  matrix_free_data = matrix_free_data_in;
 
   setup_operators();
 
@@ -106,6 +219,8 @@ Operator<dim, Number, n_components>::setup_solver()
   {
     MultigridData mg_data;
     mg_data = param.multigrid_data;
+
+    typedef MultigridPreconditioner<dim, Number, n_components> Multigrid;
 
     preconditioner.reset(new Multigrid(this->mpi_comm));
 
@@ -222,21 +337,32 @@ Operator<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number, int n_components>
 unsigned int
-Operator<dim, Number, n_components>::solve(VectorType & sol, VectorType const & rhs) const
+Operator<dim, Number, n_components>::solve(VectorType &       sol,
+                                           VectorType const & rhs,
+                                           double const       time) const
 {
   // only activate if desired
   if(false)
   {
+    typedef MultigridPreconditioner<dim, Number, n_components> Multigrid;
+
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    CheckMultigrid<dim, Number, Laplace, Multigrid, MultigridNumber> check_multigrid(
-      laplace_operator, mg_preconditioner, mpi_comm);
+    CheckMultigrid<dim, Number, Laplace, Multigrid> check_multigrid(laplace_operator,
+                                                                    mg_preconditioner,
+                                                                    mpi_comm);
 
     check_multigrid.check();
   }
 
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
+
+  // apply Dirichlet boundary conditions in case of continuous elements
+  if(param.spatial_discretization == SpatialDiscretization::CG)
+  {
+    laplace_operator.set_constrained_values(sol, time);
+  }
 
   return iterations;
 }
@@ -272,6 +398,13 @@ Operator<dim, Number, n_components>::get_average_convergence_rate() const
   return iterative_solver->rho;
 }
 
+template<int dim, typename Number, int n_components>
+unsigned int
+Operator<dim, Number, n_components>::get_degree() const
+{
+  return degree;
+}
+
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number, int n_components>
 void
@@ -301,83 +434,45 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 #endif
 
 template<int dim, typename Number, int n_components>
+std::string
+Operator<dim, Number, n_components>::get_dof_name() const
+{
+  return field + "_" + dof_index;
+}
+
+template<int dim, typename Number, int n_components>
+std::string
+Operator<dim, Number, n_components>::get_quad_name() const
+{
+  return field + "_" + quad_index;
+}
+
+template<int dim, typename Number, int n_components>
+std::string
+Operator<dim, Number, n_components>::get_quad_gauss_lobatto_name() const
+{
+  return field + "_" + quad_index_gauss_lobatto;
+}
+
+template<int dim, typename Number, int n_components>
 unsigned int
 Operator<dim, Number, n_components>::get_dof_index() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index);
+  return matrix_free_data->get_dof_index(get_dof_name());
 }
 
 template<int dim, typename Number, int n_components>
 unsigned int
 Operator<dim, Number, n_components>::get_quad_index() const
 {
-  return matrix_free_wrapper->get_quad_index(field + quad_index);
+  return matrix_free_data->get_quad_index(get_quad_name());
 }
 
 template<int dim, typename Number, int n_components>
-void
-Operator<dim, Number, n_components>::distribute_dofs()
+unsigned int
+Operator<dim, Number, n_components>::get_quad_index_gauss_lobatto() const
 {
-  if(n_components == 1)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FE_DGQ<dim>(param.degree));
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FE_Q<dim>(param.degree));
-    else
-      AssertThrow(false, ExcMessage("not implemented."));
-  }
-  else if(n_components == dim)
-  {
-    if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
-    else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FESystem<dim>(FE_Q<dim>(param.degree), dim));
-    else
-      AssertThrow(false, ExcMessage("not implemented."));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
-
-  dof_handler.distribute_dofs(*fe);
-
-  dof_handler.distribute_mg_dofs();
-
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
-
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-}
-
-template<int dim, typename Number, int n_components>
-void
-Operator<dim, Number, n_components>::setup_operators()
-{
-  // Laplace operator
-  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.dof_index             = get_dof_index();
-  laplace_operator_data.quad_index            = get_quad_index();
-  laplace_operator_data.bc                    = boundary_descriptor;
-  laplace_operator_data.use_cell_based_loops  = param.enable_cell_based_face_loops;
-  laplace_operator_data.kernel_data.IP_factor = param.IP_factor;
-  laplace_operator.reinit(*matrix_free, constraint_matrix, laplace_operator_data);
-
-  // rhs operator
-  if(param.right_hand_side)
-  {
-    ConvDiff::RHSOperatorData<dim> rhs_operator_data;
-    rhs_operator_data.dof_index     = get_dof_index();
-    rhs_operator_data.quad_index    = get_quad_index();
-    rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
-    rhs_operator.reinit(*matrix_free, rhs_operator_data);
-  }
+  return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
 }
 
 template class Operator<2, float, 1>;

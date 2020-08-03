@@ -1,5 +1,5 @@
 /*
- * boundary_descriptor_conv_diff.h
+ * boundary_descriptor.h
  *
  *  Created on: Aug 3, 2016
  *      Author: fehn
@@ -11,21 +11,24 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+#include "../../functions_and_boundary_conditions/function_cached.h"
+
 using namespace dealii;
 
 namespace ConvDiff
 {
 enum class BoundaryType
 {
-  undefined,
-  dirichlet,
-  neumann
+  Undefined,
+  Dirichlet,
+  Neumann
 };
 
 template<int dim>
 struct BoundaryDescriptor
 {
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
   // returns the boundary type
@@ -34,13 +37,31 @@ struct BoundaryDescriptor
     get_boundary_type(types::boundary_id const & boundary_id) const
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
-      return BoundaryType::dirichlet;
+      return BoundaryType::Dirichlet;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
-      return BoundaryType::neumann;
+      return BoundaryType::Neumann;
 
     AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
 
-    return BoundaryType::undefined;
+    return BoundaryType::Undefined;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(types::boundary_id const             boundary_id,
+                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(dirichlet_bc.find(boundary_id) != dirichlet_bc.end())
+      counter++;
+
+    if(neumann_bc.find(boundary_id) != neumann_bc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
 

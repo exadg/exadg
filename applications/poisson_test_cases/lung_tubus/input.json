@@ -1,0 +1,18 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "3",
+        "RunType": "RefineHAndP",
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+       	"Name": "LungTubus",
+	"OutputDirectory": "output/poisson/vtu/",
+	"OutputName": "lung_tubus"    
+    }
+}

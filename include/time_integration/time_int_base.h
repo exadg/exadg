@@ -8,17 +8,21 @@
 #ifndef INCLUDE_TIME_INTEGRATION_TIME_INT_BASE_H_
 #define INCLUDE_TIME_INTEGRATION_TIME_INT_BASE_H_
 
-#include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/timer.h>
-
+// C/C++
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
 #include <fstream>
 #include <sstream>
 
-#include "functionalities/restart_data.h"
+// deal.II
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/timer.h>
+
 #include "time_integration/restart.h"
+#include "time_integration/restart_data.h"
+
+#include "utilities/timings_hierarchical.h"
 
 using namespace dealii;
 
@@ -63,7 +67,7 @@ public:
    * Perform only one time step (which is used when coupling different solvers, equations, etc.).
    */
   void
-  advance_one_timestep_pre_solve();
+  advance_one_timestep_pre_solve(bool const print_header);
 
   void
   advance_one_timestep_solve();
@@ -77,8 +81,8 @@ public:
   /*
    * Reset the current time.
    */
-  virtual void
-  reset_time(double const & current_time) = 0;
+  void
+  reset_time(double const & current_time);
 
   /*
    * Get the time step size.
@@ -99,26 +103,42 @@ public:
   get_time() const;
 
   /*
-   * Get number of computed time steps
+   * Get time at the end of the current time step t_{n+1}.
    */
   double
+  get_next_time() const;
+
+  /*
+   * Get number of computed time steps
+   */
+  unsigned int
   get_number_of_time_steps() const;
 
+  std::shared_ptr<TimerTree>
+  get_timings() const;
+
+protected:
   /*
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
   void
-  do_timestep(bool const do_write_output = true);
+  do_timestep();
 
+  /*
+   * e.g., update of time integrator constants
+   */
   virtual void
-  do_timestep_pre_solve() = 0;
+  do_timestep_pre_solve(bool const print_header) = 0;
 
   virtual void
   solve_timestep() = 0;
 
+  /*
+   * e.g., update of DoF vectors, increment time, adjust time step size, etc.
+   */
   virtual void
-  do_timestep_post_solve(bool const do_write_output = true) = 0;
+  do_timestep_post_solve() = 0;
 
   /*
    * Postprocessing of solution.
@@ -126,14 +146,6 @@ public:
   virtual void
   postprocessing() const = 0;
 
-  /*
-   * fills a vector of wall times (if several equations have to be solved) with
-   * a list of names describing the equations/sub-steps that are solved
-   */
-  virtual void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const = 0;
-
-protected:
   /*
    * Get the current time step number.
    */
@@ -163,14 +175,8 @@ protected:
   /*
    * Output estimated computation time until completion of the simulation.
    */
-  virtual void
-  output_remaining_time(bool const do_write_output = true) const;
-
-  /*
-   * returns whether solver info has to be written in the current time step.
-   */
-  virtual bool
-  print_solver_info() const = 0;
+  void
+  output_remaining_time() const;
 
   /*
    * Start and end times.
@@ -185,7 +191,8 @@ protected:
   /*
    * Computation time (wall clock time).
    */
-  Timer global_timer;
+  Timer                      global_timer;
+  std::shared_ptr<TimerTree> timer_tree;
 
   /*
    * A small number which is much smaller than the time step size.

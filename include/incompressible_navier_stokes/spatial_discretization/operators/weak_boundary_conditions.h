@@ -10,7 +10,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/operator_type.h"
 #include "../../user_interface/boundary_descriptor.h"
 
@@ -76,14 +76,31 @@ inline DEAL_II_ALWAYS_INLINE //
   // element e⁺
   Tensor<1, dim, VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet)
+  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
-      auto q_points = integrator.quadrature_point(q);
+      Tensor<1, dim, VectorizedArray<Number>> g;
 
-      auto g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
+      if(boundary_type == BoundaryTypeU::Dirichlet)
+      {
+        auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+        auto q_points = integrator.quadrature_point(q);
+
+        g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
+      }
+      else if(boundary_type == BoundaryTypeU::DirichletMortar)
+      {
+        auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        g       = FunctionEvaluator<1, dim, Number>::value(bc,
+                                                     integrator.get_face_index(),
+                                                     q,
+                                                     integrator.quadrature_formula_index());
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
 
       value_p = -value_m + Tensor<1, dim, VectorizedArray<Number>>(2.0 * g);
     }
@@ -140,12 +157,29 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   Tensor<1, dim, VectorizedArray<Number>> u_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet)
+  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
-    auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
-    auto q_points = integrator.quadrature_point(q);
+    Tensor<1, dim, VectorizedArray<Number>> g;
 
-    auto g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
+    if(boundary_type == BoundaryTypeU::Dirichlet)
+    {
+      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+      auto q_points = integrator.quadrature_point(q);
+
+      g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
+    }
+    else if(boundary_type == BoundaryTypeU::DirichletMortar)
+    {
+      auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+      g       = FunctionEvaluator<1, dim, Number>::value(bc,
+                                                   integrator.get_face_index(),
+                                                   q,
+                                                   integrator.quadrature_formula_index());
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
 
     if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
     {
@@ -191,7 +225,7 @@ inline DEAL_II_ALWAYS_INLINE //
   // element e⁺
   Tensor<1, dim, VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet)
+  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
@@ -292,7 +326,7 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      VectorizedArray<Number> g = FunctionEvaluator<dim, Number, 0>::value(bc, q_points, time);
+      VectorizedArray<Number> g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, time);
 
       value_p = -value_m + 2.0 * inverse_scaling_factor * g;
     }
@@ -405,7 +439,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
 
-  if(boundary_type == BoundaryTypeU::Dirichlet)
+  if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
     normal_gradient_p = normal_gradient_m;
   }
@@ -419,12 +453,12 @@ inline DEAL_II_ALWAYS_INLINE //
       Tensor<1, dim, VectorizedArray<Number>> h;
       if(variable_normal_vector == false)
       {
-        h = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
+        h = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
       }
       else
       {
         auto normals_m = integrator.get_normal_vector(q);
-        h              = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, normals_m, time);
+        h              = FunctionEvaluator<1, dim, Number>::value(bc, q_points, normals_m, time);
       }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;

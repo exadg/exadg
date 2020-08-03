@@ -49,6 +49,8 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const
   {
+    dst.zero_out_ghosts();
+
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
   }
 

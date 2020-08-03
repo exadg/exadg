@@ -1,0 +1,14 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "Degree": "3",
+        "RefineSpace": "4",
+        "NScalars": "1"
+    },
+    "Application": {
+       	"Name": "Cavity",
+	"OutputDirectory": "output_flow_with_transport/cavity/",
+	"OutputName": "test"
+    }
+}

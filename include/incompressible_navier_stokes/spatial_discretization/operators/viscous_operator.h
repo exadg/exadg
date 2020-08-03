@@ -133,14 +133,17 @@ public:
   }
 
   static MappingFlags
-  get_mapping_flags()
+  get_mapping_flags(bool const compute_interior_face_integrals,
+                    bool const compute_boundary_face_integrals)
   {
     MappingFlags flags;
 
-    flags.cells       = update_JxW_values | update_gradients;
-    flags.inner_faces = update_JxW_values | update_gradients | update_normal_vectors;
-    flags.boundary_faces =
-      update_JxW_values | update_gradients | update_normal_vectors | update_quadrature_points;
+    flags.cells = update_JxW_values | update_gradients;
+    if(compute_interior_face_integrals)
+      flags.inner_faces = update_JxW_values | update_gradients | update_normal_vectors;
+    if(compute_boundary_face_integrals)
+      flags.boundary_faces =
+        update_JxW_values | update_gradients | update_normal_vectors | update_quadrature_points;
 
     return flags;
   }
@@ -498,7 +501,7 @@ private:
 template<int dim>
 struct ViscousOperatorData : public OperatorBaseData
 {
-  ViscousOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  ViscousOperatorData() : OperatorBaseData()
   {
   }
 
@@ -508,14 +511,14 @@ struct ViscousOperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class ViscousOperator : public OperatorBase<dim, Number, ViscousOperatorData<dim>, dim>
+class ViscousOperator : public OperatorBase<dim, Number, dim>
 {
 public:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  typedef OperatorBase<dim, Number, ViscousOperatorData<dim>, dim> Base;
+  typedef OperatorBase<dim, Number, dim> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::Range          Range;
@@ -523,15 +526,10 @@ public:
   typedef typename Base::IntegratorFace IntegratorFace;
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         ViscousOperatorData<dim> const &  data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &                        matrix_free,
-         AffineConstraints<double> const &                      constraint_matrix,
-         ViscousOperatorData<dim> const &                       data,
-         std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel);
+  initialize(MatrixFree<dim, Number> const &                        matrix_free,
+             AffineConstraints<double> const &                      constraint_matrix,
+             ViscousOperatorData<dim> const &                       data,
+             std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel);
 
   void
   update();
@@ -564,6 +562,8 @@ private:
   do_boundary_integral(IntegratorFace &           integrator,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  ViscousOperatorData<dim> operator_data;
 
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> kernel;
 };

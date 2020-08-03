@@ -8,7 +8,6 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
-#include "../../functionalities/set_zero_mean_value.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 
@@ -25,6 +24,7 @@ struct CompatibleLaplaceOperatorData
       degree_p(1),
       dof_index_velocity(0),
       dof_index_pressure(1),
+      quad_index_velocity(0),
       operator_is_singular(false),
       dof_handler_u(nullptr)
   {
@@ -34,6 +34,7 @@ struct CompatibleLaplaceOperatorData
   unsigned int                degree_p;
   unsigned int                dof_index_velocity;
   unsigned int                dof_index_pressure;
+  unsigned int                quad_index_velocity;
   bool                        operator_is_singular;
   const DoFHandler<dim> *     dof_handler_u;
   GradientOperatorData<dim>   gradient_operator_data;
@@ -62,9 +63,9 @@ public:
              InverseMassMatrixOperator<dim, dim, Number> const & inv_mass_matrix_operator_in);
 
   void
-  reinit_multigrid(MatrixFree<dim, Number> const &            matrix_free,
-                   AffineConstraints<double> const &          constraint_matrix,
-                   CompatibleLaplaceOperatorData<dim> const & operator_data);
+  initialize(MatrixFree<dim, Number> const &            matrix_free,
+             AffineConstraints<double> const &          constraint_matrix,
+             CompatibleLaplaceOperatorData<dim> const & operator_data);
 
   virtual void
   update_block_diagonal_preconditioner() const

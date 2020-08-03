@@ -126,8 +126,7 @@ public:
   DivergenceOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free_in,
-         DivergenceOperatorData<dim> const & data_in);
+  initialize(MatrixFree<dim, Number> const & matrix_free, DivergenceOperatorData<dim> const & data);
 
   DivergenceOperatorData<dim> const &
   get_operator_data() const;

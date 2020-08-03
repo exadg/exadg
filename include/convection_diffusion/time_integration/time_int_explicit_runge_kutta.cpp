@@ -7,10 +7,14 @@
 
 #include "time_int_explicit_runge_kutta.h"
 
-#include "../spatial_discretization/interface.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
-#include "functionalities/print_functions.h"
 #include "time_integration/time_step_calculation.h"
+
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/interface.h"
+#include "../user_interface/input_parameters.h"
+
+#include "../../utilities/print_functions.h"
+#include "../../utilities/print_throughput.h"
 
 namespace ConvDiff
 {
@@ -18,6 +22,7 @@ template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
@@ -28,25 +33,12 @@ TimeIntExplRK<Number>::TimeIntExplRK(
                               mpi_comm_in),
     pde_operator(operator_in),
     param(param_in),
+    refine_steps_time(refine_steps_time_in),
     time_step_diff(1.0),
-    cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, param.dt_refinements)),
-    wall_time(0.0),
+    cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
+    diffusion_number(param.diffusion_number / std::pow(2.0, refine_steps_time_in)),
     postprocessor(postprocessor_in)
 {
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::get_wall_times(std::vector<std::string> & name,
-                                      std::vector<double> &      wall_time_vector) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Time integrator"};
-  name                           = names;
-
-  wall_time_vector.resize(1);
-  wall_time_vector[0] = wall_time;
 }
 
 template<typename Number>
@@ -89,7 +81,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    this->time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
+    this->time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
     this->pcout << std::endl
                 << "Calculation of time step size (user-specified):" << std::endl
@@ -212,7 +204,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     unsigned int const order = rk_time_integrator->get_order();
 
     this->time_step =
-      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, param.dt_refinements);
+      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, refine_steps_time);
 
     this->time_step =
       adjust_time_step_to_hit_end_time(this->start_time, this->end_time, this->time_step);
@@ -220,7 +212,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, refine_steps_time));
     print_parameter(this->pcout, "Time step size", this->time_step);
   }
   else
@@ -354,8 +346,6 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::solve_timestep()
 {
-  this->output_solver_info_header();
-
   Timer timer;
   timer.restart();
 
@@ -372,22 +362,25 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  wall_time += timer.wall_time();
-
-  // write output
   if(print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve time step explicitly: Wall time in [s] = " << std::scientific
-                << timer.wall_time() << std::endl;
+    this->pcout << std::endl << "Solve scalar convection-diffusion equation explicitly:";
+    print_solver_info_explicit(this->pcout, timer.wall_time());
   }
+
+  this->timer_tree->insert({"Timeloop", "Solve-explicit"}, timer.wall_time());
 }
 
 template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   postprocessor->do_postprocessing(this->solution_n, this->time, this->time_step_number);
+
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 // instantiations

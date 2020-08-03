@@ -15,23 +15,27 @@ template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : Base(triangulation_in,
          mapping_in,
+         degree_u_in,
          periodic_face_pairs_in,
          boundary_descriptor_velocity_in,
          boundary_descriptor_pressure_in,
          field_functions_in,
          parameters_in,
+         field_in,
          mpi_comm_in)
 {
-  AssertThrow(this->param.get_degree_p() > 0,
+  AssertThrow(this->param.get_degree_p(degree_u_in) > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
                          "zero for projection methods."));
 }
@@ -44,10 +48,11 @@ DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 template<int dim, typename Number>
 void
 DGNavierStokesProjectionMethods<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-  std::string const &                             dof_index_temperature)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+  std::string const &                          dof_index_temperature)
 {
-  Base::setup(matrix_free_wrapper, dof_index_temperature);
+  Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
   initialize_laplace_operator();
 }
@@ -77,16 +82,16 @@ void
 DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 {
   // setup Laplace operator
-  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
   laplace_operator_data.dof_index  = this->get_dof_index_pressure();
   laplace_operator_data.quad_index = this->get_quad_index_pressure();
 
   /*
-   * In case of pure Dirichlet boundary conditions for the velocity (or more precisely pure Neumann
-   * boundary conditions for the pressure), the pressure Poisson equation is singular (i.e. vectors
-   * describing a constant pressure state form the nullspace of the discrete pressure Poisson
-   * operator). To solve the pressure Poisson equation in that case, a Krylov subspace projection is
-   * applied during the solution of the linear system of equations.
+   * In case no Dirichlet boundary conditions as prescribed for the pressure, the pressure Poisson
+   * equation is singular (i.e. vectors describing a constant pressure state form the nullspace
+   * of the discrete pressure Poisson operator). To solve the pressure Poisson equation in that
+   * case, a Krylov subspace projection is applied during the solution of the linear system of
+   * equations.
    *
    * Strictly speaking, this projection is only needed if the linear system of equations
    *
@@ -105,7 +110,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
     // the Krylov subspace projection is needed for the dual splitting scheme since the linear
     // system of equations is not consistent for this splitting method (due to the boundary
     // conditions).
-    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -118,7 +123,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
     // but we detected no convergence for some test cases and specific parameters.
     // Hence, for reasons of robustness we also solve a transformed linear system of equations
     // in case of the pressure-correction scheme.
-    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular = this->is_pressure_level_undefined();
   }
 
   laplace_operator_data.bc                   = this->boundary_descriptor_laplace;
@@ -128,7 +133,9 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 
   laplace_operator_data.kernel_data.IP_factor = this->param.IP_factor_pressure;
 
-  laplace_operator.reinit(this->get_matrix_free(), this->get_constraint_p(), laplace_operator_data);
+  laplace_operator.initialize(this->get_matrix_free(),
+                              this->get_constraint_p(),
+                              laplace_operator_data);
 }
 
 template<int dim, typename Number>
@@ -143,19 +150,19 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
     preconditioner_pressure_poisson.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
     MultigridData mg_data;
     mg_data = this->param.multigrid_data_pressure_poisson;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, 1> Multigrid;
 
-    preconditioner_pressure_poisson.reset(new MULTIGRID(this->mpi_comm));
+    preconditioner_pressure_poisson.reset(new Multigrid(this->mpi_comm));
 
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(preconditioner_pressure_poisson);
 
     parallel::TriangulationBase<dim> const * tria =
       dynamic_cast<const parallel::TriangulationBase<dim> *>(
@@ -198,8 +205,9 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
 
     // setup solver
     pressure_poisson_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        laplace_operator, *preconditioner_pressure_poisson, solver_data));
+      new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
+                   PreconditionerBase<Number>,
+                   VectorType>(laplace_operator, *preconditioner_pressure_poisson, solver_data));
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
@@ -215,7 +223,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, Number>,
+    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, Number, 1>,
                                                    PreconditionerBase<Number>,
                                                    VectorType>(laplace_operator,
                                                                *preconditioner_pressure_poisson,

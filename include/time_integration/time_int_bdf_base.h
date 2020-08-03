@@ -15,8 +15,6 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../incompressible_navier_stokes/spatial_discretization/interface.h"
-
 using namespace dealii;
 
 template<typename Number>
@@ -31,7 +29,7 @@ public:
   TimeIntBDFBase(double const        start_time_,
                  double const        end_time_,
                  unsigned int const  max_number_of_time_steps_,
-                 double const        order_,
+                 unsigned const      order_,
                  bool const          start_with_low_order_,
                  bool const          adaptive_time_stepping_,
                  RestartData const & restart_data_,
@@ -43,6 +41,13 @@ public:
   virtual ~TimeIntBDFBase()
   {
   }
+
+  /*
+   * Setup function where allocations/initializations are done. Calls another function
+   * setup_derived() in which the setup of derived classes can be performed.
+   */
+  void
+  setup(bool const do_restart) override;
 
   /*
    * Pseudo-time-stepping for steady-state problems.
@@ -57,16 +62,10 @@ public:
   get_scaling_factor_time_derivative_term() const;
 
   /*
-   * Reset the current time.
-   */
-  void
-  reset_time(double const & current_time);
-
-  /*
    * Get the time step size.
    */
   double
-  get_time_step_size() const;
+  get_time_step_size() const override;
 
   double
   get_time_step_size(int const index) const;
@@ -78,27 +77,7 @@ public:
    * size.
    */
   void
-  set_current_time_step_size(double const & time_step_size);
-
-  /*
-   * Setup function where allocations/initializations are done. Calls another function
-   * setup_derived() in which the setup of derived classes can be performed.
-   */
-  void
-  setup(bool const do_restart);
-
-  /*
-   * fills a vector of number of iterations (if several equations have to be solved) with
-   * a list of names describing the equations/sub-steps that are solved
-   */
-  virtual void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const = 0;
-
-  /*
-   * Get time at the end of the current time step t_{n+1}.
-   */
-  double
-  get_next_time() const;
+  set_current_time_step_size(double const & time_step_size) override;
 
   /*
    * Get time at the end of the current time step.
@@ -112,10 +91,10 @@ protected:
    * current time step.
    */
   virtual void
-  do_timestep_pre_solve();
+  do_timestep_pre_solve(bool const print_header) override;
 
   void
-  do_timestep_post_solve(bool const do_write_output);
+  do_timestep_post_solve() override;
 
   /*
    * Update the time integrator constants.
@@ -292,6 +271,12 @@ private:
                               VectorType &,
                               double const start_time,
                               double const time_step_size);
+
+  /*
+   * returns whether solver info has to be written in the current time step.
+   */
+  virtual bool
+  print_solver_info() const = 0;
 };
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */

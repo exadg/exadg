@@ -3,7 +3,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/mapping_flags.h"
 
 using namespace dealii;
@@ -60,7 +60,7 @@ public:
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    return FunctionEvaluator<dim, Number, rank>::value(data.f, q_points, time);
+    return FunctionEvaluator<rank, dim, Number>::value(data.f, q_points, time);
   }
 
 private:
@@ -105,7 +105,7 @@ public:
    * Initialization.
    */
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
 
   /*
    * Evaluate operator and overwrite dst-vector.

@@ -13,44 +13,32 @@ namespace IncNS
 {
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
-                                        AffineConstraints<double> const &   constraint_matrix,
-                                        ProjectionOperatorData<dim> const & data)
-{
-  (void)matrix_free;
-  (void)constraint_matrix;
-  (void)data;
-
-  AssertThrow(false,
-              ExcMessage("This reinit function is not implemented for projection operator."));
-}
-
-template<int dim, typename Number>
-void
-ProjectionOperator<dim, Number>::reinit(
+ProjectionOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                matrix_free,
   AffineConstraints<double> const &              constraint_matrix,
   ProjectionOperatorData<dim> const &            data,
   Operators::DivergencePenaltyKernelData const & div_kernel_data,
   Operators::ContinuityPenaltyKernelData const & conti_kernel_data)
 {
+  operator_data = data;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
-  if(this->data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty)
   {
     this->div_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
     this->div_kernel->reinit(matrix_free,
-                             this->data.dof_index,
-                             this->data.quad_index,
+                             operator_data.dof_index,
+                             operator_data.quad_index,
                              div_kernel_data);
   }
 
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
   {
     this->conti_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
     this->conti_kernel->reinit(matrix_free,
-                               this->data.dof_index,
-                               this->data.quad_index,
+                               operator_data.dof_index,
+                               operator_data.quad_index,
                                conti_kernel_data);
   }
 
@@ -59,22 +47,24 @@ ProjectionOperator<dim, Number>::reinit(
   this->integrator_flags.cell_integrate = CellFlags(true, false, false);
 
   // divergence penalty
-  if(this->data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty)
     this->integrator_flags = this->integrator_flags || div_kernel->get_integrator_flags();
 
   // continuity penalty
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
     this->integrator_flags = this->integrator_flags || conti_kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
-                                        AffineConstraints<double> const &   constraint_matrix,
-                                        ProjectionOperatorData<dim> const & data,
-                                        std::shared_ptr<DivKernel>          div_penalty_kernel,
-                                        std::shared_ptr<ContiKernel>        conti_penalty_kernel)
+ProjectionOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &     matrix_free,
+                                            AffineConstraints<double> const &   constraint_matrix,
+                                            ProjectionOperatorData<dim> const & data,
+                                            std::shared_ptr<DivKernel>          div_penalty_kernel,
+                                            std::shared_ptr<ContiKernel> conti_penalty_kernel)
 {
+  operator_data = data;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
   div_kernel   = div_penalty_kernel;
@@ -85,11 +75,11 @@ ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matr
   this->integrator_flags.cell_integrate = CellFlags(true, false, false);
 
   // divergence penalty
-  if(this->data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty)
     this->integrator_flags = this->integrator_flags || div_kernel->get_integrator_flags();
 
   // continuity penalty
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
     this->integrator_flags = this->integrator_flags || conti_kernel->get_integrator_flags();
 }
 
@@ -97,14 +87,14 @@ template<int dim, typename Number>
 ProjectionOperatorData<dim>
 ProjectionOperator<dim, Number>::get_data() const
 {
-  return this->data;
+  return operator_data;
 }
 
 template<int dim, typename Number>
 Operators::DivergencePenaltyKernelData
 ProjectionOperator<dim, Number>::get_divergence_kernel_data() const
 {
-  if(this->data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty)
     return div_kernel->get_data();
   else
     return Operators::DivergencePenaltyKernelData();
@@ -114,7 +104,7 @@ template<int dim, typename Number>
 Operators::ContinuityPenaltyKernelData
 ProjectionOperator<dim, Number>::get_continuity_kernel_data() const
 {
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
     return conti_kernel->get_data();
   else
     return Operators::ContinuityPenaltyKernelData();
@@ -143,9 +133,9 @@ ProjectionOperator<dim, Number>::update(VectorType const & velocity, double cons
 {
   this->velocity = &velocity;
 
-  if(this->data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty)
     div_kernel->calculate_penalty_parameter(velocity);
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
     conti_kernel->calculate_penalty_parameter(velocity);
 
   time_step_size = dt;
@@ -157,7 +147,7 @@ ProjectionOperator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
   Base::reinit_cell(cell);
 
-  if(this->data.use_divergence_penalty)
+  if(operator_data.use_divergence_penalty)
     div_kernel->reinit_cell(*this->integrator);
 }
 
@@ -167,7 +157,7 @@ ProjectionOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
     conti_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
 }
 
@@ -188,7 +178,7 @@ ProjectionOperator<dim, Number>::reinit_face_cell_based(unsigned int const      
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  if(this->data.use_continuity_penalty)
+  if(operator_data.use_continuity_penalty)
     conti_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
 }
 
@@ -200,7 +190,7 @@ ProjectionOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
   {
     integrator.submit_value(integrator.get_value(q), q);
 
-    if(this->data.use_divergence_penalty)
+    if(operator_data.use_divergence_penalty)
       integrator.submit_divergence(time_step_size * div_kernel->get_volume_flux(integrator, q), q);
   }
 }
@@ -267,15 +257,21 @@ ProjectionOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                                       OperatorType const &       operator_type,
                                                       types::boundary_id const & boundary_id) const
 {
-  if(this->data.use_boundary_data == true)
+  if(operator_data.use_boundary_data == true)
   {
-    BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
+    BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      vector u_m = calculate_interior_value(q, integrator_m, operator_type);
-      vector u_p = calculate_exterior_value(
-        u_m, q, integrator_m, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
+      vector u_m      = calculate_interior_value(q, integrator_m, operator_type);
+      vector u_p      = calculate_exterior_value(u_m,
+                                            q,
+                                            integrator_m,
+                                            operator_type,
+                                            boundary_type,
+                                            boundary_id,
+                                            operator_data.bc,
+                                            this->time);
       vector normal_m = integrator_m.get_normal_vector(q);
 
       vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);

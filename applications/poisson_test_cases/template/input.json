@@ -1,0 +1,18 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "RunType": "RefineHAndP",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+       	"Name": "Template",
+	"OutputDirectory": "output/template/vtu/",
+	"OutputName": "template"    
+    }
+}

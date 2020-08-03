@@ -44,6 +44,24 @@ struct BoundaryDescriptor
 
     return BoundaryType::Undefined;
   }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(types::boundary_id const             boundary_id,
+                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+      counter++;
+
+    if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
+  }
 };
 
 template<int dim>

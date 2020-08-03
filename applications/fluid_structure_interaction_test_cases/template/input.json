@@ -1,0 +1,21 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "DegreeFluid": "3",
+        "DegreeStructure": "3",
+        "RefineFluid": "0",
+        "RefineStructure": "0"
+    },
+    "FSI": {
+        "Method": "Aitken",
+        "AbsTol": "1e-12",
+        "RelTol": "0.001",
+        "OmegaInit": "0.1",
+        "ReusedTimeSteps": "0",
+        "PartitionedIterMax": "100"
+    },
+    "Application": {
+        "Name": "MyApp"
+    }
+}

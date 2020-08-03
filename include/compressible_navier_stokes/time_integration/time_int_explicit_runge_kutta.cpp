@@ -6,10 +6,14 @@
  */
 
 #include "time_int_explicit_runge_kutta.h"
+#include "time_integration/time_step_calculation.h"
 
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
-#include "time_integration/time_step_calculation.h"
+
+#include "../postprocessor/postprocessor_base.h"
+
+#include "../../utilities/print_throughput.h"
 
 namespace CompNS
 {
@@ -17,6 +21,7 @@ template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
@@ -27,11 +32,11 @@ TimeIntExplRK<Number>::TimeIntExplRK(
                               mpi_comm_in), // currently no adaptive time stepping implemented
     pde_operator(operator_in),
     param(param_in),
+    refine_steps_time(refine_steps_time_in),
     postprocessor(postprocessor_in),
-    time_postprocessing(0.0),
     l2_norm(0.0),
-    cfl_number(param.cfl_number / std::pow(2.0, param.dt_refinements)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, param.dt_refinements))
+    cfl_number(param.cfl_number / std::pow(2.0, refine_steps_time_in)),
+    diffusion_number(param.diffusion_number / std::pow(2.0, refine_steps_time_in))
 {
 }
 
@@ -111,7 +116,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    this->time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
+    this->time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
     print_parameter(this->pcout, "time step size", this->time_step);
   }
@@ -240,21 +245,20 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
-  timer_postprocessing.restart();
+  Timer timer;
+  timer.restart();
 
   detect_instabilities();
 
   postprocessor->do_postprocessing(this->solution_n, this->time, this->time_step_number);
 
-  time_postprocessing += timer_postprocessing.wall_time();
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 template<typename Number>
 void
 TimeIntExplRK<Number>::solve_timestep()
 {
-  this->output_solver_info_header();
-
   Timer timer;
   timer.restart();
 
@@ -263,15 +267,13 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  double wall_time = timer.wall_time();
-
-  // output
   if(print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve time step explicitly: Wall time in [s] = " << std::scientific << wall_time
-                << std::endl;
+    this->pcout << std::endl << "Solve compressible Navier-Stokes equations explicitly:";
+    print_solver_info_explicit(this->pcout, timer.wall_time());
   }
+
+  this->timer_tree->insert({"Timeloop", "Solve-explicit"}, timer.wall_time());
 }
 
 template<typename Number>
@@ -281,20 +283,6 @@ TimeIntExplRK<Number>::print_solver_info() const
   return param.solver_info_data.write(this->global_timer.wall_time(),
                                       this->time,
                                       this->time_step_number);
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::get_wall_times(std::vector<std::string> & name,
-                                      std::vector<double> &      wall_time_vector) const
-{
-  name.resize(2);
-  std::vector<std::string> names = {"Operator evaluation", "Postprocessing"};
-  name                           = names;
-
-  wall_time_vector.resize(2);
-  wall_time_vector[0] = pde_operator->get_wall_time_operator_evaluation();
-  wall_time_vector[1] = time_postprocessing;
 }
 
 // instantiations

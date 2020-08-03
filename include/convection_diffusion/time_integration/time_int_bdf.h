@@ -8,51 +8,54 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
-#include "../../functionalities/matrix_free_wrapper.h"
-#include "../../functionalities/moving_mesh.h"
-#include "../postprocessor/postprocessor_base.h"
-
-#include "../spatial_discretization/dg_operator.h"
-
 using namespace dealii;
+
+// forward declarations
+template<int dim, typename Number>
+class MovingMeshBase;
 
 namespace ConvDiff
 {
-// forward declarations
 class InputParameters;
+
+template<int dim, typename Number>
+class DGOperator;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {
 template<typename Number>
 class OperatorOIF;
 } // namespace Interface
+} // namespace ConvDiff
 
+
+namespace ConvDiff
+{
 template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
   typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
 
-
   typedef DGOperator<dim, Number> Operator;
 
   TimeIntBDF(std::shared_ptr<Operator>                       operator_in,
              InputParameters const &                         param_in,
+             unsigned int const                              refine_steps_time_in,
              MPI_Comm const &                                mpi_comm_in,
              std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
-             std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
-             std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
-
-  void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
-
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+             std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
+             std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
   void
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
@@ -63,6 +66,9 @@ public:
 
   void
   ale_update();
+
+  void
+  print_iterations() const;
 
 private:
   void
@@ -136,6 +142,8 @@ private:
 
   InputParameters const & param;
 
+  unsigned int const refine_steps_time;
+
   double const cfl;
 
   // solution vectors
@@ -150,9 +158,8 @@ private:
   std::vector<VectorType const *> velocities;
   std::vector<double>             times;
 
-  // iteration counts and solver time
-  double iterations;
-  double wall_time;
+  // iteration counts
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
 
   // Operator-integration-factor (OIF) splitting
 
@@ -171,8 +178,8 @@ private:
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
 
-  std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh;
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 };
 
 } // namespace ConvDiff

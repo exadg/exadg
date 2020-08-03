@@ -19,9 +19,9 @@ ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator()
 
 template<int dim, typename Number>
 void
-ContinuityPenaltyOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix_free,
-                                               ContinuityPenaltyData<dim> const & data,
-                                               std::shared_ptr<Kernel> const      kernel)
+ContinuityPenaltyOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &    matrix_free,
+                                                   ContinuityPenaltyData<dim> const & data,
+                                                   std::shared_ptr<Kernel> const      kernel)
 {
   this->matrix_free = &matrix_free;
   this->data        = data;
@@ -292,13 +292,13 @@ ContinuityPenaltyOperator<dim, Number>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     vector u_m = calculate_interior_value(q, integrator_m, operator_type);
     vector u_p = calculate_exterior_value(
-      u_m, q, integrator_m, operator_type, boundary_type, boundary_id, this->data.bc, time);
+      u_m, q, integrator_m, operator_type, boundary_type, boundary_id, data.bc, time);
     vector normal_m = integrator_m.get_normal_vector(q);
 
     vector flux = kernel->calculate_flux(u_m, u_p, normal_m);

@@ -13,7 +13,7 @@
 
 #include "../incompressible_navier_stokes/spatial_discretization/curl_compute.h"
 
-#include "functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 struct KineticEnergyData
 {

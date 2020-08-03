@@ -1,0 +1,14 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "3",
+        "Degree": "3",
+        "RefineSpace": "0",
+        "NScalars": "1"
+    },
+    "Application": {
+       	"Name": "Lung",
+	"OutputDirectory": "/data/fehn/navierstokes/applications/output/lung/child/",
+	"OutputName": "test"
+    }
+}

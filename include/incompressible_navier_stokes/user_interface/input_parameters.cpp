@@ -7,16 +7,13 @@
 
 #include "input_parameters.h"
 
-#include "../../functionalities/print_functions.h"
-
-#include <deal.II/base/mpi.h>
+#include "../../utilities/print_functions.h"
 
 namespace IncNS
 {
 // standard constructor that initializes parameters
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
     formulation_viscous_term(FormulationViscousTerm::LaplaceFormulation),
@@ -27,12 +24,14 @@ InputParameters::InputParameters()
 
     // ALE
     ale_formulation(false),
+    mesh_movement_type(MeshMovementType::Analytical),
     neumann_with_variable_normal_vector(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
     end_time(-1.),
     viscosity(-1.),
+    density(1.),
     thermal_expansion_coefficient(1.0),
     reference_temperature(0.0),
 
@@ -55,7 +54,6 @@ InputParameters::InputParameters()
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
     order_time_integrator(1),
     start_with_low_order(true),
-    dt_refinements(0),
 
     // pseudo time-stepping
     convergence_criterion_steady_problem(ConvergenceCriterionSteadyProblem::Undefined),
@@ -74,15 +72,11 @@ InputParameters::InputParameters()
     // triangulation
     triangulation_type(TriangulationType::Undefined),
 
-    // polynomial degrees
-    degree_u(3),
-    degree_p(DegreePressure::MixedOrder),
-
     // mapping
     mapping(MappingType::Affine),
 
-    // h-refinement
-    h_refinements(0),
+    // polynomial degrees
+    degree_p(DegreePressure::MixedOrder),
 
     // convective term
     upwind_factor(1.0),
@@ -104,7 +98,6 @@ InputParameters::InputParameters()
     divu_use_boundary_data(true),
 
     // special case: pure DBC's
-    pure_dirichlet_bc(false),
     adjust_pressure_level(AdjustPressureLevel::ApplyZeroMeanValue),
 
     // div-div and continuity penalty terms
@@ -171,7 +164,7 @@ InputParameters::InputParameters()
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
-    newton_solver_data_momentum(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
+    newton_solver_data_momentum(Newton::SolverData(1e2, 1.e-12, 1.e-6)),
     solver_momentum(SolverMomentum::GMRES),
     solver_data_momentum(SolverData(1e4, 1.e-12, 1.e-6, 100)),
     preconditioner_momentum(MomentumPreconditioner::InverseMassMatrix),
@@ -193,7 +186,7 @@ InputParameters::InputParameters()
     scaling_factor_continuity(1.0),
 
     // nonlinear solver (Newton solver)
-    newton_solver_data_coupled(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
+    newton_solver_data_coupled(Newton::SolverData(1e2, 1.e-12, 1.e-6)),
 
     // linear solver
     solver_coupled(SolverCoupled::GMRES),
@@ -225,8 +218,6 @@ void
 InputParameters::check_input_parameters(ConditionalOStream & pcout)
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
-
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
@@ -519,7 +510,7 @@ InputParameters::linear_problem_has_to_be_solved() const
 }
 
 unsigned int
-InputParameters::get_degree_p() const
+InputParameters::get_degree_p(unsigned int const degree_u) const
 {
   unsigned int k = 1;
 
@@ -577,7 +568,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
 
@@ -598,7 +588,11 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Boussinesq term", boussinesq_term);
 
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
-  print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
+  if(ale_formulation)
+  {
+    print_parameter(pcout, "Mesh movement type", enum_to_string(mesh_movement_type));
+    print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
+  }
 }
 
 
@@ -616,6 +610,9 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
 
   // viscosity
   print_parameter(pcout, "Viscosity", viscosity);
+
+  // density
+  print_parameter(pcout, "Density", density);
 
   if(boussinesq_term)
   {
@@ -669,8 +666,6 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
   print_parameter(pcout, "Order of time integration scheme", order_time_integrator);
   print_parameter(pcout, "Start with low order method", start_with_low_order);
 
-  print_parameter(pcout, "Refinement steps dt", dt_refinements);
-
   if(problem_type == ProblemType::Steady)
   {
     print_parameter(pcout,
@@ -696,12 +691,9 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-  print_parameter(pcout, "Polynomial degree velocity", degree_u);
-  print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
-
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
 
-  print_parameter(pcout, "Number of h-refinements", h_refinements);
+  print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
 
   if(this->convective_problem())
   {
@@ -740,13 +732,9 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
     print_parameter(pcout, "Div(u) - use boundary data", divu_use_boundary_data);
   }
 
-  // special case pure DBC's
-  print_parameter(pcout, "Pure Dirichlet BC's", pure_dirichlet_bc);
-
-  if(pure_dirichlet_bc == true)
-  {
-    print_parameter(pcout, "Adjust pressure level", enum_to_string(adjust_pressure_level));
-  }
+  print_parameter(pcout,
+                  "Adjust pressure level (if undefined)",
+                  enum_to_string(adjust_pressure_level));
 
   print_parameter(pcout, "Use divergence penalty term", use_divergence_penalty);
 

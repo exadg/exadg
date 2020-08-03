@@ -75,14 +75,17 @@ public:
   }
 
   static MappingFlags
-  get_mapping_flags()
+  get_mapping_flags(bool const compute_interior_face_integrals,
+                    bool const compute_boundary_face_integrals)
   {
     MappingFlags flags;
 
-    flags.cells       = update_gradients | update_JxW_values;
-    flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
-    flags.boundary_faces =
-      update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+    flags.cells = update_gradients | update_JxW_values;
+    if(compute_interior_face_integrals)
+      flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+    if(compute_boundary_face_integrals)
+      flags.boundary_faces =
+        update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
 
     return flags;
   }
@@ -170,21 +173,21 @@ private:
 template<int dim>
 struct DiffusiveOperatorData : public OperatorBaseData
 {
-  DiffusiveOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  DiffusiveOperatorData() : OperatorBaseData()
   {
   }
 
   Operators::DiffusiveKernelData kernel_data;
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim>> bc;
 };
 
 
 template<int dim, typename Number>
-class DiffusiveOperator : public OperatorBase<dim, Number, DiffusiveOperatorData<dim>>
+class DiffusiveOperator : public OperatorBase<dim, Number, 1>
 {
 private:
-  typedef OperatorBase<dim, Number, DiffusiveOperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, 1> Base;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
@@ -194,15 +197,10 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &    matrix_free,
-         AffineConstraints<double> const &  constraint_matrix,
-         DiffusiveOperatorData<dim> const & data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &                          matrix_free,
-         AffineConstraints<double> const &                        constraint_matrix,
-         DiffusiveOperatorData<dim> const &                       data,
-         std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel);
+  initialize(MatrixFree<dim, Number> const &                          matrix_free,
+             AffineConstraints<double> const &                        constraint_matrix,
+             DiffusiveOperatorData<dim> const &                       data,
+             std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel);
 
   void
   update();
@@ -236,10 +234,7 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                DiffusiveOperatorData<dim> const &   operator_data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
+  DiffusiveOperatorData<dim> operator_data;
 
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel;
 };

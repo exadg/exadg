@@ -1,34 +1,20 @@
 #include "convective_operator.h"
 
-#include "verify_boundary_conditions.h"
 #include "weak_boundary_conditions.h"
 
 namespace ConvDiff
 {
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
-                                        AffineConstraints<double> const &   constraint_matrix,
-                                        ConvectiveOperatorData<dim> const & data)
-{
-  (void)matrix_free;
-  (void)constraint_matrix;
-  (void)data;
-
-  AssertThrow(false,
-              ExcMessage(
-                "This reinit() function can not be used to initialize the convective operator."));
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::reinit(
+ConvectiveOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
   AffineConstraints<double> const &                         constraint_matrix,
   ConvectiveOperatorData<dim> const &                       data,
-  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel_in)
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel)
 {
-  kernel = kernel_in;
+  operator_data = data;
+
+  this->kernel = kernel;
 
   Base::reinit(matrix_free, constraint_matrix, data);
 
@@ -100,13 +86,14 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    if(operator_data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
       scalar value = integrator.get_value(q);
       integrator.submit_gradient(
         kernel->get_volume_flux_divergence_form(value, integrator, q, this->time), q);
     }
-    else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    else if(operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
     {
       vector gradient = integrator.get_gradient(q);
       integrator.submit_value(
@@ -222,19 +209,19 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                                       OperatorType const &       operator_type,
                                                       types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value<dim, Number, 1, 0>(q, integrator_m, operator_type);
-    scalar value_p = calculate_exterior_value<dim, Number, 1, 0>(value_m,
-                                                                 q,
-                                                                 integrator_m,
-                                                                 operator_type,
-                                                                 boundary_type,
-                                                                 boundary_id,
-                                                                 this->data.bc,
-                                                                 this->time);
+    scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
+    scalar value_p = calculate_exterior_value(value_m,
+                                              q,
+                                              integrator_m,
+                                              operator_type,
+                                              boundary_type,
+                                              boundary_id,
+                                              operator_data.bc,
+                                              this->time);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
@@ -245,16 +232,6 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
 
     integrator_m.submit_value(flux, q);
   }
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  ConvectiveOperatorData<dim> const &  data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
-{
-  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class ConvectiveOperator<2, float>;

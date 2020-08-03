@@ -14,17 +14,13 @@
 
 using namespace dealii;
 
-template<int dim,
-         typename Number,
-         typename Operator,
-         typename Preconditioner,
-         typename MultigridNumber>
+template<int dim, typename Number, typename Operator, typename Preconditioner>
 class CheckMultigrid
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
+  typedef LinearAlgebra::distributed::Vector<typename Preconditioner::MultigridNumber> VectorTypeMG;
 
   CheckMultigrid(Operator const &                underlying_operator_in,
                  std::shared_ptr<Preconditioner> preconditioner_in,

@@ -7,11 +7,15 @@
 
 #include "time_int_bdf.h"
 
-#include "../spatial_discretization/interface.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
+#include "../../grid/moving_mesh_base.h"
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/dg_operator.h"
 #include "../user_interface/input_parameters.h"
+
+#include "../../utilities/print_throughput.h"
 
 namespace ConvDiff
 {
@@ -19,10 +23,11 @@ template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -33,22 +38,22 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
                            mpi_comm_in),
     pde_operator(operator_in),
     param(param_in),
-    cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
+    refine_steps_time(refine_steps_time_in),
+    cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
     solution(param_in.order_time_integrator),
     vec_convective_term(param_in.order_time_integrator),
-    iterations(0.0),
-    wall_time(0.0),
-    cfl_oif(param.cfl_oif / std::pow(2.0, param.dt_refinements)),
+    iterations({0, 0}),
+    cfl_oif(param.cfl_oif / std::pow(2.0, refine_steps_time_in)),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator),
     moving_mesh(moving_mesh_in),
-    matrix_free_wrapper(matrix_free_wrapper_in)
+    matrix_free(matrix_free_in)
 {
   if(param.ale_formulation)
   {
     AssertThrow(moving_mesh != nullptr,
                 ExcMessage("Shared pointer moving_mesh is not correctly initialized."));
-    AssertThrow(matrix_free_wrapper != nullptr,
+    AssertThrow(matrix_free != nullptr,
                 ExcMessage("Shared pointer matrix_free_wrapper is not correctly initialized."));
   }
 }
@@ -263,9 +268,11 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
+    time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
 
-    this->pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
+    this->pcout << std::endl
+                << "Calculation of time step size (user-specified):" << std::endl
+                << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
@@ -288,7 +295,8 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     double time_step_global = calculate_time_step_cfl_global(
       cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    this->pcout << "Calculation of time step size according to CFL condition:" << std::endl
+    this->pcout << std::endl
+                << "Calculation of time step size according to CFL condition:" << std::endl
                 << std::endl;
     print_parameter(this->pcout, "h_min", h_min);
     print_parameter(this->pcout, "U_max", max_velocity);
@@ -338,14 +346,14 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     double const h_min = pde_operator->calculate_minimum_element_length();
 
     time_step = calculate_time_step_max_efficiency(
-      param.c_eff, h_min, degree, this->order, param.dt_refinements);
+      param.c_eff, h_min, degree, this->order, refine_steps_time);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, refine_steps_time));
     print_parameter(this->pcout, "Time step size", time_step);
   }
   else
@@ -464,7 +472,7 @@ void
 TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
 {
   moving_mesh->move_mesh(time);
-  matrix_free_wrapper->update_geometry();
+  matrix_free->update_mapping(moving_mesh->get_mapping());
   pde_operator->update_after_mesh_movement();
 }
 
@@ -541,8 +549,6 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::solve_timestep()
 {
-  this->output_solver_info_header();
-
   Timer timer;
   timer.restart();
 
@@ -644,14 +650,8 @@ TimeIntBDF<dim, Number>::solve_timestep()
                         this->get_next_time(),
                         &velocity);
 
-  iterations += N_iter;
-
-  // TODO: implement filtering as a separate module
-  // filtering is currently based on multigrid implementation and can therefore
-  // only be used in combination with semi-implicit BDF time integration and
-  // multigrid preconditioner
-  if(param.filter_solution)
-    pde_operator->filter_solution(solution_np);
+  iterations.first += 1;
+  iterations.second += N_iter;
 
   // evaluate convective term at end time t_{n+1} at which we know the boundary condition
   // g_u(t_{n+1})
@@ -676,15 +676,13 @@ TimeIntBDF<dim, Number>::solve_timestep()
     }
   }
 
-  wall_time += timer.wall_time();
-
-  // write output
   if(print_solver_info())
   {
-    this->pcout << "Solve scalar convection-diffusion problem:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << N_iter
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    this->pcout << std::endl << "Solve scalar convection-diffusion equation:";
+    print_solver_info_linear(this->pcout, N_iter, timer.wall_time());
   }
+
+  this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -743,6 +741,9 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::postprocessing() const
 {
+  Timer timer;
+  timer.restart();
+
   // the mesh has to be at the correct position to allow a computation of
   // errors at start_time
   if(this->param.ale_formulation && this->get_time_step_number() == 1)
@@ -751,34 +752,21 @@ TimeIntBDF<dim, Number>::postprocessing() const
   }
 
   postprocessor->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());
+
+  this->timer_tree->insert({"Timeloop", "Postprocessing"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                        std::vector<double> &      iteration) const
+TimeIntBDF<dim, Number>::print_iterations() const
 {
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
-
-  name.resize(1);
   std::vector<std::string> names = {"Linear system"};
-  name                           = names;
 
-  iteration.resize(1);
-  iteration[0] = (double)iterations / (double)N_time_steps;
-}
+  std::vector<double> iterations_avg;
+  iterations_avg.resize(1);
+  iterations_avg[0] = (double)iterations.second / std::max(1., (double)iterations.first);
 
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                        std::vector<double> &      wall_time_vector) const
-{
-  name.resize(1);
-  std::vector<std::string> names = {"Linear system"};
-  name                           = names;
-
-  wall_time_vector.resize(1);
-  wall_time_vector[0] = this->wall_time;
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 template<int dim, typename Number>

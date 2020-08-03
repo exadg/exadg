@@ -1,5 +1,5 @@
 /*
- * BoundaryDescriptorNavierStokes.h
+ * boundary_descriptor.h
  *
  *  Created on: Aug 10, 2016
  *      Author: fehn
@@ -13,6 +13,8 @@ using namespace dealii;
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+#include "../../functions_and_boundary_conditions/function_cached.h"
+
 namespace IncNS
 {
 //clang-format off
@@ -23,7 +25,7 @@ namespace IncNS
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     example          |          velocity         |               pressure                         |
  *   +----------------------+---------------------------+------------------------------------------------+
- *   |     inflow, no-slip  |   Dirichlet:              |  Neumann:                                      |
+ *   |     inflow, no-slip  |   Dirichlet(Mortar):      |  Neumann:                                      |
  *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
@@ -42,6 +44,7 @@ enum class BoundaryTypeU
 {
   Undefined,
   Dirichlet,
+  DirichletMortar,
   Neumann,
   Symmetry
 };
@@ -58,6 +61,12 @@ struct BoundaryDescriptorU
 {
   // Dirichlet: prescribe all components of the velocity
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+
+  // another type of Dirichlet boundary condition where the Dirichlet value comes
+  // from the solution on another domain that is in contact with the actual domain
+  // of interest at the given boundary (this type of Dirichlet boundary condition
+  // is required for fluid-structure interaction problems)
+  std::map<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
@@ -79,6 +88,8 @@ struct BoundaryDescriptorU
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryTypeU::Dirichlet;
+    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+      return BoundaryTypeU::DirichletMortar;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryTypeU::Neumann;
     else if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())
@@ -87,6 +98,30 @@ struct BoundaryDescriptorU
     AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
 
     return BoundaryTypeU::Undefined;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(types::boundary_id const             boundary_id,
+                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+      counter++;
+
+    if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+      counter++;
+
+    if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+      counter++;
+
+    if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
 
@@ -127,6 +162,24 @@ struct BoundaryDescriptorP
     AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
 
     return BoundaryTypeP::Undefined;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    void
+    verify_boundary_conditions(types::boundary_id const             boundary_id,
+                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+  {
+    unsigned int counter = 0;
+    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+      counter++;
+
+    if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+      counter++;
+
+    if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
+      counter++;
+
+    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
 

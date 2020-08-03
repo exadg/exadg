@@ -8,16 +8,19 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_
 
-#include "deal.II/base/conditional_ostream.h"
-#include "../../functionalities/print_functions.h"
+#include <deal.II/base/conditional_ostream.h>
 
-struct NewtonSolverData
+#include "../../utilities/print_functions.h"
+
+namespace Newton
 {
-  NewtonSolverData() : max_iter(100), abs_tol(1.e-20), rel_tol(1.e-12)
+struct SolverData
+{
+  SolverData() : max_iter(100), abs_tol(1.e-12), rel_tol(1.e-12)
   {
   }
 
-  NewtonSolverData(unsigned int const max_iter_, double const abs_tol_, double const rel_tol_)
+  SolverData(unsigned int const max_iter_, double const abs_tol_, double const rel_tol_)
     : max_iter(max_iter_), abs_tol(abs_tol_), rel_tol(rel_tol_)
   {
   }
@@ -35,5 +38,19 @@ struct NewtonSolverData
   double       rel_tol;
 };
 
+struct UpdateData
+{
+  UpdateData()
+    : do_update(true),
+      threshold_newton_iter(1),
+      threshold_linear_iter(std::numeric_limits<unsigned int>::max())
+  {
+  }
+
+  bool         do_update;
+  unsigned int threshold_newton_iter;
+  unsigned int threshold_linear_iter;
+};
+} // namespace Newton
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_ */

@@ -1,16 +1,21 @@
+// deal.II
+#include <deal.II/numerics/vector_tools.h>
+
 #include "laplace_operator.h"
 
-#include "../../convection_diffusion/spatial_discretization/operators/weak_boundary_conditions.h"
+#include "weak_boundary_conditions.h"
 
 namespace Poisson
 {
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit(
-  MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<double> const & constraint_matrix,
-  LaplaceOperatorData<dim> const &  data)
+LaplaceOperator<dim, Number, n_components>::initialize(
+  MatrixFree<dim, Number> const &        matrix_free,
+  AffineConstraints<double> const &      constraint_matrix,
+  LaplaceOperatorData<rank, dim> const & data)
 {
+  operator_data = data;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
   kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
@@ -184,118 +189,36 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
   OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
-  ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     value value_m =
-      ConvDiff::calculate_interior_value<dim, Number, n_components, rank>(q,
+      calculate_interior_value<dim, Number, n_components, rank>(q, integrator_m, operator_type);
+    value value_p = calculate_exterior_value<dim, Number, n_components, rank>(value_m,
+                                                                              q,
+                                                                              integrator_m,
+                                                                              operator_type,
+                                                                              boundary_type,
+                                                                              boundary_id,
+                                                                              operator_data.bc,
+                                                                              this->time);
+
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+
+    value normal_gradient_m =
+      calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
                                                                           integrator_m,
                                                                           operator_type);
-    value value_p =
-      ConvDiff::calculate_exterior_value<dim, Number, n_components, rank>(value_m,
+    value normal_gradient_p =
+      calculate_exterior_normal_gradient<dim, Number, n_components, rank>(normal_gradient_m,
                                                                           q,
                                                                           integrator_m,
                                                                           operator_type,
                                                                           boundary_type,
                                                                           boundary_id,
-                                                                          this->data.bc,
+                                                                          operator_data.bc,
                                                                           this->time);
-
-    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
-
-    value normal_gradient_m =
-      ConvDiff::calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
-                                                                                    integrator_m,
-                                                                                    operator_type);
-    value normal_gradient_p =
-      ConvDiff::calculate_exterior_normal_gradient<dim, Number, n_components, rank>(
-        normal_gradient_m,
-        q,
-        integrator_m,
-        operator_type,
-        boundary_type,
-        boundary_id,
-        this->data.bc,
-        this->time);
-
-    value value_flux =
-      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
-
-    integrator_m.submit_normal_derivative(gradient_flux, q);
-    integrator_m.submit_value(-value_flux, q);
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
-LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
-  IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
-{
-  ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-  {
-    value neumann_value = ConvDiff::calculate_neumann_value<dim, Number, n_components, rank>(
-      q, integrator_m, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
-
-    integrator_m.submit_value(-neumann_value, q);
-  }
-}
-
-template<int dim, typename Number, int n_components>
-void
-LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_from_dof_vector(
-  IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
-{
-  ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-  {
-    value value_m =
-      ConvDiff::calculate_interior_value<dim, Number, n_components, rank>(q,
-                                                                          integrator_m,
-                                                                          operator_type);
-
-    // deviating from the standard boundary_face_loop_inhom_operator() function,
-    // because the boundary condition comes from the vector src
-    Assert(operator_type == OperatorType::inhomogeneous,
-           ExcMessage("This function is only implemented for OperatorType::inhomogeneous."));
-
-    value value_p = value();
-    if(boundary_type == ConvDiff::BoundaryType::dirichlet)
-    {
-      value_p = 2.0 * integrator_m.get_value(q);
-    }
-    else if(boundary_type == ConvDiff::BoundaryType::neumann)
-    {
-      // do nothing
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-    }
-
-    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
-
-    value normal_gradient_m =
-      ConvDiff::calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
-                                                                                    integrator_m,
-                                                                                    operator_type);
-    value normal_gradient_p =
-      ConvDiff::calculate_exterior_normal_gradient<dim, Number, n_components, rank>(
-        normal_gradient_m,
-        q,
-        integrator_m,
-        operator_type,
-        boundary_type,
-        boundary_id,
-        this->data.bc,
-        this->time);
 
     value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
@@ -368,22 +291,166 @@ LaplaceOperator<dim, Number, n_components>::
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  LaplaceOperatorData<dim> const &     data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
+LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_from_dof_vector(
+  IntegratorFace &           integrator_m,
+  OperatorType const &       operator_type,
+  types::boundary_id const & boundary_id) const
 {
-  unsigned int counter = 0;
-  if(data.bc->dirichlet_bc.find(boundary_id) != data.bc->dirichlet_bc.end())
-    counter++;
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-  if(data.bc->neumann_bc.find(boundary_id) != data.bc->neumann_bc.end())
-    counter++;
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  {
+    value value_m =
+      calculate_interior_value<dim, Number, n_components, rank>(q, integrator_m, operator_type);
 
-  if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
-    counter++;
+    // deviating from the standard boundary_face_loop_inhom_operator() function,
+    // because the boundary condition comes from the vector src
+    Assert(operator_type == OperatorType::inhomogeneous,
+           ExcMessage("This function is only implemented for OperatorType::inhomogeneous."));
 
-  AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
+    value value_p = value();
+    if(boundary_type == BoundaryType::Dirichlet)
+    {
+      value_p = 2.0 * integrator_m.get_value(q);
+    }
+    else if(boundary_type == BoundaryType::Neumann)
+    {
+      // do nothing
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    }
+
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+
+    value normal_gradient_m =
+      calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
+                                                                          integrator_m,
+                                                                          operator_type);
+    value normal_gradient_p =
+      calculate_exterior_normal_gradient<dim, Number, n_components, rank>(normal_gradient_m,
+                                                                          q,
+                                                                          integrator_m,
+                                                                          operator_type,
+                                                                          boundary_type,
+                                                                          boundary_id,
+                                                                          operator_data.bc,
+                                                                          this->time);
+
+    value value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_m.submit_value(-value_flux, q);
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
+  IntegratorFace &           integrator_m,
+  types::boundary_id const & boundary_id) const
+{
+  BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
+
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  {
+    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
+      q, integrator_m, boundary_type, boundary_id, operator_data.bc, this->time);
+
+    integrator_m.submit_value(-neumann_value, q);
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & dst,
+                                                                   double const time) const
+{
+  // standard Dirichlet boundary conditions
+  std::map<types::global_dof_index, double> boundary_values;
+  for(auto dbc : operator_data.bc->dirichlet_bc)
+  {
+    dbc.second->set_time(time);
+
+    ComponentMask mask     = ComponentMask();
+    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
+      mask = dbc_mask->second;
+
+    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                             this->matrix_free->get_dof_handler(
+                                               operator_data.dof_index),
+                                             dbc.first,
+                                             *dbc.second,
+                                             boundary_values,
+                                             mask);
+  }
+
+  // set Dirichlet values in solution vector
+  for(auto m : boundary_values)
+    if(dst.get_partitioner()->in_local_range(m.first))
+      dst[m.first] = m.second;
+
+  dst.update_ghost_values();
+
+  // Dirichlet mortar type boundary conditions
+  if(not(operator_data.bc->dirichlet_mortar_bc.empty()))
+  {
+    unsigned int const dof_index  = operator_data.dof_index;
+    unsigned int const quad_index = operator_data.quad_index_gauss_lobatto;
+
+    IntegratorFace integrator(*this->matrix_free, true, dof_index, quad_index);
+
+    for(unsigned int face = this->matrix_free->n_inner_face_batches();
+        face <
+        this->matrix_free->n_inner_face_batches() + this->matrix_free->n_boundary_face_batches();
+        ++face)
+    {
+      types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
+
+      BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
+
+      if(boundary_type == BoundaryType::DirichletMortar)
+      {
+        integrator.reinit(face);
+        integrator.read_dof_values(dst);
+
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          unsigned int const local_face_number =
+            this->matrix_free->get_face_info(face).interior_face_no;
+
+          unsigned int const index = this->matrix_free->get_shape_info(dof_index, quad_index)
+                                       .face_to_cell_index_nodal[local_face_number][q];
+
+          Tensor<rank, dim, VectorizedArray<Number>> g;
+
+          if(boundary_type == BoundaryType::DirichletMortar)
+          {
+            auto bc = operator_data.bc->dirichlet_mortar_bc.find(boundary_id)->second;
+
+            g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
+          }
+          else
+          {
+            AssertThrow(false, ExcMessage("Not implemented."));
+          }
+
+          integrator.submit_dof_value(g, index);
+        }
+
+        integrator.set_dof_values_plain(dst);
+      }
+      else
+      {
+        AssertThrow(boundary_type == BoundaryType::Dirichlet ||
+                      boundary_type == BoundaryType::Neumann,
+                    ExcMessage("BoundaryType not implemented."));
+      }
+    }
+  }
 }
 
 template class LaplaceOperator<2, float, 1>;

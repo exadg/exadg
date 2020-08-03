@@ -1,0 +1,14 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "Degree": "3",
+        "RefineSpace": "5",
+        "NScalars": "1"
+    },
+    "Application": {
+       	"Name": "RisingBubble",
+	"OutputDirectory": "output/rising_bubble/",
+	"OutputName": "test"
+    }
+}

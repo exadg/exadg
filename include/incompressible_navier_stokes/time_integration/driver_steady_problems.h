@@ -8,12 +8,12 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../postprocessor/postprocessor_base.h"
-#include "../spatial_discretization/dg_coupled_solver.h"
+#include "../../utilities/timings_hierarchical.h"
 
 using namespace dealii;
 
@@ -21,6 +21,12 @@ namespace IncNS
 {
 // forward declarations
 class InputParameters;
+
+template<int dim, typename Number>
+class DGNavierStokesCoupled;
+
+template<typename Number>
+class PostProcessorInterface;
 
 template<int dim, typename Number>
 class DriverSteadyProblems
@@ -34,7 +40,7 @@ public:
   DriverSteadyProblems(std::shared_ptr<Operator>                       operator_in,
                        InputParameters const &                         param_in,
                        MPI_Comm const &                                mpi_comm_in,
-                       std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
   setup();
@@ -42,11 +48,11 @@ public:
   void
   solve_steady_problem();
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
-
   VectorType const &
   get_velocity() const;
+
+  std::shared_ptr<TimerTree>
+  get_timings() const;
 
 private:
   void
@@ -58,20 +64,23 @@ private:
   void
   solve();
 
+  void
+  postprocessing() const;
+
   std::shared_ptr<Operator> pde_operator;
 
   InputParameters const & param;
 
   MPI_Comm const & mpi_comm;
 
-  std::vector<double> computing_times;
+  std::shared_ptr<TimerTree> timer_tree;
 
   ConditionalOStream pcout;
 
   BlockVectorType solution;
   BlockVectorType rhs_vector;
 
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 };
 
 } // namespace IncNS

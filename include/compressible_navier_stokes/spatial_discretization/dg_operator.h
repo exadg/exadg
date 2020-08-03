@@ -9,13 +9,13 @@
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_OPERATOR_H_
 
 // deal.II
-#include <deal.II/base/timer.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/numerics/vector_tools.h>
+
+// matrix-free
+#include "../../matrix_free/matrix_free_wrapper.h"
 
 // user interface
 #include "../../compressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -26,19 +26,9 @@
 #include "comp_navier_stokes_calculators.h"
 #include "comp_navier_stokes_operators.h"
 #include "operators/inverse_mass_matrix.h"
-#include "operators/mapping_flags.h"
 
 // interface
 #include "interface.h"
-
-// time step calculation
-#include "time_integration/time_step_calculation.h"
-
-// postprocessor
-#include "../postprocessor/postprocessor_base.h"
-
-// general functionalities
-#include "../../functionalities/matrix_free_wrapper.h"
 
 namespace CompNS
 {
@@ -48,25 +38,25 @@ class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef PostProcessorBase<dim, Number> Postprocessor;
-
 public:
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,
              Mapping<dim> const &                           mapping_in,
+             unsigned int const                             degree_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
              std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
              std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
              InputParameters const &                        param_in,
+             std::string const &                            field_in,
              MPI_Comm const &                               mpi_comm_in);
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                         std::string const &              field = "") const;
+  fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -191,6 +181,11 @@ private:
   Mapping<dim> const & mapping;
 
   /*
+   * polynomial degree
+   */
+  unsigned int const degree;
+
+  /*
    * User interface: Boundary conditions and field functions.
    */
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
@@ -203,6 +198,8 @@ private:
    * List of input parameters.
    */
   InputParameters const & param;
+
+  std::string const field;
 
   /*
    * Basic finite element ingredients.
@@ -239,13 +236,11 @@ private:
   // alternative: use more accurate over-integration strategy
   //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
 
-  mutable std::string field;
-
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
   /*
    * Basic operators.

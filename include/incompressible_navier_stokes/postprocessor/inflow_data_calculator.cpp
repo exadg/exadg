@@ -7,8 +7,9 @@
 
 #include "inflow_data_calculator.h"
 
-#include "../../functionalities/linear_interpolation.h"
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "../../functions_and_boundary_conditions/linear_interpolation.h"
+#include "../../vector_tools/interpolate_solution.h"
+#include "../../vector_tools/point_value.h"
 
 template<int dim, typename Number>
 InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in,
@@ -25,7 +26,7 @@ InflowDataCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_vel
   dof_handler_velocity = &dof_handler_velocity_in;
   mapping              = &mapping_in;
 
-  array_dof_index_and_shape_values.resize(inflow_data.n_points_y * inflow_data.n_points_z);
+  array_dof_indices_and_shape_values.resize(inflow_data.n_points_y * inflow_data.n_points_z);
   array_counter.resize(inflow_data.n_points_y * inflow_data.n_points_z);
 }
 
@@ -66,13 +67,13 @@ InflowDataCalculator<dim, Number>::calculate(
             AssertThrow(false, ExcMessage("Not implemented."));
           }
 
-          std::vector<std::pair<unsigned int, std::vector<Number>>>
-            global_dof_index_and_shape_values;
-          get_global_dof_index_and_shape_values(
-            *dof_handler_velocity, *mapping, velocity, point, global_dof_index_and_shape_values);
+          unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
-          unsigned int array_index                      = iy * inflow_data.n_points_y + iz;
-          array_dof_index_and_shape_values[array_index] = global_dof_index_and_shape_values;
+          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+            *mapping, dof_handler_velocity->get_triangulation(), point, 1.e-10);
+
+          array_dof_indices_and_shape_values[array_index] = get_dof_indices_and_shape_values(
+            adjacent_cells, *dof_handler_velocity, *mapping, velocity);
         }
       }
 
@@ -85,28 +86,23 @@ InflowDataCalculator<dim, Number>::calculate(
       for(unsigned int iz = 0; iz < inflow_data.n_points_z; ++iz)
       {
         // determine the array index, will be needed several times below
-        unsigned int array_index = iy * inflow_data.n_points_y + iz;
+        unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
         // initialize with zeros since we accumulate into these variables
         (*inflow_data.array)[array_index] = 0.0;
         array_counter[array_index]        = 0;
 
-        std::vector<std::pair<unsigned int, std::vector<Number>>> & vector(
-          array_dof_index_and_shape_values[array_index]);
+        auto & vector(array_dof_indices_and_shape_values[array_index]);
 
         // loop over all adjacent, locally owned cells for the current point
-        for(typename std::vector<std::pair<unsigned int, std::vector<Number>>>::iterator iter =
-              vector.begin();
-            iter != vector.end();
-            ++iter)
+        for(auto iter = vector.begin(); iter != vector.end(); ++iter)
         {
           // increment counter (because this is a locally owned cell)
           array_counter[array_index] += 1;
 
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, Number> velocity_value;
-          interpolate_value_vectorial_quantity(
-            *dof_handler_velocity, velocity, iter->first, iter->second, velocity_value);
+          Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
+            *dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity inflow data
           (*inflow_data.array)[array_index] += velocity_value;
@@ -127,7 +123,7 @@ InflowDataCalculator<dim, Number>::calculate(
     {
       for(unsigned int iz = 0; iz < inflow_data.n_points_z; ++iz)
       {
-        unsigned int array_index = iy * inflow_data.n_points_y + iz;
+        unsigned int array_index = iy * inflow_data.n_points_z + iz;
         if(array_counter[array_index] >= 1)
           (*inflow_data.array)[array_index] /= Number(array_counter[array_index]);
       }

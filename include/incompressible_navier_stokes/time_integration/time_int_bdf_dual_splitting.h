@@ -8,10 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 
-#include <deal.II/lac/la_parallel_block_vector.h>
-
-#include "../spatial_discretization/dg_dual_splitting.h"
-#include "time_int_bdf_navier_stokes.h"
+#include "time_int_bdf.h"
 
 using namespace dealii;
 
@@ -21,26 +18,27 @@ using namespace dealii;
 namespace IncNS
 {
 // forward declarations
-class InputParameters;
+template<int dim, typename Number>
+class DGNavierStokesDualSplitting;
 
 template<int dim, typename Number>
 class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
 {
-public:
+private:
   typedef TimeIntBDF<dim, Number> Base;
 
-  typedef typename Base::VectorType      VectorType;
-  typedef typename Base::BlockVectorType BlockVectorType;
+  typedef typename Base::VectorType VectorType;
 
   typedef DGNavierStokesDualSplitting<dim, Number> Operator;
 
-  TimeIntBDFDualSplitting(
-    std::shared_ptr<Operator>                       pde_operator_in,
-    InputParameters const &                         param_in,
-    MPI_Comm const &                                mpi_comm_in,
-    std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
-    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
+public:
+  TimeIntBDFDualSplitting(std::shared_ptr<Operator>                       pde_operator_in,
+                          InputParameters const &                         param_in,
+                          unsigned int const                              refine_steps_time_in,
+                          MPI_Comm const &                                mpi_comm_in,
+                          std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
+                          std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
+                          std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
   virtual ~TimeIntBDFDualSplitting()
   {
@@ -50,10 +48,13 @@ public:
   postprocessing_stability_analysis();
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
+  print_iterations() const;
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  VectorType const &
+  get_velocity_np() const;
+
+  VectorType const &
+  get_pressure_np() const;
 
 private:
   void
@@ -122,16 +123,13 @@ private:
   double
   evaluate_residual();
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
-  get_velocity_np() const;
-
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   void
@@ -156,9 +154,18 @@ private:
   std::vector<VectorType> velocity_dbc;
   VectorType              velocity_dbc_np;
 
-  mutable std::vector<double> computing_times;
-  double                      computing_time_convective;
-  std::vector<unsigned int>   iterations;
+  // required for strongly-coupled partitioned FSI
+  VectorType pressure_last_iter;
+  VectorType velocity_projection_last_iter;
+  VectorType velocity_viscous_last_iter;
+
+  // iteration counts
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+    iterations_pressure;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+                                                                                 iterations_projection;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_viscous;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;

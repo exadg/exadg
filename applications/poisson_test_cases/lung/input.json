@@ -1,0 +1,19 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "3",
+        "RunType": "RefineHAndP",
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+       	"Name": "Lung",
+	"OutputDirectory": "output/poisson/vtu/",
+	"OutputName": "lung_4G",
+	"Generations": "4"    
+    }
+}

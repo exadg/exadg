@@ -11,7 +11,7 @@
 
 #include <deal.II/base/point.h>
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 
 using namespace dealii;
 
@@ -196,7 +196,7 @@ struct StatisticsData
 template<int dim>
 struct LinePlotData
 {
-  LinePlotData() : calculate(false), directory("output/"), precision(10)
+  LinePlotData() : directory("output/"), precision(10)
 
   {
   }
@@ -205,17 +205,7 @@ struct LinePlotData
   print(ConditionalOStream & pcout)
   {
     // TODO: add output for basic line plot data
-
-    if(statistics_data.calculate_statistics == true)
-    {
-      statistics_data.print(pcout);
-    }
   }
-
-  /*
-   *  activates line plot calculation
-   */
-  bool calculate;
 
   /*
    *  output folder
@@ -231,6 +221,49 @@ struct LinePlotData
    *  a vector of lines along which we want to write output
    */
   std::vector<std::shared_ptr<Line<dim>>> lines;
+};
+
+template<int dim>
+struct LinePlotDataInstantaneous
+{
+  LinePlotDataInstantaneous() : calculate(false)
+
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout)
+  {
+    line_data.print(pcout);
+  }
+
+  LinePlotData<dim> line_data;
+
+  /*
+   *  activates line plot calculation
+   */
+  bool calculate;
+};
+
+template<int dim>
+struct LinePlotDataStatistics
+{
+  LinePlotDataStatistics()
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout)
+  {
+    line_data.print(pcout);
+
+    if(statistics_data.calculate_statistics == true)
+    {
+      statistics_data.print(pcout);
+    }
+  }
+
+  LinePlotData<dim> line_data;
 
   /*
    *  Statistics data (only relevant if statistics have to

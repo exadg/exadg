@@ -20,10 +20,7 @@ template<int dim>
 struct MomentumOperatorData : public OperatorBaseData
 {
   MomentumOperatorData()
-    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
-      unsteady_problem(false),
-      convective_problem(false),
-      viscous_problem(false)
+    : OperatorBaseData(), unsteady_problem(false), convective_problem(false), viscous_problem(false)
   {
   }
 
@@ -38,14 +35,14 @@ struct MomentumOperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class MomentumOperator : public OperatorBase<dim, Number, MomentumOperatorData<dim>, dim>
+class MomentumOperator : public OperatorBase<dim, Number, dim>
 {
 private:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  typedef OperatorBase<dim, Number, MomentumOperatorData<dim>, dim> Base;
+  typedef OperatorBase<dim, Number, dim> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::IntegratorCell IntegratorCell;
@@ -58,16 +55,19 @@ public:
   MomentumOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         MomentumOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const &   matrix_free,
+             AffineConstraints<double> const & constraint_matrix,
+             MomentumOperatorData<dim> const & data);
 
   void
-  reinit(MatrixFree<dim, Number> const &                           matrix_free,
-         AffineConstraints<double> const &                         constraint_matrix,
-         MomentumOperatorData<dim> const &                         data,
-         std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
-         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel);
+  initialize(MatrixFree<dim, Number> const &                           matrix_free,
+             AffineConstraints<double> const &                         constraint_matrix,
+             MomentumOperatorData<dim> const &                         data,
+             std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
+             std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel);
+
+  MomentumOperatorData<dim> const &
+  get_data() const;
 
   Operators::ConvectiveKernelData
   get_convective_kernel_data() const;
@@ -163,6 +163,8 @@ private:
   do_boundary_integral(IntegratorFace &           integrator,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  MomentumOperatorData<dim> operator_data;
 
   std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;

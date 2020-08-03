@@ -10,7 +10,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../functionalities/evaluate_functions.h"
+#include "../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../operators/inverse_mass_matrix.h"
 
 template<int dim, typename Number>
@@ -68,7 +68,7 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         integrator.submit_value(
-          FunctionEvaluator<dim, Number, 1>::value(function, integrator.quadrature_point(q), time),
+          FunctionEvaluator<1, dim, Number>::value(function, integrator.quadrature_point(q), time),
           q);
       }
 

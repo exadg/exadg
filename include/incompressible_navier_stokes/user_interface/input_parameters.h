@@ -10,15 +10,14 @@
 
 #include "deal.II/base/conditional_ostream.h"
 
-#include "../../functionalities/enum_types.h"
-#include "../../functionalities/restart_data.h"
-#include "../../functionalities/solver_info_data.h"
-
+#include "../../grid/enum_types.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 #include "../../solvers_and_preconditioners/preconditioner/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../../time_integration/enum_types.h"
+#include "../../time_integration/restart_data.h"
+#include "../../time_integration/solver_info_data.h"
 
 #include "enum_types.h"
 
@@ -46,7 +45,7 @@ public:
   linear_problem_has_to_be_solved() const;
 
   unsigned int
-  get_degree_p() const;
+  get_degree_p(unsigned int const degree_u) const;
 
   void
   print(ConditionalOStream & pcout, std::string const & name);
@@ -92,9 +91,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // number of space dimensions
-  unsigned int dim;
-
   // description: see enum declaration
   ProblemType problem_type;
 
@@ -129,6 +125,8 @@ public:
   // with fixed mesh will be used
   bool ale_formulation;
 
+  MeshMovementType mesh_movement_type;
+
   bool neumann_with_variable_normal_vector;
 
   /**************************************************************************************/
@@ -145,6 +143,10 @@ public:
 
   // kinematic viscosity
   double viscosity;
+
+  // density (not required by fluid solver which is formulated in terms of the kinematic
+  // viscosity only, but for the calculation of the fluid stress for FSI problems)
+  double density;
 
   // Boussinesg term
   double thermal_expansion_coefficient;
@@ -200,7 +202,7 @@ public:
   double cfl;
 
   // cfl number for operator-integration-factor splitting (has to be smaller than the
-  // critical time step size arising from the CFL restriction)
+  // critical time step size arising from the CFL restriction, cfl_oif <= cfl)
   double cfl_oif;
 
   // dt = CFL/k_u^{exp} * h / || u ||
@@ -224,10 +226,6 @@ public:
 
   // start time integrator with low order time integrator, i.e., first order Euler method
   bool start_with_low_order;
-
-  // number of refinement steps for time step size
-  //   default: use dt_refinements = 0
-  unsigned int dt_refinements;
 
   // description: see enum declaration
   ConvergenceCriterionSteadyProblem convergence_criterion_steady_problem;
@@ -264,17 +262,11 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of velocity shape functions
-  unsigned int degree_u;
-
-  // Polynomial degree used for pressure shape functions
-  DegreePressure degree_p;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
+  // Polynomial degree used for pressure shape functions
+  DegreePressure degree_p;
 
   // convective term: upwind factor describes the scaling factor in front of the
   // stabilization term (which is strictly dissipative) of the numerical function
@@ -316,11 +308,13 @@ public:
   // use boundary data if integrated by parts
   bool divu_use_boundary_data;
 
-  // special case of pure Dirichlet BCs on whole boundary
-  bool pure_dirichlet_bc;
-
-  // adjust pressure level in case of pure Dirichlet BC's where
-  // the pressure is only defined up to an additive constant
+  // For certain setups and types of boundary conditions, the pressure level is undefined,
+  // e.g., if the velocity is prescribed on the whole boundary or in case of periodic
+  // boundary conditions. This variable defines the method used to adjust the pressure level
+  // in or to obtain a well-defined pressure solution.
+  // If you observe convergence in the velocity error, but no convergence in the pressure
+  // error, this might likely be related to the fact that this parameter has not been set
+  // as intended.
   AdjustPressureLevel adjust_pressure_level;
 
   // use div-div penalty term
@@ -505,15 +499,13 @@ public:
 
   // description: see enum declaration
   // The formulation of the convective term in the boundary conditions for the dual
-  // splitting scheme can be chosen independently from the type of formulation used for
-  // the discretization of the convective term in the Navier-Stokes equations.
-  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation should be
-  // used (exploiting that div(u)=0 holds in the continuous case). The background is
-  // that for the BDF3 time integration scheme, instabilities have been observed when
-  // using FormulationConvectiveTerm::DivergenceFormulation in the boundary conditions
-  // of the dual splitting scheme (where there are two occurrences, the g_u_hat term
-  // arising form the divergence term on the right-hand side of the pressure Poisson
-  // equation as well as the pressure NBC for the dual splitting scheme).
+  // splitting scheme (there are two occurrences, the g_u_hat term
+  // arising from the divergence term on the right-hand side of the pressure Poisson
+  // equation as well as the pressure NBC for the dual splitting scheme)can be chosen
+  // independently from the type of formulation used for the discretization of the
+  // convective term in the Navier-Stokes equations.
+  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation is
+  // used (exploiting that div(u)=0 holds in the continuous case).
   FormulationConvectiveTerm formulation_convective_term_bc;
 
   // CONVECTIVE STEP
@@ -547,7 +539,7 @@ public:
   /**************************************************************************************/
 
   // Newton solver data
-  NewtonSolverData newton_solver_data_momentum;
+  Newton::SolverData newton_solver_data_momentum;
 
   // description: see enum declaration
   SolverMomentum solver_momentum;
@@ -604,7 +596,7 @@ public:
   double scaling_factor_continuity;
 
   // solver tolerances Newton solver
-  NewtonSolverData newton_solver_data_coupled;
+  Newton::SolverData newton_solver_data_coupled;
 
   // description: see enum declaration
   SolverCoupled solver_coupled;

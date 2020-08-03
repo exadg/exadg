@@ -10,7 +10,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/mapping_flags.h"
 
 using namespace dealii;
@@ -77,11 +77,11 @@ public:
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    vector f = FunctionEvaluator<dim, Number, 1>::value(data.f, q_points, time);
+    vector f = FunctionEvaluator<1, dim, Number>::value(data.f, q_points, time);
 
     if(data.boussinesq_term)
     {
-      vector g = FunctionEvaluator<dim, Number, 1>::value(data.gravitational_force, q_points, time);
+      vector g = FunctionEvaluator<1, dim, Number>::value(data.gravitational_force, q_points, time);
       scalar T = integrator_temperature.get_value(q);
       scalar T_ref = data.reference_temperature;
       f += g * (1.0 - data.thermal_expansion_coefficient * (T - T_ref));
@@ -134,7 +134,7 @@ public:
   RHSOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free_in, RHSOperatorData<dim> const & data_in);
+  initialize(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
 
   void
   evaluate(VectorType & dst, Number const evaluation_time) const;

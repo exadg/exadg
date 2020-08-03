@@ -7,10 +7,11 @@
 
 #include "time_int_bdf_pressure_correction.h"
 
-#include "../spatial_discretization/interface.h"
+#include "../../utilities/print_throughput.h"
+#include "../spatial_discretization/dg_pressure_correction.h"
 #include "../user_interface/input_parameters.h"
-#include "functionalities/set_zero_mean_value.h"
 #include "time_integration/push_back_vectors.h"
+#include "time_integration/time_step_calculation.h"
 
 namespace IncNS
 {
@@ -18,26 +19,27 @@ template<int dim, typename Number>
 TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
   : Base(operator_in,
          param_in,
+         refine_steps_time_in,
          mpi_comm_in,
          postprocessor_in,
          moving_mesh_in,
-         matrix_free_wrapper_in),
+         matrix_free_in),
     pde_operator(operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     pressure_dbc(param_in.order_pressure_extrapolation),
-    computing_times(4),
-    computing_time_convective(0.0),
-    iterations(3),
-    N_iter_nonlinear_momentum(0)
+    iterations_momentum({0, {0, 0}}),
+    iterations_pressure({0, 0}),
+    iterations_projection({0, 0})
 {
 }
 
@@ -192,28 +194,35 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_pressure_on_boundary()
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_velocity() const
 {
   return velocity[0];
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_velocity_np() const
 {
   return velocity_np;
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
+TimeIntBDFPressureCorrection<dim, Number>::get_pressure_np() const
+{
+  return pressure_np;
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFPressureCorrection<dim, Number>::VectorType const &
 TimeIntBDFPressureCorrection<dim, Number>::get_pressure(unsigned int i) const
 {
   return pressure[i];
@@ -302,9 +311,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::solve_timestep()
 {
-  this->output_solver_info_header();
-
-  // perform the substeps of the pressure-correction scheme
+  // perform the sub-steps of the pressure-correction scheme
 
   momentum_step();
 
@@ -327,6 +334,20 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   Timer timer;
   timer.restart();
 
+  // Extrapolate old solutionsto get a good initial estimate for the solver.
+  if(this->use_extrapolation)
+  {
+    velocity_np = 0.0;
+    for(unsigned int i = 0; i < velocity.size(); ++i)
+    {
+      velocity_np.add(this->extra.get_beta(i), velocity[i]);
+    }
+  }
+  else
+  {
+    velocity_np = velocity_momentum_last_iter;
+  }
+
   /*
    *  if a turbulence model is used:
    *  update turbulence model before calculating rhs_momentum
@@ -336,19 +357,12 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     Timer timer_turbulence;
     timer_turbulence.restart();
 
-    velocity_np = 0.0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-    {
-      velocity_np.add(this->extra.get_beta(i), velocity[i]);
-    }
-
     pde_operator->update_turbulence_model(velocity_np);
 
     if(this->print_solver_info())
     {
-      this->pcout << std::endl
-                  << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
-                  << timer_turbulence.wall_time() << std::endl;
+      this->pcout << std::endl << "Update of turbulent viscosity:";
+      print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
     }
   }
 
@@ -375,49 +389,28 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   {
     if(this->param.viscous_problem())
     {
-      /*
-       *  Extrapolate old solution to get a good initial estimate for the solver.
-       */
-      velocity_np = 0.0;
-      for(unsigned int i = 0; i < velocity.size(); ++i)
-      {
-        velocity_np.add(this->extra.get_beta(i), velocity[i]);
-      }
-
       // solve linear system of equations
-      unsigned int linear_iterations_momentum = 0;
+      unsigned int n_iter = pde_operator->solve_linear_momentum_equation(
+        velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());
 
-      pde_operator->solve_linear_momentum_equation(velocity_np,
-                                                   rhs,
-                                                   update_preconditioner,
-                                                   this->get_scaling_factor_time_derivative_term(),
-                                                   linear_iterations_momentum);
+      iterations_momentum.first += 1;
+      std::get<1>(iterations_momentum.second) += n_iter;
 
-      // write output explicit case
       if(this->print_solver_info())
       {
-        this->pcout << std::endl
-                    << "Solve linear momentum equation for intermediate velocity:" << std::endl
-                    << "  Iterations:        " << std::setw(6) << std::right
-                    << linear_iterations_momentum << "\t Wall time [s]: " << std::scientific
-                    << timer.wall_time() + computing_time_convective << std::endl;
+        this->pcout << std::endl << "Solve momentum step:";
+        print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
       }
-
-      iterations[0] += linear_iterations_momentum;
     }
     else // Euler equations
     {
       pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
       velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
-      // write output explicit case
       if(this->print_solver_info())
       {
-        this->pcout << std::endl
-                    << "Solve linear momentum equation for intermediate velocity:" << std::endl
-                    << "  Iterations:        " << std::setw(6) << std::right << 0
-                    << "\t Wall time [s]: " << std::scientific
-                    << timer.wall_time() + computing_time_convective << std::endl;
+        this->pcout << std::endl << "Explicit momentum step:";
+        print_solver_info_explicit(this->pcout, timer.wall_time());
       }
     }
   }
@@ -425,49 +418,32 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   {
     AssertThrow(this->param.nonlinear_problem_has_to_be_solved(), ExcMessage("Logical error."));
 
-    /*
-     *  Extrapolate old solution to get a good initial estimate for the solver.
-     */
-    velocity_np = 0.0;
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-    {
-      velocity_np.add(this->extra.get_beta(i), velocity[i]);
-    }
+    // solve non-linear system of equations
+    auto const iter = pde_operator->solve_nonlinear_momentum_equation(
+      velocity_np,
+      rhs,
+      this->get_next_time(),
+      update_preconditioner,
+      this->get_scaling_factor_time_derivative_term());
 
-    unsigned int linear_iterations_momentum;
-    unsigned int nonlinear_iterations_momentum;
+    iterations_momentum.first += 1;
+    std::get<0>(iterations_momentum.second) += std::get<0>(iter);
+    std::get<1>(iterations_momentum.second) += std::get<1>(iter);
 
-    pde_operator->solve_nonlinear_momentum_equation(velocity_np,
-                                                    rhs,
-                                                    this->get_next_time(),
-                                                    update_preconditioner,
-                                                    this->get_scaling_factor_time_derivative_term(),
-                                                    nonlinear_iterations_momentum,
-                                                    linear_iterations_momentum);
-
-    // write output implicit case
     if(this->print_solver_info())
     {
-      this->pcout << std::endl
-                  << "Solve nonlinear momentum equation for intermediate velocity:" << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right
-                  << nonlinear_iterations_momentum << "\t Wall time [s]: " << std::scientific
-                  << timer.wall_time() << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed
-                  << std::setprecision(2)
-                  << (nonlinear_iterations_momentum > 0 ?
-                        (double)linear_iterations_momentum / (double)nonlinear_iterations_momentum :
-                        linear_iterations_momentum)
-                  << " (avg)" << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed
-                  << std::setprecision(2) << linear_iterations_momentum << " (tot)" << std::endl;
+      this->pcout << std::endl << "Solve momentum step:";
+      print_solver_info_nonlinear(this->pcout,
+                                  std::get<0>(iter),
+                                  std::get<1>(iter),
+                                  timer.wall_time());
     }
-
-    iterations[0] += linear_iterations_momentum;
-    N_iter_nonlinear_momentum += nonlinear_iterations_momentum;
   }
 
-  computing_times[0] += timer.wall_time() + computing_time_convective;
+  if(this->store_solution)
+    velocity_momentum_last_iter = velocity_np;
+
+  this->timer_tree->insert({"Timeloop", "Momentum step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -581,31 +557,35 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
   VectorType rhs(pressure_np);
   rhs_pressure(rhs);
 
-  // extrapolate old solution to get a good initial estimate for the solver
-
   // calculate initial guess for pressure solve
-
-  // extrapolate old solution to get a good initial estimate for the
-  // pressure solution p_{n+1} at time t^{n+1}
-  for(unsigned int i = 0; i < pressure.size(); ++i)
+  if(this->use_extrapolation)
   {
-    pressure_increment.add(this->extra.get_beta(i), pressure[i]);
-  }
-
-  // incremental formulation
-  if(extra_pressure_gradient.get_order() > 0)
-  {
-    // Subtract extrapolation of pressure since the PPE is solved for the
-    // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i),
-    // where p_{n+1} is approximated by an extrapolation of order J (=order of BDF scheme).
-    // Note that the divergence correction term in case of the rotational formulation is not
-    // considered when calculating a good initial guess for the solution of the PPE,
-    // which will slightly increase the number of iterations compared to the standard
-    // formulation of the pressure-correction scheme.
-    for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+    // extrapolate old solution to get a good initial estimate for the
+    // pressure solution p_{n+1} at time t^{n+1}
+    for(unsigned int i = 0; i < pressure.size(); ++i)
     {
-      pressure_increment.add(-extra_pressure_gradient.get_beta(i), pressure[i]);
+      pressure_increment.add(this->extra.get_beta(i), pressure[i]);
     }
+
+    // incremental formulation
+    if(extra_pressure_gradient.get_order() > 0)
+    {
+      // Subtract extrapolation of pressure since the PPE is solved for the
+      // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i),
+      // where p_{n+1} is approximated by an extrapolation of order J (=order of BDF scheme).
+      // Note that the divergence correction term in case of the rotational formulation is not
+      // considered when calculating a good initial guess for the solution of the PPE,
+      // which will slightly increase the number of iterations compared to the standard
+      // formulation of the pressure-correction scheme.
+      for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+      {
+        pressure_increment.add(-extra_pressure_gradient.get_beta(i), pressure[i]);
+      }
+    }
+  }
+  else
+  {
+    pressure_increment = pressure_increment_last_iter;
   }
 
   // solve linear system of equations
@@ -615,49 +595,31 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
        this->param.update_preconditioner_pressure_poisson_every_time_steps ==
      0);
 
-  unsigned int iterations_pressure =
+  unsigned int const n_iter =
     pde_operator->solve_pressure(pressure_increment, rhs, update_preconditioner);
+
+  iterations_pressure.first += 1;
+  iterations_pressure.second += n_iter;
+
+  if(this->store_solution)
+    pressure_increment_last_iter = pressure_increment;
 
   // calculate pressure p^{n+1} from pressure increment
   pressure_update(pressure_increment);
 
-  // Special case: pure Dirichlet BC's
+  // Special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
-  // For some test cases it was found that ApplyZeroMeanValue works better than
-  // ApplyAnalyticalSolutionInPoint
-  if(this->param.pure_dirichlet_bc)
-  {
-    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      pde_operator->shift_pressure(pressure_np, this->get_next_time());
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
-    {
-      set_zero_mean_value(pressure_np);
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
-    {
-      pde_operator->shift_pressure_mean_value(pressure_np, this->get_next_time());
-    }
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
-    }
-  }
+  pde_operator->adjust_pressure_level_if_undefined(pressure_np, this->get_next_time());
 
   // write output
   if(this->print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve Poisson equation for pressure p:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << iterations_pressure
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    this->pcout << std::endl << "Solve pressure step:";
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
   }
 
-  computing_times[1] += timer.wall_time();
-  iterations[1] += iterations_pressure;
+  this->timer_tree->insert({"Timeloop", "Pressure step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -719,7 +681,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
     rhs.add(-extra_pressure_gradient.get_beta(i), temp);
   }
 
-  // special case: pure Dirichlet BC's
+  // special case: pressure level is undefined
   // Unclear if this is really necessary, because from a theoretical
   // point of view one would expect that the mean value of the rhs of the
   // presssure Poisson equation is zero if consistent Dirichlet boundary
@@ -729,7 +691,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
   // Hence, for reasons of robustness we also solve a transformed linear system of equations
   // in case of the pressure-correction scheme.
 
-  if(this->param.pure_dirichlet_bc)
+  if(pde_operator->is_pressure_level_undefined())
     set_zero_mean_value(rhs);
 }
 
@@ -825,18 +787,6 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
   Timer timer;
   timer.restart();
 
-  // extrapolate velocity to time t_n+1 and use this velocity field to
-  // calculate the penalty parameter for the divergence and continuity penalty term
-  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
-  {
-    VectorType velocity_extrapolated;
-    velocity_extrapolated.reinit(velocity[0]);
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-      velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
-
-    pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
-  }
-
   // compute right-hand-side vector
   VectorType rhs(velocity_np);
   rhs_projection(rhs, pressure_increment);
@@ -845,16 +795,30 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
   // and serves as a good initial guess for the case with penalty terms
   pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
 
-  // add inhomogeneous contributions of continuity penalty terms after computing
-  // the initial guess for the linear system of equations to make sure that the initial
-  // guess is as accurate as possible
-  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
-    pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
-
-  unsigned int iterations_projection = 0;
-
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
+    // extrapolate velocity to time t_{n+1} and use this velocity field to
+    // calculate the penalty parameter for the divergence and continuity penalty terms
+    VectorType velocity_extrapolated;
+    if(this->use_extrapolation)
+    {
+      velocity_extrapolated.reinit(velocity[0]);
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+    }
+    else
+    {
+      velocity_extrapolated = velocity_projection_last_iter;
+    }
+
+    pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
+
+    // add inhomogeneous contributions of continuity penalty term after computing
+    // the initial guess for the linear system of equations to make sure that the initial
+    // guess is as accurate as possible
+    if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+      pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
+
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_projection &&
@@ -862,42 +826,56 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
 
-    iterations_projection = pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
-  }
+    if(this->use_extrapolation == false)
+      velocity_np = velocity_projection_last_iter;
 
-  // write output
-  if(this->print_solver_info())
+    unsigned int const n_iter =
+      pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
+
+    iterations_projection.first += 1;
+    iterations_projection.second += n_iter;
+
+    if(this->store_solution)
+      velocity_projection_last_iter = velocity_np;
+
+    if(this->print_solver_info())
+    {
+      this->pcout << std::endl << "Solve projection step:";
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+    }
+  }
+  else // no penalty terms
   {
-    this->pcout << std::endl
-                << "Solve projection step for intermediate velocity:" << std::endl
-                << "  Iterations:        " << std::setw(6) << std::right << iterations_projection
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    if(this->print_solver_info())
+    {
+      this->pcout << std::endl << "Solve projection step:";
+      print_solver_info_explicit(this->pcout, timer.wall_time());
+    }
   }
 
-  computing_times[2] += timer.wall_time();
-  iterations[2] += iterations_projection;
+  this->timer_tree->insert({"Timeloop", "Projection step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::evaluate_convective_term()
 {
+  Timer timer;
+  timer.restart();
+
   // evaluate convective term once solution_np is known
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
     {
-      Timer timer;
-      timer.restart();
-
       pde_operator->evaluate_convective_term(this->convective_term_np,
                                              velocity_np,
                                              this->get_next_time());
-
-      computing_time_convective = timer.wall_time();
     }
   }
+
+  this->timer_tree->insert({"Timeloop", "Momentum step"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
@@ -952,7 +930,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
       // solve time step
-      this->do_timestep(false);
+      this->do_timestep();
 
       // calculate increment:
       // increment = solution_{n+1} - solution_{n}
@@ -995,7 +973,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
     while(!converged && this->time < (this->end_time - this->eps) &&
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
-      this->do_timestep(false);
+      this->do_timestep();
 
       // check convergence by evaluating the residual of
       // the steady-state incompressible Navier-Stokes equations
@@ -1051,65 +1029,47 @@ TimeIntBDFPressureCorrection<dim, Number>::evaluate_residual()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                                          std::vector<double> & iteration) const
+TimeIntBDFPressureCorrection<dim, Number>::print_iterations() const
 {
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
+  std::vector<std::string> names;
+  std::vector<double>      iterations_avg;
 
   if(this->param.linear_problem_has_to_be_solved())
   {
-    name.resize(3);
-    std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
-    name                           = names;
+    names = {"Momentum step", "Pressure step", "Projection step"};
 
-    unsigned int N_time_steps = this->get_time_step_number() - 1;
-
-    iteration.resize(3);
-    for(unsigned int i = 0; i < this->iterations.size(); ++i)
-    {
-      iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
-    }
+    iterations_avg.resize(3);
+    iterations_avg[0] = (double)std::get<1>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
+    iterations_avg[1] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[2] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   }
   else // nonlinear system of equations in momentum step
   {
-    name.resize(5);
-    std::vector<std::string> names = {"Momentum (nonlinear)",
-                                      "Momentum (linear)",
-                                      "Momentum (linear-accumulated)",
-                                      "Pressure",
-                                      "Projection"};
+    names = {"Momentum (nonlinear)",
+             "Momentum (linear accumulated)",
+             "Momentum (linear per nonlinear)",
+             "Pressure",
+             "Projection"};
 
-    name = names;
-
-    double n_iter_nonlinear          = (double)N_iter_nonlinear_momentum / (double)N_time_steps;
-    double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
-    double n_iter_pressure           = (double)iterations[1] / (double)N_time_steps;
-    double n_iter_projection         = (double)iterations[2] / (double)N_time_steps;
-
-    iteration.resize(5);
-    iteration[0] = n_iter_nonlinear;
-    iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
-    iteration[2] = n_iter_linear_accumulated;
-    iteration[3] = n_iter_pressure;
-    iteration[4] = n_iter_projection;
+    iterations_avg.resize(5);
+    iterations_avg[0] = (double)std::get<0>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
+    iterations_avg[1] = (double)std::get<1>(iterations_momentum.second) /
+                        std::max(1., (double)iterations_momentum.first);
+    if(iterations_avg[0] > std::numeric_limits<double>::min())
+      iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
+    else
+      iterations_avg[2] = iterations_avg[1];
+    iterations_avg[3] =
+      (double)iterations_pressure.second / std::max(1., (double)iterations_pressure.first);
+    iterations_avg[4] =
+      (double)iterations_projection.second / std::max(1., (double)iterations_projection.first);
   }
-}
 
-template<int dim, typename Number>
-void
-TimeIntBDFPressureCorrection<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                          std::vector<double> & wall_time) const
-{
-  unsigned int             size  = 3;
-  std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
-
-  name.resize(size);
-  wall_time.resize(size);
-  for(unsigned int i = 0; i < size; ++i)
-  {
-    name[i]      = names[i];
-    wall_time[i] = this->computing_times[i];
-  }
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 // instantiations

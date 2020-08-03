@@ -31,11 +31,11 @@ using namespace dealii;
 
 // TODO Adapt code to geometries whose elements are not aligned with the coordinate axis.
 
-template<int dim>
+template<int dim, typename Number>
 class LinePlotCalculatorStatisticsHomogeneous
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef
     typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
@@ -47,7 +47,7 @@ public:
                                           MPI_Comm const &        mpi_comm_in);
 
   void
-  setup(LinePlotData<dim> const & data_in);
+  setup(LinePlotDataStatistics<dim> const & data_in);
 
   void
   evaluate(VectorType const &   velocity,
@@ -95,7 +95,7 @@ private:
   Mapping<dim> const &    mapping;
   MPI_Comm                communicator;
 
-  LinePlotData<dim> data;
+  LinePlotDataStatistics<dim> data;
 
   // Global points
   std::vector<std::vector<Point<dim>>> global_points;

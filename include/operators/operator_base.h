@@ -14,12 +14,14 @@
 
 #include "operator_type.h"
 
-#include "../functionalities/lazy_ptr.h"
+#include "lazy_ptr.h"
 
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 #include "integrator_flags.h"
 #include "mapping_flags.h"
+
+#include "../matrix_free/categorization.h"
 
 #include "../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "../solvers_and_preconditioners/preconditioner/enum_types.h"
@@ -31,9 +33,9 @@ using namespace dealii;
 
 struct OperatorBaseData
 {
-  OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index)
-    : dof_index(dof_index),
-      quad_index(quad_index),
+  OperatorBaseData()
+    : dof_index(0),
+      quad_index(0),
       operator_is_singular(false),
       use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false),
@@ -60,26 +62,20 @@ struct OperatorBaseData
   SolverData                  solver_data_block_diagonal;
 };
 
-template<int dim, typename Number, typename AdditionalData, int n_components = 1>
+template<int dim, typename Number, int n_components = 1>
 class OperatorBase : public dealii::Subscriptor
 {
 public:
-  typedef OperatorBase<dim, Number, AdditionalData, n_components> This;
+  typedef OperatorBase<dim, Number, n_components> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef std::pair<unsigned int, unsigned int>      Range;
   typedef CellIntegrator<dim, n_components, Number>  IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>  IntegratorFace;
 
-  /*
-   * Solution of linear systems of equations and preconditioning
-   */
   static const unsigned int vectorization_length = VectorizedArray<Number>::size();
 
   typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
-
-  typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
-    PeriodicFacePairIterator;
 
 #ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar>     FullMatrix_;
@@ -92,17 +88,9 @@ public:
   {
   }
 
-  virtual void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         AdditionalData const &            operator_data);
-
   /*
    *  Getters and setters.
    */
-  AdditionalData const &
-  get_data() const;
-
   void
   set_time(double const time) const;
 
@@ -157,6 +145,12 @@ public:
 
   void
   initialize_dof_vector(VectorType & vector) const;
+
+  virtual void
+  set_constrained_values(VectorType & solution, double const time) const;
+
+  void
+  set_constrained_values_to_zero(VectorType & vector) const;
 
   void
   calculate_inverse_diagonal(VectorType & diagonal) const;
@@ -264,11 +258,15 @@ public:
                                        unsigned int const                    problem_size) const;
 
 protected:
+  void
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
+         AffineConstraints<double> const & constraints,
+         OperatorBaseData const &          data);
+
   /*
    * These methods have to be overwritten by derived classes because these functions are
    * operator-specific and define how the operator looks like.
    */
-
   virtual void
   reinit_cell(unsigned int const cell) const;
 
@@ -292,7 +290,6 @@ protected:
 
   virtual void
   do_boundary_integral_continuous(IntegratorFace &           integrator,
-                                  OperatorType const &       operator_type,
                                   types::boundary_id const & boundary_id) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type
@@ -319,11 +316,6 @@ protected:
   virtual void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
-
-  /*
-   * Data structure containing all operator-specific data.
-   */
-  AdditionalData data;
 
   /*
    * Matrix-free object.
@@ -392,7 +384,7 @@ private:
                         IntegratorFace & integrator_2) const;
 
   /*
-   * This function apply Dirichlet BCs for continuous Galerkin discretizations.
+   * This function applies Dirichlet BCs for continuous Galerkin discretizations.
    */
   void
   cell_loop_dbc(MatrixFree<dim, Number> const & matrix_free,
@@ -568,28 +560,16 @@ private:
   set_constraint_diagonal(VectorType & diagonal) const;
 
   /*
-   *  Verify that each boundary face is assigned exactly one boundary type.
-   */
-  void
-  verify_boundary_conditions(
-    DoFHandler<dim> const &                 dof_handler,
-    std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const;
-
-  /*
-   *  Since the type of boundary conditions depends on the operator, this function has
-   *  to be implemented by derived classes and can not be implemented in the abstract base class.
-   */
-  virtual void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                AdditionalData const &               operator_data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
-
-  /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
    * such as the mass matrix operator only involve cell integrals.
    */
   bool
   evaluate_face_integrals() const;
+
+  /*
+   * Data structure containing all operator-specific data.
+   */
+  OperatorBaseData data;
 
   /*
    * Multigrid level: 0 <= level <= max_level. If the operator is not used as a multigrid
@@ -617,7 +597,5 @@ private:
   std::vector<unsigned int>                      constrained_indices;
   mutable std::vector<std::pair<Number, Number>> constrained_values;
 };
-
-#include "operator_base.cpp"
 
 #endif

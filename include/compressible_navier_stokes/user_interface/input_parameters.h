@@ -8,10 +8,10 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
-#include "../../functionalities/enum_types.h"
-#include "../../functionalities/print_functions.h"
-#include "../../functionalities/restart_data.h"
-#include "../../functionalities/solver_info_data.h"
+#include "../../grid/enum_types.h"
+#include "../../time_integration/restart_data.h"
+#include "../../time_integration/solver_info_data.h"
+#include "../../utilities/print_functions.h"
 
 #include "enum_types.h"
 
@@ -54,9 +54,6 @@ public:
   /*                                 MATHEMATICAL MODEL                                 */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // number of space dimensions
-  unsigned int dim;
 
   // description: see enum declaration
   EquationType equation_type;
@@ -137,10 +134,6 @@ public:
   // exponent of fe_degree used in the calculation of the diffusion time step size
   double exponent_fe_degree_viscous;
 
-  // number of refinement steps for time step size
-  //   default: use dt_refinements = 0
-  unsigned int dt_refinements;
-
   // set this variable to true to start the simulation from restart files
   bool restarted_simulation;
 
@@ -159,16 +152,10 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of shape functions used to approximate the solution
-  unsigned int degree;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
   QuadratureRule n_q_points_convective, n_q_points_viscous;
-
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
 
   // diffusive term: Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0

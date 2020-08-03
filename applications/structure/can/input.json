@@ -1,0 +1,25 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "3",
+        "DegreeMin": "1",
+        "DegreeMax": "1",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1",
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "OutputDirectory": "output/can/vtu/",
+	"OutputName": "test",
+	"Name": "Can",
+	"InnerRadius": "0.8",
+	"OuterRadius": "1.0",
+	"Height": "3.0",
+	"UseVolumeForce": "false",
+	"VolumeForce": "-3.0e9",
+	"BoundaryType": "Dirichlet",
+	"Displacement": "3.0",
+	"Traction":	"-1.0e11" 
+    }
+}

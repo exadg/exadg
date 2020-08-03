@@ -8,21 +8,21 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_block_vector.h>
-#include <deal.II/lac/la_parallel_vector.h>
 
-#include "../spatial_discretization/dg_coupled_solver.h"
-#include "time_int_bdf_navier_stokes.h"
+#include "time_int_bdf.h"
 
 namespace IncNS
 {
 // forward declarations
-class InputParameters;
+template<int dim, typename Number>
+class DGNavierStokesCoupled;
 
 template<int dim, typename Number>
 class TimeIntBDFCoupled : public TimeIntBDF<dim, Number>
 {
-public:
+private:
   typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType VectorType;
@@ -31,22 +31,26 @@ public:
 
   typedef DGNavierStokesCoupled<dim, Number> Operator;
 
-  TimeIntBDFCoupled(
-    std::shared_ptr<Operator>                       operator_in,
-    InputParameters const &                         param_in,
-    MPI_Comm const &                                mpi_comm_in,
-    std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
-    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
+public:
+  TimeIntBDFCoupled(std::shared_ptr<Operator>                       operator_in,
+                    InputParameters const &                         param_in,
+                    unsigned int const                              refine_steps_time_in,
+                    MPI_Comm const &                                mpi_comm_in,
+                    std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
+                    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
+                    std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
   void
   postprocessing_stability_analysis();
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
+  print_iterations() const;
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  VectorType const &
+  get_velocity_np() const;
+
+  VectorType const &
+  get_pressure_np() const;
 
 private:
   void
@@ -71,21 +75,18 @@ private:
   evaluate_residual();
 
   void
-  projection_step();
+  penalty_step();
 
   void
   prepare_vectors_for_next_timestep() override;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
-  get_velocity_np() const;
-
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   void
@@ -99,11 +100,16 @@ private:
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;
 
-  // performance analysis: average number of iterations and solver time
-  mutable std::vector<double> computing_times;
-  double                      computing_time_convective;
-  std::vector<unsigned int>   iterations;
-  unsigned int                N_iter_nonlinear;
+  // required for strongly-coupled partitioned FSI
+  BlockVectorType solution_last_iter;
+  VectorType      velocity_penalty_last_iter;
+
+  // iteration counts
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+                                                                                 iterations;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations_penalty;
 
   // scaling factor continuity equation
   double scaling_factor_continuity;

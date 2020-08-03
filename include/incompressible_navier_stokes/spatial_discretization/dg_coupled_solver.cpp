@@ -7,26 +7,36 @@
 
 #include "dg_coupled_solver.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
+#include "../../poisson/spatial_discretization/laplace_operator.h"
+#include "../../solvers_and_preconditioners/util/check_multigrid.h"
+#include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
+
 namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : Base(triangulation_in,
          mapping_in,
+         degree_u_in,
          periodic_face_pairs_in,
          boundary_descriptor_velocity_in,
          boundary_descriptor_pressure_in,
          field_functions_in,
          parameters_in,
+         field_in,
          mpi_comm_in),
     scaling_factor_continuity(1.0)
 {
@@ -40,10 +50,11 @@ DGNavierStokesCoupled<dim, Number>::~DGNavierStokesCoupled()
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-  std::string const &                             dof_index_temperature)
+  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+  std::string const &                          dof_index_temperature)
 {
-  Base::setup(matrix_free_wrapper, dof_index_temperature);
+  Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
   this->initialize_vector_velocity(temp_vector);
 }
@@ -54,7 +65,7 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
   double const &     scaling_factor_time_derivative_term,
   VectorType const & velocity)
 {
-  this->pcout << std::endl << "Setup solvers ..." << std::endl;
+  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
   Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
@@ -120,10 +131,10 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
   {
     nonlinear_operator.initialize(*this);
 
-    newton_solver.reset(new NewtonSolver<BlockVectorType,
-                                         NonlinearOperatorCoupled<dim, Number>,
-                                         LinearOperatorCoupled<dim, Number>,
-                                         IterativeSolverBase<BlockVectorType>>(
+    newton_solver.reset(new Newton::Solver<BlockVectorType,
+                                           NonlinearOperatorCoupled<dim, Number>,
+                                           LinearOperatorCoupled<dim, Number>,
+                                           IterativeSolverBase<BlockVectorType>>(
       this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver));
   }
 }
@@ -245,13 +256,11 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
 }
 
 template<int dim, typename Number>
-void
+std::tuple<unsigned int, unsigned int>
 DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
   BlockVectorType &  dst,
   VectorType const & rhs_vector,
-  bool const &       update_preconditioner,
-  unsigned int &     newton_iterations,
-  unsigned int &     linear_iterations)
+  bool const &       update_preconditioner)
 {
   // update nonlinear operator
   nonlinear_operator.update(rhs_vector, 0.0 /* time */, 1.0 /* scaling_factor */);
@@ -259,23 +268,23 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
   // no need to update linear operator since this is a steady problem
 
   // solve nonlinear problem
-  newton_solver->solve(dst,
-                       newton_iterations,
-                       linear_iterations,
-                       update_preconditioner,
-                       this->param.update_preconditioner_coupled_every_newton_iter);
+  Newton::UpdateData update;
+  update.do_update             = update_preconditioner;
+  update.threshold_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
+
+  auto const iter = newton_solver->solve(dst, update);
+
+  return iter;
 }
 
 template<int dim, typename Number>
-void
+std::tuple<unsigned int, unsigned int>
 DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   BlockVectorType &  dst,
   VectorType const & rhs_vector,
   double const &     time,
   bool const &       update_preconditioner,
-  double const &     scaling_factor_mass_matrix_term,
-  unsigned int &     newton_iterations,
-  unsigned int &     linear_iterations)
+  double const &     scaling_factor_mass_matrix_term)
 {
   // Update nonlinear operator
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
@@ -284,11 +293,13 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   linear_operator.update(time, scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  newton_solver->solve(dst,
-                       newton_iterations,
-                       linear_iterations,
-                       update_preconditioner,
-                       this->param.update_preconditioner_coupled_every_newton_iter);
+  Newton::UpdateData update;
+  update.do_update             = update_preconditioner;
+  update.threshold_newton_iter = this->param.update_preconditioner_coupled_every_newton_iter;
+
+  std::tuple<unsigned int, unsigned int> iter = newton_solver->solve(dst, update);
+
+  return iter;
 }
 
 template<int dim, typename Number>
@@ -470,7 +481,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 {
-  typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+  typedef MultigridPreconditioner<dim, Number> MULTIGRID;
 
   preconditioner_momentum.reset(new MULTIGRID(this->mpi_comm));
 
@@ -619,11 +630,12 @@ CompatibleLaplaceOperatorData<dim> const
 DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
 {
   CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
-  comp_laplace_operator_data.degree_u               = this->param.degree_u;
-  comp_laplace_operator_data.degree_p               = this->param.get_degree_p();
+  comp_laplace_operator_data.degree_u               = this->degree_u;
+  comp_laplace_operator_data.degree_p               = this->param.get_degree_p(this->degree_u);
   comp_laplace_operator_data.dof_index_velocity     = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure     = this->get_dof_index_pressure();
-  comp_laplace_operator_data.operator_is_singular   = this->param.pure_dirichlet_bc;
+  comp_laplace_operator_data.dof_index_velocity     = this->get_quad_index_velocity_linear();
+  comp_laplace_operator_data.operator_is_singular   = this->is_pressure_level_undefined();
   comp_laplace_operator_data.dof_handler_u          = &this->get_dof_handler_u();
   comp_laplace_operator_data.gradient_operator_data = this->gradient_operator.get_operator_data();
   comp_laplace_operator_data.divergence_operator_data =
@@ -642,7 +654,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   {
     MultigridData mg_data = this->param.multigrid_data_pressure_block;
 
-    typedef CompatibleLaplaceMultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef CompatibleLaplaceMultigridPreconditioner<dim, Number> MULTIGRID;
 
     multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
 
@@ -667,10 +679,10 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   else if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
     // multigrid V-cycle for negative Laplace operator
-    Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+    Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
     laplace_operator_data.dof_index             = this->get_dof_index_pressure();
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
-    laplace_operator_data.operator_is_singular  = this->param.pure_dirichlet_bc;
+    laplace_operator_data.operator_is_singular  = this->is_pressure_level_undefined();
     laplace_operator_data.kernel_data.IP_factor = 1.0;
     laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
 
@@ -725,20 +737,22 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
 
   if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
-    Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+    Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
     laplace_operator_data.dof_index             = this->get_dof_index_pressure();
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
     laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
     laplace_operator_data.kernel_data.IP_factor = 1.0;
 
-    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
-    laplace_operator_classical->reinit(this->get_matrix_free(),
-                                       this->get_constraint_p(),
-                                       laplace_operator_data);
+    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
+    laplace_operator_classical->initialize(this->get_matrix_free(),
+                                           this->get_constraint_p(),
+                                           laplace_operator_data);
 
-    solver_pressure_block.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        *laplace_operator_classical, *multigrid_preconditioner_schur_complement, solver_data));
+    solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
+                                             PreconditionerBase<Number>,
+                                             VectorType>(*laplace_operator_classical,
+                                                         *multigrid_preconditioner_schur_complement,
+                                                         solver_data));
   }
   else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
   {
@@ -839,9 +853,9 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
   pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
-  pressure_conv_diff_operator->reinit(this->get_matrix_free(),
-                                      this->get_constraint_p(),
-                                      operator_data);
+  pressure_conv_diff_operator->initialize(this->get_matrix_free(),
+                                          this->get_constraint_p(),
+                                          operator_data);
 }
 
 // clang-format off
@@ -1375,7 +1389,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
     // solve a linear system of equations for negative Laplace operator to given (relative)
     // tolerance using the PCG method
     VectorType const * pointer_to_src = &src;
-    if(this->param.pure_dirichlet_bc == true)
+    if(this->is_pressure_level_undefined())
     {
       VectorType vector_zero_mean;
       vector_zero_mean = src;

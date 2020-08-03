@@ -28,16 +28,13 @@ public:
                     MPI_Comm const &    mpi_comm_);
 
   void
-  setup(bool const do_restart = false);
-
-  void
-  reset_time(double const & current_time);
+  setup(bool const do_restart) override;
 
   double
-  get_time_step_size() const;
+  get_time_step_size() const override;
 
   void
-  set_current_time_step_size(double const & time_step_size);
+  set_current_time_step_size(double const & time_step_size) override;
 
 protected:
   // solution vectors
@@ -51,10 +48,10 @@ protected:
 
 private:
   void
-  do_timestep_pre_solve();
+  do_timestep_pre_solve(bool const print_header);
 
   void
-  do_timestep_post_solve(bool const do_write_output);
+  do_timestep_post_solve();
 
   void
   prepare_vectors_for_next_timestep();
@@ -73,6 +70,12 @@ private:
 
   virtual double
   recalculate_time_step_size() const = 0;
+
+  /*
+   * returns whether solver info has to be written in the current time step.
+   */
+  virtual bool
+  print_solver_info() const = 0;
 
   void
   do_write_restart(std::string const & filename) const override;

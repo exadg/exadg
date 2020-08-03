@@ -7,7 +7,9 @@
 
 #include "dg_dual_splitting.h"
 
-#include "../../functionalities/moving_mesh.h"
+#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
+#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {
@@ -15,20 +17,24 @@ template<int dim, typename Number>
 DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
+  unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
+  std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : ProjBase(triangulation_in,
              mapping_in,
+             degree_u_in,
              periodic_face_pairs_in,
              boundary_descriptor_velocity_in,
              boundary_descriptor_pressure_in,
              field_functions_in,
              parameters_in,
+             field_in,
              mpi_comm_in)
 {
 }
@@ -44,7 +50,7 @@ DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
   double const &     scaling_factor_time_derivative_term,
   VectorType const & velocity)
 {
-  this->pcout << std::endl << "Setup solvers ..." << std::endl;
+  this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
   ProjBase::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
@@ -93,7 +99,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
-    typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number> MULTIGRID;
 
     helmholtz_preconditioner.reset(new MULTIGRID(this->mpi_comm));
 
@@ -252,13 +258,14 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet ||
+         boundary_type == BoundaryTypeU::DirichletMortar)
       {
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
         vector rhs =
-          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+          FunctionEvaluator<1, dim, Number>::value(this->field_functions->right_hand_side,
                                                    q_points,
                                                    this->evaluation_time);
 
@@ -269,14 +276,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
       }
       else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
       {
-        // Do nothing on Neumann and Symmetry boundaries.
-        // Remark: on symmetry boundaries we prescribe g_u * n = 0, and also g_{u_hat}*n = 0 in case
-        // of the dual splitting scheme. This is in contrast to Dirichlet boundaries where we
-        // prescribe a consistent boundary condition for g_{u_hat} derived from the convective step
-        // of the dual splitting scheme which differs from the DBC g_u. Applying this consistent DBC
-        // to symmetry boundaries and using g_u*n=0 as well as exploiting symmetry, we obtain
-        // g_{u_hat}*n=0 on symmetry boundaries. Hence, there are no inhomogeneous contributions for
-        // g_{u_hat}*n.
+        // Do nothing on Neumann and symmetry boundaries.
+        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+        // are no inhomogeneous contributions on symmetry boundaries.
         scalar zero = make_vectorized_array<Number>(0.0);
         integrator.submit_value(zero, q);
       }
@@ -348,7 +351,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet ||
+         boundary_type == BoundaryTypeU::DirichletMortar)
       {
         vector normal = pressure.get_normal_vector(q);
 
@@ -383,14 +387,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
       }
       else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
       {
-        // Do nothing on Neumann and Symmetry boundaries.
-        // Remark: on symmetry boundaries we prescribe g_u * n = 0, and also g_{u_hat}*n = 0 in
-        // case of the dual splitting scheme. This is in contrast to Dirichlet boundaries where we
-        // prescribe a consistent boundary condition for g_{u_hat} derived from the convective
-        // step of the dual splitting scheme which differs from the DBC g_u. Applying this
-        // consistent DBC to symmetry boundaries and using g_u*n=0 as well as exploiting symmetry,
-        // we obtain g_{u_hat}*n=0 on symmetry boundaries. Hence, there are no inhomogeneous
-        // contributions for g_{u_hat}*n.
+        // Do nothing on Neumann and symmetry boundaries.
+        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+        // are no inhomogeneous contributions on symmetry boundaries.
         scalar zero = make_vectorized_array<Number>(0.0);
         pressure.submit_value(zero, q);
       }
@@ -453,81 +453,11 @@ DGNavierStokesDualSplitting<dim, Number>::
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
         vector dudt =
-          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
+          FunctionEvaluator<1, dim, Number>::value(it->second, q_points, this->evaluation_time);
 
         vector normal = integrator.get_normal_vector(q);
 
         scalar h = -normal * dudt;
-
-        integrator.submit_value(h, q);
-      }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = make_vectorized_array<Number>(0.0);
-        integrator.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
-    integrator.integrate(true, false);
-    integrator.distribute_local_to_global(dst);
-  }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(VectorType &   dst,
-                                                                          double const & time)
-{
-  this->evaluation_time = time;
-
-  VectorType src_dummy;
-  this->get_matrix_free().loop(&This::cell_loop_empty,
-                               &This::face_loop_empty,
-                               &This::local_rhs_ppe_nbc_body_force_term_add_boundary_face,
-                               this,
-                               dst,
-                               src_dummy);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_boundary_face(
-  MatrixFree<dim, Number> const & data,
-  VectorType &                    dst,
-  VectorType const &,
-  Range const & face_range) const
-{
-  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_pressure = this->get_quad_index_pressure();
-
-  FaceIntegratorP integrator(data, true, dof_index_pressure, quad_index_pressure);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    integrator.reinit(face);
-
-    types::boundary_id boundary_id = data.get_boundary_id(face);
-    BoundaryTypeP      boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
-
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {
-      if(boundary_type == BoundaryTypeP::Neumann)
-      {
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
-
-        // evaluate right-hand side
-        vector rhs =
-          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
-                                                   q_points,
-                                                   this->evaluation_time);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        scalar h = normal * rhs;
 
         integrator.submit_value(h, q);
       }
@@ -610,6 +540,76 @@ DGNavierStokesDualSplitting<dim, Number>::
 
     integrator_pressure.integrate(true, false);
     integrator_pressure.distribute_local_to_global(dst);
+  }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(VectorType &   dst,
+                                                                          double const & time)
+{
+  this->evaluation_time = time;
+
+  VectorType src_dummy;
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_body_force_term_add_boundary_face,
+                               this,
+                               dst,
+                               src_dummy);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_boundary_face(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &,
+  Range const & face_range) const
+{
+  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
+  unsigned int quad_index_pressure = this->get_quad_index_pressure();
+
+  FaceIntegratorP integrator(data, true, dof_index_pressure, quad_index_pressure);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    integrator.reinit(face);
+
+    types::boundary_id boundary_id = data.get_boundary_id(face);
+    BoundaryTypeP      boundary_type =
+      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+    {
+      if(boundary_type == BoundaryTypeP::Neumann)
+      {
+        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+
+        // evaluate right-hand side
+        vector rhs =
+          FunctionEvaluator<1, dim, Number>::value(this->field_functions->right_hand_side,
+                                                   q_points,
+                                                   this->evaluation_time);
+
+        vector normal = integrator.get_normal_vector(q);
+
+        scalar h = normal * rhs;
+
+        integrator.submit_value(h, q);
+      }
+      else if(boundary_type == BoundaryTypeP::Dirichlet)
+      {
+        scalar zero = make_vectorized_array<Number>(0.0);
+        integrator.submit_value(zero, q);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+      }
+    }
+    integrator.integrate(true, false);
+    integrator.distribute_local_to_global(dst);
   }
 }
 

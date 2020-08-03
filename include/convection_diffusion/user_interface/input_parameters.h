@@ -11,16 +11,16 @@
 // deal.II
 #include <deal.II/base/exceptions.h>
 
-#include "../../functionalities/enum_types.h"
-#include "../../functionalities/restart_data.h"
-#include "../../functionalities/solver_info_data.h"
+#include "enum_types.h"
 
+#include "../../grid/enum_types.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/preconditioner/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../../time_integration/enum_types.h"
-#include "enum_types.h"
+#include "../../time_integration/restart_data.h"
+#include "../../time_integration/solver_info_data.h"
 
 namespace ConvDiff
 {
@@ -78,9 +78,6 @@ public:
   /*                                 MATHEMATICAL MODEL                                 */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // number of space dimensions
-  unsigned int dim;
 
   // description: see enum declaration
   ProblemType problem_type;
@@ -200,10 +197,6 @@ public:
   // exponent of fe_degree used in the calculation of the diffusion time step size
   double exponent_fe_degree_diffusion;
 
-  // number of refinement steps for time step size
-  //   default: use dt_refinements = 0
-  unsigned int dt_refinements;
-
   // set this variable to true to start the simulation from restart files
   bool restarted_simulation;
 
@@ -219,14 +212,8 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
-  // Polynomial degree of shape functions
-  unsigned int degree;
-
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
-
-  // Number of mesh refinement steps
-  unsigned int h_refinements;
 
   // description: see enum declaration
   NumericalFluxConvectiveOperator numerical_flux_convective_operator;
@@ -313,9 +300,6 @@ public:
   // with an implicit treatment of the convective term, i.e., in cases where the convective
   // term has to be evaluated more than once at a given time t.
   bool store_analytical_velocity_in_dof_vector;
-
-  // filter solution after each time step
-  bool filter_solution;
 
   // use 3/2 overintegration rule for convective term
   bool use_overintegration;

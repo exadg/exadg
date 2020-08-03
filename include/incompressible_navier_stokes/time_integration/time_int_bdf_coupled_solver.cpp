@@ -7,9 +7,9 @@
 
 #include "time_int_bdf_coupled_solver.h"
 
-#include "../spatial_discretization/interface.h"
+#include "../../utilities/print_throughput.h"
+#include "../spatial_discretization/dg_coupled_solver.h"
 #include "../user_interface/input_parameters.h"
-#include "functionalities/set_zero_mean_value.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
@@ -19,22 +19,22 @@ template<int dim, typename Number>
 TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
   : Base(operator_in,
          param_in,
+         refine_steps_time_in,
          mpi_comm_in,
          postprocessor_in,
          moving_mesh_in,
-         matrix_free_wrapper_in),
+         matrix_free_in),
     pde_operator(operator_in),
     solution(this->order),
-    computing_times(3),
-    computing_time_convective(0.0),
-    iterations(2),
-    N_iter_nonlinear(0.0),
+    iterations({0, {0, 0}}),
+    iterations_penalty({0, 0}),
     scaling_factor_continuity(1.0),
     characteristic_element_length(1.0)
 {
@@ -97,28 +97,35 @@ TimeIntBDFCoupled<dim, Number>::setup_derived()
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_velocity() const
 {
   return solution[0].block(0);
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_velocity(unsigned int i) const
 {
   return solution[i].block(0);
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_velocity_np() const
 {
   return solution_np.block(0);
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
+TimeIntBDFCoupled<dim, Number>::get_pressure_np() const
+{
+  return solution_np.block(1);
+}
+
+template<int dim, typename Number>
+typename TimeIntBDFCoupled<dim, Number>::VectorType const &
 TimeIntBDFCoupled<dim, Number>::get_pressure(unsigned int i) const
 {
   return solution[i].block(1);
@@ -142,10 +149,51 @@ template<int dim, typename Number>
 void
 TimeIntBDFCoupled<dim, Number>::solve_timestep()
 {
-  this->output_solver_info_header();
-
   Timer timer;
   timer.restart();
+
+  // extrapolate old solutions to obtain a good initial guess for the solver, or
+  // to update the turbulence model or the penalty parameters based on this
+  // extrapolated solution
+  if(this->use_extrapolation)
+  {
+    solution_np.equ(this->extra.get_beta(0), solution[0]);
+    for(unsigned int i = 1; i < solution.size(); ++i)
+      solution_np.add(this->extra.get_beta(i), solution[i]);
+  }
+  else if(this->param.apply_penalty_terms_in_postprocessing_step == true)
+  {
+    solution_np = solution_last_iter;
+  }
+
+  // update of turbulence model
+  if(this->param.use_turbulence_model == true)
+  {
+    Timer timer_turbulence;
+    timer_turbulence.restart();
+
+    pde_operator->update_turbulence_model(solution_np.block(0));
+
+    if(this->print_solver_info())
+    {
+      this->pcout << std::endl << "Update of turbulent viscosity:";
+      print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
+    }
+  }
+
+  // Update divergence and continuity penalty operator in case
+  // that these terms are added to the monolithic system of equations.
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
+  {
+    if(this->param.use_divergence_penalty == true)
+    {
+      pde_operator->update_divergence_penalty_operator(solution_np.block(0));
+    }
+    if(this->param.use_continuity_penalty == true)
+    {
+      pde_operator->update_continuity_penalty_operator(solution_np.block(0));
+    }
+  }
 
   // update scaling factor of continuity equation
   if(this->param.use_scaling_continuity == true)
@@ -159,54 +207,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     scaling_factor_continuity = 1.0;
   }
 
-  // extrapolate old solution to obtain a good initial guess for the solver
-  solution_np.equ(this->extra.get_beta(0), solution[0]);
-  for(unsigned int i = 1; i < solution.size(); ++i)
-    solution_np.add(this->extra.get_beta(i), solution[i]);
-
-  // update of turbulence model
-  if(this->param.use_turbulence_model == true)
-  {
-    Timer timer_turbulence;
-    timer_turbulence.restart();
-
-    pde_operator->update_turbulence_model(solution_np.block(0));
-
-    if(this->print_solver_info())
-    {
-      this->pcout << std::endl
-                  << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
-                  << timer_turbulence.wall_time() << std::endl;
-    }
-  }
-
   // calculate auxiliary variable p^{*} = 1/scaling_factor * p
   solution_np.block(1) *= 1.0 / scaling_factor_continuity;
-
-  // Update divergence and continuity penalty operator in case
-  // that these terms are added to the monolithic system of equations
-  // instead of applying these terms in a postprocessing step.
-  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
-  {
-    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
-    {
-      // extrapolate velocity to time t_n+1 and use this velocity field to
-      // calculate the penalty parameter for the divergence and continuity penalty term
-      VectorType velocity_extrapolated(solution[0].block(0));
-      velocity_extrapolated = 0;
-      for(unsigned int i = 0; i < solution.size(); ++i)
-        velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
-
-      if(this->param.use_divergence_penalty == true)
-      {
-        pde_operator->update_divergence_penalty_operator(velocity_extrapolated);
-      }
-      if(this->param.use_continuity_penalty == true)
-      {
-        pde_operator->update_continuity_penalty_operator(velocity_extrapolated);
-      }
-    }
-  }
 
   bool const update_preconditioner =
     this->param.update_preconditioner_coupled &&
@@ -267,22 +269,21 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     // apply mass matrix to sum_alphai_ui and add to rhs vector
     pde_operator->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
 
-    unsigned int linear_iterations =
+    unsigned int const n_iter =
       pde_operator->solve_linear_stokes_problem(solution_np,
                                                 rhs_vector,
                                                 update_preconditioner,
                                                 this->get_next_time(),
                                                 this->get_scaling_factor_time_derivative_term());
 
-    iterations[0] += linear_iterations;
+    iterations.first += 1;
+    std::get<1>(iterations.second) += n_iter;
 
     // write output
     if(this->print_solver_info())
     {
-      this->pcout << "Solve linear problem:" << std::endl
-                  << "  Iterations: " << std::setw(6) << std::right << linear_iterations
-                  << "\t Wall time [s]: " << std::scientific
-                  << timer.wall_time() + computing_time_convective << std::endl;
+      this->pcout << std::endl << "Solve linear problem:";
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -302,82 +303,56 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
       pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
     // Newton solver
-    unsigned int newton_iterations = 0;
-    unsigned int linear_iterations = 0;
+    auto const iter =
+      pde_operator->solve_nonlinear_problem(solution_np,
+                                            rhs,
+                                            this->get_next_time(),
+                                            update_preconditioner,
+                                            this->get_scaling_factor_time_derivative_term());
 
-    pde_operator->solve_nonlinear_problem(solution_np,
-                                          rhs,
-                                          this->get_next_time(),
-                                          update_preconditioner,
-                                          this->get_scaling_factor_time_derivative_term(),
-                                          newton_iterations,
-                                          linear_iterations);
-
-    N_iter_nonlinear += newton_iterations;
-    iterations[0] += linear_iterations;
+    iterations.first += 1;
+    std::get<0>(iterations.second) += std::get<0>(iter);
+    std::get<1>(iterations.second) += std::get<1>(iter);
 
     // write output
     if(this->print_solver_info())
     {
-      this->pcout << "Solve nonlinear problem:" << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
-                  << std::right
-                  << ((newton_iterations > 0) ?
-                        (double(linear_iterations) / (double)newton_iterations) :
-                        linear_iterations)
-                  << " (avg)" << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
-                  << std::right << linear_iterations << " (tot)" << std::endl;
+      this->pcout << std::endl << "Solve nonlinear problem:";
+      print_solver_info_nonlinear(this->pcout,
+                                  std::get<0>(iter),
+                                  std::get<1>(iter),
+                                  timer.wall_time());
     }
   }
 
   // reconstruct pressure solution p from auxiliary variable p^{*}: p = scaling_factor * p^{*}
   solution_np.block(1) *= scaling_factor_continuity;
 
-  // special case: pure Dirichlet BC's
+  // special case: pressure level is undefined
   // Adjust the pressure level in order to allow a calculation of the pressure error.
   // This is necessary because otherwise the pressure solution moves away from the exact solution.
-  if(this->param.pure_dirichlet_bc)
+  pde_operator->adjust_pressure_level_if_undefined(solution_np.block(1), this->get_next_time());
+
+  if(this->store_solution && this->param.apply_penalty_terms_in_postprocessing_step == true)
   {
-    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-    {
-      pde_operator->shift_pressure(solution_np.block(1), this->get_next_time());
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
-    {
-      set_zero_mean_value(solution_np.block(1));
-    }
-    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
-    {
-      pde_operator->shift_pressure_mean_value(solution_np.block(1), this->get_next_time());
-    }
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
-    }
+    solution_last_iter = solution_np;
   }
 
-  computing_times[0] += timer.wall_time() + computing_time_convective;
-
-  // Projection step
-  timer.restart();
+  this->timer_tree->insert({"Timeloop", "Coupled system"}, timer.wall_time());
 
   // If the penalty terms are applied in a postprocessing step
   if(this->param.apply_penalty_terms_in_postprocessing_step == true)
   {
-    // projection of velocity field using divergence and/or continuity penalty terms
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
-      projection_step();
+      timer.restart();
+
+      penalty_step();
+
+      this->timer_tree->insert({"Timeloop", "Penalty step"}, timer.wall_time());
     }
   }
 
-  computing_times[1] += timer.wall_time();
-
-  // Evaluation of convective term
   timer.restart();
 
   // evaluate convective term once solution_np is known
@@ -392,29 +367,36 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     }
   }
 
-  computing_time_convective = timer.wall_time();
+  this->timer_tree->insert({"Timeloop", "Coupled system"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::projection_step()
+TimeIntBDFCoupled<dim, Number>::penalty_step()
 {
   Timer timer;
   timer.restart();
 
-  // extrapolate velocity to time t_n+1 and use this velocity field to
-  // calculate the penalty parameter for the divergence and continuity penalty term
-  VectorType velocity_extrapolated(solution[0].block(0));
-  velocity_extrapolated = 0;
-  for(unsigned int i = 0; i < solution.size(); ++i)
-    velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
-
-  // update projection operator
-  pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
-
   // right-hand side term: apply mass matrix
   VectorType rhs(solution_np.block(0));
   pde_operator->apply_mass_matrix(rhs, solution_np.block(0));
+
+  // extrapolate velocity to time t_n+1 and use this velocity field to
+  // calculate the penalty parameter for the divergence and continuity penalty term
+  VectorType velocity_extrapolated(solution_np.block(0));
+  if(this->use_extrapolation)
+  {
+    velocity_extrapolated = 0.0;
+    for(unsigned int i = 0; i < solution.size(); ++i)
+      velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
+  }
+  else
+  {
+    velocity_extrapolated = velocity_penalty_last_iter;
+  }
+
+  // update projection operator
+  pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
 
   // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
   // rhs-vector if desired
@@ -426,19 +408,24 @@ TimeIntBDFCoupled<dim, Number>::projection_step()
     ((this->time_step_number - 1) % this->param.update_preconditioner_projection_every_time_steps ==
      0);
 
-  // solve projection (and update preconditioner if desired)
-  unsigned int iterations_postprocessing =
+  // solve projection step
+  if(this->use_extrapolation == false)
+    solution_np.block(0) = velocity_penalty_last_iter;
+
+  unsigned int n_iter =
     pde_operator->solve_projection(solution_np.block(0), rhs, update_preconditioner);
 
-  iterations[1] += iterations_postprocessing;
+  if(this->store_solution)
+    velocity_penalty_last_iter = solution_np.block(0);
+
+  iterations_penalty.first += 1;
+  iterations_penalty.second += n_iter;
 
   // write output
   if(this->print_solver_info())
   {
-    this->pcout << std::endl
-                << "Solve projection step:" << std::endl
-                << "  Iterations: " << std::setw(6) << std::right << iterations_postprocessing
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    this->pcout << std::endl << "Solve penalty step:";
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
   }
 }
 
@@ -545,7 +532,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
       // solve time step
-      this->do_timestep(false);
+      this->do_timestep();
 
       // calculate increment:
       // increment = solution_{n+1} - solution_{n}
@@ -586,7 +573,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
     while(!converged && this->time < (this->end_time - this->eps) &&
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
-      this->do_timestep(false);
+      this->do_timestep();
 
       // check convergence by evaluating the residual of
       // the steady-state incompressible Navier-Stokes equations
@@ -639,85 +626,43 @@ TimeIntBDFCoupled<dim, Number>::evaluate_residual()
 
 template<int dim, typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                               std::vector<double> &      iteration) const
+TimeIntBDFCoupled<dim, Number>::print_iterations() const
 {
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
+  std::vector<std::string> names;
+  std::vector<double>      iterations_avg;
 
   if(this->param.linear_problem_has_to_be_solved())
   {
-    unsigned int             size  = 1;
-    std::vector<std::string> names = {"Coupled system"};
-
-    if(this->param.apply_penalty_terms_in_postprocessing_step)
-    {
-      names.push_back("Penalty terms");
-      size++;
-    }
-
-    name = names;
-
-    // fill iteration vector
-    iteration.resize(size);
-    for(unsigned int i = 0; i < size; ++i)
-    {
-      iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
-    }
+    names = {"Coupled system"};
+    iterations_avg.resize(1);
+    iterations_avg[0] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
   }
   else // nonlinear system of equations in momentum step
   {
-    unsigned int             size  = 3;
-    std::vector<std::string> names = {"Coupled system (nonlinear)",
-                                      "Coupled system (linear)",
-                                      "Coupled system (linear-accumulated)"};
+    names = {"Coupled system (nonlinear)",
+             "Coupled system (linear accumulated)",
+             "Coupled system (linear per nonlinear)"};
 
-    if(this->param.apply_penalty_terms_in_postprocessing_step)
-    {
-      names.push_back("Penalty terms");
-      size++;
-    }
-
-    double n_iter_nonlinear          = (double)N_iter_nonlinear / (double)N_time_steps;
-    double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
-    double n_iter_projection         = (double)iterations[1] / (double)N_time_steps;
-
-    name = names;
-
-    // fill iteration vector
-    iteration.resize(size);
-
-    iteration[0] = n_iter_nonlinear;
-    if(n_iter_nonlinear > std::numeric_limits<double>::min())
-      iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
+    iterations_avg.resize(3);
+    iterations_avg[0] =
+      (double)std::get<0>(iterations.second) / std::max(1., (double)iterations.first);
+    iterations_avg[1] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
+    if(iterations_avg[0] > std::numeric_limits<double>::min())
+      iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
     else
-      iteration[1] = n_iter_linear_accumulated;
-    iteration[2] = n_iter_linear_accumulated;
-    if(this->param.apply_penalty_terms_in_postprocessing_step)
-      iteration[3] = n_iter_projection;
+      iterations_avg[2] = iterations_avg[1];
   }
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDFCoupled<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                               std::vector<double> &      wall_time) const
-{
-  unsigned int             size  = 1;
-  std::vector<std::string> names = {"Coupled system"};
 
   if(this->param.apply_penalty_terms_in_postprocessing_step)
   {
     names.push_back("Penalty terms");
-    size++;
+    iterations_avg.push_back(iterations_penalty.second /
+                             std::max(1., (double)iterations_penalty.first));
   }
 
-  name.resize(size);
-  wall_time.resize(size);
-  for(unsigned int i = 0; i < size; ++i)
-  {
-    name[i]      = names[i];
-    wall_time[i] = this->computing_times[i];
-  }
+  print_list_of_iterations(this->pcout, names, iterations_avg);
 }
 
 // instantiations
@@ -727,4 +672,5 @@ template class TimeIntBDFCoupled<2, double>;
 
 template class TimeIntBDFCoupled<3, float>;
 template class TimeIntBDFCoupled<3, double>;
+
 } // namespace IncNS

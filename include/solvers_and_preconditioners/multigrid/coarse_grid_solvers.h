@@ -21,7 +21,6 @@
 #include "../solvers/iterative_solvers_dealii_wrapper.h"
 #include "../solvers/solver_data.h"
 
-#include "../../functionalities/set_zero_mean_value.h"
 #include "../preconditioner/preconditioner_amg.h"
 
 enum class KrylovSolverType

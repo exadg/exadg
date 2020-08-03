@@ -8,34 +8,33 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
 
-#include <deal.II/lac/la_parallel_block_vector.h>
-
-#include "../spatial_discretization/dg_pressure_correction.h"
-#include "time_int_bdf_navier_stokes.h"
+#include "time_int_bdf.h"
 
 namespace IncNS
 {
 // forward declarations
-class InputParameters;
+template<int dim, typename Number>
+class DGNavierStokesPressureCorrection;
 
 template<int dim, typename Number>
 class TimeIntBDFPressureCorrection : public TimeIntBDF<dim, Number>
 {
-public:
+private:
   typedef TimeIntBDF<dim, Number> Base;
 
-  typedef typename Base::VectorType      VectorType;
-  typedef typename Base::BlockVectorType BlockVectorType;
+  typedef typename Base::VectorType VectorType;
 
   typedef DGNavierStokesPressureCorrection<dim, Number> Operator;
 
+public:
   TimeIntBDFPressureCorrection(
     std::shared_ptr<Operator>                       operator_in,
     InputParameters const &                         param_in,
+    unsigned int const                              refine_steps_time_in,
     MPI_Comm const &                                mpi_comm_in,
-    std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
-    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
+    std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
+    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
+    std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
 
   virtual ~TimeIntBDFPressureCorrection()
   {
@@ -45,10 +44,13 @@ public:
   postprocessing_stability_analysis();
 
   void
-  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
+  print_iterations() const;
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  VectorType const &
+  get_velocity_np() const;
+
+  VectorType const &
+  get_pressure_np() const;
 
 private:
   void
@@ -114,16 +116,13 @@ private:
   void
   prepare_vectors_for_next_timestep() override;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
-  get_velocity_np() const;
-
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   void
@@ -149,11 +148,20 @@ private:
   // stores pressure Dirichlet boundary values at previous times
   std::vector<VectorType> pressure_dbc;
 
-  mutable std::vector<double> computing_times;
-  double                      computing_time_convective;
-  std::vector<unsigned int>   iterations;
+  // required for strongly-coupled partitioned FSI
+  VectorType pressure_increment_last_iter;
+  VectorType velocity_momentum_last_iter;
+  VectorType velocity_projection_last_iter;
 
-  unsigned int N_iter_nonlinear_momentum;
+  // iteration counts
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+    iterations_momentum;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+    iterations_pressure;
+  std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */>
+    iterations_projection;
 };
 
 } // namespace IncNS

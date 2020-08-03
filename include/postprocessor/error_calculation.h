@@ -15,7 +15,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 
-#include "../functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 template<int dim>
 struct ErrorCalculationData
@@ -89,9 +89,9 @@ public:
   ErrorCalculator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const &           dof_handler_in,
-        Mapping<dim> const &              mapping_in,
-        ErrorCalculationData<dim> const & error_data_in);
+  setup(DoFHandler<dim> const &           dof_handler,
+        Mapping<dim> const &              mapping,
+        ErrorCalculationData<dim> const & error_data);
 
   void
   evaluate(VectorType const & solution, double const & time, int const & time_step_number);

@@ -15,7 +15,7 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 
 /*
  * inflow data: use velocity at the outflow of one domain as inflow-BC for another domain
@@ -97,8 +97,8 @@ private:
 
   MPI_Comm const & mpi_comm;
 
-  std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>
-    array_dof_index_and_shape_values;
+  std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>
+    array_dof_indices_and_shape_values;
 
   std::vector<unsigned int> array_counter;
 };

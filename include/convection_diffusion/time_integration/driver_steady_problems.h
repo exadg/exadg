@@ -8,10 +8,11 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_
 
+// deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../postprocessor/postprocessor_base.h"
+#include "../../utilities/timings_hierarchical.h"
 
 using namespace dealii;
 
@@ -19,6 +20,9 @@ namespace ConvDiff
 {
 // forward declaration
 class InputParameters;
+
+template<typename Number>
+class PostProcessorInterface;
 
 namespace Interface
 {
@@ -45,8 +49,8 @@ public:
   void
   solve_problem();
 
-  void
-  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+  std::shared_ptr<TimerTree>
+  get_timings() const;
 
 private:
   void
@@ -69,7 +73,7 @@ private:
 
   ConditionalOStream pcout;
 
-  std::vector<double> computing_times;
+  std::shared_ptr<TimerTree> timer_tree;
 
   // vectors
   VectorType solution;

@@ -3,7 +3,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
+#include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/operator_base.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
@@ -284,7 +284,7 @@ public:
     {
       Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-      vector velocity = FunctionEvaluator<dim, Number, 1>::value(data.velocity, q_points, time);
+      vector velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity, q_points, time);
 
       scalar normal_velocity = velocity * normal_m;
 
@@ -361,7 +361,7 @@ public:
     {
       Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-      velocity = FunctionEvaluator<dim, Number, 1>::value(data.velocity, q_points, time);
+      velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity, q_points, time);
     }
     else if(data.velocity_type == TypeVelocityField::DoFVector)
     {
@@ -451,7 +451,7 @@ public:
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
-      velocity = FunctionEvaluator<dim, Number, 1>::value(data.velocity,
+      velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity,
                                                           integrator.quadrature_point(q),
                                                           time);
     }
@@ -478,7 +478,7 @@ public:
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
-      velocity = FunctionEvaluator<dim, Number, 1>::value(data.velocity,
+      velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity,
                                                           integrator.quadrature_point(q),
                                                           time);
     }
@@ -510,20 +510,20 @@ private:
 template<int dim>
 struct ConvectiveOperatorData : public OperatorBaseData
 {
-  ConvectiveOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  ConvectiveOperatorData() : OperatorBaseData()
   {
   }
 
   Operators::ConvectiveKernelData<dim> kernel_data;
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, typename Number>
-class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>>
+class ConvectiveOperator : public OperatorBase<dim, Number, 1>
 {
 private:
-  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, 1> Base;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
@@ -535,15 +535,10 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &                           matrix_free,
-         AffineConstraints<double> const &                         constraint_matrix,
-         ConvectiveOperatorData<dim> const &                       data,
-         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
+  initialize(MatrixFree<dim, Number> const &                           matrix_free,
+             AffineConstraints<double> const &                         constraint_matrix,
+             ConvectiveOperatorData<dim> const &                       data,
+             std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -592,10 +587,7 @@ private:
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
 
-  void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                ConvectiveOperatorData<dim> const &  data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
+  ConvectiveOperatorData<dim> operator_data;
 
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };

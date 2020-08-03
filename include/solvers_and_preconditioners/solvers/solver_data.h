@@ -9,7 +9,8 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_SOLVERS_SOLVER_DATA_H_
 
 #include "deal.II/base/conditional_ostream.h"
-#include "../../functionalities/print_functions.h"
+
+#include "../../utilities/print_functions.h"
 
 struct SolverData
 {

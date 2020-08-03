@@ -11,9 +11,6 @@
 #include "dg_projection_methods.h"
 
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
-#include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {
@@ -51,20 +48,10 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'initialize_vector_for_newton_solver'.
+   * 'evaluate_residual'.
    */
   void
-  initialize_vector_for_newton_solver(VectorType & src) const
-  {
-    pde_operator->initialize_vector_velocity(src);
-  }
-
-  /*
-   * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual'.
-   */
-  void
-  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src)
+  evaluate_residual(VectorType & dst, VectorType const & src)
   {
     pde_operator->evaluate_nonlinear_residual(
       dst, src, rhs_vector, time, scaling_factor_mass_matrix);
@@ -86,8 +73,7 @@ private:
   typedef DGNavierStokesProjectionMethods<dim, Number>  ProjBase;
   typedef DGNavierStokesPressureCorrection<dim, Number> This;
 
-  typedef typename Base::VectorType      VectorType;
-  typedef typename Base::MultigridNumber MultigridNumber;
+  typedef typename Base::VectorType VectorType;
 
   typedef typename Base::scalar scalar;
   typedef typename Base::vector vector;
@@ -103,15 +89,17 @@ public:
    * Constructor.
    */
   DGNavierStokesPressureCorrection(
-    parallel::TriangulationBase<dim> const & triangulation_in,
-    Mapping<dim> const &                     mapping_in,
+    parallel::TriangulationBase<dim> const & triangulation,
+    Mapping<dim> const &                     mapping,
+    unsigned int const                       degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-    InputParameters const &                         parameters_in,
-    MPI_Comm const &                                mpi_comm_in);
+                                                    periodic_face_pairs,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+    InputParameters const &                         parameters,
+    std::string const &                             field,
+    MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.
@@ -125,8 +113,9 @@ public:
    * depending on the specific ALE formulation chosen).
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
-        std::string const &                             dof_index_temperature = "");
+  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+        std::string const &                          dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
@@ -138,12 +127,11 @@ public:
   /*
    * Stokes equations or convective term treated explicitly: solve linear system of equations
    */
-  void
+  unsigned int
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
                                  bool const &       update_preconditioner,
-                                 double const &     scaling_factor_mass_matrix_term,
-                                 unsigned int &     linear_iterations);
+                                 double const &     scaling_factor_mass_matrix_term);
 
   /*
    * Calculation of right-hand side vector:
@@ -156,14 +144,12 @@ public:
   /*
    * Convective term treated implicitly: solve non-linear system of equations
    */
-  void
+  std::tuple<unsigned int, unsigned int>
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
                                     double const &     time,
                                     bool const &       update_preconditioner,
-                                    double const &     scaling_factor_mass_matrix_term,
-                                    unsigned int &     newton_iterations,
-                                    unsigned int &     linear_iterations);
+                                    double const &     scaling_factor_mass_matrix_term);
 
   /*
    * This function evaluates the nonlinear residual.
@@ -257,10 +243,10 @@ private:
   // Nonlinear operator and solver
   NonlinearMomentumOperator<dim, Number> nonlinear_operator;
 
-  std::shared_ptr<NewtonSolver<VectorType,
-                               NonlinearMomentumOperator<dim, Number>,
-                               MomentumOperator<dim, Number>,
-                               IterativeSolverBase<VectorType>>>
+  std::shared_ptr<Newton::Solver<VectorType,
+                                 NonlinearMomentumOperator<dim, Number>,
+                                 MomentumOperator<dim, Number>,
+                                 IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
 
   // linear solver (momentum_operator serves as linear operator)

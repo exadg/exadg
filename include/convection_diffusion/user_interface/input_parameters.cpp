@@ -7,13 +7,12 @@
 
 #include "input_parameters.h"
 
-#include "../../functionalities/print_functions.h"
+#include "../../utilities/print_functions.h"
 
 namespace ConvDiff
 {
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
     analytical_velocity_field(true),
@@ -47,15 +46,12 @@ InputParameters::InputParameters()
     c_eff(-1.),
     exponent_fe_degree_convection(1.5),
     exponent_fe_degree_diffusion(3.0),
-    dt_refinements(0),
     restarted_simulation(false),
     restart_data(RestartData()),
 
     // SPATIAL DISCRETIZATION
     triangulation_type(TriangulationType::Undefined),
-    degree(1),
     mapping(MappingType::Affine),
-    h_refinements(0),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
     IP_factor(1.0),
 
@@ -77,7 +73,6 @@ InputParameters::InputParameters()
     use_cell_based_face_loops(false),
     use_combined_operator(true),
     store_analytical_velocity_in_dof_vector(false),
-    filter_solution(false),
     use_overintegration(false)
 {
 }
@@ -86,8 +81,6 @@ void
 InputParameters::check_input_parameters()
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
-
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
 
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
@@ -241,8 +234,6 @@ InputParameters::check_input_parameters()
   AssertThrow(triangulation_type != TriangulationType::Undefined,
               ExcMessage("parameter must be defined"));
 
-  AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
-
   if(equation_type == EquationType::Convection ||
      equation_type == EquationType::ConvectionDiffusion)
   {
@@ -311,16 +302,6 @@ InputParameters::check_input_parameters()
   }
 
   // NUMERICAL PARAMETERS
-
-  // TODO: implement filtering as a separate module
-  if(filter_solution)
-  {
-    AssertThrow(
-      linear_system_has_to_be_solved() && preconditioner == Preconditioner::Multigrid &&
-        multigrid_data.type == MultigridType::pMG,
-      ExcMessage(
-        "In the current implementation, a multigrid preconditioner has to be used in order to use filtering."));
-  }
 }
 
 bool
@@ -404,15 +385,19 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
-  print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
-  print_parameter(pcout, "ALE formulation", ale_formulation);
   print_parameter(pcout, "Right-hand side", right_hand_side);
-  print_parameter(pcout,
-                  "Formulation convective term",
-                  enum_to_string(formulation_convective_term));
+
+  if(equation_type == EquationType::Convection ||
+     equation_type == EquationType::ConvectionDiffusion)
+  {
+    print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
+    print_parameter(pcout, "ALE formulation", ale_formulation);
+    print_parameter(pcout,
+                    "Formulation convective term",
+                    enum_to_string(formulation_convective_term));
+  }
 }
 
 void
@@ -488,8 +473,6 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
   // because this is done by the time integration scheme (or the functions that
   // calculate the time step size)
 
-  print_parameter(pcout, "Refinement steps dt", dt_refinements);
-
   print_parameter(pcout, "Restarted simulation", restarted_simulation);
 
   restart_data.print(pcout);
@@ -502,11 +485,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-  print_parameter(pcout, "Polynomial degree of shape functions", degree);
-
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
-
-  print_parameter(pcout, "Number of h-refinements", h_refinements);
 
   if(equation_type == EquationType::Convection ||
      equation_type == EquationType::ConvectionDiffusion)
@@ -586,10 +565,6 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
                       store_analytical_velocity_in_dof_vector);
     }
   }
-
-  // TODO: implement filtering as a separate module
-  if(temporal_discretization == TemporalDiscretization::BDF)
-    print_parameter(pcout, "Use filtering", filter_solution);
 
   print_parameter(pcout, "Use over-integration", use_overintegration);
 }

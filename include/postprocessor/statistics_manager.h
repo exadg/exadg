@@ -5,7 +5,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../functionalities/print_functions.h"
+#include "../utilities/print_functions.h"
 
 // turbulent channel data
 
@@ -64,11 +64,11 @@ struct TurbulentChannelData
   std::string filename_prefix;
 };
 
-template<int dim>
+template<int dim, typename Number>
 class StatisticsManager
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   StatisticsManager(const DoFHandler<dim> & dof_handler_velocity, const Mapping<dim> & mapping);
 

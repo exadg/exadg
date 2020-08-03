@@ -14,7 +14,6 @@ namespace CompNS
 // standard constructor that initializes parameters with default values
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     equation_type(EquationType::Undefined),
     right_hand_side(false),
 
@@ -40,7 +39,6 @@ InputParameters::InputParameters()
     diffusion_number(-1.),
     exponent_fe_degree_cfl(2.0),
     exponent_fe_degree_viscous(4.0),
-    dt_refinements(0),
     // restart
     restarted_simulation(false),
     restart_data(RestartData()),
@@ -50,11 +48,9 @@ InputParameters::InputParameters()
 
     // triangulation
     triangulation_type(TriangulationType::Undefined),
-    degree(3),
     mapping(MappingType::Affine),
     n_q_points_convective(QuadratureRule::Standard),
     n_q_points_viscous(QuadratureRule::Standard),
-    h_refinements(0),
 
     // viscous term
     IP_factor(1.0),
@@ -69,8 +65,6 @@ void
 InputParameters::check_input_parameters()
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
-
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
 
@@ -110,8 +104,6 @@ InputParameters::check_input_parameters()
   // SPATIAL DISCRETIZATION
   AssertThrow(triangulation_type != TriangulationType::Undefined,
               ExcMessage("parameter must be defined"));
-
-  AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
 
   if(use_combined_operator)
   {
@@ -155,7 +147,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
   print_parameter(pcout, "Right-hand side", right_hand_side);
 }
@@ -205,8 +196,6 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
   // because this is done by the time integration scheme (or the functions that
   // calculate the time step size)
 
-  print_parameter(pcout, "Refinement steps dt", dt_refinements);
-
   print_parameter(pcout, "Restarted simulation", restarted_simulation);
 
   restart_data.print(pcout);
@@ -221,14 +210,10 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
-  print_parameter(pcout, "Polynomial degree of shape functions", degree);
-
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
 
   print_parameter(pcout, "Quadrature rule convective term", enum_to_string(n_q_points_convective));
   print_parameter(pcout, "Quadrature rule viscous term", enum_to_string(n_q_points_viscous));
-
-  print_parameter(pcout, "Number of h-refinements", h_refinements);
 
   print_parameter(pcout, "IP factor viscous term", IP_factor);
 }

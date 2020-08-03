@@ -8,6 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
 
+#include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
 
