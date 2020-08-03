@@ -13,7 +13,7 @@ using namespace dealii;
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
-#include "../../functions_and_boundary_conditions/function_interpolation.h"
+#include "../../functions_and_boundary_conditions/function_cached.h"
 
 namespace IncNS
 {
@@ -66,7 +66,7 @@ struct BoundaryDescriptorU
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>> dirichlet_mortar_bc;
+  std::map<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;

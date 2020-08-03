@@ -17,8 +17,9 @@
 #include <deal.II/grid/grid_tools_cache.h>
 #include <deal.II/numerics/rtree.h>
 
-#include "../postprocessor/evaluate_solution_in_given_point.h"
-#include "function_interpolation.h"
+#include "../grid/find_all_active_cells_around_point.h"
+#include "../vector_tools/interpolate_solution.h"
+#include "function_cached.h"
 
 using namespace dealii;
 
@@ -386,7 +387,7 @@ private:
   typedef FaceIntegrator<dim, n_components, Number>  Integrator;
   typedef std::pair<unsigned int, unsigned int>      Range;
 
-  typedef std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim, double>>>
+  typedef std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>
     MapBoundaryCondition;
 
   typedef unsigned int quad_index;
@@ -668,8 +669,7 @@ private:
 
   std::map<quad_index, InterfaceCommunicator<dim, dim>> map_communicator;
 
-  mutable std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim, double>>>
-    map_bc;
+  mutable std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> map_bc;
 
   /*
    * src-side

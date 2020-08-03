@@ -12,7 +12,7 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
-#include "../../functions_and_boundary_conditions/function_interpolation.h"
+#include "../../functions_and_boundary_conditions/function_cached.h"
 
 namespace Structure
 {
@@ -35,7 +35,7 @@ struct BoundaryDescriptor
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>> dirichlet_mortar_bc;
+  std::map<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
 
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
@@ -43,7 +43,7 @@ struct BoundaryDescriptor
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Neumann boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>> neumann_mortar_bc;
+  std::map<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> neumann_mortar_bc;
 
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType

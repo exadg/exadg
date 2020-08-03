@@ -12,12 +12,12 @@ using namespace dealii;
 
 /*
  * Note:
- * The default argument "double" could be removed but this implies that all BoundaryDescriptor's
- * that use FunctionInterpolation require another template parameter "Number", which requires
+ * The default argument "double" could be removed but this implies that all BoundaryDescriptors
+ * that use FunctionCached require another template parameter "Number", which requires
  * changes of major parts of the code.
  */
 template<int rank, int dim, typename Number = double>
-class FunctionInterpolation
+class FunctionCached
 {
 private:
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
@@ -25,7 +25,7 @@ private:
   typedef std::vector<std::vector<Tensor<rank, dim, Number>>> ArrayVectorTensor;
 
 public:
-  FunctionInterpolation() : global_map_vector_index(nullptr), map_solution(nullptr)
+  FunctionCached() : global_map_vector_index(nullptr), map_solution(nullptr)
   {
   }
 
@@ -52,14 +52,14 @@ public:
 
     Assert(index < array_solution.size(), ExcMessage("Index exceeds dimensions of vector."));
 
-    std::vector<Tensor<rank, dim, double>> const & solutions = array_solution[index];
+    std::vector<Tensor<rank, dim, double>> const & vector_solution = array_solution[index];
 
     // average
     unsigned int              counter = 0;
     Tensor<rank, dim, double> solution;
-    for(unsigned int i = 0; i < solutions.size(); ++i)
+    for(unsigned int i = 0; i < vector_solution.size(); ++i)
     {
-      solution += solutions[i];
+      solution += vector_solution[i];
       ++counter;
     }
 

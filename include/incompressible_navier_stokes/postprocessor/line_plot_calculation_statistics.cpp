@@ -5,9 +5,11 @@
  *      Author: fehn
  */
 
+#include <deal.II/grid/grid_tools.h>
+
 #include "line_plot_calculation_statistics.h"
 
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "../../vector_tools/interpolate_solution.h"
 
 template<int dim, typename Number>
 LinePlotCalculatorStatistics<dim, Number>::LinePlotCalculatorStatistics(

@@ -43,7 +43,7 @@ double const TIME_PRESSURE = 5.0e-3;
 double const END_TIME      = 0.02;
 
 double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
-unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
+unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e0;
 bool const         WRITE_OUTPUT                        = false;
 
 double const REL_TOL = 1.e-2;
@@ -361,7 +361,7 @@ public:
     std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // fill boundary descriptor velocity
@@ -376,7 +376,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
 
@@ -461,7 +461,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     std::vector<bool> mask = {true, true, true};
@@ -478,7 +478,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
 
@@ -526,7 +526,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     std::vector<bool> mask = {false, false, true};
@@ -543,7 +543,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
   void
@@ -683,7 +683,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // left and right boundaries are clamped
@@ -703,7 +703,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor->neumann_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
   void

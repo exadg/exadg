@@ -5,9 +5,9 @@
  *      Author: fehn
  */
 
-#include "line_plot_calculation_statistics_homogeneous.h"
+#include <deal.II/fe/fe_values.h>
 
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "line_plot_calculation_statistics_homogeneous.h"
 
 template<int dim, typename Number>
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisticsHomogeneous(

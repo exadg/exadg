@@ -10,7 +10,7 @@
 
 #include "pressure_difference_calculation.h"
 
-#include "evaluate_solution_in_given_point.h"
+#include "../vector_tools/point_value.h"
 
 template<int dim, typename Number>
 PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm const & comm)

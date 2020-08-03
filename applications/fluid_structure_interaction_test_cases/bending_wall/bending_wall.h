@@ -140,8 +140,8 @@ public:
     param.right_hand_side                = false;
 
     // ALE
-    param.ale_formulation    = true;
-    param.mesh_movement_type = MeshMovementType::Poisson; // Elasticity;
+    param.ale_formulation                     = true;
+    param.mesh_movement_type                  = MeshMovementType::Poisson; // Elasticity;
     param.neumann_with_variable_normal_vector = false;
 
     // PHYSICAL QUANTITIES
@@ -469,7 +469,7 @@ public:
     std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // fill boundary descriptor velocity
@@ -488,7 +488,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
 
@@ -577,7 +577,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // let the mesh slide along the outer walls
@@ -600,7 +600,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
 
@@ -648,7 +648,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // let the mesh slide along the outer walls
@@ -671,7 +671,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
   void
@@ -800,7 +800,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>>
+    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // lower boundary is clamped
@@ -811,7 +811,7 @@ public:
 
     // fluid-structure interface
     boundary_descriptor->neumann_mortar_bc.insert(
-      pair_fsi(BOUNDARY_ID_FSI, new FunctionInterpolation<1, dim>()));
+      pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
   }
 
   void

@@ -11,7 +11,7 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
-#include "../../functions_and_boundary_conditions/function_interpolation.h"
+#include "../../functions_and_boundary_conditions/function_cached.h"
 
 using namespace dealii;
 
@@ -33,8 +33,7 @@ struct BoundaryDescriptor
   // ComponentMask is only used for continuous elements, and is ignored for DG
   std::map<types::boundary_id, ComponentMask> dirichlet_bc_component_mask;
 
-  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>>
-    dirichlet_mortar_bc;
+  std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim>>> dirichlet_mortar_bc;
 
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
