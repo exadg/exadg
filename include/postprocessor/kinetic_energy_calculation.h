@@ -8,8 +8,8 @@
 #ifndef INCLUDE_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 #define INCLUDE_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/matrix_free.h>
+#include "../matrix_free/integrators.h"
 
 #include "../incompressible_navier_stokes/spatial_discretization/curl_compute.h"
 

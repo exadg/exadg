@@ -10,8 +10,8 @@
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/matrix_free.h>
+#include "../../matrix_free/integrators.h"
 
 template<int dim, typename Number>
 class VorticityCalculator

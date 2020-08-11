@@ -10,8 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/operators.h>
+#include "../matrix_free/integrators.h"
 
 using namespace dealii;
 

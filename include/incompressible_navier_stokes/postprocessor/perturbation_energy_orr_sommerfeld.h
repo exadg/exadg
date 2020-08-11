@@ -8,8 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_PERTURBATION_ENERGY_ORR_SOMMERFELD_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_PERTURBATION_ENERGY_ORR_SOMMERFELD_H_
 
-// deal.II
-#include "deal.II/matrix_free/fe_evaluation_notemplate.h"
+#include "../../matrix_free/integrators.h"
 
 #include "../../utilities/print_functions.h"
 

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_MEAN_VELOCITY_CALCULATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_MEAN_VELOCITY_CALCULATOR_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../matrix_free/integrators.h"
 
 
 #include "../../utilities/print_functions.h"

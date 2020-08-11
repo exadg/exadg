@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_PENALTY_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_PENALTY_OPERATOR_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../../matrix_free/integrators.h"
 
 #include "../../../operators/integrator_flags.h"
 #include "../../../operators/mapping_flags.h"

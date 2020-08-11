@@ -13,7 +13,7 @@ MESSAGE("_______________________________________________________________________
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
-FIND_PACKAGE(deal.II 8.4 QUIET
+FIND_PACKAGE(deal.II 9.3 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})

@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_DIVERGENCE_AND_MASS_ERROR_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../matrix_free/integrators.h"
 
 #include "../../utilities/print_functions.h"
 

@@ -11,7 +11,7 @@
 // deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../matrix_free/integrators.h"
 
 #include "../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../grid/calculate_characteristic_element_length.h"

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../matrix_free/integrators.h"
 
 #include "mass_matrix_kernel.h"
 #include "operator_base.h"

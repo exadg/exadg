@@ -8,7 +8,7 @@
 #ifndef INCLUDE_OPERATORS_MASS_MATRIX_OPERATOR_H_
 #define INCLUDE_OPERATORS_MASS_MATRIX_OPERATOR_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../matrix_free/integrators.h"
 
 #include "integrator_flags.h"
 #include "mapping_flags.h"

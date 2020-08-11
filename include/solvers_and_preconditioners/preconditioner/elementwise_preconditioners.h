@@ -8,8 +8,8 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ELEMENTWISE_PRECONDITIONERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ELEMENTWISE_PRECONDITIONERS_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/operators.h>
+#include "../../matrix_free/integrators.h"
 
 #include "../solvers/elementwise_krylov_solvers.h"
 

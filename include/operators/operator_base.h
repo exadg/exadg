@@ -9,8 +9,8 @@
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/matrix_free.h>
+#include "../matrix_free/integrators.h"
 
 #include "operator_type.h"
 

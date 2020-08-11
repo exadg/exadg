@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_VELOCITY_MAGNITUDE_CALCULATOR_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../../matrix_free/integrators.h"
 
 using namespace dealii;
 
