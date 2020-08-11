@@ -64,15 +64,16 @@ git remote add supervisor https://gitlab.lrz.de/supervisor_id/navierstokes.git
 
 ### Interlude - install other software packages
 
-#### Trilinos code (optional)
-
-For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
-
-If you want to use **trilinos**, go to the *sw*-folder in your working directory
+Go to the *sw*-folder in your working directory
 
 ```bash
 cd /working_directory/sw/
 ```
+
+#### Trilinos code (optional)
+
+For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
+
 Download **trilinos** and run the following commands
 
 ```bash
@@ -119,12 +120,6 @@ make install
 
 For some functionalities in the **navierstokes** code (e.g., graph partitioning), **metis** is required. The default setting is to not install **metis** and installing this package is optional.
 
-If you want to use **metis**, go to the *sw*-folder in your working directory
-
-```bash
-cd /working_directory/sw/
-```
-
 Download **metis** and run the following commands
 
 ```bash
@@ -138,12 +133,6 @@ make
 #### deal.II code
 
 The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
-
-Go to the *sw*-folder in your working directory
-
-```bash
-cd /working_directory/sw/
-```
 
 Clone the **deal.II** code
 
@@ -200,7 +189,6 @@ Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy 
 Download **fftw** from homepage http://www.fftw.org/download.html and copy to folder *sw*
 
 ```bash
-cd /working_directory/sw/
 wget http://fftw.org/fftw-3.3.7.tar.gz
 tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
@@ -256,21 +244,21 @@ and run the config-script
 bash ./config_exadg.sh
 ```
 
-In folder *navierstokes*, run the command
+Next, run the command
 
 ```bash
 make release
 ```
-and build **navierstokes** code
+and build the code
 
 ```bash
 cd applications/
 make -j2
 ```
-You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *incompressible_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case.h* header-file, and running
+You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *incompressible_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case/* files, and running
 
 ```bash
-mpirun -np xxx ./my_application
+mpirun -np xxx ./my_application path_to_test_case/input.json
 ```
 
 #### Switching to debug-version
@@ -283,7 +271,12 @@ make debug
 cd applications/
 make -j2
 ```
-and reactivate release-version after debugging via
+Debug code with gdb
+```bash
+gdb --args ./my_application path_to_test_case/input.json
+```
+
+Don't forget to reactivate release-version after debugging via
 
 ```bash
 cd ../
@@ -294,7 +287,7 @@ make -j2
 
 #### Working with git
 
-Get recent updates of the supervisor's **navierstokes** code
+Get recent updates of the supervisor's project
 
 ```bash
 git pull supervisor master
@@ -324,7 +317,7 @@ git push
 
 Start a merge-request on the website https://gitlab.lrz.de/:
 
-Open your own **navierstokes** project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
+Open your own project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
 
 #### Setup an eclipse project
 
