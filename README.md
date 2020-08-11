@@ -244,21 +244,21 @@ and run the config-script
 bash ./config_exadg.sh
 ```
 
-In folder *navierstokes*, run the command
+Next, run the command
 
 ```bash
 make release
 ```
-and build **navierstokes** code
+and build the code
 
 ```bash
 cd applications/
 make -j2
 ```
-You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *incompressible_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case.h* header-file, and running
+You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *incompressible_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case/* files, and running
 
 ```bash
-mpirun -np xxx ./my_application
+mpirun -np xxx ./my_application path_to_test_case/input.json
 ```
 
 #### Switching to debug-version
@@ -271,7 +271,12 @@ make debug
 cd applications/
 make -j2
 ```
-and reactivate release-version after debugging via
+Debug code with gdb
+```bash
+gdb --args ./my_application path_to_test_case/input.json
+```
+
+Don't forget to reactivate release-version after debugging via
 
 ```bash
 cd ../
@@ -282,7 +287,7 @@ make -j2
 
 #### Working with git
 
-Get recent updates of the supervisor's **navierstokes** code
+Get recent updates of the supervisor's project
 
 ```bash
 git pull supervisor master
@@ -312,7 +317,7 @@ git push
 
 Start a merge-request on the website https://gitlab.lrz.de/:
 
-Open your own **navierstokes** project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
+Open your own project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
 
 #### Setup an eclipse project
 
