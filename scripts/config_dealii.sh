@@ -1,11 +1,11 @@
 # name of deal.II library directory
-DEAL=matrixfree
+DEAL=dealii
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
 # issue the build - must usually not be modified
 cmake \
-    -D CMAKE_CXX_FLAGS="-march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
+    -D CMAKE_CXX_FLAGS="-std=c++17 -march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
     -D DEAL_II_CXX_FLAGS_RELEASE="-O3" \
     -D DEAL_II_CXX_FLAGS_DEBUG="-Og" \
     -D CMAKE_C_FLAGS="-march=native -Wno-array-bounds" \
