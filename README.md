@@ -64,15 +64,16 @@ git remote add supervisor https://gitlab.lrz.de/supervisor_id/navierstokes.git
 
 ### Interlude - install other software packages
 
-#### Trilinos code (optional)
-
-For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
-
-If you want to use **trilinos**, go to the *sw*-folder in your working directory
+Go to the *sw*-folder in your working directory
 
 ```bash
 cd /working_directory/sw/
 ```
+
+#### Trilinos code (optional)
+
+For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
+
 Download **trilinos** and run the following commands
 
 ```bash
@@ -119,12 +120,6 @@ make install
 
 For some functionalities in the **navierstokes** code (e.g., graph partitioning), **metis** is required. The default setting is to not install **metis** and installing this package is optional.
 
-If you want to use **metis**, go to the *sw*-folder in your working directory
-
-```bash
-cd /working_directory/sw/
-```
-
 Download **metis** and run the following commands
 
 ```bash
@@ -138,12 +133,6 @@ make
 #### deal.II code
 
 The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
-
-Go to the *sw*-folder in your working directory
-
-```bash
-cd /working_directory/sw/
-```
 
 Clone the **deal.II** code
 
@@ -200,7 +189,6 @@ Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy 
 Download **fftw** from homepage http://www.fftw.org/download.html and copy to folder *sw*
 
 ```bash
-cd /working_directory/sw/
 wget http://fftw.org/fftw-3.3.7.tar.gz
 tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
