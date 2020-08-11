@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_
 #define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../matrix_free/integrators.h"
 
 #include "../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../operators/inverse_mass_matrix.h"

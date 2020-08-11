@@ -638,6 +638,37 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
+
+namespace
+{
+// temporary hack
+template<int dim, int spacedim, typename SparsityPatternType>
+void
+make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
+                      SparsityPatternType &             sparsity,
+                      const unsigned int                level,
+                      const AffineConstraints<double> & constraints,
+                      const bool                        keep_constrained_dofs = true)
+{
+  const types::global_dof_index n_dofs = dof.n_dofs(level);
+  (void)n_dofs;
+
+  Assert(sparsity.n_rows() == n_dofs, ExcDimensionMismatch(sparsity.n_rows(), n_dofs));
+  Assert(sparsity.n_cols() == n_dofs, ExcDimensionMismatch(sparsity.n_cols(), n_dofs));
+
+  const unsigned int                                dofs_per_cell = dof.get_fe().n_dofs_per_cell();
+  std::vector<types::global_dof_index>              dofs_on_this_cell(dofs_per_cell);
+  typename DoFHandler<dim, spacedim>::cell_iterator cell = dof.begin(level), endc = dof.end(level);
+  for(; cell != endc; ++cell)
+    if(dof.get_triangulation().locally_owned_subdomain() == numbers::invalid_subdomain_id ||
+       cell->level_subdomain_id() == dof.get_triangulation().locally_owned_subdomain())
+    {
+      cell->get_mg_dof_indices(dofs_on_this_cell);
+      constraints.add_entries_local_to_global(dofs_on_this_cell, sparsity, keep_constrained_dofs);
+    }
+}
+} // namespace
+
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(SparseMatrix & system_matrix) const
@@ -666,7 +697,7 @@ OperatorBase<dim, Number, n_components>::init_system_matrix(SparseMatrix & syste
   else if(is_dg && !is_mg)
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   else if(/*!is_dg &&*/ is_mg)
-    MGTools::make_sparsity_pattern(dof_handler, dsp, this->level, *this->constraint);
+    make_sparsity_pattern(dof_handler, dsp, this->level, *this->constraint);
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 

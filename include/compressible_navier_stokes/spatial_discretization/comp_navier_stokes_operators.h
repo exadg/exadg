@@ -9,7 +9,7 @@
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_COMP_NAVIER_STOKES_OPERATORS_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../matrix_free/integrators.h"
 
 #include "../include/functions_and_boundary_conditions/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"

@@ -9,7 +9,7 @@
 #define INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_RHS_OPERATOR_H_
 
 // deal.II
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../../matrix_free/integrators.h"
 
 #include "../../../operators/mapping_flags.h"
 

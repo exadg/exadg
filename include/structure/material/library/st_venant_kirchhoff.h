@@ -12,8 +12,8 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/matrix_free.h>
+#include "../../../matrix_free/integrators.h"
 
 #include "../../../operators/variable_coefficients.h"
 #include "../material.h"

@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../matrix_free/integrators.h"
 
 #include "lift_and_drag_calculation.h"
 

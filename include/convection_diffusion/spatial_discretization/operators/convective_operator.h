@@ -1,7 +1,7 @@
 #ifndef CONV_DIFF_CONVECTION_OPERATOR
 #define CONV_DIFF_CONVECTION_OPERATOR
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../../matrix_free/integrators.h"
 
 #include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/operator_base.h"

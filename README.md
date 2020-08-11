@@ -34,11 +34,6 @@ Add the following variable to your environment (in case you want to make the set
 export WORKING_DIRECTORY=/working_directory
 ```
 
-We now create a folder called *workspace* in the *working_directory/* where we will later install the **navierstokes** code
-
-```bash
-mkdir workspace
-```
 Since we also have to install other software packages apart from the **navierstokes** code, we create another folder called *sw* (software) for third party software packages
 
 ```bash
@@ -46,10 +41,10 @@ mkdir sw
 ```
 ### navierstokes code (part 1)
 
-Go to the *workspace*-folder in your working directory
+Go to the working directory
 
 ```bash
-cd /working_directory/workspace/
+cd /working_directory/
 ```
 
 ##### Fork navierstokes project
@@ -91,7 +86,7 @@ cd build/
 Copy the script *config_trilinos.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_trilinos.sh .
+cp /working_directory/navierstokes/scripts/config_trilinos.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
@@ -150,10 +145,10 @@ Go to the *sw*-folder in your working directory
 cd /working_directory/sw/
 ```
 
-Clone the **deal.II** code from the gitlab project called **matrixfree**
+Clone the **deal.II** code
 
 ```bash
-git clone https://gitlab.lrz.de/ne96pad/matrixfree.git
+git clone https://github.com/dealii/dealii.git
 ```
 Download **p4est**
 
@@ -174,7 +169,7 @@ cd build/
 Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
+cp /working_directory/navierstokes/scripts/config_dealii.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
@@ -217,7 +212,7 @@ cd ../fftw-3.3.7-install/lib/
 Copy the script *combine_fftw.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/combine_fftw.sh .
+cp /working_directory/navierstokes/scripts/combine_fftw.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
@@ -242,13 +237,13 @@ export FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/combined"
 cd navierstokes/
 ```
 
-Copy the script *config_navierstokes.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+Copy the script *config_exadg.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_navierstokes.sh .
+cp /working_directory/navierstokes/scripts/config_exadg.sh .
 ```
 
-Deactivate the **fftw** related lines in *config_navierstokes.sh* if not needed, i.e., set
+Deactivate the **fftw** related lines in *config_exadg.sh* if not needed, i.e., set
 
 ```bash
 ...
@@ -258,7 +253,7 @@ Deactivate the **fftw** related lines in *config_navierstokes.sh* if not needed,
 
 and run the config-script 
 ```bash
-bash ./config_navierstokes.sh
+bash ./config_exadg.sh
 ```
 
 In folder *navierstokes*, run the command
@@ -344,6 +339,5 @@ Open **eclipse** and choose folder *workspace* as "workspace" in eclipse
   * use default build command or user specified build command, e.g., make -j4
   * fill in build directory (choose navierstokes/applications)
 3. Project > Properties > C/C++ General > Code Analysis: disable 'syntax and semantic errors'
-4. Project > Properties > C/C++ General > Formatter: lnm/styles/baci-eclipse-style
-5. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/sw/matrixfree/include (for Assembly, GNU C, GNU C++)
-6. Window > Preferences > General > Editors > Text Editors > Annotations > C/C++ Indexer Markers > uncheck all checkboxes > Apply > OK
+4. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/sw/dealii/include (for Assembly, GNU C, GNU C++)
+5. Window > Preferences > General > Editors > Text Editors > Annotations > C/C++ Indexer Markers > uncheck all checkboxes > Apply > OK

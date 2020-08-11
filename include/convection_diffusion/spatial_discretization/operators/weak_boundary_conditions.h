@@ -8,7 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../../matrix_free/integrators.h"
 
 #include "../../../operators/operator_type.h"
 

@@ -9,8 +9,8 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/operators.h>
+#include "../../matrix_free/integrators.h"
 
 #include "../preconditioner/elementwise_preconditioners.h"
 #include "elementwise_krylov_solvers.h"

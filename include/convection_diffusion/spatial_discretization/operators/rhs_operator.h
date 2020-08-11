@@ -1,7 +1,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_RHS
 #define INCLUDE_CONVECTION_DIFFUSION_RHS
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+#include "../../../matrix_free/integrators.h"
 
 #include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/mapping_flags.h"
