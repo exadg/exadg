@@ -150,10 +150,10 @@ Go to the *sw*-folder in your working directory
 cd /working_directory/sw/
 ```
 
-Clone the **deal.II** code from the gitlab project called **matrixfree**
+Clone the **deal.II** code
 
 ```bash
-git clone https://gitlab.lrz.de/ne96pad/matrixfree.git
+git clone https://github.com/dealii/dealii.git
 ```
 Download **p4est**
 
