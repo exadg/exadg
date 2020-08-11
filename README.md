@@ -34,11 +34,6 @@ Add the following variable to your environment (in case you want to make the set
 export WORKING_DIRECTORY=/working_directory
 ```
 
-We now create a folder called *workspace* in the *working_directory/* where we will later install the **navierstokes** code
-
-```bash
-mkdir workspace
-```
 Since we also have to install other software packages apart from the **navierstokes** code, we create another folder called *sw* (software) for third party software packages
 
 ```bash
@@ -46,10 +41,10 @@ mkdir sw
 ```
 ### navierstokes code (part 1)
 
-Go to the *workspace*-folder in your working directory
+Go to the working directory
 
 ```bash
-cd /working_directory/workspace/
+cd /working_directory/
 ```
 
 ##### Fork navierstokes project
@@ -91,7 +86,7 @@ cd build/
 Copy the script *config_trilinos.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_trilinos.sh .
+cp /working_directory/navierstokes/scripts/config_trilinos.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
@@ -174,7 +169,7 @@ cd build/
 Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
+cp /working_directory/navierstokes/scripts/config_dealii.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
@@ -217,7 +212,7 @@ cd ../fftw-3.3.7-install/lib/
 Copy the script *combine_fftw.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/combine_fftw.sh .
+cp /working_directory/navierstokes/scripts/combine_fftw.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
@@ -245,7 +240,7 @@ cd navierstokes/
 Copy the script *config_exadg.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_exadg.sh .
+cp /working_directory/navierstokes/scripts/config_exadg.sh .
 ```
 
 Deactivate the **fftw** related lines in *config_exadg.sh* if not needed, i.e., set
