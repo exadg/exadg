@@ -242,13 +242,13 @@ export FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/combined"
 cd navierstokes/
 ```
 
-Copy the script *config_navierstokes.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+Copy the script *config_exadg.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/workspace/navierstokes/scripts/config_navierstokes.sh .
+cp /working_directory/workspace/navierstokes/scripts/config_exadg.sh .
 ```
 
-Deactivate the **fftw** related lines in *config_navierstokes.sh* if not needed, i.e., set
+Deactivate the **fftw** related lines in *config_exadg.sh* if not needed, i.e., set
 
 ```bash
 ...
@@ -258,7 +258,7 @@ Deactivate the **fftw** related lines in *config_navierstokes.sh* if not needed,
 
 and run the config-script 
 ```bash
-bash ./config_navierstokes.sh
+bash ./config_exadg.sh
 ```
 
 In folder *navierstokes*, run the command
