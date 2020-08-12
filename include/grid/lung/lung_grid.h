@@ -359,7 +359,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   if(roots[0]->skeleton.size() > 0)
   {
     deform.insert({(unsigned int)LungID::create_root(),
-                   DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {0, 0})});
+                   DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {{0, 0}})});
   }
 
 
@@ -368,14 +368,14 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   {
     deform.insert(
       {(unsigned int)LungID::generate(LungID::create_root(), false),
-       (DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton, {0, 0}))});
+       (DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton, {{0, 0}}))});
   }
 
   if(roots[0]->left_child->skeleton.size() > 0)
   {
     deform.insert(
       {(unsigned int)LungID::generate(LungID::create_root(), true),
-       (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {0, 0}))});
+       (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {{0, 0}}))});
   }
 
 
@@ -396,7 +396,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     deform.insert(
       {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), false), false),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 16, roots[0]->right_child->right_child->skeleton, {0, 1}))});
+         splines, 16, roots[0]->right_child->right_child->skeleton, {{0, 1}}))});
   }
 
   if(roots[0]->right_child->left_child->skeleton.size() > 0)
@@ -415,7 +415,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     deform.insert(
       {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), false), true),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 12, roots[0]->right_child->left_child->skeleton, {0, 0}))});
+         splines, 12, roots[0]->right_child->left_child->skeleton, {{0, 0}}))});
   }
 
   if(roots[0]->left_child->right_child->skeleton.size() > 0)
@@ -423,7 +423,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     deform.insert(
       {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), true), false),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 20, roots[0]->left_child->right_child->skeleton, {0, 1}))});
+         splines, 20, roots[0]->left_child->right_child->skeleton, {{0, 1}}))});
   }
 
   if(roots[0]->left_child->left_child->skeleton.size() > 0)
@@ -431,7 +431,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     deform.insert(
       {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), true), true),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 24, roots[0]->left_child->left_child->skeleton, {0, 0}))});
+         splines, 24, roots[0]->left_child->left_child->skeleton, {{0, 0}}))});
   }
 
 
@@ -453,7 +453,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), false), false), false),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 40, roots[0]->right_child->right_child->right_child->skeleton, {0, 1}, true))});
+         splines, 40, roots[0]->right_child->right_child->right_child->skeleton, {{0, 1}}, true))});
   }
 
   if(roots[0]->right_child->right_child->left_child->skeleton.size() > 0)
@@ -473,7 +473,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), false), false), true),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 36, roots[0]->right_child->right_child->left_child->skeleton, {0, 1}, true))});
+         splines, 36, roots[0]->right_child->right_child->left_child->skeleton, {{0, 1}}, true))});
   }
 
   if(roots[0]->right_child->left_child->left_child->skeleton.size() > 0)
@@ -497,7 +497,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), false), true), true),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 28, roots[0]->right_child->left_child->left_child->skeleton, {0, 1}, true))});
+         splines, 28, roots[0]->right_child->left_child->left_child->skeleton, {{0, 1}}, true))});
   }
 
   if(roots[0]->right_child->left_child->right_child->skeleton.size() > 0)
@@ -519,7 +519,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), false), true), false),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 32, roots[0]->right_child->left_child->right_child->skeleton, {0, 1}, true))});
+         splines, 32, roots[0]->right_child->left_child->right_child->skeleton, {{0, 1}}, true))});
   }
 
 
@@ -530,7 +530,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), true), false), false),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 44, roots[0]->left_child->right_child->right_child->skeleton, {0, 1}, false))});
+         splines, 44, roots[0]->left_child->right_child->right_child->skeleton, {{0, 1}}, false))});
   }
 
   if(roots[0]->left_child->right_child->left_child->skeleton.size() > 0)
@@ -539,7 +539,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), true), false), true),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 48, roots[0]->left_child->right_child->left_child->skeleton, {0, 1}, true))});
+         splines, 48, roots[0]->left_child->right_child->left_child->skeleton, {{0, 1}}, true))});
   }
 
 
@@ -570,7 +570,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
          splines,
          56,
          roots[0]->left_child->right_child->right_child->right_child->skeleton,
-         {0, 0},
+         {{0, 0}},
          true))});
   }
 
@@ -600,7 +600,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
          splines,
          52,
          roots[0]->left_child->right_child->right_child->left_child->skeleton,
-         {0, 0},
+         {{0, 0}},
          true))});
   }
 
@@ -610,7 +610,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), true), true), false),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {0, 1}, true))});
+         splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {{0, 1}}, true))});
   }
 
   if(roots[0]->left_child->left_child->left_child->skeleton.size() > 0)
@@ -619,7 +619,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
       {(unsigned int)LungID::generate(
          LungID::generate(LungID::generate(LungID::create_root(), true), true), true),
        (DeformTransfinitelyViaSplines<3>(
-         splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {0, 1}, true))});
+         splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {{0, 1}}, true))});
   }
 
   // clean up
@@ -785,6 +785,7 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3>                                       tria_seq;
+  tria_seq.set_mesh_smoothing(Triangulation<3>::limit_level_difference_at_vertices);
   std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
   lung_unrefined(tria_seq,
                  create_tree,
