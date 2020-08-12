@@ -12,6 +12,8 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/data_out_faces.h>
 
+#include <fstream>
+
 using namespace dealii;
 
 template<int dim>
