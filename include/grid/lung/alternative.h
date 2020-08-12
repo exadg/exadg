@@ -57,7 +57,7 @@ create_lung(dealii::parallel::distributed::Triangulation<dim> & triat,
             int                                                 n_refine_space,
             int                                                 use_manifolds)
 {
-  Triangulation<dim> tria;
+  Triangulation<dim> tria(Triangulation<dim>::limit_level_difference_at_vertices);
 
   const double radius = 1.;
   const double length = 3.;
