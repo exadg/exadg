@@ -11,6 +11,8 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 struct ConvergenceStudy
@@ -88,7 +90,7 @@ struct ConvergenceStudy
   unsigned int refine_time_min = 0;
   unsigned int refine_time_max = 0;
 };
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_UTILITIES_CONVERGENCE_STUDY_H_ */

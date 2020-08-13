@@ -26,6 +26,8 @@
 #include "compressible_navier_stokes_test_cases/taylor_green/taylor_green.h"
 #include "compressible_navier_stokes_test_cases/turbulent_channel/turbulent_channel.h"
 
+namespace ExaDG
+{
 class ApplicationSelector
 {
 public:
@@ -144,6 +146,7 @@ run(std::string const & input_file,
 
   solver->print_statistics(timer.wall_time());
 }
+} // namespace ExaDG
 
 int
 main(int argc, char ** argv)
@@ -173,13 +176,13 @@ main(int argc, char ** argv)
     if(argc == 3 && std::string(argv[2]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file(input_file);
+        ExaDG::create_input_file(input_file);
 
       return 0;
     }
   }
 
-  ConvergenceStudy study(input_file);
+  ExaDG::ConvergenceStudy study(input_file);
 
   // k-refinement
   for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
@@ -194,13 +197,13 @@ main(int argc, char ** argv)
       {
         // run the simulation
         if(study.dim == 2 && study.precision == "float")
-          run<2, float>(input_file, degree, refine_space, refine_time, mpi_comm);
+          ExaDG::run<2, float>(input_file, degree, refine_space, refine_time, mpi_comm);
         else if(study.dim == 2 && study.precision == "double")
-          run<2, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+          ExaDG::run<2, double>(input_file, degree, refine_space, refine_time, mpi_comm);
         else if(study.dim == 3 && study.precision == "float")
-          run<3, float>(input_file, degree, refine_space, refine_time, mpi_comm);
+          ExaDG::run<3, float>(input_file, degree, refine_space, refine_time, mpi_comm);
         else if(study.dim == 3 && study.precision == "double")
-          run<3, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+          ExaDG::run<3, double>(input_file, degree, refine_space, refine_time, mpi_comm);
         else
           AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
       }
