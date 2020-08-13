@@ -12,8 +12,12 @@
 
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // forward declaration
 template<int dim, typename Number>
 class DGNavierStokesPressureCorrection;
@@ -255,6 +259,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_ \
         */

@@ -12,10 +12,14 @@
 #include "../../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 #include "flow_rate_controller.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace PeriodicHill
 {
+using namespace dealii;
+
 template<int dim>
 struct MyPostProcessorData
 {
@@ -110,5 +114,7 @@ private:
 
 } // namespace PeriodicHill
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_POSTPROCESSOR_H_ */

@@ -5,12 +5,19 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_SINE_H_
+#define APPLICATIONS_POISSON_TEST_CASES_SINE_H_
+
 #include "grid/deformed_cube_manifold.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Sine
 {
+using namespace dealii;
+
 double const FREQUENCY            = 3.0 * numbers::PI;
 bool const   USE_NEUMANN_BOUNDARY = true;
 
@@ -266,3 +273,6 @@ public:
 
 } // namespace Sine
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

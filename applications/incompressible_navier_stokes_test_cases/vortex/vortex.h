@@ -12,10 +12,14 @@
 #include "grid/mesh_movement_functions.h"
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Vortex
 {
+using namespace dealii;
+
 enum class MeshType
 {
   UniformCartesian,
@@ -781,5 +785,7 @@ public:
 
 } // namespace Vortex
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_ */

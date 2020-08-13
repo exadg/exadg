@@ -33,8 +33,12 @@
 #include "../grid/mesh.h"
 #include "../utilities/print_general_infos.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class DriverPrecursor
 {
@@ -146,5 +150,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_PRECURSOR_H_ */

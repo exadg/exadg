@@ -9,10 +9,12 @@
 
 #include "enum_types.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -934,3 +936,4 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type)
 // there are currently no enums for this section
 
 } // namespace IncNS
+} // namespace ExaDG

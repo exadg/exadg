@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KOVASZNAY_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KOVASZNAY_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Kovasznay
 {
+using namespace dealii;
+
 enum class InitializeSolutionWith
 {
   ZeroFunction,
@@ -364,5 +368,7 @@ public:
 
 } // namespace Kovasznay
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KOVASZNAY_H_ */

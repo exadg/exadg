@@ -1,6 +1,8 @@
 #ifndef DYNAMIC_CONVERGENCE_TABLE
 #define DYNAMIC_CONVERGENCE_TABLE
 
+namespace ExaDG
+{
 class DynamicConvergenceTable
 {
 public:
@@ -95,5 +97,6 @@ private:
 
   mutable std::vector<std::map<std::string, double>> vec;
 };
+} // namespace ExaDG
 
 #endif

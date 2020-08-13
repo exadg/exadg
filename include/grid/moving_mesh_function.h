@@ -3,6 +3,8 @@
 
 #include "moving_mesh_base.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -43,5 +45,7 @@ private:
 
   Triangulation<dim> const & triangulation;
 };
+
+} // namespace ExaDG
 
 #endif /*INCLUDE_MOVING_MESH_H_*/

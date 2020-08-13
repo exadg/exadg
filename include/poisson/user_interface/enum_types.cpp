@@ -9,10 +9,12 @@
 
 #include "enum_types.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -105,3 +107,4 @@ enum_to_string(Preconditioner const enum_type)
 
 
 } // namespace Poisson
+} // namespace ExaDG

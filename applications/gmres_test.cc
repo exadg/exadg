@@ -18,6 +18,8 @@
 #include "../include/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "../include/solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /**************************************************************************************/
@@ -433,24 +435,25 @@ gmres_test_2c()
     std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
 }
 
+} // namespace ExaDG
 
 int
 main(int argc, char ** argv)
 {
   try
   {
-    Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+    dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
+    dealii::deallog.depth_console(0);
 
     // double
-    gmres_test_1a();
-    gmres_test_1b();
+    ExaDG::gmres_test_1a();
+    ExaDG::gmres_test_1b();
 
     // VectorizedArray<double>
-    gmres_test_2a();
-    gmres_test_2b();
-    gmres_test_2c();
+    ExaDG::gmres_test_2a();
+    ExaDG::gmres_test_2b();
+    ExaDG::gmres_test_2c();
   }
   catch(std::exception & exc)
   {

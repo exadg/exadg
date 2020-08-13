@@ -9,8 +9,9 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 using namespace dealii;
-
 
 std::string
 enum_to_string(CFLConditionType const enum_type)
@@ -59,3 +60,5 @@ enum_to_string(GenAlphaType const enum_type)
 
   return string_type;
 }
+
+} // namespace ExaDG

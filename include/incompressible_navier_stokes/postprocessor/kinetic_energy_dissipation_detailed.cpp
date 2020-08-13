@@ -9,8 +9,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 KineticEnergyCalculatorDetailed<dim, Number>::KineticEnergyCalculatorDetailed(MPI_Comm const & comm)
   : KineticEnergyCalculator<dim, Number>(comm)
@@ -127,3 +131,4 @@ template class KineticEnergyCalculatorDetailed<3, float>;
 template class KineticEnergyCalculatorDetailed<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

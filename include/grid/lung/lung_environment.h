@@ -8,6 +8,8 @@
 
 #include <deal.II/base/exceptions.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 void
@@ -35,8 +37,10 @@ get_lung_spline_file_from_environment()
 
   AssertThrow(false,
               ExcMessage("The environment variable NAVIER_LUNG_SPLINE_FILE has not been set."));
-  
-  return ""; 
+
+  return "";
 }
+
+} // namespace ExaDG
 
 #endif

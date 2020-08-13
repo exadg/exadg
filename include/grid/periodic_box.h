@@ -14,6 +14,10 @@
 
 #include "../grid/deformed_cube_manifold.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim>
 void
 create_periodic_box(
@@ -92,5 +96,6 @@ create_periodic_box(
   triangulation->refine_global(n_refine_space);
 }
 
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_ */

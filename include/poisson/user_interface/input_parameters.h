@@ -16,8 +16,12 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 class InputParameters
 {
 public:
@@ -108,4 +112,6 @@ public:
 };
 
 } // namespace Poisson
+} // namespace ExaDG
+
 #endif /* INCLUDE_LAPLACE_INPUT_PARAMETERS_H_ */

@@ -44,6 +44,8 @@ zggev_(char *,
 extern "C" void zgetrf_(int*,int*,std::complex<double>*,int*,int*,int*);
 */
 
+namespace ExaDG
+{
 using namespace dealii;
 
 // clang-format off
@@ -365,6 +367,8 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
     */
   }
 }
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_FUNCTIONALITIES_ORR_SOMMERFELD_EQUATION_H_ */

@@ -8,6 +8,10 @@
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number, int n_components>
 OperatorBase<dim, Number, n_components>::OperatorBase()
   : dealii::Subscriptor(),
@@ -1956,3 +1960,5 @@ template class OperatorBase<3, float, 3>;
 
 template class OperatorBase<3, double, 1>;
 template class OperatorBase<3, double, 3>;
+
+} // namespace ExaDG

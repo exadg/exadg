@@ -4,6 +4,10 @@
 
 #include "mg_transfer_mf_c.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferMFC<dim, Number, VectorType, components>::MGTransferMFC(
   const MF &                        data_dg,
@@ -223,3 +227,5 @@ template class MGTransferMFC<2, double, VectorTypeDouble, 2>;
 
 template class MGTransferMFC<3, double, VectorTypeDouble, 1>;
 template class MGTransferMFC<3, double, VectorTypeDouble, 3>;
+
+} // namespace ExaDG

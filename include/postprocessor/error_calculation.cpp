@@ -11,6 +11,10 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename VectorType>
 double
 calculate_error(MPI_Comm const &                     mpi_comm,
@@ -246,3 +250,5 @@ template class ErrorCalculator<2, double>;
 
 template class ErrorCalculator<3, float>;
 template class ErrorCalculator<3, double>;
+
+} // namespace ExaDG

@@ -12,8 +12,12 @@
 #include "convective_operator.h"
 #include "diffusive_operator.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim>
 struct OperatorData : public OperatorBaseData
 {
@@ -136,7 +140,7 @@ private:
 };
 
 } // namespace ConvDiff
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_ \
         */

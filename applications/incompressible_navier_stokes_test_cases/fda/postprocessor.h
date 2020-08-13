@@ -16,10 +16,14 @@
 // inflow data
 #include "inflow_data_storage.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace FDA
 {
+using namespace dealii;
+
 template<int dim>
 struct PostProcessorDataFDA
 {
@@ -162,5 +166,6 @@ private:
 
 } // namespace FDA
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_POSTPROCESSOR_H_ */

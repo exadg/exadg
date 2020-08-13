@@ -8,8 +8,12 @@
 
 #include "viscous_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::initialize(
@@ -220,3 +224,4 @@ template class ViscousOperator<3, float>;
 template class ViscousOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

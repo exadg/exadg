@@ -16,11 +16,14 @@
 
 #include "../material/material_data.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 using MaterialDescriptor = std::map<types::material_id, std::shared_ptr<MaterialData>>;
-}
+} // namespace Structure
+} // namespace ExaDG
 
 #endif

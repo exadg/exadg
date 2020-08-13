@@ -201,7 +201,7 @@ run(std::string const & input_file,
 int
 main(int argc, char ** argv)
 {
-  Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
@@ -276,7 +276,8 @@ main(int argc, char ** argv)
         else if(study.dim == 3 && study.precision == "double")
           ExaDG::run<3, double>(input_file, degree, refine_space, refine_time, sub_comm);
         else
-          AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+          AssertThrow(false,
+                      dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
       }
     }
   }

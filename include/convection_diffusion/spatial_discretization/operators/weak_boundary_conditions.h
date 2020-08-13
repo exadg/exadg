@@ -16,8 +16,12 @@
 
 #include "../../user_interface/boundary_descriptor.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 /*
  *  The following two functions calculate the interior_value/exterior_value
  *  depending on the operator type, the type of the boundary face
@@ -206,6 +210,7 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_ \
         */

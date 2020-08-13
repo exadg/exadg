@@ -5,12 +5,19 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_NOZZLE_H_
+#define APPLICATIONS_POISSON_TEST_CASES_NOZZLE_H_
+
 #include "grid/fda_benchmark/nozzle.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Nozzle
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -118,3 +125,6 @@ public:
 
 } // namespace Nozzle
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

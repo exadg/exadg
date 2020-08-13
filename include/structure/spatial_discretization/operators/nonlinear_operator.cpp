@@ -10,8 +10,12 @@
 #include "boundary_conditions.h"
 #include "continuum_mechanics.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
@@ -253,3 +257,4 @@ template class NonLinearOperator<3, float>;
 template class NonLinearOperator<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

@@ -5,10 +5,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Template
 {
+using namespace dealii;
+
 //  Example of a user defined function
 template<int dim>
 class MyFunction : public Function<dim>
@@ -120,5 +124,7 @@ public:
 
 } // namespace Template
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_ */

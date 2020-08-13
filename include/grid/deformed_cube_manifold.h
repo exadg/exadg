@@ -10,6 +10,8 @@
 
 #include <deal.II/grid/manifold_lib.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -98,5 +100,6 @@ private:
   const unsigned int frequency;
 };
 
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_GRID_TOOLS_DEFORMED_CUBE_MANIFOLD_H_ */

@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RISING_BUBBLE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RISING_BUBBLE_H_
 
+namespace ExaDG
+{
 namespace FTI
 {
 namespace RisingBubble
 {
+using namespace dealii;
+
 template<int dim>
 class InitialTemperature : public Function<dim>
 {
@@ -427,6 +431,7 @@ public:
 
 } // namespace RisingBubble
 } // namespace FTI
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RISING_BUBBLE_H_ */

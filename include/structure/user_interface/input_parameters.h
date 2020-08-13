@@ -23,8 +23,12 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 class InputParameters
 {
 public:
@@ -349,5 +353,6 @@ public:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

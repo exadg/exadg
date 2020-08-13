@@ -9,8 +9,10 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_UTIL_COMPUTE_EIGENVALUES_H_
 
 
-namespace
+namespace ExaDG
 {
+using namespace dealii;
+
 // manually compute eigenvalues for the coarsest level for proper setup of the
 // Chebyshev iteration
 template<typename Operator, typename VectorType>
@@ -77,7 +79,7 @@ public:
   std::vector<Number> values;
 };
 
-} // namespace
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_UTIL_COMPUTE_EIGENVALUES_H_ */

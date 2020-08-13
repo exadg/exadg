@@ -12,10 +12,14 @@
 // pure Dirichlet boundary conditions (homogeneous)
 // use constant or circular advection velocity
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace ConstRHS
 {
+using namespace dealii;
+
 enum class VelocityType
 {
   Constant,
@@ -233,5 +237,7 @@ public:
 
 } // namespace ConstRHS
 } // namespace ConvDiff
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_CONST_RHS_CONST_AND_CIRCULAR_WIND_H_ */

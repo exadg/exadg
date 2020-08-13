@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_SHAHBAZI_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_SHAHBAZI_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace StokesShahbazi
 {
+using namespace dealii;
+
 // perform stability analysis and compute eigenvalue spectrum
 // For this analysis one has to use the BDF1 scheme and homogeneous boundary conditions!!!
 bool const STABILITY_ANALYSIS = false;
@@ -364,5 +368,7 @@ public:
 
 } // namespace StokesShahbazi
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_SHAHBAZI_H_ */

@@ -20,8 +20,12 @@
 
 #include <iostream>
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<Number>
@@ -1902,6 +1906,7 @@ private:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_COMP_NAVIER_STOKES_OPERATORS_H_ \
         */

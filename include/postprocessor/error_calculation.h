@@ -14,8 +14,11 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-
 #include "../utilities/print_functions.h"
+
+namespace ExaDG
+{
+using namespace dealii;
 
 template<int dim>
 struct ErrorCalculationData
@@ -112,5 +115,7 @@ private:
 
   ErrorCalculationData<dim> error_data;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_ */

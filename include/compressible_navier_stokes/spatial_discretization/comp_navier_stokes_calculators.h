@@ -13,6 +13,12 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include "../../matrix_free/integrators.h"
 
+namespace ExaDG
+{
+namespace CompNS
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 class VorticityCalculator
 {
@@ -387,6 +393,9 @@ private:
   double heat_capacity_ratio;
   double specific_gas_constant;
 };
+
+} // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_COMP_NAVIER_STOKES_CALCULATORS_H_ \
         */

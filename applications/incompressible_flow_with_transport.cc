@@ -24,7 +24,8 @@
 #include "incompressible_flow_with_transport_test_cases/rayleigh_benard/rayleigh_benard.h"
 #include "incompressible_flow_with_transport_test_cases/rising_bubble/rising_bubble.h"
 
-
+namespace ExaDG
+{
 class ApplicationSelector
 {
 public:
@@ -197,11 +198,12 @@ run(std::string const & input_file,
 
   driver->print_statistics(timer.wall_time());
 }
+} // namespace ExaDG
 
 int
 main(int argc, char ** argv)
 {
-  Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
@@ -226,25 +228,26 @@ main(int argc, char ** argv)
     if(argc == 3 && std::string(argv[2]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file(input_file);
+        ExaDG::create_input_file(input_file);
 
       return 0;
     }
   }
 
-  Study study(input_file);
+  ExaDG::Study study(input_file);
 
   // run the simulation
   if(study.dim == 2 && study.precision == "float")
-    run<2, float>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
+    ExaDG::run<2, float>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
   else if(study.dim == 2 && study.precision == "double")
-    run<2, double>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
+    ExaDG::run<2, double>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
   else if(study.dim == 3 && study.precision == "float")
-    run<3, float>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
+    ExaDG::run<3, float>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
   else if(study.dim == 3 && study.precision == "double")
-    run<3, double>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
+    ExaDG::run<3, double>(input_file, study.degree, study.refine_space, study.n_scalars, mpi_comm);
   else
-    AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
 
   return 0;
 }

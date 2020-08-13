@@ -21,6 +21,8 @@
 
 #include "mesh.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -254,6 +256,6 @@ private:
   MPI_Comm const & mpi_comm;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_GRID_MOVING_MESH_BASE_H_ */

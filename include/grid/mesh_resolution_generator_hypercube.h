@@ -8,6 +8,10 @@
 #ifndef INCLUDE_FUNCTIONALITIES_MESH_RESOLUTION_GENERATOR_HYPERCUBE_H_
 #define INCLUDE_FUNCTIONALITIES_MESH_RESOLUTION_GENERATOR_HYPERCUBE_H_
 
+namespace ExaDG
+{
+using namespace dealii;
+
 // TODO this file can be removed later once all solvers are adapted to the new infrastructure
 // ThroughputStudy
 
@@ -147,6 +151,6 @@ fill_resolutions_vector(
   }
 }
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_MESH_RESOLUTION_GENERATOR_HYPERCUBE_H_ */

@@ -13,10 +13,12 @@
 
 #include "solver_data.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Elementwise
 {
+using namespace dealii;
+
 template<typename Number, typename Number2>
 bool
 all_smaller(const Number a, const Number2 b)
@@ -792,6 +794,6 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
 }
 
 } // namespace Elementwise
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ELEMENTWISE_KRYLOV_SOLVERS_H_ */

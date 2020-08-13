@@ -10,6 +10,8 @@
 
 #include "grid/periodic_box.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace PeriodicBox
@@ -220,5 +222,7 @@ public:
 
 } // namespace PeriodicBox
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_BOX_H_ */

@@ -29,10 +29,15 @@
  * shape functions of higher degree). Hence, this setup is well suited to measure temporal
  * discretization errors.
  */
+
+namespace ExaDG
+{
 namespace Structure
 {
 namespace Manufactured
 {
+using namespace dealii;
+
 /*
  * Different formulations of function f(t).
  */
@@ -444,7 +449,7 @@ public:
 };
 
 } // namespace Manufactured
-
 } // namespace Structure
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_ */

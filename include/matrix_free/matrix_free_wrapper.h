@@ -13,6 +13,8 @@
 
 #include "../operators/mapping_flags.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -153,6 +155,6 @@ private:
   std::vector<AffineConstraints<double> const *> constraint_vec;
   std::vector<Quadrature<1>>                     quadrature_vec;
 };
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_ */

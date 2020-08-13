@@ -6,6 +6,9 @@
 
 #define LUNG_NUMBER_OF_VERTICES_2D 17
 
+namespace ExaDG
+{
+using namespace dealii;
 
 void
 create_reference_cylinder(const bool                 do_transition,
@@ -584,5 +587,7 @@ process_node(Node *                           node,
     }
   }
 }
+
+} // namespace ExaDG
 
 #endif

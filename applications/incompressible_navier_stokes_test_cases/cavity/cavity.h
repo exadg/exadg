@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Cavity
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -330,5 +334,7 @@ public:
 
 } // namespace Cavity
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_ */

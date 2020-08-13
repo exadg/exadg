@@ -14,8 +14,12 @@
 #include "../../../operators/operator_type.h"
 #include "../../user_interface/boundary_descriptor.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // clang-format off
 /*
  * Velocity:
@@ -486,7 +490,7 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 } // namespace IncNS
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_WEAK_BOUNDARY_CONDITIONS_H_ \
         */

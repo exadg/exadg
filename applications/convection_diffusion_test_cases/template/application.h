@@ -10,10 +10,14 @@
 
 // template that shows how to setup a new application
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace Template
 {
+using namespace dealii;
+
 //  Example of a user defined function
 template<int dim>
 class MyFunction : public Function<dim>
@@ -108,7 +112,6 @@ public:
 
 } // namespace Template
 } // namespace ConvDiff
-
-
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_APPLICATION_H_ */

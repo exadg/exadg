@@ -8,8 +8,12 @@
 #include "postprocessor.h"
 #include "../spatial_discretization/dg_operator.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postprocessor_data,
                                           MPI_Comm const &               comm)
@@ -216,4 +220,6 @@ template class PostProcessor<2, double>;
 
 template class PostProcessor<3, float>;
 template class PostProcessor<3, double>;
+
 } // namespace CompNS
+} // namespace ExaDG

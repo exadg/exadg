@@ -14,10 +14,12 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<typename Number>
 class PostProcessorInterface
 {
@@ -52,7 +54,7 @@ public:
 };
 
 } // namespace CompNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

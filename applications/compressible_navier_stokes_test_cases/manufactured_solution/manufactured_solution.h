@@ -14,10 +14,14 @@
  *  The density and the velocity u_1 are a function of x_1 and time t.
  */
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace ManufacturedSolution
 {
+using namespace dealii;
+
 // problem specific parameters
 double const DYN_VISCOSITY = 0.1;
 double const GAMMA         = 1.4;
@@ -512,5 +516,7 @@ public:
 
 } // namespace ManufacturedSolution
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_MANUFACTURED_SOLUTION_H_ */

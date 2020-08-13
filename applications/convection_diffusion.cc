@@ -206,7 +206,8 @@ main(int argc, char ** argv)
         else if(study.dim == 3 && study.precision == "double")
           ExaDG::run<3, double>(input_file, degree, refine_space, refine_time, mpi_comm);
         else
-          AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+          AssertThrow(false,
+                      dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
       }
     }
   }

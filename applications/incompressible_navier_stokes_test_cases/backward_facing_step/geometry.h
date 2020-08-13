@@ -8,12 +8,17 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_GEOMETRY_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_GEOMETRY_H_
 
+
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace BackwardFacingStep
 {
 namespace Geometry
 {
+using namespace dealii;
+
 double const PI = numbers::PI;
 
 // Height H
@@ -293,6 +298,6 @@ create_grid_precursor(
 } // namespace Geometry
 } // namespace BackwardFacingStep
 } // namespace IncNS
-
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_GEOMETRY_H_ */

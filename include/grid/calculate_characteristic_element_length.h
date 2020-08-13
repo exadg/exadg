@@ -8,6 +8,8 @@
 #ifndef INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 #define INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /*
@@ -46,5 +48,6 @@ calculate_characteristic_element_length(double const element_length, unsigned in
   return element_length / ((double)(fe_degree + 1));
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_ */

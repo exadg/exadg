@@ -13,6 +13,8 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 // print MPI info
@@ -82,5 +84,6 @@ print_grid_data(ConditionalOStream const &               pcout,
   print_parameter(pcout, "Number of refinements", n_refine_space);
   print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
 }
+} // namespace ExaDG
 
 #endif /* INCLUDE_UTILITIES_PRINT_GENERAL_INFOS_H_ */

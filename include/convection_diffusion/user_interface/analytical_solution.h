@@ -10,10 +10,12 @@
 
 #include <deal.II/base/function.h>
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim>
 struct AnalyticalSolution
 {
@@ -21,5 +23,6 @@ struct AnalyticalSolution
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_ANALYTICAL_SOLUTION_H_ */

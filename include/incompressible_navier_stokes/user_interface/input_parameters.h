@@ -21,8 +21,12 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 class InputParameters
 {
 public:
@@ -656,5 +660,6 @@ public:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_ */

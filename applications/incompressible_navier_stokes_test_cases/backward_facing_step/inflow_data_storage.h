@@ -10,10 +10,14 @@
 
 #include "geometry.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace BackwardFacingStep
 {
+using namespace dealii;
+
 template<int dim>
 struct InflowDataStorage
 {
@@ -67,7 +71,7 @@ struct InflowDataStorage
 
 } // namespace BackwardFacingStep
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_INFLOW_DATA_STORAGE_H_ \

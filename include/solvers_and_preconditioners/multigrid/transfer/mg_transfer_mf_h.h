@@ -14,6 +14,8 @@
 #include "../../../operators/multigrid_operator_base.h"
 #include "mg_transfer_mf.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 // Specialized matrix-free implementation that overloads the copy_to_mg
@@ -134,6 +136,6 @@ private:
 
   const DoFHandler<dim> & dof_handler;
 };
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_MG_TRANSFER_MF_H_H_ */

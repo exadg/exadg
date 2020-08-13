@@ -12,8 +12,12 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/operators/projection_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  * Multigrid preconditioner for projection operator of the incompressible Navier-Stokes equations.
  */
@@ -81,6 +85,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_PROJECTION_H_ \

@@ -10,10 +10,14 @@
 
 #include "../../../include/postprocessor/statistics_manager.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace TurbulentChannel
 {
+using namespace dealii;
+
 // set problem specific parameters like physical dimensions, etc.
 double const DIMENSIONS_X1 = 2.0 * numbers::PI;
 double const DIMENSIONS_X2 = 2.0;
@@ -480,5 +484,7 @@ public:
 
 } // namespace TurbulentChannel
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

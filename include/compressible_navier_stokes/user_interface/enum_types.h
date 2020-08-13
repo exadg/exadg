@@ -10,8 +10,13 @@
 
 #include <string>
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -130,7 +135,7 @@ enum_to_string(QuadratureRule const enum_type);
 
 
 } // namespace CompNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_ */

@@ -9,6 +9,10 @@
 
 #include "bdf_time_integration.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order_time_integrator,
                                                        bool const start_with_low_order_method)
   : order(order_time_integrator),
@@ -206,3 +210,5 @@ BDFTimeIntegratorConstants::print(ConditionalOStream & pcout) const
   for(unsigned int i = 0; i < order; ++i)
     pcout << "Alpha[" << i << "] = " << alpha[i] << std::endl;
 }
+
+} // namespace ExaDG

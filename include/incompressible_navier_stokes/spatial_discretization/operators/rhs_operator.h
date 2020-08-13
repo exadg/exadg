@@ -13,10 +13,12 @@
 #include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../../operators/mapping_flags.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 namespace Operators
 {
 template<int dim>
@@ -165,7 +167,9 @@ private:
 
   VectorType const * temperature;
 };
+
 } // namespace IncNS
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_RHS_OPERATOR_H_ \

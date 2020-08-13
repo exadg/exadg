@@ -11,6 +11,10 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 void calculate_lift_and_drag_force(Tensor<1, dim, Number> &             Force,
                                    MatrixFree<dim, Number> const &      matrix_free,
@@ -207,3 +211,5 @@ template class LiftAndDragCalculator<2, double>;
 
 template class LiftAndDragCalculator<3, float>;
 template class LiftAndDragCalculator<3, double>;
+
+} // namespace ExaDG

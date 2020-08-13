@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KELVIN_HELMHOLTZ_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KELVIN_HELMHOLTZ_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace KelvinHelmholtz
 {
+using namespace dealii;
+
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
 {
@@ -291,5 +295,7 @@ public:
 
 } // namespace KelvinHelmholtz
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KELVIN_HELMHOLTZ_H_ */

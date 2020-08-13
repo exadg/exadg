@@ -9,6 +9,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
+namespace IncNS
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 LinePlotCalculator<dim, Number>::LinePlotCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true)
@@ -173,3 +179,6 @@ template class LinePlotCalculator<2, double>;
 
 template class LinePlotCalculator<3, float>;
 template class LinePlotCalculator<3, double>;
+
+} // namespace IncNS
+} // namespace ExaDG

@@ -11,8 +11,12 @@
 #include "../../postprocessor/output_data.h"
 #include "../../postprocessor/solution_field.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  *  Average velocity field over time for statistically steady, turbulent
  *  flow problems in order to visualize the time-averaged velocity field.
@@ -170,5 +174,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

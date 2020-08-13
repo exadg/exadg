@@ -12,8 +12,12 @@
 
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, Number>
 {
@@ -46,7 +50,7 @@ private:
 };
 
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_DISSIPATION_DETAILED_H_ \

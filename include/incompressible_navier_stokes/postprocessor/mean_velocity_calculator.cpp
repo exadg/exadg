@@ -10,8 +10,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
   MatrixFree<dim, Number> const &         matrix_free_in,
@@ -367,3 +371,4 @@ template class MeanVelocityCalculator<3, float>;
 template class MeanVelocityCalculator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

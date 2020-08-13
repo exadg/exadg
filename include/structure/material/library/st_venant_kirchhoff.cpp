@@ -9,8 +9,12 @@
 
 #include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 StVenantKirchhoff<dim, Number>::StVenantKirchhoff(MatrixFree<dim, Number> const &    matrix_free,
                                                   unsigned int const                 n_q_points_1d,
@@ -165,3 +169,4 @@ template class StVenantKirchhoff<3, float>;
 template class StVenantKirchhoff<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

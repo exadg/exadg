@@ -14,6 +14,8 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -68,6 +70,6 @@ private:
   PressureDifferenceData<dim> pressure_difference_data;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_POSTPROCESSOR_PRESSURE_DIFFERENCE_CALCULATION_H_ */

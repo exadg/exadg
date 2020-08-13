@@ -11,6 +11,8 @@
 #include <fstream>
 #include <sstream>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 inline std::string
@@ -47,6 +49,6 @@ write_restart_file(std::ostringstream & oss, std::string const & filename)
   stream << oss.str() << std::endl;
 }
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_RESTART_H_ */

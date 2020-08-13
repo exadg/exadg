@@ -10,6 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 enum class SolutionFieldType
@@ -36,5 +38,6 @@ public:
   LinearAlgebra::distributed::Vector<Number> const * vector;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_POSTPROCESSOR_SOLUTION_FIELD_H_ */

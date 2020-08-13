@@ -7,10 +7,14 @@
 
 #include "grid/periodic_box.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace PeriodicBox
 {
+using namespace dealii;
+
 template<int dim>
 class Velocity : public Function<dim>
 {
@@ -188,5 +192,7 @@ public:
 
 } // namespace PeriodicBox
 } // namespace ConvDiff
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_ */

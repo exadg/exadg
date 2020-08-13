@@ -13,8 +13,12 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim>
 struct FlowRateCalculatorData
 {
@@ -99,9 +103,8 @@ private:
   MPI_Comm const & mpi_comm;
 };
 
-
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_FLOW_RATE_CALCULATOR_H_ */

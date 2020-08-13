@@ -8,8 +8,13 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 template<int dim>
 struct FieldFunctions
 {
@@ -25,6 +30,6 @@ struct FieldFunctions
 };
 
 } // namespace CompNS
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_ */

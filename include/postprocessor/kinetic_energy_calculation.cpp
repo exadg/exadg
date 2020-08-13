@@ -9,6 +9,10 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 KineticEnergyCalculator<dim, Number>::KineticEnergyCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true), matrix_free(nullptr), dof_index(0), quad_index(0)
@@ -201,3 +205,5 @@ template class KineticEnergyCalculator<2, double>;
 
 template class KineticEnergyCalculator<3, float>;
 template class KineticEnergyCalculator<3, double>;
+
+} // namespace ExaDG

@@ -9,8 +9,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator(
   MPI_Comm const & comm)
@@ -303,3 +307,4 @@ template class DivergenceAndMassErrorCalculator<3, float>;
 template class DivergenceAndMassErrorCalculator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

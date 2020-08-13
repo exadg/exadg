@@ -12,12 +12,14 @@
 
 #include "../../time_integration/interpolate.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace Interface
 {
+using namespace dealii;
+
 template<typename Number>
 class Operator
 {
@@ -217,8 +219,7 @@ private:
 };
 
 } // namespace Interface
-
 } // namespace ConvDiff
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

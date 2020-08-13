@@ -14,8 +14,12 @@
 #include "../spatial_discretization/operators/divergence_operator.h"
 #include "../spatial_discretization/operators/gradient_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim>
 struct CompatibleLaplaceOperatorData
 {
@@ -208,7 +212,7 @@ private:
   InverseMassMatrixOperator<dim, dim, Number> own_inv_mass_matrix_operator_storage;
 };
 
-
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_ */

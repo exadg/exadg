@@ -13,8 +13,12 @@
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<Operator>                       operator_in,
@@ -1138,3 +1142,4 @@ template class TimeIntBDFDualSplitting<3, float>;
 template class TimeIntBDFDualSplitting<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

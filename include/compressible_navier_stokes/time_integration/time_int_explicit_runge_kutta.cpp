@@ -15,8 +15,12 @@
 
 #include "../../utilities/print_throughput.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Operator>                       operator_in,
@@ -290,3 +294,4 @@ template class TimeIntExplRK<float>;
 template class TimeIntExplRK<double>;
 
 } // namespace CompNS
+} // namespace ExaDG

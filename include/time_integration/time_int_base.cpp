@@ -7,6 +7,10 @@
 
 #include "time_int_base.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 TimeIntBase::TimeIntBase(double const &      start_time_,
                          double const &      end_time_,
                          unsigned int const  max_number_of_time_steps_,
@@ -243,3 +247,5 @@ TimeIntBase::output_remaining_time() const
           << seconds << " s." << std::endl;
   }
 }
+
+} // namespace ExaDG

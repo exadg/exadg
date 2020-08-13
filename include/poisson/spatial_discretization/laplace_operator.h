@@ -7,8 +7,12 @@
 
 #include "../user_interface/boundary_descriptor.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 namespace Operators
 {
 struct LaplaceKernelData
@@ -297,5 +301,6 @@ private:
 };
 
 } // namespace Poisson
+} // namespace ExaDG
 
 #endif

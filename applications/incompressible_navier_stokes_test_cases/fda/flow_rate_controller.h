@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_FLOW_RATE_CONTROLLER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_FLOW_RATE_CONTROLLER_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace FDA
 {
+using namespace dealii;
+
 class FlowRateController
 {
 public:
@@ -72,5 +76,6 @@ private:
 
 } // namespace FDA
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_FLOW_RATE_CONTROLLER_H_ */

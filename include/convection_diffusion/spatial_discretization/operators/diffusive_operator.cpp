@@ -2,8 +2,12 @@
 
 #include "weak_boundary_conditions.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::initialize(
@@ -197,3 +201,4 @@ template class DiffusiveOperator<3, float>;
 template class DiffusiveOperator<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

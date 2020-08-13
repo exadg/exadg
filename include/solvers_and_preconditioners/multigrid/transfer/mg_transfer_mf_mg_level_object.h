@@ -5,6 +5,10 @@
 
 #include "../levels_hybrid_multigrid.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename VectorType>
 class MGTransferMF_MGLevelObject : virtual public MGTransferMF<VectorType>
 {
@@ -32,6 +36,8 @@ public:
 private:
   MGLevelObject<std::shared_ptr<MGTransferMF<VectorType>>> mg_level_object;
 };
+
+} // namespace ExaDG
 
 #include "mg_transfer_mf_mg_level_object.cpp"
 

@@ -10,6 +10,10 @@
 
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0 = 0.0;  // origin (x-coordinate)
 double const Y_0 = 0.0;  // origin (y-coordinate)
@@ -810,5 +814,7 @@ void create_triangulation(Triangulation<3> & tria)
   // Set boundary ID's
   set_boundary_ids<3>(tria, false);
 }
+
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_ */

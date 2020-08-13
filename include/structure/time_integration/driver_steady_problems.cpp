@@ -12,8 +12,12 @@
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_in,
                                         std::shared_ptr<PostProcessorBase<Number>> postprocessor_in,
@@ -133,3 +137,4 @@ template class DriverSteady<3, float>;
 template class DriverSteady<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

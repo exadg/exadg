@@ -13,8 +13,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename VectorType>
 void
 write_output(OutputDataBase const &  output_data,
@@ -153,3 +157,4 @@ template class OutputGenerator<2, double>;
 template class OutputGenerator<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

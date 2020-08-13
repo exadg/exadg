@@ -13,6 +13,10 @@
 #include "../poisson/spatial_discretization/operator.h"
 #include "../utilities/print_throughput.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 class MovingMeshPoisson : public MovingMeshBase<dim, Number>
 {
@@ -87,5 +91,6 @@ private:
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_GRID_MOVING_MESH_POISSON_H_ */

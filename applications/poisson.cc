@@ -21,6 +21,8 @@
 #include "poisson_test_cases/template/template.h"
 #include "poisson_test_cases/torus/torus.h"
 
+namespace ExaDG
+{
 class ApplicationSelector
 {
 public:
@@ -140,11 +142,12 @@ run(std::vector<Timings> & timings,
   Timings timing = driver->print_statistics(timer.wall_time());
   timings.push_back(timing);
 }
+} // namespace ExaDG
 
 int
 main(int argc, char ** argv)
 {
-  Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
@@ -167,19 +170,19 @@ main(int argc, char ** argv)
     if(argc == 3 && std::string(argv[2]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file(input_file);
+        ExaDG::create_input_file(input_file);
 
       return 0;
     }
   }
 
-  ParameterStudy study(input_file);
+  ExaDG::ParameterStudy study(input_file);
 
   // fill resolution vector depending on the operator_type
-  study.fill_resolution_vector(&Poisson::get_dofs_per_element,
-                               enum_to_string(Poisson::OperatorType::MatrixFree));
+  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element,
+                               enum_to_string(ExaDG::Poisson::OperatorType::MatrixFree));
 
-  std::vector<Timings> timings;
+  std::vector<ExaDG::Timings> timings;
 
   // loop over resolutions vector and run simulations
   for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
@@ -189,15 +192,16 @@ main(int argc, char ** argv)
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
     if(study.dim == 2 && study.precision == "float")
-      run<2, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<2, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else if(study.dim == 2 && study.precision == "double")
-      run<2, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<2, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else if(study.dim == 3 && study.precision == "float")
-      run<3, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<3, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else if(study.dim == 3 && study.precision == "double")
-      run<3, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<3, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else
-      AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+      AssertThrow(false,
+                  dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }
 
   print_results(timings, mpi_comm);

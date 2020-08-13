@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_MANTLE_CONVECTION_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_MANTLE_CONVECTION_H_
 
+namespace ExaDG
+{
 namespace FTI
 {
 namespace MantleConvection
 {
+using namespace dealii;
+
 template<int dim>
 class InitialTemperature : public Function<dim>
 {
@@ -453,5 +457,6 @@ public:
 
 } // namespace MantleConvection
 } // namespace FTI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_MANTLE_CONVECTION_H_ */

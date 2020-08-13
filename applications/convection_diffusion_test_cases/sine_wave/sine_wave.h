@@ -13,10 +13,14 @@
 
 #include "grid/mesh_movement_functions.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace SineWave
 {
+using namespace dealii;
+
 template<int dim>
 class Solution : public Function<dim>
 {
@@ -218,5 +222,7 @@ public:
 
 } // namespace SineWave
 } // namespace ConvDiff
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_PROPAGATING_SINE_WAVE_H_ */

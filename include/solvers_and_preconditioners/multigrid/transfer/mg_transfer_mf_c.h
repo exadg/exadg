@@ -6,6 +6,8 @@
 
 #include "mg_transfer_mf.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim,
@@ -52,5 +54,7 @@ private:
   const unsigned int      fe_degree;
   MatrixFree<dim, Number> data_composite;
 };
+
+} // namespace ExaDG
 
 #endif

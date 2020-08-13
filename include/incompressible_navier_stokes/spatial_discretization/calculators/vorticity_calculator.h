@@ -11,10 +11,12 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include "../../../matrix_free/integrators.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class VorticityCalculator
 {
@@ -56,6 +58,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_VORTICITY_CALCULATOR_H_ \
         */

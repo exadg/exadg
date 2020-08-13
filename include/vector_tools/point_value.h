@@ -16,6 +16,8 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -127,5 +129,6 @@ void evaluate_vectorial_quantity_in_point(
   solution_value /= (double)counter;
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_VECTOR_TOOLS_POINT_VALUE_H_ */

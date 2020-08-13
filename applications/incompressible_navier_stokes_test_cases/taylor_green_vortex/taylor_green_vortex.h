@@ -11,10 +11,14 @@
 #include "grid/mesh_movement_functions.h"
 #include "grid/periodic_box.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace TaylorGreenVortex
 {
+using namespace dealii;
+
 enum class MeshType
 {
   Cartesian,
@@ -541,5 +545,7 @@ public:
 
 } // namespace TaylorGreenVortex
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TAYLOR_GREEN_VORTEX_H_ */

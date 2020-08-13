@@ -12,8 +12,12 @@
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
   std::shared_ptr<Interface::Operator<Number>> operator_in,
@@ -242,3 +246,4 @@ template class DriverQuasiStatic<3, float>;
 template class DriverQuasiStatic<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

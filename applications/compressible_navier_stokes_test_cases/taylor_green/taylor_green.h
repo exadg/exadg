@@ -10,10 +10,14 @@
 
 #include "grid/periodic_box.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace TaylorGreen
 {
+using namespace dealii;
+
 // set parameters according to Wiart et al. ("Assessment of discontinuous Galerkin method
 // for the simulation of vortical flows at high Reynolds number"):
 
@@ -297,5 +301,7 @@ public:
 
 } // namespace TaylorGreen
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_ */

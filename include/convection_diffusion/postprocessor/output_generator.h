@@ -15,8 +15,12 @@
 
 #include "../../postprocessor/output_data.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class OutputGenerator
 {
@@ -45,6 +49,6 @@ private:
 };
 
 } // namespace ConvDiff
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

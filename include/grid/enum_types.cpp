@@ -9,6 +9,8 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 std::string
@@ -61,3 +63,5 @@ enum_to_string(MappingType const enum_type)
 
   return string_type;
 }
+
+} // namespace ExaDG

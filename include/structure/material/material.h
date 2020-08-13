@@ -14,10 +14,12 @@
 
 #include "material_data.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class Material
 {
@@ -38,5 +40,6 @@ public:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

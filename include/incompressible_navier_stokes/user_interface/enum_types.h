@@ -10,6 +10,8 @@
 
 #include <string>
 
+namespace ExaDG
+{
 namespace IncNS
 {
 /**************************************************************************************/
@@ -681,5 +683,6 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 // there are currently no enums for this section
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ENUM_TYPES_H_ */

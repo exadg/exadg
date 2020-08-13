@@ -8,7 +8,8 @@
 #ifndef INCLUDE_UTILITIES_PRINT_THROUGHPUT_H_
 #define INCLUDE_UTILITIES_PRINT_THROUGHPUT_H_
 
-
+namespace ExaDG
+{
 inline void
 print_throughput(std::vector<std::pair<unsigned int, double>> const & wall_times,
                  std::string const &                                  name,
@@ -223,6 +224,6 @@ print_list_of_iterations(ConditionalOStream const &       pcout,
           << std::setprecision(2) << std::right << std::setw(6) << iterations_avg[i] << std::endl;
   }
 }
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_UTILITIES_PRINT_THROUGHPUT_H_ */

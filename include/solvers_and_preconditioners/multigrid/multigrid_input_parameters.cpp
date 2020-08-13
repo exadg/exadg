@@ -9,8 +9,9 @@
 
 #include "multigrid_input_parameters.h"
 
+namespace ExaDG
+{
 using namespace dealii;
-
 
 std::string
 enum_to_string(MultigridType const enum_type)
@@ -204,3 +205,5 @@ enum_to_string(PreconditionerSmoother const enum_type)
 
   return string_type;
 }
+
+} // namespace ExaDG

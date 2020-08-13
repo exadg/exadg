@@ -13,6 +13,8 @@
 #include "integrator_flags.h"
 #include "mapping_flags.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -58,5 +60,6 @@ public:
   }
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_OPERATORS_MASS_MATRIX_OPERATOR_H_ */

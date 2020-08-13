@@ -14,10 +14,12 @@
 
 #include "../../utilities/timings_hierarchical.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 // forward declaration
 class InputParameters;
 
@@ -83,5 +85,6 @@ private:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DRIVER_STEADY_PROBLEMS_H_ */

@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Beltrami
 {
+using namespace dealii;
+
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -320,5 +324,7 @@ public:
 
 } // namespace Beltrami
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_ */

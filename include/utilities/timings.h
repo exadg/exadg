@@ -10,6 +10,8 @@
 
 #include <deal.II/base/conditional_ostream.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 struct Timings
@@ -86,7 +88,7 @@ print_results(std::vector<Timings> const & timings, MPI_Comm const & mpi_comm)
         << std::endl
         << std::endl;
 }
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_UTILITIES_TIMINGS_H_ */

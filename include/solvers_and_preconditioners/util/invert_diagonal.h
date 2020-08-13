@@ -10,6 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /*
@@ -30,5 +32,6 @@ invert_diagonal(LinearAlgebra::distributed::Vector<Number> & diagonal)
   }
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_ */

@@ -12,10 +12,12 @@
 #include "continuity_penalty_operator.h"
 #include "divergence_penalty_operator.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  *  Combined divergence and continuity penalty operator: applies the operation
  *
@@ -155,6 +157,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_ \
         */

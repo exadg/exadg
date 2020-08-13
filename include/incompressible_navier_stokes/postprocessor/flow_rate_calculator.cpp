@@ -9,8 +9,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 FlowRateCalculator<dim, Number>::FlowRateCalculator(MatrixFree<dim, Number> const & matrix_free_in,
                                                     unsigned int const              dof_index_in,
@@ -153,3 +157,4 @@ template class FlowRateCalculator<3, float>;
 template class FlowRateCalculator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

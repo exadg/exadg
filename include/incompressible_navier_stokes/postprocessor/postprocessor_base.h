@@ -10,8 +10,12 @@
 
 #include "postprocessor_interface.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class DGNavierStokesBase;
 
@@ -40,5 +44,6 @@ public:
 
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

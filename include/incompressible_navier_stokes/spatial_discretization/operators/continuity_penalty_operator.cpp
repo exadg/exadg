@@ -9,8 +9,12 @@
 
 #include "weak_boundary_conditions.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator()
   : matrix_free(nullptr), time(0.0)
@@ -314,3 +318,4 @@ template class ContinuityPenaltyOperator<3, float>;
 template class ContinuityPenaltyOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

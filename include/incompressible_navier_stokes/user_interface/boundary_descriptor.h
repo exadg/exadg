@@ -8,15 +8,17 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
-using namespace dealii;
-
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
 #include "../../functions_and_boundary_conditions/function_cached.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 //clang-format off
 /*
  *
@@ -183,7 +185,7 @@ struct BoundaryDescriptorP
   }
 };
 
-
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

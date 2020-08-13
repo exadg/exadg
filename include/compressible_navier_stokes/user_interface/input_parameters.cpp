@@ -9,8 +9,13 @@
 
 #include "input_parameters.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 // standard constructor that initializes parameters with default values
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
@@ -237,3 +242,4 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
 }
 
 } // namespace CompNS
+} // namespace ExaDG

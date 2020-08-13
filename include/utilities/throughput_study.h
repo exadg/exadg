@@ -13,6 +13,8 @@
 
 #include "../utilities/print_throughput.h"
 
+namespace ExaDG
+{
 struct ThroughputStudy
 {
   ThroughputStudy()
@@ -66,7 +68,7 @@ struct ThroughputStudy
   // global variable used to store the wall times for different polynomial degrees and problem sizes
   mutable std::vector<std::tuple<unsigned int, types::global_dof_index, double>> wall_times;
 };
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_UTILITIES_THROUGHPUT_STUDY_H_ */

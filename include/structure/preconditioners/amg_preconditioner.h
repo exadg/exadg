@@ -11,8 +11,12 @@
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_amg.h"
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<typename Operator, typename Number>
 class AlgebraicMultigridPreconditioner : public PreconditionerBase<Number>
 {
@@ -53,7 +57,7 @@ private:
 };
 
 } // namespace Structure
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_STRUCTURE_PRECONDITIONERS_AMG_PRECONDITIONER_H_ */

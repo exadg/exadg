@@ -47,8 +47,13 @@
 #include "../utilities/print_general_infos.h"
 #include "../utilities/timings_hierarchical.h"
 
+
+namespace ExaDG
+{
 namespace FSI
 {
+using namespace dealii;
+
 /*
  * Own implementation of matrix class.
  */
@@ -434,6 +439,7 @@ private:
 };
 
 } // namespace FSI
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */

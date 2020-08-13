@@ -13,8 +13,12 @@
 
 #include "../../postprocessor/output_data.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class OutputGenerator
 {
@@ -43,5 +47,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

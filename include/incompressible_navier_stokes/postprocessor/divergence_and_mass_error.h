@@ -13,10 +13,12 @@
 
 #include "../../utilities/print_functions.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 struct MassConservationData
 {
   MassConservationData()
@@ -135,5 +137,6 @@ private:
 
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_DIVERGENCE_AND_MASS_ERROR_H_ */

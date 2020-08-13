@@ -10,10 +10,12 @@
 
 #include <deal.II/base/function.h>
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim>
 struct AnalyticalSolution
 {
@@ -21,5 +23,6 @@ struct AnalyticalSolution
 };
 
 } // namespace Poisson
+} // namespace ExaDG
 
 #endif /* INCLUDE_LAPLACE_ANALYTICAL_SOLUTION_H_ */

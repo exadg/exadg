@@ -8,6 +8,8 @@
 #ifndef INCLUDE_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
 #define INCLUDE_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_
 
+namespace ExaDG
+{
 /*
  * This function implements a push-back operation that is needed in multistep time integration
  * schemes like BDF schemes in order to update the solution vectors from one time step to the
@@ -38,5 +40,6 @@ push_back(std::vector<VectorType> & vector)
   }
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_PUSH_BACK_VECTORS_H_ */

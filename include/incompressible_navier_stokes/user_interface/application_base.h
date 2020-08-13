@@ -29,10 +29,12 @@
 #include "../../poisson/user_interface/field_functions.h"
 #include "../../poisson/user_interface/input_parameters.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -166,7 +168,7 @@ public:
 
 
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_ */

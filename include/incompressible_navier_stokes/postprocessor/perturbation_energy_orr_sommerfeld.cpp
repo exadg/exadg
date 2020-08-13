@@ -9,6 +9,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
+namespace IncNS
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 PerturbationEnergyCalculator<dim, Number>::PerturbationEnergyCalculator(MPI_Comm const & comm)
   : mpi_comm(comm),
@@ -172,3 +178,6 @@ template class PerturbationEnergyCalculator<2, double>;
 
 template class PerturbationEnergyCalculator<3, float>;
 template class PerturbationEnergyCalculator<3, double>;
+
+} // namespace IncNS
+} // namespace ExaDG

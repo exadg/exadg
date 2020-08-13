@@ -2,13 +2,17 @@
  * template.h
  */
 
-#ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_
-#define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_
+#ifndef APPLICATIONS_POISSON_TEST_CASES_TEMPLATE_H_
+#define APPLICATIONS_POISSON_TEST_CASES_TEMPLATE_H_
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Template
 {
+using namespace dealii;
+
 //  Example for a user defined function
 template<int dim>
 class MyFunction : public Function<dim>
@@ -111,5 +115,6 @@ public:
 
 } // namespace Template
 } // namespace Poisson
+} // namespace ExaDG
 
-#endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_ */
+#endif /* APPLICATIONS_POISSON_TEST_CASES_TEMPLATE_H_ */

@@ -1,10 +1,12 @@
 #ifndef OPERATOR_BASE_CATEGORIZATION_H
 #define OPERATOR_BASE_CATEGORIZATION_H
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Categorization
 {
+using namespace dealii;
+
 /*
  * Adjust MatrixFree::AdditionalData such that
  *   1) cells which have the same boundary IDs for all faces are put into the
@@ -76,5 +78,6 @@ do_cell_based_loops(const parallel::TriangulationBase<dim> & tria,
 }
 
 } // namespace Categorization
+} // namespace ExaDG
 
 #endif

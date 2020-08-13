@@ -11,10 +11,14 @@
 #include "functions_and_boundary_conditions/linear_interpolation.h"
 #include "grid/mesh_flow_past_cylinder.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace FlowPastCylinder
 {
+using namespace dealii;
+
 template<int dim>
 class InflowBC : public Function<dim>
 {
@@ -635,5 +639,7 @@ public:
 
 } // namespace FlowPastCylinder
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_ */

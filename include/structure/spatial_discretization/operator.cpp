@@ -18,8 +18,12 @@
 #include "../preconditioners/amg_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> &             triangulation_in,
@@ -738,3 +742,4 @@ template class Operator<3, float>;
 template class Operator<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

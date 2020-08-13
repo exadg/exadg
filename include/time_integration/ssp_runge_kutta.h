@@ -12,6 +12,8 @@
 
 #include "explicit_runge_kutta.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /*
@@ -937,5 +939,6 @@ SSPRK<Operator, VectorType>::initialize_coeffs(unsigned int const stages)
   }
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_ */

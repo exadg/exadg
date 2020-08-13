@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COUETTE_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COUETTE_H_
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace Couette
 {
+using namespace dealii;
+
 // problem specific parameters
 const double DYN_VISCOSITY = 1.0e-2;
 const double GAMMA         = 1.4;
@@ -307,5 +311,7 @@ public:
 
 } // namespace Couette
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COUETTE_H_ */

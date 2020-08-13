@@ -10,6 +10,8 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 inline unsigned int
@@ -39,6 +41,6 @@ get_mapping_degree(MappingType const & mapping_type, unsigned int const degree_s
   return degree;
 }
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_MAPPING_DEGREE_H_ */

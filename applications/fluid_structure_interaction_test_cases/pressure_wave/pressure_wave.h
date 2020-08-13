@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_FSI_PRESSURE_WAVE_H_
 #define APPLICATIONS_FSI_PRESSURE_WAVE_H_
 
+namespace ExaDG
+{
 namespace FSI
 {
 namespace PressureWave
 {
+using namespace dealii;
+
 // set problem specific parameters like physical dimensions, etc.
 double const U_X_MAX         = 1.0; // TODO
 double const FLUID_VISCOSITY = 3.0e-6;
@@ -751,5 +755,6 @@ public:
 
 } // namespace PressureWave
 } // namespace FSI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_FSI_PRESSURE_WAVE_H_ */

@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_POISEUILLE_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_POISEUILLE_H_
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace Poiseuille
 {
+using namespace dealii;
+
 // problem specific parameters
 const double DYN_VISCOSITY  = 0.1;
 const double GAMMA          = 1.4;
@@ -273,5 +277,7 @@ public:
 
 } // namespace Poiseuille
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_POISEUILLE_H_ */

@@ -2,8 +2,12 @@
 
 #include "weak_boundary_conditions.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::initialize(
@@ -241,3 +245,4 @@ template class ConvectiveOperator<3, float>;
 template class ConvectiveOperator<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

@@ -14,10 +14,14 @@
  * Brown and Minion (J. Comput. Phys. 122 (1995), 165-183)
  */
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace ShearLayer
 {
+using namespace dealii;
+
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
 {
@@ -244,5 +248,7 @@ public:
 
 } // namespace ShearLayer
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_SHEAR_LAYER_H_ */

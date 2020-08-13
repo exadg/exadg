@@ -9,6 +9,12 @@
 
 #include "line_plot_calculation_statistics_homogeneous.h"
 
+namespace ExaDG
+{
+namespace IncNS
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisticsHomogeneous(
   DoFHandler<dim> const & dof_handler_velocity_in,
@@ -923,3 +929,6 @@ template class LinePlotCalculatorStatisticsHomogeneous<3, float>;
 
 template class LinePlotCalculatorStatisticsHomogeneous<2, double>;
 template class LinePlotCalculatorStatisticsHomogeneous<3, double>;
+
+} // namespace IncNS
+} // namespace ExaDG

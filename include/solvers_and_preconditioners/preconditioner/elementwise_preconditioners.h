@@ -13,8 +13,12 @@
 
 #include "../solvers/elementwise_krylov_solvers.h"
 
+namespace ExaDG
+{
 namespace Elementwise
 {
+using namespace dealii;
+
 /*
  * Preconditioners
  */
@@ -112,7 +116,7 @@ private:
 };
 
 } // namespace Elementwise
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ELEMENTWISE_PRECONDITIONERS_H_ */

@@ -7,8 +7,12 @@
 
 #include "rhs_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), time(0.0), temperature(nullptr)
 {
@@ -99,3 +103,4 @@ template class RHSOperator<3, float>;
 template class RHSOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

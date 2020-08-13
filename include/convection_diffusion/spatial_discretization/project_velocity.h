@@ -13,6 +13,10 @@
 #include "../../functions_and_boundary_conditions/evaluate_functions.h"
 #include "../../operators/inverse_mass_matrix.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 class VelocityProjection
 {
@@ -84,6 +88,6 @@ private:
   double                         time;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_PROJECT_VELOCITY_H_ */

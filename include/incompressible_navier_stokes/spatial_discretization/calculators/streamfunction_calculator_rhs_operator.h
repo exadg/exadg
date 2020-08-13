@@ -11,10 +11,12 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include "../../../matrix_free/integrators.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  *  This function calculates the right-hand side of the Laplace equation that is solved in order to
  * obtain the streamfunction psi
@@ -63,6 +65,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_STREAMFUNCTION_CALCULATOR_RHS_OPERATOR_H_ \
         */

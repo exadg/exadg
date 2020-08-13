@@ -9,8 +9,12 @@
 
 #include "../../operators/mass_matrix_kernel.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 MultigridPreconditionerProjection<dim, Number>::MultigridPreconditionerProjection(
   MPI_Comm const & mpi_comm)
@@ -186,3 +190,4 @@ template class MultigridPreconditionerProjection<2, double>;
 template class MultigridPreconditionerProjection<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

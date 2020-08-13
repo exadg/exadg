@@ -10,6 +10,8 @@
 
 #include <deal.II/fe/fe_update_flags.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 struct MappingFlags
@@ -36,6 +38,6 @@ struct MappingFlags
   UpdateFlags boundary_faces;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_OPERATORS_MAPPING_FLAGS_H_ */

@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace Template
 {
+using namespace dealii;
+
 // Example of a user defined function
 template<int dim>
 class MyFunction : public Function<dim>
@@ -129,5 +133,6 @@ public:
 
 } // namespace Template
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_ */

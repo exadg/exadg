@@ -5,6 +5,11 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_TORUS_H_
+#define APPLICATIONS_POISSON_TEST_CASES_TORUS_H_
+
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Torus
@@ -125,3 +130,6 @@ public:
 
 } // namespace Torus
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

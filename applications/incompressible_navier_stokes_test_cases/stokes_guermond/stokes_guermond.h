@@ -10,10 +10,14 @@
 
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace StokesGuermond
 {
+using namespace dealii;
+
 enum class MeshType
 {
   UniformCartesian,
@@ -429,5 +433,7 @@ public:
 
 } // namespace StokesGuermond
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_GUERMOND_H_ */

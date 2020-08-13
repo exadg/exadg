@@ -29,6 +29,8 @@
 #include "../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
 #include "elementwise_operator.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 struct OperatorBaseData
@@ -597,5 +599,6 @@ private:
   std::vector<unsigned int>                      constrained_indices;
   mutable std::vector<std::pair<Number, Number>> constrained_values;
 };
+} // namespace ExaDG
 
 #endif

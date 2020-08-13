@@ -24,6 +24,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /*
@@ -110,10 +112,9 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
     Utilities::MPI::internal::ComputeIndexOwner::ConsensusAlgorithmsPayload process(
       range_has_lex, range_want_lex, comm, owning_ranks_of_ghosts, true);
 
-    Utilities::MPI::ConsensusAlgorithms::Selector<
-      std::pair<types::global_dof_index, types::global_dof_index>,
-      unsigned int>
-      consensus_algorithm(process, comm);
+    Utilities::MPI::ConsensusAlgorithms::
+      Selector<std::pair<types::global_dof_index, types::global_dof_index>, unsigned int>
+        consensus_algorithm(process, comm);
     consensus_algorithm.run();
 
     for(const auto & owner : owning_ranks_of_ghosts)
@@ -260,6 +261,6 @@ initialize_dof_vector(LinearAlgebra::distributed::Vector<Number> & vec,
   vec.reinit(dof_handler.locally_owned_dofs(), locally_relevant_dofs, comm);
 }
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_MIRROR_DOF_VECTOR_TAYLOR_GREEN_H_ */

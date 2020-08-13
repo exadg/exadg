@@ -7,8 +7,12 @@
 
 #include "divergence_penalty_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DivergencePenaltyOperator<dim, Number>::DivergencePenaltyOperator() : matrix_free(nullptr)
 {
@@ -85,3 +89,4 @@ template class DivergencePenaltyOperator<3, float>;
 template class DivergencePenaltyOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

@@ -7,8 +7,12 @@
 
 #include "rhs_operator.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number, int n_components>
 RHSOperator<dim, Number, n_components>::RHSOperator() : matrix_free(nullptr), time(0.0)
 {
@@ -89,3 +93,4 @@ template class RHSOperator<3, float, 3>;
 template class RHSOperator<3, double, 3>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

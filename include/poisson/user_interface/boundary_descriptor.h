@@ -13,10 +13,12 @@
 
 #include "../../functions_and_boundary_conditions/function_cached.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 enum class BoundaryType
 {
   Undefined,
@@ -77,7 +79,7 @@ struct BoundaryDescriptor
 };
 
 } // namespace Poisson
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_POISSON_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

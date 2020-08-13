@@ -10,10 +10,14 @@
 
 #include "../../../include/structure/user_interface/application_base.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
 namespace Can
 {
+using namespace dealii;
+
 template<int dim>
 class DisplacementDBC : public Function<dim>
 {
@@ -293,5 +297,6 @@ public:
 
 } // namespace Can
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

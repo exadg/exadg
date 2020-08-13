@@ -1,11 +1,13 @@
 #ifndef INCLUDE_FUNCTION_WITH_NORMAL_H_
 #define INCLUDE_FUNCTION_WITH_NORMAL_H_
 
+namespace ExaDG
+{
+using namespace dealii;
+
 /*
  * Class that extends the Function class of deal.II by the possibility of using normal vectors.
  */
-
-using namespace dealii;
 
 template<int dim>
 class FunctionWithNormal : public Function<dim>
@@ -34,5 +36,7 @@ public:
 private:
   Tensor<1, dim> normal_vector;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTION_WITH_NORMAL_H_ */

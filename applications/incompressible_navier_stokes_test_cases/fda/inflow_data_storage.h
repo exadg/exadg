@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_INFLOW_DATA_STORAGE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_INFLOW_DATA_STORAGE_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace FDA
 {
+using namespace dealii;
+
 template<int dim>
 struct InflowDataStorage
 {
@@ -111,5 +115,6 @@ struct InflowDataStorage
 
 } // namespace FDA
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_INFLOW_DATA_STORAGE_H_ */

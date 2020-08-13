@@ -10,6 +10,8 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 struct LiftAndDragData
@@ -84,6 +86,8 @@ private:
 
   LiftAndDragData lift_and_drag_data;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_POSTPROCESSOR_LIFT_AND_DRAG_CALCULATION_H_ */

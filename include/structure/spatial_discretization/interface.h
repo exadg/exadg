@@ -10,6 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 namespace Structure
 {
 namespace Interface
@@ -67,5 +69,6 @@ public:
 
 } // namespace Interface
 } // namespace Structure
+} // namespace ExaDG
 
 #endif /* INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

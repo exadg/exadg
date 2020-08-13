@@ -5,12 +5,19 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_LUNG_TUBUS_H_
+#define APPLICATIONS_POISSON_TEST_CASES_LUNG_TUBUS_H_
+
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace LungTubus
 {
+using namespace dealii;
+
 template<int dim>
 void
 set_manifolds_pipe(Triangulation<dim> & triangulation, double const radius)
@@ -270,3 +277,6 @@ public:
 
 } // namespace LungTubus
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

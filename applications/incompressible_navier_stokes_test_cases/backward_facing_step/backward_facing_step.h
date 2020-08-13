@@ -14,10 +14,14 @@
 
 #include "inflow_data_storage.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace BackwardFacingStep
 {
+using namespace dealii;
+
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
 {
@@ -721,5 +725,6 @@ public:
 
 } // namespace BackwardFacingStep
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

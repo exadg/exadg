@@ -1,7 +1,11 @@
 #include "momentum_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass_matrix(1.0)
 {
@@ -629,3 +633,4 @@ template class MomentumOperator<3, float>;
 template class MomentumOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

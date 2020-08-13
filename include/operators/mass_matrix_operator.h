@@ -13,6 +13,8 @@
 #include "mass_matrix_kernel.h"
 #include "operator_base.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -59,7 +61,7 @@ private:
   mutable double scaling_factor;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_ \
         */

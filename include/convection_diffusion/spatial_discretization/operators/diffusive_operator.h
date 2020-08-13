@@ -7,8 +7,12 @@
 
 #include "../../../operators/interior_penalty_parameter.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 namespace Operators
 {
 struct DiffusiveKernelData
@@ -239,5 +243,6 @@ private:
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel;
 };
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif

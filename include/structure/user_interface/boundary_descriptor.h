@@ -14,8 +14,12 @@
 
 #include "../../functions_and_boundary_conditions/function_cached.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 enum class BoundaryType
 {
   Undefined,
@@ -102,5 +106,6 @@ struct BoundaryDescriptor
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

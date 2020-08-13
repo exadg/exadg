@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TUM_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TUM_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace TUM
 {
+using namespace dealii;
+
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -370,5 +374,7 @@ public:
 
 } // namespace TUM
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TUM_H_ */

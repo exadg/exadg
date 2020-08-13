@@ -7,8 +7,12 @@
 
 #include "divergence_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DivergenceOperator<dim, Number>::DivergenceOperator()
   : matrix_free(nullptr), time(0.0), velocity_bc(nullptr)
@@ -508,3 +512,4 @@ template class DivergenceOperator<3, float>;
 template class DivergenceOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

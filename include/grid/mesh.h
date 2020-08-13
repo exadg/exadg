@@ -10,6 +10,8 @@
 
 #include <deal.II/fe/mapping_q_generic.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /*
@@ -38,5 +40,6 @@ protected:
   std::shared_ptr<MappingQGeneric<dim>> mapping;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_MESH_H_ */

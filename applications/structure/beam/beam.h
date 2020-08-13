@@ -10,10 +10,14 @@
 
 #include "../../../include/structure/user_interface/application_base.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
 namespace Beam
 {
+using namespace dealii;
+
 template<int dim>
 class BendingMoment : public Function<dim>
 {
@@ -329,5 +333,7 @@ public:
 
 } // namespace Beam
 } // namespace Structure
+} // namespace ExaDG
+
 
 #endif

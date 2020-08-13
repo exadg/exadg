@@ -10,6 +10,10 @@
 
 #include <deal.II/grid/manifold_lib.h>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 /*
  *  Class that provides a spherical manifold applied to one of the faces
  *  of a quadrilateral element.
@@ -719,5 +723,6 @@ public:
 private:
   Point<dim> center;
 };
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_ONESIDEDSPHERICALMANIFOLD_H_ */

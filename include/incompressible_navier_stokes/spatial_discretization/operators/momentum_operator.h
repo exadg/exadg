@@ -14,8 +14,12 @@
 #include "../../../operators/mass_matrix_kernel.h"
 #include "../../../operators/operator_base.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim>
 struct MomentumOperatorData : public OperatorBaseData
 {
@@ -173,9 +177,8 @@ private:
   double scaling_factor_mass_matrix;
 };
 
-
-
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_ \
         */

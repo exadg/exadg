@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DECAYING_HILL_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DECAYING_HILL_H_
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace DecayingHill
 {
+using namespace dealii;
+
 enum class BoundaryConditionType
 {
   HomogeneousDBC,
@@ -265,5 +269,7 @@ public:
 
 } // namespace DecayingHill
 } // namespace ConvDiff
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DECAYING_HILL_H_ */

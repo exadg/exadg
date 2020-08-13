@@ -12,8 +12,12 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/laplace_operator.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 /*
  *  Multigrid preconditioner for Laplace operator.
  */
@@ -89,6 +93,6 @@ private:
 };
 
 } // namespace Poisson
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_POISSON_MULTIGRID_PRECONDITIONER_H_ */

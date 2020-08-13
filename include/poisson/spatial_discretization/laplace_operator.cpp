@@ -5,8 +5,12 @@
 
 #include "weak_boundary_conditions.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::initialize(
@@ -464,3 +468,4 @@ template class LaplaceOperator<3, float, 3>;
 template class LaplaceOperator<3, double, 3>;
 
 } // namespace Poisson
+} // namespace ExaDG

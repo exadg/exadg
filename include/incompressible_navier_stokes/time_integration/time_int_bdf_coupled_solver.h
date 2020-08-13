@@ -13,8 +13,12 @@
 
 #include "time_int_bdf.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // forward declarations
 template<int dim, typename Number>
 class DGNavierStokesCoupled;
@@ -117,5 +121,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_COUPLED_SOLVER_H_ */

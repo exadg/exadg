@@ -1,6 +1,10 @@
 #ifndef LUNG_ALGEBRA_UTIL
 #define LUNG_ALGEBRA_UTIL
 
+namespace ExaDG
+{
+using namespace dealii;
+
 Tensor<2, 3> compute_rotation_matrix(dealii::Tensor<1, 3> a0,
                                      dealii::Tensor<1, 3> a1,
                                      dealii::Tensor<1, 3> b0,
@@ -31,5 +35,7 @@ Tensor<2, 3> compute_rotation_matrix(dealii::Tensor<1, 3> a0,
   // compute rotation matrix: R = B*A^{-1}
   return B * invert(A);
 }
+
+} // namespace ExaDG
 
 #endif

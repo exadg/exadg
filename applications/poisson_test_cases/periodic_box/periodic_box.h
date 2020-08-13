@@ -5,12 +5,19 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_PERIODIC_BOX_H_
+#define APPLICATIONS_POISSON_TEST_CASES_PERIODIC_BOX_H_
+
 #include "grid/periodic_box.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace PeriodicBox
 {
+using namespace dealii;
+
 enum class MeshType
 {
   Cartesian,
@@ -132,3 +139,6 @@ public:
 
 } // namespace PeriodicBox
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

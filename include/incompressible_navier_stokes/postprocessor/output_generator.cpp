@@ -15,8 +15,12 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 write_output(OutputData const &                                 output_data,
@@ -395,3 +399,4 @@ template class OutputGenerator<3, float>;
 template class OutputGenerator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

@@ -15,14 +15,16 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 // forward declarations
 template<int dim, typename Number>
 class MovingMeshBase;
 
 namespace IncNS
 {
+using namespace dealii;
+
 class InputParameters;
 
 template<int dim, typename Number>
@@ -33,10 +35,7 @@ class OperatorOIF;
 
 template<typename Number>
 class PostProcessorInterface;
-} // namespace IncNS
 
-namespace IncNS
-{
 template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
@@ -206,5 +205,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_H_ */

@@ -17,10 +17,11 @@
 #include "enum_types.h"
 #include "iterative_solvers_dealii_wrapper.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Elementwise
 {
+using namespace dealii;
 /*
  * Solver data
  */
@@ -131,6 +132,7 @@ private:
 };
 
 } // namespace Elementwise
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_ \
         */

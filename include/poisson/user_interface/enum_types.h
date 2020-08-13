@@ -8,8 +8,12 @@
 #ifndef INCLUDE_POISSON_USER_INTERFACE_ENUM_TYPES_H_
 #define INCLUDE_POISSON_USER_INTERFACE_ENUM_TYPES_H_
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -72,7 +76,7 @@ enum_to_string(Preconditioner const enum_type);
 // currently no enum parameters here
 
 } // namespace Poisson
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_POISSON_USER_INTERFACE_ENUM_TYPES_H_ */

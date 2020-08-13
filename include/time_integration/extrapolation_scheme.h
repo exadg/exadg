@@ -12,6 +12,8 @@
 
 #include <vector>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 class ExtrapolationConstants
@@ -74,5 +76,7 @@ private:
    */
   std::vector<double> beta;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_EXTRAPOLATION_SCHEME_H_ */

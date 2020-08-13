@@ -9,8 +9,12 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // standard constructor that initializes parameters
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
@@ -1110,3 +1114,4 @@ InputParameters::print_parameters_coupled_solver(ConditionalOStream & pcout)
 }
 
 } // namespace IncNS
+} // namespace ExaDG

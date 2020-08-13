@@ -18,6 +18,10 @@
 // coarse grid solver
 #include "../preconditioner/preconditioner_amg.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm const & comm)
   : mapping(nullptr), n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm)
@@ -828,3 +832,5 @@ template class MultigridPreconditionerBase<2, double>;
 
 template class MultigridPreconditionerBase<3, float>;
 template class MultigridPreconditionerBase<3, double>;
+
+} // namespace ExaDG

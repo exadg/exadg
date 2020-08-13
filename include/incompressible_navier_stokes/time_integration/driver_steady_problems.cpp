@@ -15,8 +15,12 @@
 #include "../../utilities/print_throughput.h"
 #include "../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_in,
@@ -171,3 +175,4 @@ template class DriverSteadyProblems<3, float>;
 template class DriverSteadyProblems<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

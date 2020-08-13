@@ -10,6 +10,8 @@
 
 #include "multigrid_operator_base.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number, typename Operator>
@@ -138,6 +140,6 @@ private:
   std::shared_ptr<Operator> pde_operator;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_OPERATORS_MULTIGRID_OPERATOR_H_ */

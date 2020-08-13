@@ -13,10 +13,12 @@
 
 #include "../../functions_and_boundary_conditions/function_cached.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 enum class BoundaryType
 {
   Undefined,
@@ -66,5 +68,6 @@ struct BoundaryDescriptor
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_ */

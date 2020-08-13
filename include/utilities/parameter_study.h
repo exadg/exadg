@@ -11,6 +11,8 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
+namespace ExaDG
+{
 /*
  * study throughput as a function of polynomial degree or problem size
  */
@@ -300,7 +302,7 @@ struct ParameterStudy
   // a vector storing tuples of the form (degree k, refine level l, n_subdivisions_1d)
   std::vector<std::tuple<unsigned int, unsigned int, unsigned int>> resolutions;
 };
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_UTILITIES_PARAMETER_STUDY_H_ */

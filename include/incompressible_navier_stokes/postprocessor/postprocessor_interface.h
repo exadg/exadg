@@ -11,8 +11,12 @@
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<typename Number>
 class PostProcessorInterface
 {
@@ -35,6 +39,6 @@ public:
 };
 
 } // namespace IncNS
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_INTERFACE_H_ */

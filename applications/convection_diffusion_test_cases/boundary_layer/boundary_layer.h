@@ -12,10 +12,14 @@
 // Neumann boundaries at upper and lower boundary
 // use constant advection velocity from left to right -> boundary layer
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace BoundaryLayer
 {
+using namespace dealii;
+
 template<int dim>
 class Solution : public Function<dim>
 {
@@ -213,6 +217,7 @@ public:
 
 } // namespace BoundaryLayer
 } // namespace ConvDiff
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_BOUNDARY_LAYER_H_ */

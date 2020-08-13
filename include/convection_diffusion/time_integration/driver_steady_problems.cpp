@@ -12,8 +12,12 @@
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_in,
@@ -148,3 +152,4 @@ template class DriverSteadyProblems<float>;
 template class DriverSteadyProblems<double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

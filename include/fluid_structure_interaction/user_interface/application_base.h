@@ -48,10 +48,12 @@
 // postprocessor
 #include "../../structure/postprocessor/postprocessor.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace FSI
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -161,6 +163,6 @@ protected:
 };
 
 } // namespace FSI
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_APPLICATION_BASE_H_ */

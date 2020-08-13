@@ -3,10 +3,14 @@
 
 #include "grid/mesh_movement_functions.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace FreeStream
 {
+using namespace dealii;
+
 template<int dim>
 class AnalyticalSolutionVelocity : public Functions::ConstantFunction<dim>
 {
@@ -319,5 +323,7 @@ public:
 
 } // namespace FreeStream
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_ */

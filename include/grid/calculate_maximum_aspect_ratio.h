@@ -14,6 +14,8 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/numerics/vector_tools.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -75,6 +77,7 @@ calculate_aspect_ratio_vertex_distance(Triangulation<dim> const & triangulation,
   return global_max_aspect_ratio;
 }
 
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_FUNCTIONALITIES_CALCULATE_MAXIMUM_ASPECT_RATIO_H_ */

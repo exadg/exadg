@@ -15,10 +15,12 @@
 
 #include "../../../operators/operator_base.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 namespace Operators
 {
 struct ConvectiveKernelData
@@ -1188,6 +1190,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_ \

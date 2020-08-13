@@ -10,8 +10,12 @@
 
 #include "../solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h"
 
+namespace ExaDG
+{
 namespace Elementwise
 {
+using namespace dealii;
+
 template<int dim, typename Number, typename Operator>
 class OperatorBase
 {
@@ -71,6 +75,6 @@ private:
 };
 
 } // namespace Elementwise
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_OPERATORS_ELEMENTWISE_OPERATOR_H_ */

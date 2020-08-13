@@ -14,10 +14,12 @@
 #include "../../../operators/mapping_flags.h"
 #include "../../user_interface/input_parameters.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  *  Divergence penalty operator:
  *
@@ -269,6 +271,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_PENALTY_OPERATOR_H_ \
         */
