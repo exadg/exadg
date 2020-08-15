@@ -594,11 +594,11 @@ struct FEEvaluationFactoryImpl
                                                 evaluate_gradients,
                                                 active_fe_index,
                                                 first_selected_component,
-                                                cell,
-                                                face_no,
+                                                std::array<unsigned int, 1>{{cell}},
+                                                std::array<unsigned int, 1>{{face_no}},
                                                 subface_index,
                                                 dof_access_index,
-                                                face_orientation,
+                                                std::array<unsigned int, 1>{{face_orientation}},
                                                 orientation_map);
       else if(data.data[0].n_q_points_1d == fe_degree + 2)
         return FEFaceEvaluationSelector<
@@ -617,11 +617,11 @@ struct FEEvaluationFactoryImpl
                                                 evaluate_gradients,
                                                 active_fe_index,
                                                 first_selected_component,
-                                                cell,
-                                                face_no,
+                                                std::array<unsigned int, 1>{{cell}},
+                                                std::array<unsigned int, 1>{{face_no}},
                                                 subface_index,
                                                 dof_access_index,
-                                                face_orientation,
+                                                std::array<unsigned int, 1>{{face_orientation}},
                                                 orientation_map);
       else if(data.data[0].n_q_points_1d == fe_degree)
         return FEFaceEvaluationSelector<
@@ -640,11 +640,11 @@ struct FEEvaluationFactoryImpl
                                                 evaluate_gradients,
                                                 active_fe_index,
                                                 first_selected_component,
-                                                cell,
-                                                face_no,
+                                                std::array<unsigned int, 1>{{cell}},
+                                                std::array<unsigned int, 1>{{face_no}},
                                                 subface_index,
                                                 dof_access_index,
-                                                face_orientation,
+                                                std::array<unsigned int, 1>{{face_orientation}},
                                                 orientation_map);
       else if(data.data[0].n_q_points_1d == 3 * fe_degree / 2 + 1)
         return FEFaceEvaluationSelector<
@@ -663,11 +663,11 @@ struct FEEvaluationFactoryImpl
                                                 evaluate_gradients,
                                                 active_fe_index,
                                                 first_selected_component,
-                                                cell,
-                                                face_no,
+                                                std::array<unsigned int, 1>{{cell}},
+                                                std::array<unsigned int, 1>{{face_no}},
                                                 subface_index,
                                                 dof_access_index,
-                                                face_orientation,
+                                                std::array<unsigned int, 1>{{face_orientation}},
                                                 orientation_map);
       else if(data.data[0].n_q_points_1d == 3 * (fe_degree + 1) / 2 + 1)
         return FEFaceEvaluationSelector<
@@ -686,11 +686,11 @@ struct FEEvaluationFactoryImpl
                                                 evaluate_gradients,
                                                 active_fe_index,
                                                 first_selected_component,
-                                                cell,
-                                                face_no,
+                                                std::array<unsigned int, 1>{{cell}},
+                                                std::array<unsigned int, 1>{{face_no}},
                                                 subface_index,
                                                 dof_access_index,
-                                                face_orientation,
+                                                std::array<unsigned int, 1>{{face_orientation}},
                                                 orientation_map);
       else if(data.data[0].n_q_points_1d == 2 * fe_degree + 1)
         return FEFaceEvaluationSelector<
@@ -709,11 +709,11 @@ struct FEEvaluationFactoryImpl
                                                 evaluate_gradients,
                                                 active_fe_index,
                                                 first_selected_component,
-                                                cell,
-                                                face_no,
+                                                std::array<unsigned int, 1>{{cell}},
+                                                std::array<unsigned int, 1>{{face_no}},
                                                 subface_index,
                                                 dof_access_index,
-                                                face_orientation,
+                                                std::array<unsigned int, 1>{{face_orientation}},
                                                 orientation_map);
       else
       {
@@ -798,11 +798,11 @@ struct FEEvaluationFactoryImpl
                                                   integrate_gradients,
                                                   active_fe_index,
                                                   first_selected_component,
-                                                  cell,
-                                                  face_no,
+                                                  std::array<unsigned int, 1>{{cell}},
+                                                  std::array<unsigned int, 1>{{face_no}},
                                                   subface_index,
                                                   dof_access_index,
-                                                  face_orientation,
+                                                  std::array<unsigned int, 1>{{face_orientation}},
                                                   orientation_map);
       else if(data.data[0].n_q_points_1d == fe_degree + 2)
         return FEFaceEvaluationSelector<
@@ -822,11 +822,11 @@ struct FEEvaluationFactoryImpl
                                                   integrate_gradients,
                                                   active_fe_index,
                                                   first_selected_component,
-                                                  cell,
-                                                  face_no,
+                                                  std::array<unsigned int, 1>{{cell}},
+                                                  std::array<unsigned int, 1>{{face_no}},
                                                   subface_index,
                                                   dof_access_index,
-                                                  face_orientation,
+                                                  std::array<unsigned int, 1>{{face_orientation}},
                                                   orientation_map);
       else if(data.data[0].n_q_points_1d == fe_degree)
         return FEFaceEvaluationSelector<
@@ -846,11 +846,11 @@ struct FEEvaluationFactoryImpl
                                                   integrate_gradients,
                                                   active_fe_index,
                                                   first_selected_component,
-                                                  cell,
-                                                  face_no,
+                                                  std::array<unsigned int, 1>{{cell}},
+                                                  std::array<unsigned int, 1>{{face_no}},
                                                   subface_index,
                                                   dof_access_index,
-                                                  face_orientation,
+                                                  std::array<unsigned int, 1>{{face_orientation}},
                                                   orientation_map);
       else if(data.data[0].n_q_points_1d == 3 * fe_degree / 2 + 1)
         return FEFaceEvaluationSelector<
@@ -870,11 +870,11 @@ struct FEEvaluationFactoryImpl
                                                   integrate_gradients,
                                                   active_fe_index,
                                                   first_selected_component,
-                                                  cell,
-                                                  face_no,
+                                                  std::array<unsigned int, 1>{{cell}},
+                                                  std::array<unsigned int, 1>{{face_no}},
                                                   subface_index,
                                                   dof_access_index,
-                                                  face_orientation,
+                                                  std::array<unsigned int, 1>{{face_orientation}},
                                                   orientation_map);
       else if(data.data[0].n_q_points_1d == 3 * (fe_degree + 1) / 2 + 1)
         return FEFaceEvaluationSelector<
@@ -894,11 +894,11 @@ struct FEEvaluationFactoryImpl
                                                   integrate_gradients,
                                                   active_fe_index,
                                                   first_selected_component,
-                                                  cell,
-                                                  face_no,
+                                                  std::array<unsigned int, 1>{{cell}},
+                                                  std::array<unsigned int, 1>{{face_no}},
                                                   subface_index,
                                                   dof_access_index,
-                                                  face_orientation,
+                                                  std::array<unsigned int, 1>{{face_orientation}},
                                                   orientation_map);
       else if(data.data[0].n_q_points_1d == 2 * fe_degree + 1)
         return FEFaceEvaluationSelector<
@@ -918,11 +918,11 @@ struct FEEvaluationFactoryImpl
                                                   integrate_gradients,
                                                   active_fe_index,
                                                   first_selected_component,
-                                                  cell,
-                                                  face_no,
+                                                  std::array<unsigned int, 1>{{cell}},
+                                                  std::array<unsigned int, 1>{{face_no}},
                                                   subface_index,
                                                   dof_access_index,
-                                                  face_orientation,
+                                                  std::array<unsigned int, 1>{{face_orientation}},
                                                   orientation_map);
       else
       {
