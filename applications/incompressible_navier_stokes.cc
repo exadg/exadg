@@ -245,7 +245,7 @@ main(int argc, char ** argv)
   {
     input_file = std::string(argv[1]);
 
-    if(argc == 3 && std::string(argv[2]) == "--help")
+    if(argc == 3 and std::string(argv[2]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
         ExaDG::create_input_file(input_file);

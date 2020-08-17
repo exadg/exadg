@@ -145,29 +145,28 @@ main(int argc, char ** argv)
 
   std::string input_file;
 
-  if(argc == 1)
+  if(argc == 1 or (argc == 2 and std::string(argv[1]) == "--help"))
   {
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::cout
-        << "To run the program, use:      ./convection_diffusion_throughput input_file" << std::endl
-        << "To setup the input file, use: ./convection_diffusion_throughput input_file --help"
-        << std::endl;
+      std::cout << "To run the program, use:      ./throughput input_file" << std::endl
+                << "To create an input file, use: ./throughput --create_input_file input_file"
+                << std::endl;
     }
 
     return 0;
   }
   else if(argc >= 2)
   {
-    input_file = std::string(argv[1]);
+    input_file = std::string(argv[argc - 1]);
+  }
 
-    if(argc == 3 && std::string(argv[2]) == "--help")
-    {
-      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        ExaDG::create_input_file(input_file);
+  if(argc == 3 and std::string(argv[1]) == "--create_input_file")
+  {
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      ExaDG::create_input_file(input_file);
 
-      return 0;
-    }
+    return 0;
   }
 
   ExaDG::ParameterStudy  study(input_file);
