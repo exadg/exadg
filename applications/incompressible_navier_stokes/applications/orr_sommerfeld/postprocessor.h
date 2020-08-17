@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_ORR_SOMMERFELD_POSTPROCESSOR_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_ORR_SOMMERFELD_POSTPROCESSOR_H_
 
-#include "../../../include/incompressible_navier_stokes/postprocessor/perturbation_energy_orr_sommerfeld.h"
+#include "incompressible_navier_stokes/postprocessor/perturbation_energy_orr_sommerfeld.h"
 
 namespace ExaDG
 {

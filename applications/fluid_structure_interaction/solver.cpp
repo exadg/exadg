@@ -14,11 +14,11 @@
 // application
 
 // template
-#include "fluid_structure_interaction_test_cases/template/template.h"
+#include "applications/template/template.h"
 
-#include "fluid_structure_interaction_test_cases/bending_wall/bending_wall.h"
-#include "fluid_structure_interaction_test_cases/cylinder_with_flag/cylinder_with_flag.h"
-#include "fluid_structure_interaction_test_cases/pressure_wave/pressure_wave.h"
+#include "applications/bending_wall/bending_wall.h"
+#include "applications/cylinder_with_flag/cylinder_with_flag.h"
+#include "applications/pressure_wave/pressure_wave.h"
 
 namespace ExaDG
 {

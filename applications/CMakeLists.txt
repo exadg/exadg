@@ -10,14 +10,14 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     # Other
-     gmres_test.cc
-     #timer.cc
+     # Miscellaneous
+     gmres_test.cpp
+     timer.cpp
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
         # string replace: cut off .cc from files
-        STRING( REPLACE ".cc" "" testname ${sourcefile} )
+        STRING( REPLACE ".cpp" "" testname ${sourcefile} )
         ADD_EXECUTABLE( ${testname} ${sourcefile})
         DEAL_II_SETUP_TARGET(${testname})
         TARGET_LINK_LIBRARIES(${testname} exadg)

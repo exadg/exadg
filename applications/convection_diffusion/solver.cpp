@@ -16,19 +16,19 @@
 #include "../include/utilities/convergence_study.h"
 
 // applications
-#include "convection_diffusion_test_cases/template/application.h"
+#include "applications/template/application.h"
 
 // applications - convection
-#include "convection_diffusion_test_cases/deforming_hill/deforming_hill.h"
-#include "convection_diffusion_test_cases/rotating_hill/rotating_hill.h"
-#include "convection_diffusion_test_cases/sine_wave/sine_wave.h"
+#include "applications/deforming_hill/deforming_hill.h"
+#include "applications/rotating_hill/rotating_hill.h"
+#include "applications/sine_wave/sine_wave.h"
 
 // applications - diffusion
-#include "convection_diffusion_test_cases/decaying_hill/decaying_hill.h"
+#include "applications/decaying_hill/decaying_hill.h"
 
 // applications - convection-diffusion
-#include "convection_diffusion_test_cases/boundary_layer/boundary_layer.h"
-#include "convection_diffusion_test_cases/const_rhs_const_or_circular_wind/const_rhs.h"
+#include "applications/boundary_layer/boundary_layer.h"
+#include "applications/const_rhs_const_or_circular_wind/const_rhs.h"
 
 namespace ExaDG
 {

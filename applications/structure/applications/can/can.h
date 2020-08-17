@@ -8,7 +8,7 @@
 #ifndef STRUCTURE_CAN
 #define STRUCTURE_CAN
 
-#include "../../../include/structure/user_interface/application_base.h"
+#include "structure/user_interface/application_base.h"
 
 namespace ExaDG
 {

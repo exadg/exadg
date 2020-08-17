@@ -12,38 +12,38 @@
 #include "../include/utilities/convergence_study.h"
 
 // applications
-#include "incompressible_navier_stokes_test_cases/template/template.h"
+#include "applications/template/template.h"
 
 // Stokes flow - analytical solutions
-#include "incompressible_navier_stokes_test_cases/stokes_curl_flow/stokes_curl_flow.h"
-#include "incompressible_navier_stokes_test_cases/stokes_guermond/stokes_guermond.h"
-#include "incompressible_navier_stokes_test_cases/stokes_shahbazi/stokes_shahbazi.h"
+#include "applications/stokes_curl_flow/stokes_curl_flow.h"
+#include "applications/stokes_guermond/stokes_guermond.h"
+#include "applications/stokes_shahbazi/stokes_shahbazi.h"
 
 // Navier-Stokes flow - analytical solutions
-#include "incompressible_navier_stokes_test_cases/beltrami/beltrami.h"
-#include "incompressible_navier_stokes_test_cases/cavity/cavity.h"
-#include "incompressible_navier_stokes_test_cases/couette/couette.h"
-#include "incompressible_navier_stokes_test_cases/free_stream/free_stream.h"
-#include "incompressible_navier_stokes_test_cases/kovasznay/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/orr_sommerfeld/orr_sommerfeld.h"
-#include "incompressible_navier_stokes_test_cases/poiseuille/poiseuille.h"
-#include "incompressible_navier_stokes_test_cases/unstable_beltrami/unstable_beltrami.h"
-#include "incompressible_navier_stokes_test_cases/vortex/vortex.h"
-#include "incompressible_navier_stokes_test_cases/vortex_periodic/vortex_periodic.h"
+#include "applications/beltrami/beltrami.h"
+#include "applications/cavity/cavity.h"
+#include "applications/couette/couette.h"
+#include "applications/free_stream/free_stream.h"
+#include "applications/kovasznay/kovasznay.h"
+#include "applications/orr_sommerfeld/orr_sommerfeld.h"
+#include "applications/poiseuille/poiseuille.h"
+#include "applications/unstable_beltrami/unstable_beltrami.h"
+#include "applications/vortex/vortex.h"
+#include "applications/vortex_periodic/vortex_periodic.h"
 
 // more complex applications and turbulence
-#include "incompressible_navier_stokes_test_cases/fda/fda_nozzle_benchmark.h"
-#include "incompressible_navier_stokes_test_cases/flow_past_cylinder/flow_past_cylinder.h"
-#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz/kelvin_helmholtz.h"
-#include "incompressible_navier_stokes_test_cases/periodic_hill/periodic_hill.h"
-#include "incompressible_navier_stokes_test_cases/shear_layer/shear_layer.h"
-#include "incompressible_navier_stokes_test_cases/taylor_green_vortex/taylor_green_vortex.h"
-#include "incompressible_navier_stokes_test_cases/tum/tum.h"
-#include "incompressible_navier_stokes_test_cases/turbulent_channel/turbulent_channel.h"
+#include "applications/fda/fda_nozzle_benchmark.h"
+#include "applications/flow_past_cylinder/flow_past_cylinder.h"
+#include "applications/kelvin_helmholtz/kelvin_helmholtz.h"
+#include "applications/periodic_hill/periodic_hill.h"
+#include "applications/shear_layer/shear_layer.h"
+#include "applications/taylor_green_vortex/taylor_green_vortex.h"
+#include "applications/tum/tum.h"
+#include "applications/turbulent_channel/turbulent_channel.h"
 
 // incompressible flow with scalar transport (but can also be used for pure fluid simulations)
-#include "../include/incompressible_flow_with_transport/user_interface/application_base.h"
-#include "incompressible_flow_with_transport_test_cases/lung/lung.h"
+#include "incompressible_flow_with_transport/user_interface/application_base.h"
+#include "../incompressible_flow_with_transport/applications/lung/lung.h"
 
 namespace ExaDG
 {

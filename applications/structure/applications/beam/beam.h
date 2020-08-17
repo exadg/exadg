@@ -8,7 +8,7 @@
 #ifndef STRUCTURE_BEAM
 #define STRUCTURE_BEAM
 
-#include "../../../include/structure/user_interface/application_base.h"
+#include "structure/user_interface/application_base.h"
 
 namespace ExaDG
 {

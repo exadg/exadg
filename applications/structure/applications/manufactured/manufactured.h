@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_
 #define APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_
 
-#include "../../../include/structure/user_interface/application_base.h"
+#include "structure/user_interface/application_base.h"
 
 /*
  * Manufactured solution for nonlinear elasticity problem with St. Venant-Kirchhoff

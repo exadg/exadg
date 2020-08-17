@@ -12,7 +12,7 @@
 #include "../include/utilities/throughput_study.h"
 
 // applications
-#include "incompressible_navier_stokes_test_cases/periodic_box/periodic_box.h"
+#include "applications/periodic_box/periodic_box.h"
 
 namespace ExaDG
 {

@@ -12,19 +12,19 @@
 #include "../include/utilities/convergence_study.h"
 
 // applications
-#include "compressible_navier_stokes_test_cases/template/template.h"
+#include "applications/template/template.h"
 
 // Euler equations
-#include "compressible_navier_stokes_test_cases/euler_vortex/euler_vortex.h"
+#include "applications/euler_vortex/euler_vortex.h"
 
 // Navier-Stokes equations
-#include "compressible_navier_stokes_test_cases/couette/couette.h"
-#include "compressible_navier_stokes_test_cases/flow_past_cylinder/flow_past_cylinder.h"
-#include "compressible_navier_stokes_test_cases/manufactured_solution/manufactured_solution.h"
-#include "compressible_navier_stokes_test_cases/poiseuille/poiseuille.h"
-#include "compressible_navier_stokes_test_cases/shear_flow/shear_flow.h"
-#include "compressible_navier_stokes_test_cases/taylor_green/taylor_green.h"
-#include "compressible_navier_stokes_test_cases/turbulent_channel/turbulent_channel.h"
+#include "applications/couette/couette.h"
+#include "applications/flow_past_cylinder/flow_past_cylinder.h"
+#include "applications/manufactured_solution/manufactured_solution.h"
+#include "applications/poiseuille/poiseuille.h"
+#include "applications/shear_flow/shear_flow.h"
+#include "applications/taylor_green/taylor_green.h"
+#include "applications/turbulent_channel/turbulent_channel.h"
 
 namespace ExaDG
 {

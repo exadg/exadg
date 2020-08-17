@@ -8,7 +8,7 @@
 #ifndef STRUCTURE_BAR
 #define STRUCTURE_BAR
 
-#include "../../../include/structure/user_interface/application_base.h"
+#include "structure/user_interface/application_base.h"
 
 namespace ExaDG
 {

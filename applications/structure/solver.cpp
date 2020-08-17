@@ -16,10 +16,10 @@
 #include "../include/utilities/convergence_study.h"
 
 // applications
-#include "./structure/bar/bar.h"
-#include "./structure/beam/beam.h"
-#include "./structure/can/can.h"
-#include "./structure/manufactured/manufactured.h"
+#include "applications/bar/bar.h"
+#include "applications/beam/beam.h"
+#include "applications/can/can.h"
+#include "applications/manufactured/manufactured.h"
 
 namespace ExaDG
 {

@@ -9,9 +9,9 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_POSTPROCESSOR_H_
 
 // other postprocessing routines
-#include "../../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
-#include "../../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
-#include "../../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
+#include "incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+#include "incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+#include "incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 
 // inflow data
 #include "inflow_data_storage.h"

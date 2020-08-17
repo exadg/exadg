@@ -17,7 +17,7 @@
 #include "../include/utilities/throughput_study.h"
 
 // applications
-#include "convection_diffusion_test_cases/periodic_box/periodic_box.h"
+#include "applications/periodic_box/periodic_box.h"
 
 namespace ExaDG
 {

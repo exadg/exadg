@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
-#include "../../../include/postprocessor/statistics_manager.h"
+#include "postprocessor/statistics_manager.h"
 
 namespace ExaDG
 {

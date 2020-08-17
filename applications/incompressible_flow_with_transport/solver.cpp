@@ -12,17 +12,17 @@
 #include "../include/incompressible_flow_with_transport/driver.h"
 
 // application
-#include "incompressible_flow_with_transport_test_cases/template/template.h"
+#include "applications/template/template.h"
 
 // passive scalar
-#include "incompressible_flow_with_transport_test_cases/cavity/cavity.h"
-#include "incompressible_flow_with_transport_test_cases/lung/lung.h"
+#include "applications/cavity/cavity.h"
+#include "applications/lung/lung.h"
 
 // natural convection (active scalar)
-#include "incompressible_flow_with_transport_test_cases/cavity_natural_convection/cavity_natural_convection.h"
-#include "incompressible_flow_with_transport_test_cases/mantle_convection/mantle_convection.h"
-#include "incompressible_flow_with_transport_test_cases/rayleigh_benard/rayleigh_benard.h"
-#include "incompressible_flow_with_transport_test_cases/rising_bubble/rising_bubble.h"
+#include "applications/cavity_natural_convection/cavity_natural_convection.h"
+#include "applications/mantle_convection/mantle_convection.h"
+#include "applications/rayleigh_benard/rayleigh_benard.h"
+#include "applications/rising_bubble/rising_bubble.h"
 
 namespace ExaDG
 {

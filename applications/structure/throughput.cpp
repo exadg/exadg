@@ -17,7 +17,7 @@
 #include "../include/utilities/throughput_study.h"
 
 // applications
-#include "structure/manufactured/manufactured.h"
+#include "applications/manufactured/manufactured.h"
 
 namespace ExaDG
 {

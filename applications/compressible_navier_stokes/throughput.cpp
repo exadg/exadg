@@ -17,7 +17,7 @@
 #include "../include/utilities/throughput_study.h"
 
 // specify the test case that has to be solved
-#include "compressible_navier_stokes_test_cases/taylor_green/taylor_green.h"
+#include "applications/taylor_green/taylor_green.h"
 
 namespace ExaDG
 {

@@ -11,8 +11,8 @@
 #include "grid/lung/lung_environment.h"
 #include "grid/lung/lung_grid.h"
 
-#include "../../../include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
-#include "../../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
+#include "incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
+#include "incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 
 namespace ExaDG
 {
