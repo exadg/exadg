@@ -10,33 +10,6 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     # Poisson
-     poisson.cc
-     poisson_throughput.cc
-
-     # Scalar reaction-convection-diffusion
-     convection_diffusion.cc
-     convection_diffusion_throughput.cc
-
-     # Incompressible Navier-Stokes
-     incompressible_navier_stokes.cc
-     incompressible_navier_stokes_throughput.cc
-     incompressible_navier_stokes_precursor.cc
-
-     # Incompressible flow with scalar transport
-     incompressible_flow_with_transport.cc
-
-     # Compressible Navier-Stokes
-     compressible_navier_stokes.cc 
-     compressible_navier_stokes_throughput.cc
-
-     # Elasticity
-     elasticity.cc
-     elasticity_throughput.cc
-
-     # Fluid-structure interaction
-     fluid_structure_interaction.cc
-
      # Other
      gmres_test.cc
      #timer.cc
@@ -59,3 +32,10 @@ IF(${USE_DEAL_SPECTRUM})
 	TARGET_LINK_LIBRARIES("deal-spectrum" exadg)
 ENDIF()
 
+ADD_SUBDIRECTORY(compressible_navier_stokes)
+ADD_SUBDIRECTORY(convection_diffusion)
+ADD_SUBDIRECTORY(fluid_structure_interaction)
+ADD_SUBDIRECTORY(incompressible_flow_with_transport)
+ADD_SUBDIRECTORY(incompressible_navier_stokes)
+ADD_SUBDIRECTORY(poisson)
+ADD_SUBDIRECTORY(structure)

@@ -163,6 +163,8 @@ SET( TARGET_SRC
 # Set the include directory and the name of the project
 INCLUDE_DIRECTORIES(include)
 
+SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
+
 PROJECT(exadg)
 
 ADD_LIBRARY(exadg  ${TARGET_SRC})
@@ -191,6 +193,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
 DEAL_II_SETUP_TARGET(exadg)
 
+enable_testing()
 ADD_SUBDIRECTORY(applications)
 #ADD_SUBDIRECTORY(tests)
 
