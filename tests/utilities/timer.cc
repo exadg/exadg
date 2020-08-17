@@ -62,11 +62,14 @@ test1()
 
   double wall_time = timer.wall_time();
 
-  pcout << "Wall time for filling the tree = " << std::scientific << wall_time << std::endl
-        << std::endl;
-  pcout << "Wall time for filling one item of the tree = " << std::scientific << wall_time / 10000
-        << std::endl
-        << std::endl;
+  if(false)
+  {
+    pcout << "Wall time for filling the tree = " << std::scientific << wall_time << std::endl
+          << std::endl;
+    pcout << "Wall time for filling one item of the tree = " << std::scientific << wall_time / 10000
+          << std::endl
+          << std::endl;
+  }
 
   pcout << std::endl << "timings for level = 0:" << std::endl;
   tree.print_level(pcout, 0);

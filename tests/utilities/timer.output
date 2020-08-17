@@ -6,10 +6,6 @@ _____________________________________________________________
                   Timer: test 1 (basic)                      
 _____________________________________________________________
 
-Wall time for filling the tree = 1.359646e-02
-
-Wall time for filling one item of the tree = 1.359645e-06
-
 
 timings for level = 0:
 
