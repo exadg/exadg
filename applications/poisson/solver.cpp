@@ -21,6 +21,8 @@
 #include "applications/template/template.h"
 #include "applications/torus/torus.h"
 
+#include <exadg/configuration.h>
+
 namespace ExaDG
 {
 class ApplicationSelector
