@@ -66,6 +66,7 @@ public:
       std::shared_ptr<FTI::ApplicationBase<dim, Number>> app =
         get_application<dim, Number>(input_file);
 
+      add_name_parameter(prm);
       app->add_parameters(prm);
     }
     catch(...) // if application is unknown, only add name of application to parameters
