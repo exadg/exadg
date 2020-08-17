@@ -34,12 +34,14 @@ Add the following variable to your environment (in case you want to make the set
 export WORKING_DIRECTORY=/working_directory
 ```
 
-Since we also have to install other software packages apart from the **navierstokes** code, we create another folder called *sw* (software) for third party software packages
+Since we also have to install other software packages apart from the **ExaDG** code, we create another folder called *sw* (software) for third party software packages
 
 ```bash
 mkdir sw
 ```
-### navierstokes code (part 1)
+
+
+### ExaDG (first steps)
 
 Go to the working directory
 
@@ -47,22 +49,23 @@ Go to the working directory
 cd /working_directory/
 ```
 
-##### Fork navierstokes project
+##### Forking ExaDG project
 
-Fork from the supervisor's **navierstokes** project *git@gitlab.lrz.de:supervisor_id/navierstokes.git*, e.g.,
+Fork from the supervisor's **ExaDG** project *git@gitlab.lrz.de:supervisor_id/exadg.git*, e.g.,
 
-*git@gitlab.lrz.de:ga34jem/navierstokes.git* (Niklas) or 
-*git@gitlab.lrz.de:ne96pad/navierstokes.git* (Martin). 
+*git@gitlab.lrz.de:ga34jem/exadg.git* (Niklas) or 
+*git@gitlab.lrz.de:ne96pad/exadg.git* (Martin). 
 
-This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **navierstokes** project and press the *Fork* button). As a result, a **navierstokes** project with the student's ID **ab12xyz** is created.
+This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **exadg** project and press the *Fork* button). As a result, an **ExaDG** project with the student's ID **ab12xyz** is created.
 
 ```bash
-git clone https://gitlab.lrz.de/ab12xyz/navierstokes.git
-cd navierstokes/
-git remote add supervisor https://gitlab.lrz.de/supervisor_id/navierstokes.git
+git clone https://gitlab.lrz.de/ab12xyz/exadg.git
+cd exadg/
+git remote add supervisor https://gitlab.lrz.de/supervisor_id/exadg.git
 ```
 
-### Interlude - install other software packages
+
+### Interlude - installing third party libraries
 
 Go to the *sw*-folder in your working directory
 
@@ -70,9 +73,9 @@ Go to the *sw*-folder in your working directory
 cd /working_directory/sw/
 ```
 
-#### Trilinos code (optional)
+#### Trilinos (optional)
 
-For some functionalities in the **navierstokes** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
+For some functionalities in the **ExaDG** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
 
 Download **trilinos** and run the following commands
 
@@ -84,12 +87,12 @@ cd Trilinos-trilinos-release-12-12-1/
 mkdir build
 cd build/
 ```
-Copy the script *config_trilinos.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+Copy the script *config_trilinos.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
 cp /working_directory/navierstokes/scripts/config_trilinos.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
+**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
 Next, adapt the directory settings at the top of the script and run the script
 
@@ -107,18 +110,16 @@ and adapt MPIDIR in *config_trilinos.sh*. Find out the path by
 module show mpi/openmpi-4.0.1
 ```
 
-
-
 Next, build the code
 
 ```bash
-make -j2
+make -j[N_CORES]
 make install
 ```
 
-#### Metis code (optional)
+#### Metis (optional)
 
-For some functionalities in the **navierstokes** code (e.g., graph partitioning), **metis** is required. The default setting is to not install **metis** and installing this package is optional.
+For some functionalities in the **ExaDG** code (e.g., graph partitioning), **metis** is required. The default setting is to not install **metis** and installing this package is optional.
 
 Download **metis** and run the following commands
 
@@ -129,10 +130,9 @@ cmake .
 make
 ```
 
+#### deal.II
 
-#### deal.II code
-
-The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
+The **ExaDG** project uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
 
 Clone the **deal.II** code
 
@@ -149,18 +149,18 @@ and run the command
 ```bash
 matrixfree/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
 ```
-Create a folder *build*
+Create a *dealii-build* directory
 
 ```bash
-mkdir build
-cd build/
+mkdir dealii-build
+cd dealii-build/
 ```
 Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
 cp /working_directory/navierstokes/scripts/config_dealii.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
+**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
 Next, adapt the directory settings at the top of the script and switch on trilinos/metis if desired (and adjust the folder if necessary)
 
@@ -179,10 +179,10 @@ bash ./config_dealii.sh
 Build the **deal.II** code
 
 ```bash
-make -j2
+make -j[N_CORES]
 ```
 
-#### fftw code (optional)
+#### fftw (optional)
 
 Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy spectra:
 
@@ -197,12 +197,12 @@ make
 make install
 cd ../fftw-3.3.7-install/lib/
 ```
-Copy the script *combine_fftw.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+Copy the script *combine_fftw.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
 cp /working_directory/navierstokes/scripts/combine_fftw.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
+**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
@@ -217,18 +217,20 @@ export FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/combined"
 
 ```
 
-### navierstokes code continued (part 2)
 
-#### Link deal.II code and build the code
+### Completing ExaDG installation (continued)
+
+#### Linking deal.II code and building the code
 
 ```bash
-cd navierstokes/
+mkdir exadg-build
+cd exadg-build/
 ```
 
-Copy the script *config_exadg.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+Copy the script *config_exadg.sh* from the *exadg/scripts/* directory to the *exadg-build/* directory, e.g.,
 
 ```bash
-cp /working_directory/navierstokes/scripts/config_exadg.sh .
+cp /working_directory/exadg/scripts/config_exadg.sh .
 ```
 
 Deactivate the **fftw** related lines in *config_exadg.sh* if not needed, i.e., set
@@ -252,37 +254,39 @@ make release
 and build the code
 
 ```bash
-cd applications/
-make -j2
+make -j[N_CORES]
 ```
-You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *incompressible_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case/* files, and running
+
+#### Running simulations in **ExaDG**
+
+To run your first simulations, select a solver, e.g., *incompressible_navier_stokes*, and of the flow examples for this solver in the *exadg/solvers/incompressible_navier_stokes/applications/* directory, where you can set and modify the parameters of the considered flow problem.
 
 ```bash
-mpirun -np xxx ./my_application path_to_test_case/input.json
+cd solvers/incompressible_navier_stokes/
+mpirun -np [N_CORES] ./solver /working_directory/exadg/solvers/incompressible_navier_stokes/applications/my_application/input.json
 ```
 
-#### Switching to debug-version
+#### Debugging
 
 To build the debug-version, run the following commands
 
 ```bash
-cd ../
+cd /working_directory/exadg-build/
 make debug
-cd applications/
-make -j2
+make -j[N_CORES]
 ```
-Debug code with gdb
+Debug code with **gdb**
 ```bash
-gdb --args ./my_application path_to_test_case/input.json
+cd solvers/incompressible_navier_stokes/
+gdb --args ./solver path_to_application/input.json
 ```
 
 Don't forget to reactivate release-version after debugging via
 
 ```bash
-cd ../
+cd /working_directory/exadg-build/
 make release
-cd applications/
-make -j2
+make -j[N_CORES]
 ```
 
 #### Working with git
@@ -319,18 +323,18 @@ Start a merge-request on the website https://gitlab.lrz.de/:
 
 Open your own project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
 
-#### Setup an eclipse project
+#### Setting up an eclipse project
 
-Open **eclipse** and choose folder *workspace* as "workspace" in eclipse
+Start **eclipse** and choose the *working_directory/* as "workspace" in eclipse
 
 1. File > New > Project > C/C++ > Makefile Project with Existing Code
-  * fill in Project Name = navierstokes
-  * Existing Code Location = /working_directory/workspace/navierstokes/
+  * fill in Project Name = exadg
+  * Existing Code Location = /working_directory/exadg/
   * disable C, enable C++
   * choose Cross GCC
 2. Project > Properties > C/C++ Build
   * use default build command or user specified build command, e.g., make -j4
-  * fill in build directory (choose navierstokes/applications)
+  * fill in build directory (choose *exadg-build/* directory)
 3. Project > Properties > C/C++ General > Code Analysis: disable 'syntax and semantic errors'
-4. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/sw/dealii/include (for Assembly, GNU C, GNU C++)
+4. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/dependencies/dealii/include (for Assembly, GNU C, GNU C++)
 5. Window > Preferences > General > Editors > Text Editors > Annotations > C/C++ Indexer Markers > uncheck all checkboxes > Apply > OK
