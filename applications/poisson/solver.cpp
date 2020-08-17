@@ -12,14 +12,14 @@
 #include "../include/utilities/parameter_study.h"
 
 // applications
-#include "poisson_test_cases/gaussian/gaussian.h"
-#include "poisson_test_cases/lung/lung.h"
-#include "poisson_test_cases/lung_tubus/lung_tubus.h"
-#include "poisson_test_cases/nozzle/nozzle.h"
-#include "poisson_test_cases/sine/sine.h"
-#include "poisson_test_cases/slit/slit.h"
-#include "poisson_test_cases/template/template.h"
-#include "poisson_test_cases/torus/torus.h"
+#include "applications/gaussian/gaussian.h"
+#include "applications/lung/lung.h"
+#include "applications/lung_tubus/lung_tubus.h"
+#include "applications/nozzle/nozzle.h"
+#include "applications/sine/sine.h"
+#include "applications/slit/slit.h"
+#include "applications/template/template.h"
+#include "applications/torus/torus.h"
 
 namespace ExaDG
 {

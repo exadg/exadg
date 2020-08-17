@@ -10,10 +10,6 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     # Poisson
-     poisson.cc
-     poisson_throughput.cc
-
      # Scalar reaction-convection-diffusion
      convection_diffusion.cc
      convection_diffusion_throughput.cc
@@ -59,3 +55,4 @@ IF(${USE_DEAL_SPECTRUM})
 	TARGET_LINK_LIBRARIES("deal-spectrum" exadg)
 ENDIF()
 
+ADD_SUBDIRECTORY(poisson)
