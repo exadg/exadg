@@ -10,6 +10,8 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -41,3 +43,5 @@ linear_interpolation_2d_cylindrical(Number const                                
                                     std::vector<Number> const &                 phi_values,
                                     std::vector<Tensor<1, dim, Number>> const & solution_values,
                                     unsigned int const &                        component);
+
+} // namespace ExaDG

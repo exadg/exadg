@@ -13,6 +13,10 @@
 #include "../structure/spatial_discretization/operator.h"
 #include "../utilities/print_throughput.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 class MovingMeshElasticity : public MovingMeshBase<dim, Number>
 {
@@ -134,5 +138,6 @@ private:
     iterations;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_GRID_MOVING_MESH_ELASTICITY_H_ */

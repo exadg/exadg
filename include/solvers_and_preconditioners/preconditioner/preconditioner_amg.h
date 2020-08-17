@@ -9,6 +9,10 @@
 #include "../multigrid/multigrid_input_parameters.h"
 #include "../preconditioner/preconditioner_base.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename Operator, typename TrilinosNumber>
 class PreconditionerAMG : public PreconditionerBase<TrilinosNumber>
 {
@@ -85,5 +89,6 @@ private:
 
   AMGData amg_data;
 };
+} // namespace ExaDG
 
 #endif

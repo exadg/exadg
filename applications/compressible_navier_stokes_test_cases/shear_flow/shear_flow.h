@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_SHEAR_FLOW_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_SHEAR_FLOW_H_
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace ShearFlow
 {
+using namespace dealii;
+
 // problem specific parameters
 const double DYN_VISCOSITY  = 0.01;
 const double GAMMA          = 1.5;
@@ -255,6 +259,7 @@ public:
 
 } // namespace ShearFlow
 } // namespace CompNS
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_SHEAR_FLOW_H_ */

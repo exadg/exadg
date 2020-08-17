@@ -17,8 +17,12 @@
 #include "postprocessor/output_data.h"
 #include "postprocessor_base.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim>
 struct PostProcessorData
 {
@@ -57,6 +61,7 @@ private:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_H_ */

@@ -11,6 +11,8 @@
 
 #include "../../grid/lung/read_bspline.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -284,5 +286,7 @@ private:
     return std::make_pair(point, derivative);
   }
 };
+
+} // namespace ExaDG
 
 #endif

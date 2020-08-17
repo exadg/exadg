@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RAYLEIGH_BENARD_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RAYLEIGH_BENARD_H_
 
+namespace ExaDG
+{
 namespace FTI
 {
 namespace RayleighBenard
 {
+using namespace dealii;
+
 template<int dim>
 class TemperatureBC : public Function<dim>
 {
@@ -456,5 +460,6 @@ public:
 
 } // namespace RayleighBenard
 } // namespace FTI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RAYLEIGH_BENARD_H_ */

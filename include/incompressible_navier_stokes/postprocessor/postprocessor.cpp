@@ -9,8 +9,12 @@
 
 #include "../spatial_discretization/dg_navier_stokes_base.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postprocessor_data,
                                           MPI_Comm const &               comm)
@@ -139,3 +143,4 @@ template class PostProcessor<3, float>;
 template class PostProcessor<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

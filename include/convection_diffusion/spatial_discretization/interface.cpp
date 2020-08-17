@@ -7,6 +7,8 @@
 
 #include "interface.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace Interface
@@ -22,5 +24,5 @@ template class Operator<double>;
 template class OperatorOIF<double>;
 
 } // namespace Interface
-
 } // namespace ConvDiff
+} // namespace ExaDG

@@ -14,10 +14,12 @@
 #include "../../user_interface/input_parameters.h"
 #include "weak_boundary_conditions.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 namespace Operators
 {
 template<int dim, typename Number>
@@ -264,7 +266,7 @@ private:
 };
 
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_GRADIENT_OPERATOR_H_ \

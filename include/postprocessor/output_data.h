@@ -10,6 +10,8 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 struct OutputDataBase
@@ -97,5 +99,7 @@ struct OutputDataBase
   // with ParaView using linear interpolation for visualization on these subdivided cells.
   unsigned int degree;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_ */

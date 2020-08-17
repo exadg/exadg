@@ -14,8 +14,12 @@
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../preconditioner/multigrid_preconditioner.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
   parallel::TriangulationBase<dim> const &             triangulation_in,
@@ -485,3 +489,4 @@ template class Operator<3, double, 1>;
 template class Operator<3, float, 3>;
 template class Operator<3, double, 3>;
 } // namespace Poisson
+} // namespace ExaDG

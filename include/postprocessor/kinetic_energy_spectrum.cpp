@@ -50,6 +50,8 @@ public:
 
 static std::shared_ptr<dealspectrum::DealSpectrumWrapper> deal_spectrum_wrapper;
 
+namespace ExaDG
+{
 template<int dim, typename Number>
 KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true), counter(0), reset_counter(true)
@@ -284,3 +286,5 @@ template class KineticEnergySpectrumCalculator<2, double>;
 
 template class KineticEnergySpectrumCalculator<3, float>;
 template class KineticEnergySpectrumCalculator<3, double>;
+
+} // namespace ExaDG

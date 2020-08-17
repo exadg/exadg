@@ -12,6 +12,8 @@
 
 #include "./preconditioner_base.h"
 
+namespace ExaDG
+{
 template<typename Operator>
 class JacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
@@ -51,6 +53,8 @@ private:
 
   VectorType inverse_diagonal;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBIPRECONDITIONER_H_ */

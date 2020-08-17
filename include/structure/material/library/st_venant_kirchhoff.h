@@ -18,8 +18,12 @@
 #include "../../../operators/variable_coefficients.h"
 #include "../material.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim>
 struct StVenantKirchhoffData : public MaterialData
 {
@@ -94,5 +98,6 @@ private:
   mutable VariableCoefficientsCells<dim, Number> f2_coefficients;
 };
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

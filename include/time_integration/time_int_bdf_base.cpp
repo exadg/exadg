@@ -7,6 +7,10 @@
 
 #include "time_int_bdf_base.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename Number>
 TimeIntBDFBase<Number>::TimeIntBDFBase(double const        start_time_,
                                        double const        end_time_,
@@ -450,3 +454,5 @@ TimeIntBDFBase<Number>::do_timestep_oif_substepping(VectorType &,
 
 template class TimeIntBDFBase<float>;
 template class TimeIntBDFBase<double>;
+
+} // namespace ExaDG

@@ -7,8 +7,12 @@
 
 #include "vorticity_calculator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 VorticityCalculator<dim, Number>::VorticityCalculator()
   : matrix_free(nullptr), dof_index(0), quad_index(0)
@@ -77,3 +81,4 @@ template class VorticityCalculator<3, float>;
 template class VorticityCalculator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

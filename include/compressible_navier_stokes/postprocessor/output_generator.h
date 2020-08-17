@@ -15,8 +15,12 @@
 #include "../../postprocessor/output_data.h"
 #include "../../postprocessor/solution_field.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 struct OutputData : public OutputDataBase
 {
   OutputData()
@@ -93,6 +97,7 @@ private:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

@@ -8,6 +8,8 @@
 #ifndef INCLUDE_OPERATORS_VARIABLE_COEFFICIENTS_H_
 #define INCLUDE_OPERATORS_VARIABLE_COEFFICIENTS_H_
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -150,5 +152,6 @@ private:
   //  Table<2, scalar> coefficients_face_cell_based;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_OPERATORS_VARIABLE_COEFFICIENTS_H_ */

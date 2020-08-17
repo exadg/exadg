@@ -31,10 +31,12 @@
 // solvers and preconditioners
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
@@ -399,5 +401,6 @@ private:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */

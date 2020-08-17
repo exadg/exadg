@@ -10,10 +10,14 @@
 
 #include "../../../include/incompressible_navier_stokes/postprocessor/perturbation_energy_orr_sommerfeld.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace OrrSommerfeld
 {
+using namespace dealii;
+
 template<int dim>
 struct MyPostProcessorData
 {
@@ -67,5 +71,7 @@ public:
 
 } // namespace OrrSommerfeld
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_ORR_SOMMERFELD_POSTPROCESSOR_H_ */

@@ -7,8 +7,12 @@
 
 #include "multigrid_preconditioner_momentum.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & comm)
   : Base(comm),
@@ -247,3 +251,4 @@ template class MultigridPreconditioner<2, double>;
 template class MultigridPreconditioner<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

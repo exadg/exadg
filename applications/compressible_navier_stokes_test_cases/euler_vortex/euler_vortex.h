@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_EULER_VORTEX_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_EULER_VORTEX_H_
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace EulerVortex
 {
+using namespace dealii;
+
 // problem specific parameters
 const double DYN_VISCOSITY  = 0.0;
 const double GAMMA          = 1.4;
@@ -328,5 +332,7 @@ public:
 
 } // namespace EulerVortex
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_EULER_VORTEX_H_ */

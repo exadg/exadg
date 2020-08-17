@@ -23,6 +23,10 @@
 
 #include "../preconditioner/preconditioner_amg.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 enum class KrylovSolverType
 {
   CG,
@@ -334,5 +338,6 @@ private:
   std::shared_ptr<PreconditionerAMG<Operator, TrilinosNumber>> amg_preconditioner;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MGCOARSEGRIDSOLVERS_H_ */

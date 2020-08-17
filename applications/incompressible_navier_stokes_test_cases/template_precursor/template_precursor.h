@@ -6,10 +6,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_PRECURSOR_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_PRECURSOR_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace TemplatePrecursor
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
@@ -135,5 +139,7 @@ public:
 
 } // namespace TemplatePrecursor
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_PRECURSOR_H_ */

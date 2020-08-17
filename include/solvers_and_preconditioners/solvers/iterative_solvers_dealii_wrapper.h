@@ -12,6 +12,10 @@
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename VectorType>
 class IterativeSolverBase
 {
@@ -320,5 +324,6 @@ private:
   Preconditioner &       preconditioner;
   FGMRESSolverData const solver_data;
 };
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_ */

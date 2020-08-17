@@ -11,6 +11,12 @@
 
 #include "../../vector_tools/interpolate_solution.h"
 
+namespace ExaDG
+{
+namespace IncNS
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 LinePlotCalculatorStatistics<dim, Number>::LinePlotCalculatorStatistics(
   DoFHandler<dim> const & dof_handler_velocity_in,
@@ -609,3 +615,6 @@ template class LinePlotCalculatorStatistics<3, float>;
 
 template class LinePlotCalculatorStatistics<2, double>;
 template class LinePlotCalculatorStatistics<3, double>;
+
+} // namespace IncNS
+} // namespace ExaDG

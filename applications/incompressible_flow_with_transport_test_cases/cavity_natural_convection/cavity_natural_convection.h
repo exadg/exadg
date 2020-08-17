@@ -10,10 +10,14 @@
 
 #include "grid/mesh_movement_functions.h"
 
+namespace ExaDG
+{
 namespace FTI
 {
 namespace CavityNaturalConvection
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
@@ -438,6 +442,7 @@ public:
 
 } // namespace CavityNaturalConvection
 } // namespace FTI
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_NATURAL_CONVECTION_H_ */

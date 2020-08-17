@@ -15,6 +15,10 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 struct KineticEnergyData
 {
   KineticEnergyData()
@@ -126,5 +130,7 @@ protected:
   unsigned int                    dof_index, quad_index;
   KineticEnergyData               data;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_ */

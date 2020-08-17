@@ -9,10 +9,12 @@
 
 #include "enum_types.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -370,3 +372,4 @@ enum_to_string(MultigridOperatorType const enum_type)
 // there are currently no enums for this section
 
 } // namespace ConvDiff
+} // namespace ExaDG

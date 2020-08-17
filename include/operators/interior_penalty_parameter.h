@@ -15,6 +15,8 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
+namespace ExaDG
+{
 namespace IP // IP = interior penalty
 {
 using namespace dealii;
@@ -87,6 +89,7 @@ get_penalty_factor(unsigned int const degree, Number const factor = 1.0)
 }
 
 } // namespace IP
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_OPERATORS_INTERIOR_PENALTY_PARAMETER_H_ */

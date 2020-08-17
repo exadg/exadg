@@ -10,10 +10,12 @@
 
 #include "enum_types.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -189,3 +191,4 @@ enum_to_string(Preconditioner const enum_type)
 // there are currently no enums for this section
 
 } // namespace Structure
+} // namespace ExaDG

@@ -8,6 +8,10 @@
 #ifndef APPLICATIONS_PERIODIC_HILL_MANIFOLD_H_
 #define APPLICATIONS_PERIODIC_HILL_MANIFOLD_H_
 
+namespace ExaDG
+{
+using namespace dealii;
+
 double
 m_to_mm(double coordinate)
 {
@@ -112,5 +116,8 @@ public:
 private:
   double const H, LENGTH, HEIGHT, GRID_STRETCH_FAC;
 };
+
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_PERIODIC_HILL_MANIFOLD_H_ */

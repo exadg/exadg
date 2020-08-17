@@ -18,8 +18,9 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 using namespace dealii;
-
 
 /*
  *  limit the maximum increase/decrease of the time step size
@@ -316,5 +317,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
 
   return new_time_step;
 }
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_ */

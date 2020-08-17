@@ -9,8 +9,12 @@
 #ifndef INCLUDE_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_STRUCTURE_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim>
 struct FieldFunctions
 {
@@ -20,5 +24,6 @@ struct FieldFunctions
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

@@ -9,10 +9,12 @@
 
 #include <deal.II/base/exceptions.h>
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Elementwise
 {
+using namespace dealii;
+
 std::string
 enum_to_string(Preconditioner const enum_type)
 {
@@ -38,3 +40,4 @@ enum_to_string(Preconditioner const enum_type)
 }
 
 } // namespace Elementwise
+} // namespace ExaDG

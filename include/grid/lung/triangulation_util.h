@@ -4,6 +4,10 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/numerics/data_out.h>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 void print_triangulation_3_1(std::vector<Point<3>> & points, std::vector<CellData<1>> & cells)
 {
   std::vector<Point<3>>    points2;
@@ -75,5 +79,7 @@ void print_tria_statistics(Triangulation<3> & tria)
   for(auto i : id_map)
     std::cout << i.first << " " << i.second << std::endl;
 }
+
+} // namespace ExaDG
 
 #endif

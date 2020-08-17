@@ -12,6 +12,8 @@
 
 #include "../../user_interface/boundary_descriptor.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
 using namespace dealii;
@@ -52,7 +54,7 @@ inline DEAL_II_ALWAYS_INLINE //
     // do nothing
 
     AssertThrow(boundary_type == BoundaryType::Dirichlet ||
-                boundary_type == BoundaryType::DirichletMortar,
+                  boundary_type == BoundaryType::DirichletMortar,
                 ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
@@ -60,7 +62,7 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 } // namespace Structure
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_ */

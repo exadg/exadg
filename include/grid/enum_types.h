@@ -10,6 +10,8 @@
 
 #include <string>
 
+namespace ExaDG
+{
 /**************************************************************************************/
 /*                                                                                    */
 /*                                         MESH                                       */
@@ -43,5 +45,6 @@ enum class MappingType
 std::string
 enum_to_string(MappingType const enum_type);
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_ENUM_TYPES_H_ */

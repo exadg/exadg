@@ -8,8 +8,12 @@
 #include "driver.h"
 #include "../utilities/print_throughput.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const & comm)
   : mpi_comm(comm),
@@ -340,3 +344,4 @@ template class Driver<2, double>;
 template class Driver<3, double>;
 
 } // namespace Poisson
+} // namespace ExaDG

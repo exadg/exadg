@@ -7,8 +7,12 @@
 
 #include "q_criterion_calculator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 QCriterionCalculator<dim, Number>::QCriterionCalculator()
   : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
@@ -81,3 +85,4 @@ template class QCriterionCalculator<3, float>;
 template class QCriterionCalculator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

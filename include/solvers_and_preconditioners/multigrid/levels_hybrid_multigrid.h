@@ -8,7 +8,8 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_LEVELS_HYBRID_MULTIGRID_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_LEVELS_HYBRID_MULTIGRID_H_
 
-
+namespace ExaDG
+{
 struct MGDoFHandlerIdentifier
 {
   MGDoFHandlerIdentifier(unsigned int degree, bool is_dg) : degree(degree), is_dg(is_dg)
@@ -70,6 +71,8 @@ private:
   unsigned int           _h_level;
   MGDoFHandlerIdentifier _dof_handler_id;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_LEVELS_HYBRID_MULTIGRID_H_ */

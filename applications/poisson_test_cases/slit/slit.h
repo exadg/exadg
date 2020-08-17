@@ -5,12 +5,19 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_SLIT_H_
+#define APPLICATIONS_POISSON_TEST_CASES_SLIT_H_
+
 #include <deal.II/base/function_lib.h>
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Slit
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -120,3 +127,6 @@ public:
 
 } // namespace Slit
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

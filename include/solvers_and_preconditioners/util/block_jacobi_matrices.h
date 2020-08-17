@@ -8,7 +8,8 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCK_JACOBI_MATRICES_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCK_JACOBI_MATRICES_H_
 
-
+namespace ExaDG
+{
 /*
  *  Initialize block Jacobi matrices with zeros.
  */
@@ -58,6 +59,8 @@ calculate_lu_factorization_block_jacobi(std::vector<LAPACKFullMatrix<Number>> & 
     }
   }
 }
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCK_JACOBI_MATRICES_H_ */

@@ -12,6 +12,10 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 struct SolverData
 {
   SolverData() : max_iter(1e3), abs_tol(1e-20), rel_tol(1e-6), max_krylov_size(30)
@@ -41,6 +45,6 @@ struct SolverData
   // only relevant for GMRES type solvers
   unsigned int max_krylov_size;
 };
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_SOLVERS_SOLVER_DATA_H_ */

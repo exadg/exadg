@@ -12,8 +12,12 @@
 
 #include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 ElasticityOperatorBase<dim, Number>::ElasticityOperatorBase() : scaling_factor_mass(1.0)
 {
@@ -181,3 +185,4 @@ template class ElasticityOperatorBase<2, double>;
 template class ElasticityOperatorBase<3, float>;
 template class ElasticityOperatorBase<3, double>;
 } // namespace Structure
+} // namespace ExaDG

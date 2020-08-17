@@ -32,10 +32,12 @@
 #include "../structure/time_integration/driver_steady_problems.h"
 #include "../structure/time_integration/time_int_gen_alpha.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 enum class OperatorType
 {
   Nonlinear,
@@ -164,5 +166,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif /* INCLUDE_STRUCTURE_DRIVER_H_ */

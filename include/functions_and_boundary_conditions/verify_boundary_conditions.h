@@ -8,6 +8,8 @@
 #ifndef INCLUDE_FUNCTIONALITIES_VERIFY_BOUNDARY_CONDITIONS_H_
 #define INCLUDE_FUNCTIONALITIES_VERIFY_BOUNDARY_CONDITIONS_H_
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename BoundaryDescriptor>
@@ -45,6 +47,7 @@ verify_boundary_conditions(
   }
 }
 
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_FUNCTIONALITIES_VERIFY_BOUNDARY_CONDITIONS_H_ */

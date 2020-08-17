@@ -17,8 +17,12 @@
 
 #include "postprocessor_base.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim>
 struct PostProcessorData
 {
@@ -85,5 +89,6 @@ private:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */

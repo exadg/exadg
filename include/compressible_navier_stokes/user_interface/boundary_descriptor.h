@@ -15,8 +15,13 @@ using namespace dealii;
 
 #include "input_parameters.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 enum class BoundaryType
 {
   Undefined,
@@ -84,5 +89,6 @@ struct BoundaryDescriptorEnergy : public BoundaryDescriptor<dim>
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_ */

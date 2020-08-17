@@ -8,8 +8,12 @@
 #ifndef INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim>
 struct FieldFunctions
 {
@@ -18,5 +22,6 @@ struct FieldFunctions
 };
 
 } // namespace Poisson
+} // namespace ExaDG
 
 #endif /* INCLUDE_LAPLACE_FIELD_FUNCTIONS_H_ */

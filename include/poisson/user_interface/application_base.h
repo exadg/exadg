@@ -24,10 +24,12 @@
 // postprocessor
 #include "../../convection_diffusion/postprocessor/postprocessor.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -82,7 +84,7 @@ protected:
 };
 
 } // namespace Poisson
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */

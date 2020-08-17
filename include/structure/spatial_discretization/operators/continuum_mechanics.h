@@ -12,6 +12,8 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/physics/transformations.h>
 
+namespace ExaDG
+{
 namespace Structure
 {
 using namespace dealii;
@@ -51,8 +53,9 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   return 0.5 * subtract_identity(transpose(F) * F);
 }
-} // namespace Structure
 
+} // namespace Structure
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUUM_MECHANICS_H_ */

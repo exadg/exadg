@@ -14,10 +14,12 @@
 
 #include "utilities/timings_hierarchical.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 // forward declarations
 class InputParameters;
 
@@ -81,5 +83,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

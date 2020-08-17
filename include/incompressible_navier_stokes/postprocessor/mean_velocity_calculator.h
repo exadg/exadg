@@ -13,8 +13,12 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim>
 struct MeanVelocityCalculatorData
 {
@@ -152,5 +156,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_MEAN_VELOCITY_CALCULATOR_H_ */

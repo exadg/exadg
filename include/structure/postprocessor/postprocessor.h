@@ -18,8 +18,12 @@
 
 #include "output_generator.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim>
 struct PostProcessorData
 {
@@ -54,5 +58,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

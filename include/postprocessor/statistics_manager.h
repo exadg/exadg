@@ -7,6 +7,10 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 // turbulent channel data
 
 struct TurbulentChannelData
@@ -127,5 +131,6 @@ private:
   TurbulentChannelData turb_channel_data;
 };
 
+} // namespace ExaDG
 
 #endif

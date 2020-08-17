@@ -10,8 +10,12 @@
 #include "boundary_conditions.h"
 #include "continuum_mechanics.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
@@ -60,3 +64,4 @@ template class LinearOperator<3, float>;
 template class LinearOperator<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

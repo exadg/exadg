@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_FLOW_RATE_CONTROLLER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_FLOW_RATE_CONTROLLER_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace PeriodicHill
 {
+using namespace dealii;
+
 class FlowRateController
 {
 public:
@@ -80,6 +84,7 @@ private:
 
 } // namespace PeriodicHill
 } // namespace IncNS
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_FLOW_RATE_CONTROLLER_H_ \

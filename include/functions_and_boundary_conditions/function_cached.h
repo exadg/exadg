@@ -8,6 +8,8 @@
 #ifndef INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_
 #define INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_
 
+namespace ExaDG
+{
 using namespace dealii;
 
 /*
@@ -82,5 +84,7 @@ private:
   std::map<unsigned int, MapVectorIndex> const *    global_map_vector_index;
   std::map<unsigned int, ArrayVectorTensor> const * map_solution;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_ */

@@ -30,8 +30,12 @@
 // interface
 #include "interface.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
@@ -279,5 +283,6 @@ private:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */

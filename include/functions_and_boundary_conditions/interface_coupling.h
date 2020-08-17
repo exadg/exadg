@@ -21,6 +21,8 @@
 #include "../vector_tools/interpolate_solution.h"
 #include "function_cached.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, int spacedim>
@@ -683,6 +685,6 @@ private:
   mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorTensor>>     map_solution_src;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_INTERFACE_COUPLING_H_ */

@@ -11,8 +11,12 @@
 // C/C++
 #include <string>
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -124,5 +128,6 @@ enum_to_string(Preconditioner const enum_type);
 // there are currently no enums for this section
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

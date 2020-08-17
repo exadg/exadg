@@ -14,8 +14,12 @@
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<OperatorBase>                   operator_in,
@@ -672,3 +676,4 @@ template class TimeIntBDF<3, float>;
 template class TimeIntBDF<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

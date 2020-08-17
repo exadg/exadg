@@ -15,8 +15,12 @@
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/material_descriptor.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim>
 struct OperatorData : public OperatorBaseData
 {
@@ -103,7 +107,7 @@ protected:
 };
 
 } // namespace Structure
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_ELASTICITY_OPERATOR_BASE_H_ */

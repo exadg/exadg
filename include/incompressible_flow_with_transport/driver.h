@@ -44,8 +44,12 @@
 #include "../incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 #include "../utilities/print_general_infos.h"
 
+namespace ExaDG
+{
 namespace FTI
 {
+using namespace dealii;
+
 template<int dim, typename Number = double>
 class Driver
 {
@@ -165,7 +169,7 @@ private:
 };
 
 } // namespace FTI
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_DRIVER_H_ */

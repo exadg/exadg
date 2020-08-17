@@ -16,10 +16,12 @@
 #include "time_integration/ssp_runge_kutta.h"
 #include "time_integration/time_int_explicit_runge_kutta_base.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 // forward declarations
 class InputParameters;
 
@@ -111,5 +113,6 @@ private:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_ */

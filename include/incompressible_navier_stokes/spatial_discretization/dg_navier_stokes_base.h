@@ -50,10 +50,12 @@
 // time integration
 #include "../../time_integration/interpolate.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class DGNavierStokesBase;
 /*
@@ -687,5 +689,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_ */

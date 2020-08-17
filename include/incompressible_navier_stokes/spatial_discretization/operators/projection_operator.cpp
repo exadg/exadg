@@ -9,8 +9,12 @@
 
 #include "weak_boundary_conditions.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 ProjectionOperator<dim, Number>::initialize(
@@ -297,3 +301,4 @@ template class ProjectionOperator<3, float>;
 template class ProjectionOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

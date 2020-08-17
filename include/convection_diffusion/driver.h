@@ -45,10 +45,12 @@
 #include "../utilities/print_functions.h"
 #include "../utilities/print_general_infos.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 enum class Operatortype
 {
   MassOperator,
@@ -172,5 +174,6 @@ private:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DRIVER_H_ */

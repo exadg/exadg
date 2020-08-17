@@ -12,6 +12,10 @@
 
 #include "../vector_tools/point_value.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files_pressure_difference(true)
@@ -91,3 +95,5 @@ template class PressureDifferenceCalculator<2, double>;
 
 template class PressureDifferenceCalculator<3, float>;
 template class PressureDifferenceCalculator<3, double>;
+
+} // namespace ExaDG

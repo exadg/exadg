@@ -32,8 +32,12 @@
 #include "../include/functions_and_boundary_conditions/verify_boundary_conditions.h"
 #include "../utilities/print_general_infos.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 // Select the operator to be applied
 enum class Operator
 {
@@ -167,5 +171,6 @@ private:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */

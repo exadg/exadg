@@ -8,10 +8,14 @@
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace Operators
 {
+using namespace dealii;
+
 template<int dim>
 struct ConvectiveKernelData
 {
@@ -592,5 +596,6 @@ private:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif

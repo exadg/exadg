@@ -15,10 +15,12 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_explicit_runge_kutta_base.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 // forward declarations
 class InputParameters;
 
@@ -105,5 +107,6 @@ private:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_TIME_INT_EXPLICIT_RUNGE_KUTTA_H_ */

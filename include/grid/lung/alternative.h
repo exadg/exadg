@@ -5,6 +5,8 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/numerics/data_out.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -372,3 +374,5 @@ create_lung(dealii::parallel::distributed::Triangulation<dim> & triat,
   triat.copy_triangulation(tria);
   triat.refine_global(n_refine_space);
 }
+
+} // namespace ExaDG

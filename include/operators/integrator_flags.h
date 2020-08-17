@@ -8,6 +8,10 @@
 #ifndef INCLUDE_OPERATORS_INTEGRATOR_FLAGS_H_
 #define INCLUDE_OPERATORS_INTEGRATOR_FLAGS_H_
 
+namespace ExaDG
+{
+using namespace dealii;
+
 struct CellFlags
 {
   CellFlags(const bool value = false, const bool gradient = false, const bool hessian = false)
@@ -83,6 +87,6 @@ struct IntegratorFlags
   FaceFlags face_integrate;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_OPERATORS_INTEGRATOR_FLAGS_H_ */

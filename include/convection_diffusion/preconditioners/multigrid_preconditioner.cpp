@@ -12,8 +12,12 @@
 
 #include "../../operators/mapping_flags.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & mpi_comm)
   : Base(mpi_comm),
@@ -326,3 +330,4 @@ template class MultigridPreconditioner<2, double>;
 template class MultigridPreconditioner<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

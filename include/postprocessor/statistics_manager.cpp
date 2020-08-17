@@ -9,6 +9,10 @@
 
 //#define OUTPUT_DEBUG_INFO
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 StatisticsManager<dim, Number>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,
                                                   const Mapping<dim> &    mapping_in)
@@ -616,3 +620,5 @@ template class StatisticsManager<3, float>;
 
 template class StatisticsManager<2, double>;
 template class StatisticsManager<3, double>;
+
+} // namespace ExaDG

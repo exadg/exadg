@@ -7,8 +7,12 @@
 
 #include "streamfunction_calculator_rhs_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 StreamfunctionCalculatorRHSOperator<dim, Number>::StreamfunctionCalculatorRHSOperator()
   : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
@@ -75,3 +79,4 @@ template class StreamfunctionCalculatorRHSOperator<3, float>;
 template class StreamfunctionCalculatorRHSOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

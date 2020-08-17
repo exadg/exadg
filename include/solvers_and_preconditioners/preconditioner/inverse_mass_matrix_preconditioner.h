@@ -11,6 +11,10 @@
 #include "../preconditioner/preconditioner_base.h"
 #include "operators/inverse_mass_matrix.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, int n_components, typename Number>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<Number>
 {
@@ -39,6 +43,7 @@ public:
 private:
   InverseMassMatrixOperator<dim, n_components, Number> inverse_mass_matrix_operator;
 };
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERSEMASSMATRIXPRECONDITIONER_H_ */

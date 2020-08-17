@@ -20,8 +20,12 @@
 #include "line_plot_calculation.h"
 #include "output_generator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim>
 struct PostProcessorData
 {
@@ -99,5 +103,6 @@ private:
 
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */

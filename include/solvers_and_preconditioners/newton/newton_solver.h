@@ -12,8 +12,12 @@
 
 #include "newton_solver_data.h"
 
+namespace ExaDG
+{
 namespace Newton
 {
+using namespace dealii;
+
 template<typename VectorType,
          typename NonlinearOperator,
          typename LinearOperator,
@@ -124,6 +128,6 @@ private:
 };
 
 } // namespace Newton
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_ */

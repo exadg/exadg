@@ -10,10 +10,12 @@
 
 #include <deal.II/base/function.h>
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim>
 struct AnalyticalSolution
 {
@@ -21,5 +23,7 @@ struct AnalyticalSolution
 };
 
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ANALYTICAL_SOLUTION_H_ */

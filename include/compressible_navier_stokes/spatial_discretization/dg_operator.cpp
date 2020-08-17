@@ -13,8 +13,12 @@
 
 #include "time_integration/time_step_calculation.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
@@ -532,3 +536,4 @@ template class DGOperator<3, float>;
 template class DGOperator<3, double>;
 
 } // namespace CompNS
+} // namespace ExaDG

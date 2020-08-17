@@ -10,6 +10,10 @@
 
 #include "time_int_gen_alpha_base.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename Number>
 TimeIntGenAlphaBase<Number>::TimeIntGenAlphaBase(double const &       start_time_,
                                                  double const &       end_time_,
@@ -171,3 +175,5 @@ TimeIntGenAlphaBase<Number>::do_timestep_post_solve()
 
 template class TimeIntGenAlphaBase<float>;
 template class TimeIntGenAlphaBase<double>;
+
+} // namespace ExaDG

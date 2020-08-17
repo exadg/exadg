@@ -8,6 +8,9 @@
 #ifndef INCLUDE_GRID_FIND_ALL_ACTIVE_CELLS_AROUND_POINT_H_
 #define INCLUDE_GRID_FIND_ALL_ACTIVE_CELLS_AROUND_POINT_H_
 
+namespace ExaDG
+{
+using namespace dealii;
 
 template<int dim>
 std::vector<std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>>>
@@ -68,5 +71,6 @@ n_locally_owned_active_cells_around_point(
   return counter;
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_GRID_FIND_ALL_ACTIVE_CELLS_AROUND_POINT_H_ */

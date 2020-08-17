@@ -7,6 +7,10 @@
 
 #include "linear_interpolation.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 Number
 linear_interpolation_1d(double const &                              y,
@@ -259,3 +263,5 @@ linear_interpolation_2d_cylindrical(double const                              r_
                                     std::vector<double> const &               phi_values,
                                     std::vector<Tensor<1, 3, double>> const & solution_values,
                                     unsigned int const &                      component);
+
+} // namespace ExaDG

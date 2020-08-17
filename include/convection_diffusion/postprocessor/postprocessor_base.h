@@ -16,10 +16,12 @@
 
 #include "convection_diffusion/user_interface/analytical_solution.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<typename Number>
 class PostProcessorInterface
 {
@@ -52,5 +54,6 @@ public:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

@@ -10,6 +10,8 @@
 
 #include "./preconditioner_base.h"
 
+namespace ExaDG
+{
 template<typename Operator>
 class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
 {
@@ -48,6 +50,8 @@ public:
 private:
   Operator const & underlying_operator;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCKJACOBIPRECONDITIONER_H_ */

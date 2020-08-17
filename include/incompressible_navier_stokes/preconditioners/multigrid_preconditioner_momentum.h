@@ -8,13 +8,16 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_MOMENTUM_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_MOMENTUM_H_
 
-
 #include "../../operators/multigrid_operator.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/operators/momentum_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  * Multigrid preconditioner for momentum operator of the incompressible Navier-Stokes equations.
  */
@@ -116,6 +119,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_MOMENTUM_H_ \
         */

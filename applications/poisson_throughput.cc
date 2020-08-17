@@ -19,6 +19,8 @@
 // applications
 #include "poisson_test_cases/periodic_box/periodic_box.h"
 
+namespace ExaDG
+{
 class ApplicationSelector
 {
 public:
@@ -126,6 +128,7 @@ run(ThroughputStudy const & throughput,
 
   throughput.wall_times.push_back(wall_time);
 }
+} // namespace ExaDG
 
 int
 main(int argc, char ** argv)
@@ -154,17 +157,17 @@ main(int argc, char ** argv)
     if(argc == 3 && std::string(argv[2]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        create_input_file(input_file);
+        ExaDG::create_input_file(input_file);
 
       return 0;
     }
   }
 
-  ParameterStudy  study(input_file);
-  ThroughputStudy throughput(input_file);
+  ExaDG::ParameterStudy  study(input_file);
+  ExaDG::ThroughputStudy throughput(input_file);
 
   // fill resolution vector depending on the operator_type
-  study.fill_resolution_vector(&Poisson::get_dofs_per_element, throughput.operator_type);
+  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, throughput.operator_type);
 
   // loop over resolutions vector and run simulations
   for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
@@ -174,15 +177,16 @@ main(int argc, char ** argv)
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
     if(study.dim == 2 && study.precision == "float")
-      run<2, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<2, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else if(study.dim == 2 && study.precision == "double")
-      run<2, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<2, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else if(study.dim == 3 && study.precision == "float")
-      run<3, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<3, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else if(study.dim == 3 && study.precision == "double")
-      run<3, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      ExaDG::run<3, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
     else
-      AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+      AssertThrow(false,
+                  dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }
 
   throughput.print_results(mpi_comm);

@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_COUETTE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_COUETTE_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Couette
 {
+using namespace dealii;
+
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -284,5 +288,7 @@ public:
 
 } // namespace Couette
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_COUETTE_H_ */

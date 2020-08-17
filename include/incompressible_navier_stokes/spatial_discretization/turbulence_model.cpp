@@ -7,8 +7,12 @@
 
 #include "turbulence_model.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 TurbulenceModel<dim, Number>::TurbulenceModel() : matrix_free(nullptr)
 {
@@ -533,3 +537,4 @@ template class TurbulenceModel<3, float>;
 template class TurbulenceModel<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

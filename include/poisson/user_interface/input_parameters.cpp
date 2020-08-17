@@ -8,8 +8,12 @@
 #include "input_parameters.h"
 #include <deal.II/base/exceptions.h>
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
     right_hand_side(false),
@@ -115,3 +119,4 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
 
 
 } // namespace Poisson
+} // namespace ExaDG

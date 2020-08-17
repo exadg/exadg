@@ -8,6 +8,8 @@
 #ifndef INCLUDE_UTILITIES_TIMINGS_HIERARCHICAL_H_
 #define INCLUDE_UTILITIES_TIMINGS_HIERARCHICAL_H_
 
+namespace ExaDG
+{
 using namespace dealii;
 
 class TimerTree
@@ -380,7 +382,7 @@ private:
   static unsigned int const offset_per_level = 2;
   static unsigned int const precision        = 2;
 };
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_UTILITIES_TIMINGS_HIERARCHICAL_H_ */

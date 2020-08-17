@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_POISEUILLE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_POISEUILLE_H_
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace Poiseuille
 {
+using namespace dealii;
+
 enum class BoundaryCondition
 {
   ParabolicInflow,
@@ -484,5 +488,7 @@ public:
 
 } // namespace Poiseuille
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_POISEUILLE_H_ */

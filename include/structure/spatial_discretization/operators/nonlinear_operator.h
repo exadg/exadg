@@ -10,8 +10,12 @@
 
 #include "elasticity_operator_base.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class NonLinearOperator : public ElasticityOperatorBase<dim, Number>
 {
@@ -160,5 +164,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

@@ -10,6 +10,10 @@
 
 #include <string>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 enum class CFLConditionType
 {
   VelocityNorm,
@@ -29,5 +33,7 @@ enum class GenAlphaType
 
 std::string
 enum_to_string(GenAlphaType const enum_type);
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_ENUM_TYPES_H_ */

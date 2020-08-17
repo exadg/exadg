@@ -6,10 +6,14 @@
 #ifndef APPLICATIONS_FSI_TEMPLATE_H_
 #define APPLICATIONS_FSI_TEMPLATE_H_
 
+namespace ExaDG
+{
 namespace FSI
 {
 namespace Template
 {
+using namespace dealii;
+
 //  Example of a user defined function
 template<int dim>
 class MyFunction : public Function<dim>
@@ -227,5 +231,6 @@ public:
 
 } // namespace Template
 } // namespace FSI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_FSI_TEMPLATE_H_ */

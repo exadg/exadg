@@ -3,6 +3,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 class PartMetis
 {
 public:
@@ -267,6 +269,7 @@ void partition(Triangulation<3> & tria)
   }
 }
 
+} // namespace ExaDG
 
 
 #endif

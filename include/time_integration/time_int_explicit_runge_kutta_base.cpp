@@ -7,6 +7,10 @@
 
 #include "time_int_explicit_runge_kutta_base.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename Number>
 TimeIntExplRKBase<Number>::TimeIntExplRKBase(double const &      start_time_,
                                              double const &      end_time_,
@@ -166,3 +170,5 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 // instantiations
 template class TimeIntExplRKBase<float>;
 template class TimeIntExplRKBase<double>;
+
+} // namespace ExaDG

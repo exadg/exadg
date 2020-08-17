@@ -13,6 +13,8 @@
 
 #include "../smoothers/smoother_base.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<typename Operator, typename VectorType>
@@ -46,5 +48,7 @@ public:
 private:
   PreconditionChebyshev<Operator, VectorType> smoother_object;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_CHEBYSHEVSMOOTHER_H_ */

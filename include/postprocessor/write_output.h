@@ -14,6 +14,8 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim>
@@ -59,5 +61,6 @@ write_boundary_IDs(Triangulation<dim> const & triangulation,
   grid_out.write_vtk(triangulation, output);
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_POSTPROCESSOR_WRITE_OUTPUT_H_ */

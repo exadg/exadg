@@ -14,8 +14,12 @@
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../preconditioners/compatible_laplace_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // forward declaration
 template<int dim, typename Number>
 class DGNavierStokesCoupled;
@@ -423,6 +427,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COUPLED_SOLVER_H_ \
         */

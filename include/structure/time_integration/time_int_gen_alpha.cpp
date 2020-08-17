@@ -12,8 +12,12 @@
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
   std::shared_ptr<Interface::Operator<Number>> operator_,
@@ -322,4 +326,6 @@ template class TimeIntGenAlpha<3, float>;
 
 template class TimeIntGenAlpha<2, double>;
 template class TimeIntGenAlpha<3, double>;
+
 } // namespace Structure
+} // namespace ExaDG

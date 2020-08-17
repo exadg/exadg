@@ -25,10 +25,13 @@
 // postprocessor
 #include "../postprocessor/postprocessor.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -87,6 +90,7 @@ protected:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_ */

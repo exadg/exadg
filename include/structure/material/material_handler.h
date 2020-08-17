@@ -15,10 +15,12 @@
 #include "library/st_venant_kirchhoff.h"
 #include "material.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class MaterialHandler
 {
@@ -103,6 +105,6 @@ private:
 };
 
 } // namespace Structure
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_STRUCTURE_MATERIAL_MATERIAL_HANDLER_H_ */

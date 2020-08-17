@@ -5,13 +5,20 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_LUNG_H_
+#define APPLICATIONS_POISSON_TEST_CASES_LUNG_H_
+
 #include "grid/lung/lung_environment.h"
 #include "grid/lung/lung_grid.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Lung
 {
+using namespace dealii;
+
 // lung geometry
 std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output/";
 
@@ -75,7 +82,7 @@ do_create_grid(
   files.push_back(FOLDER_LUNG_FILES + "rightbot.dat");
   files.push_back(FOLDER_LUNG_FILES + "rightmid.dat");
   files.push_back(FOLDER_LUNG_FILES + "righttop.dat");
-  auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
+  auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
 
   std::string spline_file = FOLDER_LUNG_FILES + "../splines_raw6.dat";
 
@@ -87,26 +94,26 @@ do_create_grid(
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
-    dealii::GridGenerator::lung(*tria,
-                                n_refine_space,
-                                n_refine_space,
-                                tree_factory,
-                                timings,
-                                OUTLET_ID_FIRST,
-                                OUTLET_ID_LAST,
-                                spline_file,
-                                generation_limiter);
+    ExaDG::GridGen::lung(*tria,
+                         n_refine_space,
+                         n_refine_space,
+                         tree_factory,
+                         timings,
+                         OUTLET_ID_FIRST,
+                         OUTLET_ID_LAST,
+                         spline_file,
+                         generation_limiter);
   }
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
-    dealii::GridGenerator::lung(*tria,
-                                n_refine_space,
-                                tree_factory,
-                                timings,
-                                OUTLET_ID_FIRST,
-                                OUTLET_ID_LAST,
-                                spline_file,
-                                generation_limiter);
+    ExaDG::GridGen::lung(*tria,
+                         n_refine_space,
+                         tree_factory,
+                         timings,
+                         OUTLET_ID_FIRST,
+                         OUTLET_ID_LAST,
+                         spline_file,
+                         generation_limiter);
   }
   else
   {
@@ -251,3 +258,6 @@ public:
 
 } // namespace Lung
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

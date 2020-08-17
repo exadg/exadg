@@ -12,6 +12,10 @@
 #include "enum_types.h"
 #include "time_int_base.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename Number>
 class TimeIntGenAlphaBase : public TimeIntBase
 {
@@ -87,5 +91,6 @@ private:
   double time_step;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_GEN_ALPHA_BASE_H_ */

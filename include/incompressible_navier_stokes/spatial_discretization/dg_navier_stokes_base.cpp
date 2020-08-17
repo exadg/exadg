@@ -18,8 +18,12 @@
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_projection.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
@@ -1713,3 +1717,4 @@ template class DGNavierStokesBase<2, double>;
 template class DGNavierStokesBase<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

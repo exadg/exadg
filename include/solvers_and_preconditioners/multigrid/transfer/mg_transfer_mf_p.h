@@ -10,6 +10,8 @@
 
 #include "mg_transfer_mf.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number, typename VectorType, int components = 1>
@@ -71,5 +73,7 @@ private:
 
   bool is_dg;
 };
+
+} // namespace ExaDG
 
 #endif

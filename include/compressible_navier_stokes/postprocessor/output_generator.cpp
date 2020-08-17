@@ -12,8 +12,12 @@
 
 #include "output_generator.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
 template<int dim, typename Number, typename VectorType>
 void
 write_output(OutputData const &                              output_data,
@@ -209,3 +213,4 @@ template class OutputGenerator<2, double>;
 template class OutputGenerator<3, float>;
 template class OutputGenerator<3, double>;
 } // namespace CompNS
+} // namespace ExaDG

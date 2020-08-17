@@ -1,6 +1,10 @@
 #ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 #define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 
+namespace ExaDG
+{
+using namespace dealii;
+
 enum class MeshMovementAdvanceInTime
 {
   Undefined,
@@ -273,5 +277,7 @@ protected:
   double const                runtime;
   double const                time_period;
 };
+
+} // namespace ExaDG
 
 #endif /*INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_*/

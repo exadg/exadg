@@ -20,10 +20,14 @@
 // postprocessor
 #include "postprocessor.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace FDA
 {
+using namespace dealii;
+
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
 {
@@ -881,5 +885,7 @@ public:
 
 } // namespace FDA
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_ */

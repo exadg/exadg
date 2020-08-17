@@ -24,10 +24,12 @@
 // postprocessor
 #include "../postprocessor/postprocessor.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -85,5 +87,6 @@ protected:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

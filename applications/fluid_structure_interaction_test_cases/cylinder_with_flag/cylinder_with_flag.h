@@ -10,10 +10,14 @@
 
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
 namespace FSI
 {
 namespace CylinderWithFlag
 {
+using namespace dealii;
+
 // set problem specific parameters
 
 // my-FSI (density ratio 1/1000)
@@ -1043,5 +1047,6 @@ public:
 
 } // namespace CylinderWithFlag
 } // namespace FSI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_FSI_CYLINDER_WITH_FLAG_H_ */

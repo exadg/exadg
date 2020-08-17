@@ -7,8 +7,12 @@
 
 #include "convective_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::set_velocity_copy(VectorType const & src) const
@@ -876,3 +880,4 @@ template class ConvectiveOperator<3, float>;
 template class ConvectiveOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

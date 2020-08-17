@@ -10,12 +10,14 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace Interface
 {
+using namespace dealii;
+
 template<typename Number>
 class Operator
 {
@@ -56,8 +58,7 @@ public:
 };
 
 } // namespace Interface
-
 } // namespace CompNS
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_INTERFACE_H_ */

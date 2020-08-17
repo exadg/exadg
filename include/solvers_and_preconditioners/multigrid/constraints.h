@@ -3,10 +3,14 @@
 
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
+namespace ExaDG
+{
 namespace ConstraintUtil
 {
 namespace // anonymous namespace
 {
+using namespace dealii;
+
 template<int dim>
 void
 add_periodicity_constraints(unsigned int const                            level,
@@ -156,5 +160,6 @@ add_constraints(
 
 } // namespace
 } // namespace ConstraintUtil
+} // namespace ExaDG
 
 #endif

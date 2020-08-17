@@ -18,6 +18,10 @@
 
 #include "line_plot_data.h"
 
+namespace ExaDG
+{
+namespace IncNS
+{
 using namespace dealii;
 
 /*
@@ -130,6 +134,9 @@ private:
 
   bool write_final_output;
 };
+
+} // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_STATISTICS_H_ \
         */

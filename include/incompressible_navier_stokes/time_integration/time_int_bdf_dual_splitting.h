@@ -10,13 +10,15 @@
 
 #include "time_int_bdf.h"
 
-using namespace dealii;
-
 // TODO
 //#define EXTRAPOLATE_ACCELERATION
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // forward declarations
 template<int dim, typename Number>
 class DGNavierStokesDualSplitting;
@@ -172,5 +174,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_ */

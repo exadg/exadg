@@ -18,6 +18,8 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
 enum class MultigridType
 {
   Undefined,
@@ -297,6 +299,8 @@ struct MultigridData
   // Coarse grid problem
   CoarseGridData coarse_problem;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_ */

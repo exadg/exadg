@@ -10,8 +10,8 @@
 
 #include "../user_interface/enum_types.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
 struct MaterialData
@@ -24,6 +24,6 @@ struct MaterialData
 };
 
 } // namespace Structure
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_STRUCTURE_MATERIAL_MATERIAL_DATA_H_ */

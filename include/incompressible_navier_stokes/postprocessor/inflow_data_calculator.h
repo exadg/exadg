@@ -17,6 +17,12 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
+namespace IncNS
+{
+using namespace dealii;
+
 /*
  * inflow data: use velocity at the outflow of one domain as inflow-BC for another domain
  *
@@ -103,5 +109,7 @@ private:
   std::vector<unsigned int> array_counter;
 };
 
+} // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_INFLOW_DATA_CALCULATOR_H_ */

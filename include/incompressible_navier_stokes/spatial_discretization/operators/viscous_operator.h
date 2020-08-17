@@ -16,10 +16,12 @@
 #include "../../user_interface/input_parameters.h"
 #include "weak_boundary_conditions.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 namespace Operators
 {
 struct ViscousKernelData
@@ -569,6 +571,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_VISCOUS_OPERATOR_H_ \
         */

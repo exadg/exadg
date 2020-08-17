@@ -13,6 +13,8 @@
 #include <deal.II/matrix_free/operators.h>
 #include "../matrix_free/integrators.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, int n_components, typename Number>
@@ -79,6 +81,8 @@ private:
 
   unsigned int dof_index, quad_index;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_OPERATORS_INVERSEMASSMATRIX_H_ */

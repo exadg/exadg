@@ -15,8 +15,13 @@
 
 #include "enum_types.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 class InputParameters
 {
 public:
@@ -177,5 +182,6 @@ public:
 };
 
 } // namespace CompNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_*/

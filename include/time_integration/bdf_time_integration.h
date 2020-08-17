@@ -12,6 +12,8 @@
 
 #include <vector>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 class BDFTimeIntegratorConstants
@@ -98,5 +100,6 @@ compute_bdf_time_derivative(VectorType &                       derivative,
     derivative.add(-bdf.get_alpha(i) / time_step_size, previous_solutions[i]);
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_BDF_TIME_INTEGRATION_H_ */

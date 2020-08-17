@@ -22,8 +22,12 @@
 #include "../../time_integration/restart_data.h"
 #include "../../time_integration/solver_info_data.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 class InputParameters
 {
 public:
@@ -306,4 +310,6 @@ public:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
+
 #endif /* INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_ */

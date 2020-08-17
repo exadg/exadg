@@ -15,6 +15,10 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 // kinetic energy spectrum data
 
 struct KineticEnergySpectrumData
@@ -126,6 +130,6 @@ private:
   std::shared_ptr<FESystem<dim>>                    fe_full;
   std::shared_ptr<DoFHandler<dim>>                  dof_handler_full;
 };
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_ */

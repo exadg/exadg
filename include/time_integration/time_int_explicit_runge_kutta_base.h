@@ -12,6 +12,8 @@
 
 #include "time_integration/time_int_base.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<typename Number>
@@ -84,6 +86,6 @@ private:
   do_read_restart(std::ifstream & in) override;
 };
 
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_EXPLICIT_RUNGE_KUTTA_BASE_H_ */

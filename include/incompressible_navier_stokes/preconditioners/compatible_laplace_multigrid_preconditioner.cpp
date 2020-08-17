@@ -9,8 +9,12 @@
 
 #include <deal.II/fe/fe_system.h>
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 CompatibleLaplaceMultigridPreconditioner<dim, Number>::CompatibleLaplaceMultigridPreconditioner(
   MPI_Comm const & mpi_comm)
@@ -194,3 +198,4 @@ template class CompatibleLaplaceMultigridPreconditioner<2, double>;
 template class CompatibleLaplaceMultigridPreconditioner<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

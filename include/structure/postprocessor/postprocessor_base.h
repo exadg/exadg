@@ -11,8 +11,12 @@
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<typename Number>
 class PostProcessorBase
 {
@@ -31,7 +35,7 @@ public:
 };
 
 } // namespace Structure
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_STRUCTURE_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */

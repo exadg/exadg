@@ -4,6 +4,9 @@
 #include "mg_transfer_mf_h.h"
 #include "mg_transfer_mf_p.h"
 
+namespace ExaDG
+{
+using namespace dealii;
 
 template<int dim, typename VectorType>
 template<typename MultigridNumber, typename MatrixFree, typename Constraints>
@@ -198,3 +201,5 @@ MGTransferMF_MGLevelObject<dim, VectorType>::prolongate(const unsigned int level
 {
   this->mg_level_object[level]->prolongate(level, dst, src);
 }
+
+} // namespace ExaDG

@@ -28,8 +28,12 @@
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim, typename Number, int n_components = 1>
 class Operator : public dealii::Subscriptor
 {
@@ -202,5 +206,6 @@ private:
   ConditionalOStream pcout;
 };
 } // namespace Poisson
+} // namespace ExaDG
 
 #endif

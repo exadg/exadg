@@ -13,10 +13,12 @@
 
 #include "../../../operators/mapping_flags.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim>
 struct BodyForceData
 {
@@ -80,5 +82,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

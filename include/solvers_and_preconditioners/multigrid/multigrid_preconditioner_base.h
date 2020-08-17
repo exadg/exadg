@@ -32,6 +32,10 @@
 // parameters
 #include "multigrid_input_parameters.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 class MultigridPreconditionerBase : public PreconditionerBase<Number>
 {
@@ -262,6 +266,7 @@ private:
   std::shared_ptr<MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>>
     multigrid_preconditioner;
 };
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \
         */

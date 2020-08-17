@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
 namespace RotatingHill
 {
+using namespace dealii;
+
 template<int dim>
 class Solution : public Function<dim>
 {
@@ -234,5 +238,7 @@ public:
 
 } // namespace RotatingHill
 } // namespace ConvDiff
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_ */

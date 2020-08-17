@@ -8,8 +8,12 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
 #define INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim>
 struct FieldFunctions
 {
@@ -19,5 +23,6 @@ struct FieldFunctions
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_FIELD_FUNCTIONS_H_ */

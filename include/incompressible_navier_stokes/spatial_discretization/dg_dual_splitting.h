@@ -13,8 +13,12 @@
 
 #include "curl_compute.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number = double>
 class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>
 {
@@ -218,6 +222,7 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_ \
         */

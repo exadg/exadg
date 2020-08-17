@@ -9,8 +9,12 @@
 
 #include "weak_boundary_conditions.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 Operator<dim, Number>::Operator() : scaling_factor_mass_matrix(1.0)
 {
@@ -510,3 +514,4 @@ template class Operator<3, float>;
 template class Operator<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

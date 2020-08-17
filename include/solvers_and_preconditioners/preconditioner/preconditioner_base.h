@@ -10,6 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<typename value_type>
@@ -28,6 +30,8 @@ public:
   virtual void
   update() = 0;
 };
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_BASE_H_ */

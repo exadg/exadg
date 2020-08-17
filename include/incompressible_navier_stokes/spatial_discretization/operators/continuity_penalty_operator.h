@@ -16,10 +16,12 @@
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  *  Continuity penalty operator:
  *
@@ -377,7 +379,7 @@ private:
 };
 
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUITY_PENALTY_OPERATOR_H_ \

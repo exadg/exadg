@@ -1,6 +1,8 @@
 #ifndef MEASURE_MINIMUM_TIME
 #define MEASURE_MINIMUM_TIME
 
+namespace ExaDG
+{
 class MeasureMinimumTime
 {
 public:
@@ -57,6 +59,6 @@ private:
     convergence_table.set_scientific(label + "_ave", true);
   }
 };
-
+} // namespace ExaDG
 
 #endif

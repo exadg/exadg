@@ -35,8 +35,12 @@
 #include "../grid/moving_mesh_poisson.h"
 #include "../utilities/print_general_infos.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 // Note: Make sure that the correct time integration scheme is selected in the input file that is
 //       compatible with the Operator type specified here. This also includes the treatment of the
 //       convective term (explicit/implicit), e.g., specifying VelocityConvDiffOperator together
@@ -267,5 +271,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_ */

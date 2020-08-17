@@ -25,10 +25,12 @@
 //#define USE_ADULT_GEOMETRY
 //#define USE_ADULT_GEOMETRY_OLD
 
-namespace dealii
+namespace ExaDG
 {
-namespace GridGenerator
+namespace GridGen
 {
+using namespace dealii;
+
 void
 lung_to_node(int                               generations,
              std::vector<Point<3>> &           points,
@@ -784,7 +786,7 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
             std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
 {
   // create sequential coarse grid (no refinements)
-  dealii::Triangulation<3>                                       tria_seq;
+  dealii::Triangulation<3> tria_seq;
   tria_seq.set_mesh_smoothing(Triangulation<3>::limit_level_difference_at_vertices);
   std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
   lung_unrefined(tria_seq,
@@ -873,8 +875,8 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
 
   timings["create_triangulation_0_overall"] = timer.wall_time();
 }
-} // namespace GridGenerator
+} // namespace GridGen
 
-} // namespace dealii
+} // namespace ExaDG
 
 #endif

@@ -10,6 +10,8 @@
 
 #include <string>
 
+namespace ExaDG
+{
 namespace Elementwise
 {
 /*
@@ -27,6 +29,6 @@ std::string
 enum_to_string(Preconditioner const enum_type);
 
 } // namespace Elementwise
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_ENUM_TYPES_H_ */

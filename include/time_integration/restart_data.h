@@ -16,6 +16,10 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 struct RestartData
 {
   RestartData()
@@ -83,5 +87,6 @@ struct RestartData
   mutable unsigned int counter;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_RESTART_DATA_H_ */

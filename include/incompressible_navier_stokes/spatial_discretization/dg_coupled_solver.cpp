@@ -13,8 +13,12 @@
 #include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_momentum.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation_in,
@@ -1427,3 +1431,4 @@ template class DGNavierStokesCoupled<3, float>;
 template class DGNavierStokesCoupled<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

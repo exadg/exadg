@@ -20,8 +20,12 @@
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../preconditioners/multigrid_preconditioner.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
@@ -930,3 +934,4 @@ template class DGOperator<3, float>;
 template class DGOperator<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

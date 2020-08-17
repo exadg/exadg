@@ -33,10 +33,12 @@
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/preconditioner_base.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 // forward declaration
 template<int dim, typename Number>
 class Operator;
@@ -446,5 +448,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

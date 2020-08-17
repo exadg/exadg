@@ -14,8 +14,12 @@
 #include "../../structure/spatial_discretization/operators/linear_operator.h"
 #include "../../structure/spatial_discretization/operators/nonlinear_operator.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number>
 {
@@ -100,5 +104,6 @@ private:
 };
 
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

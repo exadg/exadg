@@ -11,8 +11,12 @@
 
 #include "../../../functions_and_boundary_conditions/evaluate_functions.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 BodyForceOperator<dim, Number>::BodyForceOperator() : matrix_free(nullptr), time(0.0)
 {
@@ -97,3 +101,4 @@ template class BodyForceOperator<3, float>;
 template class BodyForceOperator<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

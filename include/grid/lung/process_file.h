@@ -3,6 +3,10 @@
 
 #include "../../grid/lung/lung_util.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 void
 load_files(std::vector<std::string>          files,
            std::vector<Point<3>> &           points,
@@ -178,5 +182,7 @@ void create_dual_graph(std::vector<Point<3>> &    points,
   call_METIS_MeshToDual(
     &ne, &nn, &eptr[0], &eind[0], &ncommon, &numflag, &xadj_vertex, &adjncy_vertex);
 }
+
+} // namespace ExaDG
 
 #endif

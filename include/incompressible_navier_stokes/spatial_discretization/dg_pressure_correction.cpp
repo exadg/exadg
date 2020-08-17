@@ -11,8 +11,12 @@
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_momentum.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation_in,
@@ -424,3 +428,4 @@ template class DGNavierStokesPressureCorrection<3, float>;
 template class DGNavierStokesPressureCorrection<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

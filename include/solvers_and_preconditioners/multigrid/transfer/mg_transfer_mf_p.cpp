@@ -2,6 +2,10 @@
 
 #include <deal.II/dofs/dof_tools.h>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 namespace
 {
 template<typename Number>
@@ -616,3 +620,5 @@ template class MGTransferMFP<2, double, VectorTypeDouble, 2>;
 
 template class MGTransferMFP<3, double, VectorTypeDouble, 1>;
 template class MGTransferMFP<3, double, VectorTypeDouble, 3>;
+
+} // namespace ExaDG

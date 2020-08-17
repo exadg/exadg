@@ -7,6 +7,8 @@
 
 #include "interface.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace Interface
@@ -20,5 +22,5 @@ template class Operator<float>;
 template class Operator<double>;
 
 } // namespace Interface
-
 } // namespace CompNS
+} // namespace ExaDG

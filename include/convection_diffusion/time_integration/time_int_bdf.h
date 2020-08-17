@@ -15,6 +15,8 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 // forward declarations
@@ -183,5 +185,6 @@ private:
 };
 
 } // namespace ConvDiff
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_ */

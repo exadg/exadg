@@ -17,6 +17,8 @@
 #include "function_cached.h"
 #include "function_with_normal.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int rank, int dim, typename Number>
@@ -207,5 +209,7 @@ struct FunctionEvaluator<1, dim, Number>
     return value;
   }
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_EVALUATEFUNCTIONS_H_ */

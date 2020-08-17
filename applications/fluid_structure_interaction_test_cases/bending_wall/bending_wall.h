@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_FSI_BENDING_WALL_H_
 #define APPLICATIONS_FSI_BENDING_WALL_H_
 
+namespace ExaDG
+{
 namespace FSI
 {
 namespace BendingWall
 {
+using namespace dealii;
+
 // set problem specific parameters like physical dimensions, etc.
 double const U_X_MAX         = 1.0;
 double const FLUID_VISCOSITY = 0.01;
@@ -859,5 +863,6 @@ public:
 
 } // namespace BendingWall
 } // namespace FSI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_FSI_BENDING_WALL_H_ */

@@ -3,6 +3,8 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -70,5 +72,7 @@ public:
   calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const = 0;
 #endif
 };
+
+} // namespace ExaDG
 
 #endif

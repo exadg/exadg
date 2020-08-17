@@ -18,8 +18,6 @@
 
 #include "transfer/mg_transfer_mf.h"
 
-using namespace dealii;
-
 /*
  * Activate timings if desired.
  */
@@ -29,6 +27,8 @@ using namespace dealii;
 #  define ENABLE_TIMING false
 #endif
 
+namespace ExaDG
+{
 using namespace dealii;
 
 class MultigridTimings
@@ -384,5 +384,6 @@ private:
 #endif
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ */

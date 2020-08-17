@@ -12,8 +12,12 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/operators/combined_operator.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 /*
  *  Multigrid preconditioner for scalar convection-diffusion equation.
  */
@@ -147,6 +151,6 @@ private:
 };
 
 } // namespace ConvDiff
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_ */

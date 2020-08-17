@@ -10,8 +10,12 @@
 
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
 namespace FDANozzle
 {
+using namespace dealii;
+
 // radius
 double const R       = 0.002;
 double const R_INNER = R;
@@ -402,5 +406,7 @@ create_grid_and_set_boundary_ids_nozzle(
 }
 
 } // namespace FDANozzle
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_GRID_TOOLS_FDA_BENCHMARK_NOZZLE_H_ */

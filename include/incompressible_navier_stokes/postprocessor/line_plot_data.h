@@ -13,6 +13,10 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
+namespace IncNS
+{
 using namespace dealii;
 
 enum class QuantityType
@@ -272,6 +276,7 @@ struct LinePlotDataStatistics
   StatisticsData statistics_data;
 };
 
-
+} // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_DATA_H_ */

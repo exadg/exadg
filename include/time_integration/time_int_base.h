@@ -24,6 +24,8 @@
 
 #include "utilities/timings_hierarchical.h"
 
+namespace ExaDG
+{
 using namespace dealii;
 
 class TimeIntBase
@@ -235,6 +237,7 @@ private:
   do_read_restart(std::ifstream & in) = 0;
 };
 
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_BASE_H_ */

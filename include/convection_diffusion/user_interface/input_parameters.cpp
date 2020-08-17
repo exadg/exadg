@@ -9,8 +9,12 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
     problem_type(ProblemType::Undefined),
@@ -570,3 +574,4 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
 }
 
 } // namespace ConvDiff
+} // namespace ExaDG

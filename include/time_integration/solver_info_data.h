@@ -16,6 +16,10 @@
 
 #include "../utilities/print_functions.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 struct SolverInfoData
 {
   SolverInfoData()
@@ -97,6 +101,7 @@ struct SolverInfoData
   mutable unsigned int old_time_step_number;
 };
 
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_FUNCTIONALITIES_SOLVER_INFO_DATA_H_ */

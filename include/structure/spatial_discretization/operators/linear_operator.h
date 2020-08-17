@@ -10,8 +10,12 @@
 
 #include "elasticity_operator_base.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class LinearOperator : public ElasticityOperatorBase<dim, Number>
 {
@@ -49,6 +53,8 @@ private:
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
                                   types::boundary_id const & boundary_id) const override;
 };
+
 } // namespace Structure
+} // namespace ExaDG
 
 #endif

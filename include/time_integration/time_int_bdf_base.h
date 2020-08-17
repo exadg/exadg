@@ -15,6 +15,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<typename Number>
@@ -278,5 +280,7 @@ private:
   virtual bool
   print_solver_info() const = 0;
 };
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */

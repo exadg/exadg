@@ -11,6 +11,10 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 /*
  *  To check the correctness of the efficient computation of the diagonal
  *  the result is compared to a naive calculation that simply applies the
@@ -67,6 +71,8 @@ verify_calculation_of_diagonal(Operator &                                       
 
   pcout << "L2 error diagonal: " << std::setprecision(10) << norm_error << std::endl << std::endl;
 }
+
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_VERIFY_CALCULATION_OF_DIAGONAL_H_ */

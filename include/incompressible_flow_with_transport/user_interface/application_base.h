@@ -21,10 +21,12 @@
 #include "../../convection_diffusion/user_interface/field_functions.h"
 #include "../../convection_diffusion/user_interface/input_parameters.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace FTI
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class ApplicationBase : public IncNS::ApplicationBase<dim, Number>
 {
@@ -66,7 +68,7 @@ public:
 };
 
 } // namespace FTI
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_ */

@@ -9,8 +9,12 @@
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation_in,
@@ -309,3 +313,4 @@ template class DGNavierStokesProjectionMethods<3, float>;
 template class DGNavierStokesProjectionMethods<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

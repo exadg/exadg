@@ -7,8 +7,12 @@
 
 #include "multigrid_preconditioner.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 template<int dim, typename Number, int n_components>
 MultigridPreconditioner<dim, Number, n_components>::MultigridPreconditioner(
   MPI_Comm const & mpi_comm)
@@ -175,3 +179,4 @@ template class MultigridPreconditioner<3, double, 1>;
 template class MultigridPreconditioner<3, double, 3>;
 
 } // namespace Poisson
+} // namespace ExaDG

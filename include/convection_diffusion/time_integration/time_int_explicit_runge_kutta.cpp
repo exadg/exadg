@@ -16,8 +16,12 @@
 #include "../../utilities/print_functions.h"
 #include "../../utilities/print_throughput.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Operator>                       operator_in,
@@ -389,3 +393,4 @@ template class TimeIntExplRK<float>;
 template class TimeIntExplRK<double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

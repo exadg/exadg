@@ -5,13 +5,19 @@
  *      Author: fehn
  */
 
+#ifndef APPLICATIONS_POISSON_TEST_CASES_GAUSSIAN_H_
+#define APPLICATIONS_POISSON_TEST_CASES_GAUSSIAN_H_
 
 #include "grid/deformed_cube_manifold.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
 namespace Gaussian
 {
+using namespace dealii;
+
 template<int dim>
 class CoefficientFunction : public Function<dim>
 {
@@ -311,3 +317,6 @@ public:
 
 } // namespace Gaussian
 } // namespace Poisson
+} // namespace ExaDG
+
+#endif

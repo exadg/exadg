@@ -14,10 +14,14 @@
 #include "../../../include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
 #include "../../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 
+namespace ExaDG
+{
 namespace FTI
 {
 namespace Lung
 {
+using namespace dealii;
+
 // problem specific parameters
 
 // which lung
@@ -804,7 +808,7 @@ public:
     files.push_back(FOLDER_LUNG_FILES + "rightbot.dat");
     files.push_back(FOLDER_LUNG_FILES + "rightmid.dat");
     files.push_back(FOLDER_LUNG_FILES + "righttop.dat");
-    auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
+    auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
 
     std::string spline_file = FOLDER_LUNG_FILES + "../splines_raw6.dat";
 
@@ -817,26 +821,26 @@ public:
     // create triangulation
     if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
     {
-      dealii::GridGenerator::lung(*tria,
-                                  n_refine_space,
-                                  n_refine_space,
-                                  tree_factory,
-                                  timings,
-                                  OUTLET_ID_FIRST,
-                                  OUTLET_ID_LAST,
-                                  spline_file,
-                                  generation_limiter);
+      ExaDG::GridGen::lung(*tria,
+                           n_refine_space,
+                           n_refine_space,
+                           tree_factory,
+                           timings,
+                           OUTLET_ID_FIRST,
+                           OUTLET_ID_LAST,
+                           spline_file,
+                           generation_limiter);
     }
     else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
     {
-      dealii::GridGenerator::lung(*tria,
-                                  n_refine_space,
-                                  tree_factory,
-                                  timings,
-                                  OUTLET_ID_FIRST,
-                                  OUTLET_ID_LAST,
-                                  spline_file,
-                                  generation_limiter);
+      ExaDG::GridGen::lung(*tria,
+                           n_refine_space,
+                           tree_factory,
+                           timings,
+                           OUTLET_ID_FIRST,
+                           OUTLET_ID_LAST,
+                           spline_file,
+                           generation_limiter);
     }
     else
     {
@@ -981,5 +985,6 @@ public:
 
 } // namespace Lung
 } // namespace FTI
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_ */

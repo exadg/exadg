@@ -8,6 +8,8 @@
 #ifndef INCLUDE_TIME_INTEGRATION_INTERPOLATE_H_
 #define INCLUDE_TIME_INTEGRATION_INTERPOLATE_H_
 
+namespace ExaDG
+{
 /*
  *   time t
  *  -------->   t_{n-2}   t_{n-1}   t_{n}   t    t_{n+1}
@@ -41,5 +43,7 @@ interpolate(VectorType &                            dst,
     dst.add(l_k, *solutions[k]);
   }
 }
+
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_INTERPOLATE_H_ */

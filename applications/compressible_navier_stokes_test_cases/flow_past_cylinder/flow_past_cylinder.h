@@ -11,10 +11,14 @@
 #include "grid/mesh_flow_past_cylinder.h"
 #include "grid/one_sided_cylindrical_manifold.h"
 
+namespace ExaDG
+{
 namespace CompNS
 {
 namespace FlowPastCylinder
 {
+using namespace dealii;
+
 template<int dim>
 class VelocityBC : public Function<dim>
 {
@@ -337,5 +341,7 @@ public:
 
 } // namespace FlowPastCylinder
 } // namespace CompNS
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_ */

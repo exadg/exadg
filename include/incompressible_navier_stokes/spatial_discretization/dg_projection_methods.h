@@ -10,8 +10,12 @@
 
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  * Base class for projection-type incompressible Navier-Stokes solvers such as the high-order dual
  * splitting (velocity-correction) scheme or pressure correction schemes.
@@ -125,6 +129,8 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
+
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PROJECTION_METHODS_H_ \
         */

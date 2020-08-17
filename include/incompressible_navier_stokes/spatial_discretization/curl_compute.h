@@ -11,6 +11,10 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 
+namespace ExaDG
+{
+namespace IncNS
+{
 using namespace dealii;
 
 template<int dim, typename FEEval>
@@ -47,6 +51,9 @@ struct CurlCompute<2, FEEval>
     return curl;
   }
 };
+
+} // namespace IncNS
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_ */

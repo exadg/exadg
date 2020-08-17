@@ -14,10 +14,14 @@
 #include "../../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
 #include "../../../include/postprocessor/statistics_manager.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace BackwardFacingStep
 {
+using namespace dealii;
+
 template<int dim>
 struct PostProcessorDataBFS
 {
@@ -120,7 +124,7 @@ public:
 
 } // namespace BackwardFacingStep
 } // namespace IncNS
-
+} // namespace ExaDG
 
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_POSTPROCESSOR_H_ \

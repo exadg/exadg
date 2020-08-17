@@ -12,8 +12,12 @@
 
 #include "../../utilities/print_functions.h"
 
+namespace ExaDG
+{
 namespace Newton
 {
+using namespace dealii;
+
 struct SolverData
 {
   SolverData() : max_iter(100), abs_tol(1.e-12), rel_tol(1.e-12)
@@ -52,5 +56,6 @@ struct UpdateData
   unsigned int threshold_linear_iter;
 };
 } // namespace Newton
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_ */

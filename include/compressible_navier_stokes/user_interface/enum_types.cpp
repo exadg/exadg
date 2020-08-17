@@ -9,10 +9,13 @@
 
 #include "enum_types.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace CompNS
 {
+using namespace dealii;
+
+
 std::string
 enum_to_string(EquationType const enum_type)
 {
@@ -136,3 +139,4 @@ enum_to_string(QuadratureRule const enum_type)
 }
 
 } // namespace CompNS
+} // namespace ExaDG

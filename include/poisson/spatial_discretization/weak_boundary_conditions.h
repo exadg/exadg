@@ -16,8 +16,12 @@
 
 #include "../user_interface/boundary_descriptor.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 /*
  *  The following two functions calculate the interior_value/exterior_value
  *  depending on the operator type, the type of the boundary face
@@ -254,7 +258,6 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 } // namespace Poisson
-
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_POISSON_SPATIAL_DISCRETIZATION_WEAK_BOUNDARY_CONDITIONS_H_ */

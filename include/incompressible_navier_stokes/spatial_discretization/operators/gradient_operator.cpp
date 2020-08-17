@@ -7,8 +7,12 @@
 
 #include "gradient_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 GradientOperator<dim, Number>::GradientOperator()
   : matrix_free(nullptr), time(0.0), inverse_scaling_factor_pressure(1.0), pressure_bc(nullptr)
@@ -572,3 +576,4 @@ template class GradientOperator<3, float>;
 template class GradientOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

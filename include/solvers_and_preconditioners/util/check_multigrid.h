@@ -12,6 +12,8 @@
 
 #include <fstream>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<int dim, typename Number, typename Operator, typename Preconditioner>
@@ -186,5 +188,6 @@ private:
   MPI_Comm mpi_comm;
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_CHECKMULTIGRID_H_ */

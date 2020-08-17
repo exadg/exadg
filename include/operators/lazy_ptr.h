@@ -1,6 +1,10 @@
 #ifndef LAZY_PTR_H_
 #define LAZY_PTR_H_
 
+namespace ExaDG
+{
+using namespace dealii;
+
 template<typename T>
 class lazy_ptr
 {
@@ -44,5 +48,7 @@ private:
   T         t;
   T const * t_ptr;
 };
+
+} // namespace ExaDG
 
 #endif

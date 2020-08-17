@@ -18,6 +18,8 @@
 
 #include "../multigrid_input_parameters.h"
 
+namespace ExaDG
+{
 template<typename Operator, typename VectorType>
 class CGSmoother : public SmootherBase<VectorType>
 {
@@ -108,6 +110,6 @@ private:
 
   PreconditionerBase<typename Operator::value_type> * preconditioner;
 };
-
+} // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_CG_SMOOTHER_H_ */

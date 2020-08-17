@@ -40,8 +40,12 @@
 #include "../utilities/timings.h"
 #include "../utilities/timings_hierarchical.h"
 
+namespace ExaDG
+{
 namespace Poisson
 {
+using namespace dealii;
+
 enum class OperatorType
 {
   MatrixFree,
@@ -154,7 +158,7 @@ private:
 };
 
 } // namespace Poisson
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_POISSON_DRIVER_H_ */

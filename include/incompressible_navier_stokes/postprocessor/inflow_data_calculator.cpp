@@ -11,6 +11,12 @@
 #include "../../vector_tools/interpolate_solution.h"
 #include "../../vector_tools/point_value.h"
 
+namespace ExaDG
+{
+namespace IncNS
+{
+using namespace dealii;
+
 template<int dim, typename Number>
 InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in,
                                                         MPI_Comm const &        comm)
@@ -136,3 +142,6 @@ template class InflowDataCalculator<2, double>;
 
 template class InflowDataCalculator<3, float>;
 template class InflowDataCalculator<3, double>;
+
+} // namespace IncNS
+} // namespace ExaDG

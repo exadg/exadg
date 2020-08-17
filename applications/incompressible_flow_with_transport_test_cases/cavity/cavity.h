@@ -8,10 +8,14 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_
 
+namespace ExaDG
+{
 namespace FTI
 {
 namespace Cavity
 {
+using namespace dealii;
+
 template<int dim>
 class DirichletBC : public Function<dim>
 {
@@ -435,5 +439,7 @@ public:
 
 } // namespace Cavity
 } // namespace FTI
+} // namespace ExaDG
+
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_ */

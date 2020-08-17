@@ -11,10 +11,14 @@
 #include "orr_sommerfeld_equation.h"
 #include "postprocessor.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
 namespace OrrSommerfeld
 {
+using namespace dealii;
+
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -409,5 +413,6 @@ public:
 
 } // namespace OrrSommerfeld
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_ORR_SOMMERFELD_H_ */

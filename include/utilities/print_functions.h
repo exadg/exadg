@@ -10,6 +10,8 @@
 
 #include <deal.II/base/conditional_ostream.h>
 
+namespace ExaDG
+{
 using namespace dealii;
 
 template<typename ParameterType>
@@ -83,5 +85,6 @@ print_value(ConditionalOStream const & pcout, double const value)
 {
   pcout << std::scientific << std::setprecision(4) << value << std::endl;
 }
+} // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_ */

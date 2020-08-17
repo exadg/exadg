@@ -12,6 +12,10 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+namespace ExaDG
+{
+using namespace dealii;
+
 /*
  * For a given vector of adjacent cells and points in reference coordinates, determine
  * and return the dof_indices and shape_values to be used later for interpolation of the
@@ -149,5 +153,6 @@ struct Interpolator<1, dim, Number>
   }
 };
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_VECTOR_TOOLS_INTERPOLATE_SOLUTION_H_ */

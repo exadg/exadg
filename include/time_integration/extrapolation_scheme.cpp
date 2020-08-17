@@ -12,6 +12,10 @@
 
 #include "extrapolation_scheme.h"
 
+namespace ExaDG
+{
+using namespace dealii;
+
 ExtrapolationConstants::ExtrapolationConstants(unsigned int const order_extrapolation_scheme,
                                                bool const         start_with_low_order_method)
   : order(order_extrapolation_scheme),
@@ -184,5 +188,6 @@ ExtrapolationConstants::print(ConditionalOStream & pcout) const
     pcout << "Beta[" << i << "]  = " << beta[i] << std::endl;
 }
 
+} // namespace ExaDG
 
 #endif /* INCLUDE_TIME_INTEGRATION_EXTRAPOLATION_SCHEME_CPP_ */

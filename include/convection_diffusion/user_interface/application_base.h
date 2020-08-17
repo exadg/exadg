@@ -20,10 +20,12 @@
 // postprocessor
 #include "../postprocessor/postprocessor.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 class ApplicationBase
 {
@@ -87,7 +89,7 @@ protected:
 };
 
 } // namespace ConvDiff
-
+} // namespace ExaDG
 
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_ */

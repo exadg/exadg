@@ -7,8 +7,12 @@
 
 #include "multigrid_preconditioner.h"
 
+namespace ExaDG
+{
 namespace Structure
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & mpi_comm)
   : Base(mpi_comm), pde_operator(nullptr), nonlinear(true)
@@ -200,3 +204,4 @@ template class MultigridPreconditioner<2, double>;
 template class MultigridPreconditioner<3, double>;
 
 } // namespace Structure
+} // namespace ExaDG

@@ -1,7 +1,11 @@
 #include "compatible_laplace_operator.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 CompatibleLaplaceOperator<dim, Number>::CompatibleLaplaceOperator()
   : dealii::Subscriptor(),
@@ -222,3 +226,4 @@ template class CompatibleLaplaceOperator<3, float>;
 template class CompatibleLaplaceOperator<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG

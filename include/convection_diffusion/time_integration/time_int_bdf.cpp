@@ -17,8 +17,12 @@
 
 #include "../../utilities/print_throughput.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<Operator>                       operator_in,
@@ -800,3 +804,4 @@ template class TimeIntBDF<3, float>;
 template class TimeIntBDF<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

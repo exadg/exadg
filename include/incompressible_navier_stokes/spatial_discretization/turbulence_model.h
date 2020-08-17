@@ -14,10 +14,12 @@
 #include "../user_interface/input_parameters.h"
 #include "operators/viscous_operator.h"
 
-using namespace dealii;
-
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 /*
  *  Turbulence model data.
  */
@@ -238,5 +240,6 @@ private:
 };
 
 } // namespace IncNS
+} // namespace ExaDG
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_ */

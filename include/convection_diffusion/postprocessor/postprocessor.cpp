@@ -7,8 +7,12 @@
 
 #include "postprocessor.h"
 
+namespace ExaDG
+{
 namespace ConvDiff
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
                                           MPI_Comm const &               mpi_comm_in)
@@ -46,3 +50,4 @@ template class PostProcessor<2, double>;
 template class PostProcessor<3, double>;
 
 } // namespace ConvDiff
+} // namespace ExaDG

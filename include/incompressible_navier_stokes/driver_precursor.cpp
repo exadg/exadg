@@ -9,8 +9,12 @@
 #include "../time_integration/time_step_calculation.h"
 #include "../utilities/print_throughput.h"
 
+namespace ExaDG
+{
 namespace IncNS
 {
+using namespace dealii;
+
 template<int dim, typename Number>
 DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm)
   : mpi_comm(comm),
@@ -526,3 +530,4 @@ template class DriverPrecursor<2, double>;
 template class DriverPrecursor<3, double>;
 
 } // namespace IncNS
+} // namespace ExaDG
