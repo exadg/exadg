@@ -15,3 +15,4 @@ DEAL_II_SETUP_TARGET(poisson_throughput)
 set_target_properties(poisson_throughput PROPERTIES OUTPUT_NAME "throughput")
 TARGET_LINK_LIBRARIES(poisson_throughput exadg)
 
+ADD_SUBDIRECTORY(tests)
