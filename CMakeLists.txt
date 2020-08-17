@@ -195,6 +195,6 @@ DEAL_II_SETUP_TARGET(exadg)
 
 enable_testing()
 ADD_SUBDIRECTORY(applications)
-#ADD_SUBDIRECTORY(tests)
+ADD_SUBDIRECTORY(tests)
 
 

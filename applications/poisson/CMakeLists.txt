@@ -4,7 +4,6 @@
 
 PROJECT(poisson)
 
-# string replace: cut off .cc from files
 ADD_EXECUTABLE( poisson solver.cpp)
 DEAL_II_SETUP_TARGET(poisson)
 set_target_properties(poisson PROPERTIES OUTPUT_NAME "solver")

@@ -11,8 +11,8 @@ INCLUDE_DIRECTORIES(
 
 SET( SOURCE_FILES
      # Miscellaneous
-     gmres_test.cpp
-     timer.cpp
+#     gmres_test.cpp
+#     timer.cpp
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
