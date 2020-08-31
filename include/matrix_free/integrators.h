@@ -841,16 +841,20 @@ CellIntegrator<dim, n_components_, Number, VectorizedArrayType>::evaluate(
   const bool                  evaluate_gradients,
   const bool                  evaluate_hessians)
 {
-  internal::FEEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::evaluate(
+  const EvaluationFlags::EvaluationFlags flag =
+    ((evaluate_values) ? EvaluationFlags::values : EvaluationFlags::nothing) |
+    ((evaluate_gradients) ? EvaluationFlags::gradients : EvaluationFlags::nothing) |
+    ((evaluate_hessians) ? EvaluationFlags::hessians : EvaluationFlags::nothing);
+
+  internal::FEEvaluationFactory<dim, Number, VectorizedArrayType>::evaluate(
+    n_components,
+    flag,
     *this->data,
     const_cast<VectorizedArrayType *>(values_array),
     this->values_quad,
     this->gradients_quad,
     this->hessians_quad,
-    this->scratch_data,
-    evaluate_values,
-    evaluate_gradients,
-    evaluate_hessians);
+    this->scratch_data);
 
 #ifdef DEBUG
   if(evaluate_values == true)
@@ -938,15 +942,18 @@ CellIntegrator<dim, n_components_, Number, VectorizedArrayType>::integrate(
   Assert(this->matrix_info != nullptr || this->mapped_geometry->is_initialized(),
          ExcNotInitialized());
 
-  internal::FEEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::integrate(
-    *this->data,
-    values_array,
-    this->values_quad,
-    this->gradients_quad,
-    this->scratch_data,
-    integrate_values,
-    integrate_gradients,
-    false);
+  EvaluationFlags::EvaluationFlags flag =
+    (integrate_values ? EvaluationFlags::values : EvaluationFlags::nothing) |
+    (integrate_gradients ? EvaluationFlags::gradients : EvaluationFlags::nothing);
+
+  internal::FEEvaluationFactory<dim, Number, VectorizedArrayType>::integrate(n_components,
+                                                                             flag,
+                                                                             *this->data,
+                                                                             values_array,
+                                                                             this->values_quad,
+                                                                             this->gradients_quad,
+                                                                             this->scratch_data,
+                                                                             false);
 
 #ifdef DEBUG
   this->dof_values_initialized = true;
@@ -980,6 +987,10 @@ CellIntegrator<dim, n_components_, Number, VectorizedArrayType>::integrate_scatt
          sizeof(VectorizedArrayType) ==
        0)
   {
+    EvaluationFlags::EvaluationFlags flag =
+      (integrate_values ? EvaluationFlags::values : EvaluationFlags::nothing) |
+      (integrate_gradients ? EvaluationFlags::gradients : EvaluationFlags::nothing);
+
     VectorizedArrayType * vec_values = reinterpret_cast<VectorizedArrayType *>(
       destination.begin() +
       this->dof_info
@@ -988,15 +999,14 @@ CellIntegrator<dim, n_components_, Number, VectorizedArrayType>::integrate_scatt
       this->dof_info
           ->component_dof_indices_offset[this->active_fe_index][this->first_selected_component] *
         VectorizedArrayType::size());
-    internal::FEEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::integrate(
-      *this->data,
-      vec_values,
-      this->values_quad,
-      this->gradients_quad,
-      this->scratch_data,
-      integrate_values,
-      integrate_gradients,
-      true);
+    internal::FEEvaluationFactory<dim, Number, VectorizedArrayType>::integrate(n_components,
+                                                                               flag,
+                                                                               *this->data,
+                                                                               vec_values,
+                                                                               this->values_quad,
+                                                                               this->gradients_quad,
+                                                                               this->scratch_data,
+                                                                               true);
   }
   else
   {
@@ -1545,10 +1555,10 @@ CellwiseInverseMassMatrix<dim, -1, n_components, Number, VectorizedArrayType>::a
   VectorizedArrayType *                      out_array) const
 {
   internal::CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::apply(
+    n_actual_components,
     fe_eval.get_shape_info().data[0].fe_degree,
     fe_eval.get_shape_info().data[0].inverse_shape_values_eo,
     inverse_coefficients,
-    n_actual_components,
     in_array,
     out_array);
 }
@@ -1575,9 +1585,9 @@ CellwiseInverseMassMatrix<dim, -1, n_components, Number, VectorizedArrayType>::
                                    VectorizedArrayType *       out_array) const
 {
   internal::CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::
-    transform_from_q_points_to_basis(fe_eval.get_shape_info().data[0].fe_degree,
+    transform_from_q_points_to_basis(n_actual_components,
+                                     fe_eval.get_shape_info().data[0].fe_degree,
                                      fe_eval.get_shape_info().data[0].inverse_shape_values_eo,
-                                     n_actual_components,
                                      in_array,
                                      out_array);
 }

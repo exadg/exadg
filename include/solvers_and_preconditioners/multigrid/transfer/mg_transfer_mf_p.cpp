@@ -169,9 +169,9 @@ MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType & 
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
-      components,
       VectorizedArray<Number>,
-      VectorizedArray<Number>>::do_backward(interpolation_matrix_1d,
+      VectorizedArray<Number>>::do_backward(components,
+                                            interpolation_matrix_1d,
                                             false,
                                             fe_eval1.begin_dof_values(),
                                             fe_eval1.begin_dof_values());
@@ -212,9 +212,9 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
-      components,
       VectorizedArray<Number>,
-      VectorizedArray<Number>>::do_backward(prolongation_matrix_1d,
+      VectorizedArray<Number>>::do_backward(components,
+                                            prolongation_matrix_1d,
                                             false,
                                             fe_eval1.begin_dof_values(),
                                             fe_eval1.begin_dof_values());
@@ -251,9 +251,9 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
-      components,
       VectorizedArray<Number>,
-      VectorizedArray<Number>>::do_forward(prolongation_matrix_1d,
+      VectorizedArray<Number>>::do_forward(components,
+                                           prolongation_matrix_1d,
                                            fe_eval2.begin_dof_values(),
                                            fe_eval1.begin_dof_values());
 
@@ -392,60 +392,60 @@ MGTransferMFP<dim, Number, VectorType, components>::interpolate(const unsigned i
   // clang-format off
   switch(this->degree_1*100+this->degree_2)
   {
-    // degree  2  
+    // degree  2
     case  201: do_interpolate< 2, 1>(dst, src); break;
-    // degree  3  
+    // degree  3
     case  301: do_interpolate< 3, 1>(dst, src); break;
     case  302: do_interpolate< 3, 2>(dst, src); break;
-    // degree  4  
+    // degree  4
     case  401: do_interpolate< 4, 1>(dst, src); break;
     case  402: do_interpolate< 4, 2>(dst, src); break;
     case  403: do_interpolate< 4, 3>(dst, src); break;
-    // degree  5  
+    // degree  5
     case  501: do_interpolate< 5, 1>(dst, src); break;
     case  502: do_interpolate< 5, 2>(dst, src); break;
     case  504: do_interpolate< 5, 4>(dst, src); break;
-    // degree  6  
+    // degree  6
     case  601: do_interpolate< 6, 1>(dst, src); break;
     case  603: do_interpolate< 6, 3>(dst, src); break;
     case  605: do_interpolate< 6, 5>(dst, src); break;
-    // degree  7  
+    // degree  7
     case  701: do_interpolate< 7, 1>(dst, src); break;
     case  703: do_interpolate< 7, 3>(dst, src); break;
     case  706: do_interpolate< 7, 6>(dst, src); break;
-    // degree  8  
+    // degree  8
     case  801: do_interpolate< 8, 1>(dst, src); break;
     case  804: do_interpolate< 8, 4>(dst, src); break;
     case  807: do_interpolate< 8, 7>(dst, src); break;
-    // degree  9  
+    // degree  9
     case  901: do_interpolate< 9, 1>(dst, src); break;
     case  904: do_interpolate< 9, 4>(dst, src); break;
     case  908: do_interpolate< 9, 8>(dst, src); break;
-    // degree 10  
+    // degree 10
     case 1001: do_interpolate<10, 1>(dst, src); break;
     case 1005: do_interpolate<10, 5>(dst, src); break;
     case 1009: do_interpolate<10, 9>(dst, src); break;
-    // degree 11  
+    // degree 11
     case 1101: do_interpolate<11, 1>(dst, src); break;
     case 1105: do_interpolate<11, 5>(dst, src); break;
     case 1110: do_interpolate<11,10>(dst, src); break;
-    // degree 12  
+    // degree 12
     case 1201: do_interpolate<12, 1>(dst, src); break;
     case 1206: do_interpolate<12, 6>(dst, src); break;
     case 1211: do_interpolate<12,11>(dst, src); break;
-    // degree 13  
+    // degree 13
     case 1301: do_interpolate<13, 1>(dst, src); break;
     case 1306: do_interpolate<13, 6>(dst, src); break;
     case 1312: do_interpolate<13,12>(dst, src); break;
-    // degree 14  
+    // degree 14
     case 1401: do_interpolate<14, 1>(dst, src); break;
     case 1407: do_interpolate<14, 7>(dst, src); break;
     case 1413: do_interpolate<14,13>(dst, src); break;
-    // degree 15  
+    // degree 15
     case 1501: do_interpolate<15, 1>(dst, src); break;
     case 1507: do_interpolate<15, 7>(dst, src); break;
     case 1514: do_interpolate<15,14>(dst, src); break;
-    // error: 
+    // error:
     default:
       AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
   }
@@ -464,60 +464,60 @@ MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsig
   // clang-format off
   switch(this->degree_1*100+this->degree_2)
   {
-    // degree  2  
+    // degree  2
     case  201: do_restrict_and_add< 2, 1>(dst, src); break;
-    // degree  3  
+    // degree  3
     case  301: do_restrict_and_add< 3, 1>(dst, src); break;
     case  302: do_restrict_and_add< 3, 2>(dst, src); break;
-    // degree  4  
+    // degree  4
     case  401: do_restrict_and_add< 4, 1>(dst, src); break;
     case  402: do_restrict_and_add< 4, 2>(dst, src); break;
     case  403: do_restrict_and_add< 4, 3>(dst, src); break;
-    // degree  5  
+    // degree  5
     case  501: do_restrict_and_add< 5, 1>(dst, src); break;
     case  502: do_restrict_and_add< 5, 2>(dst, src); break;
     case  504: do_restrict_and_add< 5, 4>(dst, src); break;
-    // degree  6  
+    // degree  6
     case  601: do_restrict_and_add< 6, 1>(dst, src); break;
     case  603: do_restrict_and_add< 6, 3>(dst, src); break;
     case  605: do_restrict_and_add< 6, 5>(dst, src); break;
-    // degree  7  
+    // degree  7
     case  701: do_restrict_and_add< 7, 1>(dst, src); break;
     case  703: do_restrict_and_add< 7, 3>(dst, src); break;
     case  706: do_restrict_and_add< 7, 6>(dst, src); break;
-    // degree  8  
+    // degree  8
     case  801: do_restrict_and_add< 8, 1>(dst, src); break;
     case  804: do_restrict_and_add< 8, 4>(dst, src); break;
     case  807: do_restrict_and_add< 8, 7>(dst, src); break;
-    // degree  9  
+    // degree  9
     case  901: do_restrict_and_add< 9, 1>(dst, src); break;
     case  904: do_restrict_and_add< 9, 4>(dst, src); break;
     case  908: do_restrict_and_add< 9, 8>(dst, src); break;
-    // degree 10  
+    // degree 10
     case 1001: do_restrict_and_add<10, 1>(dst, src); break;
     case 1005: do_restrict_and_add<10, 5>(dst, src); break;
     case 1009: do_restrict_and_add<10, 9>(dst, src); break;
-    // degree 11  
+    // degree 11
     case 1101: do_restrict_and_add<11, 1>(dst, src); break;
     case 1105: do_restrict_and_add<11, 5>(dst, src); break;
     case 1110: do_restrict_and_add<11,10>(dst, src); break;
-    // degree 12  
+    // degree 12
     case 1201: do_restrict_and_add<12, 1>(dst, src); break;
     case 1206: do_restrict_and_add<12, 6>(dst, src); break;
     case 1211: do_restrict_and_add<12,11>(dst, src); break;
-    // degree 13  
+    // degree 13
     case 1301: do_restrict_and_add<13, 1>(dst, src); break;
     case 1306: do_restrict_and_add<13, 6>(dst, src); break;
     case 1312: do_restrict_and_add<13,12>(dst, src); break;
-    // degree 14  
+    // degree 14
     case 1401: do_restrict_and_add<14, 1>(dst, src); break;
     case 1407: do_restrict_and_add<14, 7>(dst, src); break;
     case 1413: do_restrict_and_add<14,13>(dst, src); break;
-    // degree 15  
+    // degree 15
     case 1501: do_restrict_and_add<15, 1>(dst, src); break;
     case 1507: do_restrict_and_add<15, 7>(dst, src); break;
     case 1514: do_restrict_and_add<15,14>(dst, src); break;
-    // error: 
+    // error:
     default:
       AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
   }
@@ -542,60 +542,60 @@ MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned in
   // clang-format off
   switch(this->degree_1*100+this->degree_2)
   {
-    // degree  2  
+    // degree  2
     case  201: do_prolongate< 2, 1>(dst, src); break;
-    // degree  3  
+    // degree  3
     case  301: do_prolongate< 3, 1>(dst, src); break;
     case  302: do_prolongate< 3, 2>(dst, src); break;
-    // degree  4  
+    // degree  4
     case  401: do_prolongate< 4, 1>(dst, src); break;
     case  402: do_prolongate< 4, 2>(dst, src); break;
     case  403: do_prolongate< 4, 3>(dst, src); break;
-    // degree  5  
+    // degree  5
     case  501: do_prolongate< 5, 1>(dst, src); break;
     case  502: do_prolongate< 5, 2>(dst, src); break;
     case  504: do_prolongate< 5, 4>(dst, src); break;
-    // degree  6  
+    // degree  6
     case  601: do_prolongate< 6, 1>(dst, src); break;
     case  603: do_prolongate< 6, 3>(dst, src); break;
     case  605: do_prolongate< 6, 5>(dst, src); break;
-    // degree  7  
+    // degree  7
     case  701: do_prolongate< 7, 1>(dst, src); break;
     case  703: do_prolongate< 7, 3>(dst, src); break;
     case  706: do_prolongate< 7, 6>(dst, src); break;
-    // degree  8  
+    // degree  8
     case  801: do_prolongate< 8, 1>(dst, src); break;
     case  804: do_prolongate< 8, 4>(dst, src); break;
     case  807: do_prolongate< 8, 7>(dst, src); break;
-    // degree  9  
+    // degree  9
     case  901: do_prolongate< 9, 1>(dst, src); break;
     case  904: do_prolongate< 9, 4>(dst, src); break;
     case  908: do_prolongate< 9, 8>(dst, src); break;
-    // degree 10  
+    // degree 10
     case 1001: do_prolongate<10, 1>(dst, src); break;
     case 1005: do_prolongate<10, 5>(dst, src); break;
     case 1009: do_prolongate<10, 9>(dst, src); break;
-    // degree 11  
+    // degree 11
     case 1101: do_prolongate<11, 1>(dst, src); break;
     case 1105: do_prolongate<11, 5>(dst, src); break;
     case 1110: do_prolongate<11,10>(dst, src); break;
-    // degree 12  
+    // degree 12
     case 1201: do_prolongate<12, 1>(dst, src); break;
     case 1206: do_prolongate<12, 6>(dst, src); break;
     case 1211: do_prolongate<12,11>(dst, src); break;
-    // degree 13  
+    // degree 13
     case 1301: do_prolongate<13, 1>(dst, src); break;
     case 1306: do_prolongate<13, 6>(dst, src); break;
     case 1312: do_prolongate<13,12>(dst, src); break;
-    // degree 14  
+    // degree 14
     case 1401: do_prolongate<14, 1>(dst, src); break;
     case 1407: do_prolongate<14, 7>(dst, src); break;
     case 1413: do_prolongate<14,13>(dst, src); break;
-    // degree 15  
+    // degree 15
     case 1501: do_prolongate<15, 1>(dst, src); break;
     case 1507: do_prolongate<15, 7>(dst, src); break;
     case 1514: do_prolongate<15,14>(dst, src); break;
-    // error: 
+    // error:
     default:
       AssertThrow(false, ExcMessage("MGTransferMFP::prolongate not implemented for this degree combination!"));
   }

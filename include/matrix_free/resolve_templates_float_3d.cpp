@@ -7,8 +7,7 @@
 
 #include "evaluation_template_factory.templates.h"
 
-template struct dealii::internal::FEEvaluationFactory<3, 1, float>;
-template struct dealii::internal::FEEvaluationFactory<3, 3, float>;
+template struct dealii::internal::FEEvaluationFactory<3, float>;
 
 template struct dealii::internal::FEFaceEvaluationFactory<3, 1, float>;
 template struct dealii::internal::FEFaceEvaluationFactory<3, 3, float>;
