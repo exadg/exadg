@@ -1,0 +1,171 @@
+/*
+ * postprocessor.h
+ *
+ *  Created on: 30.03.2020
+ *      Author: fehn
+ */
+
+#ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_POSTPROCESSOR_H_
+#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_POSTPROCESSOR_H_
+
+// other postprocessing routines
+#include "incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+#include "incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+#include "incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
+
+// inflow data
+#include "inflow_data_storage.h"
+
+namespace ExaDG
+{
+namespace IncNS
+{
+namespace FDA
+{
+using namespace dealii;
+
+template<int dim>
+struct PostProcessorDataFDA
+{
+  PostProcessorData<dim>          pp_data;
+  InflowData<dim>                 inflow_data;
+  MeanVelocityCalculatorData<dim> mean_velocity_data;
+  LinePlotDataStatistics<dim>     line_plot_data;
+};
+
+template<int dim, typename Number>
+class PostProcessorFDA : public PostProcessor<dim, Number>
+{
+public:
+  typedef PostProcessor<dim, Number> Base;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef typename Base::Operator Operator;
+
+  PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in,
+                   MPI_Comm const &                  mpi_comm_in,
+                   double const                      area_in,
+                   FlowRateController &              flow_rate_controller_in,
+                   InflowDataStorage<dim> &          inflow_data_storage_in,
+                   bool const                        use_precursor_in,
+                   bool const                        add_random_perturbations_in)
+    : Base(pp_data_in.pp_data, mpi_comm_in),
+      mpi_comm(mpi_comm_in),
+      pp_data_fda(pp_data_in),
+      area(area_in),
+      flow_rate_controller(flow_rate_controller_in),
+      inflow_data_storage(inflow_data_storage_in),
+      use_precursor(use_precursor_in),
+      add_random_perturbations(add_random_perturbations_in)
+  {
+  }
+
+  void
+  setup(Operator const & pde_operator)
+  {
+    // call setup function of base class
+    Base::setup(pde_operator);
+
+    if(use_precursor)
+    {
+      // inflow data
+      inflow_data_calculator.reset(
+        new InflowDataCalculator<dim, Number>(pp_data_fda.inflow_data, mpi_comm));
+      inflow_data_calculator->setup(pde_operator.get_dof_handler_u(), pde_operator.get_mapping());
+
+      // calculation of mean velocity
+      mean_velocity_calculator.reset(
+        new MeanVelocityCalculator<dim, Number>(pde_operator.get_matrix_free(),
+                                                pde_operator.get_dof_index_velocity(),
+                                                pde_operator.get_quad_index_velocity_linear(),
+                                                pp_data_fda.mean_velocity_data,
+                                                this->mpi_comm));
+    }
+
+    // evaluation of results along lines
+    if(pp_data_fda.line_plot_data.statistics_data.calculate_statistics)
+    {
+      line_plot_calculator_statistics.reset(
+        new LinePlotCalculatorStatistics<dim, Number>(pde_operator.get_dof_handler_u(),
+                                                      pde_operator.get_dof_handler_p(),
+                                                      pde_operator.get_mapping(),
+                                                      this->mpi_comm));
+
+      line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);
+    }
+  }
+
+  void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    int const          time_step_number)
+  {
+    Base::do_postprocessing(velocity, pressure, time, time_step_number);
+
+    if(use_precursor)
+    {
+      // inflow data
+      inflow_data_calculator->calculate(velocity);
+
+      // random perturbations
+      if(add_random_perturbations)
+        inflow_data_storage.add_random_perturbations();
+    }
+    else // laminar inflow profile
+    {
+      // in case of random perturbations, the velocity field at the inflow boundary
+      // has to be recomputed after each time step
+      if(add_random_perturbations)
+        inflow_data_storage.initialize_velocity_values();
+    }
+
+    if(pp_data_fda.mean_velocity_data.calculate == true)
+    {
+      // calculation of flow rate
+      double const flow_rate =
+        area * mean_velocity_calculator->calculate_mean_velocity_volume(velocity, time);
+
+      // update body force
+      flow_rate_controller.update_body_force(flow_rate, time);
+    }
+
+    // evaluation of results along lines
+    if(pp_data_fda.line_plot_data.statistics_data.calculate_statistics)
+    {
+      line_plot_calculator_statistics->evaluate(velocity, pressure, time, time_step_number);
+    }
+  }
+
+private:
+  MPI_Comm const & mpi_comm;
+
+  // postprocessor data supplemented with data required for FDA benchmark
+  PostProcessorDataFDA<dim> pp_data_fda;
+
+  // calculate flow rate in precursor domain so that the flow rate can be
+  // dynamically adjusted by a flow rate controller.
+  std::shared_ptr<MeanVelocityCalculator<dim, Number>> mean_velocity_calculator;
+
+  double const area;
+
+  FlowRateController & flow_rate_controller;
+
+  // interpolate velocity field to a predefined set of interpolation points
+  std::shared_ptr<InflowDataCalculator<dim, Number>> inflow_data_calculator;
+
+  InflowDataStorage<dim> & inflow_data_storage;
+
+  bool const use_precursor;
+  bool const add_random_perturbations;
+
+  // evaluation of results along lines
+  std::shared_ptr<LinePlotCalculatorStatistics<dim, Number>> line_plot_calculator_statistics;
+};
+
+} // namespace FDA
+} // namespace IncNS
+} // namespace ExaDG
+
+#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_POSTPROCESSOR_H_ */
