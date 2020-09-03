@@ -1,8 +1,8 @@
 #ifndef LUNG_LUNG_TRIA
 #define LUNG_LUNG_TRIA
 
-#include "../../grid/lung/algebra_util.h"
-#include "../../grid/lung/lung_util.h"
+#include "algebra_util.h"
+#include "lung_util.h"
 
 #define LUNG_NUMBER_OF_VERTICES_2D 17
 

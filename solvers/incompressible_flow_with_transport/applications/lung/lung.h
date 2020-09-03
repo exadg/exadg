@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 
-#include "grid/lung/lung_environment.h"
-#include "grid/lung/lung_grid.h"
+#include "grid/lung_environment.h"
+#include "grid/lung_grid.h"
 
 #include "incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
 #include "incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
@@ -42,7 +42,7 @@ double const D_OXYGEN = 0.219e-4; // 0.219 cm^2/s = 0.219e-4 m^2/s
 double const DENSITY = 1.2;       // kg/m^3 (@ 20°C)
 
 #ifdef BABY // preterm infant
-std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output/";
+std::string const FOLDER_LUNG_FILES = "../../../exadg/solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/";
 double const PERIOD = 0.1; // 100 ms
 unsigned int const N_PERIODS = 10;
 double const START_TIME = 0.0;
@@ -85,7 +85,7 @@ double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^
 };
 #endif
 #ifdef ADULT // adult lung
-std::string const FOLDER_LUNG_FILES = "lung/adult/output2/";
+std::string const FOLDER_LUNG_FILES = "../../../exadg/solvers/incompressible_flow_with_transport/applications/lung/patients/adult/output2/";
 double const PERIOD = 3; // in period lasts 3 s
 unsigned int const N_PERIODS = 10;
 double const START_TIME = 0.0;

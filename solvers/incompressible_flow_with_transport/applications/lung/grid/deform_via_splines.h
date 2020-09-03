@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-#include "../../grid/lung/read_bspline.h"
+#include "read_bspline.h"
 
 namespace ExaDG
 {

@@ -8,8 +8,7 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include "grid/mesh_flow_past_cylinder.h"
-#include "grid/one_sided_cylindrical_manifold.h"
+#include "../../../incompressible_navier_stokes/applications/flow_past_cylinder/grid.h"
 
 namespace ExaDG
 {

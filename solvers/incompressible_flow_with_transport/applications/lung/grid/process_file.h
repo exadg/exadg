@@ -1,7 +1,7 @@
 #ifndef LUNG_PROCESS_FILE
 #define LUNG_PROCESS_FILE
 
-#include "../../grid/lung/lung_util.h"
+#include "lung_util.h"
 
 namespace ExaDG
 {
