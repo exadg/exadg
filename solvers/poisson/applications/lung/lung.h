@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_LUNG_H_
 #define APPLICATIONS_POISSON_TEST_CASES_LUNG_H_
 
-#include "grid/lung/lung_environment.h"
-#include "grid/lung/lung_grid.h"
+#include "../../../incompressible_flow_with_transport/applications/lung/grid/lung_environment.h"
+#include "../../../incompressible_flow_with_transport/applications/lung/grid/lung_grid.h"
 
 namespace ExaDG
 {
@@ -20,7 +20,8 @@ namespace Lung
 using namespace dealii;
 
 // lung geometry
-std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output/";
+std::string const FOLDER_LUNG_FILES =
+  "../../../exadg/solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/";
 
 // outlet boundary IDs
 types::boundary_id const OUTLET_ID_FIRST = 2;

@@ -9,7 +9,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_
 
 // nozzle geometry
-#include "grid/fda_benchmark/nozzle.h"
+#include "grid.h"
 
 // inflow profile
 #include "functions_and_boundary_conditions/linear_interpolation.h"
