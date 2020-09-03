@@ -16,92 +16,82 @@ DEAL_II_NAMESPACE_OPEN
 
 namespace internal
 {
-template<int fe_degree, int dim, int n_components, typename Number, typename VectorizedArrayType>
-struct FEEvaluationFactoryImpl
+template<int fe_degree, int dim, typename Number, typename VectorizedArrayType>
+struct FEEvaluationFactoryImplBasic
 {
   static DEAL_II_ALWAYS_INLINE void
-  evaluate(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
+  evaluate(const unsigned int                                          n_components,
+           const EvaluationFlags::EvaluationFlags                      evaluation_flag,
+           const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
            VectorizedArrayType *                                       values_dofs_actual,
            VectorizedArrayType *                                       values_quad,
            VectorizedArrayType *                                       gradients_quad,
            VectorizedArrayType *                                       hessians_quad,
-           VectorizedArrayType *                                       scratch_data,
-           const bool                                                  evaluate_values,
-           const bool                                                  evaluate_gradients,
-           const bool                                                  evaluate_hessians)
+           VectorizedArrayType *                                       scratch_data)
   {
     // n_q_points = fe_degree+1
     if(shape_info.data[0].fe_degree == fe_degree)
     {
       if(shape_info.data[0].n_q_points_1d == fe_degree + 1)
-        SelectEvaluator<dim, fe_degree, fe_degree + 1, n_components, VectorizedArrayType>::evaluate(
+        SelectEvaluator<dim, fe_degree, fe_degree + 1, VectorizedArrayType>::evaluate(
+          n_components,
+          evaluation_flag,
           shape_info,
           values_dofs_actual,
           values_quad,
           gradients_quad,
           hessians_quad,
-          scratch_data,
-          evaluate_values,
-          evaluate_gradients,
-          evaluate_hessians);
+          scratch_data);
       else if(shape_info.data[0].n_q_points_1d == fe_degree + 2)
-        SelectEvaluator<dim, fe_degree, fe_degree + 2, n_components, VectorizedArrayType>::evaluate(
+        SelectEvaluator<dim, fe_degree, fe_degree + 2, VectorizedArrayType>::evaluate(
+          n_components,
+          evaluation_flag,
           shape_info,
           values_dofs_actual,
           values_quad,
           gradients_quad,
           hessians_quad,
-          scratch_data,
-          evaluate_values,
-          evaluate_gradients,
-          evaluate_hessians);
+          scratch_data);
       else if(shape_info.data[0].n_q_points_1d == fe_degree)
-        SelectEvaluator<dim, fe_degree, fe_degree, n_components, VectorizedArrayType>::evaluate(
+        SelectEvaluator<dim, fe_degree, fe_degree, VectorizedArrayType>::evaluate(
+          n_components,
+          evaluation_flag,
           shape_info,
           values_dofs_actual,
           values_quad,
           gradients_quad,
           hessians_quad,
-          scratch_data,
-          evaluate_values,
-          evaluate_gradients,
-          evaluate_hessians);
+          scratch_data);
       else if(shape_info.data[0].n_q_points_1d == 3 * fe_degree / 2 + 1)
-        SelectEvaluator<dim, fe_degree, 3 * fe_degree / 2 + 1, n_components, VectorizedArrayType>::
-          evaluate(shape_info,
-                   values_dofs_actual,
-                   values_quad,
-                   gradients_quad,
-                   hessians_quad,
-                   scratch_data,
-                   evaluate_values,
-                   evaluate_gradients,
-                   evaluate_hessians);
+        SelectEvaluator<dim, fe_degree, 3 * fe_degree / 2 + 1, VectorizedArrayType>::evaluate(
+          n_components,
+          evaluation_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          hessians_quad,
+          scratch_data);
       else if(shape_info.data[0].n_q_points_1d == 3 * (fe_degree + 1) / 2 + 1)
-        SelectEvaluator<dim,
-                        fe_degree,
-                        3 * (fe_degree + 1) / 2 + 1,
-                        n_components,
-                        VectorizedArrayType>::evaluate(shape_info,
-                                                       values_dofs_actual,
-                                                       values_quad,
-                                                       gradients_quad,
-                                                       hessians_quad,
-                                                       scratch_data,
-                                                       evaluate_values,
-                                                       evaluate_gradients,
-                                                       evaluate_hessians);
+        SelectEvaluator<dim, fe_degree, 3 * (fe_degree + 1) / 2 + 1, VectorizedArrayType>::evaluate(
+          n_components,
+          evaluation_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          hessians_quad,
+          scratch_data);
       else if(shape_info.data[0].n_q_points_1d == 2 * fe_degree + 1)
-        SelectEvaluator<dim, fe_degree, 2 * fe_degree + 1, n_components, VectorizedArrayType>::
-          evaluate(shape_info,
-                   values_dofs_actual,
-                   values_quad,
-                   gradients_quad,
-                   hessians_quad,
-                   scratch_data,
-                   evaluate_values,
-                   evaluate_gradients,
-                   evaluate_hessians);
+        SelectEvaluator<dim, fe_degree, 2 * fe_degree + 1, VectorizedArrayType>::evaluate(
+          n_components,
+          evaluation_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          hessians_quad,
+          scratch_data);
       else
       {
         AssertThrow(false,
@@ -113,19 +103,18 @@ struct FEEvaluationFactoryImpl
     }
     else if(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX)
     {
-      FEEvaluationFactoryImpl<(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 : fe_degree),
-                              dim,
-                              n_components,
-                              Number,
-                              VectorizedArrayType>::evaluate(shape_info,
-                                                             values_dofs_actual,
-                                                             values_quad,
-                                                             gradients_quad,
-                                                             hessians_quad,
-                                                             scratch_data,
-                                                             evaluate_values,
-                                                             evaluate_gradients,
-                                                             evaluate_hessians);
+      FEEvaluationFactoryImplBasic<(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 :
+                                                                             fe_degree),
+                                   dim,
+                                   Number,
+                                   VectorizedArrayType>::evaluate(n_components,
+                                                                  evaluation_flag,
+                                                                  shape_info,
+                                                                  values_dofs_actual,
+                                                                  values_quad,
+                                                                  gradients_quad,
+                                                                  hessians_quad,
+                                                                  scratch_data);
     }
     else
     {
@@ -139,81 +128,78 @@ struct FEEvaluationFactoryImpl
 
 
   static DEAL_II_ALWAYS_INLINE void
-  integrate(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
+  integrate(const unsigned int                                          n_components,
+            const EvaluationFlags::EvaluationFlags                      integration_flag,
+            const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
             VectorizedArrayType *                                       values_dofs_actual,
             VectorizedArrayType *                                       values_quad,
             VectorizedArrayType *                                       gradients_quad,
             VectorizedArrayType *                                       scratch_data,
-            const bool                                                  integrate_values,
-            const bool                                                  integrate_gradients,
             const bool                                                  sum_into_values_array)
   {
     // n_q_points = fe_degree+1
     if(shape_info.data[0].fe_degree == fe_degree)
     {
       if(shape_info.data[0].n_q_points_1d == fe_degree + 1)
-        SelectEvaluator<dim, fe_degree, fe_degree + 1, n_components, VectorizedArrayType>::
-          integrate(shape_info,
-                    values_dofs_actual,
-                    values_quad,
-                    gradients_quad,
-                    scratch_data,
-                    integrate_values,
-                    integrate_gradients,
-                    sum_into_values_array);
-      else if(shape_info.data[0].n_q_points_1d == fe_degree + 2)
-        SelectEvaluator<dim, fe_degree, fe_degree + 2, n_components, VectorizedArrayType>::
-          integrate(shape_info,
-                    values_dofs_actual,
-                    values_quad,
-                    gradients_quad,
-                    scratch_data,
-                    integrate_values,
-                    integrate_gradients,
-                    sum_into_values_array);
-      else if(shape_info.data[0].n_q_points_1d == fe_degree)
-        SelectEvaluator<dim, fe_degree, fe_degree, n_components, VectorizedArrayType>::integrate(
+        SelectEvaluator<dim, fe_degree, fe_degree + 1, VectorizedArrayType>::integrate(
+          n_components,
+          integration_flag,
           shape_info,
           values_dofs_actual,
           values_quad,
           gradients_quad,
           scratch_data,
-          integrate_values,
-          integrate_gradients,
+          sum_into_values_array);
+      else if(shape_info.data[0].n_q_points_1d == fe_degree + 2)
+        SelectEvaluator<dim, fe_degree, fe_degree + 2, VectorizedArrayType>::integrate(
+          n_components,
+          integration_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          scratch_data,
+          sum_into_values_array);
+      else if(shape_info.data[0].n_q_points_1d == fe_degree)
+        SelectEvaluator<dim, fe_degree, fe_degree, VectorizedArrayType>::integrate(
+          n_components,
+          integration_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          scratch_data,
           sum_into_values_array);
       else if(shape_info.data[0].n_q_points_1d == 3 * fe_degree / 2 + 1)
-        SelectEvaluator<dim, fe_degree, 3 * fe_degree / 2 + 1, n_components, VectorizedArrayType>::
-          integrate(shape_info,
-                    values_dofs_actual,
-                    values_quad,
-                    gradients_quad,
-                    scratch_data,
-                    integrate_values,
-                    integrate_gradients,
-                    sum_into_values_array);
+        SelectEvaluator<dim, fe_degree, 3 * fe_degree / 2 + 1, VectorizedArrayType>::integrate(
+          n_components,
+          integration_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          scratch_data,
+          sum_into_values_array);
       else if(shape_info.data[0].n_q_points_1d == 3 * (fe_degree + 1) / 2 + 1)
-        SelectEvaluator<dim,
-                        fe_degree,
-                        3 * (fe_degree + 1) / 2 + 1,
-                        n_components,
-                        VectorizedArrayType>::integrate(shape_info,
-                                                        values_dofs_actual,
-                                                        values_quad,
-                                                        gradients_quad,
-                                                        scratch_data,
-                                                        integrate_values,
-                                                        integrate_gradients,
-                                                        sum_into_values_array);
-      else if(shape_info.data[0].n_q_points_1d == 2 * fe_degree + 1)
-        SelectEvaluator<dim, fe_degree, 2 * fe_degree + 1, n_components, VectorizedArrayType>::
-          integrate(shape_info,
+        SelectEvaluator<dim, fe_degree, 3 * (fe_degree + 1) / 2 + 1, VectorizedArrayType>::
+          integrate(n_components,
+                    integration_flag,
+                    shape_info,
                     values_dofs_actual,
                     values_quad,
                     gradients_quad,
                     scratch_data,
-                    integrate_values,
-                    integrate_gradients,
                     sum_into_values_array);
+      else if(shape_info.data[0].n_q_points_1d == 2 * fe_degree + 1)
+        SelectEvaluator<dim, fe_degree, 2 * fe_degree + 1, VectorizedArrayType>::integrate(
+          n_components,
+          integration_flag,
+          shape_info,
+          values_dofs_actual,
+          values_quad,
+          gradients_quad,
+          scratch_data,
+          sum_into_values_array);
       else
       {
         AssertThrow(false,
@@ -225,18 +211,18 @@ struct FEEvaluationFactoryImpl
     }
     else if(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX)
     {
-      FEEvaluationFactoryImpl<(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 : fe_degree),
-                              dim,
-                              n_components,
-                              Number,
-                              VectorizedArrayType>::integrate(shape_info,
-                                                              values_dofs_actual,
-                                                              values_quad,
-                                                              gradients_quad,
-                                                              scratch_data,
-                                                              integrate_values,
-                                                              integrate_gradients,
-                                                              sum_into_values_array);
+      FEEvaluationFactoryImplBasic<(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 :
+                                                                             fe_degree),
+                                   dim,
+                                   Number,
+                                   VectorizedArrayType>::integrate(n_components,
+                                                                   integration_flag,
+                                                                   shape_info,
+                                                                   values_dofs_actual,
+                                                                   values_quad,
+                                                                   gradients_quad,
+                                                                   scratch_data,
+                                                                   sum_into_values_array);
     }
     else
     {
@@ -246,9 +232,13 @@ struct FEEvaluationFactoryImpl
                                     std::to_string(FE_EVAL_FACTORY_DEGREE_MAX)));
     }
   }
+};
 
 
 
+template<int fe_degree, int dim, int n_components, typename Number, typename VectorizedArrayType>
+struct FEEvaluationFactoryImpl
+{
   static DEAL_II_ALWAYS_INLINE void
   evaluate_face(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
                 const VectorizedArrayType *                                 values_array,
@@ -968,25 +958,25 @@ struct FEEvaluationFactoryImpl
   }
 
   static DEAL_II_ALWAYS_INLINE void
-  apply_inverse_mass_matrix(const unsigned int                         given_degree,
+  apply_inverse_mass_matrix(const unsigned int                         n_desired_components,
+                            const unsigned int                         given_degree,
                             const AlignedVector<VectorizedArrayType> & inverse_shape,
                             const AlignedVector<VectorizedArrayType> & inverse_coefficients,
-                            const unsigned int                         n_desired_components,
                             const VectorizedArrayType *                in_array,
                             VectorizedArrayType *                      out_array)
   {
     if(fe_degree == given_degree)
-      internal::CellwiseInverseMassMatrixImpl<dim, fe_degree, n_components, VectorizedArrayType>::
-        apply(inverse_shape, inverse_coefficients, n_desired_components, in_array, out_array);
+      internal::CellwiseInverseMassMatrixImpl<dim, fe_degree, VectorizedArrayType>::apply(
+        n_desired_components, inverse_shape, inverse_coefficients, in_array, out_array);
     else if(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX)
       FEEvaluationFactoryImpl<(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 : fe_degree),
                               dim,
                               n_components,
                               Number,
-                              VectorizedArrayType>::apply_inverse_mass_matrix(given_degree,
+                              VectorizedArrayType>::apply_inverse_mass_matrix(n_desired_components,
+                                                                              given_degree,
                                                                               inverse_shape,
                                                                               inverse_coefficients,
-                                                                              n_desired_components,
                                                                               in_array,
                                                                               out_array);
     else
@@ -1006,8 +996,8 @@ struct FEEvaluationFactoryImpl
     VectorizedArrayType *                                                           out_array)
   {
     if(fe_degree == given_degree)
-      internal::CellwiseInverseMassMatrixImpl<dim, fe_degree, n_components, VectorizedArrayType>::
-        apply(fe_eval, in_array, out_array);
+      internal::CellwiseInverseMassMatrixImpl<dim, fe_degree, VectorizedArrayType>::apply(
+        n_components, fe_eval, in_array, out_array);
     else if(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX)
       FEEvaluationFactoryImpl<(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 : fe_degree),
                               dim,
@@ -1027,24 +1017,24 @@ struct FEEvaluationFactoryImpl
   }
 
   static DEAL_II_ALWAYS_INLINE void
-  transform_from_q_points_to_basis(const unsigned int                         given_degree,
+  transform_from_q_points_to_basis(const unsigned int                         n_desired_components,
+                                   const unsigned int                         given_degree,
                                    const AlignedVector<VectorizedArrayType> & inverse_shape,
-                                   const unsigned int                         n_desired_components,
                                    const VectorizedArrayType *                in_array,
                                    VectorizedArrayType *                      out_array)
   {
     if(fe_degree == given_degree)
-      internal::CellwiseInverseMassMatrixImpl<dim, fe_degree, n_components, VectorizedArrayType>::
-        transform_from_q_points_to_basis(inverse_shape, n_desired_components, in_array, out_array);
+      internal::CellwiseInverseMassMatrixImpl<dim, fe_degree, VectorizedArrayType>::
+        transform_from_q_points_to_basis(n_desired_components, inverse_shape, in_array, out_array);
     else if(fe_degree < FE_EVAL_FACTORY_DEGREE_MAX)
       FEEvaluationFactoryImpl<
         (fe_degree < FE_EVAL_FACTORY_DEGREE_MAX ? fe_degree + 1 : fe_degree),
         dim,
         n_components,
         Number,
-        VectorizedArrayType>::transform_from_q_points_to_basis(given_degree,
+        VectorizedArrayType>::transform_from_q_points_to_basis(n_desired_components,
+                                                               given_degree,
                                                                inverse_shape,
-                                                               n_desired_components,
                                                                in_array,
                                                                out_array);
     else
@@ -1059,51 +1049,48 @@ struct FEEvaluationFactoryImpl
 
 
 
-template<int dim, int n_components, typename Number, typename VectorizedArrayType>
+template<int dim, typename Number, typename VectorizedArrayType>
 void
-FEEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::evaluate(
+FEEvaluationFactory<dim, Number, VectorizedArrayType>::evaluate(
+  const unsigned int                                          n_components,
+  const EvaluationFlags::EvaluationFlags                      evaluation_flag,
   const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
   VectorizedArrayType *                                       values_dofs_actual,
   VectorizedArrayType *                                       values_quad,
   VectorizedArrayType *                                       gradients_quad,
   VectorizedArrayType *                                       hessians_quad,
-  VectorizedArrayType *                                       scratch_data,
-  const bool                                                  evaluate_values,
-  const bool                                                  evaluate_gradients,
-  const bool                                                  evaluate_hessians)
+  VectorizedArrayType *                                       scratch_data)
 {
-  FEEvaluationFactoryImpl<1, dim, n_components, Number, VectorizedArrayType>::evaluate(
-    shape_info,
-    values_dofs_actual,
-    values_quad,
-    gradients_quad,
-    hessians_quad,
-    scratch_data,
-    evaluate_values,
-    evaluate_gradients,
-    evaluate_hessians);
+  FEEvaluationFactoryImplBasic<1, dim, Number, VectorizedArrayType>::evaluate(n_components,
+                                                                              evaluation_flag,
+                                                                              shape_info,
+                                                                              values_dofs_actual,
+                                                                              values_quad,
+                                                                              gradients_quad,
+                                                                              hessians_quad,
+                                                                              scratch_data);
 }
 
-template<int dim, int n_components, typename Number, typename VectorizedArrayType>
+template<int dim, typename Number, typename VectorizedArrayType>
 void
-FEEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::integrate(
+FEEvaluationFactory<dim, Number, VectorizedArrayType>::integrate(
+  const unsigned int                                          n_components,
+  const EvaluationFlags::EvaluationFlags                      integration_flag,
   const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
   VectorizedArrayType *                                       values_dofs_actual,
   VectorizedArrayType *                                       values_quad,
   VectorizedArrayType *                                       gradients_quad,
   VectorizedArrayType *                                       scratch_data,
-  const bool                                                  integrate_values,
-  const bool                                                  integrate_gradients,
   const bool                                                  sum_into_values_array)
 {
-  FEEvaluationFactoryImpl<1, dim, n_components, Number, VectorizedArrayType>::integrate(
+  FEEvaluationFactoryImplBasic<1, dim, Number, VectorizedArrayType>::integrate(
+    n_components,
+    integration_flag,
     shape_info,
     values_dofs_actual,
     values_quad,
     gradients_quad,
     scratch_data,
-    integrate_values,
-    integrate_gradients,
     sum_into_values_array);
 }
 
@@ -1268,30 +1255,30 @@ CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::appl
 template<int dim, int n_components, typename Number, typename VectorizedArrayType>
 void
 CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::apply(
+  const unsigned int                         n_desired_components,
   const unsigned int                         fe_degree,
   const AlignedVector<VectorizedArrayType> & inverse_shape,
   const AlignedVector<VectorizedArrayType> & inverse_coefficients,
-  const unsigned int                         n_desired_components,
   const VectorizedArrayType *                in_array,
   VectorizedArrayType *                      out_array)
 {
   FEEvaluationFactoryImpl<1, dim, n_components, Number, VectorizedArrayType>::
     apply_inverse_mass_matrix(
-      fe_degree, inverse_shape, inverse_coefficients, n_desired_components, in_array, out_array);
+      n_desired_components, fe_degree, inverse_shape, inverse_coefficients, in_array, out_array);
 }
 
 template<int dim, int n_components, typename Number, typename VectorizedArrayType>
 void
 CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::
-  transform_from_q_points_to_basis(const unsigned int                         fe_degree,
+  transform_from_q_points_to_basis(const unsigned int                         n_desired_components,
+                                   const unsigned int                         fe_degree,
                                    const AlignedVector<VectorizedArrayType> & inverse_shape,
-                                   const unsigned int                         n_desired_components,
                                    const VectorizedArrayType *                in_array,
                                    VectorizedArrayType *                      out_array)
 {
   FEEvaluationFactoryImpl<1, dim, n_components, Number, VectorizedArrayType>::
     transform_from_q_points_to_basis(
-      fe_degree, inverse_shape, n_desired_components, in_array, out_array);
+      n_desired_components, fe_degree, inverse_shape, in_array, out_array);
 }
 
 } // namespace internal

@@ -11,31 +11,27 @@ DEAL_II_NAMESPACE_OPEN
 
 namespace internal
 {
-template<int dim,
-         int n_components,
-         typename Number,
-         typename VectorizedArrayType = VectorizedArray<Number>>
+template<int dim, typename Number, typename VectorizedArrayType = VectorizedArray<Number>>
 struct FEEvaluationFactory
 {
   static void
-  evaluate(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
+  evaluate(const unsigned int                                          n_components,
+           const EvaluationFlags::EvaluationFlags                      evaluation_flag,
+           const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
            VectorizedArrayType *                                       values_dofs_actual,
            VectorizedArrayType *                                       values_quad,
            VectorizedArrayType *                                       gradients_quad,
            VectorizedArrayType *                                       hessians_quad,
-           VectorizedArrayType *                                       scratch_data,
-           const bool                                                  evaluate_values,
-           const bool                                                  evaluate_gradients,
-           const bool                                                  evaluate_hessians);
+           VectorizedArrayType *                                       scratch_data);
 
   static void
-  integrate(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
+  integrate(const unsigned int                                          n_components,
+            const EvaluationFlags::EvaluationFlags                      integration_flag,
+            const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & shape_info,
             VectorizedArrayType *                                       values_dofs_actual,
             VectorizedArrayType *                                       values_quad,
             VectorizedArrayType *                                       gradients_quad,
             VectorizedArrayType *                                       scratch_data,
-            const bool                                                  integrate_values,
-            const bool                                                  integrate_gradients,
             const bool                                                  sum_into_values_array);
 };
 
@@ -126,17 +122,17 @@ struct CellwiseInverseMassFactory
         VectorizedArrayType *                                                           out_array);
 
   static void
-  apply(const unsigned int                         fe_degree,
+  apply(const unsigned int                         n_desired_components,
+        const unsigned int                         fe_degree,
         const AlignedVector<VectorizedArrayType> & inverse_shape,
         const AlignedVector<VectorizedArrayType> & inverse_coefficients,
-        const unsigned int                         n_desired_components,
         const VectorizedArrayType *                in_array,
         VectorizedArrayType *                      out_array);
 
   static void
-  transform_from_q_points_to_basis(const unsigned int                         fe_degree,
+  transform_from_q_points_to_basis(const unsigned int                         n_desired_components,
+                                   const unsigned int                         fe_degree,
                                    const AlignedVector<VectorizedArrayType> & inverse_shape,
-                                   const unsigned int                         n_desired_components,
                                    const VectorizedArrayType *                in_array,
                                    VectorizedArrayType *                      out_array);
 };
