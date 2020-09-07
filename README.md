@@ -192,7 +192,7 @@ Download **fftw** from homepage http://www.fftw.org/download.html and copy to fo
 wget http://fftw.org/fftw-3.3.7.tar.gz
 tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
-./configure --enable-mpi --prefix=$WORKING_DIRECTORY/sw/fftw-3.3.7-install
+./configure --enable-mpi --prefix=/working_directory/sw/fftw-3.3.7-install
 make
 make install
 cd ../fftw-3.3.7-install/lib/
