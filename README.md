@@ -147,7 +147,7 @@ wget http://p4est.github.io/release/p4est-2.0.tar.gz
 and run the command
 
 ```bash
-matrixfree/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
+dealii/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
 ```
 Create a *dealii-build* directory
 
