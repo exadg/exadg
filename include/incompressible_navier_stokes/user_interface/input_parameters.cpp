@@ -5,6 +5,8 @@
  *      Author: fehn
  */
 
+#include <deal.II/base/exceptions.h>
+
 #include "input_parameters.h"
 
 #include "../../utilities/print_functions.h"

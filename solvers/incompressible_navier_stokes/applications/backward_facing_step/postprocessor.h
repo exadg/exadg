@@ -10,9 +10,9 @@
 
 #include "geometry.h"
 
-#include "../../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
-#include "../../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
-#include "../../../include/postprocessor/statistics_manager.h"
+#include "incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+#include "incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
+#include "postprocessor/statistics_manager.h"
 
 namespace ExaDG
 {
