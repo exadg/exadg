@@ -181,14 +181,14 @@ public:
 
       // ... permute
       timer.start("Permutation");
-      ArrayView<const double> dst(
+      ArrayView<double> dst(
         fftw.u_real,
         s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
-      ArrayView<double> src_(ipol.dst,
+      ArrayView<const double> src_(ipol.dst,
                              s.dim *
                                pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst),
                                     s.dim));
-      nonconti->export_to_ghosted_array(dst, src_);
+      nonconti->export_to_ghosted_array(src_, dst);
 
       timer.append("Permutation");
 
