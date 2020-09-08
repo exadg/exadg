@@ -18,6 +18,60 @@
 
 #include "../../utilities/print_functions.h"
 
+#ifndef DEAL_II_WITH_TRILINOS
+namespace dealii
+{
+namespace TrilinosWrappers
+{
+namespace PreconditionAMG
+{
+// copy of interface from deal.II (lac/trilinos_precondition.h)
+struct AdditionalData
+{
+  AdditionalData(
+    const bool                           elliptic              = true,
+    const bool                           higher_order_elements = false,
+    const unsigned int                   n_cycles              = 1,
+    const bool                           w_cycle               = false,
+    const double                         aggregation_threshold = 1e-4,
+    const std::vector<std::vector<bool>> constant_modes        = std::vector<std::vector<bool>>(0),
+    const unsigned int                   smoother_sweeps       = 2,
+    const unsigned int                   smoother_overlap      = 0,
+    const bool                           output_details        = false,
+    const char *                         smoother_type         = "Chebyshev",
+    const char *                         coarse_type           = "Amesos-KLU")
+    : elliptic(elliptic),
+      higher_order_elements(higher_order_elements),
+      n_cycles(n_cycles),
+      w_cycle(w_cycle),
+      aggregation_threshold(aggregation_threshold),
+      constant_modes(constant_modes),
+      smoother_sweeps(smoother_sweeps),
+      smoother_overlap(smoother_overlap),
+      output_details(output_details),
+      smoother_type(smoother_type),
+      coarse_type(coarse_type)
+  {
+  }
+
+  bool                           elliptic;
+  bool                           higher_order_elements;
+  unsigned int                   n_cycles;
+  bool                           w_cycle;
+  double                         aggregation_threshold;
+  std::vector<std::vector<bool>> constant_modes;
+  unsigned int                   smoother_sweeps;
+  unsigned int                   smoother_overlap;
+  bool                           output_details;
+  const char *                   smoother_type;
+  const char *                   coarse_type;
+};
+
+} // namespace PreconditionAMG
+} // namespace TrilinosWrappers
+} // namespace dealii
+#endif
+
 namespace ExaDG
 {
 enum class MultigridType
@@ -88,60 +142,6 @@ enum class MultigridCoarseGridPreconditioner
 
 std::string
 enum_to_string(MultigridCoarseGridPreconditioner const enum_type);
-
-#ifndef DEAL_II_WITH_TRILINOS
-namespace dealii
-{
-namespace TrilinosWrappers
-{
-namespace PreconditionAMG
-{
-// copy of interface from deal.II (lac/trilinos_precondition.h)
-struct AdditionalData
-{
-  AdditionalData(
-    const bool                           elliptic              = true,
-    const bool                           higher_order_elements = false,
-    const unsigned int                   n_cycles              = 1,
-    const bool                           w_cycle               = false,
-    const double                         aggregation_threshold = 1e-4,
-    const std::vector<std::vector<bool>> constant_modes        = std::vector<std::vector<bool>>(0),
-    const unsigned int                   smoother_sweeps       = 2,
-    const unsigned int                   smoother_overlap      = 0,
-    const bool                           output_details        = false,
-    const char *                         smoother_type         = "Chebyshev",
-    const char *                         coarse_type           = "Amesos-KLU")
-    : elliptic(elliptic),
-      higher_order_elements(higher_order_elements),
-      n_cycles(n_cycles),
-      w_cycle(w_cycle),
-      aggregation_threshold(aggregation_threshold),
-      constant_modes(constant_modes),
-      smoother_sweeps(smoother_sweeps),
-      smoother_overlap(smoother_overlap),
-      output_details(output_details),
-      smoother_type(smoother_type),
-      coarse_type(coarse_type)
-  {
-  }
-
-  bool                           elliptic;
-  bool                           higher_order_elements;
-  unsigned int                   n_cycles;
-  bool                           w_cycle;
-  double                         aggregation_threshold;
-  std::vector<std::vector<bool>> constant_modes;
-  unsigned int                   smoother_sweeps;
-  unsigned int                   smoother_overlap;
-  bool                           output_details;
-  const char *                   smoother_type;
-  const char *                   coarse_type;
-};
-
-} // namespace PreconditionAMG
-} // namespace TrilinosWrappers
-} // namespace dealii
-#endif
 
 struct AMGData
 {

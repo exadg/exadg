@@ -8,6 +8,8 @@
 #ifndef INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_
 #define INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_
 
+#include <iomanip>
+
 #include <deal.II/base/conditional_ostream.h>
 
 namespace ExaDG
@@ -34,8 +36,6 @@ print_value(ConditionalOStream const & pcout, bool const value);
 template<>
 void
 print_value(ConditionalOStream const & pcout, double const value);
-
-#include <iomanip>
 
 // print a parameter (which has a name and a value)
 template<typename ParameterType>
