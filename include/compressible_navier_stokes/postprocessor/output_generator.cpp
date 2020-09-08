@@ -104,38 +104,41 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
   // reset output counter
   output_counter = output_data.output_counter_start;
 
-  // Visualize boundary IDs:
-  // since boundary IDs typically do not change during the simulation, we only do this
-  // once at the beginning of the simulation (i.e., in the setup function).
-  if(output_data.write_boundary_IDs)
+  if(output_data.write_output == true)
   {
-    write_boundary_IDs(dof_handler->get_triangulation(),
-                       output_data.output_folder,
-                       output_data.output_name,
-                       mpi_comm);
-  }
+    // Visualize boundary IDs:
+    // since boundary IDs typically do not change during the simulation, we only do this
+    // once at the beginning of the simulation (i.e., in the setup function).
+    if(output_data.write_boundary_IDs)
+    {
+      write_boundary_IDs(dof_handler->get_triangulation(),
+                         output_data.output_folder,
+                         output_data.output_name,
+                         mpi_comm);
+    }
 
-  // write surface mesh
-  if(output_data.write_surface_mesh)
-  {
-    write_surface_mesh(dof_handler->get_triangulation(),
-                       *mapping,
-                       output_data.degree,
-                       output_data.output_folder,
-                       output_data.output_name,
-                       output_counter,
-                       mpi_comm);
-  }
+    // write surface mesh
+    if(output_data.write_surface_mesh)
+    {
+      write_surface_mesh(dof_handler->get_triangulation(),
+                         *mapping,
+                         output_data.degree,
+                         output_data.output_folder,
+                         output_data.output_name,
+                         output_counter,
+                         mpi_comm);
+    }
 
 
-  // processor_id
-  if(output_data.write_processor_id)
-  {
-    GridOut grid_out;
+    // processor_id
+    if(output_data.write_processor_id)
+    {
+      GridOut grid_out;
 
-    grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
-                                             output_data.output_folder + output_data.output_name +
-                                               "_processor_id");
+      grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
+                                               output_data.output_folder + output_data.output_name +
+                                                 "_processor_id");
+    }
   }
 }
 
