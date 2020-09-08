@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_
 
-#include "deal.II/base/conditional_ostream.h"
+#include <deal.II/base/conditional_ostream.h>
 
 #include "../../grid/enum_types.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
