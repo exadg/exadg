@@ -166,6 +166,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType & 
 
     internal::FEEvaluationImplBasisChange<
       internal::evaluate_evenodd,
+      internal::EvaluatorQuantity::value,
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
@@ -209,6 +210,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
 
     internal::FEEvaluationImplBasisChange<
       internal::evaluate_evenodd,
+      internal::EvaluatorQuantity::value,
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
@@ -248,6 +250,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
 
     internal::FEEvaluationImplBasisChange<
       internal::evaluate_evenodd,
+      internal::EvaluatorQuantity::value,
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
