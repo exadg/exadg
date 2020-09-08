@@ -12,9 +12,9 @@
 #include "../include/incompressible_navier_stokes/driver_precursor.h"
 
 // application
-#include "incompressible_navier_stokes_test_cases/backward_facing_step/backward_facing_step.h"
-#include "incompressible_navier_stokes_test_cases/fda/fda_nozzle_benchmark.h"
-#include "incompressible_navier_stokes_test_cases/template_precursor/template_precursor.h"
+#include "../solvers/incompressible_navier_stokes/applications/backward_facing_step/backward_facing_step.h"
+#include "../solvers/incompressible_navier_stokes/applications/fda/fda_nozzle_benchmark.h"
+#include "../solvers/incompressible_navier_stokes/applications/template_precursor/template_precursor.h"
 
 namespace ExaDG
 {
