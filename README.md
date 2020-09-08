@@ -90,7 +90,7 @@ cd build/
 Copy the script *config_trilinos.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/navierstokes/scripts/config_trilinos.sh .
+cp /working_directory/exadg/scripts/config_trilinos.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
@@ -147,7 +147,7 @@ wget http://p4est.github.io/release/p4est-2.0.tar.gz
 and run the command
 
 ```bash
-matrixfree/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
+dealii/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
 ```
 Create a *dealii-build* directory
 
@@ -155,10 +155,10 @@ Create a *dealii-build* directory
 mkdir dealii-build
 cd dealii-build/
 ```
-Copy the script *config_dealii.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
+Copy the script *config_dealii.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/navierstokes/scripts/config_dealii.sh .
+cp /working_directory/exadg/scripts/config_dealii.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
@@ -200,7 +200,7 @@ cd ../fftw-3.3.7-install/lib/
 Copy the script *combine_fftw.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/navierstokes/scripts/combine_fftw.sh .
+cp /working_directory/exadg/scripts/combine_fftw.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
