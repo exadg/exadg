@@ -209,14 +209,6 @@ Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_
 ```bash
 bash ./combine_fftw.sh
 ```
-Add the following variable to your environment (in case you want to make the setting permanent, e.g. by inserting the following lines into your *bashrc*-file)
-
-```bash
-export FFTW_INC="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/include"
-export FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/combined"
-
-```
-
 
 ### Completing ExaDG installation (continued)
 
