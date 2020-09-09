@@ -1,5 +1,5 @@
 /*
- * 3D_taylor_green_vortex.h
+ * taylor_green.h
  *
  *  Created on: Mar 7, 2018
  *      Author: fehn
@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 
-#include "grid/periodic_box.h"
+#include <exadg/grid/periodic_box.h>
 
 namespace ExaDG
 {

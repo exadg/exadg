@@ -8,6 +8,7 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_SLIT_H_
 #define APPLICATIONS_POISSON_TEST_CASES_SLIT_H_
 
+// deal.II
 #include <deal.II/base/function_lib.h>
 
 namespace ExaDG

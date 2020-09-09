@@ -1,5 +1,5 @@
 /*
- * incompressible_flow_with_transport.cc
+ * solver.cpp
  *
  *  Created on: Nov 6, 2018
  *      Author: fehn
@@ -8,10 +8,12 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
-// driver
-#include "../include/incompressible_flow_with_transport/driver.h"
+// ExaDG
 
-// application
+// driver
+#include <exadg/incompressible_flow_with_transport/driver.h>
+
+// applications
 #include "applications/template/template.h"
 
 // passive scalar

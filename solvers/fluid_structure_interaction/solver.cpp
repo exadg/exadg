@@ -1,5 +1,5 @@
 /*
- * fluid_structure_interaction.cc
+ * solver.cpp
  *
  *  Created on: Feb 25, 2020
  *      Author: fehn
@@ -8,17 +8,16 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
+// ExaDG
+
 // driver
-#include "../include/fluid_structure_interaction/driver.h"
+#include <exadg/fluid_structure_interaction/driver.h>
 
-// application
-
-// template
-#include "applications/template/template.h"
-
+// applications
 #include "applications/bending_wall/bending_wall.h"
 #include "applications/cylinder_with_flag/cylinder_with_flag.h"
 #include "applications/pressure_wave/pressure_wave.h"
+#include "applications/template/template.h"
 
 namespace ExaDG
 {

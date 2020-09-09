@@ -4,10 +4,11 @@
 #include <iostream>
 #include <sstream>
 
-// deal.ii
+// deal.II
 #include <deal.II/base/timer.h>
 
-#include "utilities/timings_hierarchical.h"
+// ExaDG
+#include <exadg/utilities/timer_tree.h>
 
 using namespace dealii;
 

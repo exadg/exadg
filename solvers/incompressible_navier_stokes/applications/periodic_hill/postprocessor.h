@@ -8,8 +8,10 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_POSTPROCESSOR_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_POSTPROCESSOR_H_
 
-#include "incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
-#include "incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
+// ExaDG
+#include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h>
+
 #include "flow_rate_controller.h"
 
 namespace ExaDG

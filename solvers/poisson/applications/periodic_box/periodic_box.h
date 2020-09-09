@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_PERIODIC_BOX_H_
 #define APPLICATIONS_POISSON_TEST_CASES_PERIODIC_BOX_H_
 
-#include "grid/periodic_box.h"
+// ExaDG
+#include <exadg/grid/periodic_box.h>
 
 namespace ExaDG
 {

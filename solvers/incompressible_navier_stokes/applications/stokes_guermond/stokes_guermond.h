@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_GUERMOND_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_GUERMOND_H_
 
-#include "grid/one_sided_cylindrical_manifold.h"
+// ExaDG
+#include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {

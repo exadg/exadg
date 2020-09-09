@@ -1,5 +1,5 @@
 /*
- * elasticity.cc
+ * solver.cpp
  *
  *  Created on: 25.03.2020
  *      Author: fehn
@@ -9,11 +9,13 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
 
-// elasticity solver
-#include "../include/structure/driver.h"
+// ExaDG
 
-// infrastructure for convergence studies
-#include "../include/utilities/convergence_study.h"
+// driver
+#include <exadg/structure/driver.h>
+
+// utilities
+#include <exadg/utilities/convergence_study.h>
 
 // applications
 #include "applications/bar/bar.h"

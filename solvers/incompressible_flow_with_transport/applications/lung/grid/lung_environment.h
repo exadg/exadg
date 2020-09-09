@@ -1,11 +1,13 @@
 #ifndef LUNG_ENVIRONMENT
 #define LUNG_ENVIRONMENT
 
+// C/C++
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
+// deal.II
 #include <deal.II/base/exceptions.h>
 
 namespace ExaDG

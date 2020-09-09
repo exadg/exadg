@@ -10,13 +10,13 @@
 #include <iostream>
 #include <sstream>
 
-// deal.ii
+// deal.II
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
-// internal solvers
-#include "../include/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
-#include "../include/solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h"
+// ExaDG
+#include <exadg/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h>
+#include <exadg/solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h>
 
 namespace ExaDG
 {

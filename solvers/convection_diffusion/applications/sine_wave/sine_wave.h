@@ -11,7 +11,7 @@
 // test case for a purely convective problem
 // sine wave that is advected from left to right by a constant velocity field
 
-#include "grid/mesh_movement_functions.h"
+#include <exadg/grid/mesh_movement_functions.h>
 
 namespace ExaDG
 {

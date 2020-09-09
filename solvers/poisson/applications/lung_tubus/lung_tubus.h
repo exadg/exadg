@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_LUNG_TUBUS_H_
 #define APPLICATIONS_POISSON_TEST_CASES_LUNG_TUBUS_H_
 
-#include "grid/one_sided_cylindrical_manifold.h"
+// ExaDG
+#include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {

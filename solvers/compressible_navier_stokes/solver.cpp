@@ -1,15 +1,15 @@
 /*
- * compressible_navier_stokes.cc
+ * solver.cpp
  *
  *  Created on: 2018
  *      Author: fehn
  */
 
 // driver
-#include "../include/compressible_navier_stokes/driver.h"
+#include <exadg/compressible_navier_stokes/driver.h>
 
-// infrastructure for convergence studies
-#include "../include/utilities/convergence_study.h"
+// utilities
+#include <exadg/utilities/convergence_study.h>
 
 // applications
 #include "applications/template/template.h"

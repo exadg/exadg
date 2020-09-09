@@ -8,9 +8,10 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
 
-#include "grid/deformed_cube_manifold.h"
-#include "grid/mesh_movement_functions.h"
-#include "grid/one_sided_cylindrical_manifold.h"
+// ExaDG
+#include <exadg/grid/deformed_cube_manifold.h>
+#include <exadg/grid/mesh_movement_functions.h>
+#include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {

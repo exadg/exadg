@@ -8,7 +8,9 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include "functions_and_boundary_conditions/linear_interpolation.h"
+// ExaDG
+#include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
+
 #include "grid.h"
 
 namespace ExaDG

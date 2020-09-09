@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_GRID_TOOLS_FDA_BENCHMARK_NOZZLE_H_
 #define APPLICATIONS_GRID_TOOLS_FDA_BENCHMARK_NOZZLE_H_
 
-#include "grid/one_sided_cylindrical_manifold.h"
+// ExaDG
+#include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {

@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_GAUSSIAN_H_
 #define APPLICATIONS_POISSON_TEST_CASES_GAUSSIAN_H_
 
-#include "grid/deformed_cube_manifold.h"
+// ExaDG
+#include <exadg/grid/deformed_cube_manifold.h>
 
 namespace ExaDG
 {

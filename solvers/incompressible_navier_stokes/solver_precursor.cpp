@@ -1,5 +1,5 @@
 /*
- * incompressible_navier_stokes_precursor.cc
+ * solver_precursor.cpp
  *
  *  Created on: 2017
  *      Author: fehn
@@ -8,13 +8,16 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
-// driver
-#include "../include/incompressible_navier_stokes/driver_precursor.h"
+// ExaDG
 
-// application
-#include "../solvers/incompressible_navier_stokes/applications/backward_facing_step/backward_facing_step.h"
-#include "../solvers/incompressible_navier_stokes/applications/fda/fda_nozzle_benchmark.h"
-#include "../solvers/incompressible_navier_stokes/applications/template_precursor/template_precursor.h"
+// driver
+#include <exadg/incompressible_navier_stokes/driver_precursor.h>
+
+// applications
+#include "applications/template_precursor/template_precursor.h"
+
+#include "applications/backward_facing_step/backward_facing_step.h"
+#include "applications/fda/fda_nozzle_benchmark.h"
 
 namespace ExaDG
 {
