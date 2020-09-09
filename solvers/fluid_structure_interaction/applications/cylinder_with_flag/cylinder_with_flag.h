@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_FSI_CYLINDER_WITH_FLAG_H_
 #define APPLICATIONS_FSI_CYLINDER_WITH_FLAG_H_
 
-#include "grid/one_sided_cylindrical_manifold.h"
+#include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {

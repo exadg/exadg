@@ -1,15 +1,15 @@
 /*
- * incompressible_navier_stokes.cc
+ * solver.cpp
  *
  *  Created on: Oct 10, 2016
  *      Author: fehn
  */
 
 // driver
-#include "../include/incompressible_navier_stokes/driver.h"
+#include <exadg/incompressible_navier_stokes/driver.h>
 
-// infrastructure for convergence studies
-#include "../include/utilities/convergence_study.h"
+// utilities
+#include <exadg/utilities/convergence_study.h>
 
 // applications
 #include "applications/template/template.h"
@@ -42,7 +42,7 @@
 #include "applications/turbulent_channel/turbulent_channel.h"
 
 // incompressible flow with scalar transport (but can also be used for pure fluid simulations)
-#include "incompressible_flow_with_transport/user_interface/application_base.h"
+#include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
 #include "../incompressible_flow_with_transport/applications/lung/lung.h"
 
 namespace ExaDG

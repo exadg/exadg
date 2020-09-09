@@ -1,5 +1,5 @@
 /*
- * application.h
+ * can.h
  *
  *  Created on: 21.03.2020
  *      Author: fehn
@@ -7,8 +7,6 @@
 
 #ifndef STRUCTURE_CAN
 #define STRUCTURE_CAN
-
-#include "structure/user_interface/application_base.h"
 
 namespace ExaDG
 {

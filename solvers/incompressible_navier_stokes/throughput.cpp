@@ -1,15 +1,18 @@
 /*
- * incompressible_navier_stokes_performance.cc
+ * throughput.cpp
  *
  *  Created on: May 5, 2017
  *      Author: fehn
  */
 
-#include "../include/incompressible_navier_stokes/driver.h"
+// ExaDG
 
-// infrastructure for parameter studies and throughput measurements
-#include "../include/utilities/parameter_study.h"
-#include "../include/utilities/throughput_study.h"
+// driver
+#include <exadg/incompressible_navier_stokes/driver.h>
+
+// utilities
+#include <exadg/utilities/parameter_study.h>
+#include <exadg/utilities/throughput_study.h>
 
 // applications
 #include "applications/periodic_box/periodic_box.h"

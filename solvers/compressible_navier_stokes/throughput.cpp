@@ -1,5 +1,5 @@
 /*
- * compressible_navier_stokes_performance.cc
+ * throughput.cpp
  *
  *  Created on: 2018
  *      Author: fehn
@@ -10,13 +10,13 @@
 #endif
 
 // driver
-#include "../include/compressible_navier_stokes/driver.h"
+#include <exadg/compressible_navier_stokes/driver.h>
 
 // infrastructure for parameter studies and throughput measurements
-#include "../include/utilities/parameter_study.h"
-#include "../include/utilities/throughput_study.h"
+#include <exadg/utilities/parameter_study.h>
+#include <exadg/utilities/throughput_study.h>
 
-// specify the test case that has to be solved
+// applications
 #include "applications/taylor_green/taylor_green.h"
 
 namespace ExaDG

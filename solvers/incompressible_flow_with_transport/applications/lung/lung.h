@@ -8,11 +8,13 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 
+// ExaDG
+#include <exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h>
+
+// lung grid generator
 #include "grid/lung_environment.h"
 #include "grid/lung_grid.h"
-
-#include "incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
-#include "incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 
 namespace ExaDG
 {

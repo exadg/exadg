@@ -8,11 +8,11 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_
 
+// inflow profile
+#include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
+
 // nozzle geometry
 #include "grid.h"
-
-// inflow profile
-#include "functions_and_boundary_conditions/linear_interpolation.h"
 
 // flow-rate controller
 #include "flow_rate_controller.h"

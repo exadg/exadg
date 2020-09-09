@@ -8,8 +8,6 @@
 #ifndef APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_
 #define APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_
 
-#include "structure/user_interface/application_base.h"
-
 /*
  * Manufactured solution for nonlinear elasticity problem with St. Venant-Kirchhoff
  * material. The test case can be used in both 2d and 3d, as well as for testing both

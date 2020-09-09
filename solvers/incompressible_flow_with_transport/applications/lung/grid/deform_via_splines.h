@@ -2,13 +2,16 @@
 #ifndef DEFORM_VIA_SPLINES_H
 #define DEFORM_VIA_SPLINES_H
 
+// C/C++
+#include <fstream>
+
+// deal.II
 #include <deal.II/base/geometry_info.h>
 #include <deal.II/base/point.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/tria.h>
 
-#include <fstream>
-
+// ExaDG
 #include "read_bspline.h"
 
 namespace ExaDG

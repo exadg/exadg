@@ -8,11 +8,12 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_POSTPROCESSOR_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BACKWARD_FACING_STEP_POSTPROCESSOR_H_
 
-#include "geometry.h"
+// ExaDG
+#include <exadg/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h>
+#include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
+#include <exadg/postprocessor/statistics_manager.h>
 
-#include "incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
-#include "incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
-#include "postprocessor/statistics_manager.h"
+#include "geometry.h"
 
 namespace ExaDG
 {

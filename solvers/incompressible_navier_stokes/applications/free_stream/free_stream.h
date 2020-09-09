@@ -1,7 +1,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_
 
-#include "grid/mesh_movement_functions.h"
+// ExaDG
+#include <exadg/grid/mesh_movement_functions.h>
 
 namespace ExaDG
 {

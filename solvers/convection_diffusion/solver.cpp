@@ -1,5 +1,5 @@
 /*
- * convection_diffusion.cc
+ * solver.cpp
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -9,13 +9,15 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
 
+// ExaDG
+
+// utilities
+#include <exadg/utilities/convergence_study.h>
+
 // driver
-#include "../include/convection_diffusion/driver.h"
+#include <exadg/convection_diffusion/driver.h>
 
-// infrastructure for convergence studies
-#include "../include/utilities/convergence_study.h"
-
-// applications
+// application
 #include "applications/template/application.h"
 
 // applications - convection

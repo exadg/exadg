@@ -12,9 +12,13 @@
 #  include <metis.h>
 #endif
 
-#include <deal.II/grid/grid_reordering.h>
+// C/C++
 #include <vector>
 
+// deal.II
+#include <deal.II/grid/grid_reordering.h>
+
+// ExaDG
 #include "deform_via_splines.h"
 #include "lung_tria.h"
 #include "lung_util.h"

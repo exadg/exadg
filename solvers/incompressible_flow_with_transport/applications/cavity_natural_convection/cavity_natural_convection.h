@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_NATURAL_CONVECTION_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_NATURAL_CONVECTION_H_
 
-#include "grid/mesh_movement_functions.h"
+#include <exadg/grid/mesh_movement_functions.h>
 
 namespace ExaDG
 {

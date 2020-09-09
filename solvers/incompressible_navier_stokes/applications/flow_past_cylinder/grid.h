@@ -8,7 +8,8 @@
 #ifndef APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 
-#include "grid/one_sided_cylindrical_manifold.h"
+// ExaDG
+#include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {

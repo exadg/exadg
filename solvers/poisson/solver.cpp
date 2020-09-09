@@ -1,24 +1,27 @@
 /*
- * poisson.cc
+ * solver.cpp
  *
  *  Created on: May, 2019
  *      Author: fehn
  */
 
-// driver
-#include "../include/poisson/driver.h"
+// ExaDG
 
-// infrastructure for parameter studies
-#include "../include/utilities/parameter_study.h"
+// driver
+#include <exadg/poisson/driver.h>
+
+// utilities
+#include <exadg/utilities/parameter_study.h>
 
 // applications
+#include "applications/template/template.h"
+
 #include "applications/gaussian/gaussian.h"
 #include "applications/lung/lung.h"
 #include "applications/lung_tubus/lung_tubus.h"
 #include "applications/nozzle/nozzle.h"
 #include "applications/sine/sine.h"
 #include "applications/slit/slit.h"
-#include "applications/template/template.h"
 #include "applications/torus/torus.h"
 
 namespace ExaDG

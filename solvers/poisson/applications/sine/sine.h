@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 #define APPLICATIONS_POISSON_TEST_CASES_SINE_H_
 
-#include "grid/deformed_cube_manifold.h"
+#include <exadg/grid/deformed_cube_manifold.h>
 
 namespace ExaDG
 {

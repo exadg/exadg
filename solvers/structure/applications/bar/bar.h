@@ -1,5 +1,5 @@
 /*
- * application.h
+ * bar.h
  *
  *  Created on: 21.03.2020
  *      Author: fehn
@@ -7,8 +7,6 @@
 
 #ifndef STRUCTURE_BAR
 #define STRUCTURE_BAR
-
-#include "structure/user_interface/application_base.h"
 
 namespace ExaDG
 {

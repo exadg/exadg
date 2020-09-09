@@ -1,5 +1,5 @@
 /*
- * convection_diffusion_throughput.cc
+ * throughput.cpp
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -9,12 +9,14 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
 
-// driver
-#include "../include/convection_diffusion/driver.h"
+// ExaDG
 
-// infrastructure for parameter studies and throughput measurements
-#include "../include/utilities/parameter_study.h"
-#include "../include/utilities/throughput_study.h"
+// driver
+#include <exadg/convection_diffusion/driver.h>
+
+// utilities
+#include <exadg/utilities/parameter_study.h>
+#include <exadg/utilities/throughput_study.h>
 
 // applications
 #include "applications/periodic_box/periodic_box.h"

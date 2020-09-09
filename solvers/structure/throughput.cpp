@@ -1,5 +1,5 @@
 /*
- * elasticity_throughput.cc
+ * throughput.cpp
  *
  *  Created on: 25.03.2020
  *      Author: fehn
@@ -9,12 +9,14 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
 
-// driver
-#include "../include/structure/driver.h"
+// ExaDG
 
-// infrastructure for parameter studies and throughput measurements
-#include "../include/utilities/parameter_study.h"
-#include "../include/utilities/throughput_study.h"
+// driver
+#include <exadg/structure/driver.h>
+
+// utilities
+#include <exadg/utilities/parameter_study.h>
+#include <exadg/utilities/throughput_study.h>
 
 // applications
 #include "applications/manufactured/manufactured.h"

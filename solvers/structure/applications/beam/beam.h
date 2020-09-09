@@ -1,5 +1,5 @@
 /*
- * application.h
+ * beam.h
  *
  *  Created on: 21.03.2020
  *      Author: fehn
@@ -7,8 +7,6 @@
 
 #ifndef STRUCTURE_BEAM
 #define STRUCTURE_BEAM
-
-#include "structure/user_interface/application_base.h"
 
 namespace ExaDG
 {
