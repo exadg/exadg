@@ -9,6 +9,7 @@
 #define INCLUDE_EXADG_STRUCTURE_SPATIAL_DISCRETIZATION_OPERATORS_BOUNDARY_CONDITIONS_H_
 
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
+#include <exadg/matrix_free/integrators.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 
 namespace ExaDG

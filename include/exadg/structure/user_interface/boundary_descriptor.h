@@ -11,6 +11,7 @@
 // deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
+#include <deal.II/fe/component_mask.h>
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/function_cached.h>

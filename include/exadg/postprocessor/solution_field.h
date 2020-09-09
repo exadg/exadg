@@ -8,6 +8,7 @@
 #ifndef INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_
 #define INCLUDE_EXADG_POSTPROCESSOR_SOLUTION_FIELD_H_
 
+#include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 namespace ExaDG
