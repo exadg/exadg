@@ -215,11 +215,12 @@ bash ./combine_fftw.sh
 #### Linking deal.II code and building the code
 
 ```bash
-mkdir exadg-build
-cd exadg-build/
+cd /working_directory/exadg/
+mkdir build
+cd build/
 ```
 
-Copy the script *config_exadg.sh* from the *exadg/scripts/* directory to the *exadg-build/* directory, e.g.,
+Copy the script *config_exadg.sh* from the *exadg/scripts/* directory to the *exadg/build/* directory, e.g.,
 
 ```bash
 cp /working_directory/exadg/scripts/config_exadg.sh .
@@ -263,7 +264,7 @@ mpirun -np [N_CORES] ./solver /working_directory/exadg/solvers/incompressible_na
 To build the debug-version, run the following commands
 
 ```bash
-cd /working_directory/exadg-build/
+cd /working_directory/exadg/build/
 make debug
 make -j[N_CORES]
 ```
@@ -276,7 +277,7 @@ gdb --args ./solver path_to_application/input.json
 Don't forget to reactivate release-version after debugging via
 
 ```bash
-cd /working_directory/exadg-build/
+cd /working_directory/exadg/build/
 make release
 make -j[N_CORES]
 ```
@@ -326,7 +327,7 @@ Start **eclipse** and choose the *working_directory/* as "workspace" in eclipse
   * choose Cross GCC
 2. Project > Properties > C/C++ Build
   * use default build command or user specified build command, e.g., make -j4
-  * fill in build directory (choose *exadg-build/* directory)
+  * fill in build directory (choose *exadg/build/* directory)
 3. Project > Properties > C/C++ General > Code Analysis: disable 'syntax and semantic errors'
 4. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/dependencies/dealii/include (for Assembly, GNU C, GNU C++)
 5. Window > Preferences > General > Editors > Text Editors > Annotations > C/C++ Indexer Markers > uncheck all checkboxes > Apply > OK
