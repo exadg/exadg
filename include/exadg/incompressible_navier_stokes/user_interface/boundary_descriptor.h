@@ -8,6 +8,9 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
+// C/C++
+#include <set>
+
 // deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>

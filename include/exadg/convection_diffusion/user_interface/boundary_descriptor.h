@@ -8,6 +8,9 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
 #define INCLUDE_CONVECTION_DIFFUSION_BOUNDARY_DESCRIPTOR_H_
 
+// C/C++
+#include <set>
+
 // deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
