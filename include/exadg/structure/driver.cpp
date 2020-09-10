@@ -260,11 +260,13 @@ Driver<dim, Number>::print_statistics(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(unsigned int const degree,
-				    std::string const & operator_type_string,
+Driver<dim, Number>::apply_operator(unsigned int const  degree,
+                                    std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
 {
+  (void)degree;
+
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   OperatorType operator_type;
@@ -281,82 +283,76 @@ Driver<dim, Number>::apply_operator(unsigned int const degree,
     linearization = 1.0;
   }
 
-  // Timer and wall times
-  Timer  timer;
-  double wall_time = std::numeric_limits<double>::max();
+  Timer global_timer;
+  global_timer.restart();
+  Utilities::MPI::MinMaxAvg global_time;
+  double                    wall_time = std::numeric_limits<double>::max();
 
-  for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  do
   {
-    double current_wall_time = 0.0;
-
-    // apply matrix-vector product several times
-    for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+    for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
     {
+      Timer timer;
       timer.restart();
 
 #ifdef LIKWID_PERFMON
       LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
 #endif
 
-      if(param.large_deformation)
+      // apply matrix-vector product several times
+      for(unsigned int i = 0; i < n_repetitions_inner; ++i)
       {
-        if(operator_type == OperatorType::Nonlinear)
+        if(param.large_deformation)
         {
-          pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
+          if(operator_type == OperatorType::Nonlinear)
+          {
+            pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
+          }
+          else if(operator_type == OperatorType::Linearized)
+          {
+            pde_operator->set_solution_linearization(linearization);
+            pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
+          }
         }
-        else if(operator_type == OperatorType::Linearized)
+        else
         {
-          pde_operator->set_solution_linearization(linearization);
-          pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
+          pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
         }
-      }
-      else
-      {
-        pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
       }
 
 #ifdef LIKWID_PERFMON
       LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
 #endif
 
-      Utilities::MPI::MinMaxAvg wall_time_local =
+      MPI_Barrier(mpi_comm);
+      Utilities::MPI::MinMaxAvg wall_time_inner =
         Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
 
-      current_wall_time += wall_time_local.avg;
+      wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
     }
 
-    // compute average wall time
-    current_wall_time /= (double)n_repetitions_inner;
-
-    wall_time = std::min(wall_time, current_wall_time);
-  }
-
-  if(wall_time * n_repetitions_inner * n_repetitions_outer < 1.0 /*wall time in seconds*/)
-  {
-    this->pcout
-      << std::endl
-      << "WARNING: One should use a larger number of matrix-vector products to obtain reproducible results."
-      << std::endl;
-  }
+    MPI_Barrier(mpi_comm);
+    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
+  } while(global_time.avg < 1.0 /*wall time in seconds*/);
 
   types::global_dof_index dofs = pde_operator->get_number_of_dofs();
 
-  double dofs_per_walltime = (double)dofs / wall_time;
+  double throughput = (double)dofs / wall_time;
 
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // clang-format off
   pcout << std::endl
         << std::scientific << std::setprecision(4)
-        << "DoFs/sec:        " << dofs_per_walltime << std::endl
-        << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
+        << "DoFs/sec:        " << throughput << std::endl
+        << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
   // clang-format on
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
   return std::tuple<unsigned int, types::global_dof_index, double>(pde_operator->get_degree(),
                                                                    dofs,
-                                                                   dofs_per_walltime);
+                                                                   throughput);
 }
 
 template class Driver<2, float>;
