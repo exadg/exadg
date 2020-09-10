@@ -5,6 +5,11 @@
  *      Author: fehn
  */
 
+// likwid
+#ifdef LIKWID_PERFMON
+#  include <likwid.h>
+#endif
+
 // ExaDG
 
 // driver
@@ -124,7 +129,8 @@ run(ThroughputStudy const & throughput,
 
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
-    driver->apply_operator(throughput.operator_type,
+    driver->apply_operator(degree,
+                           throughput.operator_type,
                            throughput.n_repetitions_inner,
                            throughput.n_repetitions_outer);
 
@@ -135,6 +141,10 @@ run(ThroughputStudy const & throughput,
 int
 main(int argc, char ** argv)
 {
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+#endif
+
   dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
@@ -192,6 +202,10 @@ main(int argc, char ** argv)
   }
 
   throughput.print_results(mpi_comm);
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
 
   return 0;
 }

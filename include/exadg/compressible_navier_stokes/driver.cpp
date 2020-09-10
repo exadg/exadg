@@ -5,6 +5,12 @@
  *      Author: fehn
  */
 
+// likwid
+#ifdef LIKWID_PERFMON
+#  include <likwid.h>
+#endif
+
+// ExaDG
 #include <exadg/compressible_navier_stokes/driver.h>
 #include <exadg/utilities/print_throughput.h>
 
@@ -191,7 +197,8 @@ Driver<dim, Number>::print_statistics(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
+Driver<dim, Number>::apply_operator(unsigned int const degree,
+				    std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
 {
@@ -223,7 +230,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       timer.restart();
 
 #ifdef LIKWID_PERFMON
-      LIKWID_MARKER_START(("compressible_deg_" + std::to_string(degree)).c_str());
+      LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
 #endif
 
       if(operator_type == Operator::ConvectiveTerm)
@@ -244,13 +251,13 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
         AssertThrow(false, ExcMessage("Specified operator type not implemented"));
 
 #ifdef LIKWID_PERFMON
-      LIKWID_MARKER_STOP(("compressible_deg_" + std::to_string(degree)).c_str());
+      LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
 #endif
 
-      Utilities::MPI::MinMaxAvg wall_time =
+      Utilities::MPI::MinMaxAvg wall_time_local =
         Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
 
-      current_wall_time += wall_time.avg;
+      current_wall_time += wall_time_local.avg;
     }
 
     // compute average wall time
