@@ -32,9 +32,6 @@ using namespace dealii;
 
 // clang-format off
 
-// number of lung generations
-unsigned int const N_GENERATIONS = 6;
-
 // triangulation type
 TriangulationType const TRIANGULATION_TYPE = TriangulationType::Distributed;
 
@@ -155,20 +152,21 @@ double const RESTART_INTERVAL_TIME = PERIOD;
 
 // boundary conditions prescribed at the outlets require an effective resistance for each outlet
 double
-get_equivalent_resistance()
+get_equivalent_resistance(unsigned int const n_generations, unsigned int const max_generation)
 {
   double resistance = 0.0;
 
   // calculate effective resistance for all higher generations not being resolved
   // assuming that all airways of a specific generation have the same resistance and that the flow
   // is laminar!
-  for(unsigned int i = 0; i <= MAX_GENERATION - N_GENERATIONS; ++i)
+  for(unsigned int i = 0; i <= max_generation - n_generations; ++i)
   {
-    resistance += RESISTANCE_VECTOR_DYNAMIC[i + N_GENERATIONS] / std::pow(2.0, (double)i);
+    resistance += RESISTANCE_VECTOR_DYNAMIC[i + n_generations] / std::pow(2.0, (double)i);
   }
 
-  // beyond the current outflow boundary, we have two branches from generation N_GENERATIONS to
-  // MAX_GENERATION
+  // beyond the current outflow boundary, we have two branches from generation n_generations to
+  // generation max_generation, but the resistance computed above corresponds to only one of the
+  // two branches
   resistance /= 2.0;
 
   // the solver uses the kinematic pressure and therefore we have to transform the resistance
@@ -308,15 +306,15 @@ private:
 class OutflowBoundary
 {
 public:
-  OutflowBoundary(types::boundary_id const id)
+  OutflowBoundary(types::boundary_id const id,
+                  unsigned int const       n_generations,
+                  unsigned int const       max_generation)
     : boundary_id(id),
-      resistance(get_equivalent_resistance()), // in preliminary tests with 5 generations we used a
-                                               // constant value of 1.0e7
-      compliance(C_RS_KINEMATIC /
-                 std::pow(2.0, N_GENERATIONS - 1)), // note that one could use a statistical
-                                                    // distribution as in Roth et al. (2018)
-      volume(compliance * PEEP_KINEMATIC), // p = 1/C * V -> V = C * p (initialize volume so that
-                                           // p(t=0) = PEEP_KINEMATIC)
+      resistance(get_equivalent_resistance(n_generations, max_generation)),
+      // note that one could use a statistical distribution as in Roth et al. (2018)
+      compliance(C_RS_KINEMATIC / std::pow(2.0, n_generations - 1)),
+      // p = 1/C * V -> V = C * p (initialize volume so that p(t=0) = PEEP_KINEMATIC)
+      volume(compliance * PEEP_KINEMATIC),
       flow_rate(0.0),
       time_old(START_TIME)
   {
@@ -566,11 +564,13 @@ public:
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
+      prm.add_parameter("Generations",        n_generations,        "Number of generations.");
     prm.leave_subsection();
     // clang-format on
   }
 
-  std::string directory_lung_files = "";
+  std::string  directory_lung_files = "";
+  unsigned int n_generations        = 6;
 
   // output
   bool const   high_order_output    = true;
@@ -814,7 +814,9 @@ public:
     std::map<std::string, double> timings;
 
     std::shared_ptr<LungID::Checker> generation_limiter(
-      new LungID::GenerationChecker(N_GENERATIONS));
+      new LungID::GenerationChecker(n_generations));
+
+    // TODO
     // std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
 
     // create triangulation
@@ -846,7 +848,7 @@ public:
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
 
-    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1),
+    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, n_generations - 1),
                 ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
   }
 
@@ -872,7 +874,7 @@ public:
     for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
     {
       std::shared_ptr<OutflowBoundary> outflow_boundary;
-      outflow_boundary.reset(new OutflowBoundary(id));
+      outflow_boundary.reset(new OutflowBoundary(id, n_generations, MAX_GENERATION));
       OUTFLOW_BOUNDARIES.push_back(outflow_boundary);
 
       boundary_descriptor_velocity->neumann_bc.insert(

@@ -11,7 +11,8 @@
     },
     "Application": {
        	"Name": "Lung",
-       	"DirectoryLungFiles": "solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/"
+       	"DirectoryLungFiles": "solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/",
+       	"Generations": "6"
     },
     "Output": {
         "OutputDirectory": "output/lung/",
