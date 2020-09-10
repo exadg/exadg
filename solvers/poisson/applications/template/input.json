@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "RunType": "RefineHAndP",
         "DegreeMin": "1",
@@ -11,8 +11,11 @@
         "DofsMax": "10000"
     },
     "Application": {
-       	"Name": "Template",
-	"OutputDirectory": "output/template/vtu/",
-	"OutputName": "template"    
+       	"Name": "Template"
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/template/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

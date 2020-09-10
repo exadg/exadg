@@ -9,15 +9,18 @@
   },
   "FSI" : {
     "Method": "Aitken",
-    "AbsTol": "1.e-12", 
-    "RelTol": "1.e-3", 
+    "AbsTol": "1.e-12",
+    "RelTol": "1.e-3",
     "OmegaInit": "0.3",
     "ReusedTimeSteps": "1",
     "PartitionedIterMax": "100"
   },
   "Application" : {
-    "Name": "CylinderWithFlag",
-    "OutputDirectory": "output/cylinder_with_flag/",
-    "OutputName": "test"
+    "Name": "CylinderWithFlag"
+  },
+  "Output": {
+    "OutputDirectory" : "output/cylinder_with_flag/", 
+    "OutputName" : "test", 
+    "WriteOutput" : "false"
   }
 }

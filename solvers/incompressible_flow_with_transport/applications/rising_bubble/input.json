@@ -1,14 +1,17 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "Degree": "3",
         "RefineSpace": "5",
         "NScalars": "1"
     },
     "Application": {
-       	"Name": "RisingBubble",
-	"OutputDirectory": "output/rising_bubble/",
-	"OutputName": "test"
+       	"Name": "RisingBubble"
+    },
+    "Output": {
+        "OutputDirectory": "output/rising_bubble/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

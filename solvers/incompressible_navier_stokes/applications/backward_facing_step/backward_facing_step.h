@@ -139,21 +139,11 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
     unsigned int const n_points = 101;
     inflow_data_storage.reset(new InflowDataStorage<dim>(n_points));
-  }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      // TODO
-    prm.leave_subsection();
-    // clang-format on
   }
 
   // consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
@@ -174,18 +164,10 @@ public:
 
   // postprocessing
 
-  // output folder
-  std::string const output_directory = "output/bfs/after_refactoring/";
-
   // sampling of statistical results
   double const       sample_start_time      = 2.0;
   unsigned int const sample_every_timesteps = 10;
   unsigned int const n_points_per_line      = 101;
-
-  // vtu output
-  bool const        write_vtu_output      = false;
-  std::string const output_name_precursor = "precursor";
-  std::string const output_name           = "bfs";
 
   /*
    *  Most of the input parameters are the same for both domains, so we write
@@ -450,9 +432,9 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output         = write_vtu_output;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence     = true;
@@ -465,7 +447,7 @@ public:
     pp_data_bfs.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    pp_data_bfs.line_plot_data.line_data.directory                    = output_directory;
+    pp_data_bfs.line_plot_data.line_data.directory                    = this->output_directory;
     pp_data_bfs.line_plot_data.statistics_data.calculate_statistics   = true;
     pp_data_bfs.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_end_time        = end_time;
@@ -684,9 +666,9 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output         = write_vtu_output;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name_precursor;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name + "_precursor";
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence     = true;
@@ -705,7 +687,8 @@ public:
     pp_data_bfs.turb_ch_data.sample_end_time        = end_time;
     pp_data_bfs.turb_ch_data.sample_every_timesteps = sample_every_timesteps;
     pp_data_bfs.turb_ch_data.viscosity              = viscosity;
-    pp_data_bfs.turb_ch_data.filename_prefix        = output_directory + output_name_precursor;
+    pp_data_bfs.turb_ch_data.filename_prefix =
+      this->output_directory + this->output_name + "_precursor";
 
     // use turbulent channel data to prescribe inflow velocity for BFS
     pp_data_bfs.inflow_data.write_inflow_data = true;

@@ -224,16 +224,14 @@ public:
   void
   add_parameters(ParameterHandler & prm)
   {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-      prm.add_parameter("TestCase",         test_case,        "Number of test case.", Patterns::Integer(1,3));
+      prm.add_parameter("TestCase", test_case, "Number of test case.", Patterns::Integer(1,3));
     prm.leave_subsection();
     // clang-format on
   }
-
-  std::string output_directory = "output/flow_past_cylinder/", output_name = "test";
 
   // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
   unsigned int test_case = 3; // 1, 2 or 3
@@ -585,9 +583,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = true;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence     = true;
@@ -610,8 +608,8 @@ public:
     // surface for calculation of lift and drag coefficients has boundary_ID = 2
     pp_data.lift_and_drag_data.boundary_IDs.insert(2);
 
-    pp_data.lift_and_drag_data.filename_lift = output_directory + output_name + "_lift";
-    pp_data.lift_and_drag_data.filename_drag = output_directory + output_name + "_drag";
+    pp_data.lift_and_drag_data.filename_lift = this->output_directory + this->output_name + "_lift";
+    pp_data.lift_and_drag_data.filename_drag = this->output_directory + this->output_name + "_drag";
 
     // pressure difference
     pp_data.pressure_difference_data.calculate_pressure_difference = true;
@@ -630,7 +628,7 @@ public:
     }
 
     pp_data.pressure_difference_data.filename =
-      output_directory + output_name + "_pressure_difference";
+      this->output_directory + this->output_name + "_pressure_difference";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

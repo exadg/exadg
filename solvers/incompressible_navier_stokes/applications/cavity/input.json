@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "4",
         "DegreeMax": "4",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Cavity",
-	"OutputDirectory": "output/cavity/",
-	"OutputName": "test"
+       	"Name": "Cavity"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "cavity",
+        "WriteOutput": "false"
     }
 }

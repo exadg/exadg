@@ -349,23 +349,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/compressible_flow/manufactured_solution/",
-              output_name      = "test";
 
   double const start_time = 0.0;
   double const end_time   = 0.75;
@@ -403,7 +389,7 @@ public:
     param.restarted_simulation       = false;
     param.restart_data.write_restart = false;
     param.restart_data.interval_time = 0.5;
-    param.restart_data.filename      = output_directory + output_name + "_restart";
+    param.restart_data.filename      = this->output_directory + this->output_name + "_restart";
 
     // output of solver information
     param.solver_info_data.interval_time = (param.end_time - param.start_time) / 10;
@@ -490,9 +476,9 @@ public:
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     CompNS::PostProcessorData<dim> pp_data;
-    pp_data.output_data.output_folder        = output_directory;
-    pp_data.output_data.output_name          = output_name;
-    pp_data.output_data.write_output         = false;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.write_pressure       = true;
     pp_data.output_data.write_velocity       = true;
     pp_data.output_data.write_temperature    = true;

@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "RunType": "RefineHAndP",
         "DegreeMin": "1",
@@ -11,8 +11,11 @@
         "DofsMax": "10000"
     },
     "Application": {
-       	"Name": "Slit",
-	"OutputDirectory": "output/poisson/vtu/",
-	"OutputName": "slit"    
+       	"Name": "Slit"  
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/slit/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

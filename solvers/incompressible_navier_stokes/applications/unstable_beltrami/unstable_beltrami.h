@@ -151,22 +151,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/unstable_beltrami/", output_name = "test";
 
   double const viscosity = 1.0 / (2.0e3);
 
@@ -347,9 +334,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = false; // true;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = false;
@@ -363,8 +350,8 @@ public:
     pp_data.error_data_u.error_calc_start_time       = start_time;
     pp_data.error_data_u.error_calc_interval_time    = 10;
     pp_data.error_data_u.write_errors_to_file        = true;
-    pp_data.error_data_u.folder                      = output_directory;
-    pp_data.error_data_u.name                        = output_name + "_velocity";
+    pp_data.error_data_u.folder                      = this->output_directory;
+    pp_data.error_data_u.name                        = this->output_name + "_velocity";
 
     // ... pressure error
     pp_data.error_data_p.analytical_solution_available = true;
@@ -373,14 +360,14 @@ public:
     pp_data.error_data_p.error_calc_start_time     = start_time;
     pp_data.error_data_p.error_calc_interval_time  = 10;
     pp_data.error_data_p.write_errors_to_file      = true;
-    pp_data.error_data_p.folder                    = output_directory;
-    pp_data.error_data_p.name                      = output_name + "_pressure";
+    pp_data.error_data_p.folder                    = this->output_directory;
+    pp_data.error_data_p.name                      = this->output_name + "_pressure";
 
     // kinetic energy
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 10;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.filename = output_directory + output_name + "_energy";
+    pp_data.kinetic_energy_data.filename = this->output_directory + this->output_name + "_energy";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

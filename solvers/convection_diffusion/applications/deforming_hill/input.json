@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "5",
         "DegreeMax": "5",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "DeformingHill",
-	"OutputDirectory": "output_conv_diff/deforming_hill/",
-	"OutputName": "test"
+       	"Name": "DeformingHill"
+    },
+    "Output": {
+        "OutputDirectory": "output/deforming_hill/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

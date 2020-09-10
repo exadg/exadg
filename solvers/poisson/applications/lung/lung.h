@@ -19,16 +19,9 @@ namespace Lung
 {
 using namespace dealii;
 
-// lung geometry
-std::string const FOLDER_LUNG_FILES =
-  "../../../exadg/solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/";
-
 // outlet boundary IDs
 types::boundary_id const OUTLET_ID_FIRST = 2;
 types::boundary_id       OUTLET_ID_LAST  = OUTLET_ID_FIRST; // initialization
-
-// number of lung generations
-unsigned int const N_GENERATIONS = 8;
 
 enum class BoundaryConditionType
 {
@@ -57,74 +50,6 @@ public:
   }
 };
 
-void do_create_grid(
-  std::shared_ptr<parallel::TriangulationBase<2>>,
-  unsigned int const,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<2>::cell_iterator>> &)
-{
-  AssertThrow(false, ExcMessage("This test case can only be used for dim = 3!"));
-}
-
-template<int dim>
-void
-do_create_grid(
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-  unsigned int const                                n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-    periodic_faces)
-{
-  (void)periodic_faces;
-
-  AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim = 3!"));
-
-  std::vector<std::string> files;
-  files.push_back(FOLDER_LUNG_FILES + "leftbot.dat");
-  files.push_back(FOLDER_LUNG_FILES + "lefttop.dat");
-  files.push_back(FOLDER_LUNG_FILES + "rightbot.dat");
-  files.push_back(FOLDER_LUNG_FILES + "rightmid.dat");
-  files.push_back(FOLDER_LUNG_FILES + "righttop.dat");
-  auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
-
-  std::string spline_file = FOLDER_LUNG_FILES + "../splines_raw6.dat";
-
-  std::map<std::string, double> timings;
-
-  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(N_GENERATIONS));
-  // std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
-
-  // create triangulation
-  if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
-  {
-    ExaDG::GridGen::lung(*tria,
-                         n_refine_space,
-                         n_refine_space,
-                         tree_factory,
-                         timings,
-                         OUTLET_ID_FIRST,
-                         OUTLET_ID_LAST,
-                         spline_file,
-                         generation_limiter);
-  }
-  else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
-  {
-    ExaDG::GridGen::lung(*tria,
-                         n_refine_space,
-                         tree_factory,
-                         timings,
-                         OUTLET_ID_FIRST,
-                         OUTLET_ID_LAST,
-                         spline_file,
-                         generation_limiter);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Unknown triangulation!"));
-  }
-
-  AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1),
-              ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
-}
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -142,15 +67,14 @@ public:
   {
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-      prm.add_parameter("Generations",      n_generations,    "Number of generations.");
+      prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
+      prm.add_parameter("Generations",        n_generations,        "Number of generations.");
     prm.leave_subsection();
     // clang-format on
   }
 
-  std::string  output_directory = "output/poisson/vtu/", output_name = "lung";
-  unsigned int n_generations = 4;
+  std::string  directory_lung_files = "";
+  unsigned int n_generations        = 4;
 
   void
   set_input_parameters(InputParameters & param)
@@ -191,7 +115,57 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {
-    do_create_grid(triangulation, n_refine_space, periodic_faces);
+    (void)periodic_faces;
+
+    AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim = 3!"));
+
+    std::vector<std::string> files;
+    files.push_back(directory_lung_files + "leftbot.dat");
+    files.push_back(directory_lung_files + "lefttop.dat");
+    files.push_back(directory_lung_files + "rightbot.dat");
+    files.push_back(directory_lung_files + "rightmid.dat");
+    files.push_back(directory_lung_files + "righttop.dat");
+    auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
+
+    std::string spline_file = directory_lung_files + "../splines_raw6.dat";
+
+    std::map<std::string, double> timings;
+
+    std::shared_ptr<LungID::Checker> generation_limiter(
+      new LungID::GenerationChecker(n_generations));
+    // std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
+
+    // create triangulation
+    if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+    {
+      ExaDG::GridGen::lung(*tria,
+                           n_refine_space,
+                           n_refine_space,
+                           tree_factory,
+                           timings,
+                           OUTLET_ID_FIRST,
+                           OUTLET_ID_LAST,
+                           spline_file,
+                           generation_limiter);
+    }
+    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+    {
+      ExaDG::GridGen::lung(*tria,
+                           n_refine_space,
+                           tree_factory,
+                           timings,
+                           OUTLET_ID_FIRST,
+                           OUTLET_ID_LAST,
+                           spline_file,
+                           generation_limiter);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Unknown triangulation!"));
+    }
+
+    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, n_generations - 1),
+                ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
   }
 
   void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
@@ -244,9 +218,9 @@ public:
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = true;
-    pp_data.output_data.output_folder      = output_directory;
-    pp_data.output_data.output_name        = output_name;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.output_folder      = this->output_directory + "vtu/";
+    pp_data.output_data.output_name        = this->output_name;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = degree;
 

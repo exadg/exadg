@@ -157,7 +157,7 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
     flow_rate_controller.reset(new FlowRateController(target_flow_rate,
@@ -191,16 +191,6 @@ public:
                                                          max_velocity,
                                                          use_random_perturbations,
                                                          factor_random_perturbations));
-  }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      // TODO
-    prm.leave_subsection();
-    // clang-format on
   }
 
   // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
@@ -263,12 +253,9 @@ public:
   unsigned int const n_points_line_circumferential = 32;
 
   // vtu-output
-  bool const        write_output                = false;
-  std::string const output_name_precursor       = "precursor";
-  std::string const output_name                 = "nozzle";
-  double const      output_start_time_precursor = start_time_precursor;
-  double const      output_start_time_nozzle    = start_time_nozzle;
-  double const      output_interval_time        = 5.0 * T_0; // 10.0*T_0;
+  double const output_start_time_precursor = start_time_precursor;
+  double const output_start_time_nozzle    = start_time_nozzle;
+  double const output_interval_time        = 5.0 * T_0; // 10.0*T_0;
 
   /*
    *  Most of the input parameters are the same for both domains, so we write
@@ -632,9 +619,9 @@ public:
 
     // write output for visualization of results
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output                         = write_output;
-    pp_data.output_data.output_folder                        = output_folder + "vtu/";
-    pp_data.output_data.output_name                          = output_name;
+    pp_data.output_data.write_output                         = this->write_output;
+    pp_data.output_data.output_folder                        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name                          = this->output_name + "_nozzle";
     pp_data.output_data.output_start_time                    = output_start_time_nozzle;
     pp_data.output_data.output_interval_time                 = output_interval_time;
     pp_data.output_data.write_divergence                     = true;
@@ -649,7 +636,7 @@ public:
     pp_data_fda.pp_data = pp_data;
 
     // evaluation of quantities along lines
-    pp_data_fda.line_plot_data.line_data.directory                    = output_folder;
+    pp_data_fda.line_plot_data.line_data.directory                    = this->output_directory;
     pp_data_fda.line_plot_data.statistics_data.calculate_statistics   = true;
     pp_data_fda.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_fda.line_plot_data.statistics_data.sample_end_time        = end_time;
@@ -834,9 +821,9 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output                         = write_output;
-    pp_data.output_data.output_folder                        = output_folder + "vtu/";
-    pp_data.output_data.output_name                          = output_name_precursor;
+    pp_data.output_data.write_output                         = this->write_output;
+    pp_data.output_data.output_folder                        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name                          = this->output_name + "_precursor";
     pp_data.output_data.output_start_time                    = output_start_time_precursor;
     pp_data.output_data.output_interval_time                 = output_interval_time;
     pp_data.output_data.write_divergence                     = true;
@@ -865,7 +852,7 @@ public:
 
     // calculation of flow rate (use volume-based computation)
     pp_data_fda.mean_velocity_data.calculate       = true;
-    pp_data_fda.mean_velocity_data.filename_prefix = output_folder + filename_flowrate;
+    pp_data_fda.mean_velocity_data.filename_prefix = this->output_directory + filename_flowrate;
     Tensor<1, dim, double> direction;
     direction[2]                                 = 1.0;
     pp_data_fda.mean_velocity_data.direction     = direction;

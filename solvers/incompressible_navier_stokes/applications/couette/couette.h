@@ -48,22 +48,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/couette/", output_name = "test";
 
   double const H            = 1.0;
   double const L            = 4.0;
@@ -254,9 +241,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = false;
-    pp_data.output_data.output_folder        = output_directory;
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence     = true;

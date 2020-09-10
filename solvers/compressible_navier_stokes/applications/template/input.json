@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "6",
         "DegreeMax": "6",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Template",
-	"OutputDirectory": "output/compressible_flow/template/",
-	"OutputName": "test"
+       	"Name": "Template"
+    },
+    "Output": {
+        "OutputDirectory": "output/template/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

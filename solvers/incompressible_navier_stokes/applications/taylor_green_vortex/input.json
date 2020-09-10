@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "DegreeMin": "3",
         "DegreeMax": "3",
@@ -10,17 +10,19 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "TaylorGreenVortex",
-	"MeshType": "Cartesian",
-	"NCoarseCells1D": "1",
-	"ExploitSymmetry": "true",
-	"MovingMesh": "false",
-	"Inviscid": "true",
-	"ReynoldsNumber": "1600.0",
-	"OutputDirectory": "output/tgv/inviscid/",
-	"OutputName": "64_l3_k3_test_parameter_file",
-	"WriteVTUOutput": "true",
-	"WriteRestart": "false",
-	"IsARestart": "false"
+        "Name": "TaylorGreenVortex",
+        "MeshType": "Cartesian",
+        "NCoarseCells1D": "1",
+        "ExploitSymmetry": "true",
+        "MovingMesh": "false",
+        "Inviscid": "true",
+        "ReynoldsNumber": "1600.0",
+        "WriteRestart": "false",
+        "ReadRestart": "false"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "64_l3_k3",
+        "WriteOutput": "false"
     }
 }

@@ -118,9 +118,7 @@ public:
   {
     // clang-format off
      prm.enter_subsection("Application");
-       prm.add_parameter("MeshType",         mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
-       prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-       prm.add_parameter("OutputName",       output_name,      "Name of output files.");
+       prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
      prm.leave_subsection();
     // clang-format on
   }
@@ -130,8 +128,6 @@ public:
 
   double const start_time = 0.0;
   double const end_time   = 20.0 * CHARACTERISTIC_TIME;
-
-  std::string output_directory = "output/compressible_flow/taylor_green/", output_name = "test";
 
   void
   set_input_parameters(InputParameters & param)
@@ -193,7 +189,7 @@ public:
     // restart
     param.restart_data.write_restart = false;
     param.restart_data.interval_time = 1.0;
-    param.restart_data.filename      = output_directory + output_name + "_restart";
+    param.restart_data.filename      = this->output_directory + this->output_name + "_restart";
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type    = TriangulationType::Distributed;
@@ -264,10 +260,10 @@ public:
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     CompNS::PostProcessorData<dim> pp_data;
-    pp_data.output_data.output_folder = output_directory + "vtu/";
-    pp_data.output_data.output_name   = output_name;
+    pp_data.output_data.write_output  = this->write_output;
+    pp_data.output_data.output_folder = this->output_directory + "vtu/";
+    pp_data.output_data.output_name   = this->output_name;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-    pp_data.output_data.write_output         = false;
     pp_data.output_data.write_pressure       = true;
     pp_data.output_data.write_velocity       = true;
     pp_data.output_data.write_temperature    = true;
@@ -281,14 +277,15 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = DYN_VISCOSITY / RHO_0;
-    pp_data.kinetic_energy_data.filename                   = output_directory + output_name;
+    pp_data.kinetic_energy_data.filename = this->output_directory + this->output_name;
 
     // kinetic energy spectrum
     pp_data.kinetic_energy_spectrum_data.calculate                     = true;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps    = -1;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-    pp_data.kinetic_energy_spectrum_data.filename = output_directory + output_name + "_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree   = degree;
+    pp_data.kinetic_energy_spectrum_data.filename =
+      this->output_directory + this->output_name + "_spectrum";
+    pp_data.kinetic_energy_spectrum_data.degree                     = degree;
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1) * 1;
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = false;
 

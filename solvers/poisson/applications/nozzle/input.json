@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "RunType": "RefineHAndP",
         "DegreeMin": "1",
@@ -11,8 +11,11 @@
         "DofsMax": "10000"
     },
     "Application": {
-       	"Name": "Nozzle",
-	"OutputDirectory": "output/poisson/vtu/",
-	"OutputName": "nozzle"    
+       	"Name": "Nozzle"   
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/nozzle/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

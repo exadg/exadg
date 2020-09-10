@@ -107,19 +107,18 @@ public:
   void
   add_parameters(ParameterHandler & prm)
   {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("Inviscid",             inviscid,                     "Is this an inviscid simulation?");
       prm.add_parameter("ReynoldsNumber",       Re,                           "Reynolds number (ignored if Inviscid = true)");
       prm.add_parameter("EndTime",              end_time_multiples,           "End time in multiples of flow through time.", Patterns::Integer(0.0,1000.0));
       prm.add_parameter("GridStretchFactor",    grid_stretch_factor,          "Factor describing grid stretching in vertical direction.");
-      prm.add_parameter("OutputDirectory",      output_directory,             "Directory where output is written.");
       prm.add_parameter("CalculateStatistics",  calculate_statistics,         "Decides whether statistics are calculated.");
       prm.add_parameter("SampleStartTime",      sample_start_time_multiples,  "Start time of sampling in multiples of flow through time.", Patterns::Integer(0.0,1000.0));
       prm.add_parameter("SampleEveryTimeSteps", sample_every_timesteps,       "Sample every ... time steps.", Patterns::Integer(1,1000));
       prm.add_parameter("PointsPerLine",        points_per_line,              "Points per line in vertical direction.", Patterns::Integer(1,10000));
-      prm.add_parameter("WriteVTUOutput",       write_vtu_output,             "Decides whether vtu output is written.");
-      prm.add_parameter("OutputNameVTU",        output_name_vtu,              "Name of vtu output files.");
     prm.leave_subsection();
     // clang-format on
   }
@@ -152,8 +151,7 @@ public:
   // grid
   double grid_stretch_factor = 1.6;
 
-  // results (postprocessing)
-  std::string output_directory = "output/periodic_hill/";
+  // postprocessing
 
   // sampling
   bool         calculate_statistics        = true;
@@ -162,10 +160,6 @@ public:
   double       sample_end_time        = end_time;
   unsigned int sample_every_timesteps = 1;
   unsigned int points_per_line        = 20;
-
-  // vtu output
-  bool        write_vtu_output = true;
-  std::string output_name_vtu  = "test";
 
   void
   set_input_parameters(InputParameters & param)
@@ -353,9 +347,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = write_vtu_output;
-    pp_data.output_data.output_folder             = output_directory + "vtu/";
-    pp_data.output_data.output_name               = output_name_vtu;
+    pp_data.output_data.write_output              = this->write_output;
+    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
+    pp_data.output_data.output_name               = this->output_name;
     pp_data.output_data.output_start_time         = start_time;
     pp_data.output_data.output_interval_time      = flow_through_time / 10.0;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -369,7 +363,7 @@ public:
     my_pp_data.pp_data = pp_data;
 
     // line plot data: calculate statistics along lines
-    my_pp_data.line_plot_data.line_data.directory = output_directory;
+    my_pp_data.line_plot_data.line_data.directory = this->output_directory;
 
     // mean velocity
     std::shared_ptr<Quantity> quantity_velocity;
@@ -497,7 +491,7 @@ public:
 
     // calculation of flow rate (use volume-based computation)
     my_pp_data.mean_velocity_data.calculate       = true;
-    my_pp_data.mean_velocity_data.filename_prefix = output_directory + "flow_rate";
+    my_pp_data.mean_velocity_data.filename_prefix = this->output_directory + "flow_rate";
     Tensor<1, dim, double> direction;
     direction[0]                                = 1.0;
     my_pp_data.mean_velocity_data.direction     = direction;

@@ -1,14 +1,17 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "Degree": "3",
         "RefineSpace": "2",
         "NScalars": "1"
     },
     "Application": {
-       	"Name": "Template",
-	"OutputDirectory": "output/template/vtu/",
-	"OutputName": "test"
+       	"Name": "Template"
+    },
+    "Output": {
+        "OutputDirectory": "output/template/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

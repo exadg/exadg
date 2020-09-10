@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "RunType": "RefineHAndP",
         "DegreeMin": "3",
@@ -12,8 +12,12 @@
     },
     "Application": {
        	"Name": "Lung",
-	"OutputDirectory": "output/poisson/vtu/",
-	"OutputName": "lung_4G",
-	"Generations": "4"    
+       	"DirectoryLungFiles": "solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/",
+        "Generations": "4"    
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/lung/",
+        "OutputName": "lung_4gen",
+        "WriteOutput": "false"
     }
 }

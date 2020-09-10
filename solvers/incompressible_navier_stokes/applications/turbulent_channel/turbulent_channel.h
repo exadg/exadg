@@ -228,22 +228,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/turbulent_channel/", output_name = "test";
 
   void
   set_input_parameters(InputParameters & param)
@@ -448,9 +435,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = true;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = START_TIME;
     pp_data.output_data.output_interval_time = 1.0;
     pp_data.output_data.write_divergence     = true;
@@ -461,7 +448,7 @@ public:
     pp_data.mass_data.calculate_error         = false; // true;
     pp_data.mass_data.start_time              = START_TIME;
     pp_data.mass_data.sample_every_time_steps = 1e0; // 1e2;
-    pp_data.mass_data.filename_prefix         = output_directory + output_name;
+    pp_data.mass_data.filename_prefix         = this->output_directory + this->output_name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
     MyPostProcessorData<dim> pp_data_turb_ch;
@@ -474,7 +461,7 @@ public:
     pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
     pp_data_turb_ch.turb_ch_data.sample_every_timesteps = 10;
     pp_data_turb_ch.turb_ch_data.viscosity              = VISCOSITY;
-    pp_data_turb_ch.turb_ch_data.filename_prefix        = output_directory + output_name;
+    pp_data_turb_ch.turb_ch_data.filename_prefix = this->output_directory + this->output_name;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, mpi_comm));

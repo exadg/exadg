@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "2",
         "DegreeMax": "2",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Poiseuille",
-	"OutputDirectory": "output/poiseuille/",
-	"OutputName": "test"
+       	"Name": "Poiseuille"
+    },
+    "Output": {
+        "OutputDirectory": "output/poiseuille/",
+        "OutputName": "l0_k2",
+        "WriteOutput": "false"
     }
 }

@@ -16,8 +16,11 @@
     "PartitionedIterMax": "100"
   },
   "Application" : {
-    "Name": "CylinderWithFlag",
+    "Name": "CylinderWithFlag"
+  },
+  "Output": {
     "OutputDirectory": "output/cylinder_with_flag/",
-    "OutputName": "test"
+    "OutputName": "test",
+    "WriteOutput": "false"
   }
 }

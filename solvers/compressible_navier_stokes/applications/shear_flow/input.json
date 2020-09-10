@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "6",
         "DegreeMax": "6",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "ShearFlow",
-	"OutputDirectory": "output/compressible_flow/shear_flow/",
-	"OutputName": "test"
+       	"Name": "ShearFlow"
+    },
+    "Output": {
+        "OutputDirectory": "output/shear_flow/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

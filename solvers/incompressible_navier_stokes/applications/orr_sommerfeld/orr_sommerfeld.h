@@ -153,7 +153,7 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
     // solve Orr-Sommerfeld equation
@@ -162,19 +162,6 @@ public:
     t0       = 2.0 * PI * ALPHA / OMEGA.real();
     end_time = 2.0 * t0;
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/orr_sommerfeld/", output_name = "Re7500_l5_k2_div_conti";
 
   const double Re = 7500.0;
 
@@ -384,9 +371,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = false;
-    pp_data.output_data.output_folder        = output_directory;
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
     pp_data.output_data.write_divergence     = true;
@@ -399,7 +386,7 @@ public:
     pp_data_os.energy_data.calculate                  = true;
     pp_data_os.energy_data.calculate_every_time_steps = 1;
     pp_data_os.energy_data.filename_prefix =
-      output_directory + output_name + "_perturbation_energy";
+      this->output_directory + this->output_name + "_perturbation_energy";
     pp_data_os.energy_data.U_max   = MAX_VELOCITY;
     pp_data_os.energy_data.h       = H;
     pp_data_os.energy_data.omega_i = OMEGA.imag();
