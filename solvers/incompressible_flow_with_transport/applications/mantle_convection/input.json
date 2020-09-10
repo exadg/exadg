@@ -7,8 +7,11 @@
         "NScalars": "1"
     },
     "Application": {
-       	"Name": "MantleConvection",
-	"OutputDirectory": "/data/fehn/navierstokes/applications/output/mantle_convection/",
-	"OutputName": "test"
+       	"Name": "MantleConvection"
+    },
+    "Output": {
+        "OutputDirectory": "output/mantle_convection/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

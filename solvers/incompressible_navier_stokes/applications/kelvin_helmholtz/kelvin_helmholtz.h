@@ -65,22 +65,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/kelvin_helmholtz/", output_name = "Re1e4_l1_k7";
 
   double const Re           = 1.0e4;
   double const L            = 1.0;
@@ -111,10 +98,8 @@ public:
 
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type = SolverType::Unsteady;
-    param.temporal_discretization =
-      TemporalDiscretization::BDFDualSplittingScheme; // BDFDualSplittingScheme;
-                                                      // //BDFCoupledSolution;
+    param.solver_type                     = SolverType::Unsteady;
+    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.max_velocity                    = max_velocity;
@@ -270,9 +255,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = false;
-    pp_data.output_data.output_folder             = output_directory + "vtu/";
-    pp_data.output_data.output_name               = output_name;
+    pp_data.output_data.write_output              = this->write_output;
+    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
+    pp_data.output_data.output_name               = this->output_name;
     pp_data.output_data.output_start_time         = start_time;
     pp_data.output_data.output_interval_time      = (end_time - start_time) / 200;
     pp_data.output_data.write_divergence          = true;
@@ -284,7 +269,7 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.filename                   = output_directory + output_name;
+    pp_data.kinetic_energy_data.filename = this->output_directory + this->output_name;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

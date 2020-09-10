@@ -42,22 +42,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/fsi/", output_name = "test";
 
   void
   set_input_parameters_fluid(IncNS::InputParameters & param)

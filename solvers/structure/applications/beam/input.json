@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "DegreeMin": "1",
         "DegreeMax": "1",
@@ -10,13 +10,16 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "OutputDirectory": "output/beam/vtu/",
-	"OutputName": "test_nonlinear",
-	"Name": "Beam",
-	"Length": "1100.0",
-	"Height": "100.0",
-	"Width": "20.0",
-	"BoundaryType": "BendingMoment",
-	"Force": "2500.0"
+        "Name": "Beam",
+        "Length": "1100.0",
+        "Height": "100.0",
+        "Width": "20.0",
+        "BoundaryType": "BendingMoment",
+        "Force": "2500.0"
+    },
+    "Output": {
+        "OutputDirectory": "output/beam/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

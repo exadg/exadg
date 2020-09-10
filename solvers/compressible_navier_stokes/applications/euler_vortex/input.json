@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "15",
         "DegreeMax": "15",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "EulerVortex",
-	"OutputDirectory": "output/compressible_flow/euler_vortex/",
-	"OutputName": "test"
+       	"Name": "EulerVortex"
+    },
+    "Output": {
+        "OutputDirectory": "output/euler_vortex/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

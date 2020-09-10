@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "3",
         "DegreeMax": "3",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "TUM",
-	"OutputDirectory": "output/tum/",
-	"OutputName": "test"
+       	"Name": "TUM"
+    },
+    "Output": {
+        "OutputDirectory": "output/tum/",
+        "OutputName": "l0_k3",
+        "WriteOutput": "false"
     }
 }

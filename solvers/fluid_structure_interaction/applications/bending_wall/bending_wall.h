@@ -113,22 +113,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/bending_wall/", output_name = "test";
 
   void
   set_input_parameters_fluid(IncNS::InputParameters & param)
@@ -528,9 +515,9 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = true;
-    pp_data.output_data.output_folder             = output_directory + "vtu/";
-    pp_data.output_data.output_name               = output_name + "_fluid";
+    pp_data.output_data.write_output              = this->write_output;
+    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
+    pp_data.output_data.output_name               = this->output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs        = true;
     pp_data.output_data.write_surface_mesh        = true;
     pp_data.output_data.output_start_time         = 0.0;
@@ -846,9 +833,9 @@ public:
     using namespace Structure;
 
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output         = true;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name + "_structure";
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name + "_structure";
     pp_data.output_data.output_start_time    = 0.0;
     pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order   = false;

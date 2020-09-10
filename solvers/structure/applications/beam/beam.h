@@ -126,8 +126,6 @@ public:
   {
     // clang-format off
     prm.enter_subsection("Application");
-    prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-    prm.add_parameter("OutputName",       output_name,      "Name of output files.");
     prm.add_parameter("Length",           length,           "Length of domain.");
     prm.add_parameter("Height",           height,           "Height of domain.");
     prm.add_parameter("Width",            width,            "Width of domain.");
@@ -136,9 +134,6 @@ public:
     prm.leave_subsection();
     // clang-format on
   }
-
-  // output
-  std::string output_directory = "output/beam/vtu/", output_name = "test";
 
   // size of geometry
   double length = 1.0, height = 1.0, width = 1.0;
@@ -304,9 +299,9 @@ public:
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output       = true;
-    pp_data.output_data.output_folder      = output_directory;
-    pp_data.output_data.output_name        = output_name;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.output_folder      = this->output_directory + "vtu/";
+    pp_data.output_data.output_name        = this->output_name;
     pp_data.output_data.write_higher_order = false;
     pp_data.output_data.degree             = degree;
 

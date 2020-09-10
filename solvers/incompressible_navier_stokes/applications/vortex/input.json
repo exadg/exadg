@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "8",
         "DegreeMax": "8",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "12"
     },
     "Application": {
-       	"Name": "Vortex",
-	"OutputDirectory": "output/vortex/",
-	"OutputName": "ale"
+       	"Name": "Vortex"
+    },
+    "Output": {
+        "OutputDirectory": "output/vortex/",
+        "OutputName": "ale",
+        "WriteOutput": "false"
     }
 }

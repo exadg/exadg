@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "7",
         "DegreeMax": "7",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "SineWave",
-	"OutputDirectory": "output_conv_diff/propagating_sine_wave/",
-	"OutputName": "test"
+       	"Name": "SineWave"
+    },
+    "Output": {
+        "OutputDirectory": "output/sine_wave/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

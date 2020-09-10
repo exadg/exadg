@@ -44,7 +44,6 @@ double const D_OXYGEN = 0.219e-4; // 0.219 cm^2/s = 0.219e-4 m^2/s
 double const DENSITY = 1.2;       // kg/m^3 (@ 20°C)
 
 #ifdef BABY // preterm infant
-std::string const FOLDER_LUNG_FILES = "../../../exadg/solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/";
 double const PERIOD = 0.1; // 100 ms
 unsigned int const N_PERIODS = 10;
 double const START_TIME = 0.0;
@@ -87,7 +86,6 @@ double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^
 };
 #endif
 #ifdef ADULT // adult lung
-std::string const FOLDER_LUNG_FILES = "../../../exadg/solvers/incompressible_flow_with_transport/applications/lung/patients/adult/output2/";
 double const PERIOD = 3; // in period lasts 3 s
 unsigned int const N_PERIODS = 10;
 double const START_TIME = 0.0;
@@ -556,29 +554,28 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
 
   void
   add_parameters(ParameterHandler & prm)
   {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
+      prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
     prm.leave_subsection();
     // clang-format on
   }
 
+  std::string directory_lung_files = "";
+
   // output
-  bool const   write_output         = false;
   bool const   high_order_output    = true;
   double const output_start_time    = START_TIME;
   double const output_interval_time = PERIOD / 300;
-
-  std::string output_directory = "output/lung/child/";
-  std::string output_name      = "gen6_l0_k32_xyz";
 
   void
   set_input_parameters(IncNS::InputParameters & param)
@@ -753,7 +750,7 @@ public:
     param.restart_data.write_restart = WRITE_RESTART;
     param.restart_data.interval_time = RESTART_INTERVAL_TIME;
     param.restart_data.filename =
-      output_directory + output_name + "_scalar_" + std::to_string(scalar_index);
+      this->output_directory + this->output_name + "_scalar_" + std::to_string(scalar_index);
 
     // SPATIAL DISCRETIZATION
 
@@ -805,14 +802,14 @@ public:
     AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
     std::vector<std::string> files;
-    files.push_back(FOLDER_LUNG_FILES + "leftbot.dat");
-    files.push_back(FOLDER_LUNG_FILES + "lefttop.dat");
-    files.push_back(FOLDER_LUNG_FILES + "rightbot.dat");
-    files.push_back(FOLDER_LUNG_FILES + "rightmid.dat");
-    files.push_back(FOLDER_LUNG_FILES + "righttop.dat");
+    files.push_back(directory_lung_files + "leftbot.dat");
+    files.push_back(directory_lung_files + "lefttop.dat");
+    files.push_back(directory_lung_files + "rightbot.dat");
+    files.push_back(directory_lung_files + "rightmid.dat");
+    files.push_back(directory_lung_files + "righttop.dat");
     auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
 
-    std::string spline_file = FOLDER_LUNG_FILES + "../splines_raw6.dat";
+    std::string spline_file = directory_lung_files + "../splines_raw6.dat";
 
     std::map<std::string, double> timings;
 
@@ -900,9 +897,9 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = write_output;
-    pp_data.output_data.output_folder             = output_directory + "vtu/";
-    pp_data.output_data.output_name               = output_name + "_fluid";
+    pp_data.output_data.write_output              = this->write_output;
+    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
+    pp_data.output_data.output_name               = this->output_name + "_fluid";
     pp_data.output_data.output_start_time         = output_start_time;
     pp_data.output_data.output_interval_time      = output_interval_time;
     pp_data.output_data.write_vorticity           = true;
@@ -919,13 +916,14 @@ public:
     pp_data_lung.pp_data = pp_data;
 
     // calculation of flow rate
-    pp_data_lung.flow_rate_data.calculate       = true;
-    pp_data_lung.flow_rate_data.write_to_file   = true;
-    pp_data_lung.flow_rate_data.filename_prefix = output_directory + output_name + "_flow_rate";
+    pp_data_lung.flow_rate_data.calculate     = true;
+    pp_data_lung.flow_rate_data.write_to_file = true;
+    pp_data_lung.flow_rate_data.filename_prefix =
+      this->output_directory + this->output_name + "_flow_rate";
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
-    pp.reset(
-      new PostProcessorLung<dim, Number>(pp_data_lung, mpi_comm, output_directory, output_name));
+    pp.reset(new PostProcessorLung<dim, Number>(
+      pp_data_lung, mpi_comm, this->output_directory, this->output_name));
 
     return pp;
   }
@@ -970,10 +968,10 @@ public:
                                  unsigned int const scalar_index)
   {
     ConvDiff::PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output      = write_output;
-    pp_data.output_data.output_folder     = output_directory + "vtu/";
-    pp_data.output_data.output_name       = output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.output_start_time = output_start_time;
+    pp_data.output_data.write_output  = this->write_output;
+    pp_data.output_data.output_folder = this->output_directory + "vtu/";
+    pp_data.output_data.output_name = this->output_name + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.output_start_time    = output_start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = high_order_output;

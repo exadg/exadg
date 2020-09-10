@@ -1,14 +1,17 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "Degree": "3",
         "RefineSpace": "4",
         "NScalars": "1"
     },
     "Application": {
-       	"Name": "RayleighBenard",
-	"OutputDirectory": "output/rayleigh_benard/",
-	"OutputName": "test"
+       	"Name": "RayleighBenard"
+    },
+    "Output": {
+        "OutputDirectory": "output/rayleigh_benard/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

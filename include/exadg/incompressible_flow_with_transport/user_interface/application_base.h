@@ -30,10 +30,13 @@ public:
   virtual void
   add_parameters(ParameterHandler & prm)
   {
-    (void)prm;
-
-    // can be overwritten by derived classes and is for example necessary
-    // in order to generate a default input file
+    // clang-format off
+    prm.enter_subsection("Output");
+      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
+      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
+      prm.add_parameter("WriteOutput",      write_output,     "Decides whether vtu output is written.");
+    prm.leave_subsection();
+    // clang-format on
   }
 
   ApplicationBase(std::string parameter_file) : IncNS::ApplicationBase<dim, Number>(parameter_file)
@@ -61,6 +64,10 @@ public:
   construct_postprocessor_scalar(unsigned int const degree,
                                  MPI_Comm const &   mpi_comm,
                                  unsigned int const scalar_index = 0) = 0;
+
+protected:
+  std::string output_directory = "output/", output_name = "output";
+  bool        write_output = false;
 };
 
 } // namespace FTI

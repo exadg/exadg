@@ -24,22 +24,9 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    add_parameters(prm);
+    this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
-
-  void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/cavity/", output_name = "test";
 
   double const L = 1.0;
 
@@ -275,9 +262,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = true;
-    pp_data.output_data.output_folder        = output_directory + "vtu/";
-    pp_data.output_data.output_name          = output_name;
+    pp_data.output_data.write_output         = this->write_output;
+    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
+    pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = true;
@@ -291,7 +278,7 @@ public:
     {
       // line plot data
       pp_data.line_plot_data.calculate           = false;
-      pp_data.line_plot_data.line_data.directory = output_directory;
+      pp_data.line_plot_data.line_data.directory = this->output_directory;
 
       // which quantities
       std::shared_ptr<Quantity> quantity_u;
@@ -308,7 +295,7 @@ public:
       vert_line.reset(new Line<dim>());
       vert_line->begin    = Point<dim>(0.5, 0.0);
       vert_line->end      = Point<dim>(0.5, 1.0);
-      vert_line->name     = output_name + "_vert_line";
+      vert_line->name     = this->output_name + "_vert_line";
       vert_line->n_points = 100001; // 2001;
       vert_line->quantities.push_back(quantity_u);
       vert_line->quantities.push_back(quantity_p);
@@ -318,7 +305,7 @@ public:
       hor_line.reset(new Line<dim>());
       hor_line->begin    = Point<dim>(0.0, 0.5);
       hor_line->end      = Point<dim>(1.0, 0.5);
-      hor_line->name     = output_name + "_hor_line";
+      hor_line->name     = this->output_name + "_hor_line";
       hor_line->n_points = 10001; // 2001;
       hor_line->quantities.push_back(quantity_u);
       hor_line->quantities.push_back(quantity_p);

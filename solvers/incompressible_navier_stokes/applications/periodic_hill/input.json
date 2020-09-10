@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "DegreeMin": "3",
         "DegreeMax": "3",
@@ -11,16 +11,18 @@
     },
     "Application": {
        	"Name": "PeriodicHill",
-	"Inviscid": "false",
-	"ReynoldsNumber": "5600.0",
-	"EndTime": "1",
-	"GridStretchFactor": "1.6",
-	"OutputDirectory": "output/periodic_hill/",
-	"CalculateStatistics": "true",
-	"SampleStartTime": "0",
-	"SampleEveryTimeSteps": "1",
-	"PointsPerLine": "16",
-	"WriteVTUOutput": "false",
-	"OutputNameVTU": "16_l2_k3_test"
+        "Inviscid": "false",
+        "ReynoldsNumber": "5600.0",
+        "EndTime": "1",
+        "GridStretchFactor": "1.6",
+        "CalculateStatistics": "true",
+        "SampleStartTime": "0",
+        "SampleEveryTimeSteps": "1",
+        "PointsPerLine": "16"
+    },
+    "Output": {
+        "OutputDirectory": "output/periodic_hill/",
+        "OutputName": "16_l2_k3",
+        "WriteOutput": "false"
     }
 }

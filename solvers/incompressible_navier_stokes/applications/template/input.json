@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "DegreeMin": "4",
         "DegreeMax": "4",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Template",
-	"OutputDirectory": "output/template/vtu/",
-	"OutputName": "test"
+       	"Name": "Template"
+    },
+    "Output": {
+        "OutputDirectory": "output/template/",
+        "OutputName": "template",
+        "WriteOutput": "false"
     }
 }

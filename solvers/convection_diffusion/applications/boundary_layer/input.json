@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "3",
         "DegreeMax": "3",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "BoundaryLayer",
-	"OutputDirectory": "output_conv_diff/boundary_layer_problem/",
-	"OutputName": "test"
+       	"Name": "BoundaryLayer"
+    },
+    "Output": {
+        "OutputDirectory": "output/boundary_layer_problem/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

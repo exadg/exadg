@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "RunType": "FixedProblemSize",
         "DegreeMin": "1",
@@ -11,11 +11,16 @@
         "DofsMax": "100000"
     },
     "Throughput": {
-	"OperatorType": "Linearized",
-	"RepetitionsInner": "100",
-	"RepetitionsOuter": "3"
+        "OperatorType": "Linearized",
+        "RepetitionsInner": "100",
+        "RepetitionsOuter": "3"
     },
     "Application": {
        	"Name": "Manufactured"
+    },
+    "Output": {
+        "OutputDirectory": "output/manufactured/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

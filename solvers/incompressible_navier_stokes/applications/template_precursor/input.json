@@ -1,11 +1,16 @@
 {
     "General": {
-	"Precision": "double",
-    "Dim": "3",
-    "Degree": "2",
-	"RefineSpace": "0"
+        "Precision": "double",
+        "Dim": "3",
+        "Degree": "2",
+        "RefineSpace": "0"
     },
     "Application": {
-	"Name": "TemplatePrecursor"
+        "Name": "TemplatePrecursor"
+    },
+    "Output": {
+        "OutputDirectory": "output/template_precursor/",
+        "OutputName": "template",
+        "WriteOutput": "false"
     }
 }

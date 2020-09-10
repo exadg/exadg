@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "7",
         "DegreeMax": "7",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "ShearLayer",
-	"OutputDirectory": "output/shear_layer/",
-	"OutputName": "test"
+       	"Name": "ShearLayer"
+    },
+    "Output": {
+        "OutputDirectory": "output/shear_layer/",
+        "OutputName": "l4_k7",
+        "WriteOutput": "false"
     }
 }

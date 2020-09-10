@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Beltrami",
-	"OutputDirectory": "output/beltrami/",
-	"OutputName": "test"
+       	"Name": "Beltrami"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "beltrami",
+        "WriteOutput": "false"
     }
 }

@@ -51,19 +51,6 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("Application");
-      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string output_directory = "output/vtu/", output_name = "test";
-
-  void
   set_input_parameters(InputParameters & param)
   {
     (void)param;

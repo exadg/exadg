@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "7",
         "DegreeMax": "7",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Template",
-	"OutputDirectory": "output_conv_diff/template/vtu/",
-	"OutputName": "test"
+       	"Name": "Template"
+    },
+    "Output": {
+        "OutputDirectory": "output/template/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

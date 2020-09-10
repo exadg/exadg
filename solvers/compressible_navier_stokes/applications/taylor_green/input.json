@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
         "DegreeMin": "3",
         "DegreeMax": "3",
@@ -11,8 +11,11 @@
     },
     "Application": {
        	"Name": "TaylorGreen",
-	"MeshType": "Cartesian",
-	"OutputDirectory": "output/compressible_flow/taylor_green/",
-	"OutputName": "32_l3_k3"
+        "MeshType": "Cartesian"
+    },
+    "Output": {
+        "OutputDirectory": "output/taylor_green_vortex/",
+        "OutputName": "32_l3_k3",
+        "WriteOutput": "false"
     }
 }

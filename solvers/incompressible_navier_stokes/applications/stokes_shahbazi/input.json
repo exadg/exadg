@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "4",
         "DegreeMax": "4",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "16"
     },
     "Application": {
-       	"Name": "StokesShahbazi",
-	"OutputDirectory": "output/stokes_shahbazi/",
-	"OutputName": "test"
+       	"Name": "StokesShahbazi"
+    },
+    "Output": {
+        "OutputDirectory": "output/stokes_shahbazi/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "3",
         "DegreeMax": "3",
@@ -11,8 +11,11 @@
     },
     "Application": {
        	"Name": "FlowPastCylinder",
-	"TestCase": "3",
-	"OutputDirectory": "output/compressible_flow/flow_past_cylinder/",
-	"OutputName": "test"
+        "TestCase": "3"
+    },
+    "Output": {
+        "OutputDirectory": "output/flow_past_cylinder/",
+        "OutputName": "test",
+        "WriteOutput": "false"
     }
 }

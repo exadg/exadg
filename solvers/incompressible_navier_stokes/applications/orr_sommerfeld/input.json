@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "2",
         "DegreeMax": "2",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "OrrSommerfeld",
-	"OutputDirectory": "output/orr_sommerfeld/",
-	"OutputName": "Re7500_l5_k2_div_conti"
+       	"Name": "OrrSommerfeld"
+    },
+    "Output": {
+        "OutputDirectory": "output/orr_sommerfeld/",
+        "OutputName": "Re7500_l5_k2_div_conti",
+        "WriteOutput": "false"
     }
 }

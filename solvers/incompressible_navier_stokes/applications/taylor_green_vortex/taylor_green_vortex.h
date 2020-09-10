@@ -107,6 +107,8 @@ public:
   void
   add_parameters(ParameterHandler & prm)
   {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("MeshType",        mesh_type_string,                  "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
@@ -115,11 +117,8 @@ public:
       prm.add_parameter("MovingMesh",      ALE,                               "Moving mesh?");
       prm.add_parameter("Inviscid",        inviscid,                          "Is this an inviscid simulation?");
       prm.add_parameter("ReynoldsNumber",  Re,                                "Reynolds number (ignored if Inviscid = true)");
-      prm.add_parameter("OutputDirectory", output_directory,                  "Directory where output is written.");
-      prm.add_parameter("OutputName",      output_name,                       "Name of output files.");
-      prm.add_parameter("WriteVTUOutput",  write_vtu_output,                  "Decides whether vtu output is written.");
       prm.add_parameter("WriteRestart",    write_restart,                     "Should restart files be written?");
-      prm.add_parameter("IsARestart",      is_a_restarted_simulation,         "Is this a restarted simulation?");
+      prm.add_parameter("ReadRestart",     read_restart,                      "Is this a restarted simulation?");
     prm.leave_subsection();
     // clang-format on
   }
@@ -140,14 +139,9 @@ public:
   // moving mesh
   bool ALE = false;
 
-  // output
-  std::string output_directory = "output/taylor_green_vortex/";
-  std::string output_name      = "test";
-  bool        write_vtu_output = false;
-
   // restart
-  bool write_restart             = false;
-  bool is_a_restarted_simulation = false;
+  bool write_restart = false;
+  bool read_restart  = false;
 
   double const V_0                 = 1.0;
   double const L                   = 1.0;
@@ -204,15 +198,15 @@ public:
     param.cfl_exponent_fe_degree_velocity        = 1.5;
     param.time_step_size                         = 1.0e-3;
     param.order_time_integrator                  = 2; // 1; // 2; // 3;
-    param.start_with_low_order                   = !is_a_restarted_simulation;
+    param.start_with_low_order                   = !read_restart;
 
     // restart
-    param.restarted_simulation             = is_a_restarted_simulation;
+    param.restarted_simulation             = read_restart;
     param.restart_data.write_restart       = write_restart;
     param.restart_data.interval_time       = 1.0;
     param.restart_data.interval_wall_time  = 1.e6;
     param.restart_data.interval_time_steps = 1e8;
-    param.restart_data.filename            = output_directory + output_name + "restart";
+    param.restart_data.filename            = this->output_directory + this->output_name + "restart";
 
     // output of solver information
     param.solver_info_data.interval_time = characteristic_time;
@@ -387,7 +381,7 @@ public:
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    if(exploit_symmetry == false)
+    if(exploit_symmetry == false) // periodic box
     {
       create_periodic_box(triangulation,
                           n_refine_space,
@@ -398,7 +392,7 @@ public:
                           curvilinear_mesh,
                           deformation);
     }
-    else
+    else // symmetric box
     {
       GridGenerator::subdivided_hyper_cube(*triangulation,
                                            this->n_subdivisions_1d_hypercube,
@@ -491,9 +485,9 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output              = write_vtu_output;
-    pp_data.output_data.output_folder             = output_directory + "vtu/";
-    pp_data.output_data.output_name               = output_name;
+    pp_data.output_data.write_output              = this->write_output;
+    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
+    pp_data.output_data.output_name               = this->output_name;
     pp_data.output_data.output_start_time         = start_time;
     pp_data.output_data.output_interval_time      = (end_time - start_time) / 20;
     pp_data.output_data.write_vorticity           = true;
@@ -509,7 +503,7 @@ public:
     pp_data.mass_data.calculate_error         = false;
     pp_data.mass_data.start_time              = 0.0;
     pp_data.mass_data.sample_every_time_steps = 1e2;
-    pp_data.mass_data.filename_prefix         = output_directory + output_name;
+    pp_data.mass_data.filename_prefix         = this->output_directory + this->output_name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
     // kinetic energy
@@ -517,8 +511,8 @@ public:
     pp_data.kinetic_energy_data.evaluate_individual_terms  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.filename                   = output_directory + output_name;
-    pp_data.kinetic_energy_data.clear_file                 = !is_a_restarted_simulation;
+    pp_data.kinetic_energy_data.filename   = this->output_directory + this->output_name;
+    pp_data.kinetic_energy_data.clear_file = !read_restart;
 
     // kinetic energy spectrum
     bool const do_fftw_during_simulation                               = true;
@@ -527,14 +521,14 @@ public:
     pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files       = !do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.1;
     pp_data.kinetic_energy_spectrum_data.filename =
-      output_directory + output_name + "_energy_spectrum";
+      this->output_directory + this->output_name + "_energy_spectrum";
     pp_data.kinetic_energy_spectrum_data.degree                     = degree;
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1);
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = exploit_symmetry;
     pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid = this->n_subdivisions_1d_hypercube;
     pp_data.kinetic_energy_spectrum_data.refine_level           = this->refine_levels;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
-    pp_data.kinetic_energy_spectrum_data.clear_file              = !is_a_restarted_simulation;
+    pp_data.kinetic_energy_spectrum_data.clear_file              = !read_restart;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

@@ -7,8 +7,11 @@
         "NScalars": "1"
     },
     "Application": {
-       	"Name": "CavityNaturalConvection",
-	"OutputDirectory": "output/natural_convection/",
-	"OutputName": "test"
+       	"Name": "CavityNaturalConvection"
+    },
+    "Output": {
+        "OutputDirectory": "output/cavity_natural_convection/",
+        "OutputName": "l4_k3",
+        "WriteOutput": "false"
     }
 }

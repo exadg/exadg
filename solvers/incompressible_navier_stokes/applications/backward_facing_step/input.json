@@ -7,5 +7,10 @@
     },
     "Application": {
 	"Name": "BackwardFacingStep"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "bfs",
+        "WriteOutput": "false"
     }
 }

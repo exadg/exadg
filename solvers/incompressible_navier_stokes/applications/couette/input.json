@@ -1,6 +1,6 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
         "DegreeMin": "2",
         "DegreeMax": "2",
@@ -10,8 +10,11 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "Couette",
-	"OutputDirectory": "output/couette/",
-	"OutputName": "test"
+       	"Name": "Couette"
+    },
+    "Output": {
+        "OutputDirectory": "output/",
+        "OutputName": "couette",
+        "WriteOutput": "false"
     }
 }

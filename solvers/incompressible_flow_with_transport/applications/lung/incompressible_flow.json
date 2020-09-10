@@ -11,7 +11,11 @@
     },
     "Application": {
        	"Name": "Lung",
-	"OutputDirectory": "/data/fehn/navierstokes/applications/output/lung/child/",
-	"OutputName": "test"
+       	"DirectoryLungFiles": "solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/"
+    },
+    "Output": {
+        "OutputDirectory": "output/lung/",
+        "OutputName": "gen6_l0_k32",
+        "WriteOutput": "false"
     }
 }
