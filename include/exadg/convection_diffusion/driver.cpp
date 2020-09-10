@@ -5,6 +5,12 @@
  *      Author: fehn
  */
 
+// likwid
+#ifdef LIKWID_PERFMON
+#  include <likwid.h>
+#endif
+
+// ExaDG
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/utilities/print_throughput.h>
 
@@ -354,10 +360,13 @@ Driver<dim, Number>::print_statistics(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
+Driver<dim, Number>::apply_operator(unsigned int const  degree,
+                                    std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
 {
+  (void)degree;
+
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   Operatortype operator_type;
@@ -386,61 +395,66 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                                   1.0 /* scaling_factor_mass_matrix */,
                                                   &velocity);
 
-  // Timer and wall times
-  Timer  timer;
-  double wall_time = std::numeric_limits<double>::max();
+  Timer global_timer;
+  global_timer.restart();
+  Utilities::MPI::MinMaxAvg global_time;
+  double                    wall_time = std::numeric_limits<double>::max();
 
-  for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  do
   {
-    double current_wall_time = 0.0;
-
-    // apply matrix-vector product several times
-    for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+    for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
     {
+      Timer timer;
       timer.restart();
 
-      if(operator_type == Operatortype::MassOperator)
-        conv_diff_operator->apply_mass_matrix(dst, src);
-      else if(operator_type == Operatortype::ConvectiveOperator)
-        conv_diff_operator->apply_convective_term(dst, src);
-      else if(operator_type == Operatortype::DiffusiveOperator)
-        conv_diff_operator->apply_diffusive_term(dst, src);
-      else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
-        conv_diff_operator->apply_conv_diff_operator(dst, src);
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
+#endif
 
-      current_wall_time += timer.wall_time();
+      // apply matrix-vector product several times
+      for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+      {
+        if(operator_type == Operatortype::MassOperator)
+          conv_diff_operator->apply_mass_matrix(dst, src);
+        else if(operator_type == Operatortype::ConvectiveOperator)
+          conv_diff_operator->apply_convective_term(dst, src);
+        else if(operator_type == Operatortype::DiffusiveOperator)
+          conv_diff_operator->apply_diffusive_term(dst, src);
+        else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
+          conv_diff_operator->apply_conv_diff_operator(dst, src);
+      }
+
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
+#endif
+
+      MPI_Barrier(mpi_comm);
+      Utilities::MPI::MinMaxAvg wall_time_inner =
+        Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
+
+      wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
     }
 
-    // compute average wall time
-    current_wall_time /= (double)n_repetitions_inner;
+    MPI_Barrier(mpi_comm);
+    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
+  } while(global_time.avg < 1.0 /*wall time in seconds*/);
 
-    wall_time = std::min(wall_time, current_wall_time);
-  }
-
-  if(wall_time * n_repetitions_inner * n_repetitions_outer < 1.0 /*wall time in seconds*/)
-  {
-    this->pcout
-      << std::endl
-      << "WARNING: One should use a larger number of matrix-vector products to obtain reproducible results."
-      << std::endl;
-  }
-
-  types::global_dof_index dofs              = conv_diff_operator->get_number_of_dofs();
-  double                  dofs_per_walltime = (double)dofs / wall_time;
+  types::global_dof_index dofs       = conv_diff_operator->get_number_of_dofs();
+  double                  throughput = (double)dofs / wall_time;
 
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // clang-format off
   pcout << std::endl
         << std::scientific << std::setprecision(4)
-        << "DoFs/sec:        " << dofs_per_walltime << std::endl
-        << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
+        << "DoFs/sec:        " << throughput << std::endl
+        << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
   // clang-format on
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
   return std::tuple<unsigned int, types::global_dof_index, double>(
-    conv_diff_operator->get_polynomial_degree(), dofs, dofs_per_walltime);
+    conv_diff_operator->get_polynomial_degree(), dofs, throughput);
 }
 
 template class Driver<2, float>;
