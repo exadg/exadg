@@ -123,7 +123,6 @@ SET( TARGET_SRC
      include/exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.cpp
-     include/exadg/incompressible_navier_stokes/postprocessor/perturbation_energy_orr_sommerfeld.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp
      include/exadg/incompressible_navier_stokes/postprocessor/postprocessor.cpp
