@@ -13,6 +13,7 @@
 // ExaDG
 #include <exadg/poisson/driver.h>
 #include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/throughput_study.h>
 
 namespace ExaDG
 {
@@ -281,59 +282,33 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 #endif
   }
 
-  Timer global_timer;
-  global_timer.restart();
-  Utilities::MPI::MinMaxAvg global_time;
-  double                    wall_time = std::numeric_limits<double>::max();
-
-  do
-  {
-    for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  const std::function<void(void)> operator_evaluation = [&](void) {
+    if(operator_type == OperatorType::MatrixFree)
     {
-      Timer timer;
-      timer.restart();
-
-#ifdef LIKWID_PERFMON
-      LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
-#endif
-
-      // apply matrix-vector product several times
-      for(unsigned int i = 0; i < n_repetitions_inner; ++i)
-      {
-        if(operator_type == OperatorType::MatrixFree)
-        {
-          poisson_operator->vmult(dst, src);
-        }
-        else if(operator_type == OperatorType::MatrixBased)
-        {
-#ifdef DEAL_II_WITH_TRILINOS
-          poisson_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
-#else
-          AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS."));
-#endif
-        }
-      }
-
-#ifdef LIKWID_PERFMON
-      LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
-#endif
-
-      MPI_Barrier(mpi_comm);
-      Utilities::MPI::MinMaxAvg wall_time_inner =
-        Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
-
-      wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
+      poisson_operator->vmult(dst, src);
     }
+    else if(operator_type == OperatorType::MatrixBased)
+    {
+#ifdef DEAL_II_WITH_TRILINOS
+      poisson_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
+#else
+      AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS."));
+#endif
+    }
+  };
 
-    MPI_Barrier(mpi_comm);
-    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
-  } while(global_time.avg < 1.0 /*wall time in seconds*/);
+  // do the measurements
+  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
+                                                            n_repetitions_inner,
+                                                            n_repetitions_outer,
+                                                            mpi_comm);
 
-  types::global_dof_index dofs = poisson_operator->get_number_of_dofs();
+  // calculate throughput
+  types::global_dof_index const dofs = poisson_operator->get_number_of_dofs();
 
-  double throughput = (double)dofs / wall_time;
+  double const throughput = (double)dofs / wall_time;
 
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // clang-format off
   pcout << std::endl

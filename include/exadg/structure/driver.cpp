@@ -13,6 +13,7 @@
 // ExaDG
 #include <exadg/structure/driver.h>
 #include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/throughput_study.h>
 
 namespace ExaDG
 {
@@ -283,63 +284,37 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     linearization = 1.0;
   }
 
-  Timer global_timer;
-  global_timer.restart();
-  Utilities::MPI::MinMaxAvg global_time;
-  double                    wall_time = std::numeric_limits<double>::max();
-
-  do
-  {
-    for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  const std::function<void(void)> operator_evaluation = [&](void) {
+    if(param.large_deformation)
     {
-      Timer timer;
-      timer.restart();
-
-#ifdef LIKWID_PERFMON
-      LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
-#endif
-
-      // apply matrix-vector product several times
-      for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+      if(operator_type == OperatorType::Nonlinear)
       {
-        if(param.large_deformation)
-        {
-          if(operator_type == OperatorType::Nonlinear)
-          {
-            pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
-          }
-          else if(operator_type == OperatorType::Linearized)
-          {
-            pde_operator->set_solution_linearization(linearization);
-            pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
-          }
-        }
-        else
-        {
-          pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
-        }
+        pde_operator->apply_nonlinear_operator(dst, src, 1.0, 0.0);
       }
-
-#ifdef LIKWID_PERFMON
-      LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
-#endif
-
-      MPI_Barrier(mpi_comm);
-      Utilities::MPI::MinMaxAvg wall_time_inner =
-        Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
-
-      wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
+      else if(operator_type == OperatorType::Linearized)
+      {
+        pde_operator->set_solution_linearization(linearization);
+        pde_operator->apply_linearized_operator(dst, src, 1.0, 0.0);
+      }
     }
+    else
+    {
+      pde_operator->apply_linear_operator(dst, src, 1.0, 0.0);
+    }
+  };
 
-    MPI_Barrier(mpi_comm);
-    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
-  } while(global_time.avg < 1.0 /*wall time in seconds*/);
+  // do the measurements
+  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
+                                                            n_repetitions_inner,
+                                                            n_repetitions_outer,
+                                                            mpi_comm);
 
-  types::global_dof_index dofs = pde_operator->get_number_of_dofs();
+  // calculate throughput
+  types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
 
-  double throughput = (double)dofs / wall_time;
+  double const throughput = (double)dofs / wall_time;
 
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // clang-format off
   pcout << std::endl
