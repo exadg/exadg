@@ -36,14 +36,12 @@ struct FEEvaluationFactory
 
 
 
-template<int dim,
-         int n_components,
-         typename Number,
-         typename VectorizedArrayType = VectorizedArray<Number>>
+template<int dim, typename Number, typename VectorizedArrayType = VectorizedArray<Number>>
 struct FEFaceEvaluationFactory
 {
   static void
-  evaluate(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
+  evaluate(const unsigned int                                          n_components,
+           const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
            const VectorizedArrayType *                                 values_array,
            VectorizedArrayType *                                       values_quad,
            VectorizedArrayType *                                       gradients_quad,
@@ -56,7 +54,8 @@ struct FEFaceEvaluationFactory
            const Table<2, unsigned int> &                              orientation_map);
 
   static void
-  integrate(const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
+  integrate(const unsigned int                                          n_components,
+            const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
             VectorizedArrayType *                                       values_array,
             VectorizedArrayType *                                       values_quad,
             VectorizedArrayType *                                       gradients_quad,
@@ -69,7 +68,8 @@ struct FEFaceEvaluationFactory
             const Table<2, unsigned int> &                              orientation_map);
 
   static bool
-  gather_evaluate(const Number *                                              src_ptr,
+  gather_evaluate(const unsigned int                                          n_components,
+                  const Number *                                              src_ptr,
                   const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
                   const MatrixFreeFunctions::DoFInfo &                        dof_info,
                   VectorizedArrayType *                                       values_quad,
@@ -87,7 +87,8 @@ struct FEFaceEvaluationFactory
                   const Table<2, unsigned int> &                     orientation_map);
 
   static bool
-  integrate_scatter(Number *                                                    dst_ptr,
+  integrate_scatter(const unsigned int                                          n_components,
+                    Number *                                                    dst_ptr,
                     const MatrixFreeFunctions::ShapeInfo<VectorizedArrayType> & data,
                     const MatrixFreeFunctions::DoFInfo &                        dof_info,
                     VectorizedArrayType *                                       values_array,
@@ -108,17 +109,15 @@ struct FEFaceEvaluationFactory
 
 
 
-template<int dim,
-         int n_components,
-         typename Number,
-         typename VectorizedArrayType = VectorizedArray<Number>>
+template<int dim, typename Number, typename VectorizedArrayType = VectorizedArray<Number>>
 struct CellwiseInverseMassFactory
 {
   static void
-  apply(const unsigned int                                                              fe_degree,
-        const FEEvaluationBase<dim, n_components, Number, false, VectorizedArrayType> & fe_eval,
-        const VectorizedArrayType *                                                     in_array,
-        VectorizedArrayType *                                                           out_array);
+  apply(const unsigned int                                                    n_components,
+        const unsigned int                                                    fe_degree,
+        const FEEvaluationBaseData<dim, Number, false, VectorizedArrayType> & fe_eval,
+        const VectorizedArrayType *                                           in_array,
+        VectorizedArrayType *                                                 out_array);
 
   static void
   apply(const unsigned int                         n_desired_components,

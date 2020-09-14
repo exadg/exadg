@@ -9,10 +9,6 @@
 
 template struct dealii::internal::FEEvaluationFactory<2, float>;
 
-template struct dealii::internal::FEFaceEvaluationFactory<2, 1, float>;
-template struct dealii::internal::FEFaceEvaluationFactory<2, 2, float>;
+template struct dealii::internal::FEFaceEvaluationFactory<2, float>;
 
-// inverse mass
-template struct dealii::internal::CellwiseInverseMassFactory<2, 1, float>;
-template struct dealii::internal::CellwiseInverseMassFactory<2, 2, float>;
-template struct dealii::internal::CellwiseInverseMassFactory<2, 2 + 2, float>;
+template struct dealii::internal::CellwiseInverseMassFactory<2, float>;

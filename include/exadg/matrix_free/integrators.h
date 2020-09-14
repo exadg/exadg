@@ -1245,7 +1245,8 @@ FaceIntegrator<dim, n_components, Number, VectorizedArrayType>::evaluate(
   if(!(evaluate_values + evaluate_gradients))
     return;
 
-  internal::FEFaceEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::evaluate(
+  internal::FEFaceEvaluationFactory<dim, Number, VectorizedArrayType>::evaluate(
+    n_components,
     *this->data,
     values_array,
     this->begin_values(),
@@ -1293,7 +1294,8 @@ FaceIntegrator<dim, n_components, Number, VectorizedArrayType>::integrate(
   if(!(integrate_values + integrate_gradients))
     return;
 
-  internal::FEFaceEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::integrate(
+  internal::FEFaceEvaluationFactory<dim, Number, VectorizedArrayType>::integrate(
+    n_components,
     *this->data,
     values_array,
     this->begin_values(),
@@ -1324,23 +1326,24 @@ FaceIntegrator<dim, n_components_, Number, VectorizedArrayType>::gather_evaluate
                 "evaluating to a pointer to basic number (float,double). "
                 "Use read_dof_values() followed by evaluate() instead.");
 
-  if(!internal::FEFaceEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::
-       gather_evaluate(input_vector.begin(),
-                       *this->data,
-                       *this->dof_info,
-                       this->begin_values(),
-                       this->begin_gradients(),
-                       this->scratch_data,
-                       evaluate_values,
-                       evaluate_gradients,
-                       this->active_fe_index,
-                       this->first_selected_component,
-                       this->cell,
-                       this->face_no,
-                       this->subface_index,
-                       this->dof_access_index,
-                       this->face_orientation,
-                       this->mapping_data->descriptor[this->active_fe_index].face_orientations))
+  if(!internal::FEFaceEvaluationFactory<dim, Number, VectorizedArrayType>::gather_evaluate(
+       n_components,
+       input_vector.begin(),
+       *this->data,
+       *this->dof_info,
+       this->begin_values(),
+       this->begin_gradients(),
+       this->scratch_data,
+       evaluate_values,
+       evaluate_gradients,
+       this->active_fe_index,
+       this->first_selected_component,
+       this->cell,
+       this->face_no,
+       this->subface_index,
+       this->dof_access_index,
+       this->face_orientation,
+       this->mapping_data->descriptor[this->active_fe_index].face_orientations))
   {
     this->read_dof_values(input_vector);
     this->evaluate(evaluate_values, evaluate_gradients);
@@ -1372,24 +1375,25 @@ FaceIntegrator<dim, n_components_, Number, VectorizedArrayType>::integrate_scatt
                 "Use integrate() followed by distribute_local_to_global() "
                 "instead.");
 
-  if(!internal::FEFaceEvaluationFactory<dim, n_components, Number, VectorizedArrayType>::
-       integrate_scatter(destination.begin(),
-                         *this->data,
-                         *this->dof_info,
-                         this->begin_dof_values(),
-                         this->begin_values(),
-                         this->begin_gradients(),
-                         this->scratch_data,
-                         integrate_values,
-                         integrate_gradients,
-                         this->active_fe_index,
-                         this->first_selected_component,
-                         this->cell,
-                         this->face_no,
-                         this->subface_index,
-                         this->dof_access_index,
-                         this->face_orientation,
-                         this->mapping_data->descriptor[this->active_fe_index].face_orientations))
+  if(!internal::FEFaceEvaluationFactory<dim, Number, VectorizedArrayType>::integrate_scatter(
+       n_components,
+       destination.begin(),
+       *this->data,
+       *this->dof_info,
+       this->begin_dof_values(),
+       this->begin_values(),
+       this->begin_gradients(),
+       this->scratch_data,
+       integrate_values,
+       integrate_gradients,
+       this->active_fe_index,
+       this->first_selected_component,
+       this->cell,
+       this->face_no,
+       this->subface_index,
+       this->dof_access_index,
+       this->face_orientation,
+       this->mapping_data->descriptor[this->active_fe_index].face_orientations))
   {
     // if we arrive here, writing into the destination vector did not succeed
     // because some of the assumptions in integrate_scatter were not
@@ -1555,7 +1559,7 @@ CellwiseInverseMassMatrix<dim, -1, n_components, Number, VectorizedArrayType>::a
   const VectorizedArrayType *                in_array,
   VectorizedArrayType *                      out_array) const
 {
-  internal::CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::apply(
+  internal::CellwiseInverseMassFactory<dim, Number, VectorizedArrayType>::apply(
     n_actual_components,
     fe_eval.get_shape_info().data[0].fe_degree,
     fe_eval.get_shape_info().data[0].inverse_shape_values_eo,
@@ -1572,8 +1576,8 @@ CellwiseInverseMassMatrix<dim, -1, n_components, Number, VectorizedArrayType>::a
   const VectorizedArrayType * in_array,
   VectorizedArrayType *       out_array) const
 {
-  internal::CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::apply(
-    fe_eval.get_shape_info().data[0].fe_degree, fe_eval, in_array, out_array);
+  internal::CellwiseInverseMassFactory<dim, Number, VectorizedArrayType>::apply(
+    n_components, fe_eval.get_shape_info().data[0].fe_degree, fe_eval, in_array, out_array);
 }
 
 
@@ -1585,7 +1589,7 @@ CellwiseInverseMassMatrix<dim, -1, n_components, Number, VectorizedArrayType>::
                                    const VectorizedArrayType * in_array,
                                    VectorizedArrayType *       out_array) const
 {
-  internal::CellwiseInverseMassFactory<dim, n_components, Number, VectorizedArrayType>::
+  internal::CellwiseInverseMassFactory<dim, Number, VectorizedArrayType>::
     transform_from_q_points_to_basis(n_actual_components,
                                      fe_eval.get_shape_info().data[0].fe_degree,
                                      fe_eval.get_shape_info().data[0].inverse_shape_values_eo,
