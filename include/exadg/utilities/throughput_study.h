@@ -18,6 +18,52 @@ namespace ExaDG
 {
 using namespace dealii;
 
+inline double
+measure_operator_evaluation_time(std::function<void(void)> const & evaluate_operator,
+                                 unsigned int const                n_repetitions_inner,
+                                 unsigned int const                n_repetitions_outer,
+                                 MPI_Comm const &                  mpi_comm)
+{
+  Timer global_timer;
+  global_timer.restart();
+  Utilities::MPI::MinMaxAvg global_time;
+
+  double wall_time = std::numeric_limits<double>::max();
+
+  do
+  {
+    for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+    {
+      Timer timer;
+      timer.restart();
+
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
+#endif
+
+      // apply matrix-vector product several times
+      for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+      {
+        evaluate_operator();
+      }
+
+#ifdef LIKWID_PERFMON
+      LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
+#endif
+
+      MPI_Barrier(mpi_comm);
+      Utilities::MPI::MinMaxAvg wall_time_inner =
+        Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
+
+      wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
+    }
+
+    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
+  } while(global_time.avg < 1.0 /*wall time in seconds*/);
+
+  return wall_time;
+}
+
 struct ThroughputStudy
 {
   ThroughputStudy()

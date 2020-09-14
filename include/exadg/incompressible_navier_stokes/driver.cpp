@@ -13,6 +13,7 @@
 // ExaDG
 #include <exadg/incompressible_navier_stokes/driver.h>
 #include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/throughput_study.h>
 
 namespace ExaDG
 {
@@ -479,7 +480,7 @@ Driver<dim, Number>::print_statistics(double const total_time) const
 
   if(param.solver_type == SolverType::Unsteady)
   {
-    unsigned int N_time_steps = time_integrator->get_number_of_time_steps();
+    unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
     print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
   }
   else
@@ -621,89 +622,65 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  Timer global_timer;
-  global_timer.restart();
-  Utilities::MPI::MinMaxAvg global_time;
-  double                    wall_time = std::numeric_limits<double>::max();
-
-  do
-  {
-    for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  const std::function<void(void)> operator_evaluation = [&](void) {
+    // clang-format off
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
-      Timer timer;
-      timer.restart();
-
-#ifdef LIKWID_PERFMON
-      LIKWID_MARKER_START(("degree_" + std::to_string(degree)).c_str());
-#endif
-
-      // apply matrix-vector product several times
-      for(unsigned int i = 0; i < n_repetitions_inner; ++i)
-      {
-        // clang-format off
-        if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-        {
-          if(operator_type == Operator::CoupledNonlinearResidual)
-            navier_stokes_operator_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
-          else if(operator_type == Operator::CoupledLinearized)
-            navier_stokes_operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
-          else if(operator_type == Operator::ConvectiveOperator)
-            navier_stokes_operator_coupled->evaluate_convective_term(dst2,src2,0.0);
-          else if(operator_type == Operator::InverseMassMatrix)
-            navier_stokes_operator_coupled->apply_inverse_mass_matrix(dst2,src2);
-          else
-            AssertThrow(false,ExcMessage("Not implemented."));
-        }
-        else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-        {
-          if(operator_type == Operator::HelmholtzOperator)
-            navier_stokes_operator_dual_splitting->apply_helmholtz_operator(dst2,src2);
-          else if(operator_type == Operator::ConvectiveOperator)
-            navier_stokes_operator_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
-          else if(operator_type == Operator::ProjectionOperator)
-            navier_stokes_operator_dual_splitting->apply_projection_operator(dst2,src2);
-          else if(operator_type == Operator::PressurePoissonOperator)
-            navier_stokes_operator_dual_splitting->apply_laplace_operator(dst2,src2);
-          else if(operator_type == Operator::InverseMassMatrix)
-            navier_stokes_operator_dual_splitting->apply_inverse_mass_matrix(dst2,src2);
-          else
-            AssertThrow(false,ExcMessage("Not implemented."));
-        }
-        else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-        {
-          if(operator_type == Operator::VelocityConvDiffOperator)
-            navier_stokes_operator_pressure_correction->apply_momentum_operator(dst2,src2);
-          else if(operator_type == Operator::ProjectionOperator)
-            navier_stokes_operator_pressure_correction->apply_projection_operator(dst2,src2);
-          else if(operator_type == Operator::PressurePoissonOperator)
-            navier_stokes_operator_pressure_correction->apply_laplace_operator(dst2,src2);
-          else if(operator_type == Operator::InverseMassMatrix)
-            navier_stokes_operator_pressure_correction->apply_inverse_mass_matrix(dst2,src2);
-          else
-            AssertThrow(false,ExcMessage("Not implemented."));
-        }
-        else
-        {
-          AssertThrow(false,ExcMessage("Not implemented."));
-        }
-        // clang-format on
-      }
-
-#ifdef LIKWID_PERFMON
-      LIKWID_MARKER_STOP(("degree_" + std::to_string(degree)).c_str());
-#endif
-
-      MPI_Barrier(mpi_comm);
-      Utilities::MPI::MinMaxAvg wall_time_inner =
-        Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
-
-      wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
+      if(operator_type == Operator::CoupledNonlinearResidual)
+        navier_stokes_operator_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
+      else if(operator_type == Operator::CoupledLinearized)
+        navier_stokes_operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
+      else if(operator_type == Operator::ConvectiveOperator)
+        navier_stokes_operator_coupled->evaluate_convective_term(dst2,src2,0.0);
+      else if(operator_type == Operator::InverseMassMatrix)
+        navier_stokes_operator_coupled->apply_inverse_mass_matrix(dst2,src2);
+      else
+        AssertThrow(false,ExcMessage("Not implemented."));
     }
+    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      if(operator_type == Operator::HelmholtzOperator)
+        navier_stokes_operator_dual_splitting->apply_helmholtz_operator(dst2,src2);
+      else if(operator_type == Operator::ConvectiveOperator)
+        navier_stokes_operator_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
+      else if(operator_type == Operator::ProjectionOperator)
+        navier_stokes_operator_dual_splitting->apply_projection_operator(dst2,src2);
+      else if(operator_type == Operator::PressurePoissonOperator)
+        navier_stokes_operator_dual_splitting->apply_laplace_operator(dst2,src2);
+      else if(operator_type == Operator::InverseMassMatrix)
+        navier_stokes_operator_dual_splitting->apply_inverse_mass_matrix(dst2,src2);
+      else
+        AssertThrow(false,ExcMessage("Not implemented."));
+    }
+    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      if(operator_type == Operator::VelocityConvDiffOperator)
+        navier_stokes_operator_pressure_correction->apply_momentum_operator(dst2,src2);
+      else if(operator_type == Operator::ProjectionOperator)
+        navier_stokes_operator_pressure_correction->apply_projection_operator(dst2,src2);
+      else if(operator_type == Operator::PressurePoissonOperator)
+        navier_stokes_operator_pressure_correction->apply_laplace_operator(dst2,src2);
+      else if(operator_type == Operator::InverseMassMatrix)
+        navier_stokes_operator_pressure_correction->apply_inverse_mass_matrix(dst2,src2);
+      else
+        AssertThrow(false,ExcMessage("Not implemented."));
+    }
+    else
+    {
+      AssertThrow(false,ExcMessage("Not implemented."));
+    }
+    // clang-format on
 
-    MPI_Barrier(mpi_comm);
-    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
-  } while(global_time.avg < 1.0 /*wall time in seconds*/);
+    return;
+  };
 
+  // do the measurements
+  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
+                                                            n_repetitions_inner,
+                                                            n_repetitions_outer,
+                                                            mpi_comm);
+
+  // calculate throughput
   types::global_dof_index dofs      = 0;
   unsigned int            fe_degree = 1;
 
@@ -736,9 +713,9 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  double throughput = (double)dofs / wall_time;
+  double const throughput = (double)dofs / wall_time;
 
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // clang-format off
   pcout << std::endl
