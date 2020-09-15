@@ -20,10 +20,13 @@ using namespace dealii;
 
 inline double
 measure_operator_evaluation_time(std::function<void(void)> const & evaluate_operator,
+                                 unsigned int const                degree,
                                  unsigned int const                n_repetitions_inner,
                                  unsigned int const                n_repetitions_outer,
                                  MPI_Comm const &                  mpi_comm)
 {
+  (void)degree;
+
   Timer global_timer;
   global_timer.restart();
   Utilities::MPI::MinMaxAvg global_time;

@@ -675,10 +675,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   };
 
   // do the measurements
-  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
-                                                            n_repetitions_inner,
-                                                            n_repetitions_outer,
-                                                            mpi_comm);
+  double const wall_time = measure_operator_evaluation_time(
+    operator_evaluation, degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
 
   // calculate throughput
   types::global_dof_index dofs      = 0;
