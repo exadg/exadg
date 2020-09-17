@@ -88,9 +88,9 @@ inline DEAL_II_ALWAYS_INLINE //
       {
         auto bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
         g       = FunctionEvaluator<rank, dim, Number>::value(bc,
-                                                        integrator.get_face_index(),
+                                                        integrator.get_current_cell_index(),
                                                         q,
-                                                        integrator.quadrature_formula_index());
+                                                        integrator.get_quadrature_index());
       }
       else
       {

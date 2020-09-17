@@ -27,7 +27,7 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
     tensor const gradient = integrator.get_gradient(q);
 
     // Cauchy stresses
-    tensor const sigma = material->apply_C(gradient, integrator.get_cell_index(), q);
+    tensor const sigma = material->apply_C(gradient, integrator.get_current_cell_index(), q);
 
     // test with gradients
     integrator.submit_gradient(sigma, q);
