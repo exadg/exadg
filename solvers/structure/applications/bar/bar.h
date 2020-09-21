@@ -159,6 +159,8 @@ public:
   void
   add_parameters(ParameterHandler & prm)
   {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
     // clang-format off
     prm.enter_subsection("Application");
     prm.add_parameter("Length",           length,           "Length of domain.");
