@@ -65,6 +65,8 @@ public:
   void
   add_parameters(ParameterHandler & prm)
   {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
