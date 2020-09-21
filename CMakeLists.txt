@@ -43,6 +43,10 @@ SET( TARGET_SRC
      include/exadg/time_integration/enum_types.cpp
      include/exadg/grid/enum_types.cpp
      include/exadg/functions_and_boundary_conditions/linear_interpolation.cpp
+     include/exadg/matrix_free/resolve_templates_float_2d.cpp
+     include/exadg/matrix_free/resolve_templates_float_3d.cpp
+     include/exadg/matrix_free/resolve_templates_double_2d.cpp
+     include/exadg/matrix_free/resolve_templates_double_3d.cpp
      include/exadg/solvers_and_preconditioners/preconditioner/enum_types.cpp
      include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
