@@ -45,9 +45,9 @@ inline DEAL_II_ALWAYS_INLINE //
     auto bc = boundary_descriptor->neumann_mortar_bc.find(boundary_id)->second;
 
     traction = FunctionEvaluator<1, dim, Number>::value(bc,
-                                                        integrator.get_face_index(),
+                                                        integrator.get_current_cell_index(),
                                                         q,
-                                                        integrator.quadrature_formula_index());
+                                                        integrator.get_quadrature_index());
   }
   else
   {

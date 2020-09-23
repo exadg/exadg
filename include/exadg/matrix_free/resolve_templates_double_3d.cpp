@@ -1,14 +1,6 @@
-/*
- * resolve_templates_double_3d.cpp
- *
- *  Created on: May 2, 2019
- *      Author: fehn
- */
+#include <deal.II/base/vectorization.h>
 
-#include <exadg/matrix_free/evaluation_template_factory.templates.h>
+#define deal_II_dimension 3
+#define deal_II_scalar_vectorized dealii::VectorizedArray<double>
 
-template struct dealii::internal::FEEvaluationFactory<3, double>;
-
-template struct dealii::internal::FEFaceEvaluationFactory<3, double>;
-
-template struct dealii::internal::CellwiseInverseMassFactory<3, double>;
+#include "resolve_templates.h"

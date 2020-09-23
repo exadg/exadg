@@ -304,7 +304,7 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
     if(operator_data.viscous_problem)
     {
-      scalar viscosity = viscous_kernel->get_viscosity_cell(integrator.get_cell_index(), q);
+      scalar viscosity = viscous_kernel->get_viscosity_cell(integrator.get_current_cell_index(), q);
       gradient_flux += viscous_kernel->get_volume_flux(gradient, viscosity);
     }
 
@@ -346,7 +346,7 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     if(operator_data.viscous_problem)
     {
       scalar average_viscosity =
-        viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
+        viscous_kernel->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q);
 
       gradient_flux =
         viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
@@ -400,7 +400,7 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
     if(operator_data.viscous_problem)
     {
       scalar average_viscosity =
-        viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
+        viscous_kernel->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q);
 
       gradient_flux +=
         viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
@@ -455,7 +455,7 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
     if(operator_data.viscous_problem)
     {
       scalar average_viscosity =
-        viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
+        viscous_kernel->get_viscosity_interior_face(integrator_m.get_current_cell_index(), q);
 
       gradient_flux +=
         viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
@@ -507,7 +507,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
     if(operator_data.viscous_problem)
     {
       scalar average_viscosity =
-        viscous_kernel->get_viscosity_interior_face(integrator_p.get_face_index(), q);
+        viscous_kernel->get_viscosity_interior_face(integrator_p.get_current_cell_index(), q);
 
       gradient_flux +=
         viscous_kernel->calculate_gradient_flux(value_p, value_m, normal_p, average_viscosity);
@@ -591,7 +591,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
                                          this->time);
 
       scalar viscosity =
-        viscous_kernel->get_viscosity_boundary_face(integrator.get_face_index(), q);
+        viscous_kernel->get_viscosity_boundary_face(integrator.get_current_cell_index(), q);
       gradient_flux +=
         viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, viscosity);
 
