@@ -13,7 +13,7 @@
 //
 // ---------------------------------------------------------------------
 
-#define FE_EVAL_FACTORY_DEGREE_MAX 15
+#define FE_EVAL_FACTORY_DEGREE_MAX EXADG_DEGREE_MAX
 
 #include <deal.II/matrix_free/evaluation_template_factory.templates.h>
 

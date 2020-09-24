@@ -128,7 +128,7 @@ struct Study
       prm.add_parameter("Degree",
                         degree,
                         "Polynomial degree of shape functions.",
-                        Patterns::Integer(1,15),
+                        Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineSpace",
                         refine_space,

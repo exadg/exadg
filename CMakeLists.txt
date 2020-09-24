@@ -159,8 +159,6 @@ SET( TARGET_SRC
      include/exadg/fluid_structure_interaction/driver.cpp
   )
 
-target_compile_definitions(${TARGET} PRIVATE "FE_EVAL_FACTORY_DEGREE_MAX=3")
-
 # Set the include directory and the name of the project
 INCLUDE_DIRECTORIES(include)
 
@@ -169,6 +167,10 @@ SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
 PROJECT(exadg)
 
 ADD_LIBRARY(exadg  ${TARGET_SRC})
+
+option(DEGREE_MAX "DEGREE_MAX" 15)
+MESSAGE("Compiling with k_max=${DEGREE_MAX}.")
+target_compile_definitions(exadg PUBLIC "EXADG_DEGREE_MAX=${DEGREE_MAX}")
 
 option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
 IF(${USE_DEAL_SPECTRUM})
