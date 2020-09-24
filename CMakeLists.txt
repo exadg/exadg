@@ -159,6 +159,8 @@ SET( TARGET_SRC
      include/exadg/fluid_structure_interaction/driver.cpp
   )
 
+target_compile_definitions(${TARGET} PRIVATE "FE_EVAL_FACTORY_DEGREE_MAX=3")
+
 # Set the include directory and the name of the project
 INCLUDE_DIRECTORIES(include)
 
