@@ -189,12 +189,12 @@ struct ParameterStudy
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
-                        Patterns::Integer(1,15),
+                        Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("DegreeMax",
                         degree_max,
                         "Maximal polynomial degree of shape functions.",
-                        Patterns::Integer(1,15),
+                        Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,

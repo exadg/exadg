@@ -115,12 +115,12 @@ struct Study
       prm.add_parameter("DegreeFluid",
                         degree_fluid,
                         "Polynomial degree of fluid (velocity).",
-                        Patterns::Integer(1,15),
+                        Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("DegreeStructure",
                         degree_structure,
                         "Polynomial degree of structural problem.",
-                        Patterns::Integer(1,15),
+                        Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineFluid",
                         refine_fluid,

@@ -13,9 +13,9 @@
 //
 // ---------------------------------------------------------------------
 
-#include <deal.II/matrix_free/evaluation_template_factory.templates.h>
+#define FE_EVAL_FACTORY_DEGREE_MAX EXADG_DEGREE_MAX
 
-#define FE_EVAL_FACTORY_DEGREE_MAX 15
+#include <deal.II/matrix_free/evaluation_template_factory.templates.h>
 
 DEAL_II_NAMESPACE_OPEN
 
