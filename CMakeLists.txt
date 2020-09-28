@@ -168,9 +168,13 @@ PROJECT(exadg)
 
 ADD_LIBRARY(exadg  ${TARGET_SRC})
 
-option(DEGREE_MAX "DEGREE_MAX" 15)
-MESSAGE("Compiling with k_max=${DEGREE_MAX}.")
-target_compile_definitions(exadg PUBLIC "EXADG_DEGREE_MAX=${DEGREE_MAX}")
+IF(NOT DEGREE_MAX)
+  MESSAGE("Compiling with k_max=15.")
+  target_compile_definitions(exadg PUBLIC "EXADG_DEGREE_MAX=15")
+ELSE()
+  MESSAGE("Compiling with k_max=${DEGREE_MAX}.")
+  target_compile_definitions(exadg PUBLIC "EXADG_DEGREE_MAX=${DEGREE_MAX}")
+ENDIF()
 
 option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
 IF(${USE_DEAL_SPECTRUM})
