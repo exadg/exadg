@@ -25,6 +25,7 @@ struct OutputDataBase
       output_interval_time(std::numeric_limits<double>::max()),
       write_surface_mesh(false),
       write_boundary_IDs(false),
+      write_grid(false),
       write_processor_id(false),
       write_higher_order(true),
       degree(1)
@@ -84,6 +85,9 @@ struct OutputDataBase
   // version of deal.II, boundaries with ID = 0 (default) are not visible, but only those with
   // ID != 0.
   bool write_boundary_IDs;
+
+  // write grid output for debug meshing
+  bool write_grid;
 
   // write processor ID to scalar field in order to visualize the
   // distribution of cells to processors

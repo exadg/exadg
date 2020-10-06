@@ -11,11 +11,12 @@
     },
     "Application": {
        	"Name": "FlowPastCylinder",
-        "TestCase": "3"
+        "TestCase": "3",
+        "CylinderType": "circular"
     },
     "Output": {
         "OutputDirectory": "output/flow_past_cylinder/",
-        "OutputName": "test",
+        "OutputName": "test_circular",
         "WriteOutput": "false"
     }
 }

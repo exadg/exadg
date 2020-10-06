@@ -18,6 +18,11 @@ namespace FlowPastCylinder
 {
 using namespace dealii;
 
+const double H   = IncNS::FlowPastCylinder::H;
+const double D   = IncNS::FlowPastCylinder::D;
+const double X_C = IncNS::FlowPastCylinder::X_C;
+const double Y_C = IncNS::FlowPastCylinder::Y_C;
+
 template<int dim>
 class VelocityBC : public Function<dim>
 {
@@ -84,11 +89,17 @@ public:
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
-     prm.enter_subsection("Application");
-       prm.add_parameter("TestCase",  test_case, "Number of test case.", Patterns::Integer(1,3));
-     prm.leave_subsection();
+    prm.enter_subsection("Application");
+     prm.add_parameter("TestCase",  test_case, "Number of test case.",
+       Patterns::Integer(1,3));
+     prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",
+       Patterns::Selection("circular|square"));
+    prm.leave_subsection();
     // clang-format on
   }
+
+  // string to read input parameter
+  std::string cylinder_type_string = "circular";
 
   // test case according to benchmark nomenclature
   unsigned int test_case = 3;
@@ -163,57 +174,43 @@ public:
   {
     (void)periodic_faces;
 
-    Point<dim> center;
-    center[0] = X_C;
-    center[1] = Y_C;
 
-    // apply this manifold for all mesh types
-    Point<dim> direction;
-    direction[dim - 1] = 1.;
-
-    static std::shared_ptr<Manifold<dim>> cylinder_manifold;
-
-    if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+    if(auto tria_fully_dist =
+         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
     {
-      cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-        dim == 2 ? static_cast<Manifold<dim> *>(new SphericalManifold<dim>(center)) :
-                   static_cast<Manifold<dim> *>(new CylindricalManifold<dim>(direction, center)));
+      const auto construction_data =
+        TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
+                                                                                             dim>(
+          [&](dealii::Triangulation<dim, dim> & tria) mutable {
+            IncNS::FlowPastCylinder::create_cylinder_grid<dim>(tria,
+                                                               n_refine_space,
+                                                               periodic_faces,
+                                                               cylinder_type_string);
+          },
+          [](dealii::Triangulation<dim, dim> & tria,
+             const MPI_Comm                    comm,
+             const unsigned int /* group_size */) {
+            // metis partitioning
+            GridTools::partition_triangulation(Utilities::MPI::n_mpi_processes(comm), tria);
+            // p4est partitioning
+            //            GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm),
+            //            tria);
+          },
+          tria_fully_dist->get_communicator(),
+          1 /* group size */);
+      tria_fully_dist->create_triangulation(construction_data);
     }
-    else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
     {
-      cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-        static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(center)));
+      IncNS::FlowPastCylinder::create_cylinder_grid<dim>(*tria,
+                                                         n_refine_space,
+                                                         periodic_faces,
+                                                         cylinder_type_string);
     }
     else
     {
-      AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
-                    MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                  ExcMessage("Specified manifold type not implemented"));
+      AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
-
-    create_triangulation(*triangulation);
-    triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
-
-    // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
-    manifold_vec.resize(manifold_ids.size());
-
-    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
-    {
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-          cell != triangulation->end();
-          ++cell)
-      {
-        if(cell->manifold_id() == manifold_ids[i])
-        {
-          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
-        }
-      }
-    }
-
-    triangulation->refine_global(n_refine_space);
   }
 
   void

@@ -51,7 +51,7 @@ write_boundary_IDs(Triangulation<dim> const & triangulation,
 
   std::string filename =
     folder + file + "_boundary_IDs" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";
-  std::ofstream output(filename.c_str());
+  std::ofstream output(filename);
 
   GridOut           grid_out;
   GridOutFlags::Vtk flags;
@@ -61,6 +61,18 @@ write_boundary_IDs(Triangulation<dim> const & triangulation,
   flags.output_only_relevant = false;
   grid_out.set_flags(flags);
   grid_out.write_vtk(triangulation, output);
+}
+
+template<int dim>
+void
+write_grid(Triangulation<dim> const & triangulation,
+           std::string const &        folder,
+           std::string const &        file)
+{
+  std::string filename = folder + file + "_grid";
+
+  GridOut grid_out;
+  grid_out.write_mesh_per_processor_as_vtu(triangulation, filename);
 }
 
 } // namespace ExaDG
