@@ -228,10 +228,16 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("TestCase", test_case, "Number of test case.", Patterns::Integer(1,3));
+      prm.add_parameter("TestCase", test_case, "Number of test case.",
+        Patterns::Integer(1,3));
+      prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",
+        Patterns::Selection("circular|square"));
     prm.leave_subsection();
     // clang-format on
   }
+
+  // string to read input parameter
+  std::string cylinder_type_string = "circular";
 
   // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
   unsigned int test_case = 3; // 1, 2 or 3
@@ -318,8 +324,11 @@ public:
     if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       param.upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
-    param.use_divergence_penalty = true;
-    param.use_continuity_penalty = true;
+    // divergence penalty
+    param.use_divergence_penalty    = true;
+    param.divergence_penalty_factor = 1.0e0;
+    param.use_continuity_penalty    = true;
+    param.continuity_penalty_factor = param.divergence_penalty_factor;
 
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -440,72 +449,6 @@ public:
     param.multigrid_data_pressure_block.coarse_problem.amg_data.data.smoother_sweeps = 1;
   }
 
-  void
-  do_create_grid(
-    Triangulation<dim> & triangulation,
-    unsigned int const   n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-      periodic_faces)
-  {
-    (void)periodic_faces;
-
-    Point<dim> center;
-    center[0] = X_C;
-    center[1] = Y_C;
-
-    Point<3> center_cyl_manifold;
-    center_cyl_manifold[0] = center[0];
-    center_cyl_manifold[1] = center[1];
-
-    // apply this manifold for all mesh types
-    Point<3> direction;
-    direction[2] = 1.;
-
-    static std::shared_ptr<Manifold<dim>> cylinder_manifold;
-
-    if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
-    {
-      cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-        dim == 2 ? static_cast<Manifold<dim> *>(new SphericalManifold<dim>(center)) :
-                   reinterpret_cast<Manifold<dim> *>(
-                     new CylindricalManifold<3>(direction, center_cyl_manifold)));
-    }
-    else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
-    {
-      cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-        static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(center)));
-    }
-    else
-    {
-      AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
-                    MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                  ExcMessage("Specified manifold type not implemented"));
-    }
-
-    create_triangulation(triangulation);
-    triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
-
-    // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
-    manifold_vec.resize(manifold_ids.size());
-
-    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
-    {
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
-          cell != triangulation.end();
-          ++cell)
-      {
-        if(cell->manifold_id() == manifold_ids[i])
-        {
-          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          triangulation.set_manifold(manifold_ids[i], *(manifold_vec[i]));
-        }
-      }
-    }
-
-    triangulation.refine_global(n_refine_space);
-  }
 
   void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
@@ -520,7 +463,7 @@ public:
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
                                                                                              dim>(
           [&](dealii::Triangulation<dim, dim> & tria) mutable {
-            do_create_grid(tria, n_refine_space, periodic_faces);
+            create_cylinder_grid<dim>(tria, n_refine_space, periodic_faces, cylinder_type_string);
           },
           [](dealii::Triangulation<dim, dim> & tria,
              const MPI_Comm                    comm,
@@ -537,7 +480,7 @@ public:
     }
     else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
     {
-      do_create_grid(*tria, n_refine_space, periodic_faces);
+      create_cylinder_grid<dim>(*tria, n_refine_space, periodic_faces, cylinder_type_string);
     }
     else
     {
@@ -593,6 +536,7 @@ public:
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.write_surface_mesh   = true;
     pp_data.output_data.write_boundary_IDs   = true;
+    pp_data.output_data.write_grid           = true;
     pp_data.output_data.degree               = degree;
 
     // lift and drag

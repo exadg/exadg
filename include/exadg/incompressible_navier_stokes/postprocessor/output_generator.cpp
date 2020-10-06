@@ -136,6 +136,13 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
                          mpi_comm);
     }
 
+    if(output_data.write_grid)
+    {
+      write_grid(dof_handler_velocity->get_triangulation(),
+                 output_data.output_folder,
+                 output_data.output_name);
+    }
+
     // processor_id
     if(output_data.write_processor_id)
     {

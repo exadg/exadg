@@ -163,13 +163,13 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
         f_lift.open(filename_lift.c_str(), std::ios::trunc);
 
         // clang-format off
-        f_drag << std::setw(precision+8) << std::left << "time t"
+        f_drag << std::setw(precision+8) << std::left << "time_t"
                << std::setw(precision+8) << std::left << "c_D(t)"
                << std::setw(precision+8) << std::left << "c_D_min"
                << std::setw(precision+8) << std::left << "c_D_max"
                << std::endl;
 
-        f_lift << std::setw(precision+8) << std::left << "time t"
+        f_lift << std::setw(precision+8) << std::left << "time_t"
                << std::setw(precision+8) << std::left << "c_L(t)"
                << std::setw(precision+8) << std::left << "c_L_min"
                << std::setw(precision+8) << std::left << "c_L_max"

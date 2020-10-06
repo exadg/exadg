@@ -8,25 +8,34 @@
 #ifndef APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 
+// boost
+#include <boost/math/special_functions/sign.hpp>
+
 // ExaDG
 #include <exadg/grid/one_sided_cylindrical_manifold.h>
 
 namespace ExaDG
 {
 using namespace dealii;
-
+namespace IncNS
+{
+namespace FlowPastCylinder
+{
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0 = 0.0;  // origin (x-coordinate)
 double const Y_0 = 0.0;  // origin (y-coordinate)
 double const L1  = 0.3;  // x-coordinate of inflow boundary (2d test cases)
 double const L2  = 2.5;  // x-coordinate of outflow boundary (=length for 3d test cases)
 double const H   = 0.41; // height of channel
-double const X_1 = L1;   // left x-coordinate of mesh block around the cylinder
-double const X_2 = 0.7;  // right x-coordinate of mesh block around the cylinder
-double const X_C = (X_2 + X_1) / 2.0; // center of cylinder (x-coordinate)
-double const Y_C = 0.2;               // center of cylinder (y-coordinate)
-double const D   = 0.1;               // cylinder diameter
-double const R   = D / 2.0;           // cylinder radius
+double const D   = 0.1;  // cylinder diameter
+double const X_C = 0.5;  // center of cylinder (x-coordinate)
+double const Y_C = 0.2;  // center of cylinder (y-coordinate)
+
+namespace CircularCylinder
+{
+double const X_1 = L1;      // left x-coordinate of mesh block around the cylinder
+double const X_2 = 0.7;     // right x-coordinate of mesh block around the cylinder
+double const R   = D / 2.0; // cylinder radius
 
 // MeshType
 // Type1: no refinement around cylinder surface (coarsest mesh has 34 elements in 2D)
@@ -51,7 +60,7 @@ MeshType const MESH_TYPE = MeshType::Type2;
 double const R_1 = 1.2 * R;
 double const R_2 = 1.7 * R;
 
-// neded for mesh type 3 with one layers of spherical cells around cylinder
+// needed for mesh type 3 with one layers of spherical cells around cylinder
 double const R_3 = 1.75 * R;
 
 // ManifoldType
@@ -103,7 +112,8 @@ set_boundary_ids(Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
+void
+create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
               ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
@@ -618,7 +628,8 @@ void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = tr
 }
 
 
-void create_triangulation(Triangulation<3> & tria)
+void
+create_triangulation(Triangulation<3> & tria)
 {
   Triangulation<2> tria_2d;
   create_triangulation(tria_2d, false);
@@ -816,6 +827,491 @@ void create_triangulation(Triangulation<3> & tria)
   set_boundary_ids<3>(tria, false);
 }
 
+template<int dim>
+void
+do_create_grid(
+  Triangulation<dim> & triangulation,
+  unsigned int const   n_refine_space,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+    periodic_faces)
+{
+  (void)periodic_faces;
+
+  Point<dim> center;
+  center[0] = X_C;
+  center[1] = Y_C;
+
+  Point<3> center_cyl_manifold;
+  center_cyl_manifold[0] = center[0];
+  center_cyl_manifold[1] = center[1];
+
+  // apply this manifold for all mesh types
+  Point<3> direction;
+  direction[2] = 1.;
+
+  static std::shared_ptr<Manifold<dim>> cylinder_manifold;
+
+  if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+  {
+    cylinder_manifold = std::shared_ptr<Manifold<dim>>(
+      dim == 2 ? static_cast<Manifold<dim> *>(new SphericalManifold<dim>(center)) :
+                 reinterpret_cast<Manifold<dim> *>(
+                   new CylindricalManifold<3>(direction, center_cyl_manifold)));
+  }
+  else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+  {
+    cylinder_manifold = std::shared_ptr<Manifold<dim>>(
+      static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(center)));
+  }
+  else
+  {
+    AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
+                  MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+                ExcMessage("Specified manifold type not implemented"));
+  }
+
+  create_triangulation(triangulation);
+  triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
+
+  // generate vector of manifolds and apply manifold to all cells that have been marked
+  static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+  manifold_vec.resize(manifold_ids.size());
+
+  for(unsigned int i = 0; i < manifold_ids.size(); ++i)
+  {
+    for(typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
+        cell != triangulation.end();
+        ++cell)
+    {
+      if(cell->manifold_id() == manifold_ids[i])
+      {
+        manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
+          new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+        triangulation.set_manifold(manifold_ids[i], *(manifold_vec[i]));
+      }
+    }
+  }
+
+  triangulation.refine_global(n_refine_space);
+} // function do_create_grid
+
+} // namespace CircularCylinder
+
+namespace SquareCylinder
+{
+double const L   = L2;            // length of 3D cylinder
+double const I_x = X_C - 0.5 * D; // position of cylinder in x-direction (bottom left corner)
+double const I_y = Y_C - 0.5 * D; // position of cylinder in y-direction (bottom left corner)
+
+// left x-coordinate of mesh block around the cylinder
+double const X_1 = L1;
+
+// shift nodes in a trapez like manner to the square cylinder
+bool const adaptive_mesh_shift = false;
+
+// = 1 for adaptive_mesh_shift == true
+// > 1 extends the region of a finer mesh to the right of the cylinder
+// (allowed only in the case adaptive_mesh_shift == false)
+unsigned int const FAC_X_2 = 2;
+
+// right x-coordinate of mesh block around the cylinder
+double const X_2 = X_C + 0.5 * D + FAC_X_2 * I_y;
+
+double const Y_1 = Y_0 + I_y; // y level of bottom of square cylinder
+double const Y_2 = Y_1 + D;   // y level of top of square cylinder
+
+// number of elements in y direction
+unsigned int const nele_y_bottom = 3;
+unsigned int const nele_y_top    = 3;
+unsigned int const nele_y_middle = 2;
+
+// number of elements in x direction
+unsigned int const nele_x_left          = 2;
+unsigned int const nele_x_right         = 10;
+unsigned int const nele_x_middle_middle = 2;
+unsigned int const nele_x_middle_left   = 3;
+unsigned int const nele_x_middle_right  = FAC_X_2 * 3;
+
+// number of elements in z direction
+unsigned int const nele_z = 5;
+
+double const h_y_2 = (H - Y_2) / nele_y_top;
+double const h_y_1 = (Y_2 - Y_1) / nele_y_middle;
+double const h_y_0 = (Y_1 - Y_0) / nele_y_bottom;
+
+double const h_x_2 = (L - X_2) / nele_x_right;
+double const h_x_1 = D / nele_x_middle_middle;
+double const h_x_0 = (X_1 - X_0) / nele_x_left;
+
+void
+create_trapezoid(Triangulation<2> &        tria,
+                 std::vector<unsigned int> ref,
+                 Point<2> const            x_0,
+                 double const              length,
+                 double const              height,
+                 double const              max_shift,
+                 double const              min_shift)
+{
+  Triangulation<2> tmp;
+
+  Point<2> x_1 = x_0 + Point<2>(length, height);
+
+  GridGenerator::subdivided_hyper_rectangle(tmp, ref, x_0, x_1, false);
+
+  for(Triangulation<2>::vertex_iterator v = tmp.begin_vertex(); v != tmp.end_vertex(); ++v)
+  {
+    Point<2> & vertex = v->vertex();
+
+    if(0 < vertex[0] && vertex[0] < length)
+      vertex = Point<2>(vertex[0] + 0.75 * length / ref[0] * vertex[0] / length, vertex[1]);
+
+    double const m = (max_shift - min_shift) / height;
+
+    double const b = max_shift - m * x_1[1];
+
+    vertex = Point<2>(vertex[0], vertex[1] + (m * vertex[1] + b) * (length - vertex[0]) / length);
+  }
+
+  tria.copy_triangulation(tmp);
+}
+
+
+template<int dim>
+void
+set_boundary_ids(Triangulation<dim> & tria)
+{
+  // Set the wall boundary and inflow to 0, cylinder boundary to 2, outflow to 1
+  for(typename Triangulation<dim>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+      ++cell)
+  {
+    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
+    {
+      if(cell->face(f)->at_boundary())
+      {
+        Point<dim> point_on_centerline;
+        point_on_centerline[0] = X_C;
+        point_on_centerline[1] = Y_C;
+        if(dim == 3)
+          point_on_centerline[dim - 1] = cell->face(f)->center()[2];
+
+        if(dim == 3 ? std::abs(cell->face(f)->center()[0] - X_0) < 1e-12 :
+                      std::abs(cell->face(f)->center()[0] - X_1) < 1e-12) // inflow
+          cell->face(f)->set_all_boundary_ids(0);
+        else if(std::abs(cell->face(f)->center()[0] - (X_0 + L)) < 1e-12) // outflow
+          cell->face(f)->set_all_boundary_ids(1);
+        else if(std::abs(cell->face(f)->center()[0] - point_on_centerline[0]) <=
+                  (0.5 * D + 1e-12) &&
+                std::abs(cell->face(f)->center()[1] - point_on_centerline[1]) <=
+                  (0.5 * D + 1e-12)) // square cylinder walls
+          cell->face(f)->set_all_boundary_ids(2);
+        else
+          cell->face(f)->set_all_boundary_ids(0); // domain walls
+      }
+    }
+  }
+}
+
+template<unsigned int dim>
+void
+create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
+{
+  Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top, middle_bottom,
+    middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
+    middle_right_bottom, right, right_bottom, right_middle, right_top, tmp;
+
+  // left
+  std::vector<unsigned int> ref_left_top    = {nele_x_left, nele_y_top};
+  std::vector<unsigned int> ref_left_bottom = {nele_x_left, nele_y_bottom};
+  std::vector<unsigned int> ref_left_middle = {nele_x_left, nele_y_middle};
+
+  // right
+  std::vector<unsigned int> ref_right_top    = {nele_x_right, nele_y_top};
+  std::vector<unsigned int> ref_right_bottom = {nele_x_right, nele_y_bottom};
+  std::vector<unsigned int> ref_right_middle = {nele_x_right, nele_y_middle};
+
+  // middle
+  std::vector<unsigned int> ref_middle_top       = {nele_x_middle_middle, nele_y_top};
+  std::vector<unsigned int> ref_middle_top_right = {nele_x_middle_right, nele_y_top};
+  std::vector<unsigned int> ref_middle_top_left  = {nele_x_middle_left, nele_y_top};
+
+  std::vector<unsigned int> ref_middle_bottom_right = {nele_x_middle_right, nele_y_bottom};
+  std::vector<unsigned int> ref_middle_bottom_left  = {nele_x_middle_left, nele_y_bottom};
+  std::vector<unsigned int> ref_middle_bottom       = {nele_x_middle_middle, nele_y_bottom};
+
+  std::vector<unsigned int> ref_middle_right = {nele_x_middle_right, nele_y_middle};
+  std::vector<unsigned int> ref_middle_left  = {nele_x_middle_left, nele_y_middle};
+
+  // left part
+  GridGenerator::subdivided_hyper_rectangle(
+    left_bottom, ref_left_bottom, Point<2>(X_0, Y_0), Point<2>(X_1, Y_1), false);
+
+  GridGenerator::subdivided_hyper_rectangle(
+    left_middle, ref_left_middle, Point<2>(X_0, Y_1), Point<2>(X_1, Y_2), false);
+
+  GridGenerator::subdivided_hyper_rectangle(
+    left_top, ref_left_top, Point<2>(X_0, Y_2), Point<2>(X_1, H), false);
+
+  // merge left triangulations
+  GridGenerator::merge_triangulations(left_bottom, left_middle, tmp);
+  GridGenerator::merge_triangulations(tmp, left_top, left);
+
+  // right part
+  GridGenerator::subdivided_hyper_rectangle(
+    right_bottom, ref_right_bottom, Point<2>(X_2, Y_0), Point<2>(L, Y_1), false);
+
+  GridGenerator::subdivided_hyper_rectangle(
+    right_middle, ref_right_middle, Point<2>(X_2, Y_1), Point<2>(L, Y_2), false);
+
+  GridGenerator::subdivided_hyper_rectangle(
+    right_top, ref_right_top, Point<2>(X_2, Y_2), Point<2>(L, H), false);
+
+  // merge right triangulations
+  GridGenerator::merge_triangulations(right_bottom, right_middle, tmp);
+  GridGenerator::merge_triangulations(tmp, right_top, right);
+
+  // middle part
+  if(!adaptive_mesh_shift)
+  {
+    // create middle bottom part
+    GridGenerator::subdivided_hyper_rectangle(middle_bottom,
+                                              ref_middle_bottom,
+                                              Point<2>(X_0 + I_x, Y_0),
+                                              Point<2>(X_0 + I_x + D, Y_1),
+                                              false);
+
+    // create middle top part
+    GridGenerator::subdivided_hyper_rectangle(
+      middle_top, ref_middle_top, Point<2>(X_0 + I_x, Y_2), Point<2>(X_0 + I_x + D, H), false);
+
+    // create middle left part
+    GridGenerator::subdivided_hyper_rectangle(
+      middle_left, ref_middle_left, Point<2>(X_1, Y_1), Point<2>(X_0 + I_x, Y_2), false);
+
+    GridGenerator::subdivided_hyper_rectangle(
+      middle_left_top, ref_middle_top_left, Point<2>(X_1, Y_2), Point<2>(X_0 + I_x, H), false);
+
+    GridGenerator::subdivided_hyper_rectangle(middle_left_bottom,
+                                              ref_middle_bottom_left,
+                                              Point<2>(X_1, Y_0),
+                                              Point<2>(X_0 + I_x, Y_1),
+                                              false);
+
+    // create middle right part
+    GridGenerator::subdivided_hyper_rectangle(
+      middle_right, ref_middle_right, Point<2>(X_0 + I_x + D, Y_1), Point<2>(X_2, Y_2), false);
+
+    GridGenerator::subdivided_hyper_rectangle(middle_right_top,
+                                              ref_middle_top_right,
+                                              Point<2>(X_0 + I_x + D, Y_2),
+                                              Point<2>(X_2, H),
+                                              false);
+
+    GridGenerator::subdivided_hyper_rectangle(middle_right_bottom,
+                                              ref_middle_bottom_right,
+                                              Point<2>(X_0 + I_x + D, Y_0),
+                                              Point<2>(X_2, Y_1),
+                                              false);
+  }
+  else
+  {
+    Triangulation<2> middle_right_right;
+
+    unsigned int nele_trapezoid = 4;
+
+    std::vector<unsigned int> ref_trapezoid_left_bottom = {nele_trapezoid, 4};
+    std::vector<unsigned int> ref_trapezoid_left_middle = {nele_trapezoid, 1};
+    std::vector<unsigned int> ref_trapezoid_left_top    = {nele_trapezoid, 3};
+
+    std::vector<unsigned int> ref_trapezoid_right_bottom = {nele_trapezoid, 4};
+    std::vector<unsigned int> ref_trapezoid_right_middle = {nele_trapezoid, 1};
+    std::vector<unsigned int> ref_trapezoid_right_top    = {nele_trapezoid, 3};
+
+    std::vector<unsigned int> ref_trapezoid_top    = {nele_trapezoid, 6};
+    std::vector<unsigned int> ref_trapezoid_bottom = {nele_trapezoid, 6};
+
+    // create middle left trapez
+    create_trapezoid(middle_left_top,
+                     ref_trapezoid_left_top,
+                     Point<2>(0, 0),
+                     I_x - X_1,
+                     3.0 * D / 8.0,
+                     H - Y_2,
+                     3.0 * D / 8.0);
+
+    Tensor<1, 2> shift_middle_left_top;
+    shift_middle_left_top[0] = X_1;
+    shift_middle_left_top[1] = Y_1 + D / 2 + D / 8;
+    GridTools::shift(shift_middle_left_top, middle_left_top);
+
+    create_trapezoid(middle_left,
+                     ref_trapezoid_left_middle,
+                     Point<2>(0, 0),
+                     I_x - X_1,
+                     1.0 * D / 8.0,
+                     3.0 * D / 8.0,
+                     0);
+
+    Tensor<1, 2> shift_middle_left;
+    shift_middle_left[0] = X_1;
+    shift_middle_left[1] = Y_1 + D / 2;
+    GridTools::shift(shift_middle_left, middle_left);
+
+    create_trapezoid(
+      middle_left_bottom, ref_trapezoid_left_bottom, Point<2>(0, 0), I_x - X_1, D / 2.0, 0, -Y_1);
+
+    Tensor<1, 2> shift_middle_left_bottom;
+    shift_middle_left_bottom[0] = X_1;
+    shift_middle_left_bottom[1] = Y_1;
+    GridTools::shift(shift_middle_left_bottom, middle_left_bottom);
+
+    // middle right trapez
+    create_trapezoid(middle_right_top,
+                     ref_trapezoid_right_top,
+                     Point<2>(0, 0),
+                     I_y,
+                     3.0 * D / 8.0,
+                     -3.0 * D / 8.0,
+                     -(H - Y_2));
+
+    Tensor<1, 2> shift_middle_right_top;
+    shift_middle_right_top[0] = I_x + D + I_y;
+    shift_middle_right_top[1] = Y_2;
+    GridTools::rotate(M_PI, middle_right_top);
+    GridTools::shift(shift_middle_right_top, middle_right_top);
+
+    create_trapezoid(middle_right,
+                     ref_trapezoid_right_middle,
+                     Point<2>(0, 0),
+                     I_y,
+                     1.0 * D / 8.0,
+                     0,
+                     -3.0 * D / 8.0);
+
+    Tensor<1, 2> shift_middle_right;
+    shift_middle_right[0] = I_x + D + I_y;
+    shift_middle_right[1] = Y_1 + D / 2 + D / 8;
+    GridTools::rotate(M_PI, middle_right);
+    GridTools::shift(shift_middle_right, middle_right);
+
+    create_trapezoid(
+      middle_right_bottom, ref_trapezoid_right_bottom, Point<2>(0, 0), I_y, D / 2.0, Y_1, 0);
+
+    Tensor<1, 2> shift_middle_right_bottom;
+    shift_middle_right_bottom[0] = I_x + D + I_y;
+    shift_middle_right_bottom[1] = Y_1 + D / 2;
+    GridTools::rotate(M_PI, middle_right_bottom);
+    GridTools::shift(shift_middle_right_bottom, middle_right_bottom);
+
+    // create top trapez
+    create_trapezoid(middle_top, ref_trapezoid_top, Point<2>(0, 0), H - Y_2, D, I_y, -(I_x - X_1));
+
+    Tensor<1, 2> shift_middle_top;
+    shift_middle_top[0] = I_x;
+    shift_middle_top[1] = H;
+    GridTools::rotate(-M_PI / 2.0, middle_top);
+    GridTools::shift(shift_middle_top, middle_top);
+
+    // create bottom trapez
+    create_trapezoid(
+      middle_bottom, ref_trapezoid_bottom, Point<2>(0, 0), Y_1, D, I_y, -(I_x - X_1));
+
+    Tensor<1, 2> shift_middle_bottom;
+    shift_middle_bottom[0] = I_x + D;
+    shift_middle_bottom[1] = 0;
+    GridTools::rotate(M_PI / 2.0, middle_bottom);
+    GridTools::shift(shift_middle_bottom, middle_bottom);
+  }
+
+  // merge middle left triangulations
+  GridGenerator::merge_triangulations(middle_left, middle_left_top, tmp);
+  GridGenerator::merge_triangulations(tmp, middle_left_bottom, middle_left);
+
+  // merge middle right triangulations
+  GridGenerator::merge_triangulations(middle_right, middle_right_top, tmp);
+  GridGenerator::merge_triangulations(tmp, middle_right_bottom, middle_right);
+
+
+  // merge middle triangulations
+  GridGenerator::merge_triangulations({&middle_bottom, &middle_left, &middle_top, &middle_right},
+                                      middle);
+
+  // merge middle and right together
+  GridGenerator::merge_triangulations(right, middle, tmp);
+
+  // merge left to middle and right in 3D case
+  if(is_2d)
+    triangulation.copy_triangulation(tmp);
+  else
+    GridGenerator::merge_triangulations(tmp, left, triangulation);
+}
+
+template<unsigned int dim>
+void
+create_triangulation(Triangulation<3> & triangulation)
+{
+  Triangulation<2> tria_2D;
+  create_triangulation<2>(tria_2D, false);
+
+  GridGenerator::extrude_triangulation(tria_2D, nele_z, H, triangulation);
+}
+
+template<unsigned int dim>
+void
+do_create_grid(Triangulation<dim> & triangulation, unsigned int n_global_refinements)
+{
+  create_triangulation<dim>(triangulation);
+
+  // set boundary ids
+  set_boundary_ids<dim>(triangulation);
+
+  triangulation.refine_global(n_global_refinements);
+}
+
+} // namespace SquareCylinder
+
+enum CylinderType
+{
+  circular,
+  square
+} cylinder_type;
+
+void
+select_cylinder_type(std::string cylinder_type_string)
+{
+  if(cylinder_type_string == "circular")
+    cylinder_type = circular;
+  else if(cylinder_type_string == "square")
+    cylinder_type = square;
+  else
+    AssertThrow(false, ExcNotImplemented());
+}
+
+template<unsigned int dim>
+void
+create_cylinder_grid(
+  Triangulation<dim> & triangulation,
+  unsigned int const   n_refine_space,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+              periodic_faces,
+  std::string cylinder_type_string)
+{
+  select_cylinder_type(cylinder_type_string);
+
+  switch(cylinder_type)
+  {
+    case circular:
+      CircularCylinder::do_create_grid<dim>(triangulation, n_refine_space, periodic_faces);
+      break;
+    case square:
+      SquareCylinder::do_create_grid<dim>(triangulation, n_refine_space);
+      break;
+    default:
+      AssertThrow(false, ExcNotImplemented());
+  }
+}
+
+} // namespace FlowPastCylinder
+} // namespace IncNS
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_ */
