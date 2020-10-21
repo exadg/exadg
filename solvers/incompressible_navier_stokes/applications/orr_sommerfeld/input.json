@@ -14,7 +14,7 @@
     },
     "Output": {
         "OutputDirectory": "output/orr_sommerfeld/",
-        "OutputName": "Re7500_l5_k2_div_conti",
+        "OutputName": "Re7500",
         "WriteOutput": "false"
     }
 }
