@@ -16,7 +16,7 @@
     },
     "Output": {
         "OutputDirectory": "output/flow_past_cylinder/",
-        "OutputName": "l0_k2",
+        "OutputName": "2d_3",
         "WriteOutput": "false"
     }
 }
