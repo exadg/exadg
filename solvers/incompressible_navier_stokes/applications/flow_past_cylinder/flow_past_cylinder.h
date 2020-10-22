@@ -228,10 +228,9 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("TestCase", test_case, "Number of test case.",
-        Patterns::Integer(1,3));
-      prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",
-        Patterns::Selection("circular|square"));
+      prm.add_parameter("TestCase",     test_case,            "Number of test case.", Patterns::Integer(1,3));
+      prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",    Patterns::Selection("circular|square"));
+      prm.add_parameter("CFL",          cfl_number,           "CFL number.",          Patterns::Double(0.0, 1.0e6), true);
     prm.leave_subsection();
     // clang-format on
   }
@@ -247,13 +246,15 @@ public:
 
   double const viscosity = 1.e-3;
 
+  double cfl_number = 1.0;
+
   // start and end time
   // use a large value for test_case = 1 (steady problem)
   // in order to not stop pseudo-timestepping approach before having converged
   double const start_time = 0.0;
   double const end_time   = (test_case == 1) ? 1000.0 : 8.0;
 
-  unsigned int refine_level;
+  unsigned int refine_level = 0;
 
   // superimpose random perturbations at inflow
   bool const use_perturbation = false;
@@ -273,8 +274,8 @@ public:
   double const ABS_TOL = 1.e-12;
   double const REL_TOL = 1.e-6;
 
-  double const ABS_TOL_LINEAR = ABS_TOL;
-  double const REL_TOL_LINEAR = REL_TOL;
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 
   void
   set_input_parameters(InputParameters & param)
@@ -303,11 +304,11 @@ public:
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.adaptive_time_stepping          = true;
     param.max_velocity                    = Um;
-    param.cfl                             = 0.35;
+    param.cfl                             = cfl_number;
     param.cfl_oif                         = param.cfl;
     param.cfl_exponent_fe_degree_velocity = 1.5;
     param.time_step_size                  = 1.0e-3;
-    param.time_step_size_max              = 1.0e-3;
+    param.time_step_size_max              = 1.0e-2;
 
     // output of solver information
     param.solver_info_data.interval_time = (param.end_time - param.start_time) / 8.0;
@@ -381,26 +382,34 @@ public:
 
     // PRESSURE-CORRECTION SCHEME
 
+    // formulation
+    param.order_pressure_extrapolation = 1;
+    param.rotational_formulation       = true;
+
     // momentum step
 
     // Newton solver
     param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_momentum                  = SolverMomentum::CG; // FGMRES;
-    param.solver_data_momentum             = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
-    param.preconditioner_momentum          = MomentumPreconditioner::InverseMassMatrix;
-    param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
-    param.multigrid_data_momentum.type     = MultigridType::phcMG;
-    param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    param.solver_momentum      = SolverMomentum::FGMRES;
+    param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+
+    param.update_preconditioner_momentum                   = true;
+    param.update_preconditioner_momentum_every_newton_iter = 10;
+    param.update_preconditioner_momentum_every_time_steps  = 10;
+
+    param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
+    param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
+    param.multigrid_data_momentum.type     = MultigridType::phMG;
+    param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+    param.multigrid_data_momentum.smoother_data.preconditioner =
+      PreconditionerSmoother::BlockJacobi;
+    param.multigrid_data_momentum.smoother_data.iterations        = 1;
+    param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
+    param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
     param.multigrid_data_momentum.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
-    param.update_preconditioner_momentum = false;
-
-    // formulation
-    param.order_pressure_extrapolation = 1;
-    param.rotational_formulation       = true;
-
+      MultigridCoarseGridPreconditioner::BlockJacobi;
 
     // COUPLED NAVIER-STOKES SOLVER
 
@@ -411,38 +420,31 @@ public:
     param.solver_coupled      = SolverCoupled::FGMRES;
     param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
 
-    param.update_preconditioner_coupled = false;
+    param.update_preconditioner_coupled                   = true;
+    param.update_preconditioner_coupled_every_newton_iter = 10;
+    param.update_preconditioner_coupled_every_time_steps  = 10;
 
     // preconditioning linear solver
     param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
     // preconditioner velocity/momentum block
-    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
-    param.multigrid_data_velocity_block.type     = MultigridType::phcMG;
-    param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev;
+    param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+    param.multigrid_operator_type_velocity_block =
+      MultigridOperatorType::ReactionConvectionDiffusion;
+    param.multigrid_data_velocity_block.type                   = MultigridType::phMG;
+    param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi;
     param.multigrid_data_velocity_block.smoother_data.preconditioner =
-      PreconditionerSmoother::PointJacobi;
-    param.multigrid_data_velocity_block.smoother_data.iterations = 5;
-    param.multigrid_data_velocity_block.coarse_problem.solver    = MultigridCoarseGridSolver::CG;
+      PreconditionerSmoother::BlockJacobi;
+    param.multigrid_data_velocity_block.smoother_data.iterations        = 1;
+    param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
+    param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
     param.multigrid_data_velocity_block.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data_velocity_block.coarse_problem.solver_data.rel_tol           = 1.e-3;
-    param.multigrid_data_velocity_block.coarse_problem.amg_data.data.smoother_type   = "Chebyshev";
-    param.multigrid_data_velocity_block.coarse_problem.amg_data.data.smoother_sweeps = 1;
+      MultigridCoarseGridPreconditioner::BlockJacobi;
 
     // preconditioner Schur-complement block
     param.preconditioner_pressure_block =
       SchurComplementPreconditioner::PressureConvectionDiffusion;
-    param.discretization_of_laplacian        = DiscretizationOfLaplacian::Classical;
     param.multigrid_data_pressure_block.type = MultigridType::cphMG;
-    param.multigrid_data_pressure_block.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev; // CG;
-    //  param.multigrid_data_pressure_block.coarse_problem.preconditioner =
-    //  MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data_pressure_block.coarse_problem.solver_data.rel_tol           = 1.e-3;
-    param.multigrid_data_pressure_block.coarse_problem.amg_data.data.smoother_type   = "Chebyshev";
-    param.multigrid_data_pressure_block.coarse_problem.amg_data.data.smoother_sweeps = 1;
   }
 
 

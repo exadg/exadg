@@ -12,7 +12,8 @@
     "Application": {
        	"Name": "FlowPastCylinder",
         "TestCase": "3",
-        "CylinderType": "circular"
+        "CylinderType": "circular",
+        "CFL": "0.35"
     },
     "Output": {
         "OutputDirectory": "output/flow_past_cylinder/",
