@@ -50,7 +50,7 @@ public:
     double const factor = 0.5;
 
     double result = 0.0;
-    if(true)
+    if(false) // only random perturbations
     {
       if(component == 0)
       {
@@ -61,7 +61,7 @@ public:
           result = 0.0;
       }
     }
-    else
+    else // random perturbations and vortices
     {
       if(component == 0)
       {
@@ -142,32 +142,42 @@ public:
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
-    unsigned int const n_points = 101;
-    inflow_data_storage.reset(new InflowDataStorage<dim>(n_points));
+    inflow_data_storage.reset(new InflowDataStorage<dim>(n_points_inflow));
   }
 
   // consider a friction Reynolds number of Re_tau = u_tau * H / nu = 290
   // and body force f = tau_w/H with tau_w = u_tau^2.
   double const viscosity = 1.5268e-5;
 
-  // estimate the maximum velocity
-  double const max_velocity = 2.0;
-
   // precursor simulation: data structures for storage of inflow data
   std::shared_ptr<InflowDataStorage<dim>> inflow_data_storage;
+
+  // number of points for inflow boundary condition
+  unsigned int const n_points_inflow = 101;
 
   unsigned int const additional_refinements_precursor = 0;
 
   // start and end time
-  double const start_time = 0.0;
-  double const end_time   = 6.0;
+  double const Re_H                 = 5540.0;
+  double const centerline_velocity  = Re_H * viscosity / Geometry::H;
+  double const characteristic_time  = Geometry::H / centerline_velocity;
+  double const start_time           = 0.0;
+  double const precursor_start_time = -300.0 * characteristic_time;
+  double const end_time             = 300.0 * characteristic_time;
 
   // postprocessing
 
   // sampling of statistical results
-  double const       sample_start_time      = 2.0;
+  double const       sample_start_time      = 100.0 * characteristic_time;
   unsigned int const sample_every_timesteps = 10;
   unsigned int const n_points_per_line      = 101;
+
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-3;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
 
   /*
    *  Most of the input parameters are the same for both domains, so we write
@@ -183,15 +193,18 @@ public:
     param.problem_type                   = ProblemType::Unsteady;
     param.equation_type                  = EquationType::NavierStokes;
     param.use_outflow_bc_convective_term = true;
-    param.formulation_viscous_term       = FormulationViscousTerm::DivergenceFormulation;
-    param.formulation_convective_term    = FormulationConvectiveTerm::ConvectiveFormulation;
+    param.formulation_viscous_term       = FormulationViscousTerm::LaplaceFormulation;
+    param.formulation_convective_term    = FormulationConvectiveTerm::DivergenceFormulation;
     param.right_hand_side                = true;
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = start_time;
-    param.end_time   = end_time;
-    param.viscosity  = viscosity;
+    if(is_precursor)
+      param.start_time = precursor_start_time;
+    else
+      param.start_time = start_time;
+    param.end_time  = end_time;
+    param.viscosity = viscosity;
 
 
     // TEMPORAL DISCRETIZATION
@@ -199,13 +212,14 @@ public:
     param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
+    param.order_time_integrator           = 2;
+    param.start_with_low_order            = true;
     param.adaptive_time_stepping          = true;
-    param.max_velocity                    = max_velocity;
-    param.cfl                             = 0.4; // 0.6;
+    param.max_velocity                    = centerline_velocity;
+    param.cfl                             = 0.4;
     param.cfl_exponent_fe_degree_velocity = 1.5;
     param.time_step_size                  = 1.0e-1;
-    param.order_time_integrator           = 2; // 1; // 2; // 3;
-    param.start_with_low_order            = true;
+    param.order_time_integrator           = 2;
 
     // output of solver information
     param.solver_info_data.interval_time = (end_time - start_time) / 100;
@@ -221,10 +235,14 @@ public:
 
     // variant Direct allows to use larger time step
     // sizes due to CFL condition at inflow boundary
-    param.type_dirichlet_bc_convective = TypeDirichletBCs::Direct; // Mirror;
+    param.type_dirichlet_bc_convective = TypeDirichletBCs::Mirror;
 
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+
+    // velocity pressure coupling terms
+    param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+    param.divu_formulation  = FormulationVelocityDivergenceTerm::Weak;
 
     // div-div and continuity penalty
     param.use_divergence_penalty                     = true;
@@ -232,8 +250,8 @@ public:
     param.use_continuity_penalty                     = true;
     param.continuity_penalty_factor                  = param.divergence_penalty_factor;
     param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
-    param.continuity_penalty_use_boundary_data       = true;
     param.apply_penalty_terms_in_postprocessing_step = true;
+    param.continuity_penalty_use_boundary_data       = true;
 
     // TURBULENCE
     param.use_turbulence_model = false;
@@ -245,6 +263,9 @@ public:
     param.turbulence_model_constant = 1.35;
 
     // PROJECTION METHODS
+
+    // formulation
+    param.store_previous_boundary_values = true;
 
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
@@ -259,13 +280,19 @@ public:
     param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::PointJacobi;
 
+    // pressure Poisson equation
+    param.solver_pressure_poisson              = SolverPressurePoisson::CG;
+    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
+    param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
+    param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
+    param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
+
     // projection step
-    param.solver_projection = SolverProjection::CG;
-    param.preconditioner_projection =
-      PreconditionerProjection::InverseMassMatrix; // BlockJacobi; //PointJacobi;
-                                                   // //InverseMassMatrix;
-    param.update_preconditioner_projection = true;
-    param.solver_data_projection           = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_projection         = SolverProjection::CG;
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -276,8 +303,8 @@ public:
 
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // GeometricMultigrid;
-    param.solver_data_viscous    = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -289,37 +316,43 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    param.update_preconditioner_momentum = false;
+    param.solver_momentum = SolverMomentum::GMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
 
-    param.solver_momentum         = SolverMomentum::GMRES;
     param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-
 
     // COUPLED NAVIER-STOKES SOLVER
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled      = SolverCoupled::GMRES; // GMRES; //FGMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_coupled = SolverCoupled::GMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_coupled = SolverData(1e3, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      param.solver_data_coupled = SolverData(1e3, ABS_TOL, REL_TOL, 100);
 
     // preconditioning linear solver
-    param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
-    param.update_preconditioner_coupled = false;
+    param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
     // preconditioner velocity/momentum block
     param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
     // preconditioner Schur-complement block
-    param.preconditioner_pressure_block =
-      SchurComplementPreconditioner::CahouetChabard; // PressureConvectionDiffusion;
-    param.discretization_of_laplacian = DiscretizationOfLaplacian::Classical;
+    param.preconditioner_pressure_block      = SchurComplementPreconditioner::CahouetChabard;
+    param.discretization_of_laplacian        = DiscretizationOfLaplacian::Classical;
+    param.multigrid_data_pressure_block.type = MultigridType::cphMG;
+    param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    param.multigrid_data_pressure_block.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
   }
 
   void
@@ -407,8 +440,11 @@ public:
   void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
-    field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>(
-      max_velocity, Geometry::LENGTH_CHANNEL, Geometry::HEIGHT_CHANNEL, Geometry::WIDTH_CHANNEL));
+    field_functions->initial_solution_velocity.reset(
+      new InitialSolutionVelocity<dim>(centerline_velocity,
+                                       Geometry::LENGTH_CHANNEL,
+                                       Geometry::HEIGHT_CHANNEL,
+                                       Geometry::WIDTH_CHANNEL));
     //  field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -418,8 +454,11 @@ public:
   void
   set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
-    field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>(
-      max_velocity, Geometry::LENGTH_CHANNEL, Geometry::HEIGHT_CHANNEL, Geometry::WIDTH_CHANNEL));
+    field_functions->initial_solution_velocity.reset(
+      new InitialSolutionVelocity<dim>(centerline_velocity,
+                                       Geometry::LENGTH_CHANNEL,
+                                       Geometry::HEIGHT_CHANNEL,
+                                       Geometry::WIDTH_CHANNEL));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new RightHandSide<dim>());
@@ -442,6 +481,7 @@ public:
     pp_data.output_data.write_boundary_IDs   = true;
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_higher_order   = false;
 
     PostProcessorDataBFS<dim> pp_data_bfs;
     pp_data_bfs.pp_data = pp_data;
@@ -592,28 +632,40 @@ public:
     // set the quantities that we want to compute along the lines
     vel_0->quantities.push_back(quantity_velocity);
     vel_0->quantities.push_back(quantity_pressure);
+    vel_0->quantities.push_back(quantity_reynolds);
     vel_1->quantities.push_back(quantity_velocity);
     vel_1->quantities.push_back(quantity_pressure);
+    vel_1->quantities.push_back(quantity_reynolds);
     vel_2->quantities.push_back(quantity_velocity);
     vel_2->quantities.push_back(quantity_pressure);
+    vel_2->quantities.push_back(quantity_reynolds);
     vel_3->quantities.push_back(quantity_velocity);
     vel_3->quantities.push_back(quantity_pressure);
+    vel_3->quantities.push_back(quantity_reynolds);
     vel_4->quantities.push_back(quantity_velocity);
     vel_4->quantities.push_back(quantity_pressure);
+    vel_4->quantities.push_back(quantity_reynolds);
     vel_5->quantities.push_back(quantity_velocity);
     vel_5->quantities.push_back(quantity_pressure);
+    vel_5->quantities.push_back(quantity_reynolds);
     vel_6->quantities.push_back(quantity_velocity);
     vel_6->quantities.push_back(quantity_pressure);
+    vel_6->quantities.push_back(quantity_reynolds);
     vel_7->quantities.push_back(quantity_velocity);
     vel_7->quantities.push_back(quantity_pressure);
+    vel_7->quantities.push_back(quantity_reynolds);
     vel_8->quantities.push_back(quantity_velocity);
     vel_8->quantities.push_back(quantity_pressure);
+    vel_8->quantities.push_back(quantity_reynolds);
     vel_9->quantities.push_back(quantity_velocity);
     vel_9->quantities.push_back(quantity_pressure);
+    vel_9->quantities.push_back(quantity_reynolds);
     vel_10->quantities.push_back(quantity_velocity);
     vel_10->quantities.push_back(quantity_pressure);
+    vel_10->quantities.push_back(quantity_reynolds);
     vel_11->quantities.push_back(quantity_velocity);
     vel_11->quantities.push_back(quantity_pressure);
+    vel_11->quantities.push_back(quantity_reynolds);
     Cp_1->quantities.push_back(quantity_pressure);
     Cp_1->quantities.push_back(quantity_pressure_coeff);
     Cp_2->quantities.push_back(quantity_pressure);
@@ -676,6 +728,7 @@ public:
     pp_data.output_data.write_boundary_IDs   = true;
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_higher_order   = false;
 
     PostProcessorDataBFS<dim> pp_data_bfs;
     pp_data_bfs.pp_data = pp_data;
