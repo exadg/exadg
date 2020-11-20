@@ -139,7 +139,8 @@ InputParameters::check_input_parameters()
   // Set the diffusivity whenever the diffusive term is involved.
   if(equation_type == EquationType::Diffusion || equation_type == EquationType::ConvectionDiffusion)
   {
-    AssertThrow(diffusivity > (0.0 + 1.0e-12), ExcMessage("parameter must be defined"));
+    AssertThrow(diffusivity > (0.0 - std::numeric_limits<double>::epsilon()),
+                ExcMessage("parameter must be defined"));
   }
 
   // TEMPORAL DISCRETIZATION
