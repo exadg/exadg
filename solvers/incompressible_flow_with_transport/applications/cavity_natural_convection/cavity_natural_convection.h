@@ -57,7 +57,7 @@ public:
   bool const   adaptive_time_stepping = true;
 
   // vtu output
-  double const output_interval_time = (end_time - start_time) / 1000.0;
+  double const output_interval_time = (end_time - start_time) / 100.0;
 
   // restart
   bool const   write_restart         = false;
