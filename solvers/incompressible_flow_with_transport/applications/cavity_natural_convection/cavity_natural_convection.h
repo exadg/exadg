@@ -82,7 +82,7 @@ public:
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     param.ale_formulation             = ALE;
     param.right_hand_side             = true;
     param.boussinesq_term             = true;
@@ -131,7 +131,7 @@ public:
 
     // div-div and continuity penalty
     param.use_divergence_penalty                     = true;
-    param.divergence_penalty_factor                  = 1.0;
+    param.divergence_penalty_factor                  = 1.0e0;
     param.use_continuity_penalty                     = true;
     param.continuity_penalty_factor                  = param.divergence_penalty_factor;
     param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
@@ -296,7 +296,7 @@ public:
 
     // NUMERICAL PARAMETERS
     param.use_combined_operator = true;
-    param.use_overintegration   = false;
+    param.use_overintegration   = true;
   }
 
   void
