@@ -54,7 +54,8 @@ public:
 
     calculate_penalty_parameter(matrix_free, dof_index);
 
-    AssertThrow(data.diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
+    AssertThrow(data.diffusivity > (0.0 - std::numeric_limits<double>::epsilon()),
+                ExcMessage("Diffusivity is not set!"));
   }
 
   void

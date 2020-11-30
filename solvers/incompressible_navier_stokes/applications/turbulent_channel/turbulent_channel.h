@@ -40,10 +40,11 @@ double const MAX_VELOCITY = 18.3;
 const double CHARACTERISTIC_TIME = DIMENSIONS_X1 / MAX_VELOCITY;
 
 double const START_TIME = 0.0;
-double const END_TIME   = 200.0 * CHARACTERISTIC_TIME; // 50.0;
+double const END_TIME   = 200.0 * CHARACTERISTIC_TIME;
 
-double const SAMPLE_START_TIME = 100.0 * CHARACTERISTIC_TIME; // 30.0;
-double const SAMPLE_END_TIME   = END_TIME;
+double const SAMPLE_START_TIME       = 100.0 * CHARACTERISTIC_TIME;
+double const SAMPLE_END_TIME         = END_TIME;
+unsigned int SAMPLE_EVERY_TIME_STEPS = 10;
 
 // use a negative GRID_STRETCH_FAC to deactivate grid stretching
 const double GRID_STRETCH_FAC = 1.8;
@@ -232,14 +233,22 @@ public:
     prm.parse_input(input_file, "", true, true);
   }
 
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-3;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
+
   void
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.problem_type             = ProblemType::Unsteady;
-    param.equation_type            = EquationType::NavierStokes;
-    param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-    param.right_hand_side          = true;
+    param.problem_type                = ProblemType::Unsteady;
+    param.equation_type               = EquationType::NavierStokes;
+    param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
+    param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+    param.right_hand_side             = true;
 
 
     // PHYSICAL QUANTITIES
@@ -253,16 +262,17 @@ public:
     param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
+    param.order_time_integrator           = 2;
+    param.start_with_low_order            = true;
     param.adaptive_time_stepping          = true;
     param.max_velocity                    = MAX_VELOCITY;
-    param.cfl                             = 0.4;
+    param.cfl                             = 0.3;
     param.cfl_exponent_fe_degree_velocity = 1.5;
     param.time_step_size                  = 1.0e-1;
-    param.order_time_integrator           = 2; // 1; // 2; // 3;
-    param.start_with_low_order            = true;
 
     // output of solver information
-    param.solver_info_data.interval_time = CHARACTERISTIC_TIME;
+    param.solver_info_data.interval_time       = CHARACTERISTIC_TIME;
+    param.solver_info_data.interval_time_steps = 1;
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type = TriangulationType::Distributed;
@@ -270,10 +280,25 @@ public:
     param.mapping            = MappingType::Isoparametric;
 
     // convective term
-    param.upwind_factor = 0.5;
+    if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+      param.upwind_factor = 0.5;
 
     // viscous term
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+
+    // velocity pressure coupling terms
+    param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+    param.divu_formulation  = FormulationVelocityDivergenceTerm::Weak;
+
+    // div-div and continuity penalty
+    param.use_divergence_penalty                     = true;
+    param.divergence_penalty_factor                  = 1.0e0;
+    param.use_continuity_penalty                     = true;
+    param.continuity_penalty_factor                  = param.divergence_penalty_factor;
+    param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
+    param.apply_penalty_terms_in_postprocessing_step = true;
+    param.continuity_penalty_use_boundary_data       = true;
+
 
     // TURBULENCE
     param.use_turbulence_model = false;
@@ -287,17 +312,15 @@ public:
     // PROJECTION METHODS
 
     // pressure Poisson equation
-    param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-6, 100);
-    param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+    param.solver_pressure_poisson              = SolverPressurePoisson::CG;
+    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
+    param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
+    param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
 
     // projection step
-    param.solver_projection      = SolverProjection::CG;
-    param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
-    param.preconditioner_projection =
-      PreconditionerProjection::InverseMassMatrix; // BlockJacobi; //PointJacobi;
-                                                   // //InverseMassMatrix;
-    param.update_preconditioner_projection = true;
+    param.solver_projection         = SolverProjection::CG;
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -308,8 +331,8 @@ public:
 
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
+    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
     // PRESSURE-CORRECTION SCHEME
 
@@ -320,42 +343,40 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_momentum                = SolverMomentum::GMRES;
-    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-6, 100);
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-    param.update_preconditioner_momentum = false;
+    param.solver_momentum = SolverMomentum::GMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+
+    param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
 
     // COUPLED NAVIER-STOKES SOLVER
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled      = SolverCoupled::GMRES; // GMRES; //FGMRES;
-    param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
+    param.solver_coupled = SolverCoupled::GMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_coupled = SolverData(1e3, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      param.solver_data_coupled = SolverData(1e3, ABS_TOL, REL_TOL, 100);
 
     // preconditioning linear solver
-    param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
-    param.update_preconditioner_coupled = false;
+    param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
     // preconditioner velocity/momentum block
-    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; // Multigrid;
-    param.multigrid_data_velocity_block.smoother_data.smoother =
-      MultigridSmoother::Jacobi; // Jacobi; //Chebyshev; //GMRES;
-    param.multigrid_data_velocity_block.smoother_data.preconditioner =
-      PreconditionerSmoother::BlockJacobi; // PointJacobi; //BlockJacobi;
-    param.multigrid_data_velocity_block.smoother_data.iterations        = 4;
-    param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
-    param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
     // preconditioner Schur-complement block
-    param.preconditioner_pressure_block =
-      SchurComplementPreconditioner::CahouetChabard; // PressureConvectionDiffusion;
-    param.discretization_of_laplacian = DiscretizationOfLaplacian::Classical;
+    param.preconditioner_pressure_block      = SchurComplementPreconditioner::CahouetChabard;
+    param.discretization_of_laplacian        = DiscretizationOfLaplacian::Classical;
+    param.multigrid_data_pressure_block.type = MultigridType::cphMG;
   }
 
   void
@@ -439,15 +460,14 @@ public:
     pp_data.output_data.output_folder        = this->output_directory + "vtu/";
     pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = START_TIME;
-    pp_data.output_data.output_interval_time = 1.0;
-    pp_data.output_data.write_divergence     = true;
+    pp_data.output_data.output_interval_time = 1.0 * CHARACTERISTIC_TIME;
     pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
     // calculate div and mass error
     pp_data.mass_data.calculate_error         = false; // true;
     pp_data.mass_data.start_time              = START_TIME;
-    pp_data.mass_data.sample_every_time_steps = 1e0; // 1e2;
+    pp_data.mass_data.sample_every_time_steps = 1e0;
     pp_data.mass_data.filename_prefix         = this->output_directory + this->output_name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
@@ -459,7 +479,7 @@ public:
     pp_data_turb_ch.turb_ch_data.cells_are_stretched    = true;
     pp_data_turb_ch.turb_ch_data.sample_start_time      = SAMPLE_START_TIME;
     pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
-    pp_data_turb_ch.turb_ch_data.sample_every_timesteps = 10;
+    pp_data_turb_ch.turb_ch_data.sample_every_timesteps = SAMPLE_EVERY_TIME_STEPS;
     pp_data_turb_ch.turb_ch_data.viscosity              = VISCOSITY;
     pp_data_turb_ch.turb_ch_data.filename_prefix = this->output_directory + this->output_name;
 

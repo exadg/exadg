@@ -122,10 +122,15 @@ public:
     // parse application-specific parameters
     ParameterHandler prm;
     this->add_parameters(prm);
+    // clang-format off
+    prm.enter_subsection("Application");
+      prm.add_parameter("Viscosity", viscosity, "Viscosity.", Patterns::Double(1.e-10, 1.e10), true);
+    prm.leave_subsection();
+    // clang-format on
     prm.parse_input(input_file, "", true, true);
   }
 
-  double const viscosity = 1.0e-5;
+  double viscosity = 1.0e0;
 
   double const start_time = 0.0;
   double const end_time   = 1.0e4;
@@ -175,16 +180,16 @@ public:
     param.IP_factor_viscous      = 1.0e0;
 
     // pressure level is undefined
-    param.adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue;
+    param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalMeanValue;
 
     // div-div and continuity penalty
-    param.use_divergence_penalty               = true;
-    param.divergence_penalty_factor            = 1.0e0;
-    param.use_continuity_penalty               = true;
-    param.continuity_penalty_factor            = param.divergence_penalty_factor;
-    param.continuity_penalty_use_boundary_data = true;
-    param.continuity_penalty_components        = ContinuityPenaltyComponents::Normal;
-    param.type_penalty_parameter               = TypePenaltyParameter::ViscousAndConvectiveTerms;
+    param.use_divergence_penalty                     = true;
+    param.divergence_penalty_factor                  = 1.0e0;
+    param.use_continuity_penalty                     = true;
+    param.continuity_penalty_factor                  = param.divergence_penalty_factor;
+    param.continuity_penalty_use_boundary_data       = true;
+    param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
+    param.type_penalty_parameter                     = TypePenaltyParameter::ConvectiveTerm;
     param.apply_penalty_terms_in_postprocessing_step = false;
 
     // PROJECTION METHODS
@@ -235,7 +240,7 @@ public:
     param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
     // preconditioner velocity/momentum block
-    param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
+    param.preconditioner_velocity_block          = MomentumPreconditioner::Multigrid;
     param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
     param.multigrid_data_velocity_block.type     = MultigridType::phMG;
     param.multigrid_data_velocity_block.smoother_data.smoother =
@@ -287,10 +292,10 @@ public:
   void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
-    //  field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-    //  field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+    field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
+    //    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    //    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
     field_functions->right_hand_side.reset(new RightHandSide<dim>(viscosity));
   }

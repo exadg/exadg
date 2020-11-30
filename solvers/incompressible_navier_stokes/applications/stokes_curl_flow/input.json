@@ -10,7 +10,8 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-       	"Name": "StokesCurlFlow"
+       	"Name": "StokesCurlFlow",
+       	"Viscosity": "1.e-5"
     },
     "Output": {
         "OutputDirectory": "output/stokes_curl_flow/",

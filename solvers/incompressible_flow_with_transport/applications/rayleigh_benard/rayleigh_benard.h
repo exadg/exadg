@@ -20,16 +20,26 @@ template<int dim>
 class TemperatureBC : public Function<dim>
 {
 public:
-  TemperatureBC(double const T_ref, double const delta_T, double const length)
-    : Function<dim>(1, 0.0), T_ref(T_ref), delta_T(delta_T), length(length)
+  TemperatureBC(double const T_ref,
+                double const delta_T,
+                double const length,
+                double const characteristic_time)
+    : Function<dim>(1, 0.0),
+      T_ref(T_ref),
+      delta_T(delta_T),
+      length(length),
+      characteristic_time(characteristic_time)
   {
   }
 
   double
   value(const Point<dim> & p, const unsigned int /*component = 0*/) const
   {
-    double perturbation =
-      0.25 * delta_T * std::pow(std::sin(numbers::PI * p[0] / (length / 4.)), 2.0);
+    double       t           = this->get_time();
+    double const time_factor = std::max(0.0, 1.0 - t / characteristic_time);
+
+    double perturbation = time_factor;
+    perturbation *= 0.25 * delta_T * std::pow(std::sin(numbers::PI * p[0] / (length / 4.)), 2.0);
     if(dim == 3)
       perturbation *= std::pow(std::sin(numbers::PI * p[2] / (length / 4.)), 2.0);
 
@@ -37,7 +47,7 @@ public:
   }
 
 private:
-  double const T_ref, delta_T, length;
+  double const T_ref, delta_T, length, characteristic_time;
 };
 
 template<int dim, typename Number>
@@ -57,7 +67,7 @@ public:
   double const H = 1.0;
 
   double const Prandtl = 1.0;
-  double const Re      = 1.e5;
+  double const Re      = std::sqrt(1.0e8);
   double const Ra      = Re * Re * Prandtl;
   double const g       = 10.0;
   double const T_ref   = 0.0;
@@ -70,12 +80,12 @@ public:
   // u^2 = g * beta * Delta_T * h
   double const delta_T = std::pow(U, 2.0) / beta / g / H;
 
-  double const start_time = 0.0;
-  double const end_time   = 50.0;
+  double const start_time          = 0.0;
+  double const characteristic_time = H / U;
+  double const end_time            = 200.0 * characteristic_time;
 
   // time stepping
-  double const CFL_OIF                = 0.4;
-  double const CFL                    = CFL_OIF;
+  double const CFL                    = 0.4;
   double const max_velocity           = 1.0;
   bool const   adaptive_time_stepping = true;
 
@@ -91,7 +101,7 @@ public:
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     param.right_hand_side             = true;
     param.boussinesq_term             = true;
 
@@ -107,16 +117,14 @@ public:
     param.solver_type                     = SolverType::Unsteady;
     param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.time_integrator_oif             = TimeIntegratorOIF::ExplRK3Stage7Reg2;
     param.adaptive_time_stepping          = adaptive_time_stepping;
+    param.order_time_integrator           = 2;
+    param.start_with_low_order            = true;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.max_velocity                    = max_velocity;
     param.cfl_exponent_fe_degree_velocity = 1.5;
-    param.cfl_oif                         = CFL_OIF;
     param.cfl                             = CFL;
     param.time_step_size                  = 1.0e-1;
-    param.order_time_integrator           = 2;
-    param.start_with_low_order            = true;
 
     // output of solver information
     param.solver_info_data.interval_time = (end_time - start_time) / 10.;
@@ -191,9 +199,7 @@ public:
     param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
 
     // linear solver
-    // use FGMRES for matrix-free BlockJacobi or Multigrid with Krylov methods as smoother/coarse
-    // grid solver
-    param.solver_momentum         = SolverMomentum::FGMRES;
+    param.solver_momentum         = SolverMomentum::GMRES;
     param.solver_data_momentum    = SolverData(1e4, 1.e-12, 1.e-6, 100);
     param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
 
@@ -410,7 +416,8 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ConstantFunction<dim>(T_ref)));
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new TemperatureBC<dim>(T_ref, delta_T, L)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(1, new TemperatureBC<dim>(T_ref, delta_T, L, characteristic_time)));
   }
 
   void

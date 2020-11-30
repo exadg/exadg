@@ -13,16 +13,16 @@
         "Name": "TaylorGreenVortex",
         "MeshType": "Cartesian",
         "NCoarseCells1D": "1",
-        "ExploitSymmetry": "true",
+        "ExploitSymmetry": "false",
         "MovingMesh": "false",
-        "Inviscid": "true",
+        "Inviscid": "false",
         "ReynoldsNumber": "1600.0",
         "WriteRestart": "false",
         "ReadRestart": "false"
     },
     "Output": {
-        "OutputDirectory": "output/",
-        "OutputName": "64_l3_k3",
+        "OutputDirectory": "output/tgv/",
+        "OutputName": "Re1600",
         "WriteOutput": "false"
     }
 }

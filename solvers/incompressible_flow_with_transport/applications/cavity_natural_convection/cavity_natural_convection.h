@@ -30,27 +30,31 @@ public:
     prm.parse_input(input_file, "", true, true);
   }
 
-  // Length of cavity
-  double const L     = 1.0;
+  // Problem specific parameters
+  double const L        = 1.0;
+  double const T_ref    = 300.0;
+  double const delta_T  = 1.0;
+  double const g        = 10.0;
+  double const beta     = 1.0 / 300.0;
+  double const Prandtl  = 1.0;
+  double const Rayleigh = 1.0e8;
+
+  // dependent parameters
+  double const kinematic_viscosity =
+    std::sqrt(g * beta * delta_T * std::pow(L, 3.0) * Prandtl / Rayleigh);
+  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
+
   double const left  = -L / 2.0;
   double const right = L / 2.0;
 
-  double const start_time = 0.0;
-  double const end_time   = 10.0;
+  double const U                   = std::sqrt(g * beta * delta_T * L);
+  double const characteristic_time = L / U;
+  double const start_time          = 0.0;
+  double const end_time            = 10.0 * characteristic_time;
 
-  double const CFL_OIF                = 0.5;
-  double const CFL                    = CFL_OIF;
+  double const CFL                    = 0.3;
   double const max_velocity           = 1.0;
   bool const   adaptive_time_stepping = true;
-
-  double const T_ref   = 0.0;
-  double const delta_T = 20.0;
-  double const g       = 10.0;
-  double const beta    = 1.0 / 300.0;
-
-  double const kinematic_viscosity = 1.0e-4;
-  double const Prandtl             = 1.0;
-  double const thermal_diffusivity = kinematic_viscosity / Prandtl;
 
   // vtu output
   double const output_interval_time = (end_time - start_time) / 100.0;
@@ -62,6 +66,13 @@ public:
   // moving mesh (ALE)
   bool const ALE = false;
 
+  // solver tolerances
+  double const ABS_TOL = 1.e-12;
+  double const REL_TOL = 1.e-6;
+
+  double const ABS_TOL_LINEAR = 1.e-12;
+  double const REL_TOL_LINEAR = 1.e-2;
+
   void
   set_input_parameters(IncNS::InputParameters & param)
   {
@@ -71,7 +82,7 @@ public:
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::NavierStokes;
     param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
     param.ale_formulation             = ALE;
     param.right_hand_side             = true;
     param.boussinesq_term             = true;
@@ -87,18 +98,16 @@ public:
 
     // TEMPORAL DISCRETIZATION
     param.solver_type                     = SolverType::Unsteady;
-    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.time_integrator_oif             = TimeIntegratorOIF::ExplRK3Stage7Reg2;
     param.adaptive_time_stepping          = adaptive_time_stepping;
+    param.order_time_integrator           = 2;
+    param.start_with_low_order            = true;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
     param.max_velocity                    = max_velocity;
     param.cfl_exponent_fe_degree_velocity = 1.5;
-    param.cfl_oif                         = CFL_OIF;
     param.cfl                             = CFL;
     param.time_step_size                  = 1.0e-1;
-    param.order_time_integrator           = 2;
-    param.start_with_low_order            = true;
 
     // output of solver information
     param.solver_info_data.interval_time = (end_time - start_time) / 10.;
@@ -122,7 +131,7 @@ public:
 
     // div-div and continuity penalty
     param.use_divergence_penalty                     = true;
-    param.divergence_penalty_factor                  = 1.0;
+    param.divergence_penalty_factor                  = 1.0e0;
     param.use_continuity_penalty                     = true;
     param.continuity_penalty_factor                  = param.divergence_penalty_factor;
     param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
@@ -138,7 +147,7 @@ public:
 
     // pressure Poisson equation
     param.solver_pressure_poisson              = SolverPressurePoisson::CG;
-    param.solver_data_pressure_poisson         = SolverData(1000, 1.e-12, 1.e-6, 100);
+    param.solver_data_pressure_poisson         = SolverData(1000, ABS_TOL, REL_TOL, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.coarse_problem.solver =
@@ -151,7 +160,7 @@ public:
 
     // projection step
     param.solver_projection         = SolverProjection::CG;
-    param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-6);
+    param.solver_data_projection    = SolverData(1000, ABS_TOL, REL_TOL);
     param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -162,7 +171,7 @@ public:
 
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-6);
+    param.solver_data_viscous    = SolverData(1000, ABS_TOL, REL_TOL);
     param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
 
@@ -175,13 +184,15 @@ public:
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-20, 1.e-6);
+    param.newton_solver_data_momentum = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    // use FGMRES for matrix-free BlockJacobi or Multigrid with Krylov methods as smoother/coarse
-    // grid solver
-    param.solver_momentum         = SolverMomentum::FGMRES;
-    param.solver_data_momentum    = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_momentum = SolverMomentum::GMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      param.solver_data_momentum = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+
     param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
 
 
@@ -190,11 +201,14 @@ public:
     param.use_scaling_continuity = false;
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-6);
+    param.newton_solver_data_coupled = Newton::SolverData(100, ABS_TOL, REL_TOL);
 
     // linear solver
-    param.solver_coupled      = SolverCoupled::GMRES;
-    param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
+    param.solver_coupled = SolverCoupled::GMRES;
+    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      param.solver_data_coupled = SolverData(1e3, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
+    else
+      param.solver_data_coupled = SolverData(1e3, ABS_TOL, REL_TOL, 100);
 
     // preconditioner linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -270,9 +284,9 @@ public:
 
     // SOLVER
     param.solver                    = ConvDiff::Solver::CG;
-    param.solver_data               = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_data               = SolverData(1e3, ABS_TOL, REL_TOL, 100);
     param.preconditioner            = Preconditioner::InverseMassMatrix;
-    param.multigrid_data.type       = MultigridType::pMG;
+    param.multigrid_data.type       = MultigridType::phMG;
     param.multigrid_data.p_sequence = PSequenceType::Bisect;
     param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
     param.update_preconditioner     = false;
@@ -282,7 +296,7 @@ public:
 
     // NUMERICAL PARAMETERS
     param.use_combined_operator = true;
-    param.use_overintegration   = false;
+    param.use_overintegration   = true;
   }
 
   void
@@ -304,6 +318,13 @@ public:
         if((std::fabs(cell->face(f)->center()(0) - left) < 1e-12))
         {
           cell->face(f)->set_boundary_id(1);
+        }
+
+        // lower and upper boundary
+        if((std::fabs(cell->face(f)->center()(1) - left) < 1e-12) ||
+           (std::fabs(cell->face(f)->center()(1) - right) < 1e-12))
+        {
+          cell->face(f)->set_boundary_id(2);
         }
       }
     }
@@ -341,10 +362,13 @@ public:
       pair(0, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_velocity->dirichlet_bc.insert(
+      pair(2, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor_pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor_pressure->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -372,7 +396,7 @@ public:
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_higher_order   = true;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
@@ -392,6 +416,7 @@ public:
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ConstantFunction<dim>(T_ref)));
     boundary_descriptor->dirichlet_bc.insert(
       pair(1, new Functions::ConstantFunction<dim>(T_ref + delta_T)));
+    boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
   }
 
   void
@@ -417,7 +442,7 @@ public:
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_higher_order   = true;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
