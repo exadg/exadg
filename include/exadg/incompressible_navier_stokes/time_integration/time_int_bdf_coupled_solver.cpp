@@ -309,8 +309,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     auto const iter =
       pde_operator->solve_nonlinear_problem(solution_np,
                                             rhs,
-                                            this->get_next_time(),
                                             update_preconditioner,
+                                            this->get_next_time(),
                                             this->get_scaling_factor_time_derivative_term());
 
     iterations.first += 1;

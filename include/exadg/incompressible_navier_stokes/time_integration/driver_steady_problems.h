@@ -49,13 +49,16 @@ public:
   setup();
 
   void
-  solve_steady_problem();
+  solve_steady_problem(double const time = 0.0, bool unsteady_problem = false);
 
   VectorType const &
   get_velocity() const;
 
   std::shared_ptr<TimerTree>
   get_timings() const;
+
+  void
+  print_iterations() const;
 
 private:
   void
@@ -65,10 +68,13 @@ private:
   initialize_solution();
 
   void
-  solve();
+  solve(double const time = 0.0, bool unsteady_problem = false);
+
+  bool
+  print_solver_info(double const time, bool unsteady_problem = false) const;
 
   void
-  postprocessing() const;
+  postprocessing(double const time = 0.0, bool unsteady_problem = false) const;
 
   std::shared_ptr<Operator> pde_operator;
 
@@ -76,6 +82,7 @@ private:
 
   MPI_Comm const & mpi_comm;
 
+  Timer                      global_timer;
   std::shared_ptr<TimerTree> timer_tree;
 
   ConditionalOStream pcout;
@@ -84,6 +91,12 @@ private:
   BlockVectorType rhs_vector;
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
+
+  // iteration counts
+  std::pair<
+    unsigned int /* calls */,
+    std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear} */>
+    iterations;
 };
 
 } // namespace IncNS

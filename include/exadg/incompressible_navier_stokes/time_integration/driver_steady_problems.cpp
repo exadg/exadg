@@ -32,7 +32,8 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
     mpi_comm(mpi_comm_in),
     timer_tree(new TimerTree()),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    postprocessor(postprocessor_in)
+    postprocessor(postprocessor_in),
+    iterations({0, {0, 0}})
 {
 }
 
@@ -84,18 +85,42 @@ DriverSteadyProblems<dim, Number>::initialize_solution()
 
 template<int dim, typename Number>
 void
-DriverSteadyProblems<dim, Number>::solve()
+DriverSteadyProblems<dim, Number>::solve_steady_problem(double const time, bool unsteady_problem)
 {
   Timer timer;
   timer.restart();
 
-  pcout << std::endl << "Solving steady state problem ..." << std::endl;
+  postprocessing(time, unsteady_problem);
+
+  solve(time, unsteady_problem);
+
+  postprocessing(time, unsteady_problem);
+
+  timer_tree->insert({"DriverSteady"}, timer.wall_time());
+}
+
+template<int dim, typename Number>
+void
+DriverSteadyProblems<dim, Number>::solve(double const time, bool unsteady_problem)
+{
+  if(iterations.first == 0)
+    global_timer.restart();
+
+  Timer timer;
+  timer.restart();
+
+  if(print_solver_info(time, unsteady_problem))
+    pcout << std::endl << "Solve steady state problem:" << std::endl;
 
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
   // instead of applying these terms in a postprocessing step.
-  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
+  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
+    AssertThrow(this->param.apply_penalty_terms_in_postprocessing_step == false,
+                ExcMessage(
+                  "Penalty terms have to be applied in momentum equation for steady problems."));
+
     if(this->param.use_divergence_penalty == true)
       pde_operator->update_divergence_penalty_operator(solution.block(0));
     if(this->param.use_continuity_penalty == true)
@@ -106,63 +131,99 @@ DriverSteadyProblems<dim, Number>::solve()
   if(this->param.linear_problem_has_to_be_solved())
   {
     // calculate rhs vector
-    pde_operator->rhs_stokes_problem(rhs_vector);
+    pde_operator->rhs_stokes_problem(rhs_vector, time);
 
     // solve coupled system of equations
-    unsigned int const N_iter_linear =
-      pde_operator->solve_linear_stokes_problem(solution,
-                                                rhs_vector,
-                                                this->param.update_preconditioner_coupled);
+    unsigned int const n_iter = pde_operator->solve_linear_stokes_problem(
+      solution, rhs_vector, this->param.update_preconditioner_coupled, time);
 
-    print_solver_info_linear(pcout, N_iter_linear, timer.wall_time());
+    if(print_solver_info(time, unsteady_problem))
+      print_solver_info_linear(pcout, n_iter, timer.wall_time());
+
+    iterations.first += 1;
+    std::get<1>(iterations.second) += n_iter;
   }
   else // nonlinear problem
   {
     VectorType rhs(solution.block(0));
     rhs = 0.0;
     if(this->param.right_hand_side)
-      pde_operator->evaluate_add_body_force_term(rhs, 0.0 /* time */);
+      pde_operator->evaluate_add_body_force_term(rhs, time);
 
     // Newton solver
-    auto const iter =
-      pde_operator->solve_nonlinear_steady_problem(solution,
-                                                   rhs,
-                                                   this->param.update_preconditioner_coupled);
+    auto const iter = pde_operator->solve_nonlinear_problem(
+      solution, rhs, this->param.update_preconditioner_coupled, time);
 
-    print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+    if(print_solver_info(time, unsteady_problem))
+      print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+
+    iterations.first += 1;
+    std::get<0>(iterations.second) += std::get<0>(iter);
+    std::get<1>(iterations.second) += std::get<1>(iter);
   }
 
-  pde_operator->adjust_pressure_level_if_undefined(solution.block(1), 0.0 /* time */);
-
-  pcout << std::endl << "... done!" << std::endl;
+  pde_operator->adjust_pressure_level_if_undefined(solution.block(1), time);
 
   timer_tree->insert({"DriverSteady", "Solve"}, timer.wall_time());
 }
 
 template<int dim, typename Number>
-void
-DriverSteadyProblems<dim, Number>::solve_steady_problem()
+bool
+DriverSteadyProblems<dim, Number>::print_solver_info(double const time, bool unsteady_problem) const
 {
-  Timer timer;
-  timer.restart();
-
-  postprocessing();
-
-  solve();
-
-  postprocessing();
-
-  timer_tree->insert({"DriverSteady"}, timer.wall_time());
+  return !unsteady_problem || param.solver_info_data.write(this->global_timer.wall_time(),
+                                                           time - param.start_time,
+                                                           iterations.first + 1);
 }
 
 template<int dim, typename Number>
 void
-DriverSteadyProblems<dim, Number>::postprocessing() const
+DriverSteadyProblems<dim, Number>::print_iterations() const
+{
+  std::vector<std::string> names;
+  std::vector<double>      iterations_avg;
+
+  if(this->param.linear_problem_has_to_be_solved())
+  {
+    names = {"Coupled system"};
+    iterations_avg.resize(1);
+    iterations_avg[0] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
+  }
+  else // nonlinear system of equations in momentum step
+  {
+    names = {"Coupled system (nonlinear)",
+             "Coupled system (linear accumulated)",
+             "Coupled system (linear per nonlinear)"};
+
+    iterations_avg.resize(3);
+    iterations_avg[0] =
+      (double)std::get<0>(iterations.second) / std::max(1., (double)iterations.first);
+    iterations_avg[1] =
+      (double)std::get<1>(iterations.second) / std::max(1., (double)iterations.first);
+    if(iterations_avg[0] > std::numeric_limits<double>::min())
+      iterations_avg[2] = iterations_avg[1] / iterations_avg[0];
+    else
+      iterations_avg[2] = iterations_avg[1];
+  }
+
+  print_list_of_iterations(this->pcout, names, iterations_avg);
+}
+
+template<int dim, typename Number>
+void
+DriverSteadyProblems<dim, Number>::postprocessing(double const time, bool unsteady_problem) const
 {
   Timer timer;
   timer.restart();
 
-  postprocessor->do_postprocessing(solution.block(0), solution.block(1));
+  if(unsteady_problem)
+    postprocessor->do_postprocessing(solution.block(0),
+                                     solution.block(1),
+                                     (Number)time,
+                                     (int)iterations.first);
+  else
+    postprocessor->do_postprocessing(solution.block(0), solution.block(1));
 
   timer_tree->insert({"DriverSteady", "Postprocessing"}, timer.wall_time());
 }

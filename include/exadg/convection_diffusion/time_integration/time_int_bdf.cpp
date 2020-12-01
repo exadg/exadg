@@ -554,17 +554,17 @@ TimeIntBDF<dim, Number>::solve_timestep()
   timer.restart();
 
   // transport velocity
-  VectorType velocity;
+  VectorType velocity_np;
 
   if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      pde_operator->initialize_dof_vector_velocity(velocity);
+      pde_operator->initialize_dof_vector_velocity(velocity_np);
 
       if(param.analytical_velocity_field)
       {
-        pde_operator->project_velocity(velocity, this->get_next_time());
+        pde_operator->project_velocity(velocity_np, this->get_next_time());
       }
       else
       {
@@ -573,12 +573,12 @@ TimeIntBDF<dim, Number>::solve_timestep()
         AssertThrow(velocities[0] != nullptr,
                     ExcMessage("Pointer velocities[0] is not correctly initialized."));
 
-        velocity = *velocities[0];
+        velocity_np = *velocities[0];
       }
 
       if(param.ale_formulation)
       {
-        velocity -= grid_velocity;
+        velocity_np -= grid_velocity;
       }
     }
     else
@@ -588,7 +588,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
   }
 
   // calculate rhs (rhs-vector f and inhomogeneous boundary face integrals)
-  pde_operator->rhs(rhs_vector, this->get_next_time(), &velocity);
+  pde_operator->rhs(rhs_vector, this->get_next_time(), &velocity_np);
 
   // if the convective term is involved in the equations:
   // add the convective term to the right-hand side of the equations
@@ -605,7 +605,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
         pde_operator->evaluate_convective_term(vec_convective_term[i],
                                                solution[i],
                                                this->get_previous_time(i),
-                                               &velocity);
+                                               &velocity_np);
       }
     }
 
@@ -649,7 +649,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
                         update_preconditioner,
                         this->bdf.get_gamma0() / this->get_time_step_size(),
                         this->get_next_time(),
-                        &velocity);
+                        &velocity_np);
 
   iterations.first += 1;
   iterations.second += N_iter;
@@ -666,7 +666,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
         pde_operator->evaluate_convective_term(convective_term_np,
                                                solution_np,
                                                this->get_next_time(),
-                                               &velocity);
+                                               &velocity_np);
       }
       else
       {
