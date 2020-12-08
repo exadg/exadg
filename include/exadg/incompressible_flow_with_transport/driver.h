@@ -29,6 +29,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
@@ -136,6 +137,11 @@ private:
 
   std::shared_ptr<TimeInt> fluid_time_integrator;
 
+  // steady solver
+  typedef IncNS::DriverSteadyProblems<dim, Number> DriverSteady;
+
+  std::shared_ptr<DriverSteady> fluid_driver_steady;
+
   // SCALAR TRANSPORT
 
   std::vector<ConvDiff::InputParameters> scalar_param;
@@ -155,6 +161,8 @@ private:
    * Computation time (wall clock time).
    */
   mutable TimerTree timer_tree;
+
+  mutable unsigned int N_time_steps;
 };
 
 } // namespace FTI

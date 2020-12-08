@@ -256,22 +256,14 @@ public:
    */
 
   /*
-   * This function solves the nonlinear problem for steady problems.
-   */
-  std::tuple<unsigned int, unsigned int>
-  solve_nonlinear_steady_problem(BlockVectorType &  dst,
-                                 VectorType const & rhs_vector,
-                                 bool const &       update_preconditioner);
-
-  /*
-   * This function solves the nonlinear problem for unsteady problems.
+   * This function solves the nonlinear problem.
    */
   std::tuple<unsigned int, unsigned int>
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & rhs_vector,
-                          double const &     time,
                           bool const &       update_preconditioner,
-                          double const &     scaling_factor_mass_matrix_term);
+                          double const &     time                            = 0.0,
+                          double const &     scaling_factor_mass_matrix_term = 1.0);
 
 
   /*
@@ -307,8 +299,8 @@ public:
   /*
    * This function calculates the right-hand side of the steady Stokes problem, or unsteady Stokes
    * problem, or unsteady Navier-Stokes problem with explicit treatment of the convective term. The
-   * parameters 'src' and 'time' have to be specified for unsteady problems. For steady
-   * problems these parameters are omitted.
+   * parameter 'time' has to be specified for unsteady problems and can be omitted for steady
+   * problems.
    */
   void
   rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
