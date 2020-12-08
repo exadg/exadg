@@ -257,7 +257,7 @@ public:
 
     MaterialType const type = MaterialType::StVenantKirchhoff;
     double const       E = 200.0e9, nu = 0.3;
-    Type2D const       two_dim_type = Type2D::PlainStress;
+    Type2D const       two_dim_type = Type2D::PlaneStress;
 
     material_descriptor.insert(Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
   }
