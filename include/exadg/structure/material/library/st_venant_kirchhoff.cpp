@@ -55,7 +55,7 @@ StVenantKirchhoff<dim, Number>::get_f0_factor() const
   return (dim == 3) ?
            (1. - nu) / (1. + nu) / (1. - 2. * nu) :
            (type_two_dim == Type2D::PlainStress ? (1. / (1. - nu * nu)) :
-                                                  ((1. - nu) / (.1 + nu) / (1. - 2. * nu)));
+                                                  ((1. - nu) / (1. + nu) / (1. - 2. * nu)));
 }
 
 template<int dim, typename Number>
