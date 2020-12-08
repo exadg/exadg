@@ -61,11 +61,11 @@ enum_to_string(Type2D const enum_type)
     case Type2D::Undefined:
       string_type = "Undefined";
       break;
-    case Type2D::PlainStress:
-      string_type = "PlainStress";
+    case Type2D::PlaneStress:
+      string_type = "PlaneStress";
       break;
-    case Type2D::PlainStrain:
-      string_type = "PlainStrain";
+    case Type2D::PlaneStrain:
+      string_type = "PlaneStrain";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

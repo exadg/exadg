@@ -544,7 +544,7 @@ public:
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
-    Type2D const       two_dim_type = Type2D::PlainStress;
+    Type2D const       two_dim_type = Type2D::PlaneStress;
 
     double const E       = 1.0;
     double const poisson = 0.3;
@@ -704,7 +704,7 @@ public:
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
-    Type2D const       two_dim_type = Type2D::PlainStress;
+    Type2D const       two_dim_type = Type2D::PlaneStress;
 
     material_descriptor.insert(Pair(
       0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));

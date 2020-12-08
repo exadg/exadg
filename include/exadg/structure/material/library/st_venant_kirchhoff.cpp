@@ -54,7 +54,7 @@ StVenantKirchhoff<dim, Number>::get_f0_factor() const
 
   return (dim == 3) ?
            (1. - nu) / (1. + nu) / (1. - 2. * nu) :
-           (type_two_dim == Type2D::PlainStress ? (1. / (1. - nu * nu)) :
+           (type_two_dim == Type2D::PlaneStress ? (1. / (1. - nu * nu)) :
                                                   ((1. - nu) / (1. + nu) / (1. - 2. * nu)));
 }
 
@@ -66,7 +66,7 @@ StVenantKirchhoff<dim, Number>::get_f1_factor() const
   Type2D const type_two_dim = data.type_two_dim;
 
   return (dim == 3) ? (nu) / (1. + nu) / (1. - 2. * nu) :
-                      (type_two_dim == Type2D::PlainStress ? (nu / (1. - nu * nu)) :
+                      (type_two_dim == Type2D::PlaneStress ? (nu / (1. - nu * nu)) :
                                                              (nu / (1. + nu) / (1. - 2. * nu)));
 }
 
@@ -78,7 +78,7 @@ StVenantKirchhoff<dim, Number>::get_f2_factor() const
   Type2D const type_two_dim = data.type_two_dim;
 
   return (dim == 3) ? (1. - 2. * nu) / 2. / (1. + nu) / (1. - 2. * nu) :
-                      (type_two_dim == Type2D::PlainStress ?
+                      (type_two_dim == Type2D::PlaneStress ?
                          ((1. - nu) / 2. / (1. - nu * nu)) :
                          ((1. - 2. * nu) / 2. / (1. + nu) / (1. - 2. * nu)));
 }

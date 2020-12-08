@@ -40,8 +40,8 @@ enum_to_string(ProblemType const enum_type);
 enum class Type2D
 {
   Undefined,
-  PlainStress,
-  PlainStrain
+  PlaneStress,
+  PlaneStrain
 };
 
 std::string
