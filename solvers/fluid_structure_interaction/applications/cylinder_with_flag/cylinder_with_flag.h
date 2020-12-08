@@ -19,26 +19,18 @@ namespace CylinderWithFlag
 using namespace dealii;
 
 // set problem specific parameters
+#define TESTCASE 2
 
-// my-FSI (density ratio 1/1000)
-// double const U_MEAN          = 1.0;
-// double const FLUID_VISCOSITY = 1.0e-3;
-// double const FLUID_DENSITY   = 1.0e0;
-//
-// double const DENSITY_STRUCTURE       = 1.0e3;
-// double const POISSON_RATIO_STRUCTURE = 0.4;
-// double const E_STRUCTURE             = 0.5e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
-//// double const E_STRUCTURE             = 2.0e3 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
-
+#if TESTCASE == 1
 // FSI 1
-// double const U_MEAN   = 0.2;
-// double const FLUID_VISCOSITY = 1.0e-3;
-// double const FLUID_DENSITY = 1.0e3;
-//
-// double const DENSITY_STRUCTURE = 1.0e3;
-// double const POISSON_RATIO_STRUCTURE = 0.4;
-// double const E_STRUCTURE = 0.5e6*2.0*(1.0+POISSON_RATIO_STRUCTURE);
+double const U_MEAN          = 0.2;
+double const FLUID_VISCOSITY = 1.0e-3;
+double const FLUID_DENSITY   = 1.0e3;
 
+double const DENSITY_STRUCTURE       = 1.0e3;
+double const POISSON_RATIO_STRUCTURE = 0.4;
+double const E_STRUCTURE             = 0.5e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+#elif TESTCASE == 2
 // FSI 2
 double const U_MEAN          = 1.0;
 double const FLUID_VISCOSITY = 1.0e-3;
@@ -47,15 +39,16 @@ double const FLUID_DENSITY   = 1.0e3;
 double const DENSITY_STRUCTURE       = 1.0e4;
 double const POISSON_RATIO_STRUCTURE = 0.4;
 double const E_STRUCTURE             = 0.5e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
-
+#elif TESTCASE == 3
 // FSI 3
-// double const U_MEAN         = 2.0;
-// double const FLUID_VISCOSITY = 1.0e-3;
-// double const FLUID_DENSITY   = 1.0e3;
-//
-// double const DENSITY_STRUCTURE       = 1.0e3;
-// double const POISSON_RATIO_STRUCTURE = 0.4;
-// double const E_STRUCTURE             = 2.0e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+double const U_MEAN          = 2.0;
+double const FLUID_VISCOSITY = 1.0e-3;
+double const FLUID_DENSITY   = 1.0e3;
+
+double const DENSITY_STRUCTURE       = 1.0e3;
+double const POISSON_RATIO_STRUCTURE = 0.4;
+double const E_STRUCTURE             = 2.0e6 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
+#endif
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0    = 0.0;  // origin (x-coordinate)
@@ -86,7 +79,7 @@ unsigned int N_CELLS_FLAG_X = 16;
 double const U_X_MAX  = 1.5 * U_MEAN;
 double const END_TIME = 4.0 * L / U_MEAN;
 
-double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
+double const       OUTPUT_INTERVAL_TIME                = END_TIME / 600;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
 double const REL_TOL = 1.e-2;
@@ -110,10 +103,13 @@ public:
     double result = 0.0;
 
     double const t = this->get_time();
-    double const T = END_TIME / 10.0;
+    double const T = 2.0;
+
+    double const y = p[1];
 
     if(component == 0)
-      result = U_X_MAX * ((t < T) ? 0.5 * (1.0 - std::cos(t / T * numbers::PI)) : 1.0);
+      result = U_X_MAX * (y * (H - y) / std::pow(H / 2.0, 2.0)) *
+               ((t < T) ? 0.5 * (1.0 - std::cos(t * numbers::PI / T)) : 1.0);
 
     return result;
   }
@@ -683,7 +679,7 @@ public:
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
-    Type2D const       two_dim_type = Type2D::PlainStress;
+    Type2D const       two_dim_type = Type2D::PlaneStrain;
 
     double const                   E       = 1.0;
     double const                   poisson = 0.3;
@@ -1004,7 +1000,7 @@ public:
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
-    Type2D const       two_dim_type = Type2D::PlainStress;
+    Type2D const       two_dim_type = Type2D::PlaneStrain;
 
     material_descriptor.insert(Pair(
       0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
