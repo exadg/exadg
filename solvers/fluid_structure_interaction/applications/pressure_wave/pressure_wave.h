@@ -17,7 +17,6 @@ namespace PressureWave
 using namespace dealii;
 
 // set problem specific parameters like physical dimensions, etc.
-double const U_X_MAX         = 1.0; // TODO
 double const FLUID_VISCOSITY = 3.0e-6;
 double const FLUID_DENSITY   = 1.0e3;
 
@@ -43,8 +42,9 @@ unsigned int MANIFOLD_ID_CYLINDER = 1;
 
 MappingType const MAPPING_TYPE = MappingType::Affine; // Quadratic;
 
-double const TIME_PRESSURE = 5.0e-3;
-double const END_TIME      = 0.02;
+double const TIME_PRESSURE  = 3.0e-3;
+double const TIME_STEP_SIZE = 0.0001;
+double const END_TIME       = 0.02;
 
 double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e0;
@@ -120,10 +120,10 @@ public:
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
-    param.adaptive_time_stepping          = true;
-    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    param.time_step_size                  = END_TIME;
-    param.max_velocity                    = U_X_MAX;
+    param.adaptive_time_stepping          = false;
+    param.calculation_of_time_step_size   = TimeStepCalculation::UserSpecified;
+    param.time_step_size                  = TIME_STEP_SIZE;
+    param.max_velocity                    = 1.0;
     param.cfl                             = 0.4;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
@@ -361,7 +361,7 @@ public:
       pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
 
     // outflow
-    boundary_descriptor_velocity->neumann_bc.insert(
+    boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
@@ -375,7 +375,7 @@ public:
       pair(BOUNDARY_ID_INFLOW, new PressureInflowBC<dim>()));
 
     // outflow
-    boundary_descriptor_pressure->dirichlet_bc.insert(
+    boundary_descriptor_pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
 
     // fluid-structure interface
@@ -577,7 +577,7 @@ public:
 
     parameters.start_time                           = 0.0;
     parameters.end_time                             = END_TIME;
-    parameters.time_step_size                       = END_TIME / 100.0;
+    parameters.time_step_size                       = TIME_STEP_SIZE;
     parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
     parameters.spectral_radius                      = 0.8;
     parameters.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
