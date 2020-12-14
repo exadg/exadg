@@ -28,6 +28,7 @@ InputParameters::InputParameters()
     use_outflow_bc_convective_term(false),
     right_hand_side(false),
     boussinesq_term(false),
+    boussinesq_dynamic_part_only(false),
 
     // ALE
     ale_formulation(false),
@@ -593,6 +594,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 
   print_parameter(pcout, "Right-hand side", right_hand_side);
   print_parameter(pcout, "Boussinesq term", boussinesq_term);
+  print_parameter(pcout, "Boussinesq - dynamic part only", boussinesq_dynamic_part_only);
 
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
   if(ale_formulation)

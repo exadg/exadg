@@ -24,7 +24,10 @@ template<int dim>
 struct RHSKernelData
 {
   RHSKernelData()
-    : boussinesq_term(false), thermal_expansion_coefficient(1.0), reference_temperature(0.0)
+    : boussinesq_term(false),
+      boussinesq_dynamic_part_only(false),
+      thermal_expansion_coefficient(1.0),
+      reference_temperature(0.0)
   {
   }
 
@@ -32,6 +35,7 @@ struct RHSKernelData
 
   // Boussinesq term
   bool                           boussinesq_term;
+  bool                           boussinesq_dynamic_part_only;
   double                         thermal_expansion_coefficient;
   double                         reference_temperature;
   std::shared_ptr<Function<dim>> gravitational_force;
@@ -85,12 +89,11 @@ public:
       vector g = FunctionEvaluator<1, dim, Number>::value(data.gravitational_force, q_points, time);
       scalar T = integrator_temperature.get_value(q);
       scalar T_ref = data.reference_temperature;
-      f += g * (1.0 - data.thermal_expansion_coefficient * (T - T_ref));
-      // TODO: for the dual splitting scheme we observed in one example that it might be
-      // advantageous to only solve for the dynamic pressure variations and drop the constant 1.0 in
-      // the above term that leads to a static pressure, in order improve robustness of the
-      // splitting scheme.
-      //      f += g * (- data.thermal_expansion_coefficient * (T - T_ref));
+      // solve only for the dynamic pressure variations
+      if(data.boussinesq_dynamic_part_only)
+        f += g * (-data.thermal_expansion_coefficient * (T - T_ref));
+      else // includes hydrostatic component
+        f += g * (1.0 - data.thermal_expansion_coefficient * (T - T_ref));
     }
 
     return f;

@@ -120,6 +120,10 @@ public:
   // Boussinesq term (natural convection through buoyancy forces)
   bool boussinesq_term;
 
+  // If Boussinesq term is activated: solves only for dynamic pressure variations if true,
+  // and includes hydrostatic component if false.
+  bool boussinesq_dynamic_part_only;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                 Arbitrary Lagrangian-Eulerian formulation (ALE)                    */

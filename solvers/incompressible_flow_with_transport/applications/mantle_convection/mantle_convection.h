@@ -17,33 +17,6 @@ namespace MantleConvection
 using namespace dealii;
 
 template<int dim>
-class InitialTemperature : public Function<dim>
-{
-public:
-  InitialTemperature(double const R0, double const R1, double const T0, double const T1)
-    : Function<dim>(1, 0.0), R0(R0), R1(R1), T0(T0), T1(T1)
-  {
-  }
-
-  double
-  value(const Point<dim> & p, const unsigned int /*component = 0*/) const
-  {
-    const double r   = p.norm();
-    const double h   = R1 - R0;
-    const double s   = (r - R0) / h;
-    const double q   = (dim == 3) ? std::max(0.0, cos(numbers::PI * abs(p(2) / R1))) : 1.0;
-    const double phi = std::atan2(p(0), p(1));
-    const double tau = s + 0.2 * s * (1 - s) * std::sin(6 * phi) * q;
-
-    return T0 * (1.0 - tau) + T1 * tau;
-  }
-
-private:
-  double const R0, R1;
-  double const T0, T1;
-};
-
-template<int dim>
 class RightHandSide : public Function<dim>
 {
 public:
@@ -56,10 +29,54 @@ public:
   {
     double const r = p.norm();
 
-    double g = -(1.245e-6 * r + 7.714e13 / r / r) * p[component] / r;
+    double g = -p[component] / r;
 
     return g;
   }
+};
+
+template<int dim>
+class TemperatureBC : public Function<dim>
+{
+public:
+  TemperatureBC(double const T_ref,
+                double const delta_T,
+                double const length,
+                double const characteristic_time)
+    : Function<dim>(1, 0.0),
+      T_ref(T_ref),
+      delta_T(delta_T),
+      length(length),
+      characteristic_time(characteristic_time)
+  {
+  }
+
+  double
+  value(const Point<dim> & p, const unsigned int /*component = 0*/) const
+  {
+    double       t           = this->get_time();
+    double const time_factor = std::max(0.0, 1.0 - t / characteristic_time);
+
+    double perturbation = time_factor;
+    if(dim == 2)
+      perturbation *= 0.25 * delta_T *
+                      std::pow(std::sin(numbers::PI * (p[0] + std::sqrt(2)) / (length / 2.)) *
+                                 std::sin(numbers::PI * (p[1] + std::sqrt(3)) / (length / 2.)),
+                               2.0);
+    else if(dim == 3)
+      perturbation *= 0.25 * delta_T *
+                      std::pow(std::sin(numbers::PI * (p[0] + std::sqrt(2)) / (length / 2.)) *
+                                 std::sin(numbers::PI * (p[1] + std::sqrt(3)) / (length / 2.)) *
+                                 std::sin(numbers::PI * (p[2] + std::sqrt(5)) / (length / 2.)),
+                               2.0);
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+
+    return (T_ref + delta_T + perturbation);
+  }
+
+private:
+  double const T_ref, delta_T, length, characteristic_time;
 };
 
 template<int dim, typename Number>
@@ -75,31 +92,32 @@ public:
   }
 
   // physical quantities
-  double const R0 = 6371000.0 - 2890000.0;
-  double const R1 = 6371000.0 - 35000.0;
+  double const R0 = 0.55;
+  double const R1 = 1.0;
 
-  double const beta                = 2.0e-5;
-  double const kinematic_viscosity = 1.0e21 / 3300.0;
-  double const thermal_diffusivity = 1.0e-6;
+  double const Ra                  = 1.0e8;
+  double const beta                = Ra;
+  double const kinematic_viscosity = 1.0;
+  double const thermal_diffusivity = 1.0;
 
-  double const T_ref = 293.0;
-  double const T0    = 4000.0 + 273.0 - T_ref;
-  double const T1    = 700.0 + 273.0 - T_ref;
+  double const T0 = 1.0;
+  double const T1 = 0.0;
 
-  double const year_in_seconds = 3600.0 * 24.0 * 365.0;
+  double const H = R1 - R0;
+  double const U = std::sqrt(Ra * kinematic_viscosity * thermal_diffusivity / (H * H));
+  double const characteristic_time = H / U;
+  double const start_time          = 0.0;
+  double const end_time            = 200.0 * characteristic_time;
 
-  double const start_time = 0.0;
-  double const end_time   = 1.0e8 * year_in_seconds;
-
-  double const CFL                    = 1.0;
-  double const max_velocity           = 1.0 / year_in_seconds;
+  // CFL > 4 did not show further speed-up for 2d example
+  double const CFL                    = 2.0; // 0.4;
   bool const   adaptive_time_stepping = true;
 
   // solver tolerance
-  double const reltol = 1.e-6;
+  double const reltol = 1.e-3;
 
   // vtu output
-  double const output_interval_time = (end_time - start_time) / 100.0;
+  double const output_interval_time = (end_time - start_time) / 200.0;
 
   void
   set_input_parameters(IncNS::InputParameters & param)
@@ -107,37 +125,37 @@ public:
     using namespace IncNS;
 
     // MATHEMATICAL MODEL
-    param.problem_type                = ProblemType::Unsteady;
-    param.equation_type               = EquationType::Stokes;
-    param.formulation_viscous_term    = FormulationViscousTerm::LaplaceFormulation;
-    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
-    param.right_hand_side             = true;
-    param.boussinesq_term             = true;
-
+    param.problem_type                 = ProblemType::Steady;
+    param.equation_type                = EquationType::Stokes;
+    param.formulation_viscous_term     = FormulationViscousTerm::LaplaceFormulation;
+    param.formulation_convective_term  = FormulationConvectiveTerm::ConvectiveFormulation;
+    param.right_hand_side              = true;
+    param.boussinesq_term              = true;
+    param.boussinesq_dynamic_part_only = true;
 
     // PHYSICAL QUANTITIES
     param.start_time                    = start_time;
     param.end_time                      = end_time;
     param.viscosity                     = kinematic_viscosity;
     param.thermal_expansion_coefficient = beta;
-    param.reference_temperature         = T_ref;
+    param.reference_temperature         = T1;
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                     = SolverType::Unsteady;
+    param.solver_type                     = SolverType::Steady;
     param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.time_integrator_oif             = TimeIntegratorOIF::ExplRK3Stage7Reg2;
     param.adaptive_time_stepping          = adaptive_time_stepping;
-    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    param.max_velocity                    = max_velocity;
-    param.cfl_exponent_fe_degree_velocity = 1.5;
-    param.cfl                             = CFL;
-    param.time_step_size                  = 1.0e-1;
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
+    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
+    param.max_velocity                    = U;
+    param.cfl_exponent_fe_degree_velocity = 1.5;
+    param.cfl                             = CFL;
+    param.time_step_size                  = characteristic_time / 1.e0;
+    param.time_step_size_max              = characteristic_time / 1.e0;
 
     // output of solver information
-    param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+    param.solver_info_data.interval_time = output_interval_time;
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type = TriangulationType::Distributed;
@@ -152,13 +170,13 @@ public:
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // div-div and continuity penalty
-    param.use_divergence_penalty                     = true;
+    param.use_divergence_penalty                     = false;
     param.divergence_penalty_factor                  = 1.0;
-    param.use_continuity_penalty                     = true;
+    param.use_continuity_penalty                     = false;
     param.continuity_penalty_factor                  = param.divergence_penalty_factor;
     param.continuity_penalty_components              = ContinuityPenaltyComponents::Normal;
     param.continuity_penalty_use_boundary_data       = true;
-    param.apply_penalty_terms_in_postprocessing_step = true;
+    param.apply_penalty_terms_in_postprocessing_step = false;
     param.type_penalty_parameter                     = TypePenaltyParameter::ConvectiveTerm;
 
     // NUMERICAL PARAMETERS
@@ -172,13 +190,6 @@ public:
     param.solver_data_pressure_poisson         = SolverData(1000, 1.e-30, reltol, 100);
     param.preconditioner_pressure_poisson      = PreconditionerPressurePoisson::Multigrid;
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
-    param.multigrid_data_pressure_poisson.coarse_problem.solver =
-      MultigridCoarseGridSolver::Chebyshev;
-    param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::PointJacobi;
-    param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    param.multigrid_data_pressure_poisson.smoother_data.preconditioner =
-      PreconditionerSmoother::PointJacobi;
 
     // projection step
     param.solver_projection         = SolverProjection::CG;
@@ -194,7 +205,6 @@ public:
     // viscous step
     param.solver_viscous              = SolverViscous::CG;
     param.solver_data_viscous         = SolverData(1000, 1.e-30, reltol);
-    param.preconditioner_viscous      = PreconditionerViscous::Multigrid; // InverseMassMatrix;
     param.multigrid_data_viscous.type = MultigridType::cphMG;
 
 
@@ -210,10 +220,8 @@ public:
     param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-30, reltol);
 
     // linear solver
-    // use FGMRES for matrix-free BlockJacobi or Multigrid with Krylov methods as smoother/coarse
-    // grid solver
-    param.solver_momentum                  = SolverMomentum::FGMRES;
-    param.solver_data_momentum             = SolverData(1e4, 1.e-30, 1.e-6, 100);
+    param.solver_momentum                  = SolverMomentum::CG;
+    param.solver_data_momentum             = SolverData(1e4, 1.e-30, reltol, 100);
     param.preconditioner_momentum          = MomentumPreconditioner::Multigrid;
     param.multigrid_data_momentum.type     = MultigridType::cphMG;
     param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
@@ -273,13 +281,13 @@ public:
     param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     param.time_step_size                = 1.0e-2;
     param.cfl                           = CFL;
-    param.max_velocity                  = max_velocity;
+    param.max_velocity                  = U;
     param.exponent_fe_degree_convection = 1.5;
-    param.exponent_fe_degree_diffusion  = 3.0;
-    param.diffusion_number              = 0.01;
+    param.time_step_size                = characteristic_time / 1.e0;
+    param.time_step_size_max            = characteristic_time / 1.e0;
 
     // output of solver information
-    param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+    param.solver_info_data.interval_time = output_interval_time;
 
     // SPATIAL DISCRETIZATION
 
@@ -300,16 +308,12 @@ public:
     param.use_cell_based_face_loops                           = false;
 
     // SOLVER
-    param.solver                    = ConvDiff::Solver::GMRES; // CG;
-    param.solver_data               = SolverData(1e4, 1.e-30, reltol, 100);
-    param.preconditioner            = Preconditioner::InverseMassMatrix;
-    param.multigrid_data.type       = MultigridType::pMG;
-    param.multigrid_data.p_sequence = PSequenceType::DecreaseByOne; // Bisect;
-    param.mg_operator_type          = MultigridOperatorType::ReactionDiffusion;
-    param.update_preconditioner     = false;
-
-    // output of solver information
-    param.solver_info_data.interval_time = (end_time - start_time) / 10.;
+    param.solver                = ConvDiff::Solver::GMRES; // CG;
+    param.solver_data           = SolverData(1e4, 1.e-30, reltol, 100);
+    param.preconditioner        = Preconditioner::InverseMassMatrix;
+    param.multigrid_data.type   = MultigridType::cphMG;
+    param.mg_operator_type      = MultigridOperatorType::ReactionDiffusion;
+    param.update_preconditioner = false;
 
     // NUMERICAL PARAMETERS
     param.use_combined_operator = true;
@@ -324,7 +328,7 @@ public:
   {
     (void)periodic_faces;
 
-    GridGenerator::hyper_shell(*triangulation, Point<dim>(), R0, R1, 12);
+    GridGenerator::hyper_shell(*triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
 
     Point<dim> center = dim == 2 ? Point<dim>(0., 0.) : Point<dim>(0., 0., 0.);
 
@@ -388,7 +392,7 @@ public:
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_higher_order   = (dim == 2);
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
@@ -405,7 +409,8 @@ public:
 
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ConstantFunction<dim>(T0)));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new TemperatureBC<dim>(T1, T0 - T1, H, characteristic_time)));
     boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ConstantFunction<dim>(T1)));
   }
 
@@ -415,7 +420,7 @@ public:
   {
     (void)scalar_index; // only one scalar quantity considered
 
-    field_functions->initial_solution.reset(new InitialTemperature<dim>(R0, R1, T0, T1));
+    field_functions->initial_solution.reset(new Functions::ConstantFunction<dim>(T1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
@@ -432,7 +437,8 @@ public:
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_higher_order   = (dim == 2);
+    pp_data.output_data.write_surface_mesh   = true;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
