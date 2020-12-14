@@ -47,6 +47,10 @@ public:
       if(cell->is_locally_owned())
         local_boxes.push_back(mapping.get_bounding_box(cell));
 
+    // it might happen that there are no cells on a processor
+    if(local_boxes.size() == 0)
+      local_boxes.resize(1);
+
     // create r-tree of bounding boxes
     const auto local_tree = pack_rtree(local_boxes);
 
