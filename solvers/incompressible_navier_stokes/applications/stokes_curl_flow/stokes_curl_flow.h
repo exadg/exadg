@@ -234,7 +234,7 @@ public:
 
     // linear solver
     param.solver_coupled      = SolverCoupled::GMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-8, 100);
+    param.solver_data_coupled = SolverData(1e5, 1.e-12, 1.e-8, 1000);
 
     // preconditioning linear solver
     param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;

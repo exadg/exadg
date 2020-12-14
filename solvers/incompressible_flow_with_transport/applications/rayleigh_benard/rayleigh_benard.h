@@ -397,6 +397,7 @@ public:
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = output_interval_time;
     pp_data.output_data.write_processor_id   = true;
+    pp_data.output_data.write_surface_mesh   = true;
     pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 

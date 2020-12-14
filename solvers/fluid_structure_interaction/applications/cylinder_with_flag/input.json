@@ -9,10 +9,10 @@
   },
   "FSI" : {
     "Method": "IQN-ILS",
-    "AbsTol": "1.e-12", 
+    "AbsTol": "1.e-8",
     "RelTol": "1.e-3", 
     "OmegaInit": "0.3",
-    "ReusedTimeSteps": "1",
+    "ReusedTimeSteps": "8",
     "PartitionedIterMax": "100"
   },
   "Application" : {

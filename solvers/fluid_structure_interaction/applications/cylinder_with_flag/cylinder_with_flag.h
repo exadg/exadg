@@ -82,10 +82,10 @@ double const END_TIME = 4.0 * L / U_MEAN;
 double const       OUTPUT_INTERVAL_TIME                = END_TIME / 600;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e2;
 
-double const REL_TOL = 1.e-2;
-double const ABS_TOL = 1.e-12;
+double const REL_TOL = 1.e-6;
+double const ABS_TOL = 1.e-8;
 
-double const REL_TOL_LINEARIZED = 1.e-2;
+double const REL_TOL_LINEARIZED = 1.e-6;
 double const ABS_TOL_LINEARIZED = 1.e-12;
 
 template<int dim>

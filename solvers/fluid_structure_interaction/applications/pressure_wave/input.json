@@ -8,10 +8,10 @@
         "RefineStructure": "0"
     },
     "FSI" : {
-        "Method": "IQN-IMVLS",
-        "AbsTol": "1.e-12",
+        "Method": "IQN-ILS",
+        "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
-        "OmegaInit": "0.1",
+        "OmegaInit": "0.3",
         "PartitionedIterMax": "100",
         "ReusedTimeSteps": "10",
         "GeometricTolerance": "1.e-8"
