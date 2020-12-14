@@ -9,7 +9,7 @@
   },
   "FSI" : {
     "Method": "Aitken",
-    "AbsTol": "1.e-12",
+    "AbsTol": "1.e-8",
     "RelTol": "1.e-3",
     "OmegaInit": "0.3",
     "ReusedTimeSteps": "1",

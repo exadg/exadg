@@ -46,13 +46,13 @@ double const TIME_PRESSURE  = 3.0e-3;
 double const TIME_STEP_SIZE = 0.0001;
 double const END_TIME       = 0.02;
 
-double const       OUTPUT_INTERVAL_TIME                = END_TIME / 100;
+double const       OUTPUT_INTERVAL_TIME                = END_TIME / 20;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1e0;
 
-double const REL_TOL = 1.e-2;
+double const REL_TOL = 1.e-3;
 double const ABS_TOL = 1.e-12;
 
-double const REL_TOL_LINEARIZED = 1.e-2;
+double const REL_TOL_LINEARIZED = 1.e-3;
 double const ABS_TOL_LINEARIZED = 1.e-12;
 
 template<int dim>
@@ -591,7 +591,7 @@ public:
       parameters.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
     else
       parameters.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    parameters.preconditioner                       = Preconditioner::Multigrid;
+    parameters.preconditioner                       = Preconditioner::AMG; // Multigrid;
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     parameters.multigrid_data.coarse_problem.preconditioner =
