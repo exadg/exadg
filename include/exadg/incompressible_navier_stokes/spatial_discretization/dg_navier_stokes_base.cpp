@@ -324,6 +324,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   rhs_data.quad_index                                = get_quad_index_velocity_linear();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
+  rhs_data.kernel_data.boussinesq_dynamic_part_only  = param.boussinesq_dynamic_part_only;
   rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
   rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
   rhs_data.kernel_data.gravitational_force           = field_functions->gravitational_force;
