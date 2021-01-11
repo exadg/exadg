@@ -54,6 +54,7 @@ SET( TARGET_SRC
      include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.cpp
      include/exadg/postprocessor/error_calculation.cpp
+     include/exadg/postprocessor/mean_scalar_calculation.cpp
      include/exadg/postprocessor/lift_and_drag_calculation.cpp
      include/exadg/postprocessor/pressure_difference_calculation.cpp
      include/exadg/postprocessor/kinetic_energy_spectrum.cpp
@@ -67,6 +68,7 @@ SET( TARGET_SRC
      include/exadg/poisson/spatial_discretization/operator.cpp
      include/exadg/poisson/spatial_discretization/laplace_operator.cpp
      include/exadg/poisson/preconditioner/multigrid_preconditioner.cpp
+     include/exadg/poisson/postprocessor/postprocessor.cpp
      include/exadg/poisson/driver.cpp
      # convection-diffusion equation
      include/exadg/convection_diffusion/user_interface/enum_types.cpp
@@ -82,7 +84,7 @@ SET( TARGET_SRC
      include/exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/exadg/convection_diffusion/time_integration/driver_steady_problems.cpp
      include/exadg/convection_diffusion/postprocessor/postprocessor.cpp
-     include/exadg/convection_diffusion/postprocessor/output_generator.cpp
+     include/exadg/postprocessor/output_generator_scalar.cpp
      include/exadg/convection_diffusion/driver.cpp
      # incompressible Navier-Stokes equations
      include/exadg/incompressible_navier_stokes/user_interface/input_parameters.cpp

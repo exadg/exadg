@@ -12,12 +12,10 @@
 #include <deal.II/numerics/data_out.h>
 
 // ExaDG
-#include <exadg/convection_diffusion/postprocessor/output_generator.h>
+#include <exadg/postprocessor/output_generator_scalar.h>
 #include <exadg/postprocessor/write_output.h>
 
 namespace ExaDG
-{
-namespace ConvDiff
 {
 using namespace dealii;
 
@@ -161,5 +159,4 @@ template class OutputGenerator<3, float>;
 template class OutputGenerator<2, double>;
 template class OutputGenerator<3, double>;
 
-} // namespace ConvDiff
 } // namespace ExaDG

@@ -138,7 +138,7 @@ struct Study
       prm.add_parameter("NScalars",
                         n_scalars,
                         "Number of scalar fields.",
-                        Patterns::Integer(1,20),
+                        Patterns::Integer(0,20),
                         true);
     prm.leave_subsection();
     // clang-format on

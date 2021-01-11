@@ -109,6 +109,95 @@ load_files(std::vector<std::string>          files,
 }
 
 void
+load_new_files(const std::vector<std::string> &  files,
+               std::vector<Point<3>> &           points,
+               std::vector<CellData<1>> &        cells,
+               std::vector<CellAdditionalInfo> & cells_additional_data,
+               unsigned int                      generations)
+{
+  double const              mm_to_m = 0.001;
+  std::vector<unsigned int> point_id;
+
+  for(const auto & filename : files)
+  {
+    std::ifstream infile(filename);
+
+    const int max_point_nr = points.size();
+
+    std::string line;
+
+    std::getline(infile, line);
+    std::getline(infile, line);
+
+    while(std::getline(infile, line))
+    {
+      std::istringstream iss(line);
+      std::string        a, b;
+      std::string        str_vertex;
+      int                vertex;
+      double             x, y, z;
+      if(!(iss >> a >> str_vertex >> b >> x >> y >> z))
+      {
+        break;
+      } // error
+
+      vertex = std::stoi(str_vertex, nullptr, 2);
+
+      point_id.push_back(vertex);
+
+      if(vertex < max_point_nr)
+        points[vertex] = {x * mm_to_m, y * mm_to_m, z * mm_to_m};
+
+      // points.emplace_back(x * mm_to_m, y * mm_to_m, z * mm_to_m); // in meter
+    }
+
+    while(std::getline(infile, line))
+    {
+      std::istringstream iss(line);
+
+      std::string element;        //	LINE
+      std::string str_element_nr; //	1
+      int         element_nr;
+      std::string nodes;     //	NODES
+      std::string str_node1; //	1
+      int         node1;
+      std::string str_node2; //	2
+      int         node2;
+      std::string Radius;     //	RADIUS
+      double      radius;     //	1.0
+      std::string Generation; //	GENERATION
+      int         generation;
+
+
+      if(!(iss >> element >> str_element_nr >> nodes >> str_node1 >> str_node2 >> Radius >>
+           radius >> Generation >> generation))
+      {
+        break;
+      } // error
+
+      // binary to decimal
+      element_nr = std::stoi(str_element_nr, nullptr, 2);
+      node1      = std::stoi(str_node1, nullptr, 2);
+      node2      = std::stoi(str_node2, nullptr, 2);
+
+      if((unsigned int)generation <= generations)
+      {
+        CellData<1> cell;
+        cell.vertices[0] = node1;
+        cell.vertices[1] = node2;
+        cells.push_back(cell);
+
+        CellAdditionalInfo cai;
+        cai.cell_id    = element_nr;
+        cai.generation = generation;
+        cai.radius     = radius * mm_to_m; // in meter
+        cells_additional_data.push_back(cai);
+      }
+    }
+  }
+}
+
+void
 call_METIS_MeshToDual(int *  ne,
                       int *  nn,
                       int *  eptr,

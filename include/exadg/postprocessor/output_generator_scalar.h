@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_OUTPUT_GENERATOR_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#ifndef INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_
+#define INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -17,8 +17,6 @@
 #include <exadg/postprocessor/output_data_base.h>
 
 namespace ExaDG
-{
-namespace ConvDiff
 {
 using namespace dealii;
 
@@ -49,7 +47,6 @@ private:
   OutputDataBase                      output_data;
 };
 
-} // namespace ConvDiff
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */
+#endif /* INCLUDE_EXADG_POSTPROCESSOR_OUTPUT_GENERATOR_SCALAR_H_ */

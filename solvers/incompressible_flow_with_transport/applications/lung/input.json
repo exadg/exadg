@@ -1,19 +1,19 @@
 {
     "General": {
-	"Precision": "double",
-        "Dim": "3",
-        "Degree": "3",
-        "RefineSpace": "0",
-        "NScalars": "1"
+      "Precision": "double",
+      "Dim": "3",
+      "Degree": "3",
+      "RefineSpace": "0",
+      "NScalars": "1"
     },
     "Application": {
-       	"Name": "Lung",
-       	"DirectoryLungFiles": "solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/",
-       	"Generations": "6"
+      "Name": "Lung",
+      "DirectoryLungFiles": "/home/bergbauer/code/exadg/solvers/incompressible_flow_with_transport/applications/lung/grid/patients/new_format/08gen/",
+      "MaxGeneration": "5"
     },
     "Output": {
-        "OutputDirectory": "output/lung/",
-        "OutputName": "gen6_l0_k32",
-        "WriteOutput": "false"
+      "OutputDirectory": "/home/bergbauer/code/exadg/build-debug/solvers/incompressible_flow_with_transport/output/lung/",
+      "OutputName": "gen6_l2_k32",
+      "WriteOutput": "true"
     }
 }

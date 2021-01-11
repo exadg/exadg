@@ -3,168 +3,21 @@
 
 namespace ExaDG
 {
-namespace LungID
-{
-int
-create_root()
-{
-  return 0;
-}
-
-int
-generate(int num, bool left)
-{
-  int generation_parent = (num << 27) >> 27;
-  int generation        = generation_parent + 1;
-
-  if(left)
-    return (num + 1) | (1 << (31 - generation));
-  else
-    return (num + 1);
-}
-
-int
-get_generation(int num)
-{
-  return (num << 27) >> 27;
-}
-
-template<typename T>
-std::string
-to_binary(T val)
-{
-  std::size_t sz = sizeof(val) * CHAR_BIT;
-  std::string ret(sz, ' ');
-  while(sz--)
-  {
-    ret[sz] = '0' + (val & 1);
-    val >>= 1;
-  }
-  return ret;
-}
-
-std::string
-to_string(int num)
-{
-  return to_binary(num);
-}
-
-class Checker
-{
-public:
-  virtual bool
-  pre(int num) = 0;
-  virtual bool
-  post(int num) = 0;
-  virtual int
-  get_generations() = 0;
-};
-
-class NoneChecker : public Checker
-{
-public:
-  virtual bool
-  pre(int num)
-  {
-    (void)num;
-    return true;
-  }
-  virtual bool
-  post(int num)
-  {
-    (void)num;
-    return true;
-  }
-
-  virtual int
-  get_generations()
-  {
-    return 12;
-  }
-};
-
-class GenerationChecker : public Checker
-{
-public:
-  GenerationChecker(int generation) : generation(generation)
-  {
-  }
-
-  virtual bool
-  pre(int num)
-  {
-    return get_generation(num) < generation;
-  }
-  virtual bool
-  post(int num)
-  {
-    return get_generation(num) + 1 < generation;
-  }
-
-  virtual int
-  get_generations()
-  {
-    return this->generation;
-  }
-
-  const int generation;
-};
-
-class ManualChecker : public Checker
-{
-public:
-  virtual bool
-  pre(int num)
-  {
-    if(num == create_root())
-      return true;
-
-
-    if(num == generate(create_root(), true))
-      return true;
-    if(num == generate(create_root(), false))
-      return true;
-
-    // if(num == generate(generate(create_root(), true), true))
-    //    return true;
-    // if(num == generate(generate(create_root(), true), false))
-    //    return true;
-    if(num == generate(generate(create_root(), false), true))
-      return true;
-    if(num == generate(generate(create_root(), false), false))
-      return true;
-
-    return false;
-  }
-  virtual bool
-  post(int num)
-  {
-    (void)num;
-    return true;
-  }
-
-  virtual int
-  get_generations()
-  {
-    return 2;
-  }
-};
-
-} // namespace LungID
-
 
 struct CellAdditionalInfo
 {
-  CellAdditionalInfo() : radius(0), generation(0)
+  CellAdditionalInfo() : cell_id(0), radius(0), generation(0)
   {
   }
 
-  CellAdditionalInfo(double radius, int generation) : radius(radius), generation(generation)
+  CellAdditionalInfo(unsigned int cell_id, double radius, int generation)
+    : cell_id(cell_id), radius(radius), generation(generation)
   {
   }
 
-  double radius;
-  int    generation;
+  unsigned int cell_id;
+  double       radius;
+  int          generation;
 };
 
 class Node
@@ -177,9 +30,9 @@ public:
        std::vector<CellAdditionalInfo> & cells_additional_data,
        std::vector<CellData<1>> &        cells,
        std::vector<Point<3>> &           points,
-       int                               todo,
+       unsigned int                      todo,
        bool                              _is_left)
-    : id(id),
+    : id(cells_additional_data[id].cell_id),
       generation(cells_additional_data[id].generation),
       radius(cells_additional_data[id].radius),
       from(points[cells[id].vertices[0]]),
@@ -187,8 +40,7 @@ public:
       _is_left(_is_left),
       parent(parent),
       left_child(nullptr),
-      right_child(nullptr),
-      _is_dummy(false)
+      right_child(nullptr)
   {
     // enough generations have been processed
     if(todo == 0)
@@ -229,49 +81,6 @@ public:
       }
   }
 
-  Node(Node * left_child, Node * right_child)
-    : id(0),
-      generation(left_child->get_generation() - 1),
-      radius((left_child->get_radius() + right_child->get_radius()) / 2 / 0.8),
-      _is_left(false),
-      parent(nullptr),
-      left_child(left_child),
-      right_child(right_child),
-      _is_dummy(false)
-  {
-    left_child->set_parent(this);
-    left_child->_is_left = true;
-    right_child->set_parent(this);
-    right_child->_is_left = false;
-  }
-
-  Node(Node *   left_child,
-       Node *   right_child,
-       Point<3> from,
-       bool     _is_left,
-       bool     do_twist = true,
-       bool     do_rot   = false)
-    : id(0),
-      generation(left_child->get_generation() - 1),
-      radius((left_child->get_radius() + right_child->get_radius()) / 2 / 0.7),
-      _is_left(_is_left),
-      parent(nullptr),
-      left_child(left_child),
-      right_child(right_child),
-      _is_dummy(false)
-  {
-    left_child->set_parent(this);
-    left_child->_is_left = true;
-    right_child->set_parent(this);
-    right_child->_is_left = false;
-
-    this->to   = left_child->from;
-    this->from = from;
-
-    this->do_twist = do_twist;
-    this->do_rot   = do_rot;
-  }
-
   static Node *
   create_root(unsigned int                      id,
               int *                             xadj_vertex,
@@ -279,7 +88,7 @@ public:
               std::vector<CellAdditionalInfo> & cells_additional_data,
               std::vector<CellData<1>> &        cells,
               std::vector<Point<3>> &           points,
-              int                               todo)
+              unsigned int                      todo)
   {
     return new Node(
       nullptr, id, xadj_vertex, adjncy_vertex, cells_additional_data, cells, points, todo, false);
@@ -291,6 +100,25 @@ public:
       delete left_child;
     if(right_child != nullptr)
       delete right_child;
+  }
+
+  static bool
+  check_if_planar(dealii::Tensor<1, 3> v1, dealii::Tensor<1, 3> v2, dealii::Tensor<1, 3> v3)
+  {
+    dealii::Tensor<2, 3> A;
+
+    for(int i = 0; i < 3; i++)
+      A[i][0] = v1[i];
+
+    for(int i = 0; i < 3; i++)
+      A[i][1] = v2[i];
+
+    for(int i = 0; i < 3; i++)
+      A[i][2] = v3[i];
+
+    double det = determinant(A);
+
+    return std::abs(det) < 1e-10;
   }
 
   bool
@@ -309,100 +137,162 @@ public:
     Point<3> & p1 = this->from;
     Point<3> & p2 = this->to;
     Point<3> & p3 = this->left_child->to;
-    Point<3> & p4 = this->left_child->from;
+    Point<3> & p4 = this->right_child->to;
 
-    dealii::Tensor<1, 3> v1 = p1 - p2;
-    dealii::Tensor<1, 3> v2 = p2 - p3;
-    dealii::Tensor<1, 3> v3 = p2 - p4;
+    dealii::Tensor<1, 3> v1 = p2 - p1;
+    dealii::Tensor<1, 3> v2 = p3 - p2;
+    dealii::Tensor<1, 3> v3 = p4 - p2;
 
-    dealii::Tensor<1, 3> n1 = cross_product_3d(v1, v2);
-    dealii::Tensor<1, 3> n2 = cross_product_3d(v1, v3);
-
-    double n3 = scalar_product(n1, n2);
-    return n3 == 0;
+    return check_if_planar(v1, v2, v3);
   }
 
-  dealii::Tensor<1, 3>
-  get_normal_vector()
+  static dealii::Tensor<1, 3>
+  get_normal_vector(dealii::Tensor<1, 3> v1, dealii::Tensor<1, 3> v2)
+  {
+    double scalar_product = v1 * v2;
+
+    double deg = std::acos(scalar_product / v1.norm() / v2.norm());
+
+    if(deg < 1e-10 || (numbers::PI - deg) < 1e-10)
+      AssertThrow(false, ExcMessage("Given vectors are collinear!"))
+
+        return cross_product_3d(v1, v2);
+  }
+
+  [[nodiscard]] dealii::Tensor<1, 3>
+  get_normal_vector_children() const
   {
     Point<3> &           p1 = this->right_child->from;
     Point<3> &           p2 = this->right_child->to;
     Point<3> &           p3 = this->left_child->from;
     Point<3> &           p4 = this->left_child->to;
-    dealii::Tensor<1, 3> v1 = p1 - p2;
-    dealii::Tensor<1, 3> v2 = p3 - p4;
+    dealii::Tensor<1, 3> v1 = p2 - p1;
+    dealii::Tensor<1, 3> v2 = p4 - p3;
 
-    double n3 = std::acos(v1 * v2 / v1.norm() / v2.norm());
-    if(true || abs(n3) < 1e-10 || abs(abs(n3) - numbers::PI) < 1e-10)
+    double argument = v1 * v2 / v1.norm() / v2.norm();
+
+    if((1.0 - std::abs(argument)) < 1e-10)
+      argument = std::copysign(1.0, argument);
+
+    double deg = std::acos(argument);
+
+    dealii::Tensor<1, 3> normal;
+
+    if(deg < 1e-10 || (numbers::PI - deg) < 1e-10)
     {
-      Point<3> &           p0 = this->from;
-      dealii::Tensor<1, 3> v1 = p0 - p1;
-      return cross_product_3d(v1, v2);
+      Point<3>             p5       = this->from;
+      dealii::Tensor<1, 3> v_parent = p1 - p5;
+      normal                        = get_normal_vector(v1 / v1.norm(), v_parent / v_parent.norm());
     }
     else
     {
-      return cross_product_3d(v1, v2);
+      normal = get_normal_vector(v1 / v1.norm(), v2 / v2.norm());
     }
+
+    return normal;
   }
-  //
-  //    dealii::Tensor<1, 3> get_normal_vector() {
-  //        Point<3>& p1 = this->right_child->from;
-  //        Point<3>& p2 = this->right_child->to;
-  //        Point<3>& p3 = this->left_child->from;
-  //        Point<3>& p4 = this->left_child->to;
-  //        dealii::Tensor<1, 3> v1 = p1 - p2;
-  //        dealii::Tensor<1, 3> v2 = p3 - p4;
-  //
-  //        std::cout << "AAAAAAAAAAAAAA1" << std::endl;
-  //        double n3 = std::acos( v1*v2  /v1.norm()/v2.norm());
-  //        std::cout << n3 << std::endl;
-  //        if(abs(n3)<1e-10 || abs(abs(n3)-numbers::PI)<1e-10){
-  //            std::cout << "AAAAAAAAAAAAAA2" << std::endl;
-  //            Point<3>& p0 = this->from;
-  //            dealii::Tensor<1, 3> v1 = p0 - p1;
-  //            return cross_product_3d(v1, v2);
-  //        } else
-  //            return cross_product_3d(v1, v2);
-  //    }
+
+  dealii::Tensor<1, 3>
+  get_normal_vector_parent_left()
+  {
+    Point<3> &           p1 = this->from;
+    Point<3> &           p2 = this->to;
+    Point<3> &           p3 = this->left_child->from;
+    Point<3> &           p4 = this->left_child->to;
+    dealii::Tensor<1, 3> v1 = p1 - p2;
+    dealii::Tensor<1, 3> v2 = p4 - p3;
+
+    double argument = v1 * v2 / v1.norm() / v2.norm();
+
+    if((1.0 - std::abs(argument)) < 1e-10)
+      argument = std::copysign(1.0, argument);
+
+    double deg = std::acos(argument);
+
+    dealii::Tensor<1, 3> normal;
+
+    if(deg < 1e-10 || (numbers::PI - deg) < 1e-10)
+    {
+      Point<3>             p5            = this->right_child->to;
+      dealii::Tensor<1, 3> v_right_child = p5 - p3;
+
+      normal = get_normal_vector(v1 / v1.norm(), v_right_child / v_right_child.norm());
+    }
+    else
+    {
+      normal = get_normal_vector(v1 / v1.norm(), v2 / v2.norm());
+    }
+
+    return normal;
+  }
+
+  dealii::Tensor<1, 3>
+  get_normal_vector_parent_right()
+  {
+    Point<3> &           p1 = this->from;
+    Point<3> &           p2 = this->to;
+    Point<3> &           p3 = this->right_child->from;
+    Point<3> &           p4 = this->right_child->to;
+    dealii::Tensor<1, 3> v1 = p1 - p2;
+    dealii::Tensor<1, 3> v2 = p4 - p3;
+
+    double argument = v1 * v2 / v1.norm() / v2.norm();
+
+    if((1.0 - std::abs(argument)) < 1e-10)
+      argument = std::copysign(1.0, argument);
+
+    double deg = std::acos(argument);
+
+    dealii::Tensor<1, 3> normal;
+
+    if(deg < 1e-10 || (numbers::PI - deg) < 1e-10)
+    {
+      Point<3>             p5           = this->left_child->to;
+      dealii::Tensor<1, 3> v_left_child = p5 - p3;
+
+      normal = get_normal_vector(v1 / v1.norm(), v_left_child / v_left_child.norm());
+    }
+    else
+    {
+      normal = get_normal_vector(v1 / v1.norm(), v2 / v2.norm());
+    }
+
+    return normal;
+  }
 
   virtual dealii::Tensor<1, 3>
   get_tangential_vector()
   {
     Point<3> &           p1 = this->from;
     Point<3> &           p2 = this->to;
-    dealii::Tensor<1, 3> v1 = p1 - p2;
+    dealii::Tensor<1, 3> v1 = p2 - p1;
 
     return v1;
   }
 
-  double
-  get_length()
+  [[nodiscard]] double
+  get_length() const
   {
     auto temp = to;
     temp -= from;
     return temp.norm();
   }
 
-  double get_degree(dealii::Tensor<1, 3> t1, dealii::Tensor<1, 3> t2)
+  static double
+  get_degree(dealii::Tensor<1, 3> t1, dealii::Tensor<1, 3> t2)
   {
-    return std::acos(t1 * t2 / t1.norm() / t2.norm());
+    double argument = t1 * t2 / t1.norm() / t2.norm();
+
+    if((1.0 - std::abs(argument)) < 1e-10)
+      argument = std::copysign(1.0, argument);
+
+    return std::acos(argument);
   }
 
-  double get_degree(Point<3> & p1, Point<3> & p2, Point<3> & p3, Point<3> & p4)
+  static double
+  get_degree(Point<3> & p1, Point<3> & p2, Point<3> & p3, Point<3> & p4)
   {
     return get_degree(p2 - p1, p4 - p3);
-  }
-
-  virtual double
-  get_degree_1()
-  {
-    return get_degree(this->from, this->to, left_child->from, left_child->to);
-  }
-
-  virtual double
-  get_degree_2()
-  {
-    return get_degree(this->from, this->to, right_child->from, right_child->to);
   }
 
   void
@@ -424,76 +314,64 @@ public:
       right_child->print();
   }
 
-  bool
-  has_children()
+  [[nodiscard]] bool
+  has_children() const
   {
     return left_child != nullptr && right_child != nullptr;
   }
 
-  Point<3>
-  get_source()
+  [[nodiscard]] Point<3>
+  get_source() const
   {
     return from;
   }
 
-  Point<3>
-  get_target()
+  [[nodiscard]] Point<3>
+  get_target() const
   {
     return to;
   }
 
-  bool
-  is_root()
+  [[nodiscard]] bool
+  is_root() const
   {
     return parent == nullptr;
   }
 
-  bool
-  is_left()
+  [[nodiscard]] bool
+  is_left() const
   {
     return _is_left;
   }
 
-  double
-  get_radius()
+  [[nodiscard]] double
+  get_radius() const
   {
     return radius;
   }
 
-  Node *
-  get_parent()
+  [[nodiscard]] Node *
+  get_parent() const
   {
     return parent;
   }
 
-  void
-  set_parent(Node * parent)
-  {
-    this->parent = parent;
-  }
-
-  Node *
-  get_left_child()
+  [[nodiscard]] Node *
+  get_left_child() const
   {
     return left_child;
   }
 
-  Node *
-  get_right_child()
+  [[nodiscard]] Node *
+  get_right_child() const
   {
     return right_child;
   }
 
-  int
-  get_generation()
+  [[maybe_unused]] [[nodiscard]] int
+  get_generation() const
   {
     return generation;
-  }
-
-  bool
-  is_dummy()
-  {
-    return _is_dummy;
   }
 
   virtual int
@@ -512,57 +390,9 @@ public:
   Node *       parent;
   Node *       left_child;
   Node *       right_child;
-  bool         _is_dummy;
-  bool         do_twist = true;
   bool         do_rot   = false;
 
   std::vector<Point<3>> skeleton;
-};
-
-class DummyNode : public Node
-{
-public:
-  DummyNode(Node * left_child, Node * right_child) : Node(left_child, right_child)
-  {
-    this->_is_dummy = true;
-  }
-
-  virtual double
-  get_degree_1()
-  {
-    return get_degree(this->right_child->from,
-                      this->right_child->to,
-                      this->left_child->from,
-                      this->left_child->to) /
-           2;
-  }
-
-  virtual double
-  get_degree_2()
-  {
-    return get_degree(this->left_child->from,
-                      this->left_child->to,
-                      this->right_child->from,
-                      this->right_child->to) /
-           2;
-  }
-
-
-  dealii::Tensor<1, 3>
-  get_tangential_vector()
-  {
-    auto right_dir = this->right_child->from - this->right_child->to;
-    auto left_dir  = this->left_child->from - this->left_child->to;
-
-    return left_dir / left_dir.norm() + right_dir / right_dir.norm();
-  }
-
-
-  virtual int
-  get_intersections()
-  {
-    return 0;
-  }
 };
 
 } // namespace ExaDG

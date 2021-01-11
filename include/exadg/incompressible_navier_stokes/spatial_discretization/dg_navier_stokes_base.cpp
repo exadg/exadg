@@ -886,6 +886,24 @@ DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velo
 
 template<int dim, typename Number>
 void
+DGNavierStokesBase<dim, Number>::calculate_cfl_from_time_step(VectorType &       cfl,
+                                                              VectorType const & velocity,
+                                                              double const time_step_size) const
+{
+  calculate_cfl<dim, Number>(cfl,
+                             triangulation,
+                             *matrix_free,
+                             get_dof_index_velocity(),
+                             get_quad_index_velocity_linear(),
+                             velocity,
+                             time_step_size,
+                             degree_u,
+                             param.cfl_exponent_fe_degree_velocity);
+}
+
+
+template<int dim, typename Number>
+void
 DGNavierStokesBase<dim, Number>::apply_mass_matrix(VectorType & dst, VectorType const & src) const
 {
   mass_matrix_operator.apply(dst, src);
@@ -1706,6 +1724,13 @@ DGNavierStokesBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
                   ExcMessage("BoundaryTypeU not implemented."));
     }
   }
+}
+
+template<int dim, typename Number>
+const InputParameters &
+DGNavierStokesBase<dim, Number>::get_param() const
+{
+  return param;
 }
 
 template class DGNavierStokesBase<2, float>;

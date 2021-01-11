@@ -242,6 +242,10 @@ public:
   /*
    * Setters and getters.
    */
+
+  const MatrixFree<dim, Number> &
+  get_matrix_free() const;
+
   DoFHandler<dim> const &
   get_dof_handler() const;
 
@@ -259,6 +263,12 @@ public:
 
   void
   update_after_mesh_movement();
+
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
 
 private:
   /*
@@ -279,17 +289,11 @@ private:
   std::string
   get_dof_name_velocity() const;
 
-  unsigned int
-  get_dof_index() const;
-
   /*
    * Dof index for velocity (in case of numerical velocity field)
    */
   unsigned int
   get_dof_index_velocity() const;
-
-  unsigned int
-  get_quad_index() const;
 
   unsigned int
   get_quad_index_overintegration() const;

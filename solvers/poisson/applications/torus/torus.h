@@ -96,18 +96,18 @@ public:
     field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(1.0, 1));
   }
 
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    ConvDiff::PostProcessorData<dim> pp_data;
+    Poisson::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->write_output;
     pp_data.output_data.output_folder      = this->output_directory + "vtu/";
     pp_data.output_data.output_name        = this->output_name;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = degree;
 
-    std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<Poisson::PostProcessorBase<dim, Number>> pp;
+    pp.reset(new Poisson::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }
