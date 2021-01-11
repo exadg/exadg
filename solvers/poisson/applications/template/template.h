@@ -86,15 +86,15 @@ public:
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   }
 
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     (void)degree;
 
-    ConvDiff::PostProcessorData<dim> pp_data;
+    Poisson::PostProcessorData<dim> pp_data;
 
-    std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<Poisson::PostProcessorBase<dim, Number>> pp;
+    pp.reset(new Poisson::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }

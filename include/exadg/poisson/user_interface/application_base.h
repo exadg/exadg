@@ -17,7 +17,7 @@
 #include <deal.II/grid/tria_description.h>
 
 // ExaDG
-#include <exadg/convection_diffusion/postprocessor/postprocessor.h>
+#include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/input_parameters.h>
@@ -68,7 +68,7 @@ public:
   virtual void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
 
-  virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  virtual std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
   void

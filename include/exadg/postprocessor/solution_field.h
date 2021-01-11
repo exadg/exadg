@@ -18,7 +18,8 @@ using namespace dealii;
 enum class SolutionFieldType
 {
   scalar,
-  vector
+  vector,
+  cellwise
 };
 
 template<int dim, typename Number>

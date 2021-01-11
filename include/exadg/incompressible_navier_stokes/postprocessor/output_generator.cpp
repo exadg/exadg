@@ -56,6 +56,15 @@ write_output(OutputData const &                                 output_data,
   pressure.update_ghost_values();
   data_out.add_data_vector(dof_handler_pressure, pressure, "p");
 
+  if(output_data.write_aspect_ratio)
+  {
+    Vector<double> aspect_ratios =
+      GridTools::compute_aspect_ratio_of_cells(mapping,
+                                               dof_handler_velocity.get_triangulation(),
+                                               QGauss<dim>(4));
+    data_out.add_data_vector(aspect_ratios, "aspect_ratio");
+  }
+
   for(typename std::vector<SolutionField<dim, Number>>::const_iterator it =
         additional_fields.begin();
       it != additional_fields.end();
@@ -66,6 +75,10 @@ write_output(OutputData const &                                 output_data,
     if(it->type == SolutionFieldType::scalar)
     {
       data_out.add_data_vector(*it->dof_handler, *it->vector, it->name);
+    }
+    else if(it->type == SolutionFieldType::cellwise)
+    {
+      data_out.add_data_vector(*it->vector, it->name);
     }
     else if(it->type == SolutionFieldType::vector)
     {
@@ -326,6 +339,16 @@ OutputGenerator<dim, Number>::initialize_additional_fields()
       sol.vector      = &mean_velocity;
       this->additional_fields.push_back(sol);
     }
+
+    // cfl
+    if(output_data.write_cfl)
+    {
+      SolutionField<dim, Number> sol;
+      sol.type   = SolutionFieldType::cellwise;
+      sol.name   = "cfl";
+      sol.vector      = &cfl;
+      this->additional_fields.push_back(sol);
+    }
   }
 }
 
@@ -399,6 +422,17 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
         compute_mean_velocity(mean_velocity, velocity, time, time_step_number);
       else // time_step_number < 0 -> steady problems
         AssertThrow(false, ExcMessage("Mean velocity can only be computed for unsteady problems."));
+    }
+
+    if(output_data.write_cfl)
+    {
+      auto param = navier_stokes_operator->get_param();
+      auto time_step_size =
+        navier_stokes_operator->calculate_time_step_cfl(velocity,
+                                                        param.cfl,
+                                                        param.cfl_exponent_fe_degree_velocity);
+
+      navier_stokes_operator->calculate_cfl_from_time_step(cfl, velocity, time_step_size);
     }
   }
 }

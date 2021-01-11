@@ -925,6 +925,13 @@ DGOperator<dim, Number>::update_after_mesh_movement()
   }
 }
 
+template<int dim, typename Number>
+const MatrixFree<dim, Number> &
+DGOperator<dim, Number>::get_matrix_free() const
+{
+  return *matrix_free;
+}
+
 template class DGOperator<2, float>;
 template class DGOperator<2, double>;
 

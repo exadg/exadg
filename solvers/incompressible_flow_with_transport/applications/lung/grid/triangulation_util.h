@@ -8,45 +8,6 @@ namespace ExaDG
 {
 using namespace dealii;
 
-void print_triangulation_3_1(std::vector<Point<3>> & points, std::vector<CellData<1>> & cells)
-{
-  std::vector<Point<3>>    points2;
-  std::vector<CellData<1>> cells2;
-
-  int i = 0;
-  for(auto & celli : cells)
-  {
-    CellData<1> cell;
-    cell.vertices[0] = i++;
-    cell.vertices[1] = i++;
-    cells2.push_back(cell);
-
-    points2.push_back(points[celli.vertices[0]]);
-    points2.push_back(points[celli.vertices[1]]);
-  }
-
-  Triangulation<1, 3> tria;
-  tria.create_triangulation(points2, cells2, SubCellData());
-
-  std::cout << "AA" << std::endl;
-  DoFHandler<1, 3> dofhanlder(tria);
-  FE_DGQ<1, 3>     fe2(0);
-  dofhanlder.distribute_dofs(fe2);
-
-  std::cout << "BB" << std::endl;
-
-  DataOut<1, DoFHandler<1, 3>> data_out;
-  data_out.attach_dof_handler(dofhanlder);
-
-  data_out.build_patches(1);
-
-  std::filebuf fb;
-  fb.open("test.vtu", std::ios::out);
-  std::ostream os(&fb);
-  data_out.write_vtu(os);
-  fb.close();
-}
-
 void print_tria_statistics(Triangulation<3> & tria)
 {
   std::cout << "Statistics:" << std::endl;

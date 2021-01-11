@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
-#define INCLUDE_EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
+#ifndef INCLUDE_EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
+#define INCLUDE_EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
 
 // deal.II
 #include <deal.II/dofs/dof_handler.h>
@@ -19,12 +19,9 @@
 
 namespace ExaDG
 {
-namespace ConvDiff
+namespace Poisson
 {
 using namespace dealii;
-
-template<int dim, typename Number>
-class DGOperator;
 
 template<typename Number>
 class PostProcessorInterface
@@ -48,18 +45,16 @@ class PostProcessorBase : public PostProcessorInterface<Number>
 protected:
   typedef typename PostProcessorInterface<Number>::VectorType VectorType;
 
-  typedef DGOperator<dim, Number> Operator;
-
 public:
   virtual ~PostProcessorBase()
   {
   }
 
   virtual void
-  setup(Operator const & pde_operator, Mapping<dim> const & mapping) = 0;
+  setup(DoFHandler<dim, dim> const & dof_handler, Mapping<dim> const & mapping) = 0;
 };
 
-} // namespace ConvDiff
+} // namespace Poisson
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_CONVECTION_DIFFUSION_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */
+#endif /* INCLUDE_EXADG_POISSON_POSTPROCESSOR_POSTPROCESSOR_BASE_H_ */
