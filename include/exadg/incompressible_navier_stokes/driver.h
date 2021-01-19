@@ -90,16 +90,42 @@ string_to_enum(Operator & enum_type, std::string const string_type)
 }
 
 inline unsigned int
-get_dofs_per_element(std::string const & operator_type_string,
+get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,
                      unsigned int const  degree)
 {
+  std::string operator_type_string, pressure_degree = "MixedOrder";
+
+  dealii::ParameterHandler prm;
+  // clang-format off
+  prm.enter_subsection("Discretization");
+    prm.add_parameter("PressureDegree",
+                      pressure_degree,
+                      "Degree of pressure shape functions.",
+                      Patterns::Selection("MixedOrder|EqualOrder"),
+                      true);
+  prm.leave_subsection();
+  prm.enter_subsection("Throughput");
+    prm.add_parameter("OperatorType",
+                      operator_type_string,
+                      "Type of operator.",
+                      Patterns::Anything(),
+                      true);
+  prm.leave_subsection();
+  // clang-format on
+  prm.parse_input(input_file, "", true, true);
+
   Operator operator_type;
   string_to_enum(operator_type, operator_type_string);
 
   unsigned int const velocity_dofs_per_element = dim * std::pow(degree + 1, dim);
-  // assume mixed-order polynomials
-  unsigned int const pressure_dofs_per_element = std::pow(degree, dim);
+  unsigned int       pressure_dofs_per_element = 1;
+  if(pressure_degree == "MixedOrder")
+    pressure_dofs_per_element = std::pow(degree, dim);
+  else if(pressure_degree == "EqualOrder")
+    pressure_dofs_per_element = std::pow(degree + 1, dim);
+  else
+    AssertThrow(false, ExcMessage("Not implemented."));
 
   if(operator_type == Operator::CoupledNonlinearResidual ||
      operator_type == Operator::CoupledLinearized)
