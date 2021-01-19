@@ -1,13 +1,11 @@
-#ifndef INCLUDE_CONVECTION_DIFFUSION_RHS
-#define INCLUDE_CONVECTION_DIFFUSION_RHS
+#ifndef INCLUDE_OPERATORS_RHS_OPERATOR
+#define INCLUDE_OPERATORS_RHS_OPERATOR
 
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/mapping_flags.h>
 
 namespace ExaDG
-{
-namespace ConvDiff
 {
 using namespace dealii;
 
@@ -143,7 +141,6 @@ private:
   Operators::RHSKernel<dim, Number, n_components> kernel;
 };
 
-} // namespace ConvDiff
 } // namespace ExaDG
 
 #endif

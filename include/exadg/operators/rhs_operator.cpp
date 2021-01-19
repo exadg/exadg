@@ -5,11 +5,9 @@
  *      Author: fehn
  */
 
-#include <exadg/convection_diffusion/spatial_discretization/operators/rhs_operator.h>
+#include <exadg/operators/rhs_operator.h>
 
 namespace ExaDG
-{
-namespace ConvDiff
 {
 using namespace dealii;
 
@@ -92,5 +90,4 @@ template class RHSOperator<3, double, 1>;
 template class RHSOperator<3, float, 3>;
 template class RHSOperator<3, double, 3>;
 
-} // namespace ConvDiff
 } // namespace ExaDG

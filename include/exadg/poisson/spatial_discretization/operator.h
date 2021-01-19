@@ -17,11 +17,11 @@
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 
 // operators
+#include <exadg/operators/rhs_operator.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
 
 // user interface
-#include <exadg/convection_diffusion/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
@@ -187,7 +187,7 @@ private:
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
 
-  ConvDiff::RHSOperator<dim, Number, n_components> rhs_operator;
+  RHSOperator<dim, Number, n_components> rhs_operator;
 
   Laplace laplace_operator;
 
