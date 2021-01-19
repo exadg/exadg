@@ -13,8 +13,6 @@
 #include <deal.II/base/timer.h>
 
 // ExaDG
-
-#include <exadg/convection_diffusion/postprocessor/postprocessor_base.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
