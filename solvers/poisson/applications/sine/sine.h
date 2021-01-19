@@ -248,10 +248,10 @@ public:
     field_functions->right_hand_side.reset(new RightHandSide<dim>());
   }
 
-  std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
+  std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    Poisson::PostProcessorData<dim> pp_data;
+    PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->write_output;
     pp_data.output_data.output_folder      = this->output_directory + "vtu/";
     pp_data.output_data.output_name        = this->output_name;
@@ -262,8 +262,8 @@ public:
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
     pp_data.error_data.calculate_relative_errors = true;
 
-    std::shared_ptr<Poisson::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new Poisson::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
+    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }

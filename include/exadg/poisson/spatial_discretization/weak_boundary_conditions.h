@@ -8,7 +8,6 @@
 #ifndef INCLUDE_EXADG_POISSON_SPATIAL_DISCRETIZATION_WEAK_BOUNDARY_CONDITIONS_H_
 #define INCLUDE_EXADG_POISSON_SPATIAL_DISCRETIZATION_WEAK_BOUNDARY_CONDITIONS_H_
 
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_type.h>

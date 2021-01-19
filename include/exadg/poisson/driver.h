@@ -13,17 +13,13 @@
 #include <deal.II/base/timer.h>
 
 // ExaDG
-#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mesh.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
-#include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/application_base.h>
-#include <exadg/poisson/user_interface/field_functions.h>
-#include <exadg/poisson/user_interface/input_parameters.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
 #include <exadg/utilities/timer_tree.h>
@@ -155,7 +151,7 @@ private:
 
   std::shared_ptr<Operator<dim, Number>> poisson_operator;
 
-  std::shared_ptr<Poisson::PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 
   // number of iterations
   mutable unsigned int iterations;

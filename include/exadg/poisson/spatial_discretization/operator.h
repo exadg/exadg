@@ -17,7 +17,6 @@
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 
 // operators
-#include <exadg/operators/inverse_mass_matrix.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
 
