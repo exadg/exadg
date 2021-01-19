@@ -37,39 +37,6 @@ namespace Poisson
 {
 using namespace dealii;
 
-enum class OperatorType
-{
-  MatrixFree,
-  MatrixBased
-};
-
-inline std::string
-enum_to_string(OperatorType const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    // clang-format off
-    case OperatorType::MatrixFree:  string_type = "MatrixFree";  break;
-    case OperatorType::MatrixBased: string_type = "MatrixBased"; break;
-    default: AssertThrow(false, ExcMessage("Not implemented.")); break;
-      // clang-format on
-  }
-
-  return string_type;
-}
-
-inline void
-string_to_enum(OperatorType & enum_type, std::string const string_type)
-{
-  // clang-format off
-  if     (string_type == "MatrixFree")  enum_type = OperatorType::MatrixFree;
-  else if(string_type == "MatrixBased") enum_type = OperatorType::MatrixBased;
-  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
-  // clang-format on
-}
-
 inline unsigned int
 get_dofs_per_element(std::string const & operator_type_string,
                      unsigned int const  dim,
@@ -77,7 +44,16 @@ get_dofs_per_element(std::string const & operator_type_string,
 {
   (void)operator_type_string;
 
-  unsigned int const dofs_per_element = std::pow(degree + 1, dim);
+  unsigned int dofs_per_element = 1;
+
+  if(operator_type_string == "Scalar-CG")
+    dofs_per_element = std::pow(degree, dim);
+  else if(operator_type_string == "Scalar-DG")
+    dofs_per_element = std::pow(degree + 1, dim);
+  else if(operator_type_string == "Vectorial-CG")
+    dofs_per_element = dim * std::pow(degree, dim);
+  else if(operator_type_string == "Vectorial-DG")
+    dofs_per_element = dim * std::pow(degree + 1, dim);
 
   return dofs_per_element;
 }

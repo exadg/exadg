@@ -11,7 +11,7 @@
         "DofsMax": "10000"
     },
     "Throughput": {
-        "OperatorType": "MatrixFree",
+        "OperatorType": "Scalar-DG",
         "RepetitionsInner": "100",
         "RepetitionsOuter": "1"
     },

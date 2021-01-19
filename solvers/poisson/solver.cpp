@@ -183,8 +183,7 @@ main(int argc, char ** argv)
   ExaDG::ParameterStudy study(input_file);
 
   // fill resolution vector depending on the operator_type
-  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element,
-                               enum_to_string(ExaDG::Poisson::OperatorType::MatrixFree));
+  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, "Scalar-DG");
 
   std::vector<ExaDG::Timings> timings;
 

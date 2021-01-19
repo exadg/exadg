@@ -250,8 +250,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
-  OperatorType operator_type;
-  string_to_enum(operator_type, operator_type_string);
+  bool const matrix_free = true;
 
   LinearAlgebra::distributed::Vector<Number> dst, src;
   poisson_operator->initialize_dof_vector(src);
@@ -267,27 +266,22 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   TrilinosWrappers::SparseMatrix system_matrix;
 #endif
 
-  if(operator_type == OperatorType::MatrixBased)
+  if(!matrix_free)
   {
 #ifdef DEAL_II_WITH_TRILINOS
     poisson_operator->init_system_matrix(system_matrix);
     poisson_operator->calculate_system_matrix(system_matrix);
-
-    // TODO
-//  pcout << "Number of nonzero elements = " << system_matrix.n_nonzero_elements() << std::endl;
-//  pcout << "Number of nonzero elements block diagonal = " <<
-//  triangulation->n_global_active_cells()*std::pow(param.degree+1, 2*param.dim) << std::endl;
 #else
     AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));
 #endif
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(operator_type == OperatorType::MatrixFree)
+    if(matrix_free)
     {
       poisson_operator->vmult(dst, src);
     }
-    else if(operator_type == OperatorType::MatrixBased)
+    else
     {
 #ifdef DEAL_II_WITH_TRILINOS
       poisson_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);

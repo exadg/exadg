@@ -34,10 +34,10 @@ enum_to_string(SpatialDiscretization const enum_type)
       string_type = "Undefined";
       break;
     case SpatialDiscretization::CG:
-      string_type = "FE_Q";
+      string_type = "CG";
       break;
     case SpatialDiscretization::DG:
-      string_type = "FE_DGQ";
+      string_type = "DG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
