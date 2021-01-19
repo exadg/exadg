@@ -14,13 +14,13 @@
 
 // ExaDG
 
+#include <exadg/convection_diffusion/postprocessor/postprocessor_base.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mesh.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
-#include <exadg/poisson/postprocessor/postprocessor_base.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/application_base.h>
@@ -37,23 +37,65 @@ namespace Poisson
 {
 using namespace dealii;
 
+enum class OperatorType
+{
+  MatrixFree,
+  MatrixBased
+};
+
+inline std::string
+enum_to_string(OperatorType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    // clang-format off
+    case OperatorType::MatrixFree:  string_type = "MatrixFree";  break;
+    case OperatorType::MatrixBased: string_type = "MatrixBased"; break;
+    default: AssertThrow(false, ExcMessage("Not implemented.")); break;
+      // clang-format on
+  }
+
+  return string_type;
+}
+
+inline void
+string_to_enum(OperatorType & enum_type, std::string const string_type)
+{
+  // clang-format off
+  if     (string_type == "MatrixFree")  enum_type = OperatorType::MatrixFree;
+  else if(string_type == "MatrixBased") enum_type = OperatorType::MatrixBased;
+  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  // clang-format on
+}
+
 inline unsigned int
-get_dofs_per_element(std::string const & operator_type_string,
+get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,
                      unsigned int const  degree)
 {
-  (void)operator_type_string;
+  std::string spatial_discretization = "DG";
+
+  ParameterHandler prm;
+  prm.enter_subsection("Discretization");
+  prm.add_parameter("SpatialDiscretization",
+                    spatial_discretization,
+                    "Spatial discretization (CG vs. DG).",
+                    Patterns::Selection("CG|DG"),
+                    true);
+  prm.leave_subsection();
+
+  prm.parse_input(input_file, "", true, true);
 
   unsigned int dofs_per_element = 1;
 
-  if(operator_type_string == "Scalar-CG")
+  if(spatial_discretization == "CG")
     dofs_per_element = std::pow(degree, dim);
-  else if(operator_type_string == "Scalar-DG")
+  else if(spatial_discretization == "DG")
     dofs_per_element = std::pow(degree + 1, dim);
-  else if(operator_type_string == "Vectorial-CG")
-    dofs_per_element = dim * std::pow(degree, dim);
-  else if(operator_type_string == "Vectorial-DG")
-    dofs_per_element = dim * std::pow(degree + 1, dim);
+  else
+    AssertThrow(false, ExcMessage("Not implemented."));
 
   return dofs_per_element;
 }

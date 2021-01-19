@@ -250,7 +250,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
-  bool const matrix_free = true;
+  OperatorType operator_type;
+  string_to_enum(operator_type, operator_type_string);
 
   LinearAlgebra::distributed::Vector<Number> dst, src;
   poisson_operator->initialize_dof_vector(src);
@@ -266,7 +267,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   TrilinosWrappers::SparseMatrix system_matrix;
 #endif
 
-  if(!matrix_free)
+  if(operator_type == OperatorType::MatrixBased)
   {
 #ifdef DEAL_II_WITH_TRILINOS
     poisson_operator->init_system_matrix(system_matrix);
@@ -277,11 +278,11 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(matrix_free)
+    if(operator_type == OperatorType::MatrixFree)
     {
       poisson_operator->vmult(dst, src);
     }
-    else
+    else if(operator_type == OperatorType::MatrixBased)
     {
 #ifdef DEAL_II_WITH_TRILINOS
       poisson_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);

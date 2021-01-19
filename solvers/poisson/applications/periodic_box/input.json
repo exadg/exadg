@@ -10,8 +10,12 @@
         "DofsMin": "1000",
         "DofsMax": "10000"
     },
+    "Discretization":
+    {
+    	"SpatialDiscretization": "DG"
+    },
     "Throughput": {
-        "OperatorType": "Scalar-DG",
+        "OperatorType": "MatrixFree",
         "RepetitionsInner": "100",
         "RepetitionsOuter": "1"
     },
