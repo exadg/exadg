@@ -62,6 +62,7 @@ SET( TARGET_SRC
      include/exadg/postprocessor/statistics_manager.cpp
      include/exadg/operators/operator_base.cpp
      include/exadg/operators/mass_matrix_operator.cpp
+     include/exadg/operators/rhs_operator.cpp
      # Poisson equation
      include/exadg/poisson/user_interface/enum_types.cpp
      include/exadg/poisson/user_interface/input_parameters.cpp
@@ -75,7 +76,6 @@ SET( TARGET_SRC
      include/exadg/convection_diffusion/user_interface/input_parameters.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
-     include/exadg/convection_diffusion/spatial_discretization/operators/rhs_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/dg_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/interface.cpp

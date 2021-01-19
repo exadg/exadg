@@ -141,8 +141,10 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
       param.spatial_discretization == SpatialDiscretization::DG, true));
 
   if(param.right_hand_side)
+  {
     matrix_free_data.append_mapping_flags(
-      ConvDiff::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
+      ExaDG::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
+  }
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
@@ -179,7 +181,7 @@ Operator<dim, Number, n_components>::setup_operators()
   // rhs operator
   if(param.right_hand_side)
   {
-    ConvDiff::RHSOperatorData<dim> rhs_operator_data;
+    RHSOperatorData<dim> rhs_operator_data;
     rhs_operator_data.dof_index     = get_dof_index();
     rhs_operator_data.quad_index    = get_quad_index();
     rhs_operator_data.kernel_data.f = field_functions->right_hand_side;

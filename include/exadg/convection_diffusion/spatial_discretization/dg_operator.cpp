@@ -76,7 +76,8 @@ DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & mat
 
   if(param.right_hand_side)
   {
-    matrix_free_data.append_mapping_flags(Operators::RHSKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(
+      ExaDG::Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.convective_problem())

@@ -16,13 +16,13 @@
 // ExaDG
 #include <exadg/convection_diffusion/spatial_discretization/interface.h>
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
-#include <exadg/convection_diffusion/spatial_discretization/operators/rhs_operator.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/input_parameters.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 #include <exadg/operators/inverse_mass_matrix.h>
 #include <exadg/operators/mass_matrix_operator.h>
+#include <exadg/operators/rhs_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
 
 // operators
