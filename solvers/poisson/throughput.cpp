@@ -180,7 +180,7 @@ main(int argc, char ** argv)
   ExaDG::ThroughputStudy throughput(input_file);
 
   // fill resolution vector depending on the operator_type
-  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, throughput.operator_type);
+  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
 
   // loop over resolutions vector and run simulations
   for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)

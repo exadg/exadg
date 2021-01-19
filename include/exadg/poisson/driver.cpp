@@ -272,11 +272,6 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 #ifdef DEAL_II_WITH_TRILINOS
     poisson_operator->init_system_matrix(system_matrix);
     poisson_operator->calculate_system_matrix(system_matrix);
-
-    // TODO
-//  pcout << "Number of nonzero elements = " << system_matrix.n_nonzero_elements() << std::endl;
-//  pcout << "Number of nonzero elements block diagonal = " <<
-//  triangulation->n_global_active_cells()*std::pow(param.degree+1, 2*param.dim) << std::endl;
 #else
     AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));
 #endif

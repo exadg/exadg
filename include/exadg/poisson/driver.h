@@ -13,14 +13,12 @@
 #include <deal.II/base/timer.h>
 
 // ExaDG
-
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mesh.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
-#include <exadg/poisson/postprocessor/postprocessor_base.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/application_base.h>
@@ -71,13 +69,31 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
 }
 
 inline unsigned int
-get_dofs_per_element(std::string const & operator_type_string,
+get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,
                      unsigned int const  degree)
 {
-  (void)operator_type_string;
+  std::string spatial_discretization = "DG";
 
-  unsigned int const dofs_per_element = std::pow(degree + 1, dim);
+  ParameterHandler prm;
+  prm.enter_subsection("Discretization");
+  prm.add_parameter("SpatialDiscretization",
+                    spatial_discretization,
+                    "Spatial discretization (CG vs. DG).",
+                    Patterns::Selection("CG|DG"),
+                    true);
+  prm.leave_subsection();
+
+  prm.parse_input(input_file, "", true, true);
+
+  unsigned int dofs_per_element = 1;
+
+  if(spatial_discretization == "CG")
+    dofs_per_element = std::pow(degree, dim);
+  else if(spatial_discretization == "DG")
+    dofs_per_element = std::pow(degree + 1, dim);
+  else
+    AssertThrow(false, ExcMessage("Not implemented."));
 
   return dofs_per_element;
 }
