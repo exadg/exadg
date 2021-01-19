@@ -14,9 +14,6 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
-// ExaDG
-#include <exadg/convection_diffusion/user_interface/analytical_solution.h>
-
 namespace ExaDG
 {
 namespace Poisson

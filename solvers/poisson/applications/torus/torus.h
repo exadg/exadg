@@ -96,7 +96,7 @@ public:
     field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(1.0, 1));
   }
 
-  std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
+  std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     Poisson::PostProcessorData<dim> pp_data;
@@ -106,8 +106,8 @@ public:
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = degree;
 
-    std::shared_ptr<Poisson::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new Poisson::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
+    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }

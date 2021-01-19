@@ -12,7 +12,6 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/convection_diffusion/user_interface/analytical_solution.h>
 #include <exadg/poisson/postprocessor/postprocessor_base.h>
 #include <exadg/postprocessor/error_calculation.h>
 #include <exadg/postprocessor/output_data_base.h>
