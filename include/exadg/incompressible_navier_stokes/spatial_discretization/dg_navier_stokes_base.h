@@ -297,6 +297,12 @@ public:
                           double const       cfl,
                           double const       exponent_degree) const;
 
+  // Calculate CFL numbers of cells
+  void
+  calculate_cfl_from_time_step(VectorType &       cfl,
+                               VectorType const & velocity,
+                               double const       time_step_size) const;
+
   /*
    * For certain setups and types of boundary conditions, the pressure field is only defined up to
    * an additive constant which originates from the fact that only the derivative of the pressure
@@ -479,6 +485,11 @@ protected:
    */
   InputParameters const & param;
 
+public:
+  const InputParameters &
+  get_param() const;
+
+protected:
   std::string const field;
 
   /*

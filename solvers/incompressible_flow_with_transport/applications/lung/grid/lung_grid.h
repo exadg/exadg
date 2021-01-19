@@ -1,13 +1,6 @@
 #ifndef LUNG_GRID
 #define LUNG_GRID
 
-// merge every second root such that they have a flat starting points
-//#define USE_FLAT_ROOT
-
-// create a dummy root for every second root such that there is only a single inlet
-//#define DUMMY_ROOT
-
-//#define DEBUG_INFO
 #ifdef DEAL_II_WITH_METIS
 #  include <metis.h>
 #endif
@@ -16,6 +9,9 @@
 #include <vector>
 
 // deal.II
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_q_cache.h>
 #include <deal.II/grid/grid_reordering.h>
 
 // ExaDG
@@ -25,18 +21,15 @@
 #include "process_file.h"
 #include "triangulation_util.h"
 
-#define USE_CHILD_GEOMETRY
-//#define USE_ADULT_GEOMETRY
-//#define USE_ADULT_GEOMETRY_OLD
-
-namespace ExaDG
-{
-namespace GridGen
+namespace ExaDG::GridGen
 {
 using namespace dealii;
 
+// TODO: adjust local refinement
+const int MAX_REFINED_GENERATION = -1;
+
 void
-lung_to_node(int                               generations,
+lung_to_node(unsigned int                      generations,
              std::vector<Point<3>> &           points,
              std::vector<CellData<1>> &        cells,
              std::vector<CellAdditionalInfo> & cells_additional_data,
@@ -50,8 +43,8 @@ lung_to_node(int                               generations,
   // get minimum generation number -> nodes with this number are treated
   // as roots
   int min_generation = std::numeric_limits<int>::max();
-  for(unsigned int i = 0; i < cells_additional_data.size(); i++)
-    min_generation = std::min(cells_additional_data[i].generation, min_generation);
+  for(auto & i : cells_additional_data)
+    min_generation = std::min(i.generation, min_generation);
 
   // setup forest of trees
   for(unsigned int i = 0; i < cells_additional_data.size(); i++)
@@ -61,150 +54,33 @@ lung_to_node(int                               generations,
 }
 
 std::function<void(std::vector<Node *> & roots, unsigned int)>
-lung_files_to_node(std::vector<std::string> files)
+lung_files_to_node(const std::vector<std::string> & files)
 {
   return [files](std::vector<Node *> & roots, unsigned int generations) {
-    for(auto file : files)
+    for(const auto & file : files)
     {
       // process files
       // get coordinates of points, connectivity of mesh, and info on
       // branches (generation, radius)
-      std::vector<Point<3>>           points;
+
+      unsigned int number_of_points = 1;
+
+      for(unsigned int i = 0; i <= generations; i++)
+        number_of_points += (unsigned int)std::pow(2, i);
+
+      std::vector<Point<3>>           points(number_of_points);
       std::vector<CellData<1>>        cells;
       std::vector<CellAdditionalInfo> cells_additional_data;
-      load_files({file}, points, cells, cells_additional_data);
 
-      int n_bifurcations = generations; /* TODO */
+      // TODO: remove old file structure when baby is compatible with new one
+      // load_files({file}, points, cells, cells_additional_data);
 
-      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
-         file.find("righttop") != std::string::npos)
-      {
-        n_bifurcations = generations - 4;
-      }
-      else if(file.find("rightbot") != std::string::npos ||
-              file.find("rightmid") != std::string::npos)
-      {
-        n_bifurcations = generations - 5;
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
-      }
+      load_new_files({file}, points, cells, cells_additional_data, generations);
+
+      unsigned int n_bifurcations = generations;
 
       lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
     }
-
-#ifdef DEBUG
-    // check the read data
-    for(auto & root : roots)
-      Assert(root->check_if_planar(), ExcMessage("Bifurcation is not planar!"));
-    std::cout << "Check:   All bifurcations are planar!" << std::endl;
-#endif
-
-#ifdef USE_FLAT_ROOT
-    std::vector<Node *> roots_temp = roots;
-    roots.clear();
-    for(unsigned int i = 0; i < roots_temp.size(); i += 2)
-      roots.push_back(new DummyNode(roots_temp[i + 1], roots_temp[i]));
-#endif
-
-#ifdef DUMMY_ROOT
-    std::vector<Node *> roots_temp = roots;
-    roots.clear();
-    for(unsigned int i = 0; i < roots_temp.size(); i += 2)
-    {
-      Point<3> dst  = roots_temp[i]->from;
-      Point<3> norm = (roots_temp[i]->to + roots_temp[i + 1]->to);
-      norm          = norm / 2;
-      norm          = Point<3>(norm - dst);
-      Point<3> src  = Point<3>(dst - norm);
-      roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
-    }
-#endif
-
-    if(roots.size() != 10)
-      return;
-
-    std::vector<Node *> roots_temp = roots;
-    roots.clear();
-
-#ifdef USE_CHILD_GEOMETRY
-
-    // clang-format off
-    {
-    auto temp                            = roots_temp[4]->right_child;
-    roots_temp[4]->right_child           = roots_temp[4]->left_child;
-    roots_temp[4]->left_child            = temp;
-    roots_temp[4]->left_child->_is_left  = true;
-    roots_temp[4]->right_child->_is_left = false;
-    }
-    
-    {
-    auto temp                            = roots_temp[5]->right_child;
-    roots_temp[5]->right_child           = roots_temp[5]->left_child;
-    roots_temp[5]->left_child            = temp;
-    roots_temp[5]->left_child->_is_left  = true;
-    roots_temp[5]->right_child->_is_left = false;
-    }
-    
-    //roots[0]->left_child->right_child->right_child->left_child
-
-    roots.push_back(new Node(
-      new Node(
-        new Node(roots_temp[9], roots_temp[8], {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871}, true,false),
-        new Node(
-          new Node(roots_temp[6], roots_temp[7], Point<3>({-0.01820662231978939, 0.03544419220009717, -0.001789115751719632}), false),
-          new Node(roots_temp[5], roots_temp[4], Point<3>({-0.01820662231978939, 0.03544419220009717, -0.001789115751719632}), false,false, true),
-          {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871}, true),
-        {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125}, false, false),
-      new Node(
-        new Node(roots_temp[2], roots_temp[3], Point<3>({0.004594151748164817, 0.03753150327901492, 0.0011504181300876433}), false, false),
-        new Node(roots_temp[1], roots_temp[0], Point<3>({0.004594151748164817, 0.03753150327901492, 0.0011504181300876433}), false),
-        {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125}, false,false),
-      {-0.004691444584156128, 0.012111498522501644, 0.040161793504990745}, true));
-    // clang-format on
-
-#endif
-
-#ifdef USE_ADULT_GEOMETRY_OLD
-    // with twist in generation 1
-
-    // clang-format off
-    roots.push_back(new Node(
-      new Node(
-        new Node(new Node(roots_temp[6], roots_temp[7], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), true),
-                 new Node(roots_temp[4], roots_temp[5], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), false),
-                 {-24.3016e-3, 156.6774e-3, -201.6689e-3}, true),
-        new Node(roots_temp[8], roots_temp[9], {-24.3016e-3, 156.6774e-3, -201.6689e-3}, false),
-        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-      new Node(
-        new Node(roots_temp[3], roots_temp[2], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
-        new Node(roots_temp[1], roots_temp[0], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
-        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3}, false),
-      {8.864201963148962e-3, 200.1647444329594e-3, -69.43970578881185e-3},
-      true));
-    // clang-format on
-#endif
-
-#ifdef USE_ADULT_GEOMETRY
-    // without twist in generation 1
-
-    // clang-format off
-    roots.push_back(new Node(
-      new Node(
-        new Node(roots_temp[8], roots_temp[9], {-24.3016e-3, 156.6774e-3, -201.6689e-3}, true, false),
-        new Node(new Node(roots_temp[6], roots_temp[7], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), false),
-                 new Node(roots_temp[4], roots_temp[5], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), false,false),
-                 {-24.3016e-3, 156.6774e-3, -201.6689e-3}, true),
-        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false,false),
-      new Node(
-        new Node(roots_temp[3], roots_temp[2], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
-        new Node(roots_temp[1], roots_temp[0], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
-        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3}, false),
-      {8.864201963148962e-3, 200.1647444329594e-3, -69.43970578881185e-3},
-      true));
-    // clang-format on
-#endif
   };
 }
 
@@ -231,19 +107,19 @@ face_vertices(T face)
 
 template<typename T, typename Map>
 bool
-mark(T cell, const int number, Map & map)
+mark(T cell, const unsigned int number, Map & map)
 {
   // is not at boundary
-  if(!cell->at_boundary(4))
+  if(!cell->at_boundary(5))
     return false;
 
   // already visited
-  if(cell->face(4)->boundary_id() > 0)
+  if(cell->face(5)->boundary_id() > 0)
     return false;
 
   // set boundary id
-  cell->face(4)->set_all_boundary_ids(number);
-  map[face_vertices(cell->face(4))] = number;
+  cell->face(5)->set_all_boundary_ids(number);
+  map[face_vertices(cell->face(5))] = number;
 
   // mark all neighbors
   for(unsigned int d = 0; d < 6; d++)
@@ -260,20 +136,37 @@ mark(T cell, const int number, Map & map)
   return true;
 }
 
-void lung_unrefined(dealii::Triangulation<3> &                                     tria,
-                    std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-                    std::map<std::string, double> &                                timings,
-                    unsigned int const &                                           outlet_id_first,
-                    unsigned int &                                                 outlet_id_last,
-                    const std::string &                                            bspline_file,
-                    std::map<types::material_id, DeformTransfinitelyViaSplines<3>> & deform,
-                    std::shared_ptr<LungID::Checker>                                 branch_filter)
+void
+fill_deform(std::map<types::material_id, DeformTransfinitelyViaCylinder<3>> & deform,
+            Node *                                                            node_to_deform)
+{
+  const unsigned int index_in = node_to_deform->do_rot ? 1 : 0;
+
+  deform.insert({node_to_deform->id,
+                 DeformTransfinitelyViaCylinder<3>(node_to_deform->skeleton, {{index_in, 0}})});
+
+  if(node_to_deform->left_child != nullptr)
+    fill_deform(deform, node_to_deform->left_child);
+
+  if(node_to_deform->right_child != nullptr)
+    fill_deform(deform, node_to_deform->right_child);
+}
+
+void
+lung_unrefined(dealii::Triangulation<3> &                                             tria,
+               const std::function<void(std::vector<Node *> & roots, unsigned int)> & create_tree,
+               std::map<std::string, double> &                                        timings,
+               unsigned int const &                                              outlet_id_first,
+               unsigned int &                                                    outlet_id_last,
+               const std::string &                                               bspline_file,
+               std::map<types::material_id, DeformTransfinitelyViaCylinder<3>> & deform,
+               const unsigned int max_resolved_generation)
 {
   Timer timer;
 
   timer.restart();
   std::vector<Node *> roots;
-  create_tree(roots, branch_filter->get_generations());
+  create_tree(roots, max_resolved_generation);
 
   timings["create_triangulation_1_load_data"] = timer.wall_time();
 
@@ -282,25 +175,25 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   std::vector<CellData<3>> cell_data_3d;
   std::vector<Point<3>>    vertices_3d;
   SubCellData              subcell_data;
-  for(unsigned int i = 0; i < roots.size(); i++)
+  for(auto & root : roots)
   {
-    process_node(roots[i], cell_data_3d, vertices_3d, branch_filter, vertices_3d.size());
+    process_node(root, cell_data_3d, vertices_3d, root->id, vertices_3d.size());
     // break;
   }
 
 #ifdef DEBUG
-  for(unsigned int i = 0; i < roots.size(); i++)
-    for(auto v : roots[i]->skeleton)
+  for(auto & root : roots)
+    for(auto v : root->skeleton)
       printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
   printf("\n");
 
-  for(unsigned int i = 0; i < roots.size(); i++)
-    for(auto v : roots[i]->right_child->skeleton)
+  for(auto & root : roots)
+    for(auto v : root->right_child->skeleton)
       printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
   printf("\n");
 
-  for(unsigned int i = 0; i < roots.size(); i++)
-    for(auto v : roots[i]->left_child->skeleton)
+  for(auto & root : roots)
+    for(auto v : root->left_child->skeleton)
       printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
   printf("\n");
 #endif
@@ -328,20 +221,19 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     map;
 
   {
-    dealii::Triangulation<3> tria;
-    tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
+    dealii::Triangulation<3> tria_tmp(Triangulation<3>::MeshSmoothing::none, true);
+    tria_tmp.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
 
     // set boundary ids
     unsigned int counter = outlet_id_first; // counter for outlets
-    for(auto cell : tria.active_cell_iterators())
+    for(auto cell : tria_tmp.active_cell_iterators())
     {
       // the mesh is generated in a way that inlet/outlets are one faces with normal vector
       // in positive or negative z-direction (faces 4/5)
-      if(cell->at_boundary(5) &&
-         cell->material_id() == (unsigned int)LungID::create_root()) // inlet
-        map[face_vertices(cell->face(5))] = 1;
+      if(cell->at_boundary(4) && cell->material_id() == roots[0]->id) // inlet
+        map[face_vertices(cell->face(4))] = 1;
 
-      if(cell->at_boundary(4)) // outlets (>1)
+      if(cell->at_boundary(5)) // outlets (>1)
         if(mark(cell, counter, map))
           counter++;
     }
@@ -352,7 +244,11 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   GridReordering<3>::reorder_cells(cell_data_3d, true);
   tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
 
-
+#ifdef DEBUG
+  GridOut       grid_out;
+  std::ofstream file("mesh-tria.vtu");
+  grid_out.write_vtu(tria, file);
+#endif
 
   // actually set boundary ids
   for(auto cell : tria.active_cell_iterators())
@@ -362,281 +258,65 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
-  if(roots[0]->skeleton.size() > 0)
+  bool use_spline_deform = false;
+  if(use_spline_deform)
   {
-    deform.insert({(unsigned int)LungID::create_root(),
-                   DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {{0, 0}})});
+    if(!roots[0]->skeleton.empty())
+    {
+      deform.insert(
+        {roots[0]->id, DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {{0, 0}})});
+    }
+
+
+    if(!roots[0]->right_child->skeleton.empty())
+    {
+      deform.insert({roots[0]->right_child->id,
+                     (DeformTransfinitelyViaSplines<3>(
+                       splines, 4, roots[0]->right_child->skeleton, {{0, 0}}))});
+    }
+
+    if(!roots[0]->left_child->skeleton.empty())
+    {
+      deform.insert(
+        {roots[0]->left_child->id,
+         (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {{0, 0}}))});
+    }
   }
-
-
-
-  if(roots[0]->right_child->skeleton.size() > 0)
+  else
   {
-    deform.insert(
-      {(unsigned int)LungID::generate(LungID::create_root(), false),
-       (DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton, {{0, 0}}))});
-  }
+    // fill deform map for all children of root
+    Node * node_to_deform = roots[0];
 
-  if(roots[0]->left_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(LungID::create_root(), true),
-       (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {{0, 0}}))});
-  }
-
-
-
-  if(roots[0]->right_child->right_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->right_child->right_child->skeleton;
-    auto   temp_c = temp;
-    temp_c[3]     = temp[0];
-    temp_c[2]     = temp[1];
-    temp_c[1]     = temp[2];
-    temp_c[0]     = temp[3];
-    temp_c[7]     = temp[4];
-    temp_c[6]     = temp[5];
-    temp_c[5]     = temp[6];
-    temp_c[4]     = temp[7];
-    temp          = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), false), false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 16, roots[0]->right_child->right_child->skeleton, {{0, 1}}))});
-  }
-
-  if(roots[0]->right_child->left_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->right_child->left_child->skeleton;
-    auto   temp_c = temp;
-    temp_c[3]     = temp[0];
-    temp_c[2]     = temp[1];
-    temp_c[1]     = temp[2];
-    temp_c[0]     = temp[3];
-    temp_c[7]     = temp[4];
-    temp_c[6]     = temp[5];
-    temp_c[5]     = temp[6];
-    temp_c[4]     = temp[7];
-    temp          = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), false), true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 12, roots[0]->right_child->left_child->skeleton, {{0, 0}}))});
-  }
-
-  if(roots[0]->left_child->right_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), true), false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 20, roots[0]->left_child->right_child->skeleton, {{0, 1}}))});
-  }
-
-  if(roots[0]->left_child->left_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(LungID::generate(LungID::create_root(), true), true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 24, roots[0]->left_child->left_child->skeleton, {{0, 0}}))});
-  }
-
-
-
-  if(roots[0]->right_child->right_child->right_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->right_child->right_child->right_child->skeleton;
-    auto   temp_c = temp;
-    temp_c[3]     = temp[0];
-    temp_c[2]     = temp[1];
-    temp_c[1]     = temp[2];
-    temp_c[0]     = temp[3];
-    temp_c[7]     = temp[4];
-    temp_c[6]     = temp[5];
-    temp_c[5]     = temp[6];
-    temp_c[4]     = temp[7];
-    temp          = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), false), false), false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 40, roots[0]->right_child->right_child->right_child->skeleton, {{0, 1}}, true))});
-  }
-
-  if(roots[0]->right_child->right_child->left_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->right_child->right_child->left_child->skeleton;
-    auto   temp_c = temp;
-    temp_c[3]     = temp[0];
-    temp_c[2]     = temp[1];
-    temp_c[1]     = temp[2];
-    temp_c[0]     = temp[3];
-    temp_c[7]     = temp[4];
-    temp_c[6]     = temp[5];
-    temp_c[5]     = temp[6];
-    temp_c[4]     = temp[7];
-    temp          = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), false), false), true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 36, roots[0]->right_child->right_child->left_child->skeleton, {{0, 1}}, true))});
-  }
-
-  if(roots[0]->right_child->left_child->left_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->right_child->left_child->left_child->skeleton;
-    auto   temp_c = temp;
-
-
-    temp_c[3] = temp[0];
-    temp_c[2] = temp[1];
-    temp_c[1] = temp[2];
-    temp_c[0] = temp[3];
-
-    temp_c[7] = temp[4];
-    temp_c[6] = temp[5];
-    temp_c[5] = temp[6];
-    temp_c[4] = temp[7];
-
-    temp = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), false), true), true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 28, roots[0]->right_child->left_child->left_child->skeleton, {{0, 1}}, true))});
-  }
-
-  if(roots[0]->right_child->left_child->right_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->right_child->left_child->right_child->skeleton;
-    auto   temp_c = temp;
-
-    temp_c[3] = temp[0];
-    temp_c[2] = temp[1];
-    temp_c[1] = temp[2];
-    temp_c[0] = temp[3];
-
-    temp_c[7] = temp[4];
-    temp_c[6] = temp[5];
-    temp_c[5] = temp[6];
-    temp_c[4] = temp[7];
-    temp      = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), false), true), false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 32, roots[0]->right_child->left_child->right_child->skeleton, {{0, 1}}, true))});
-  }
-
-
-
-  if(roots[0]->left_child->right_child->right_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), true), false), false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 44, roots[0]->left_child->right_child->right_child->skeleton, {{0, 1}}, false))});
-  }
-
-  if(roots[0]->left_child->right_child->left_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), true), false), true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 48, roots[0]->left_child->right_child->left_child->skeleton, {{0, 1}}, true))});
-  }
-
-
-
-  if(roots[0]->left_child->right_child->right_child->right_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->left_child->right_child->right_child->right_child->skeleton;
-    auto   temp_c = temp;
-
-    temp_c[2] = temp[0];
-    temp_c[0] = temp[1];
-    temp_c[3] = temp[2];
-    temp_c[1] = temp[3];
-
-    temp_c[6] = temp[4];
-    temp_c[4] = temp[5];
-    temp_c[7] = temp[6];
-    temp_c[5] = temp[7];
-
-
-    temp = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false),
-                          false),
-         false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines,
-         56,
-         roots[0]->left_child->right_child->right_child->right_child->skeleton,
-         {{0, 0}},
-         true))});
-  }
-
-  if(roots[0]->left_child->right_child->right_child->left_child->skeleton.size() > 0)
-  {
-    auto & temp   = roots[0]->left_child->right_child->right_child->left_child->skeleton;
-    auto   temp_c = temp;
-
-    temp_c[1] = temp[0];
-    temp_c[3] = temp[1];
-    temp_c[0] = temp[2];
-    temp_c[2] = temp[3];
-
-    temp_c[5] = temp[4];
-    temp_c[7] = temp[5];
-    temp_c[4] = temp[6];
-    temp_c[6] = temp[7];
-
-
-    temp = temp_c;
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false),
-                          false),
-         true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines,
-         52,
-         roots[0]->left_child->right_child->right_child->left_child->skeleton,
-         {{0, 0}},
-         true))});
-  }
-
-  if(roots[0]->left_child->left_child->right_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), true), true), false),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {{0, 1}}, true))});
-  }
-
-  if(roots[0]->left_child->left_child->left_child->skeleton.size() > 0)
-  {
-    deform.insert(
-      {(unsigned int)LungID::generate(
-         LungID::generate(LungID::generate(LungID::create_root(), true), true), true),
-       (DeformTransfinitelyViaSplines<3>(
-         splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {{0, 1}}, true))});
+    fill_deform(deform, node_to_deform);
   }
 
   // clean up
-  for(unsigned int i = 0; i < roots.size(); i++)
-    delete roots[i];
+  for(auto & root : roots)
+    delete root;
 }
 
-void update_mapping(dealii::Triangulation<3> &                                       tria,
-                    std::map<types::material_id, DeformTransfinitelyViaSplines<3>> & deform)
+void
+local_refinement(dealii::Triangulation<3> & tria, const int max_refined_generation)
 {
-  if(deform.size() == 0)
+  // set refine flag until specified generation
+  unsigned int max_material_id = 0;
+
+  for(int i = 0; i <= max_refined_generation; i++)
+    max_material_id += (unsigned int)std::pow(2, i);
+
+  for(auto & cell : tria.active_cell_iterators())
+    if(cell->material_id() <= max_material_id)
+      cell->set_refine_flag();
+
+  // execute local refinement
+  tria.execute_coarsening_and_refinement();
+}
+
+void
+update_mapping(dealii::Triangulation<3> &                                        tria,
+               std::map<types::material_id, DeformTransfinitelyViaCylinder<3>> & deform)
+{
+  if(deform.empty())
     return;
 
 #ifdef DEBUG
@@ -688,7 +368,7 @@ void update_mapping(dealii::Triangulation<3> &                                  
   for(auto cell : tria.active_cell_iterators())
     if(deform.find(cell->material_id()) != deform.end())
       for(unsigned int v = 0; v < GeometryInfo<3>::vertices_per_cell; ++v)
-        if(touched[cell->vertex_index(v)] == false)
+        if(!touched[cell->vertex_index(v)])
         {
           // std::cout << cell->material_id() << " " << LungID::to_string(cell->material_id()) <<
           // std::endl;
@@ -698,13 +378,11 @@ void update_mapping(dealii::Triangulation<3> &                                  
           }
           catch(typename Mapping<3, 3>::ExcTransformationFailed & exc)
           {
-            std::cout << "Failed for material id " << LungID::to_string(cell->material_id())
-                      << std::endl;
+            std::cout << "Failed for material id " << cell->material_id() << std::endl;
             // throw exc;
           }
           touched[cell->vertex_index(v)] = true;
         }
-
 
   // TODO only print if desired
   bool print = false;
@@ -712,39 +390,81 @@ void update_mapping(dealii::Triangulation<3> &                                  
     print_tria_statistics(tria);
 }
 
-void lung(dealii::Triangulation<2> &                                     tria,
-          int                                                            refinements,
-          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings,
-          unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "",
-          std::shared_ptr<LungID::Checker>                               branch_filter =
-            std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
+
+
+template<int dim>
+class MeshByDeformation : public Mesh<dim>
+{
+public:
+  MeshByDeformation(
+    const dealii::Triangulation<dim> &                                        tria,
+    const unsigned int                                                        mapping_degree,
+    const std::map<types::material_id, DeformTransfinitelyViaCylinder<dim>> & deform)
+    : Mesh<dim>(mapping_degree), mapping(mapping_degree)
+  {
+    dealii::FE_Q<dim> fe_q(mapping_degree);
+    FEValues<dim>     fe_values(fe_q,
+                            Quadrature<dim>(fe_q.get_unit_support_points()),
+                            update_quadrature_points);
+    mapping.initialize(tria, [&](const typename Triangulation<dim>::cell_iterator & cell) {
+      fe_values.reinit(cell);
+      std::vector<Point<dim>> support_points = fe_values.get_quadrature_points();
+      const auto              my_deform      = deform.find(cell->material_id());
+      Assert(my_deform != deform.end(),
+             ExcMessage("Could not find the given material id " +
+                        std::to_string(cell->material_id())));
+      for(auto & p : support_points)
+        p = my_deform->second.transform_to_deformed(p);
+      return support_points;
+    });
+  }
+
+  virtual Mapping<dim> const &
+  get_mapping() const
+  {
+    return mapping;
+  }
+
+private:
+  MappingQCache<dim> mapping;
+};
+
+
+
+void lung(dealii::Triangulation<2> &                                             tria,
+     int                                                                    refinements,
+     const std::function<void(std::vector<Node *> & roots, unsigned int)> & create_tree,
+     std::shared_ptr<Mesh<2>> &                                             mesh,
+     std::map<std::string, double> &                                        timings,
+     unsigned int const &                                                   outlet_id_first,
+     unsigned int &                                                         outlet_id_last,
+     const std::string &                                                    bspline_file = "",
+     const unsigned int max_resolved_generation                                          = 0)
 {
   (void)tria;
   (void)refinements;
   (void)create_tree;
+  (void)mesh;
   (void)timings;
   (void)outlet_id_first;
   (void)outlet_id_last;
   (void)bspline_file;
-  (void)branch_filter;
+  (void)max_resolved_generation;
 
   AssertThrow(false, ExcMessage("Not implemented for dim = 2."));
 }
 
-void lung(dealii::Triangulation<3> &                                     tria,
-          int                                                            refinements,
-          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings,
-          unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "",
-          std::shared_ptr<LungID::Checker>                               branch_filter =
-            std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
+void lung(dealii::Triangulation<3> &                                             tria,
+     int                                                                    refinements,
+     const std::function<void(std::vector<Node *> & roots, unsigned int)> & create_tree,
+     std::shared_ptr<Mesh<3>> &                                             mesh,
+     std::map<std::string, double> &                                        timings,
+     unsigned int const &                                                   outlet_id_first,
+     unsigned int &                                                         outlet_id_last,
+     const std::string &                                                    bspline_file = "",
+     const unsigned int max_resolved_generation                                          = 0)
 {
-  std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
+  std::map<types::material_id, DeformTransfinitelyViaCylinder<3>> deform;
   lung_unrefined(tria,
                  create_tree,
                  timings,
@@ -752,47 +472,49 @@ void lung(dealii::Triangulation<3> &                                     tria,
                  outlet_id_last,
                  bspline_file,
                  deform,
-                 branch_filter);
+                 max_resolved_generation);
+  local_refinement(tria, MAX_REFINED_GENERATION);
   tria.refine_global(refinements);
-  update_mapping(tria, deform);
+  mesh = std::make_shared<MeshByDeformation<3>>(tria, 5, deform);
 }
 
-void lung(dealii::parallel::distributed::Triangulation<2> &              tria,
-          int                                                            refinements,
-          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings,
-          unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "",
-          std::shared_ptr<LungID::Checker>                               branch_filter =
-            std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
+void lung(dealii::parallel::distributed::Triangulation<2> &                      tria,
+     int                                                                    refinements,
+     const std::function<void(std::vector<Node *> & roots, unsigned int)> & create_tree,
+     std::shared_ptr<Mesh<2>> &                                             mesh,
+     std::map<std::string, double> &                                        timings,
+     unsigned int const &                                                   outlet_id_first,
+     unsigned int &                                                         outlet_id_last,
+     const std::string &                                                    bspline_file = "",
+     const unsigned int max_resolved_generation                                          = 0)
 {
   (void)tria;
   (void)refinements;
   (void)create_tree;
+  (void)mesh;
   (void)timings;
   (void)outlet_id_first;
   (void)outlet_id_last;
   (void)bspline_file;
-  (void)branch_filter;
+  (void)max_resolved_generation;
 
   AssertThrow(false, ExcMessage("Not implemented for dim = 2."));
 }
 
-void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
-          int                                                            refinements,
-          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings,
-          unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "",
-          std::shared_ptr<LungID::Checker>                               branch_filter =
-            std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
+void lung(dealii::parallel::distributed::Triangulation<3> &                      tria,
+     int                                                                    refinements,
+     const std::function<void(std::vector<Node *> & roots, unsigned int)> & create_tree,
+     std::shared_ptr<Mesh<3>> &                                             mesh,
+     std::map<std::string, double> &                                        timings,
+     unsigned int const &                                                   outlet_id_first,
+     unsigned int &                                                         outlet_id_last,
+     const std::string &                                                    bspline_file = "",
+     const unsigned int max_resolved_generation                                          = 0)
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
   tria_seq.set_mesh_smoothing(Triangulation<3>::limit_level_difference_at_vertices);
-  std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
+  std::map<types::material_id, DeformTransfinitelyViaCylinder<3>> deform;
   lung_unrefined(tria_seq,
                  create_tree,
                  timings,
@@ -800,55 +522,57 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
                  outlet_id_last,
                  bspline_file,
                  deform,
-                 branch_filter);
+                 max_resolved_generation);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);
   // ... refine
+  local_refinement(tria, MAX_REFINED_GENERATION);
   tria.refine_global(refinements);
-  update_mapping(tria, deform);
+  mesh = std::make_shared<MeshByDeformation<3>>(tria, 5, deform);
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, tria.get_communicator());
 }
 
-void lung(dealii::parallel::fullydistributed::Triangulation<2> &         tria,
-          int                                                            refinements1,
-          int                                                            refinements2,
-          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings,
-          unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "",
-          std::shared_ptr<LungID::Checker>                               branch_filter =
-            std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
+void lung(dealii::parallel::fullydistributed::Triangulation<2> &                 tria,
+     int                                                                    refinements1,
+     int                                                                    refinements2,
+     const std::function<void(std::vector<Node *> & roots, unsigned int)> & create_tree,
+     std::shared_ptr<Mesh<2>> &                                             mesh,
+     std::map<std::string, double> &                                        timings,
+     unsigned int const &                                                   outlet_id_first,
+     unsigned int &                                                         outlet_id_last,
+     const std::string &                                                    bspline_file = "",
+     const unsigned int max_resolved_generation                                          = 0)
 {
   (void)tria;
   (void)refinements1;
   (void)refinements2;
   (void)create_tree;
+  (void)mesh;
   (void)timings;
   (void)outlet_id_first;
   (void)outlet_id_last;
   (void)bspline_file;
-  (void)branch_filter;
+  (void)max_resolved_generation;
 
   AssertThrow(false, ExcMessage("Not implemented for dim = 2."));
 }
 
 void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
-          int                                                    refinements1,
-          int /*refinements2*/,
-          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings,
-          unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "",
-          std::shared_ptr<LungID::Checker>                               branch_filter =
-            std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
+     int                                                    refinements1,
+     int /*refinements2*/,
+     std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
+     std::shared_ptr<Mesh<3>> &                                     mesh,
+     std::map<std::string, double> &                                timings,
+     unsigned int const &                                           outlet_id_first,
+     unsigned int &                                                 outlet_id_last,
+     const std::string &                                            bspline_file            = "",
+     const unsigned int                                             max_resolved_generation = 0)
 {
   Timer timer;
   timer.restart();
 
-  std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
+  std::map<types::material_id, DeformTransfinitelyViaCylinder<3>> deform;
 
   // create partitioned triangulation ...
   const auto construction_data =
@@ -862,7 +586,8 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
                        outlet_id_last,
                        bspline_file,
                        deform,
-                       branch_filter);
+                       max_resolved_generation);
+        local_refinement(tria, MAX_REFINED_GENERATION);
         tria.refine_global(refinements1);
       },
       [](dealii::Triangulation<3, 3> & tria,
@@ -873,14 +598,12 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
       tria.get_communicator(),
       1 /*group size*/);
   tria.create_triangulation(construction_data);
-  update_mapping(tria, deform);
+  mesh = std::make_shared<MeshByDeformation<3>>(tria, 5, deform);
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, tria.get_communicator());
 
   timings["create_triangulation_0_overall"] = timer.wall_time();
 }
-} // namespace GridGen
-
-} // namespace ExaDG
+} // namespace ExaDG::GridGen
 
 #endif

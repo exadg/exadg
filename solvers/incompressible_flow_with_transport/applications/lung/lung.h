@@ -9,26 +9,24 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 
 // ExaDG
+#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h>
+#include <exadg/postprocessor/mean_scalar_calculation.h>
 
 // lung grid generator
 #include "grid/lung_environment.h"
 #include "grid/lung_grid.h"
 
-namespace ExaDG
-{
-namespace FTI
-{
-namespace Lung
+namespace ExaDG::FTI::Lung
 {
 using namespace dealii;
 
 // problem specific parameters
 
 // which lung
-#define BABY
-//#define ADULT
+//#define BABY
+#define ADULT
 
 // clang-format off
 
@@ -83,7 +81,7 @@ double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^
 };
 #endif
 #ifdef ADULT // adult lung
-double const PERIOD = 3; // in period lasts 3 s
+double const PERIOD = 3; // one period lasts 3 s
 unsigned int const N_PERIODS = 10;
 double const START_TIME = 0.0;
 double const END_TIME = PERIOD*N_PERIODS;
@@ -92,41 +90,45 @@ double const TIDAL_VOLUME = 500.0e-6;                       // 500 ml = 500 * 10
 double const C_RS_KINEMATIC = DENSITY * 100.0e-6/98.0665;   // total respiratory compliance C_rs = 100 ml/cm H20
 double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS_KINEMATIC; // initialize pressure difference in order to obtain desired tidal volume
 
+
+double const TOTAL_RESISTANCE = 0.15 * 1e6; // 0.15 kPa * l^{-1} * s, total lung resistance
+double const TISSUE_RESISTANCE = 0.2 * TOTAL_RESISTANCE; // around 20% of total lung resistance (West2015)
+
 // Menache et al. (2008): Extract diameter and length of airways from Table A11 (21-year-old male)
 // and compute resistance of airways assuming laminar flow
 
 // default is 1.0, but it was found experimentally that a larger resistance gives way better results
 // for flow rate and volume profiles
-double const SCALING_FACTOR_RESISTANCE = 50.0;
+double const SCALING_FACTOR_RESISTANCE = 1.0;
 unsigned int const MAX_GENERATION = 25;
 double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^3/s)]
 {
-    5.96E+02 * SCALING_FACTOR_RESISTANCE, // GENERATION 0
-    3.87E+02 * SCALING_FACTOR_RESISTANCE,
-    1.06E+03 * SCALING_FACTOR_RESISTANCE,
-    2.57E+03 * SCALING_FACTOR_RESISTANCE,
-    7.93E+03 * SCALING_FACTOR_RESISTANCE,
-    3.04E+04 * SCALING_FACTOR_RESISTANCE,
-    7.82E+04 * SCALING_FACTOR_RESISTANCE,
-    2.35E+05 * SCALING_FACTOR_RESISTANCE,
-    5.60E+05 * SCALING_FACTOR_RESISTANCE,
-    1.50E+06 * SCALING_FACTOR_RESISTANCE,
-    2.06E+06 * SCALING_FACTOR_RESISTANCE,
-    3.24E+06 * SCALING_FACTOR_RESISTANCE,
-    4.57E+06 * SCALING_FACTOR_RESISTANCE,
-    6.38E+06 * SCALING_FACTOR_RESISTANCE,
-    8.53E+06 * SCALING_FACTOR_RESISTANCE,
-    1.11E+07 * SCALING_FACTOR_RESISTANCE,
-    1.58E+07 * SCALING_FACTOR_RESISTANCE,
-    2.08E+07 * SCALING_FACTOR_RESISTANCE,
-    2.62E+07 * SCALING_FACTOR_RESISTANCE,
-    3.39E+07 * SCALING_FACTOR_RESISTANCE,
-    4.11E+07 * SCALING_FACTOR_RESISTANCE,
-    5.04E+07 * SCALING_FACTOR_RESISTANCE,
-    5.61E+07 * SCALING_FACTOR_RESISTANCE,
-    6.34E+07 * SCALING_FACTOR_RESISTANCE,
-    7.11E+07 * SCALING_FACTOR_RESISTANCE,
-    4.73E+07 * SCALING_FACTOR_RESISTANCE // MAX_GENERATION
+    5.96E+02, // GENERATION 0
+    3.87E+02,
+    1.06E+03,
+    2.57E+03,
+    7.93E+03,
+    3.04E+04,
+    7.82E+04,
+    2.35E+05,
+    5.60E+05,
+    1.50E+06,
+    2.06E+06,
+    3.24E+06,
+    4.57E+06,
+    6.38E+06,
+    8.53E+06,
+    1.11E+07,
+    1.58E+07,
+    2.08E+07,
+    2.62E+07,
+    3.39E+07,
+    4.11E+07,
+    5.04E+07,
+    5.61E+07,
+    6.34E+07,
+    7.11E+07,
+    4.73E+07 // MAX_GENERATION
 };
 #endif
 
@@ -142,9 +144,13 @@ double const TIME_STEP_SIZE_MAX     = 1.e-4;
 double const ABS_TOL = 1.e-12;
 double const REL_TOL = 1.e-3;
 
+// boundary ID trachea
+types::boundary_id const TRACHEA_ID = 1;
+
 // outlet boundary IDs
-types::boundary_id const OUTLET_ID_FIRST = 2;
-types::boundary_id       OUTLET_ID_LAST  = 2;
+types::boundary_id const OUTLET_ID_FIRST = TRACHEA_ID + 1;
+// initialize with OUTLET_ID_FIRST, changed later
+types::boundary_id       OUTLET_ID_LAST  = OUTLET_ID_FIRST;
 
 // restart
 bool const   WRITE_RESTART         = false;
@@ -152,22 +158,50 @@ double const RESTART_INTERVAL_TIME = PERIOD;
 
 // boundary conditions prescribed at the outlets require an effective resistance for each outlet
 double
-get_equivalent_resistance(unsigned int const n_generations, unsigned int const max_generation)
+get_equivalent_resistance(unsigned int const max_resolved_generation,
+                          unsigned int const max_generation)
 {
   double resistance = 0.0;
+
+  unsigned int const min_unresolved_generation = max_resolved_generation + 1;
 
   // calculate effective resistance for all higher generations not being resolved
   // assuming that all airways of a specific generation have the same resistance and that the flow
   // is laminar!
-  for(unsigned int i = 0; i <= max_generation - n_generations; ++i)
+  for(unsigned int i = 0; i <= (max_generation - min_unresolved_generation); ++i)
   {
-    resistance += RESISTANCE_VECTOR_DYNAMIC[i + n_generations] / std::pow(2.0, (double)i);
+    resistance +=
+      RESISTANCE_VECTOR_DYNAMIC[min_unresolved_generation + i] / std::pow(2.0, (double)i);
   }
 
-  // beyond the current outflow boundary, we have two branches from generation n_generations to
+  // beyond the current outflow boundary, we have two branches from generation max_resolved_generation to
   // generation max_generation, but the resistance computed above corresponds to only one of the
   // two branches
   resistance /= 2.0;
+
+
+  // TODO: scale airway resistance by constant factor
+  resistance *= SCALING_FACTOR_RESISTANCE;
+
+#ifdef DEBUG
+  std::cout << std::endl;
+  std::cout << "airway outflow resistance: " << resistance << std::endl;
+  // percentage of airway resistance at boundaries to total resistance
+  double percent_of_total =
+    resistance / std::pow(2.0, (double)max_resolved_generation) / TOTAL_RESISTANCE;
+  std::cout << "percent of total: " << percent_of_total << std::endl << std::endl;
+#endif
+
+  // add tissue resistance
+  resistance += TISSUE_RESISTANCE * std::pow(2.0, (double)max_resolved_generation);
+
+#ifdef DEBUG
+  std::cout << "total outflow resistance: " << resistance << std::endl;
+  // percentage of modeled resistance to total resistance
+  double total_percent_of_total =
+    resistance / std::pow(2.0, (double)max_resolved_generation) / TOTAL_RESISTANCE;
+  std::cout << "percent of total: " << total_percent_of_total << std::endl << std::endl;
+#endif
 
   // the solver uses the kinematic pressure and therefore we have to transform the resistance
   resistance /= DENSITY;
@@ -196,17 +230,32 @@ public:
   {
   }
 
-  double
+  [[nodiscard]] double
   get_pressure(double const & time) const
   {
-    // 0 <= (t-t_period_start) <= PERIOD/3 (inhaling)
-    if((int(time / (PERIOD / 3))) % 3 == 0)
+    const int    n_period = int(time / PERIOD);
+    const double t_period = time - n_period * PERIOD;
+    const double t_ramp   = PERIOD / 100.0;
+
+    // TODO: generalize breathing periods
+    // 0 <= (t-t_period_start) <= PERIOD/3
+    if((int(time / (PERIOD / 3))) % 3 == 0) // inhaling
     {
-      return PEEP_KINEMATIC + pressure_difference + pressure_difference_damping;
+      if(t_period <= t_ramp)
+        return PEEP_KINEMATIC +
+               t_period / t_ramp * (pressure_difference + pressure_difference_damping);
+      else
+        return PEEP_KINEMATIC + pressure_difference + pressure_difference_damping;
     }
     else // rest of the period (exhaling)
     {
-      return PEEP_KINEMATIC;
+      const double t_exhale = t_period - PERIOD / 3.0;
+
+      if(t_exhale <= t_ramp)
+        return PEEP_KINEMATIC +
+               (1 - t_exhale / t_ramp) * (pressure_difference + pressure_difference_damping);
+      else
+        return PEEP_KINEMATIC;
     }
   }
 
@@ -256,6 +305,12 @@ private:
       pressure_difference_last_period + C_I * (TIDAL_VOLUME - (volume_max - volume_min)) /
                                           TIDAL_VOLUME * PEEP_KINEMATIC; // I-controller
 
+
+    double const factor = 2.0;
+    // limit pressure difference to a change of factor (assuming positive pressure_difference)
+    pressure_difference = std::min(pressure_difference, pressure_difference_last_period * factor);
+    pressure_difference = std::max(pressure_difference, pressure_difference_last_period / factor);
+
     // the damping part first be applied once we can compute a discrete derivative, i.e., after two
     // full periods
     if(counter >= 2)
@@ -281,12 +336,60 @@ private:
 
 std::shared_ptr<Ventilator> VENTILATOR;
 
+/*
+ * This class computes the pressure difference resulting from the resistance of the tubus
+ */
+class Tubus
+{
+public:
+  Tubus()
+    : K1I(8.41 * 1e3 * 98.0665 / DENSITY), // cmH2O*l^{-1}*s
+      K2I(1.96),
+      K1E(9.28 * 1e3 * 98.0665 / DENSITY), // cmH2O*l^{-1}*s
+      K2E(1.81),
+      pressure_difference_tubus(0.0)
+  {
+  }
+
+  [[nodiscard]] double
+  get_pressure_difference() const
+  {
+    return pressure_difference_tubus;
+  }
+
+  void
+  set_pressure_difference(double const flow_rate_trachea)
+  {
+    const double sign_flow = std::copysign(1.0, flow_rate_trachea);
+
+    // sign trachea flow rate < 0 -> inhale
+    if(sign_flow < 0)
+      pressure_difference_tubus =
+        -sign_flow * K1I * std::pow(std::abs(flow_rate_trachea) * 1e3, K2I) * 1e-3;
+    else // -> exhale
+      pressure_difference_tubus =
+        -sign_flow * K1E * std::pow(std::abs(flow_rate_trachea) * 1e3, K2E) * 1e-3;
+  }
+
+private:
+  const double K1I, K2I;
+  const double K1E, K2E;
+
+  double pressure_difference_tubus;
+};
+
+std::shared_ptr<Tubus> TUBUS;
+
 template<int dim>
 class PressureInlet : public Function<dim>
 {
 public:
-  PressureInlet(std::shared_ptr<Ventilator> ventilator_, const double time = 0.)
-    : Function<dim>(1 /*n_components*/, time), ventilator(ventilator_)
+  PressureInlet(std::shared_ptr<Ventilator> ventilator_,
+                std::shared_ptr<Tubus>      tubus_,
+                const double                time = 0.)
+    : Function<dim>(1 /*n_components*/, time),
+      ventilator(std::move(ventilator_)),
+      tubus(std::move(tubus_))
   {
   }
 
@@ -294,25 +397,26 @@ public:
   value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
   {
     double t        = this->get_time();
-    double pressure = ventilator->get_pressure(t);
+    double pressure = ventilator->get_pressure(t) - tubus->get_pressure_difference();
 
     return pressure;
   }
 
 private:
   std::shared_ptr<Ventilator> ventilator;
+  std::shared_ptr<Tubus>      tubus;
 };
 
 class OutflowBoundary
 {
 public:
   OutflowBoundary(types::boundary_id const id,
-                  unsigned int const       n_generations,
+                  unsigned int const       max_resolved_generation,
                   unsigned int const       max_generation)
     : boundary_id(id),
-      resistance(get_equivalent_resistance(n_generations, max_generation)),
+      resistance(get_equivalent_resistance(max_resolved_generation, max_generation)),
       // note that one could use a statistical distribution as in Roth et al. (2018)
-      compliance(C_RS_KINEMATIC / std::pow(2.0, n_generations - 1)),
+      compliance(C_RS_KINEMATIC / std::pow(2.0, max_resolved_generation)),
       // p = 1/C * V -> V = C * p (initialize volume so that p(t=0) = PEEP_KINEMATIC)
       volume(compliance * PEEP_KINEMATIC),
       flow_rate(0.0),
@@ -334,19 +438,19 @@ public:
     time_old = time;
   }
 
-  double
+  [[nodiscard]] double
   get_pressure() const
   {
     return resistance * flow_rate + volume / compliance;
   }
 
-  double
+  [[nodiscard]] double
   get_volume() const
   {
     return volume;
   }
 
-  types::boundary_id
+  [[nodiscard]] types::boundary_id
   get_boundary_id() const
   {
     return boundary_id;
@@ -368,7 +472,8 @@ template<int dim>
 class PressureOutlet : public Function<dim>
 {
 public:
-  PressureOutlet(std::shared_ptr<OutflowBoundary> outflow_boundary_, double const time = 0.)
+  explicit PressureOutlet(std::shared_ptr<OutflowBoundary> outflow_boundary_,
+                          double const                     time = 0.)
     : Function<dim>(1 /*n_components*/, time), outflow_boundary(outflow_boundary_)
   {
   }
@@ -384,10 +489,10 @@ private:
 };
 
 template<int dim>
-class DirichletBC : public Function<dim>
+class InhaleDirichletBCScalar : public Function<dim>
 {
 public:
-  DirichletBC(const unsigned int n_components = 1, const double time = 0.)
+  explicit InhaleDirichletBCScalar(const unsigned int n_components = 1, const double time = 0.)
     : Function<dim>(n_components, time)
   {
   }
@@ -399,12 +504,47 @@ public:
   }
 };
 
+template<int dim>
+class ExhaleDirichletBCScalar : public Function<dim>
+{
+public:
+  explicit ExhaleDirichletBCScalar(const double       mean_scalar,
+                                   const unsigned int n_components = 1,
+                                   const double       time         = 0.)
+    : Function<dim>(n_components, time), mean_scalar(mean_scalar)
+  {
+  }
+
+  double
+  value(const Point<dim> & /*p*/, const unsigned int /*component = 0*/) const
+  {
+    return mean_scalar;
+  }
+
+private:
+  double mean_scalar;
+};
+
+template<int dim>
+void
+set_inhale_bc_scalar(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
+{
+  // 1 = inlet
+  boundary_descriptor->dirichlet_bc.insert({1, std::make_shared<InhaleDirichletBCScalar<dim>>()});
+
+  // outlets
+  for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
+  {
+    boundary_descriptor->neumann_bc.insert({id, std::make_shared<Functions::ZeroFunction<dim>>(1)});
+  }
+}
 
 template<int dim>
 struct PostProcessorDataLung
 {
   IncNS::PostProcessorData<dim>      pp_data;
   IncNS::FlowRateCalculatorData<dim> flow_rate_data;
+  IncNS::FlowRateCalculatorData<dim> flow_rate_data_trachea;
 };
 
 template<int dim, typename Number>
@@ -436,10 +576,9 @@ public:
     Base::setup(pde_operator);
 
     // fill flow_rates map
-    for(auto iterator = OUTFLOW_BOUNDARIES.begin(); iterator != OUTFLOW_BOUNDARIES.end();
-        ++iterator)
+    for(auto & iterator : OUTFLOW_BOUNDARIES)
     {
-      flow_rates.insert(std::pair<types::boundary_id, double>((*iterator)->get_boundary_id(), 0.0));
+      flow_rates.insert({iterator->get_boundary_id(), 0.0});
     }
 
     flow_rate_calculator.reset(
@@ -447,6 +586,13 @@ public:
                                                  pde_operator.get_dof_index_velocity(),
                                                  pde_operator.get_quad_index_velocity_linear(),
                                                  pp_data_lung.flow_rate_data,
+                                                 this->mpi_comm));
+
+    flow_rate_calculator_trachea.reset(
+      new IncNS::FlowRateCalculator<dim, Number>(pde_operator.get_matrix_free(),
+                                                 pde_operator.get_dof_index_velocity(),
+                                                 pde_operator.get_quad_index_velocity_linear(),
+                                                 pp_data_lung.flow_rate_data_trachea,
                                                  this->mpi_comm));
   }
 
@@ -467,12 +613,11 @@ public:
     // set flow rate for all outflow boundaries and update volume (i.e., integrate flow rate over
     // time)
     Number volume = 0.0;
-    for(auto iterator = OUTFLOW_BOUNDARIES.begin(); iterator != OUTFLOW_BOUNDARIES.end();
-        ++iterator)
+    for(auto & iterator : OUTFLOW_BOUNDARIES)
     {
-      (*iterator)->set_flow_rate(flow_rates.at((*iterator)->get_boundary_id()));
-      (*iterator)->integrate_volume(time);
-      volume += (*iterator)->get_volume();
+      iterator->set_flow_rate(flow_rates.at(iterator->get_boundary_id()));
+      iterator->integrate_volume(time);
+      volume += iterator->get_volume();
     }
 
     // write volume to file
@@ -489,16 +634,27 @@ public:
       time_last = time;
     }
 
+    // calculate the flow rate of the trachea inlet
+    std::map<types::boundary_id, Number> map_trachea = {{TRACHEA_ID, 0.0}};
+
+    flow_rate_calculator_trachea->calculate_flow_rates(velocity, time, map_trachea);
+
+    // extract flow rate from map
+    Number flow_rate_trachea = map_trachea.at(TRACHEA_ID);
+
+    TUBUS->set_pressure_difference(flow_rate_trachea);
+
     // update the ventilator using the new volume
     VENTILATOR->update_pressure_difference(time, volume);
 
     // write pressure to file
     if(pp_data_lung.flow_rate_data.write_to_file)
     {
-      double const       pressure = VENTILATOR->get_pressure(time);
+      double const pressure_trachea =
+        VENTILATOR->get_pressure(time) - TUBUS->get_pressure_difference();
       std::ostringstream filename;
       filename << output_directory + output_name + "_pressure";
-      write_output(pressure, time, "Pressure in [m^2/s^2]", time_step_number, filename);
+      write_output(pressure_trachea, time, "Pressure in [m^2/s^2]", time_step_number, filename);
     }
   }
 
@@ -524,7 +680,7 @@ private:
         f.open(filename.str().c_str(), std::ios::app);
       }
 
-      unsigned int precision = 12;
+      int precision = 12;
       f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
         << std::setw(precision + 8) << value << std::endl;
     }
@@ -539,16 +695,143 @@ private:
   // calculate flow rates for all outflow boundaries
   std::shared_ptr<IncNS::FlowRateCalculator<dim, Number>> flow_rate_calculator;
 
+  // calculate flow rate for trachea
+  std::shared_ptr<IncNS::FlowRateCalculator<dim, Number>> flow_rate_calculator_trachea;
+
   double time_last;
 
   std::string const output_directory, output_name;
 };
 
 template<int dim, typename Number>
+class PostProcessorLungScalar : public ConvDiff::PostProcessor<dim, Number>
+{
+public:
+  typedef ConvDiff::PostProcessor<dim, Number> Base;
+
+  typedef typename Base::VectorType VectorType;
+
+  typedef typename Base::Operator Operator;
+
+  PostProcessorLungScalar(
+    ConvDiff::PostProcessorData<dim> const &                        pp_data_in,
+    MPI_Comm const &                                                comm,
+    std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> boundary_descriptor_in)
+    : Base(pp_data_in, comm),
+      boundary_descriptor_scalar(boundary_descriptor_in),
+      is_inhale_old(true)
+  {
+  }
+
+  void
+  setup(Operator const & pde_operator, const Mapping<dim> & mapping) override
+  {
+    Base::setup(pde_operator, mapping);
+
+    // fill mean_scalar map
+    for(auto & iterator : OUTFLOW_BOUNDARIES)
+    {
+      mean_scalar.insert({iterator->get_boundary_id(), 0.0});
+    }
+
+    mean_scalar_calculator.reset(
+      new MeanScalarCalculator<dim, Number>(pde_operator.get_matrix_free(),
+                                            pde_operator.get_dof_index(),
+                                            pde_operator.get_quad_index(),
+                                            this->mpi_comm));
+  }
+
+  void
+  do_postprocessing(const VectorType & solution,
+                    const double       time,
+                    const int          time_step_number) override
+  {
+    Base::do_postprocessing(solution, time, time_step_number);
+
+    bool is_inhale_now = is_inhale(time);
+
+    if(is_inhale_old != is_inhale_now)
+    {
+      if(is_inhale_now)
+        for(auto & bc_des : boundary_descriptor_scalar)
+        {
+          erase_exhale_bc_scalar(bc_des);
+          set_inhale_bc_scalar(bc_des);
+        }
+      else // exhale
+        for(auto & bc_des : boundary_descriptor_scalar)
+        {
+          mean_scalar_calculator->calculate_mean_scalar(solution, mean_scalar);
+          erase_inhale_bc_scalar(bc_des);
+          set_exhale_bc_scalar(bc_des);
+        }
+    }
+  }
+
+private:
+  bool
+  is_inhale(const double time)
+  {
+    // TODO: generalize breathing periods
+    return (int(time / (PERIOD / 3))) % 3 == 0;
+  }
+
+  void
+  erase_inhale_bc_scalar(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    // 1 = inlet
+    boundary_descriptor->dirichlet_bc.erase(TRACHEA_ID);
+
+    // outlets
+    for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
+    {
+      boundary_descriptor->neumann_bc.erase(id);
+    }
+  }
+
+  void
+  erase_exhale_bc_scalar(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    // 1 = inlet
+    boundary_descriptor->neumann_bc.erase(TRACHEA_ID);
+
+    // outlets
+    for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
+    {
+      boundary_descriptor->dirichlet_bc.erase(id);
+    }
+  }
+
+  void
+  set_exhale_bc_scalar(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
+  {
+    // 1 = inlet
+    boundary_descriptor->neumann_bc.insert_or_assign(
+      1, std::make_shared<Functions::ZeroFunction<dim>>(TRACHEA_ID));
+
+    // outlets
+    for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
+    {
+      boundary_descriptor->dirichlet_bc.insert_or_assign(
+        id, std::make_shared<ExhaleDirichletBCScalar<dim>>(mean_scalar.at(id)));
+    }
+  }
+
+  // we need to compute the mean scalar for each outlet
+  std::map<types::boundary_id, Number> mean_scalar;
+
+  std::shared_ptr<MeanScalarCalculator<dim, Number>> mean_scalar_calculator;
+
+  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> boundary_descriptor_scalar;
+
+  bool is_inhale_old;
+};
+
+template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : FTI::ApplicationBase<dim, Number>(input_file)
+  explicit Application(std::string input_file) : FTI::ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -563,19 +846,21 @@ public:
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
-      prm.add_parameter("Generations",        n_generations,        "Number of generations.");
+    prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
+    prm.add_parameter("MaxGeneration", max_resolved_generation, "Highest resolved generation, starting with 0 for the trachea.");
     prm.leave_subsection();
     // clang-format on
   }
 
-  std::string  directory_lung_files = "";
-  unsigned int n_generations        = 6;
+  std::string  directory_lung_files;
+  unsigned int max_resolved_generation = 5;
 
   // output
   bool const   high_order_output    = true;
   double const output_start_time    = START_TIME;
-  double const output_interval_time = PERIOD / 300;
+  double const output_interval_time = PERIOD / 30;
+
+  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> boundary_descriptor_scalar;
 
   void
   set_input_parameters(IncNS::InputParameters & param)
@@ -620,7 +905,7 @@ public:
     // SPATIAL DISCRETIZATION
     param.triangulation_type = TRIANGULATION_TYPE;
     param.degree_p           = DegreePressure::MixedOrder;
-    param.mapping            = MappingType::Affine; // TODO
+    param.mapping            = MappingType::Affine;
 
     // convective term
     if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -717,7 +1002,8 @@ public:
     param.problem_type              = ProblemType::Unsteady;
     param.equation_type             = EquationType::ConvectionDiffusion;
     param.analytical_velocity_field = false;
-    param.right_hand_side           = false;
+    param.right_hand_side             = false;
+    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
     // PHYSICAL QUANTITIES
     param.start_time = START_TIME;
@@ -758,7 +1044,7 @@ public:
     param.triangulation_type = TRIANGULATION_TYPE;
 
     // mapping
-    param.mapping = MappingType::Affine; // TODO
+    param.mapping = MappingType::Affine;
 
     // convective term
     param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
@@ -789,67 +1075,79 @@ public:
     param.solver_info_data.interval_time = PERIOD / 30;
 
     // NUMERICAL PARAMETERS
+    param.use_overintegration = false;
   }
 
   void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces)
+  create_grid(
+    std::shared_ptr<parallel::TriangulationBase<dim>>,
+    unsigned int const,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &) override
+  {
+#ifdef DEBUG
+    std::cout << "create_grid() is empty for lung application" << std::endl;
+#endif
+  }
+
+  void
+  create_grid_and_mesh(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                 periodic_faces,
+    std::shared_ptr<Mesh<dim>> & mesh) override
   {
     (void)periodic_faces;
 
     AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
     std::vector<std::string> files;
-    files.push_back(directory_lung_files + "leftbot.dat");
-    files.push_back(directory_lung_files + "lefttop.dat");
-    files.push_back(directory_lung_files + "rightbot.dat");
-    files.push_back(directory_lung_files + "rightmid.dat");
-    files.push_back(directory_lung_files + "righttop.dat");
+    files.push_back(directory_lung_files + "airways_complete");
+
+    // call to setup root
     auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
 
-    std::string spline_file = directory_lung_files + "../splines_raw6.dat";
+    // TODO: automate deform via spline
+    std::string spline_file = directory_lung_files + "splines_raw6.dat";
 
     std::map<std::string, double> timings;
 
-    std::shared_ptr<LungID::Checker> generation_limiter(
-      new LungID::GenerationChecker(n_generations));
-
-    // TODO
-    // std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
-
     // create triangulation
-    if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+    if(auto tria =
+         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(triangulation.get()))
     {
       ExaDG::GridGen::lung(*tria,
                            n_refine_space,
                            n_refine_space,
                            tree_factory,
+                           mesh,
                            timings,
                            OUTLET_ID_FIRST,
                            OUTLET_ID_LAST,
                            spline_file,
-                           generation_limiter);
+                           max_resolved_generation);
     }
-    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+    else if(auto tria =
+              dynamic_cast<parallel::distributed::Triangulation<dim> *>(triangulation.get()))
     {
       ExaDG::GridGen::lung(*tria,
                            n_refine_space,
                            tree_factory,
+                           mesh,
                            timings,
                            OUTLET_ID_FIRST,
                            OUTLET_ID_LAST,
                            spline_file,
-                           generation_limiter);
+                           max_resolved_generation);
     }
     else
     {
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
 
-    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, n_generations - 1),
-                ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
+    // check if all outlet ids are set correctly
+    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, max_resolved_generation),
+                ExcMessage("Number of outlets has to be 2^{max_resolved_generation}."));
   }
 
   void
@@ -867,14 +1165,16 @@ public:
 
     // 1 = inlet
     VENTILATOR.reset(new Ventilator());
+    TUBUS.reset(new Tubus());
     boundary_descriptor_velocity->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->dirichlet_bc.insert(pair(1, new PressureInlet<dim>(VENTILATOR)));
+    boundary_descriptor_pressure->dirichlet_bc.insert(
+      pair(1, new PressureInlet<dim>(VENTILATOR, TUBUS)));
 
     // outlets
     for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
     {
       std::shared_ptr<OutflowBoundary> outflow_boundary;
-      outflow_boundary.reset(new OutflowBoundary(id, n_generations, MAX_GENERATION));
+      outflow_boundary.reset(new OutflowBoundary(id, max_resolved_generation, MAX_GENERATION));
       OUTFLOW_BOUNDARIES.push_back(outflow_boundary);
 
       boundary_descriptor_velocity->neumann_bc.insert(
@@ -909,7 +1209,10 @@ public:
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity_magnitude = true;
     pp_data.output_data.write_q_criterion         = true;
+    pp_data.output_data.write_cfl                 = true;
+    pp_data.output_data.write_aspect_ratio        = true;
     pp_data.output_data.write_processor_id        = true;
+    pp_data.output_data.write_boundary_IDs        = true;
     pp_data.output_data.degree                    = degree;
     pp_data.output_data.write_higher_order        = high_order_output;
 
@@ -917,11 +1220,17 @@ public:
     PostProcessorDataLung<dim> pp_data_lung;
     pp_data_lung.pp_data = pp_data;
 
-    // calculation of flow rate
+    // calculation of flow rate at outlets
     pp_data_lung.flow_rate_data.calculate     = true;
     pp_data_lung.flow_rate_data.write_to_file = true;
     pp_data_lung.flow_rate_data.filename_prefix =
       this->output_directory + this->output_name + "_flow_rate";
+
+    // calculation of flow rate of the trachea
+    pp_data_lung.flow_rate_data_trachea.calculate     = true;
+    pp_data_lung.flow_rate_data_trachea.write_to_file = true;
+    pp_data_lung.flow_rate_data_trachea.filename_prefix =
+      this->output_directory + this->output_name + "_flow_rate_trachea";
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessorLung<dim, Number>(
@@ -935,22 +1244,16 @@ public:
     std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
     unsigned int                                       scalar_index = 0)
   {
-    (void)scalar_index; // only one scalar quantity considered
+    (void)scalar_index;
+
+    boundary_descriptor_scalar.push_back(boundary_descriptor);
 
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // 0 = walls
     boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
 
-    // 1 = inlet
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new DirichletBC<dim>()));
-
-    // outlets
-    for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
-    {
-      // TODO
-      boundary_descriptor->dirichlet_bc.insert(pair(id, new Functions::ZeroFunction<dim>(1)));
-    }
+    set_inhale_bc_scalar(boundary_descriptor);
   }
 
   void
@@ -979,14 +1282,13 @@ public:
     pp_data.output_data.write_higher_order   = high_order_output;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(
+      new PostProcessorLungScalar<dim, Number>(pp_data, mpi_comm, boundary_descriptor_scalar));
 
     return pp;
   }
 };
 
-} // namespace Lung
-} // namespace FTI
-} // namespace ExaDG
+} // namespace ExaDG::FTI::Lung
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_ */

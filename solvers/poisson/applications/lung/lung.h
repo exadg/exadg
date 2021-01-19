@@ -70,13 +70,13 @@ public:
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("DirectoryLungFiles", directory_lung_files, "Directory where to find files for lung geometry.");
-      prm.add_parameter("Generations",        n_generations,        "Number of generations.");
+      prm.add_parameter("MaxGeneration", max_resolved_generation, "Highest resolved generation, starting with 0 for the trachea.");
     prm.leave_subsection();
     // clang-format on
   }
 
-  std::string  directory_lung_files = "";
-  unsigned int n_generations        = 4;
+  std::string  directory_lung_files    = "";
+  unsigned int max_resolved_generation = 3;
 
   void
   set_input_parameters(InputParameters & param)
@@ -115,7 +115,7 @@ public:
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
               unsigned int const                                n_refine_space,
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces)
+                periodic_faces) override
   {
     (void)periodic_faces;
 
@@ -133,9 +133,7 @@ public:
 
     std::map<std::string, double> timings;
 
-    std::shared_ptr<LungID::Checker> generation_limiter(
-      new LungID::GenerationChecker(n_generations));
-    // std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
+    std::shared_ptr<Mesh<dim>> mesh;
 
     // create triangulation
     if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
@@ -144,30 +142,32 @@ public:
                            n_refine_space,
                            n_refine_space,
                            tree_factory,
+                           mesh,
                            timings,
                            OUTLET_ID_FIRST,
                            OUTLET_ID_LAST,
                            spline_file,
-                           generation_limiter);
+                           max_resolved_generation);
     }
     else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
     {
       ExaDG::GridGen::lung(*tria,
                            n_refine_space,
                            tree_factory,
+                           mesh,
                            timings,
                            OUTLET_ID_FIRST,
                            OUTLET_ID_LAST,
                            spline_file,
-                           generation_limiter);
+                           max_resolved_generation);
     }
     else
     {
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
 
-    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, n_generations - 1),
-                ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
+    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, max_resolved_generation),
+                ExcMessage("Number of outlets has to be 2^{max_resolved_generation}."));
   }
 
   void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
@@ -216,18 +216,18 @@ public:
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   }
 
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    ConvDiff::PostProcessorData<dim> pp_data;
+    Poisson::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->write_output;
     pp_data.output_data.output_folder      = this->output_directory + "vtu/";
     pp_data.output_data.output_name        = this->output_name;
     pp_data.output_data.write_higher_order = true;
     pp_data.output_data.degree             = degree;
 
-    std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<Poisson::PostProcessorBase<dim, Number>> pp;
+    pp.reset(new Poisson::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }

@@ -60,7 +60,9 @@ struct OutputData : public OutputDataBase
       write_vorticity_magnitude(false),
       write_streamfunction(false),
       write_q_criterion(false),
-      mean_velocity(OutputDataMeanVelocity())
+      mean_velocity(OutputDataMeanVelocity()),
+      write_cfl(false),
+      write_aspect_ratio(false)
   {
   }
 
@@ -105,6 +107,12 @@ struct OutputData : public OutputDataBase
 
   // calculate mean velocity field (averaged over time)
   OutputDataMeanVelocity mean_velocity;
+
+  // write cfl
+  bool write_cfl;
+
+  // write aspect ratio
+  bool write_aspect_ratio;
 };
 
 template<int dim, typename Number>
@@ -168,6 +176,7 @@ private:
   VectorType   streamfunction;
   VectorType   q_criterion;
   VectorType   mean_velocity; // velocity field averaged over time
+  VectorType   cfl;
   unsigned int counter_mean_velocity;
 
   std::vector<SolutionField<dim, Number>> additional_fields;

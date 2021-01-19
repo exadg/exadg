@@ -113,8 +113,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   application->create_grid(triangulation, refine_space, periodic_faces);
-  print_grid_data(pcout, refine_space, *triangulation);
-
   // mapping
   unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree);
 
@@ -139,8 +137,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
   else // static mesh
   {
-    mesh.reset(new Mesh<dim>(mapping_degree));
+    // currently required for lung test case, TODO: find a better solution
+    if(triangulation->n_cells() == 0)
+      application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
+    else
+      mesh.reset(new Mesh<dim>(mapping_degree));
   }
+
+  // print after call to create_grid or create_grid_and_mesh
+  print_grid_data(pcout, refine_space, *triangulation);
+
 
   // boundary conditions
   fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
@@ -290,6 +296,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
         "Parameter use_cell_based_face_loops should be the same for fluid and scalar transport."));
   }
 
+  // compute maximum aspect ratio (default = false)
+  if(false)
+  {
+    QGauss<dim> quadrature(degree + 1);
+    double      AR =
+      GridTools::compute_maximum_aspect_ratio(mesh->get_mapping(), *triangulation, quadrature);
+    pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
+  }
+
   // setup Navier-Stokes operator
   if(fluid_param.boussinesq_term)
   {
@@ -319,7 +334,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_postprocessor[i] = application->construct_postprocessor_scalar(degree, mpi_comm, i);
-    scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(), mesh->get_mapping());
+    scalar_postprocessor[i]->setup(*conv_diff_operator[i], mesh->get_mapping());
   }
 
   // setup time integrator before calling setup_solvers

@@ -318,6 +318,62 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   return new_time_step;
 }
 
+/*
+ * this function computes the actual CFL number in each cell given a global time step size
+ * (that holds for all cells)
+ */
+
+template<int dim, typename value_type>
+void
+calculate_cfl(LinearAlgebra::distributed::Vector<value_type> &       cfl,
+              Triangulation<dim> const &                             triangulation,
+              MatrixFree<dim, value_type> const &                    data,
+              unsigned int const                                     dof_index,
+              unsigned int const                                     quad_index,
+              LinearAlgebra::distributed::Vector<value_type> const & velocity,
+              double const                                           time_step,
+              unsigned int const                                     degree,
+              double const                                           exponent_fe_degree)
+{
+  CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
+
+  const unsigned int n_active_cells = triangulation.n_active_cells();
+
+  cfl.reinit(n_active_cells);
+
+  for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
+  {
+    fe_eval.reinit(cell);
+    fe_eval.read_dof_values(velocity);
+    fe_eval.evaluate(true, false);
+
+    VectorizedArray<value_type> u_va =
+      make_vectorized_array<value_type>(std::numeric_limits<value_type>::min());
+
+    Tensor<2, dim, VectorizedArray<value_type>> invJ;
+    Tensor<1, dim, VectorizedArray<value_type>> u_x;
+    Tensor<1, dim, VectorizedArray<value_type>> ut_xi;
+
+    // loop over quadrature points
+    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    {
+      u_x   = fe_eval.get_value(q);
+      invJ  = fe_eval.inverse_jacobian(q);
+      invJ  = transpose(invJ);
+      ut_xi = invJ * u_x;
+
+      u_va = std::max(u_va, ut_xi.norm());
+    }
+
+    // loop over vectorized array
+    for(unsigned int v = 0; v < data.n_active_entries_per_cell_batch(cell); ++v)
+    {
+      cfl[data.get_cell_iterator(cell, v)->active_cell_index()] =
+        u_va[v] * time_step * pow(degree, exponent_fe_degree);
+    }
+  }
+}
+
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_ */

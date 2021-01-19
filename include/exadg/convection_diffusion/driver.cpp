@@ -143,7 +143,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     // initialize postprocessor
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(conv_diff_operator->get_dof_handler(), mesh->get_mapping());
+    postprocessor->setup(*conv_diff_operator, mesh->get_mapping());
 
     // initialize time integrator or driver for steady problems
     if(param.problem_type == ProblemType::Unsteady)

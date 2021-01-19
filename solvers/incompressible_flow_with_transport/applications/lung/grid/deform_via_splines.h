@@ -12,6 +12,7 @@
 #include <deal.II/grid/tria.h>
 
 // ExaDG
+#include "deform_via_cylinder.h"
 #include "read_bspline.h"
 
 namespace ExaDG
@@ -19,7 +20,7 @@ namespace ExaDG
 using namespace dealii;
 
 template<int dim>
-class DeformTransfinitelyViaSplines
+class DeformTransfinitelyViaSplines : public DeformTransfinitelyViaCylinder<dim>
 {
 public:
   DeformTransfinitelyViaSplines() = default;
@@ -49,16 +50,18 @@ public:
                 ExcDimensionMismatch(surrounding_points.size(),
                                      GeometryInfo<dim>::vertices_per_cell));
 
-    bifurcation_indices = bifurcation_indices_in;
-    for(unsigned int i = 0; i < bifurcation_indices.size(); ++i)
-      AssertThrow(bifurcation_indices[i] < 2,
+    this->bifurcation_indices = bifurcation_indices_in;
+    for(unsigned int i = 0; i < this->bifurcation_indices.size(); ++i)
+      AssertThrow(this->bifurcation_indices[i] < 2,
                   ExcInternalError("Bifurcation index must be either 0 or 1"));
 
-    surrounding_points_parts = surrounding_points;
-    surrounding_points_parts.push_back(0.5(surrounding_points[bifurcation_indices[0]] +
-                                           surrounding_points[3 - bifurcation_indices[0]]));
-    surrounding_points_parts.push_back(0.5(surrounding_points[4 + bifurcation_indices[1]] +
-                                           surrounding_points[7 - bifurcation_indices[1]]));
+    this->surrounding_points_parts = surrounding_points;
+    this->surrounding_points_parts.push_back(
+      0.5(surrounding_points[this->bifurcation_indices[0]] +
+          surrounding_points[3 - this->bifurcation_indices[0]]));
+    this->surrounding_points_parts.push_back(
+      0.5(surrounding_points[4 + this->bifurcation_indices[1]] +
+          surrounding_points[7 - this->bifurcation_indices[1]]));
   }
 
   DeformTransfinitelyViaSplines(const std::vector<BSpline2D<dim, 3>> & splines_in,
@@ -86,20 +89,22 @@ public:
                 ExcDimensionMismatch(surrounding_points.size(),
                                      GeometryInfo<dim>::vertices_per_cell));
 
-    bifurcation_indices = bifurcation_indices_in;
-    for(unsigned int i = 0; i < bifurcation_indices.size(); ++i)
-      AssertThrow(bifurcation_indices[i] < 2,
+    this->bifurcation_indices = bifurcation_indices_in;
+    for(unsigned int i = 0; i < this->bifurcation_indices.size(); ++i)
+      AssertThrow(this->bifurcation_indices[i] < 2,
                   ExcInternalError("Bifurcation index must be either 0 or 1"));
 
-    surrounding_points_parts = surrounding_points;
-    surrounding_points_parts.push_back(0.5 * (surrounding_points[bifurcation_indices[0]] +
-                                              surrounding_points[3 - bifurcation_indices[0]]));
-    surrounding_points_parts.push_back(0.5 * (surrounding_points[4 + bifurcation_indices[1]] +
-                                              surrounding_points[7 - bifurcation_indices[1]]));
+    this->surrounding_points_parts = surrounding_points;
+    this->surrounding_points_parts.push_back(
+      0.5 * (surrounding_points[this->bifurcation_indices[0]] +
+             surrounding_points[3 - this->bifurcation_indices[0]]));
+    this->surrounding_points_parts.push_back(
+      0.5 * (surrounding_points[4 + this->bifurcation_indices[1]] +
+             surrounding_points[7 - this->bifurcation_indices[1]]));
   }
 
   Point<dim>
-  transform_to_deformed(const Point<dim> & untransformed) const
+  transform_to_deformed(const Point<dim> & untransformed) const override
   {
     AssertThrow(splines.size() >= 4, ExcNotImplemented("Need at least 4 splines"));
 
@@ -109,7 +114,7 @@ public:
     double       distance = 3;
     for(; quadrant < 4; ++quadrant)
     {
-      Point<dim>   tentative = transform_to_reference_prism(quadrant, untransformed);
+      Point<dim>   tentative = this->transform_to_reference_prism(quadrant, untransformed);
       const double my_distance =
         (tentative[0] < -1e-12 ? -tentative[0] :
                                  (tentative[0] > 1 + 1e-12 ? tentative[0] - 1 : 0)) +
@@ -134,7 +139,7 @@ public:
       std::cout << "Warning: Error in locating point " << untransformed
                 << " on reference prism; guesses were ";
       for(unsigned int r = 0; r < 4; ++r)
-        std::cout << transform_to_reference_prism(r, untransformed) << "   ";
+        std::cout << this->transform_to_reference_prism(r, untransformed) << "   ";
       std::cout << std::endl;
     }
 
@@ -143,7 +148,7 @@ public:
       std::ostringstream str;
       str << "Error in locating point " << untransformed << " on reference prism; guesses were ";
       for(unsigned int r = 0; r < 4; ++r)
-        str << transform_to_reference_prism(r, untransformed) << "   ";
+        str << this->transform_to_reference_prism(r, untransformed) << "   ";
       AssertThrow(false, (typename Mapping<dim, dim>::ExcTransformationFailed(str.str())));
     }
 
@@ -160,8 +165,9 @@ public:
                                   splines[2].value(1., reference[2])};
     const Point<dim> mid_point =
       (1. - reference[2]) * 0.5 *
-        (bounds[bifurcation_indices[0]] + bounds[2 + bifurcation_indices[0]]) +
-      reference[2] * 0.5 * (bounds[bifurcation_indices[1]] + bounds[2 + bifurcation_indices[1]]);
+        (bounds[this->bifurcation_indices[0]] + bounds[2 + this->bifurcation_indices[0]]) +
+      reference[2] * 0.5 *
+        (bounds[this->bifurcation_indices[1]] + bounds[2 + this->bifurcation_indices[1]]);
 
     Point<dim>           lambda(1 - reference[0] - reference[1], reference[0], reference[1]);
     const Tensor<1, dim> vbar12 = mid_point + (bounds[quadrant] - mid_point) * lambda[1];
@@ -170,16 +176,16 @@ public:
     const Tensor<1, dim> vbar21 = bounds[quadrant] + (mid_point - bounds[quadrant]) * lambda[0];
     const Tensor<1, dim> vbar31 =
       bounds[(quadrant + 1) % 4] + (mid_point - bounds[(quadrant + 1) % 4]) * lambda[0];
-    const Tensor<1, dim> vbar32      = splines[quadrant].value(1 - lambda[1], reference[2]);
-    auto                 transformed = Point<dim>(lambda[0] * (vbar12 + vbar13 - mid_point) +
-                                  lambda[1] * (vbar23 + vbar21 - bounds[quadrant]) +
-                                  lambda[2] * (vbar31 + vbar32 - bounds[(quadrant + 1) % 4]));
+    const Tensor<1, dim> vbar32 = splines[quadrant].value(1 - lambda[1], reference[2]);
+    const Point<dim>     transformed(lambda[0] * (vbar12 + vbar13 - mid_point) +
+                                 lambda[1] * (vbar23 + vbar21 - bounds[quadrant]) +
+                                 lambda[2] * (vbar31 + vbar32 - bounds[(quadrant + 1) % 4]));
 
     if(!this->do_blend)
       return transformed;
     else
-      return Point<dim>(untransformed * reference[2] * reference[2] +
-                        transformed * (1.0 - reference[2] * reference[2]));
+      return untransformed * reference[2] * reference[2] +
+             transformed * (1.0 - reference[2] * reference[2]);
 
     // compute angle and radius of the new point to correct for the fact that
     // we are going to map back to a circle with a single element
@@ -209,85 +215,6 @@ public:
 
 private:
   std::vector<BSpline2D<dim, 3>> splines;
-  std::vector<Point<dim>>        surrounding_points_parts;
-  MappingQ1<dim>                 auxiliary_mapping;
-  std::array<unsigned int, 2>    bifurcation_indices;
-  bool                           do_blend = false;
-
-  Point<dim>
-  transform_to_reference_prism(const unsigned int section, const Point<dim> & original) const
-  {
-    Point<dim> result(1. / 3., 1. / 3., 0.5);
-
-    double                                error_norm_sqr = 1;
-    std::pair<Point<dim>, Tensor<2, dim>> data           = transform_to_prism(section, result);
-    while(error_norm_sqr > 1e-24)
-    {
-      const Tensor<1, dim> residual = original - data.first;
-      error_norm_sqr                = residual.norm_square();
-      const double det              = determinant(data.second);
-      if(det < 1e-10)
-        return Point<dim>(-1, -1, -1);
-      else
-      {
-        Tensor<1, dim> update = invert(data.second) * residual;
-        double         alpha  = 1;
-        while(alpha > 1e-7)
-        {
-          Point<dim> tentative = result + alpha * update;
-          data                 = transform_to_prism(section, tentative);
-          if((original - data.first).norm_square() <= error_norm_sqr &&
-             determinant(data.second) > 1e-10)
-          {
-            result = tentative;
-            break;
-          }
-          alpha *= 0.5;
-        }
-        if(alpha <= 1e-7)
-          return Point<dim>(-1, -1, -1);
-      }
-    }
-    return result;
-  }
-
-  std::pair<Point<dim>, Tensor<2, dim>>
-  transform_to_prism(const unsigned int section, const Point<dim> & reference) const
-  {
-    constexpr unsigned int indices_tria[4][2] = {{0, 1}, {1, 3}, {3, 2}, {2, 0}};
-    const Point<dim>       point(
-      (1 - reference[2]) * ((1 - reference[0] - reference[1]) * surrounding_points_parts[8] +
-                            reference[0] * surrounding_points_parts[indices_tria[section][0]] +
-                            reference[1] * surrounding_points_parts[indices_tria[section][1]]) +
-      reference[2] * ((1 - reference[0] - reference[1]) * surrounding_points_parts[9] +
-                      reference[0] * surrounding_points_parts[4 + indices_tria[section][0]] +
-                      reference[1] * surrounding_points_parts[4 + indices_tria[section][1]]));
-    Tensor<2, dim>       derivative;
-    const Tensor<1, dim> der_0 =
-      (1 - reference[2]) *
-        (surrounding_points_parts[indices_tria[section][0]] - surrounding_points_parts[8]) +
-      reference[2] *
-        (surrounding_points_parts[4 + indices_tria[section][0]] - surrounding_points_parts[9]);
-    const Tensor<1, dim> der_1 =
-      (1 - reference[2]) *
-        (surrounding_points_parts[indices_tria[section][1]] - surrounding_points_parts[8]) +
-      reference[2] *
-        (surrounding_points_parts[4 + indices_tria[section][1]] - surrounding_points_parts[9]);
-    const Tensor<1, dim> der_2 =
-      -((1 - reference[0] - reference[1]) * surrounding_points_parts[8] +
-        reference[0] * surrounding_points_parts[indices_tria[section][0]] +
-        reference[1] * surrounding_points_parts[indices_tria[section][1]]) +
-      ((1 - reference[0] - reference[1]) * surrounding_points_parts[9] +
-       reference[0] * surrounding_points_parts[4 + indices_tria[section][0]] +
-       reference[1] * surrounding_points_parts[4 + indices_tria[section][1]]);
-    for(unsigned int d = 0; d < dim; ++d)
-    {
-      derivative[d][0] = der_0[d];
-      derivative[d][1] = der_1[d];
-      derivative[d][2] = der_2[d];
-    }
-    return std::make_pair(point, derivative);
-  }
 };
 
 } // namespace ExaDG

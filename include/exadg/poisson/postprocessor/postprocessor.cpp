@@ -5,12 +5,12 @@
  *      Author: fehn
  */
 
-#include <exadg/convection_diffusion/postprocessor/postprocessor.h>
-#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
+#include <exadg/poisson/postprocessor/postprocessor.h>
+#include <exadg/poisson/spatial_discretization/operator.h>
 
 namespace ExaDG
 {
-namespace ConvDiff
+namespace Poisson
 {
 using namespace dealii;
 
@@ -26,11 +26,12 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(Operator const & pde_operator, Mapping<dim> const & mapping)
+PostProcessor<dim, Number>::setup(DoFHandler<dim, dim> const & dof_handler,
+                                  Mapping<dim> const &         mapping)
 {
-  error_calculator.setup(pde_operator.get_dof_handler(), mapping, pp_data.error_data);
+  error_calculator.setup(dof_handler, mapping, pp_data.error_data);
 
-  output_generator.setup(pde_operator.get_dof_handler(), mapping, pp_data.output_data);
+  output_generator.setup(dof_handler, mapping, pp_data.output_data);
 }
 
 template<int dim, typename Number>
@@ -50,5 +51,5 @@ template class PostProcessor<3, float>;
 template class PostProcessor<2, double>;
 template class PostProcessor<3, double>;
 
-} // namespace ConvDiff
+} // namespace Poisson
 } // namespace ExaDG
