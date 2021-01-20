@@ -64,11 +64,11 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
 }
 
 inline unsigned int
-get_dofs_per_element(std::string const & operator_type_string,
+get_dofs_per_element(std::string const & input_file,
                      unsigned int const  dim,
                      unsigned int const  degree)
 {
-  (void)operator_type_string;
+  (void)input_file;
 
   unsigned int const dofs_per_element = std::pow(degree, dim) * dim;
 
