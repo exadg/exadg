@@ -1,20 +1,12 @@
-/*
- * includes/spectrum.h
- *
- *  Created on: Mar 02, 2018
- *      Author: muench
- */
-
 #ifndef DEAL_SPECTRUM_SPECTRUM
 #define DEAL_SPECTRUM_SPECTRUM
 
-// include std
 #include <fftw3-mpi.h>
 #include <mpi.h>
 #include <cmath>
 
-// include DEAL.SPECTRUM modules
-#include "./setup.h"
+// ExaDG
+#include <exadg/postprocessor/spectral_analysis/setup.h>
 
 // shortcuts for accessing linearized arrays
 #define u_comp2(i, j) u_comp[(j - local_start) * (N / 2 + 1) + i]
@@ -31,7 +23,7 @@ namespace dealspectrum
 class SpectralAnalysis
 {
   MPI_Comm const & comm;
-    
+
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?
@@ -99,8 +91,8 @@ public:
 
     // ...get local size of local output arrays
     ptrdiff_t local_elements = 0;
-    alloc_local = fftw_mpi_local_size(dim, n, comm, &local_elements, &local_start);
-    local_end   = local_start + local_elements;
+    alloc_local              = fftw_mpi_local_size(dim, n, comm, &local_elements, &local_start);
+    local_end                = local_start + local_elements;
 
     // determine how many rows each process has
     int * global_elements = new int[size];

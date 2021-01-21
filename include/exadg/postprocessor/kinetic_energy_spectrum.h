@@ -11,7 +11,7 @@
 // deal.II
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include "deal.II/matrix_free/matrix_free.h"
+#include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
 #include <exadg/utilities/print_functions.h>
@@ -20,7 +20,8 @@ namespace ExaDG
 {
 using namespace dealii;
 
-// kinetic energy spectrum data
+// forward declaration
+class DealSpectrumWrapper;
 
 struct KineticEnergySpectrumData
 {
@@ -39,7 +40,6 @@ struct KineticEnergySpectrumData
       n_cells_1d_coarse_grid(1),
       refine_level(0),
       length_symmetric_domain(numbers::PI)
-
   {
   }
 
@@ -123,6 +123,8 @@ private:
   unsigned int              counter;
   bool                      reset_counter;
   const unsigned int        precision = 12;
+
+  std::shared_ptr<DealSpectrumWrapper> deal_spectrum_wrapper;
 
   SmartPointer<DoFHandler<dim> const> dof_handler;
 
