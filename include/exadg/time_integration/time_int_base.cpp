@@ -19,13 +19,13 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
                          bool const          print_wall_times_)
   : start_time(start_time_),
     end_time(end_time_),
+    time(start_time_),
     eps(1.e-10),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     time_step_number(1),
     max_number_of_time_steps(max_number_of_time_steps_),
     restart_data(restart_data_),
     mpi_comm(mpi_comm_),
-    time(start_time_),
     timer_tree(new TimerTree()),
     print_wall_times(print_wall_times_)
 {

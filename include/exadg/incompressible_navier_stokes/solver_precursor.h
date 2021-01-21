@@ -12,6 +12,7 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
+#include <exadg/configuration/config.h>
 #include <exadg/incompressible_navier_stokes/driver_precursor.h>
 #include <exadg/utilities/general_parameters.h>
 
