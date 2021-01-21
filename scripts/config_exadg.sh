@@ -1,4 +1,4 @@
-rm -rf CMakeFiles/ CMakeCache.txt
+rm -rf CMakeFiles/ CMakeCache.txt include/exadg/configuration/config.h
 
 # issue the build - must usually not be modified
 cmake \

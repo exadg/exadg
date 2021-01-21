@@ -1,0 +1,18 @@
+//
+// Created by bergbauer on 1/21/21.
+//
+
+#ifndef EXADG_CONFIG_H
+#define EXADG_CONFIG_H
+
+// clang-format off
+// read DEGREE_MAX from cmake
+#cmakedefine EXADG_DEGREE_MAX @EXADG_DEGREE_MAX@
+// clang-format on
+
+// set default EXADG_DEGREE_MAX
+#ifndef EXADG_DEGREE_MAX
+#  define EXADG_DEGREE_MAX 15
+#endif
+
+#endif // EXADG_CONFIG_H
