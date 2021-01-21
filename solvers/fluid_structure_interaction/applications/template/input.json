@@ -2,6 +2,9 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
         "DegreeFluid": "3",
         "DegreeStructure": "3",
         "RefineFluid": "0",

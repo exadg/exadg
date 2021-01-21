@@ -1,11 +1,16 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
         "DegreeMin": "2",
         "DegreeMax": "2",
         "RefineSpaceMin": "2",
-        "RefineSpaceMax": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
         "RefineTimeMin": "0",
         "RefineTimeMax": "0"
     },

@@ -2,6 +2,9 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
+        "IsTest": "false"
+    },
+    "Resolution": {
         "RunType": "FixedProblemSize",
         "DegreeMin": "1",
         "DegreeMax": "15",

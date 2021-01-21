@@ -2,9 +2,11 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
         "Degree": "3",
-        "RefineSpace": "5",
-        "NScalars": "1"
+        "RefineSpace": "5"
     },
     "Application": {
        	"Name": "RisingBubble"

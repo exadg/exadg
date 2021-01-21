@@ -1,10 +1,12 @@
 {
     "General": {
-      "Precision": "double",
-      "Dim": "3",
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
       "Degree": "3",
-      "RefineSpace": "0",
-      "NScalars": "1"
+      "RefineSpace": "0"
     },
     "Application": {
       "Name": "Lung",
