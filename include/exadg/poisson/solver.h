@@ -14,7 +14,8 @@
 #include <exadg/poisson/driver.h>
 
 // utilities
-#include <exadg/utilities/parameter_study.h>
+#include <exadg/utilities/general_parameters.h>
+#include <exadg/utilities/hypercube_resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -32,8 +33,11 @@ create_input_file(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
 
-  ParameterStudy parameter_study;
-  parameter_study.add_parameters(prm);
+  GeneralParameters general;
+  general.add_parameters(prm);
+
+  HypercubeResolutionParameters resolution;
+  resolution.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
   // for the automatic generation of a default input file
@@ -48,12 +52,13 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(std::vector<Timings> & timings,
-    std::string const &    input_file,
-    unsigned int const     degree,
-    unsigned int const     refine_space,
-    unsigned int const     n_cells_1d,
-    MPI_Comm const &       mpi_comm)
+run(std::vector<SolverResult> & results,
+    std::string const &         input_file,
+    unsigned int const          degree,
+    unsigned int const          refine_space,
+    unsigned int const          n_cells_1d,
+    MPI_Comm const &            mpi_comm,
+    bool const                  is_test)
 {
   Timer timer;
   timer.restart();
@@ -66,12 +71,12 @@ run(std::vector<Timings> & timings,
 
   application->set_subdivisions_hypercube(n_cells_1d);
 
-  driver->setup(application, degree, refine_space);
+  driver->setup(application, degree, refine_space, is_test, false);
 
   driver->solve();
 
-  Timings timing = driver->print_statistics(timer.wall_time());
-  timings.push_back(timing);
+  SolverResult result = driver->print_performance_results(timer.wall_time(), is_test);
+  results.push_back(result);
 }
 } // namespace ExaDG
 
@@ -107,34 +112,40 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::ParameterStudy study(input_file);
+  ExaDG::GeneralParameters             general(input_file);
+  ExaDG::HypercubeResolutionParameters resolution(input_file, general.dim);
 
   // fill resolution vector
-  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
+  resolution.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
 
-  std::vector<ExaDG::Timings> timings;
+  std::vector<ExaDG::SolverResult> results;
 
   // loop over resolutions vector and run simulations
-  for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
+  for(auto iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)
   {
     unsigned int const degree       = std::get<0>(*iter);
     unsigned int const refine_space = std::get<1>(*iter);
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
-    if(study.dim == 2 && study.precision == "float")
-      ExaDG::run<2, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-    else if(study.dim == 2 && study.precision == "double")
-      ExaDG::run<2, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-    else if(study.dim == 3 && study.precision == "float")
-      ExaDG::run<3, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-    else if(study.dim == 3 && study.precision == "double")
-      ExaDG::run<3, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+    if(general.dim == 2 && general.precision == "float")
+      ExaDG::run<2, float>(
+        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    else if(general.dim == 2 && general.precision == "double")
+      ExaDG::run<2, double>(
+        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    else if(general.dim == 3 && general.precision == "float")
+      ExaDG::run<3, float>(
+        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    else if(general.dim == 3 && general.precision == "double")
+      ExaDG::run<3, double>(
+        results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
     else
       AssertThrow(false,
                   dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }
 
-  print_results(timings, mpi_comm);
+  if(not(general.is_test))
+    print_results(results, mpi_comm);
 
   return 0;
 }

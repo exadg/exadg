@@ -12,7 +12,7 @@
 #include <exadg/grid/moving_mesh_base.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -26,6 +26,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
+  bool const                                      print_wall_times_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
@@ -36,7 +37,8 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
                            param_in.start_with_low_order,
                            param_in.adaptive_time_stepping,
                            param_in.restart_data,
-                           mpi_comm_in),
+                           mpi_comm_in,
+                           print_wall_times_in),
     pde_operator(operator_in),
     param(param_in),
     refine_steps_time(refine_steps_time_in),
@@ -680,7 +682,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
   if(print_solver_info())
   {
     this->pcout << std::endl << "Solve scalar convection-diffusion equation:";
-    print_solver_info_linear(this->pcout, N_iter, timer.wall_time());
+    print_solver_info_linear(this->pcout, N_iter, timer.wall_time(), this->print_wall_times);
   }
 
   this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());

@@ -5,14 +5,14 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_THROUGHPUT_STUDY_H_
-#define INCLUDE_EXADG_UTILITIES_THROUGHPUT_STUDY_H_
+#ifndef INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
+#define INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
-#include <exadg/utilities/print_throughput.h>
+#include "print_solver_results.h"
 
 namespace ExaDG
 {
@@ -67,13 +67,13 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
   return wall_time;
 }
 
-struct ThroughputStudy
+struct ThroughputParameters
 {
-  ThroughputStudy()
+  ThroughputParameters()
   {
   }
 
-  ThroughputStudy(const std::string & input_file)
+  ThroughputParameters(const std::string & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -123,4 +123,4 @@ struct ThroughputStudy
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_THROUGHPUT_STUDY_H_ */
+#endif /* INCLUDE_EXADG_UTILITIES_THROUGHPUT_PARAMETERS_H_ */

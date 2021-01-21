@@ -44,6 +44,7 @@ public:
   DriverSteadyProblems(std::shared_ptr<Operator>                       operator_in,
                        InputParameters const &                         param_in,
                        MPI_Comm const &                                mpi_comm_in,
+                       bool const                                      print_wall_times_in,
                        std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
@@ -73,6 +74,8 @@ private:
   InputParameters const & param;
 
   MPI_Comm const & mpi_comm;
+
+  bool print_wall_times;
 
   ConditionalOStream pcout;
 

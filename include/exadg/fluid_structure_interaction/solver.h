@@ -12,9 +12,8 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
-
-// driver
 #include <exadg/fluid_structure_interaction/driver.h>
+#include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
 {
@@ -27,13 +26,13 @@ template<int dim, typename Number>
 void
 add_parameters_application(dealii::ParameterHandler & prm, std::string const & input_file);
 
-struct Study
+struct ResolutionParameters
 {
-  Study()
+  ResolutionParameters()
   {
   }
 
-  Study(const std::string & input_file)
+  ResolutionParameters(const std::string & input_file)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -44,17 +43,7 @@ struct Study
   add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
-    prm.enter_subsection("General");
-      prm.add_parameter("Precision",
-                        precision,
-                        "Floating point precision.",
-                        Patterns::Selection("float|double"),
-                        false);
-      prm.add_parameter("Dim",
-                        dim,
-                        "Number of space dimension.",
-                        Patterns::Integer(2,3),
-                        true);
+    prm.enter_subsection("SpatialResolution");
       prm.add_parameter("DegreeFluid",
                         degree_fluid,
                         "Polynomial degree of fluid (velocity).",
@@ -79,10 +68,6 @@ struct Study
     // clang-format on
   }
 
-  std::string precision = "double";
-
-  unsigned int dim = 2;
-
   unsigned int degree_fluid = 3, degree_structure = 3;
 
   unsigned int refine_fluid = 0, refine_structure = 0;
@@ -93,8 +78,11 @@ create_input_file(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
 
-  Study study;
-  study.add_parameters(prm);
+  GeneralParameters general;
+  general.add_parameters(prm);
+
+  ResolutionParameters resolution;
+  resolution.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
   // for the automatic generation of a default input file
@@ -113,7 +101,10 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(std::string const & input_file, Study const & study, MPI_Comm const & mpi_comm)
+run(std::string const &          input_file,
+    ResolutionParameters const & resolution,
+    MPI_Comm const &             mpi_comm,
+    bool const                   is_test)
 {
   Timer timer;
   timer.restart();
@@ -125,14 +116,15 @@ run(std::string const & input_file, Study const & study, MPI_Comm const & mpi_co
     get_application<dim, Number>(input_file);
 
   driver->setup(application,
-                study.degree_fluid,
-                study.degree_structure,
-                study.refine_fluid,
-                study.refine_structure);
+                resolution.degree_fluid,
+                resolution.degree_structure,
+                resolution.refine_fluid,
+                resolution.refine_structure,
+                is_test);
 
   driver->solve();
 
-  driver->print_statistics(timer.wall_time());
+  driver->print_performance_results(timer.wall_time(), is_test);
 }
 } // namespace ExaDG
 
@@ -145,41 +137,43 @@ main(int argc, char ** argv)
 
   std::string input_file;
 
-  if(argc == 1 or (argc == 2 and std::string(argv[1]) == "--help"))
+  if(argc == 1)
   {
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
+      // clang-format off
       std::cout << "To run the program, use:      ./solver input_file" << std::endl
-                << "To create an input file, use: ./solver --create_input_file input_file"
-                << std::endl;
+                << "To setup the input file, use: ./solver input_file --help" << std::endl;
+      // clang-format on
     }
 
     return 0;
   }
   else if(argc >= 2)
   {
-    input_file = std::string(argv[argc - 1]);
+    input_file = std::string(argv[1]);
+
+    if(argc == 3 and std::string(argv[2]) == "--help")
+    {
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        ExaDG::create_input_file(input_file);
+
+      return 0;
+    }
   }
 
-  if(argc == 3 and std::string(argv[1]) == "--create_input_file")
-  {
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      ExaDG::create_input_file(input_file);
-
-    return 0;
-  }
-
-  ExaDG::Study study(input_file);
+  ExaDG::GeneralParameters    general(input_file);
+  ExaDG::ResolutionParameters resolution(input_file);
 
   // run the simulation
-  if(study.dim == 2 && study.precision == "float")
-    ExaDG::run<2, float>(input_file, study, mpi_comm);
-  else if(study.dim == 2 && study.precision == "double")
-    ExaDG::run<2, double>(input_file, study, mpi_comm);
-  else if(study.dim == 3 && study.precision == "float")
-    ExaDG::run<3, float>(input_file, study, mpi_comm);
-  else if(study.dim == 3 && study.precision == "double")
-    ExaDG::run<3, double>(input_file, study, mpi_comm);
+  if(general.dim == 2 && general.precision == "float")
+    ExaDG::run<2, float>(input_file, resolution, mpi_comm, general.is_test);
+  else if(general.dim == 2 && general.precision == "double")
+    ExaDG::run<2, double>(input_file, resolution, mpi_comm, general.is_test);
+  else if(general.dim == 3 && general.precision == "float")
+    ExaDG::run<3, float>(input_file, resolution, mpi_comm, general.is_test);
+  else if(general.dim == 3 && general.precision == "double")
+    ExaDG::run<3, double>(input_file, resolution, mpi_comm, general.is_test);
   else
     AssertThrow(false,
                 dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));

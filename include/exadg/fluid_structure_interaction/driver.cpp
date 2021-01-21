@@ -6,7 +6,7 @@
  */
 
 #include <exadg/fluid_structure_interaction/driver.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -89,17 +89,22 @@ Driver<dim, Number>::print_header() const
 template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const &                          degree_fluid,
-                           unsigned int const &                          degree_structure,
-                           unsigned int const &                          refine_space_fluid,
-                           unsigned int const &                          refine_space_structure)
+                           unsigned int const                            degree_fluid,
+                           unsigned int const                            degree_structure,
+                           unsigned int const                            refine_space_fluid,
+                           unsigned int const                            refine_space_structure,
+                           bool const                                    is_test)
 
 {
   Timer timer;
   timer.restart();
 
   print_header();
-  print_dealii_info<Number>(pcout);
+  if(not(is_test))
+  {
+    print_dealii_info(pcout);
+    print_matrixfree_info<Number>(pcout);
+  }
   print_MPI_info(pcout, mpi_comm);
 
   application = app;
@@ -383,13 +388,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // mapping for fluid problem (moving mesh)
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      fluid_moving_mesh.reset(
-        new MovingMeshPoisson<dim, Number>(mapping_degree_fluid, mpi_comm, ale_poisson_operator));
+      fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
+        mapping_degree_fluid, mpi_comm, not(is_test), ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(
-        mapping_degree_fluid, mpi_comm, ale_elasticity_operator, ale_elasticity_param));
+      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(mapping_degree_fluid,
+                                                                    mpi_comm,
+                                                                    not(is_test),
+                                                                    ale_elasticity_operator,
+                                                                    ale_elasticity_param));
     }
     else
     {
@@ -628,6 +636,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             fluid_param,
                                                                             0 /* refine_time */,
                                                                             mpi_comm,
+                                                                            not(is_test),
                                                                             fluid_postprocessor,
                                                                             fluid_moving_mesh,
                                                                             fluid_matrix_free));
@@ -640,6 +649,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                         fluid_param,
                                                         0 /* refine_time */,
                                                         mpi_comm,
+                                                        not(is_test),
                                                         fluid_postprocessor,
                                                         fluid_moving_mesh,
                                                         fluid_matrix_free));
@@ -652,6 +662,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                              fluid_param,
                                                              0 /* refine_time */,
                                                              mpi_comm,
+                                                             not(is_test),
                                                              fluid_postprocessor,
                                                              fluid_moving_mesh,
                                                              fluid_matrix_free));
@@ -675,8 +686,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // initialize time integrator
-    structure_time_integrator.reset(new Structure::TimeIntGenAlpha<dim, Number>(
-      structure_operator, structure_postprocessor, 0 /* refine_time */, structure_param, mpi_comm));
+    structure_time_integrator.reset(
+      new Structure::TimeIntGenAlpha<dim, Number>(structure_operator,
+                                                  structure_postprocessor,
+                                                  0 /* refine_time */,
+                                                  structure_param,
+                                                  mpi_comm,
+                                                  not(is_test)));
     structure_time_integrator->setup(structure_param.restarted_simulation);
 
     structure_operator->setup_solver();
@@ -1217,7 +1233,7 @@ Driver<dim, Number>::print_partitioned_iterations() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_statistics(double const total_time) const
+Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
 {
   pcout << std::endl
         << "_________________________________________________________________________________"
@@ -1249,39 +1265,43 @@ Driver<dim, Number>::print_statistics(double const total_time) const
   timer_tree.insert({"FSI"}, fluid_time_integrator->get_timings(), "Fluid");
   timer_tree.insert({"FSI"}, structure_time_integrator->get_timings(), "Structure");
 
-  pcout << std::endl << "Timings for level 1:" << std::endl;
-  timer_tree.print_level(pcout, 1);
-
-  pcout << std::endl << "Timings for level 2:" << std::endl;
-  timer_tree.print_level(pcout, 2);
-
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index DoFs =
-    fluid_operator->get_number_of_dofs() + structure_operator->get_number_of_dofs();
-
-  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+  if(not(is_test))
   {
-    DoFs += ale_poisson_operator->get_number_of_dofs();
+    pcout << std::endl << "Timings for level 1:" << std::endl;
+    timer_tree.print_level(pcout, 1);
+
+    pcout << std::endl << "Timings for level 2:" << std::endl;
+    timer_tree.print_level(pcout, 2);
+
+    // Throughput in DoFs/s per time step per core
+    types::global_dof_index DoFs =
+      fluid_operator->get_number_of_dofs() + structure_operator->get_number_of_dofs();
+
+    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
+    {
+      DoFs += ale_poisson_operator->get_number_of_dofs();
+    }
+    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+    {
+      DoFs += ale_elasticity_operator->get_number_of_dofs();
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+    Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+    double const              total_time_avg  = total_time_data.avg;
+
+    unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
+
+    print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
+
+    // computational costs in CPUh
+    print_costs(pcout, total_time_avg, N_mpi_processes);
   }
-  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-  {
-    DoFs += ale_elasticity_operator->get_number_of_dofs();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("not implemented."));
-  }
-
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              total_time_avg  = total_time_data.avg;
-
-  unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
-  print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
-
-  // computational costs in CPUh
-  print_costs(pcout, total_time_avg, N_mpi_processes);
 
   pcout << "_________________________________________________________________________________"
         << std::endl

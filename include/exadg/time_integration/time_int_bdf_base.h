@@ -36,7 +36,8 @@ public:
                  bool const          start_with_low_order_,
                  bool const          adaptive_time_stepping_,
                  RestartData const & restart_data_,
-                 MPI_Comm const &    mpi_comm_);
+                 MPI_Comm const &    mpi_comm_,
+                 bool const          print_wall_times_);
 
   /*
    * Destructor.

@@ -36,14 +36,15 @@ public:
 
   void
   setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
-        unsigned int const &                                   degree,
-        unsigned int const &                                   refine_space);
+        unsigned int const                                     degree,
+        unsigned int const                                     refine_space,
+        bool const                                             is_test);
 
   void
   solve() const;
 
   void
-  print_statistics(double const total_time) const;
+  print_performance_results(double const total_time, bool const is_test) const;
 
 private:
   void

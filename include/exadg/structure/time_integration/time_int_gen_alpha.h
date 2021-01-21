@@ -46,7 +46,8 @@ public:
                   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
                   unsigned int const                           refine_time_,
                   InputParameters const &                      param_,
-                  MPI_Comm const &                             mpi_comm_);
+                  MPI_Comm const &                             mpi_comm_,
+                  bool const                                   print_wall_times_);
 
   void
   setup(bool const do_restart) override;

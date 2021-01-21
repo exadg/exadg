@@ -6,7 +6,7 @@
  */
 
 #include <exadg/incompressible_flow_with_transport/driver.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -15,20 +15,13 @@ namespace FTI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, unsigned int const n_scalars)
+Driver<dim, Number>::Driver(MPI_Comm const & comm)
   : mpi_comm(comm),
-    n_scalars(n_scalars),
+    n_scalars(1),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     use_adaptive_time_stepping(false),
     N_time_steps(0)
 {
-  scalar_param.resize(n_scalars);
-  scalar_field_functions.resize(n_scalars);
-  scalar_boundary_descriptor.resize(n_scalars);
-
-  conv_diff_operator.resize(n_scalars);
-  scalar_postprocessor.resize(n_scalars);
-  scalar_time_integrator.resize(n_scalars);
 }
 
 template<int dim, typename Number>
@@ -50,17 +43,31 @@ Driver<dim, Number>::print_header() const
 template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const &                          degree,
-                           unsigned int const &                          refine_space)
+                           unsigned int const                            degree,
+                           unsigned int const                            refine_space,
+                           bool const                                    is_test)
 {
   Timer timer;
   timer.restart();
 
   print_header();
-  print_dealii_info<Number>(pcout);
+  if(not(is_test))
+  {
+    print_dealii_info(pcout);
+    print_matrixfree_info<Number>(pcout);
+  }
   print_MPI_info(pcout, mpi_comm);
 
   application = app;
+  n_scalars   = application->get_n_scalars();
+
+  scalar_param.resize(n_scalars);
+  scalar_field_functions.resize(n_scalars);
+  scalar_boundary_descriptor.resize(n_scalars);
+
+  conv_diff_operator.resize(n_scalars);
+  scalar_postprocessor.resize(n_scalars);
+  scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
   application->set_input_parameters(fluid_param);
@@ -349,6 +356,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                      fluid_param,
                                                      0 /* refine_time */,
                                                      mpi_comm,
+                                                     not(is_test),
                                                      fluid_postprocessor,
                                                      moving_mesh,
                                                      matrix_free));
@@ -360,6 +368,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                            fluid_param,
                                                            0 /* refine_time */,
                                                            mpi_comm,
+                                                           not(is_test),
                                                            fluid_postprocessor,
                                                            moving_mesh,
                                                            matrix_free));
@@ -372,6 +381,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                       fluid_param,
                                       0 /* refine_time */,
                                       mpi_comm,
+                                      not(is_test),
                                       fluid_postprocessor,
                                       moving_mesh,
                                       matrix_free));
@@ -384,8 +394,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
     // initialize driver for steady state problem that depends on navier_stokes_operator
-    fluid_driver_steady.reset(
-      new DriverSteady(navier_stokes_operator_coupled, fluid_param, mpi_comm, fluid_postprocessor));
+    fluid_driver_steady.reset(new DriverSteady(
+      navier_stokes_operator_coupled, fluid_param, mpi_comm, not(is_test), fluid_postprocessor));
   }
   else
   {
@@ -421,6 +431,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                           scalar_param[i],
                                                                           0 /* refine_time */,
                                                                           mpi_comm,
+                                                                          not(is_test),
                                                                           scalar_postprocessor[i]));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
@@ -429,6 +440,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             scalar_param[i],
                                                                             0 /* refine_time */,
                                                                             mpi_comm,
+                                                                            not(is_test),
                                                                             scalar_postprocessor[i],
                                                                             moving_mesh,
                                                                             matrix_free));
@@ -809,12 +821,14 @@ Driver<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_statistics(double const total_time) const
+Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
               << std::endl
               << std::endl;
+
+  pcout << "Performance results for coupled flow-transport solver:" << std::endl;
 
   // Iterations
   this->pcout << std::endl << "Average number of iterations:" << std::endl;
@@ -881,29 +895,32 @@ Driver<dim, Number>::print_statistics(double const total_time) const
                       "Timeloop scalar " + std::to_string(i));
   }
 
-  pcout << std::endl << "Timings for level 1:" << std::endl;
-  timer_tree.print_level(pcout, 1);
-
-  pcout << std::endl << "Timings for level 2:" << std::endl;
-  timer_tree.print_level(pcout, 2);
-
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index DoFs = this->navier_stokes_operator->get_number_of_dofs();
-
-  for(unsigned int i = 0; i < n_scalars; ++i)
+  if(not(is_test))
   {
-    DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
+    pcout << std::endl << "Timings for level 1:" << std::endl;
+    timer_tree.print_level(pcout, 1);
+
+    pcout << std::endl << "Timings for level 2:" << std::endl;
+    timer_tree.print_level(pcout, 2);
+
+    // Throughput in DoFs/s per time step per core
+    types::global_dof_index DoFs = this->navier_stokes_operator->get_number_of_dofs();
+
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
+      DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
+    }
+
+    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+    double const              overall_time_avg  = overall_time_data.avg;
+
+    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+
+    // computational costs in CPUh
+    print_costs(pcout, overall_time_avg, N_mpi_processes);
   }
-
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-
-  print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
-
-  // computational costs in CPUh
-  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

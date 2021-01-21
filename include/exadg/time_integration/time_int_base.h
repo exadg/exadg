@@ -36,7 +36,8 @@ public:
               double const &      end_time_,
               unsigned int const  max_number_of_time_steps_,
               RestartData const & restart_data_,
-              MPI_Comm const &    mpi_comm_);
+              MPI_Comm const &    mpi_comm_,
+              bool const          print_wall_times_);
 
   virtual ~TimeIntBase()
   {
@@ -192,12 +193,6 @@ protected:
   double time;
 
   /*
-   * Computation time (wall clock time).
-   */
-  Timer                      global_timer;
-  std::shared_ptr<TimerTree> timer_tree;
-
-  /*
    * A small number which is much smaller than the time step size.
    */
   double const eps;
@@ -222,7 +217,17 @@ protected:
    */
   RestartData const restart_data;
 
+  /*
+   * MPI communicator.
+   */
   MPI_Comm const & mpi_comm;
+
+  /*
+   * Computation time (wall clock time).
+   */
+  Timer                      global_timer;
+  std::shared_ptr<TimerTree> timer_tree;
+  bool                       print_wall_times;
 
 private:
   /*

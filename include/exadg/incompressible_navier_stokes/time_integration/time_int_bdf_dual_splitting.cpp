@@ -10,7 +10,7 @@
 #include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -24,6 +24,7 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
+  bool const                                      print_wall_times_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
@@ -31,6 +32,7 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
          param_in,
          refine_steps_time_in,
          mpi_comm_in,
+         print_wall_times_in,
          postprocessor_in,
          moving_mesh_in,
          matrix_free_in),
@@ -483,7 +485,8 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   if(this->print_solver_info())
   {
     this->pcout << std::endl << "Explicit convective step:";
-    print_solver_info_explicit(this->pcout, timer.wall_time());
+    if(this->print_wall_times)
+      print_wall_time(this->pcout, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Convective step"}, timer.wall_time());
@@ -558,7 +561,7 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   if(this->print_solver_info())
   {
     this->pcout << std::endl << "Solve pressure step:";
-    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
   }
 
   this->timer_tree->insert({"Timeloop", "Pressure step"}, timer.wall_time());
@@ -750,7 +753,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve projection step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
     }
   }
   else // no penalty terms
@@ -758,7 +761,8 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Explicit projection step:";
-      print_solver_info_explicit(this->pcout, timer.wall_time());
+      if(this->print_wall_times)
+        print_wall_time(this->pcout, timer.wall_time());
     }
   }
 
@@ -810,7 +814,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       if(this->print_solver_info())
       {
         this->pcout << std::endl << "Update of turbulent viscosity:";
-        print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
+        if(this->print_wall_times)
+          print_wall_time(this->pcout, timer_turbulence.wall_time());
       }
     }
 
@@ -849,7 +854,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve viscous step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
     }
   }
   else // inviscid
@@ -927,7 +932,7 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve penalty step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
     }
 
     this->timer_tree->insert({"Timeloop", "Penalty step"}, timer.wall_time());

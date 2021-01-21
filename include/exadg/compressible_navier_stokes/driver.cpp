@@ -12,8 +12,8 @@
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/driver.h>
-#include <exadg/utilities/print_throughput.h>
-#include <exadg/utilities/throughput_study.h>
+#include <exadg/utilities/print_solver_results.h>
+#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {
@@ -45,16 +45,21 @@ Driver<dim, Number>::print_header()
 template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const &                          degree,
-                           unsigned int const &                          refine_space,
-                           unsigned int const &                          refine_time,
-                           bool const &                                  is_throughput_study)
+                           unsigned int const                            degree,
+                           unsigned int const                            refine_space,
+                           unsigned int const                            refine_time,
+                           bool const                                    is_test,
+                           bool const                                    is_throughput_study)
 {
   Timer timer;
   timer.restart();
 
   print_header();
-  print_dealii_info<Number>(pcout);
+  if(not(is_test))
+  {
+    print_dealii_info(pcout);
+    print_matrixfree_info<Number>(pcout);
+  }
   print_MPI_info(pcout, mpi_comm);
 
   application = app;
@@ -142,7 +147,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize time integrator
     time_integrator.reset(new TimeIntExplRK<Number>(
-      comp_navier_stokes_operator, param, refine_time, mpi_comm, postprocessor));
+      comp_navier_stokes_operator, param, refine_time, mpi_comm, not(is_test), postprocessor));
     time_integrator->setup(param.restarted_simulation);
   }
 
@@ -158,7 +163,7 @@ Driver<dim, Number>::solve()
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_statistics(double const total_time) const
+Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -172,24 +177,27 @@ Driver<dim, Number>::print_statistics(double const total_time) const
 
   timer_tree.insert({"Compressible flow"}, time_integrator->get_timings());
 
-  pcout << std::endl << "Timings for level 1:" << std::endl;
-  timer_tree.print_level(pcout, 1);
+  if(not(is_test))
+  {
+    pcout << std::endl << "Timings for level 1:" << std::endl;
+    timer_tree.print_level(pcout, 1);
 
-  pcout << std::endl << "Timings for level 2:" << std::endl;
-  timer_tree.print_level(pcout, 2);
+    pcout << std::endl << "Timings for level 2:" << std::endl;
+    timer_tree.print_level(pcout, 2);
 
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs            = comp_navier_stokes_operator->get_number_of_dofs();
-  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-  unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
+    // Throughput in DoFs/s per time step per core
+    types::global_dof_index const DoFs = comp_navier_stokes_operator->get_number_of_dofs();
+    unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+    unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
 
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+    double const              overall_time_avg  = overall_time_data.avg;
 
-  print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
 
-  // computational costs in CPUh
-  print_costs(pcout, overall_time_avg, N_mpi_processes);
+    // computational costs in CPUh
+    print_costs(pcout, overall_time_avg, N_mpi_processes);
+  }
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl
@@ -201,7 +209,8 @@ std::tuple<unsigned int, types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(unsigned int const  degree,
                                     std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer) const
+                                    unsigned int const  n_repetitions_outer,
+                                    bool const          is_test) const
 {
   (void)degree;
 
@@ -249,12 +258,15 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  // clang-format off
-  pcout << std::endl
-        << std::scientific << std::setprecision(4)
-        << "DoFs/sec:        " << throughput << std::endl
-        << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
-  // clang-format on
+  if(not(is_test))
+  {
+    // clang-format off
+    pcout << std::endl
+          << std::scientific << std::setprecision(4)
+          << "DoFs/sec:        " << throughput << std::endl
+          << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
+    // clang-format on
+  }
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 

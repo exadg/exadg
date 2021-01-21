@@ -7,7 +7,7 @@
 
 #include <exadg/incompressible_navier_stokes/driver_precursor.h>
 #include <exadg/time_integration/time_step_calculation.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -98,14 +98,19 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
-                                    unsigned int const &                                   degree,
-                                    unsigned int const & refine_space)
+                                    unsigned int const                                     degree,
+                                    unsigned int const refine_space,
+                                    bool const         is_test)
 {
   Timer timer;
   timer.restart();
 
   print_header();
-  print_dealii_info<Number>(pcout);
+  if(not(is_test))
+  {
+    print_dealii_info(pcout);
+    print_matrixfree_info<Number>(pcout);
+  }
   print_MPI_info(pcout, mpi_comm);
 
   application = app;
@@ -367,6 +372,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                  param_pre,
                                                  0 /* refine_time */,
                                                  mpi_comm,
+                                                 not(is_test),
                                                  postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -375,6 +381,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                        param_pre,
                                                        0 /* refine_time */,
                                                        mpi_comm,
+                                                       not(is_test),
                                                        postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
@@ -384,6 +391,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                     param_pre,
                                     0 /* refine_time */,
                                     mpi_comm,
+                                    not(is_test),
                                     postprocessor_pre));
   }
   else
@@ -393,13 +401,21 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator.reset(new TimeIntCoupled(
-      navier_stokes_operator_coupled, param, 0 /* refine_time */, mpi_comm, postprocessor));
+    time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
+                                             param,
+                                             0 /* refine_time */,
+                                             mpi_comm,
+                                             not(is_test),
+                                             postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator.reset(new TimeIntDualSplitting(
-      navier_stokes_operator_dual_splitting, param, 0 /* refine_time */, mpi_comm, postprocessor));
+    time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
+                                                   param,
+                                                   0 /* refine_time */,
+                                                   mpi_comm,
+                                                   not(is_test),
+                                                   postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -407,6 +423,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                         param,
                                                         0 /* refine_time */,
                                                         mpi_comm,
+                                                        not(is_test),
                                                         postprocessor));
   }
   else
@@ -474,7 +491,8 @@ DriverPrecursor<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::print_statistics(double const total_time) const
+DriverPrecursor<dim, Number>::print_performance_results(double const total_time,
+                                                        bool const   is_test) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -504,19 +522,22 @@ DriverPrecursor<dim, Number>::print_statistics(double const total_time) const
                     "Timeloop precursor");
   timer_tree.insert({"Incompressible flow"}, time_integrator->get_timings(), "Timeloop main");
 
-  pcout << std::endl << "Timings for level 1:" << std::endl;
-  timer_tree.print_level(pcout, 1);
+  if(not(is_test))
+  {
+    pcout << std::endl << "Timings for level 1:" << std::endl;
+    timer_tree.print_level(pcout, 1);
 
-  pcout << std::endl << "Timings for level 2:" << std::endl;
-  timer_tree.print_level(pcout, 2);
+    pcout << std::endl << "Timings for level 2:" << std::endl;
+    timer_tree.print_level(pcout, 2);
 
-  // Computational costs in CPUh
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+    // Computational costs in CPUh
+    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              total_time_avg  = total_time_data.avg;
+    Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+    double const              total_time_avg  = total_time_data.avg;
 
-  print_costs(pcout, total_time_avg, N_mpi_processes);
+    print_costs(pcout, total_time_avg, N_mpi_processes);
+  }
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

@@ -49,9 +49,21 @@ get_type(double)
 
 
 // print deal.II info
-template<typename Number>
 inline void
 print_dealii_info(ConditionalOStream const & pcout)
+{
+  // clang-format off
+  pcout << std::endl
+        << "deal.II info:" << std::endl
+        << std::endl
+        << "  deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch " << DEAL_II_GIT_BRANCH
+        << std::endl;
+  // clang-format on
+}
+
+template<typename Number>
+inline void
+print_matrixfree_info(ConditionalOStream const & pcout)
 {
   unsigned int const n_vect_doubles = VectorizedArray<Number>::size();
   unsigned int const n_vect_bits    = 8 * sizeof(Number) * n_vect_doubles;
@@ -60,14 +72,10 @@ print_dealii_info(ConditionalOStream const & pcout)
 
   // clang-format off
   pcout << std::endl
-        << "deal.II info:" << std::endl
+        << "MatrixFree info:" << std::endl
         << std::endl
-        << "  deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch " << DEAL_II_GIT_BRANCH
+        << "  vectorization level = " << DEAL_II_COMPILER_VECTORIZATION_LEVEL
         << std::endl
-        << "  with vectorization level = " << DEAL_II_COMPILER_VECTORIZATION_LEVEL
-        << std::endl;
-
-  pcout << std::endl
         << "  Vectorization over "
         << n_vect_doubles << " " << type << " = " << n_vect_bits << " bits (" << vect_level << ")"
         << std::endl;
