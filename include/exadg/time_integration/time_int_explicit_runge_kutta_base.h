@@ -29,7 +29,8 @@ public:
                     unsigned int const  max_number_of_time_steps_,
                     RestartData const & restart_data_,
                     bool const          adaptive_time_stepping_,
-                    MPI_Comm const &    mpi_comm_);
+                    MPI_Comm const &    mpi_comm_,
+                    bool const          print_wall_times_);
 
   void
   setup(bool const do_restart) override;

@@ -2,6 +2,9 @@
     "General": {
         "Precision": "double",
         "Dim": "3",
+        "IsTest": "false"
+    },
+    "Resolution": {
         "RunType": "RefineHAndP",
         "DegreeMin": "3",
         "DegreeMax": "3",

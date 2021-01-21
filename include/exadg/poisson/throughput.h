@@ -23,8 +23,9 @@
 #include <exadg/poisson/driver.h>
 
 // utilities
-#include <exadg/utilities/parameter_study.h>
-#include <exadg/utilities/throughput_study.h>
+#include <exadg/utilities/general_parameters.h>
+#include <exadg/utilities/hypercube_resolution_parameters.h>
+#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {
@@ -42,11 +43,14 @@ create_input_file(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
 
-  ParameterStudy parameter_study;
-  parameter_study.add_parameters(prm);
+  GeneralParameters general;
+  general.add_parameters(prm);
 
-  ThroughputStudy throughput_study;
-  throughput_study.add_parameters(prm);
+  HypercubeResolutionParameters resolution;
+  resolution.add_parameters(prm);
+
+  ThroughputParameters throughput;
+  throughput.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
   // for the automatic generation of a default input file
@@ -61,12 +65,13 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(ThroughputStudy const & throughput,
-    std::string const &     input_file,
-    unsigned int const      degree,
-    unsigned int const      refine_space,
-    unsigned int const      n_cells_1d,
-    MPI_Comm const &        mpi_comm)
+run(ThroughputParameters const & throughput,
+    std::string const &          input_file,
+    unsigned int const           degree,
+    unsigned int const           refine_space,
+    unsigned int const           n_cells_1d,
+    MPI_Comm const &             mpi_comm,
+    bool const                   is_test)
 {
   std::shared_ptr<Poisson::Driver<dim, Number>> driver;
   driver.reset(new Poisson::Driver<dim, Number>(mpi_comm));
@@ -76,13 +81,14 @@ run(ThroughputStudy const & throughput,
 
   application->set_subdivisions_hypercube(n_cells_1d);
 
-  driver->setup(application, degree, refine_space, true);
+  driver->setup(application, degree, refine_space, is_test, true);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(degree,
                            throughput.operator_type,
                            throughput.n_repetitions_inner,
-                           throughput.n_repetitions_outer);
+                           throughput.n_repetitions_outer,
+                           is_test);
 
   throughput.wall_times.push_back(wall_time);
 }
@@ -105,9 +111,8 @@ main(int argc, char ** argv)
   {
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::cout << "To run the program, use:      ./poisson_throughput input_file" << std::endl
-                << "To setup the input file, use: ./poisson_throughput input_file --help"
-                << std::endl;
+      std::cout << "To run the program, use:      ./throughput input_file" << std::endl
+                << "To setup the input file, use: ./throughput input_file --help" << std::endl;
     }
 
     return 0;
@@ -125,33 +130,39 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::ParameterStudy  study(input_file);
-  ExaDG::ThroughputStudy throughput(input_file);
+  ExaDG::GeneralParameters             general(input_file);
+  ExaDG::HypercubeResolutionParameters resolution(input_file, general.dim);
+  ExaDG::ThroughputParameters          throughput(input_file);
 
   // fill resolution vector depending on the operator_type
-  study.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
+  resolution.fill_resolution_vector(&ExaDG::Poisson::get_dofs_per_element, input_file);
 
   // loop over resolutions vector and run simulations
-  for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
+  for(auto iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)
   {
     unsigned int const degree       = std::get<0>(*iter);
     unsigned int const refine_space = std::get<1>(*iter);
     unsigned int const n_cells_1d   = std::get<2>(*iter);
 
-    if(study.dim == 2 && study.precision == "float")
-      ExaDG::run<2, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-    else if(study.dim == 2 && study.precision == "double")
-      ExaDG::run<2, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-    else if(study.dim == 3 && study.precision == "float")
-      ExaDG::run<3, float>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
-    else if(study.dim == 3 && study.precision == "double")
-      ExaDG::run<3, double>(throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+    if(general.dim == 2 && general.precision == "float")
+      ExaDG::run<2, float>(
+        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    else if(general.dim == 2 && general.precision == "double")
+      ExaDG::run<2, double>(
+        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    else if(general.dim == 3 && general.precision == "float")
+      ExaDG::run<3, float>(
+        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
+    else if(general.dim == 3 && general.precision == "double")
+      ExaDG::run<3, double>(
+        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
     else
       AssertThrow(false,
                   dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }
 
-  throughput.print_results(mpi_comm);
+  if(not(general.is_test))
+    throughput.print_results(mpi_comm);
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_CLOSE;

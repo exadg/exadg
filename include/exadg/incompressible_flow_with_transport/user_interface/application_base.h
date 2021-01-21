@@ -50,6 +50,12 @@ public:
   {
   }
 
+  unsigned int
+  get_n_scalars()
+  {
+    return this->n_scalars;
+  }
+
   virtual void
   create_grid_and_mesh(
     std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
@@ -81,8 +87,9 @@ public:
                                  unsigned int const scalar_index = 0) = 0;
 
 protected:
-  std::string output_directory = "output/", output_name = "output";
-  bool        write_output = false;
+  std::string  output_directory = "output/", output_name = "output";
+  bool         write_output = false;
+  unsigned int n_scalars    = 1;
 };
 
 } // namespace FTI

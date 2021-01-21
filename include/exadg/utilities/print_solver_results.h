@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_PRINT_THROUGHPUT_H_
-#define INCLUDE_EXADG_UTILITIES_PRINT_THROUGHPUT_H_
+#ifndef INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
+#define INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
 
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
@@ -18,45 +18,9 @@ namespace ExaDG
 using namespace dealii;
 
 inline void
-print_throughput(std::vector<std::pair<unsigned int, double>> const & wall_times,
-                 std::string const &                                  name,
-                 MPI_Comm const &                                     mpi_comm)
-{
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-  {
-    // clang-format off
-    std::cout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl << std::endl
-              << "Operator type: " << name
-              << std::endl << std::endl
-              << std::setw(5) << std::left << "k"
-              << std::setw(15) << std::left << "DoFs/sec"
-              << std::setw(15) << std::left << "DoFs/(sec*core)"
-              << std::endl << std::flush;
-
-    typedef typename std::vector<std::pair<unsigned int, double> >::const_iterator ITERATOR;
-    for(ITERATOR it = wall_times.begin(); it != wall_times.end(); ++it)
-    {
-      std::cout << std::setw(5) << std::left << it->first
-                << std::scientific << std::setprecision(4)
-                << std::setw(15) << std::left << it->second
-                << std::setw(15) << std::left << it->second/(double)N_mpi_processes
-                << std::endl << std::flush;
-    }
-
-    std::cout << "_________________________________________________________________________________"
-              << std::endl << std::endl << std::flush;
-    // clang-format on
-  }
-}
-
-inline void
 print_throughput(
   std::vector<std::tuple<unsigned int, types::global_dof_index, double>> const & wall_times,
-  std::string const &                                                            name,
+  std::string const &                                                            operator_type,
   MPI_Comm const &                                                               mpi_comm)
 {
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
@@ -67,7 +31,7 @@ print_throughput(
     std::cout << std::endl
               << "_________________________________________________________________________________"
               << std::endl << std::endl
-              << "Operator type: " << name
+              << "Operator type: " << operator_type
               << std::endl << std::endl
               << std::setw(5) << std::left << "k"
               << std::setw(15) << std::left << "DoFs"
@@ -145,7 +109,6 @@ print_throughput_unsteady(ConditionalOStream const &    pcout,
         << "  Wall time               = " << std::scientific << std::setprecision(2) << overall_time_avg << " s" << std::endl
         << "  Time steps              = " << std::left << N_time_steps << std::endl
         << "  Wall time per time step = " << std::scientific << std::setprecision(2) << time_per_timestep << " s" << std::endl
-        << "  Number of MPI processes = " << N_mpi_processes << std::endl
         << "  Throughput              = " << std::scientific << std::setprecision(2) << n_dofs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl
         << std::flush;
   // clang-format on
@@ -172,7 +135,8 @@ inline void
 print_solver_info_nonlinear(ConditionalOStream const & pcout,
                             unsigned int const         N_iter_nonlinear,
                             unsigned int const         N_iter_linear,
-                            double const               wall_time)
+                            double const               wall_time,
+                            bool const                 print_wall_time)
 
 {
   double const N_iter_linear_avg =
@@ -182,28 +146,39 @@ print_solver_info_nonlinear(ConditionalOStream const & pcout,
   pcout << std::endl
         << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
         << "  Linear iterations (avg):" << std::setw(12) << std::fixed << std::setprecision(1) << std::right << N_iter_linear_avg << std::endl
-        << "  Linear iterations (tot):" << std::setw(12) << std::right << N_iter_linear << std::endl
-        << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl
-        << std::flush;
+        << "  Linear iterations (tot):" << std::setw(12) << std::right << N_iter_linear << std::endl;
+
+  if(print_wall_time)
+  {
+    pcout << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl;
+  }
+
+  pcout << std::flush;
   // clang-format on
 }
 
 inline void
 print_solver_info_linear(ConditionalOStream const & pcout,
                          unsigned int const         N_iter_linear,
-                         double const               wall_time)
+                         double const               wall_time,
+                         bool const                 print_wall_time)
 
 {
   // clang-format off
   pcout << std::endl
-        << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
-        << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl
-        << std::flush;
+        << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl;
+
+  if(print_wall_time)
+  {
+    pcout << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl;
+  }
+
+  pcout << std::flush;
   // clang-format on
 }
 
 inline void
-print_solver_info_explicit(ConditionalOStream const & pcout, double const wall_time)
+print_wall_time(ConditionalOStream const & pcout, double const wall_time)
 
 {
   // clang-format off
@@ -233,4 +208,4 @@ print_list_of_iterations(ConditionalOStream const &       pcout,
 }
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_UTILITIES_PRINT_THROUGHPUT_H_ */
+#endif /* INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_ */

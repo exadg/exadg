@@ -9,7 +9,7 @@
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/time_integration/time_int_gen_alpha.h>
 #include <exadg/structure/user_interface/input_parameters.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -23,14 +23,16 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
   unsigned int const                           refine_steps_time_,
   InputParameters const &                      param_,
-  MPI_Comm const &                             mpi_comm_)
+  MPI_Comm const &                             mpi_comm_,
+  bool const                                   print_wall_times_)
   : TimeIntGenAlphaBase<Number>(param_.start_time,
                                 param_.end_time,
                                 param_.max_number_of_time_steps,
                                 param_.spectral_radius,
                                 param_.gen_alpha_type,
                                 param_.restart_data,
-                                mpi_comm_),
+                                mpi_comm_,
+                                print_wall_times_),
     pde_operator(operator_),
     postprocessor(postprocessor_),
     refine_steps_time(refine_steps_time_),
@@ -152,7 +154,8 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve nonlinear elasticity problem:";
-      print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+      print_solver_info_nonlinear(
+        pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time(), this->print_wall_times);
     }
   }
   else // linear case
@@ -169,7 +172,7 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve linear elasticity problem:";
-      print_solver_info_linear(pcout, iter, timer.wall_time());
+      print_solver_info_linear(pcout, iter, timer.wall_time(), this->print_wall_times);
     }
   }
 

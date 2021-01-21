@@ -236,16 +236,17 @@ public:
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const &                          degree_fluid,
-        unsigned int const &                          degree_structure,
-        unsigned int const &                          refine_space_fluid,
-        unsigned int const &                          refine_space_structure);
+        unsigned int const                            degree_fluid,
+        unsigned int const                            degree_structure,
+        unsigned int const                            refine_space_fluid,
+        unsigned int const                            refine_space_structure,
+        bool const                                    is_test);
 
   void
   solve() const;
 
   void
-  print_statistics(double const total_time) const;
+  print_performance_results(double const total_time, bool const is_test) const;
 
 private:
   void

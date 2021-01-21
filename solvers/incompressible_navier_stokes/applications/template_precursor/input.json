@@ -2,6 +2,9 @@
     "General": {
         "Precision": "double",
         "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
         "Degree": "2",
         "RefineSpace": "0"
     },

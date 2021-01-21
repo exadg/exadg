@@ -9,7 +9,7 @@
 #include <exadg/convection_diffusion/spatial_discretization/interface.h>
 #include <exadg/convection_diffusion/time_integration/driver_steady_problems.h>
 #include <exadg/convection_diffusion/user_interface/input_parameters.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -22,10 +22,12 @@ DriverSteadyProblems<Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
   MPI_Comm const &                                mpi_comm_in,
+  bool const                                      print_wall_times_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : pde_operator(operator_in),
     param(param_in),
     mpi_comm(mpi_comm_in),
+    print_wall_times(print_wall_times_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     timer_tree(new TimerTree()),
     postprocessor(postprocessor_in)
@@ -127,7 +129,7 @@ DriverSteadyProblems<Number>::solve()
                                                 0.0 /* time */,
                                                 velocity_ptr);
 
-  print_solver_info_linear(pcout, iterations, timer.wall_time());
+  print_solver_info_linear(pcout, iterations, timer.wall_time(), print_wall_times);
 
   pcout << std::endl << "... done!" << std::endl;
 

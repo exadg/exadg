@@ -10,7 +10,7 @@
 #include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -24,6 +24,7 @@ TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
+  bool const                                      print_wall_times_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
@@ -31,6 +32,7 @@ TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
          param_in,
          refine_steps_time_in,
          mpi_comm_in,
+         print_wall_times_in,
          postprocessor_in,
          moving_mesh_in,
          matrix_free_in),
@@ -180,7 +182,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Update of turbulent viscosity:";
-      print_solver_info_explicit(this->pcout, timer_turbulence.wall_time());
+      if(this->print_wall_times)
+        print_wall_time(this->pcout, timer_turbulence.wall_time());
     }
   }
 
@@ -286,7 +289,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     if(this->print_solver_info())
     {
       this->pcout << std::endl << "Solve linear problem:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -324,7 +327,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
       print_solver_info_nonlinear(this->pcout,
                                   std::get<0>(iter),
                                   std::get<1>(iter),
-                                  timer.wall_time());
+                                  timer.wall_time(),
+                                  this->print_wall_times);
     }
   }
 
@@ -428,7 +432,7 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
   if(this->print_solver_info())
   {
     this->pcout << std::endl << "Solve penalty step:";
-    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
   }
 }
 

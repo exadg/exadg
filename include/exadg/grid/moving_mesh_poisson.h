@@ -14,7 +14,7 @@
 // ExaDG
 #include <exadg/grid/moving_mesh_base.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -28,6 +28,7 @@ public:
 
   MovingMeshPoisson(unsigned int const                                   mapping_degree_static,
                     MPI_Comm const &                                     mpi_comm,
+                    bool const                                           print_wall_times,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
     : MovingMeshBase<dim, Number>(mapping_degree_static,
                                   // extract mapping_degree_moving from Poisson operator
@@ -35,7 +36,8 @@ public:
                                   mpi_comm),
       poisson(poisson_operator),
       pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-      iterations({0, 0})
+      iterations({0, 0}),
+      print_wall_times(print_wall_times)
   {
     poisson->initialize_dof_vector(displacement);
 
@@ -62,7 +64,7 @@ public:
     if(print_solver_info)
     {
       this->pcout << std::endl << "Solve moving mesh problem (Poisson):";
-      print_solver_info_linear(pcout, n_iter, timer.wall_time());
+      print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
     }
 
     this->initialize_mapping_q_cache(*this->mapping, poisson->get_dof_handler(), displacement);
@@ -92,6 +94,8 @@ private:
   ConditionalOStream pcout;
 
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
+
+  bool print_wall_times;
 };
 
 } // namespace ExaDG

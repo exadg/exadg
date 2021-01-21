@@ -31,7 +31,8 @@ public:
                       double const         spectral_radius_,
                       GenAlphaType const & gen_alpha_type_,
                       RestartData const &  restart_data_,
-                      MPI_Comm const &     mpi_comm_);
+                      MPI_Comm const &     mpi_comm_,
+                      bool const           print_wall_times_);
 
   double
   get_time_step_size() const override;

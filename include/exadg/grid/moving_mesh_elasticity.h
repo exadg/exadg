@@ -10,7 +10,7 @@
 
 #include <exadg/grid/moving_mesh_base.h>
 #include <exadg/structure/spatial_discretization/operator.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -24,6 +24,7 @@ public:
 
   MovingMeshElasticity(unsigned int const                                mapping_degree_static,
                        MPI_Comm const &                                  mpi_comm,
+                       bool const                                        print_wall_times,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
     : MovingMeshBase<dim, Number>(mapping_degree_static,
@@ -33,7 +34,8 @@ public:
       pde_operator(structure_operator),
       param(structure_parameters),
       pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-      iterations({0, {0, 0}})
+      iterations({0, {0, 0}}),
+      print_wall_times(print_wall_times)
   {
     pde_operator->initialize_dof_vector(displacement);
 
@@ -61,7 +63,8 @@ public:
       if(print_solver_info)
       {
         this->pcout << std::endl << "Solve moving mesh problem (nonlinear elasticity):";
-        print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+        print_solver_info_nonlinear(
+          pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time(), print_wall_times);
       }
     }
     else // linear problem
@@ -79,7 +82,7 @@ public:
       if(print_solver_info)
       {
         this->pcout << std::endl << "Solve moving mesh problem (linear elasticity):";
-        print_solver_info_linear(pcout, iter, timer.wall_time());
+        print_solver_info_linear(pcout, iter, timer.wall_time(), print_wall_times);
       }
     }
 
@@ -135,6 +138,8 @@ private:
     unsigned int /* calls */,
     std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
     iterations;
+
+  bool print_wall_times;
 };
 
 } // namespace ExaDG

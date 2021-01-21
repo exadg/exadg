@@ -12,8 +12,8 @@
 
 // ExaDG
 #include <exadg/poisson/driver.h>
-#include <exadg/utilities/print_throughput.h>
-#include <exadg/utilities/throughput_study.h>
+#include <exadg/utilities/print_solver_results.h>
+#include <exadg/utilities/throughput_parameters.h>
 
 namespace ExaDG
 {
@@ -48,15 +48,20 @@ Driver<dim, Number>::print_header()
 template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const &                          degree,
-                           unsigned int const &                          refine_space,
-                           bool const &                                  is_throughput_study)
+                           unsigned int const                            degree,
+                           unsigned int const                            refine_space,
+                           bool const                                    is_test,
+                           bool const                                    is_throughput_study)
 {
   Timer timer;
   timer.restart();
 
   print_header();
-  print_dealii_info<Number>(pcout);
+  if(not(is_test))
+  {
+    print_dealii_info(pcout);
+    print_matrixfree_info<Number>(pcout);
+  }
   print_MPI_info(pcout, mpi_comm);
 
   application = app;
@@ -138,11 +143,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                       matrix_free_data->data);
 
   poisson_operator->setup(matrix_free, matrix_free_data);
-  poisson_operator->setup_solver();
 
-  if(!is_throughput_study)
+  // setup solver
+  if(not(is_throughput_study))
   {
-    // initialize postprocessor
+    poisson_operator->setup_solver();
+  }
+
+  // initialize postprocessor
+  if(not(is_throughput_study))
+  {
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
     postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
   }
@@ -187,8 +197,8 @@ Driver<dim, Number>::solve()
 }
 
 template<int dim, typename Number>
-Timings
-Driver<dim, Number>::print_statistics(double const total_time) const
+SolverResult
+Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -211,32 +221,35 @@ Driver<dim, Number>::print_statistics(double const total_time) const
   // wall times
   timer_tree.insert({"Poisson"}, total_time);
 
-  pcout << std::endl << "Timings for level 1:" << std::endl;
-  timer_tree.print_level(pcout, 1);
-
-  // throughput
   types::global_dof_index const DoFs = poisson_operator->get_number_of_dofs();
 
   unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  // Throughput of linear solver in DoFs/s per core
   double const t_10 = solve_time * n_10 / iterations;
-  print_throughput_10(pcout, DoFs, t_10, N_mpi_processes);
 
-  // Throughput in DoFs/s per core (overall costs)
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-  print_throughput_steady(pcout, DoFs, overall_time_avg, N_mpi_processes);
+  if(not(is_test))
+  {
+    pcout << std::endl << "Timings for level 1:" << std::endl;
+    timer_tree.print_level(pcout, 1);
 
-  // computational costs in CPUh
-  print_costs(pcout, overall_time_avg, N_mpi_processes);
+    // Throughput of linear solver in DoFs/s per core
+    print_throughput_10(pcout, DoFs, t_10, N_mpi_processes);
+
+    // Throughput in DoFs/s per core (overall costs)
+    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+    double const              overall_time_avg  = overall_time_data.avg;
+    print_throughput_steady(pcout, DoFs, overall_time_avg, N_mpi_processes);
+
+    // computational costs in CPUh
+    print_costs(pcout, overall_time_avg, N_mpi_processes);
+  }
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl
               << std::endl;
 
   double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
-  return Timings(poisson_operator->get_degree(), DoFs, n_10, tau_10);
+  return SolverResult(poisson_operator->get_degree(), DoFs, n_10, tau_10);
 }
 
 template<int dim, typename Number>
@@ -244,7 +257,8 @@ std::tuple<unsigned int, types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(unsigned int const  degree,
                                     std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer) const
+                                    unsigned int const  n_repetitions_outer,
+                                    bool const          is_test) const
 {
   (void)degree;
 
@@ -303,12 +317,15 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  // clang-format off
-  pcout << std::endl
-        << std::scientific << std::setprecision(4)
-        << "DoFs/sec:        " << throughput << std::endl
-        << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
-  // clang-format on
+  if(not(is_test))
+  {
+    // clang-format off
+    pcout << std::endl
+          << std::scientific << std::setprecision(4)
+          << "DoFs/sec:        " << throughput << std::endl
+          << "DoFs/(sec*core): " << throughput/(double)N_mpi_processes << std::endl;
+    // clang-format on
+  }
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 

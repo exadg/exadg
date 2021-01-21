@@ -22,8 +22,8 @@
 #include <exadg/poisson/user_interface/application_base.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
+#include <exadg/utilities/solver_result.h>
 #include <exadg/utilities/timer_tree.h>
-#include <exadg/utilities/timings.h>
 
 namespace ExaDG
 {
@@ -102,21 +102,23 @@ public:
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const &                          degree,
-        unsigned int const &                          refine_space,
-        bool const &                                  is_throughput_study = false);
+        unsigned int const                            degree,
+        unsigned int const                            refine_space,
+        bool const                                    is_test,
+        bool const                                    is_throughput_study);
 
   void
   solve();
 
-  Timings
-  print_statistics(double const total_time) const;
+  SolverResult
+  print_performance_results(double const total_time, bool const is_test) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(unsigned int const  degree,
                  std::string const & operator_type_string,
                  unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer) const;
+                 unsigned int const  n_repetitions_outer,
+                 bool const          is_test) const;
 
 private:
   void

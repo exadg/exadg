@@ -12,7 +12,8 @@
 #include <exadg/compressible_navier_stokes/driver.h>
 
 // utilities
-#include <exadg/utilities/convergence_study.h>
+#include <exadg/utilities/general_parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 namespace ExaDG
 {
@@ -30,8 +31,14 @@ create_input_file(std::string const & input_file)
 {
   dealii::ParameterHandler prm;
 
-  ConvergenceStudy study;
-  study.add_parameters(prm);
+  GeneralParameters general;
+  general.add_parameters(prm);
+
+  SpatialResolutionParameters spatial;
+  spatial.add_parameters(prm);
+
+  TemporalResolutionParameters temporal;
+  temporal.add_parameters(prm);
 
   // we have to assume a default dimension and default Number type
   // for the automatic generation of a default input file
@@ -51,22 +58,23 @@ run(std::string const & input_file,
     unsigned int const  degree,
     unsigned int const  refine_space,
     unsigned int const  refine_time,
-    MPI_Comm const &    mpi_comm)
+    MPI_Comm const &    mpi_comm,
+    bool const          is_test)
 {
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<CompNS::Driver<dim, Number>> solver;
-  solver.reset(new CompNS::Driver<dim, Number>(mpi_comm));
+  std::shared_ptr<CompNS::Driver<dim, Number>> driver;
+  driver.reset(new CompNS::Driver<dim, Number>(mpi_comm));
 
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
 
-  solver->setup(application, degree, refine_space, refine_time);
+  driver->setup(application, degree, refine_space, refine_time, is_test, false);
 
-  solver->solve();
+  driver->solve();
 
-  solver->print_statistics(timer.wall_time());
+  driver->print_performance_results(timer.wall_time(), is_test);
 }
 } // namespace ExaDG
 
@@ -79,52 +87,61 @@ main(int argc, char ** argv)
 
   std::string input_file;
 
-  if(argc == 1 or (argc == 2 and std::string(argv[1]) == "--help"))
+  if(argc == 1)
   {
     if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
+      // clang-format off
       std::cout << "To run the program, use:      ./solver input_file" << std::endl
-                << "To create an input file, use: ./solver --create_input_file input_file"
-                << std::endl;
+                << "To setup the input file, use: ./solver input_file --help" << std::endl;
+      // clang-format on
     }
 
     return 0;
   }
   else if(argc >= 2)
   {
-    input_file = std::string(argv[argc - 1]);
+    input_file = std::string(argv[1]);
+
+    if(argc == 3 and std::string(argv[2]) == "--help")
+    {
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        ExaDG::create_input_file(input_file);
+
+      return 0;
+    }
   }
 
-  if(argc == 3 and std::string(argv[1]) == "--create_input_file")
-  {
-    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      ExaDG::create_input_file(input_file);
-
-    return 0;
-  }
-
-  ExaDG::ConvergenceStudy study(input_file);
+  ExaDG::GeneralParameters            general(input_file);
+  ExaDG::SpatialResolutionParameters  spatial(input_file);
+  ExaDG::TemporalResolutionParameters temporal(input_file);
 
   // k-refinement
-  for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
+  for(unsigned int degree = spatial.degree_min; degree <= spatial.degree_max; ++degree)
   {
     // h-refinement
-    for(unsigned int refine_space = study.refine_space_min; refine_space <= study.refine_space_max;
+    for(unsigned int refine_space = spatial.refine_space_min;
+        refine_space <= spatial.refine_space_max;
         ++refine_space)
     {
       // dt-refinement
-      for(unsigned int refine_time = study.refine_time_min; refine_time <= study.refine_time_max;
+      for(unsigned int refine_time = temporal.refine_time_min;
+          refine_time <= temporal.refine_time_max;
           ++refine_time)
       {
         // run the simulation
-        if(study.dim == 2 && study.precision == "float")
-          ExaDG::run<2, float>(input_file, degree, refine_space, refine_time, mpi_comm);
-        else if(study.dim == 2 && study.precision == "double")
-          ExaDG::run<2, double>(input_file, degree, refine_space, refine_time, mpi_comm);
-        else if(study.dim == 3 && study.precision == "float")
-          ExaDG::run<3, float>(input_file, degree, refine_space, refine_time, mpi_comm);
-        else if(study.dim == 3 && study.precision == "double")
-          ExaDG::run<3, double>(input_file, degree, refine_space, refine_time, mpi_comm);
+        if(general.dim == 2 && general.precision == "float")
+          ExaDG::run<2, float>(
+            input_file, degree, refine_space, refine_time, mpi_comm, general.is_test);
+        else if(general.dim == 2 && general.precision == "double")
+          ExaDG::run<2, double>(
+            input_file, degree, refine_space, refine_time, mpi_comm, general.is_test);
+        else if(general.dim == 3 && general.precision == "float")
+          ExaDG::run<3, float>(
+            input_file, degree, refine_space, refine_time, mpi_comm, general.is_test);
+        else if(general.dim == 3 && general.precision == "double")
+          ExaDG::run<3, double>(
+            input_file, degree, refine_space, refine_time, mpi_comm, general.is_test);
         else
           AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
       }

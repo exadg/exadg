@@ -44,18 +44,19 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & mpi_comm, unsigned int const n_scalars);
+  Driver(MPI_Comm const & mpi_comm);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const &                          degree,
-        unsigned int const &                          refine_space);
+        unsigned int const                            degree,
+        unsigned int const                            refine_space,
+        bool const                                    is_test);
 
   void
   solve() const;
 
   void
-  print_statistics(double const total_time) const;
+  print_performance_results(double const total_time, bool const is_test) const;
 
 private:
   void
@@ -80,7 +81,7 @@ private:
   MPI_Comm const & mpi_comm;
 
   // number of scalar quantities
-  unsigned int const n_scalars;
+  unsigned int n_scalars;
 
   // output to std::cout
   ConditionalOStream pcout;

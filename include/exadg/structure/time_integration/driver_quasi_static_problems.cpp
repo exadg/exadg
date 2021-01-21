@@ -9,7 +9,7 @@
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/time_integration/driver_quasi_static_problems.h>
 #include <exadg/structure/user_interface/input_parameters.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -22,11 +22,13 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
   std::shared_ptr<Interface::Operator<Number>> operator_in,
   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_in,
   InputParameters const &                      param_in,
-  MPI_Comm const &                             mpi_comm_in)
+  MPI_Comm const &                             mpi_comm_in,
+  bool const                                   print_wall_times_in)
   : pde_operator(operator_in),
     postprocessor(postprocessor_in),
     param(param_in),
     mpi_comm(mpi_comm_in),
+    print_wall_times(print_wall_times_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     step_number(1),
     timer_tree(new TimerTree()),
@@ -221,7 +223,8 @@ DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
   auto const iter = pde_operator->solve_nonlinear(
     solution, const_vector, 0.0 /*no mass term*/, load_factor /* = time */, update_preconditioner);
 
-  print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+  print_solver_info_nonlinear(
+    pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time(), print_wall_times);
 
   return iter;
 }

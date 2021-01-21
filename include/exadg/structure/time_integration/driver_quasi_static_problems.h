@@ -43,7 +43,8 @@ public:
   DriverQuasiStatic(std::shared_ptr<Interface::Operator<Number>> operator_in,
                     std::shared_ptr<PostProcessorBase<Number>>   postprocessor_in,
                     InputParameters const &                      param_in,
-                    MPI_Comm const &                             mpi_comm_in);
+                    MPI_Comm const &                             mpi_comm_in,
+                    bool const                                   print_wall_times_in);
 
   void
   setup();
@@ -83,6 +84,8 @@ private:
   InputParameters const & param;
 
   MPI_Comm const & mpi_comm;
+
+  bool const print_wall_times;
 
   ConditionalOStream pcout;
 

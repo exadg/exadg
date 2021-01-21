@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_PARAMETER_STUDY_H_
-#define INCLUDE_EXADG_UTILITIES_PARAMETER_STUDY_H_
+#ifndef INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_
+#define INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_
 
 // deal.II
 #include <deal.II/base/parameter_handler.h>
@@ -149,13 +149,13 @@ fill_resolutions_vector(
   }
 }
 
-struct ParameterStudy
+struct HypercubeResolutionParameters
 {
-  ParameterStudy()
+  HypercubeResolutionParameters()
   {
   }
 
-  ParameterStudy(const std::string & input_file)
+  HypercubeResolutionParameters(const std::string & input_file, unsigned int const dim) : dim(dim)
   {
     dealii::ParameterHandler prm;
     add_parameters(prm);
@@ -170,17 +170,7 @@ struct ParameterStudy
   add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
-    prm.enter_subsection("General");
-      prm.add_parameter("Precision",
-                        precision,
-                        "Floating point precision.",
-                        Patterns::Selection("float|double"),
-                        false);
-      prm.add_parameter("Dim",
-                        dim,
-                        "Number of space dimension.",
-                        Patterns::Integer(2,3),
-                        true);
+    prm.enter_subsection("Resolution");
       prm.add_parameter("RunType",
                         run_type_string,
                         "Type of throughput study.",
@@ -285,9 +275,7 @@ struct ParameterStudy
     }
   }
 
-  std::string precision = "double";
-
-  unsigned int dim = 2;
+  unsigned int dim = 2; // number of space dimensions
 
   std::string run_type_string = "RefineHAndP";
   RunType     run_type        = RunType::RefineHAndP;
@@ -307,4 +295,4 @@ struct ParameterStudy
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_PARAMETER_STUDY_H_ */
+#endif /* INCLUDE_EXADG_UTILITIES_HYPERCUBE_RESOLUTION_PARAMETERS_H_ */

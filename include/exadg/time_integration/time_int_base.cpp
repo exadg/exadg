@@ -15,17 +15,19 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
                          double const &      end_time_,
                          unsigned int const  max_number_of_time_steps_,
                          RestartData const & restart_data_,
-                         MPI_Comm const &    mpi_comm_)
+                         MPI_Comm const &    mpi_comm_,
+                         bool const          print_wall_times_)
   : start_time(start_time_),
     end_time(end_time_),
-    time(start_time_),
-    timer_tree(new TimerTree()),
     eps(1.e-10),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     time_step_number(1),
     max_number_of_time_steps(max_number_of_time_steps_),
     restart_data(restart_data_),
-    mpi_comm(mpi_comm_)
+    mpi_comm(mpi_comm_),
+    time(start_time_),
+    timer_tree(new TimerTree()),
+    print_wall_times(print_wall_times_)
 {
 }
 
@@ -233,18 +235,21 @@ TimeIntBase::output_solver_info_header() const
 void
 TimeIntBase::output_remaining_time() const
 {
-  if(time > start_time)
+  if(this->print_wall_times)
   {
-    double const remaining_time =
-      global_timer.wall_time() * (end_time - time) / (time - start_time);
+    if(time > start_time)
+    {
+      double const remaining_time =
+        global_timer.wall_time() * (end_time - time) / (time - start_time);
 
-    int const hours   = int(remaining_time / 3600.0);
-    int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
-    int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
+      int const hours   = int(remaining_time / 3600.0);
+      int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
+      int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
 
-    pcout << std::endl
-          << "Estimated time until completion is " << hours << " h " << minutes << " min "
-          << seconds << " s." << std::endl;
+      pcout << std::endl
+            << "Estimated time until completion is " << hours << " h " << minutes << " min "
+            << seconds << " s." << std::endl;
+    }
   }
 }
 

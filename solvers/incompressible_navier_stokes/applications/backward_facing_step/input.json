@@ -1,12 +1,15 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
         "Degree": "2",
         "RefineSpace": "0"
     },
     "Application": {
-	"Name": "BackwardFacingStep"
+        "Name": "BackwardFacingStep"
     },
     "Output": {
         "OutputDirectory": "output/",

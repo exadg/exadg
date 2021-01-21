@@ -13,7 +13,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
 #include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
-#include <exadg/utilities/print_throughput.h>
+#include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
 {
@@ -26,10 +26,12 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_in,
   InputParameters const &                         param_in,
   MPI_Comm const &                                mpi_comm_in,
+  bool const                                      print_wall_times_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : pde_operator(operator_in),
     param(param_in),
     mpi_comm(mpi_comm_in),
+    print_wall_times(print_wall_times_in),
     timer_tree(new TimerTree()),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     postprocessor(postprocessor_in),
@@ -138,7 +140,7 @@ DriverSteadyProblems<dim, Number>::solve(double const time, bool unsteady_proble
       solution, rhs_vector, this->param.update_preconditioner_coupled, time);
 
     if(print_solver_info(time, unsteady_problem))
-      print_solver_info_linear(pcout, n_iter, timer.wall_time());
+      print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
 
     iterations.first += 1;
     std::get<1>(iterations.second) += n_iter;
@@ -155,7 +157,8 @@ DriverSteadyProblems<dim, Number>::solve(double const time, bool unsteady_proble
       solution, rhs, this->param.update_preconditioner_coupled, time);
 
     if(print_solver_info(time, unsteady_problem))
-      print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
+      print_solver_info_nonlinear(
+        pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time(), print_wall_times);
 
     iterations.first += 1;
     std::get<0>(iterations.second) += std::get<0>(iter);

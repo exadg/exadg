@@ -1,10 +1,12 @@
 {
     "General": {
-	"Precision": "double",
+        "Precision": "double",
         "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
         "Degree": "3",
-        "RefineSpace": "4",
-        "NScalars": "1"
+        "RefineSpace": "4"
     },
     "Application": {
        	"Name": "CavityNaturalConvection"

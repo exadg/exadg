@@ -1,12 +1,12 @@
 /*
- * timings.h
+ * solver_result.h
  *
  *  Created on: 24.03.2020
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_UTILITIES_TIMINGS_H_
-#define INCLUDE_EXADG_UTILITIES_TIMINGS_H_
+#ifndef INCLUDE_EXADG_UTILITIES_SOLVER_RESULT_H_
+#define INCLUDE_EXADG_UTILITIES_SOLVER_RESULT_H_
 
 #include <deal.II/base/conditional_ostream.h>
 
@@ -14,16 +14,16 @@ namespace ExaDG
 {
 using namespace dealii;
 
-struct Timings
+struct SolverResult
 {
-  Timings() : degree(1), dofs(1), n_10(0), tau_10(0.0)
+  SolverResult() : degree(1), dofs(1), n_10(0), tau_10(0.0)
   {
   }
 
-  Timings(unsigned int const            degree_,
-          types::global_dof_index const dofs_,
-          double const                  n_10_,
-          double const                  tau_10_)
+  SolverResult(unsigned int const            degree_,
+               types::global_dof_index const dofs_,
+               double const                  n_10_,
+               double const                  tau_10_)
     : degree(degree_), dofs(dofs_), n_10(n_10_), tau_10(tau_10_)
   {
   }
@@ -68,7 +68,7 @@ struct Timings
 };
 
 inline void
-print_results(std::vector<Timings> const & timings, MPI_Comm const & mpi_comm)
+print_results(std::vector<SolverResult> const & results, MPI_Comm const & mpi_comm)
 {
   // summarize results for all polynomial degrees and problem sizes
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
@@ -80,8 +80,8 @@ print_results(std::vector<Timings> const & timings, MPI_Comm const & mpi_comm)
 
   pcout << "Summary of results:" << std::endl << std::endl;
 
-  timings[0].print_header(pcout);
-  for(std::vector<Timings>::const_iterator it = timings.begin(); it != timings.end(); ++it)
+  results[0].print_header(pcout);
+  for(std::vector<SolverResult>::const_iterator it = results.begin(); it != results.end(); ++it)
     it->print_results(pcout);
 
   pcout << "_________________________________________________________________________________"
@@ -91,4 +91,4 @@ print_results(std::vector<Timings> const & timings, MPI_Comm const & mpi_comm)
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_UTILITIES_TIMINGS_H_ */
+#endif /* INCLUDE_EXADG_UTILITIES_SOLVER_RESULT_H_ */
