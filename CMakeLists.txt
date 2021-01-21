@@ -158,25 +158,27 @@ SET( TARGET_SRC
      include/exadg/structure/postprocessor/postprocessor.cpp
      include/exadg/structure/driver.cpp
      # fluid-structure-interaction
-     include/exadg/fluid_structure_interaction/driver.cpp
-  )
+        include/exadg/fluid_structure_interaction/driver.cpp
+        )
 
-# Set the include directory and the name of the project
+# Set the include directories and the name of the project
 INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
 
 PROJECT(exadg)
 
-ADD_LIBRARY(exadg  ${TARGET_SRC})
+set(EXADG_DEGREE_MAX ${DEGREE_MAX})
 
-IF(NOT DEGREE_MAX)
-  MESSAGE("Compiling with k_max=15.")
-  target_compile_definitions(exadg PUBLIC "EXADG_DEGREE_MAX=15")
-ELSE()
-  MESSAGE("Compiling with k_max=${DEGREE_MAX}.")
-  target_compile_definitions(exadg PUBLIC "EXADG_DEGREE_MAX=${DEGREE_MAX}")
-ENDIF()
+# Configure config.h
+MESSAGE("max compiled degree = " ${EXADG_DEGREE_MAX})
+CONFIGURE_FILE(
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/exadg/configuration/config.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/include/exadg/configuration/config.h
+)
+
+ADD_LIBRARY(exadg ${TARGET_SRC})
 
 option(USE_FFTW "Use fftw" OFF)
 IF(${USE_FFTW})

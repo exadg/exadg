@@ -11,6 +11,9 @@
 // deal.II
 #include <deal.II/base/parameter_handler.h>
 
+// ExaDG
+#include <exadg/configuration/config.h>
+
 namespace ExaDG
 {
 using namespace dealii;
