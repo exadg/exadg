@@ -202,13 +202,57 @@ Copy the script *combine_fftw.sh* from the folder *exadg/scripts/* to the curren
 ```bash
 cp /working_directory/exadg/scripts/combine_fftw.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
+
+**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above,
+i.e., you have to fork and clone the **ExaDG** project.
 
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
 ```bash
 bash ./combine_fftw.sh
 ```
+
+### Likwid (optional)
+
+Get likwid release 4.3.3 from github
+
+```bash
+wget https://github.com/RRZE-HPC/likwid/archive/likwid-4.3.3.tar.gz
+```
+
+Unzip the file with tar
+
+```bash
+tar -xf likwid-4.3.3.tar.gz
+```
+
+Change into the likwid directory
+
+```bash
+cd likwid-likwid-4.3.3
+```
+
+Open the likwid config file
+
+```bash
+vi config.mk
+```
+
+Select the install directory, for example
+
+```bash
+PREFIX = /working_directory/sw/likwid-install
+```
+
+Build likwid and install it into the selected folder (*sudo* required to install the access daemon with proper
+permissions)
+
+```bash
+make
+sudo make install
+```
+
+Set the likwid install directory in *config_exadg.sh* (see next step)
 
 ### Completing ExaDG installation (continued)
 
