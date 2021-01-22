@@ -214,7 +214,7 @@ bash ./combine_fftw.sh
 
 ### Likwid (optional)
 
-Get likwid release 4.3.3 from github
+Download likwid release 4.3.3 from github to folder *sw*
 
 ```bash
 wget https://github.com/RRZE-HPC/likwid/archive/likwid-4.3.3.tar.gz
