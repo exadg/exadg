@@ -241,7 +241,7 @@ vi config.mk
 Select the install directory, for example
 
 ```bash
-PREFIX = $WORKING_DIRECTORY/sw/likwid-install
+PREFIX = $(WORKING_DIRECTORY)/sw/likwid-install
 ```
 
 Build likwid and install it into the selected folder (*sudo* required to install the access daemon with proper
