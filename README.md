@@ -73,6 +73,13 @@ Go to the *sw*-folder in your working directory
 cd $WORKING_DIRECTORY/sw/
 ```
 
+#### cmake (deal.II and likwid require newer cmake versions, recommended cmake versions are 3.18 and higher)
+
+```bash
+wget https://github.com/Kitware/CMake/releases/download/v3.19.3/cmake-3.19.3-Linux-x86_64.sh -O cmake.sh
+sudo sh cmake.sh --prefix=/usr/local/ --exclude-subdir
+```
+
 #### Trilinos (optional)
 
 For some functionalities in the **ExaDG** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
