@@ -180,13 +180,13 @@ CONFIGURE_FILE(
 
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
-option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
-IF (${USE_DEAL_SPECTRUM})
- add_definitions(-DUSE_DEAL_SPECTRUM)
- include_directories(${FFTW_INC})
- FIND_LIBRARY(FFTW3 fftw3 HINTS ${FFTW_LIB})
- MESSAGE(${FFTW3})
- target_link_libraries(exadg ${FFTW3})
+option(USE_FFTW "Use fftw" OFF)
+IF(${USE_FFTW})
+    add_definitions(-DUSE_FFTW)
+    include_directories(${FFTW_INC})
+    FIND_LIBRARY(FFTW3 fftw3 HINTS ${FFTW_LIB})
+    MESSAGE(${FFTW3})
+    target_link_libraries(exadg ${FFTW3})
 ENDIF()
 
 FIND_LIBRARY(LIKWID likwid HINTS ${LIKWID_LIB})

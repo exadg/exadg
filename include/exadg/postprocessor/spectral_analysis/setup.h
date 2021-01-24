@@ -1,10 +1,3 @@
-/*
- * <DEAL.SPECTRUM>/includes/setup.h
- *
- *  Created on: Mar 02, 2018
- *      Author: muench
- */
-
 #ifndef DEAL_SPECTRUM_SETUP
 #define DEAL_SPECTRUM_SETUP
 
@@ -33,9 +26,9 @@ class Setup
 public:
   // length of header (8 ints)
   static const int HEADER_LENGTH = 8;
-  
+
   MPI_Comm const & comm;
-  
+
   // is initialized?
   bool initialized;
   // file type (0) sfc + cell-wise (1) row-wise
@@ -105,9 +98,9 @@ public:
   readHeader(char *& filename)
   {
     FILE * fp;
-    int    crit[1+4];
+    int    crit[1 + 4];
     crit[0] = 0;
-    
+
     if(this->rank == 0)
     {
       // read header only by rank 0 ...
@@ -115,7 +108,7 @@ public:
       {
         // ... read header in one go
         fread(crit + 1, sizeof(int), 4, fp);
-        
+
         // read time
         fread(&this->time, sizeof(double), 1, fp);
 
@@ -128,7 +121,7 @@ public:
         crit[0] = 0;
       }
     }
-    
+
     // broadcast header to all processes
     MPI_Bcast(&crit, 5, MPI_INT, 0, comm);
     MPI_Bcast(&this->time, 1, MPI_DOUBLE, 0, comm);
@@ -152,7 +145,7 @@ public:
       if(this->points_dst == 0)
         this->points_dst = this->points_src; // equal if nothing specified
     }
-    
+
     // success or failure?
     return crit[0];
   }

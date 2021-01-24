@@ -1,18 +1,11 @@
-/*
- * <DEAL.SPECTRUM>/includes/interpolation.h
- *
- *  Created on: Mar 02, 2018
- *      Author: muench
- */
-
 #ifndef DEAL_SPECTRUM_INTERPOLATION
 #define DEAL_SPECTRUM_INTERPOLATION
 
-// include std
+// std
 #include <mpi.h>
 #include <stdlib.h>
 
-// include deal.II
+// deal.II
 #include <deal.II/base/aligned_vector.h>
 #include <deal.II/base/point.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -81,7 +74,7 @@ public:
   {
     int start, end;
     MAP.getLocalRange(start, end);
-    
+
     init(start, end);
   }
 
@@ -327,7 +320,8 @@ public:
     // dofs to read/write per field
     unsigned long int dofs = cells * dofs_source;
     // local displacement in file (in bytes)
-    MPI_Offset disp = 8 * sizeof(int) + static_cast<unsigned long int>(start) * dofs_source * sizeof(double) * DIM;
+    MPI_Offset disp =
+      8 * sizeof(int) + static_cast<unsigned long int>(start) * dofs_source * sizeof(double) * DIM;
 
     // create view
     MPI_Datatype stype;

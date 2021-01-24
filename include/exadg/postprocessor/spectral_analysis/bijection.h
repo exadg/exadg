@@ -1,24 +1,17 @@
-/*
- * <DEAL.SPECTRUM>/includes/bijection.h
- *
- *  Created on: Mar 02, 2018
- *      Author: muench
- */
-
 #ifndef DEAL_SPECTRUM_BIJECTION
 #define DEAL_SPECTRUM_BIJECTION
 
-// include std
+// std
 #include <immintrin.h>
 #include <stdint.h>
 #include <cmath>
 
-// include deal.II
+// deal.II
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 
-// include DEAL.SPECTRUM modules
-#include "./setup.h"
+// ExaDG
+#include <exadg/postprocessor/spectral_analysis/setup.h>
 
 // define helper funtions
 #ifndef MIN
@@ -39,8 +32,8 @@ namespace dealspectrum
  */
 class Bijection
 {
-  MPI_Comm const & comm;  
-    
+  MPI_Comm const & comm;
+
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?
@@ -81,18 +74,24 @@ public:
   init()
   {
     int n = s.cells;
-    
+
     if(s.dim == 2)
     {
       dealii::parallel::distributed::Triangulation<2> triangulation(comm);
-      dealii::GridGenerator::subdivided_hyper_cube(triangulation, 1, -dealii::numbers::PI, dealii::numbers::PI);
+      dealii::GridGenerator::subdivided_hyper_cube(triangulation,
+                                                   1,
+                                                   -dealii::numbers::PI,
+                                                   dealii::numbers::PI);
       triangulation.refine_global(round(log(n) / log(2)));
       init(triangulation);
     }
     else if(s.dim == 3)
     {
       dealii::parallel::distributed::Triangulation<3> triangulation(comm);
-      dealii::GridGenerator::subdivided_hyper_cube(triangulation, 1, -dealii::numbers::PI, dealii::numbers::PI);
+      dealii::GridGenerator::subdivided_hyper_cube(triangulation,
+                                                   1,
+                                                   -dealii::numbers::PI,
+                                                   dealii::numbers::PI);
       triangulation.refine_global(round(log(n) / log(2)));
       init(triangulation);
     }
@@ -138,10 +137,14 @@ public:
         }
 
         // domain is between -pi and +pi
-        unsigned int x_index = int((x+dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
-        unsigned int y_index = int((y+dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
+        unsigned int x_index =
+          int((x + dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
+        unsigned int y_index =
+          int((y + dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
         unsigned int z_index =
-          s.dim == 2 ? 0 : int((z+dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
+          s.dim == 2 ?
+            0 :
+            int((z + dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
 
         temp_indices.push_back(n_active_cells_1d * n_active_cells_1d * z_index +
                                n_active_cells_1d * y_index + x_index);

@@ -1,14 +1,7 @@
-/*
- * <DEAL.SPECTRUM>/includes/permutation.h
- *
- *  Created on: Mar 02, 2018
- *      Author: muench
- */
-
 #ifndef DEAL_SPECTRUM_PERMUTATION
 #define DEAL_SPECTRUM_PERMUTATION
 
-// include std
+// std
 #include <math.h>
 #include <mpi.h>
 #include <stdio.h>
@@ -18,8 +11,8 @@
 #include <numeric>
 #include <vector>
 
-// include DEAL.SPECTRUM modules
-#include "./setup.h"
+// ExaDG
+#include <exadg/postprocessor/spectral_analysis/setup.h>
 
 namespace dealspectrum
 {
