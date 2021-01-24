@@ -46,7 +46,7 @@ mkdir sw
 Go to the working directory
 
 ```bash
-cd /working_directory/
+cd $WORKING_DIRECTORY
 ```
 
 ##### Forking ExaDG project
@@ -70,7 +70,7 @@ git remote add supervisor https://gitlab.lrz.de/supervisor_id/exadg.git
 Go to the *sw*-folder in your working directory
 
 ```bash
-cd /working_directory/sw/
+cd $WORKING_DIRECTORY/sw/
 ```
 
 #### Trilinos (optional)
@@ -90,7 +90,7 @@ cd build/
 Copy the script *config_trilinos.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/exadg/scripts/config_trilinos.sh .
+cp $WORKING_DIRECTORY/exadg/scripts/config_trilinos.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
@@ -158,7 +158,7 @@ cd dealii-build/
 Copy the script *config_dealii.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/exadg/scripts/config_dealii.sh .
+cp $WORKING_DIRECTORY/exadg/scripts/config_dealii.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
 
@@ -192,7 +192,7 @@ Download **fftw** from homepage http://www.fftw.org/download.html and copy to fo
 wget http://fftw.org/fftw-3.3.7.tar.gz
 tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
-./configure --enable-mpi --prefix=/working_directory/sw/fftw-3.3.7-install
+./configure --enable-mpi --prefix=$WORKING_DIRECTORY/sw/fftw-3.3.7-install
 make
 make install
 cd ../fftw-3.3.7-install/lib/
@@ -200,9 +200,11 @@ cd ../fftw-3.3.7-install/lib/
 Copy the script *combine_fftw.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
-cp /working_directory/exadg/scripts/combine_fftw.sh .
+cp $WORKING_DIRECTORY/exadg/scripts/combine_fftw.sh .
 ```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
+
+**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above,
+i.e., you have to fork and clone the **ExaDG** project.
 
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
@@ -210,12 +212,54 @@ Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_
 bash ./combine_fftw.sh
 ```
 
+### Likwid (optional)
+
+Download likwid release 4.3.3 from github to folder *sw*
+
+```bash
+wget https://github.com/RRZE-HPC/likwid/archive/likwid-4.3.3.tar.gz
+```
+
+Unzip the file with tar
+
+```bash
+tar -xf likwid-4.3.3.tar.gz
+```
+
+Change into the likwid directory
+
+```bash
+cd likwid-likwid-4.3.3
+```
+
+Open the likwid config file
+
+```bash
+vi config.mk
+```
+
+Select the install directory, for example
+
+```bash
+PREFIX = $(WORKING_DIRECTORY)/sw/likwid-install
+```
+
+Build likwid and install it into the selected folder (*sudo* required to install the access daemon with proper
+permissions)
+
+```bash
+make
+sudo make install
+```
+
+Set the likwid install directory in *config_exadg.sh* (see next step)
+
 ### Completing ExaDG installation (continued)
 
 #### Linking deal.II code and building the code
 
 ```bash
-cd /working_directory/exadg/
+cd $WORKING_DIRECTORY/exadg/
 mkdir build
 cd build/
 ```
@@ -223,7 +267,7 @@ cd build/
 Copy the script *config_exadg.sh* from the *exadg/scripts/* directory to the *exadg/build/* directory, e.g.,
 
 ```bash
-cp /working_directory/exadg/scripts/config_exadg.sh .
+cp $WORKING_DIRECTORY/exadg/scripts/config_exadg.sh .
 ```
 
 Deactivate the **fftw** related lines in *config_exadg.sh* if not needed, i.e., set
@@ -256,7 +300,7 @@ To run your first simulations, select a solver, e.g., *incompressible_navier_sto
 
 ```bash
 cd solvers/incompressible_navier_stokes/
-mpirun -np [N_CORES] ./solver /working_directory/exadg/solvers/incompressible_navier_stokes/applications/my_application/input.json
+mpirun -np [N_CORES] ./solver $WORKING_DIRECTORY/exadg/solvers/incompressible_navier_stokes/applications/my_application/input.json
 ```
 
 #### Debugging
@@ -264,7 +308,7 @@ mpirun -np [N_CORES] ./solver /working_directory/exadg/solvers/incompressible_na
 To build the debug-version, run the following commands
 
 ```bash
-cd /working_directory/exadg/build/
+cd $WORKING_DIRECTORY/exadg/build/
 make debug
 make -j[N_CORES]
 ```
@@ -277,7 +321,7 @@ gdb --args ./solver path_to_application/input.json
 Don't forget to reactivate release-version after debugging via
 
 ```bash
-cd /working_directory/exadg/build/
+cd $WORKING_DIRECTORY/exadg/build/
 make release
 make -j[N_CORES]
 ```
