@@ -5,25 +5,25 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
 
 namespace ExaDG
 {
 using namespace dealii;
 
 template<int dim, typename Number, typename VectorType, int components = 1>
-class MGTransferMFP : virtual public MGTransferMF<VectorType>
+class MGTransferP : virtual public MGTransfer<VectorType>
 {
 public:
   typedef Number value_type;
 
-  MGTransferMFP();
+  MGTransferP();
 
-  MGTransferMFP(const MatrixFree<dim, value_type> * matrixfree_1,
-                const MatrixFree<dim, value_type> * matrixfree_2,
-                int                                 degree_1,
-                int                                 degree_2,
-                int                                 dof_handler_index = 0);
+  MGTransferP(const MatrixFree<dim, value_type> * matrixfree_1,
+              const MatrixFree<dim, value_type> * matrixfree_2,
+              int                                 degree_1,
+              int                                 degree_2,
+              int                                 dof_handler_index = 0);
 
   void
   reinit(const MatrixFree<dim, value_type> * matrixfree_1,
@@ -32,7 +32,7 @@ public:
          int                                 degree_2,
          int                                 dof_handler_index = 0);
 
-  virtual ~MGTransferMFP();
+  virtual ~MGTransferP();
 
   virtual void
   interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;

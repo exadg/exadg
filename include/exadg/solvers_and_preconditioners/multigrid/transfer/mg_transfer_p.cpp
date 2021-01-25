@@ -6,7 +6,7 @@
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_p.h>
 
 namespace ExaDG
 {
@@ -161,8 +161,8 @@ weight_residuum(MatrixFree &                                   data_1,
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
-MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
-                                                                   const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
+                                                                 const VectorType & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
@@ -201,9 +201,8 @@ MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType & 
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
-MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
-  VectorType &       dst,
-  const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType &       dst,
+                                                                      const VectorType & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
@@ -245,8 +244,8 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
-MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
-                                                                  const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
+                                                                const VectorType & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
@@ -287,7 +286,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
 }
 
 template<int dim, typename Number, typename VectorType, int components>
-MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP()
+MGTransferP<dim, Number, VectorType, components>::MGTransferP()
   : matrixfree_1(nullptr),
     matrixfree_2(nullptr),
     degree_1(0),
@@ -299,7 +298,7 @@ MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP()
 }
 
 template<int dim, typename Number, typename VectorType, int components>
-MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP(
+MGTransferP<dim, Number, VectorType, components>::MGTransferP(
   const MatrixFree<dim, value_type> * matrixfree_1,
   const MatrixFree<dim, value_type> * matrixfree_2,
   int                                 degree_1,
@@ -311,7 +310,7 @@ MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP(
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::reinit(
+MGTransferP<dim, Number, VectorType, components>::reinit(
   const MatrixFree<dim, value_type> * matrixfree_1,
   const MatrixFree<dim, value_type> * matrixfree_2,
   int                                 degree_1,
@@ -397,15 +396,15 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
 }
 
 template<int dim, typename Number, typename VectorType, int components>
-MGTransferMFP<dim, Number, VectorType, components>::~MGTransferMFP()
+MGTransferP<dim, Number, VectorType, components>::~MGTransferP()
 {
 }
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::interpolate(const unsigned int level,
-                                                                VectorType &       dst,
-                                                                const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::interpolate(const unsigned int level,
+                                                              VectorType &       dst,
+                                                              const VectorType & src) const
 {
   (void)level;
   if(!this->is_dg) // only if CG
@@ -469,16 +468,16 @@ MGTransferMFP<dim, Number, VectorType, components>::interpolate(const unsigned i
     case 1514: do_interpolate<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
+      AssertThrow(false, ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
   }
   // clang-format on
 }
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
-                                                                     VectorType &       dst,
-                                                                     const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
+                                                                   VectorType &       dst,
+                                                                   const VectorType & src) const
 {
   if(!this->is_dg) // only if CG
     src.update_ghost_values();
@@ -541,7 +540,7 @@ MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsig
     case 1514: do_restrict_and_add<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
+      AssertThrow(false, ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
   }
   // clang-format on
 
@@ -551,9 +550,9 @@ MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsig
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
-                                                               VectorType &       dst,
-                                                               const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
+                                                             VectorType &       dst,
+                                                             const VectorType & src) const
 {
   if(!this->is_dg) // only if CG
   {
@@ -619,7 +618,7 @@ MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned in
     case 1514: do_prolongate<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFP::prolongate not implemented for this degree combination!"));
+      AssertThrow(false, ExcMessage("MGTransferP::prolongate() not implemented for this degree combination!"));
   }
   // clang-format on
 
@@ -631,16 +630,16 @@ MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned in
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
 typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-template class MGTransferMFP<2, float, VectorTypeFloat, 1>;
-template class MGTransferMFP<2, float, VectorTypeFloat, 2>;
+template class MGTransferP<2, float, VectorTypeFloat, 1>;
+template class MGTransferP<2, float, VectorTypeFloat, 2>;
 
-template class MGTransferMFP<3, float, VectorTypeFloat, 1>;
-template class MGTransferMFP<3, float, VectorTypeFloat, 3>;
+template class MGTransferP<3, float, VectorTypeFloat, 1>;
+template class MGTransferP<3, float, VectorTypeFloat, 3>;
 
-template class MGTransferMFP<2, double, VectorTypeDouble, 1>;
-template class MGTransferMFP<2, double, VectorTypeDouble, 2>;
+template class MGTransferP<2, double, VectorTypeDouble, 1>;
+template class MGTransferP<2, double, VectorTypeDouble, 2>;
 
-template class MGTransferMFP<3, double, VectorTypeDouble, 1>;
-template class MGTransferMFP<3, double, VectorTypeDouble, 3>;
+template class MGTransferP<3, double, VectorTypeDouble, 1>;
+template class MGTransferP<3, double, VectorTypeDouble, 3>;
 
 } // namespace ExaDG

@@ -5,7 +5,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
 
 namespace ExaDG
 {
@@ -15,19 +15,19 @@ template<int dim,
          typename Number,
          typename VectorType = LinearAlgebra::distributed::Vector<Number>,
          int components      = 1>
-class MGTransferMFC : virtual public MGTransferMF<VectorType>
+class MGTransferC : virtual public MGTransfer<VectorType>
 {
 public:
-  MGTransferMFC(const Mapping<dim> &              mapping,
-                const MatrixFree<dim, Number> &   matrixfree_dg,
-                const MatrixFree<dim, Number> &   matrixfree_cg,
-                const AffineConstraints<double> & constraints_dg,
-                const AffineConstraints<double> & constraints_cg,
-                const unsigned int                level,
-                const unsigned int                fe_degree,
-                const unsigned int                dof_handler_index = 0);
+  MGTransferC(const Mapping<dim> &              mapping,
+              const MatrixFree<dim, Number> &   matrixfree_dg,
+              const MatrixFree<dim, Number> &   matrixfree_cg,
+              const AffineConstraints<double> & constraints_dg,
+              const AffineConstraints<double> & constraints_cg,
+              const unsigned int                level,
+              const unsigned int                fe_degree,
+              const unsigned int                dof_handler_index = 0);
 
-  virtual ~MGTransferMFC();
+  virtual ~MGTransferC();
 
   void
   interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;

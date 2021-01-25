@@ -4,10 +4,10 @@
 namespace ExaDG
 {
 template<typename VectorType>
-class MGTransferMF
+class MGTransfer
 {
 public:
-  virtual ~MGTransferMF()
+  virtual ~MGTransfer()
   {
   }
 
