@@ -5,11 +5,11 @@
  *      Author: fehn
  */
 
-#include <exadg/incompressible_navier_stokes/preconditioners/compatible_laplace_multigrid_preconditioner.h>
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
 #include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
 
 namespace ExaDG
@@ -551,31 +551,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);
   }
-  else if(type == SchurComplementPreconditioner::Elman)
-  {
-    setup_multigrid_preconditioner_schur_complement();
-
-    if(this->param.exact_inversion_of_laplace_operator == true)
-    {
-      setup_iterative_solver_schur_complement();
-    }
-
-    if(this->param.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
-    {
-      // -S^{-1} = - (BM^{-1}B^T)^{-1} (-B M^{-1} A M^{-1} B^T) (BM^{-1}B^T)^{-1}
-      // --> inverse velocity mass matrix needed for inner factor
-      inv_mass_matrix_preconditioner_schur_complement.reset(
-        new InverseMassMatrixPreconditioner<dim, dim, Number>(
-          this->get_matrix_free(),
-          this->get_dof_index_velocity(),
-          this->get_quad_index_velocity_linear()));
-    }
-
-    // initialize tmp vectors
-    this->initialize_vector_pressure(tmp_scp_pressure);
-    this->initialize_vector_velocity(tmp_scp_velocity);
-    this->initialize_vector_velocity(tmp_scp_velocity_2);
-  }
   else if(type == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
     // -S^{-1} = M_p^{-1} A_p (-L)^{-1}
@@ -607,96 +582,38 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 }
 
 template<int dim, typename Number>
-CompatibleLaplaceOperatorData<dim> const
-DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
-{
-  CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
-  comp_laplace_operator_data.degree_u               = this->degree_u;
-  comp_laplace_operator_data.degree_p               = this->param.get_degree_p(this->degree_u);
-  comp_laplace_operator_data.dof_index_velocity     = this->get_dof_index_velocity();
-  comp_laplace_operator_data.dof_index_pressure     = this->get_dof_index_pressure();
-  comp_laplace_operator_data.dof_index_velocity     = this->get_quad_index_velocity_linear();
-  comp_laplace_operator_data.operator_is_singular   = this->is_pressure_level_undefined();
-  comp_laplace_operator_data.dof_handler_u          = &this->get_dof_handler_u();
-  comp_laplace_operator_data.gradient_operator_data = this->gradient_operator.get_operator_data();
-  comp_laplace_operator_data.divergence_operator_data =
-    this->divergence_operator.get_operator_data();
-
-  return comp_laplace_operator_data;
-}
-
-template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 {
-  auto type_laplacian = this->param.discretization_of_laplacian;
+  // multigrid V-cycle for negative Laplace operator
+  Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
+  laplace_operator_data.dof_index             = this->get_dof_index_pressure();
+  laplace_operator_data.quad_index            = this->get_quad_index_pressure();
+  laplace_operator_data.operator_is_singular  = this->is_pressure_level_undefined();
+  laplace_operator_data.kernel_data.IP_factor = 1.0;
+  laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
 
-  if(type_laplacian == DiscretizationOfLaplacian::Compatible)
-  {
-    MultigridData mg_data = this->param.multigrid_data_pressure_block;
+  MultigridData mg_data = this->param.multigrid_data_pressure_block;
 
-    typedef CompatibleLaplaceMultigridPreconditioner<dim, Number> MULTIGRID;
+  multigrid_preconditioner_schur_complement.reset(new MultigridPoisson(this->mpi_comm));
 
-    multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
+  std::shared_ptr<MultigridPoisson> mg_preconditioner =
+    std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
 
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
+  auto & dof_handler = this->get_dof_handler_p();
 
-    auto compatible_laplace_operator_data = get_compatible_laplace_operator_data();
+  parallel::TriangulationBase<dim> const * tria =
+    dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
+  const FiniteElement<dim> & fe = dof_handler.get_fe();
 
-    auto & dof_handler = this->get_dof_handler_p();
-
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
-    mg_preconditioner->initialize(mg_data,
-                                  tria,
-                                  fe,
-                                  this->get_mapping(),
-                                  compatible_laplace_operator_data,
-                                  this->param.ale_formulation);
-  }
-  else if(type_laplacian == DiscretizationOfLaplacian::Classical)
-  {
-    // multigrid V-cycle for negative Laplace operator
-    Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
-    laplace_operator_data.dof_index             = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index            = this->get_quad_index_pressure();
-    laplace_operator_data.operator_is_singular  = this->is_pressure_level_undefined();
-    laplace_operator_data.kernel_data.IP_factor = 1.0;
-    laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
-
-    MultigridData mg_data = this->param.multigrid_data_pressure_block;
-
-    multigrid_preconditioner_schur_complement.reset(new MultigridPoisson(this->mpi_comm));
-
-    std::shared_ptr<MultigridPoisson> mg_preconditioner =
-      std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
-
-    auto & dof_handler = this->get_dof_handler_p();
-
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
-    mg_preconditioner->initialize(mg_data,
-                                  tria,
-                                  fe,
-                                  this->get_mapping(),
-                                  laplace_operator_data,
-                                  this->param.ale_formulation,
-                                  &laplace_operator_data.bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
-  }
-  else
-  {
-    AssertThrow(
-      type_laplacian == DiscretizationOfLaplacian::Classical ||
-        type_laplacian == DiscretizationOfLaplacian::Compatible,
-      ExcMessage(
-        "Specified discretization of Laplacian for Schur-complement preconditioner is not available."));
-  }
+  mg_preconditioner->initialize(mg_data,
+                                tria,
+                                fe,
+                                this->get_mapping(),
+                                laplace_operator_data,
+                                this->param.ale_formulation,
+                                &laplace_operator_data.bc->dirichlet_bc,
+                                &this->periodic_face_pairs);
 }
 
 template<int dim, typename Number>
@@ -714,52 +631,20 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   solver_data.solver_tolerance_rel = this->param.solver_data_pressure_block.rel_tol;
   solver_data.use_preconditioner   = true;
 
-  auto type_laplacian = this->param.discretization_of_laplacian;
+  Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
+  laplace_operator_data.dof_index             = this->get_dof_index_pressure();
+  laplace_operator_data.quad_index            = this->get_quad_index_pressure();
+  laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
+  laplace_operator_data.kernel_data.IP_factor = 1.0;
 
-  if(type_laplacian == DiscretizationOfLaplacian::Classical)
-  {
-    Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
-    laplace_operator_data.dof_index             = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index            = this->get_quad_index_pressure();
-    laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
-    laplace_operator_data.kernel_data.IP_factor = 1.0;
+  laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
+  laplace_operator_classical->initialize(this->get_matrix_free(),
+                                         this->get_constraint_p(),
+                                         laplace_operator_data);
 
-    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
-    laplace_operator_classical->initialize(this->get_matrix_free(),
-                                           this->get_constraint_p(),
-                                           laplace_operator_data);
-
-    solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
-                                             PreconditionerBase<Number>,
-                                             VectorType>(*laplace_operator_classical,
-                                                         *multigrid_preconditioner_schur_complement,
-                                                         solver_data));
-  }
-  else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
-  {
-    CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data =
-      get_compatible_laplace_operator_data();
-
-    laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim, Number>());
-
-    laplace_operator_compatible->initialize(this->get_matrix_free(),
-                                            compatible_laplace_operator_data,
-                                            this->gradient_operator,
-                                            this->divergence_operator,
-                                            this->inverse_mass_velocity);
-
-    solver_pressure_block.reset(
-      new CGSolver<CompatibleLaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        *laplace_operator_compatible, *multigrid_preconditioner_schur_complement, solver_data));
-  }
-  else
-  {
-    AssertThrow(
-      type_laplacian == DiscretizationOfLaplacian::Classical ||
-        type_laplacian == DiscretizationOfLaplacian::Compatible,
-      ExcMessage(
-        "Specified discretization of Laplacian for Schur-complement preconditioner is not available."));
-  }
+  solver_pressure_block.reset(
+    new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>(
+      *laplace_operator_classical, *multigrid_preconditioner_schur_complement, solver_data));
 }
 
 template<int dim, typename Number>
@@ -931,17 +816,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
  *
  *      -> - S^{-1} = nu M_p^{-1} + 1/dt (-L)^{-1}
  *
- *   4. Elman et al. (BFBt preconditioner, sparse approximate commutator preconditioner)
- *
- *      S = - B A^{-1}B^T is approximated by (BB^T) (-B A B^T)^{-1} (BB^T)
- *
- *      -> -S^{-1} = - (-L)^{-1} (-B A B^T) (-L)^{-1}
- *
- *      improvement: S is approximated by (BM^{-1}B^T) (-B A B^T)^{-1} (BM^{-1}B^T)
- *
- *      -> -S^{-1} = - (BM^{-1}B^T)^{-1} (-B M^{-1} A M^{-1} B^T) (BM^{-1}B^T)^{-1}
- *
- *   5. Pressure convection-diffusion preconditioner
+ *   4. Pressure convection-diffusion preconditioner
  *
  *      -> -S^{-1} = M_p^{-1} A_p (-L)^{-1} where A_p is a convection-diffusion operator for the pressure
  */
@@ -957,13 +832,11 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
   // pressure block
   if(this->param.ale_formulation) // only if mesh is moving
   {
-    auto type           = this->param.preconditioner_pressure_block;
-    auto type_laplacian = this->param.discretization_of_laplacian;
+    auto const type = this->param.preconditioner_pressure_block;
+
     // inverse mass matrix
     if(type == SchurComplementPreconditioner::InverseMassMatrix ||
        type == SchurComplementPreconditioner::CahouetChabard ||
-       (type == SchurComplementPreconditioner::Elman &&
-        type_laplacian == DiscretizationOfLaplacian::Compatible) ||
        type == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
       inv_mass_matrix_preconditioner_schur_complement->update();
@@ -972,28 +845,11 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
     // Laplace operator
     if(type == SchurComplementPreconditioner::LaplaceOperator ||
        type == SchurComplementPreconditioner::CahouetChabard ||
-       type == SchurComplementPreconditioner::Elman ||
        type == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
       if(this->param.exact_inversion_of_laplace_operator == true)
       {
-        if(type_laplacian == DiscretizationOfLaplacian::Classical)
-        {
-          laplace_operator_classical->update_after_mesh_movement();
-        }
-        else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
-        {
-          // nothin to do
-
-          // the class DGNavierStokesBase takes care that the
-          // gradient operator, divergence operator, and inverse mass
-          // matrix operator are up to date. The compatible Laplace operator
-          // only has pointers to these operators.
-        }
-        else
-        {
-          AssertThrow(false, ExcMessage("Not implemented"));
-        }
+        laplace_operator_classical->update_after_mesh_movement();
       }
 
       multigrid_preconditioner_schur_complement->update();
@@ -1256,68 +1112,6 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
     // III. add temporary vector scaled by viscosity
     dst.add(this->get_viscosity(), tmp_scp_pressure);
   }
-  else if(type == SchurComplementPreconditioner::Elman)
-  {
-    auto type_laplacian = this->param.discretization_of_laplacian;
-
-    if(type_laplacian == DiscretizationOfLaplacian::Classical)
-    {
-      // -S^{-1} = - (BB^T)^{-1} (-B A B^T) (BB^T)^{-1}
-
-      // I. (BB^T)^{-1} -> apply inverse negative Laplace operator (classical discretization),
-      // (-L)^{-1}
-      apply_inverse_negative_laplace_operator(dst, src);
-
-      // II. (-B A B^T)
-      // II.a) B^T
-      this->gradient_operator.apply(tmp_scp_velocity, dst);
-
-      // II.b) A = 1/dt * mass matrix  +  viscous term  +  linearized convective term
-      this->momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
-
-      // II.c) -B
-      this->divergence_operator.apply(tmp_scp_pressure, tmp_scp_velocity_2);
-
-      // III. -(BB^T)^{-1}
-      // III.a) apply inverse negative Laplace operator (classical discretization), (-L)^{-1}
-      apply_inverse_negative_laplace_operator(dst, tmp_scp_pressure);
-      // III.b) minus sign
-      dst *= -1.0;
-    }
-    else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
-    {
-      // -S^{-1} = - (BM^{-1}B^T)^{-1} (-B M^{-1} A M^{-1} B^T) (BM^{-1}B^T)^{-1}
-
-      // I. (BM^{-1}B^T)^{-1} -> apply inverse negative Laplace operator (compatible
-      // discretization), (-L)^{-1}
-      apply_inverse_negative_laplace_operator(dst, src);
-
-
-      // II. (-B M^{-1} A M^{-1} B^T)
-      // II.a) B^T
-      this->gradient_operator.apply(tmp_scp_velocity, dst);
-
-      // II.b) M^{-1}
-      inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_velocity, tmp_scp_velocity);
-
-      // II.c) A = 1/dt * mass matrix + viscous term + linearized convective term
-      this->momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
-
-      // II.d) M^{-1}
-      inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_velocity_2,
-                                                             tmp_scp_velocity_2);
-
-      // II.e) -B
-      this->divergence_operator.apply(tmp_scp_pressure, tmp_scp_velocity_2);
-
-
-      // III. -(BM^{-1}B^T)^{-1}
-      // III.a) apply inverse negative Laplace operator (compatible discretization), (-L)^{-1}
-      apply_inverse_negative_laplace_operator(dst, tmp_scp_pressure);
-      // III.b) minus sign
-      dst *= -1.0;
-    }
-  }
   else if(type == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
     // -S^{-1} = M_p^{-1} A_p (-L)^{-1}
@@ -1375,17 +1169,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
       VectorType vector_zero_mean;
       vector_zero_mean = src;
 
-      auto type_laplacian = this->param.discretization_of_laplacian;
-
-      bool singular = false;
-      if(type_laplacian == DiscretizationOfLaplacian::Classical)
-        singular = laplace_operator_classical->operator_is_singular();
-      else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
-        singular = laplace_operator_compatible->is_singular();
-      else
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-      if(singular)
+      if(laplace_operator_classical->operator_is_singular())
       {
         set_zero_mean_value(vector_zero_mean);
       }

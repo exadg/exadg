@@ -110,8 +110,6 @@ SET( TARGET_SRC
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp
-     include/exadg/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
-     include/exadg/incompressible_navier_stokes/preconditioners/compatible_laplace_multigrid_preconditioner.cpp
      include/exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.cpp
      include/exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.cpp
      include/exadg/incompressible_navier_stokes/time_integration/time_int_bdf.cpp

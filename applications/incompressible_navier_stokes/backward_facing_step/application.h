@@ -348,7 +348,6 @@ public:
 
     // preconditioner Schur-complement block
     param.preconditioner_pressure_block      = SchurComplementPreconditioner::CahouetChabard;
-    param.discretization_of_laplacian        = DiscretizationOfLaplacian::Classical;
     param.multigrid_data_pressure_block.type = MultigridType::cphMG;
     param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     param.multigrid_data_pressure_block.coarse_problem.preconditioner =
