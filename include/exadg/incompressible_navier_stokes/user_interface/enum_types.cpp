@@ -114,9 +114,6 @@ enum_to_string(FormulationConvectiveTerm const enum_type)
     case FormulationConvectiveTerm::ConvectiveFormulation:
       string_type = "ConvectiveFormulation";
       break;
-    case FormulationConvectiveTerm::EnergyPreservingFormulation:
-      string_type = "EnergyPreservingFormulation";
-      break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
       break;
