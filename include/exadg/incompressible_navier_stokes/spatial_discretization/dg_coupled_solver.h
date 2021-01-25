@@ -398,7 +398,7 @@ private:
 
   std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
 
-  std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator_classical;
+  std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> solver_pressure_block;
 

@@ -637,14 +637,14 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
   laplace_operator_data.kernel_data.IP_factor = 1.0;
 
-  laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
-  laplace_operator_classical->initialize(this->get_matrix_free(),
-                                         this->get_constraint_p(),
-                                         laplace_operator_data);
+  laplace_operator.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
+  laplace_operator->initialize(this->get_matrix_free(),
+                               this->get_constraint_p(),
+                               laplace_operator_data);
 
   solver_pressure_block.reset(
     new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>(
-      *laplace_operator_classical, *multigrid_preconditioner_schur_complement, solver_data));
+      *laplace_operator, *multigrid_preconditioner_schur_complement, solver_data));
 }
 
 template<int dim, typename Number>
@@ -849,7 +849,7 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
     {
       if(this->param.exact_inversion_of_laplace_operator == true)
       {
-        laplace_operator_classical->update_after_mesh_movement();
+        laplace_operator->update_after_mesh_movement();
       }
 
       multigrid_preconditioner_schur_complement->update();
@@ -1169,7 +1169,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
       VectorType vector_zero_mean;
       vector_zero_mean = src;
 
-      if(laplace_operator_classical->operator_is_singular())
+      if(laplace_operator->operator_is_singular())
       {
         set_zero_mean_value(vector_zero_mean);
       }
@@ -1179,7 +1179,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
 
     dst = 0.0;
     // Note that update of preconditioner is set to false here since the preconditioner has
-    // already been updated in the member function update() if desired.
+    // already been updated in the function update_block_preconditioner().
     solver_pressure_block->solve(dst, *pointer_to_src, /* update_preconditioner = */ false);
   }
 }
