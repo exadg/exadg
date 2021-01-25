@@ -139,14 +139,6 @@ public:
       flags.face_evaluate  = FaceFlags(true, false);
       flags.face_integrate = FaceFlags(true, false);
     }
-    else if(data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      flags.cell_evaluate  = CellFlags(true, true, false);
-      flags.cell_integrate = CellFlags(true, true, false);
-
-      flags.face_evaluate  = FaceFlags(true, false);
-      flags.face_integrate = FaceFlags(true, false);
-    }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
@@ -394,15 +386,6 @@ public:
       flux_m = flux - average_u_normal * uM;
       flux_p = -flux + average_u_normal * uP; // opposite signs since n⁺ = - n⁻
     }
-    else if(data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      vector flux = calculate_lax_friedrichs_flux(uM, uP, normalM);
-
-      // corrections to obtain an energy preserving flux (which is not conservative!)
-      vector jump = uM - uP;
-      flux_m      = flux + 0.25 * jump * normalM * uP;
-      flux_p      = -flux + 0.25 * jump * normalM * uM; // opposite signs since n⁺ = - n⁻
-    }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
@@ -452,16 +435,6 @@ public:
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
       flux = flux - average_u_normal * uM;
-    }
-    else if(data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      flux = calculate_lax_friedrichs_flux(uM, uP, normalM);
-
-      if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
-        apply_outflow_bc(flux, uM * normalM);
-
-      // corrections to obtain an energy preserving flux (which is not conservative!)
-      flux = flux + 0.25 * (uM - uP) * normalM * uP;
     }
     else
     {

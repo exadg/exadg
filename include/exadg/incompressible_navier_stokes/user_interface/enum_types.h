@@ -67,14 +67,12 @@ enum_to_string(FormulationViscousTerm const enum_type);
 
 /*
  *  Formulation of convective term: divergence formulation or convective formulation
- *  (energy preserving formulation is only used for testing)
  */
 enum class FormulationConvectiveTerm
 {
   Undefined,
   DivergenceFormulation,
-  ConvectiveFormulation,
-  EnergyPreservingFormulation
+  ConvectiveFormulation
 };
 
 std::string

@@ -326,16 +326,6 @@ ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
       // integration by parts is performed twice
       integrator.submit_value(F, q);
     }
-    else if(operator_data.kernel_data.formulation ==
-            FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      // nonlinear convective flux F(u) = uu
-      tensor F          = outer_product(u, u);
-      scalar divergence = integrator.get_divergence(q);
-      // minus sign due to integration by parts
-      integrator.submit_gradient(-F, q);
-      integrator.submit_value(-0.5 * divergence * u, q);
-    }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
