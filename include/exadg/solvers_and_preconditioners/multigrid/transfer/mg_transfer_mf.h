@@ -7,6 +7,10 @@ template<typename VectorType>
 class MGTransferMF
 {
 public:
+  virtual ~MGTransferMF()
+  {
+  }
+
   virtual void
   interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
 

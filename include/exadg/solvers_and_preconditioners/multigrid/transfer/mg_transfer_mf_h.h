@@ -9,7 +9,6 @@
 #define INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_MG_TRANSFER_MF_H_H_
 
 // deal.II
-#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
 
 // ExaDG

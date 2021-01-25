@@ -204,7 +204,7 @@ template<int dim, typename Number, int n_components>
 bool
 OperatorBase<dim, Number, n_components>::is_empty_locally() const
 {
-  return (this->matrix_free->n_macro_cells() == 0);
+  return (this->matrix_free->n_cell_batches() == 0);
 }
 
 template<int dim, typename Number, int n_components>
@@ -395,12 +395,12 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
 
   // allocate memory only the first time
   if(!block_diagonal_preconditioner_is_initialized ||
-     matrix_free->n_macro_cells() * vectorization_length != matrices.size())
+     matrix_free->n_cell_batches() * vectorization_length != matrices.size())
   {
     auto dofs =
       matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
 
-    matrices.resize(matrix_free->n_macro_cells() * vectorization_length,
+    matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
                     LAPACKFullMatrix<Number>(dofs, dofs));
 
     block_diagonal_preconditioner_is_initialized = true;
@@ -618,7 +618,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
       // allocate memory only the first time
       auto dofs =
         matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
-      matrices.resize(matrix_free->n_macro_cells() * vectorization_length,
+      matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
                       LAPACKFullMatrix<Number>(dofs, dofs));
     }
 
@@ -1659,7 +1659,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    unsigned int const n_filled_lanes = matrix_free.n_components_filled(cell);
+    unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
 
     // create a temporal full matrix for the local element matrix of each ...
     // cell of each macro cell and ...

@@ -3,7 +3,6 @@
 
 // deal.II
 #include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/multigrid/mg_base.h>
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf.h>
@@ -19,12 +18,11 @@ template<int dim,
 class MGTransferMFC : virtual public MGTransferMF<VectorType>
 {
 public:
-  typedef MatrixFree<dim, Number> MF;
-
-  MGTransferMFC(const MF &                        data_dg,
-                const MF &                        data_cg,
-                const AffineConstraints<double> & cm_dg,
-                const AffineConstraints<double> & cm_cg,
+  MGTransferMFC(const Mapping<dim> &              mapping,
+                const MatrixFree<dim, Number> &   matrixfree_dg,
+                const MatrixFree<dim, Number> &   matrixfree_cg,
+                const AffineConstraints<double> & constraints_dg,
+                const AffineConstraints<double> & constraints_cg,
                 const unsigned int                level,
                 const unsigned int                fe_degree,
                 const unsigned int                dof_handler_index = 0);

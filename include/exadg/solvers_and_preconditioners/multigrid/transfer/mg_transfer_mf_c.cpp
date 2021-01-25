@@ -1,7 +1,6 @@
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/mapping_q.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
 // ExaDG
@@ -13,24 +12,27 @@ using namespace dealii;
 
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferMFC<dim, Number, VectorType, components>::MGTransferMFC(
-  const MF &                        data_dg,
-  const MF &                        data_cg,
-  const AffineConstraints<double> & cm_dg,
-  const AffineConstraints<double> & cm_cg,
+  const Mapping<dim> &              mapping,
+  const MatrixFree<dim, Number> &   matrixfree_dg,
+  const MatrixFree<dim, Number> &   matrixfree_cg,
+  const AffineConstraints<double> & constraints_dg,
+  const AffineConstraints<double> & constraints_cg,
   const unsigned int                level,
   const unsigned int                fe_degree,
   const unsigned int                dof_handler_index)
   : fe_degree(fe_degree)
 {
-  std::vector<const DoFHandler<dim> *> dofhandlers = {&data_cg.get_dof_handler(dof_handler_index),
-                                                      &data_dg.get_dof_handler(dof_handler_index)};
+  std::vector<const DoFHandler<dim> *> dofhandlers = {
+    &matrixfree_cg.get_dof_handler(dof_handler_index),
+    &matrixfree_dg.get_dof_handler(dof_handler_index)};
 
-  std::vector<const AffineConstraints<double> *> constraint_matrices = {&cm_cg, &cm_dg};
+  std::vector<const AffineConstraints<double> *> constraint_matrices = {&constraints_cg,
+                                                                        &constraints_dg};
   QGauss<1>                                      quadrature(1);
 
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.mg_level = level;
-  data_composite.reinit(dofhandlers, constraint_matrices, quadrature, additional_data);
+  data_composite.reinit(mapping, dofhandlers, constraint_matrices, quadrature, additional_data);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -47,16 +49,16 @@ MGTransferMFC<dim, Number, VectorType, components>::do_interpolate(VectorType & 
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
-  VectorType vec__dg;
-  data_composite.initialize_dof_vector(vec__dg, 1);
-  vec__dg.copy_locally_owned_data_from(src);
+  VectorType vec_dg;
+  data_composite.initialize_dof_vector(vec_dg, 1);
+  vec_dg.copy_locally_owned_data_from(src);
 
-  for(unsigned int cell = 0; cell < data_composite.n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < data_composite.n_cell_batches(); ++cell)
   {
     fe_eval_cg.reinit(cell);
     fe_eval_dg.reinit(cell);
 
-    fe_eval_dg.read_dof_values(vec__dg);
+    fe_eval_dg.read_dof_values(vec_dg);
 
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_cg.begin_dof_values()[i] = fe_eval_dg.begin_dof_values()[i];
@@ -75,16 +77,16 @@ MGTransferMFC<dim, Number, VectorType, components>::do_restrict_and_add(
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
-  VectorType vec__dg;
-  data_composite.initialize_dof_vector(vec__dg, 1);
-  vec__dg.copy_locally_owned_data_from(src);
+  VectorType vec_dg;
+  data_composite.initialize_dof_vector(vec_dg, 1);
+  vec_dg.copy_locally_owned_data_from(src);
 
-  for(unsigned int cell = 0; cell < data_composite.n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < data_composite.n_cell_batches(); ++cell)
   {
     fe_eval_cg.reinit(cell);
     fe_eval_dg.reinit(cell);
 
-    fe_eval_dg.read_dof_values(vec__dg);
+    fe_eval_dg.read_dof_values(vec_dg);
 
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_cg.begin_dof_values()[i] = fe_eval_dg.begin_dof_values()[i];
@@ -106,10 +108,10 @@ MGTransferMFC<dim, Number, VectorType, components>::do_prolongate(VectorType &  
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
-  VectorType vec__dg;
-  data_composite.initialize_dof_vector(vec__dg, 1);
+  VectorType vec_dg;
+  data_composite.initialize_dof_vector(vec_dg, 1);
 
-  for(unsigned int cell = 0; cell < data_composite.n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < data_composite.n_cell_batches(); ++cell)
   {
     fe_eval_cg.reinit(cell);
     fe_eval_dg.reinit(cell);
@@ -119,9 +121,9 @@ MGTransferMFC<dim, Number, VectorType, components>::do_prolongate(VectorType &  
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_dg.begin_dof_values()[i] = fe_eval_cg.begin_dof_values()[i];
 
-    fe_eval_dg.distribute_local_to_global(vec__dg);
+    fe_eval_dg.distribute_local_to_global(vec_dg);
   }
-  dst.copy_locally_owned_data_from(vec__dg);
+  dst.copy_locally_owned_data_from(vec_dg);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -151,7 +153,7 @@ MGTransferMFC<dim, Number, VectorType, components>::interpolate(const unsigned i
     case 14: do_interpolate<14>(dst, src); break;
     case 15: do_interpolate<15>(dst, src); break;
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFC::interpolate not implemented for this degree!"));
+      AssertThrow(false, ExcMessage("MGTransferMFC::interpolate() not implemented for this degree!"));
       // clang-format on
   }
 }
@@ -181,7 +183,7 @@ MGTransferMFC<dim, Number, VectorType, components>::restrict_and_add(const unsig
     case 14: do_restrict_and_add<14>(dst, src); break;
     case 15: do_restrict_and_add<15>(dst, src); break;
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFC::restrict_and_add not implemented for this degree!"));
+      AssertThrow(false, ExcMessage("MGTransferMFC::restrict_and_add() not implemented for this degree!"));
       // clang-format on
   }
 }
@@ -211,7 +213,7 @@ MGTransferMFC<dim, Number, VectorType, components>::prolongate(const unsigned in
     case 14: do_prolongate<14>(dst, src); break;
     case 15: do_prolongate<15>(dst, src); break;
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFC::prolongate not implemented for this degree!"));
+      AssertThrow(false, ExcMessage("MGTransferMFC::prolongate() not implemented for this degree!"));
       // clang-format on
   }
 }

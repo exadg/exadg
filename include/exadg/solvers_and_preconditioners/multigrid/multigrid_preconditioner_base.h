@@ -14,10 +14,7 @@
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_h.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_mg_level_object.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.h>
 
 namespace ExaDG
 {

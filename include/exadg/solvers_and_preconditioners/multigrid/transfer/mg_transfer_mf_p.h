@@ -2,12 +2,7 @@
 #define MG_TRANSFER_MF_P
 
 // deal.II
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/fe/fe_dgq.h>
-#include <deal.II/fe/fe_tools.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/multigrid/mg_base.h>
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf.h>
@@ -24,15 +19,15 @@ public:
 
   MGTransferMFP();
 
-  MGTransferMFP(const MatrixFree<dim, value_type> * data_1_cm,
-                const MatrixFree<dim, value_type> * data_2_cm,
+  MGTransferMFP(const MatrixFree<dim, value_type> * matrixfree_1,
+                const MatrixFree<dim, value_type> * matrixfree_2,
                 int                                 degree_1,
                 int                                 degree_2,
                 int                                 dof_handler_index = 0);
 
   void
-  reinit(const MatrixFree<dim, value_type> * data_1_cm,
-         const MatrixFree<dim, value_type> * data_2_cm,
+  reinit(const MatrixFree<dim, value_type> * matrixfree_1,
+         const MatrixFree<dim, value_type> * matrixfree_2,
          int                                 degree_1,
          int                                 degree_2,
          int                                 dof_handler_index = 0);
@@ -49,11 +44,6 @@ public:
   prolongate(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
 
 private:
-  const MatrixFree<dim, value_type> *    data_1_cm;
-  const MatrixFree<dim, value_type> *    data_2_cm;
-  AlignedVector<VectorizedArray<Number>> prolongation_matrix_1d;
-  AlignedVector<VectorizedArray<Number>> interpolation_matrix_1d;
-
   template<int fe_degree_1, int fe_degree_2>
   void
   do_interpolate(VectorType & dst, const VectorType & src) const;
@@ -65,6 +55,11 @@ private:
   template<int fe_degree_1, int fe_degree_2>
   void
   do_prolongate(VectorType & dst, const VectorType & src) const;
+
+  const MatrixFree<dim, value_type> *    matrixfree_1;
+  const MatrixFree<dim, value_type> *    matrixfree_2;
+  AlignedVector<VectorizedArray<Number>> prolongation_matrix_1d;
+  AlignedVector<VectorizedArray<Number>> interpolation_matrix_1d;
 
   unsigned int degree_1;
   unsigned int degree_2;

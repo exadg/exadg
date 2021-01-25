@@ -183,7 +183,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
   double const cfl_p = cfl / pow(degree, exponent_fe_degree);
 
   // loop over cells of processor
-  for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
   {
     VectorizedArray<value_type> delta_t_cell =
       make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());
@@ -255,7 +255,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   double const cfl_p = cfl / pow(degree, exponent_fe_degree);
 
   // loop over cells of processor
-  for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
   {
     VectorizedArray<value_type> delta_t_cell =
       make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());

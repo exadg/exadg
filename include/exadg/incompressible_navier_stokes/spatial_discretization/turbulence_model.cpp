@@ -204,7 +204,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(Mapping<dim> const & mappin
   // loop over all cells
   for(unsigned int i = 0; i < n_cells; ++i)
   {
-    for(unsigned int v = 0; v < matrix_free->n_components_filled(i); ++v)
+    for(unsigned int v = 0; v < matrix_free->n_active_entries_per_cell_batch(i); ++v)
     {
       typename DoFHandler<dim>::cell_iterator cell =
         matrix_free->get_cell_iterator(i, v, dof_index);

@@ -18,8 +18,9 @@ public:
 
   template<typename MultigridNumber, typename MatrixFree, typename Constraints>
   void
-  reinit(MGLevelObject<std::shared_ptr<MatrixFree>> &        mg_data,
-         MGLevelObject<std::shared_ptr<Constraints>> &       mg_Constraints,
+  reinit(const Mapping<dim> &                                mapping,
+         MGLevelObject<std::shared_ptr<MatrixFree>> &        mg_matrixfree,
+         MGLevelObject<std::shared_ptr<Constraints>> &       mg_constraints,
          MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> & mg_constrained_dofs,
          const unsigned int                                  dof_handler_index = 0);
 

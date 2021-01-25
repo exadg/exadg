@@ -6,6 +6,7 @@
  */
 
 // deal.II
+#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
@@ -218,7 +219,8 @@ MultigridPreconditioner<dim, Number>::initialize_transfer_operators()
   Base::initialize_transfer_operators();
 
   if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
-    this->transfers_velocity.template reinit<MultigridNumber>(this->matrix_free_objects,
+    this->transfers_velocity.template reinit<MultigridNumber>(*this->mapping,
+                                                              this->matrix_free_objects,
                                                               this->constraints_velocity,
                                                               this->constrained_dofs_velocity,
                                                               1);
