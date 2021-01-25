@@ -97,31 +97,11 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
 
     if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
-#ifdef DEBUG
-      printf("  h-MG (l = %d, k = %d, dg = %d) -> (l = %d, k = %d, dg = %d)\n",
-             coarse_level.h_level(),
-             coarse_level.degree(),
-             coarse_level.is_dg(),
-             fine_level.h_level(),
-             fine_level.degree(),
-             fine_level.is_dg());
-#endif
-
       temp =
         mg_tranfers_temp[coarse_level.dof_handler_id()]; // get the previously h-transfer operator
     }
     else if(coarse_level.degree() != fine_level.degree()) // p-transfer
     {
-#ifdef DEBUG
-      printf("  p-MG (l = %d, k = %d, dg = %d) -> (l = %d, k = %d, dg = %d)\n",
-             coarse_level.h_level(),
-             coarse_level.degree(),
-             coarse_level.is_dg(),
-             fine_level.h_level(),
-             fine_level.degree(),
-             fine_level.is_dg());
-#endif
-
       if(n_components == 1)
         temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, 1>(&*mg_data[i],
                                                                           &*mg_data[i - 1],
@@ -139,16 +119,6 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
     }
     else if(coarse_level.is_dg() != fine_level.is_dg()) // c-transfer
     {
-#ifdef DEBUG
-      printf("  c-MG (l = %d, k = %d, dg = %d) -> (l = %d, k = %d, dg = %d)\n",
-             coarse_level.h_level(),
-             coarse_level.degree(),
-             coarse_level.is_dg(),
-             fine_level.h_level(),
-             fine_level.degree(),
-             fine_level.is_dg());
-#endif
-
       if(n_components == 1)
         temp.reset(new MGTransferMFC<dim, typename MatrixFree::value_type, VectorType, 1>(
           *mg_data[i],
