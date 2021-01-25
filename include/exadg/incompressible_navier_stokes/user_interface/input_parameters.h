@@ -593,11 +593,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // use symmetric saddle point matrix for coupled solver:
-  // continuity equation formulated as: - div(u) = 0 -> symmetric formulation
-  //                                      div(u) = 0 -> non-symmetric formulation
-  //  bool use_symmetric_saddle_point_matrix;
-
   // use a scaling of the continuity equation
   bool use_scaling_continuity;
 
