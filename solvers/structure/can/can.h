@@ -12,8 +12,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-namespace Can
-{
 using namespace dealii;
 
 template<int dim>
@@ -291,8 +289,16 @@ public:
   }
 };
 
-} // namespace Can
 } // namespace Structure
+
+template<int dim, typename Number>
+std::shared_ptr<Structure::ApplicationBase<dim, Number>>
+get_application(std::string input_file)
+{
+  return std::shared_ptr<Structure::ApplicationBase<dim, Number>>(
+    new Structure::Application<dim, Number>(input_file));
+}
+
 } // namespace ExaDG
 
 #endif

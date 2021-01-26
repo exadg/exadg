@@ -19,7 +19,6 @@
         "RepetitionsOuter": "3"
     },
     "Application": {
-       	"Name": "Manufactured"
     },
     "Output": {
         "OutputDirectory": "output/manufactured/",

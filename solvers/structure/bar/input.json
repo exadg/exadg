@@ -15,7 +15,6 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "Name": "Bar",
         "Length": "100.0",
         "Height": "10.0",
         "Width": "10.0",

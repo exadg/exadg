@@ -35,11 +35,17 @@ create_input_file(std::string const & input_file)
   HypercubeResolutionParameters resolution;
   resolution.add_parameters(prm);
 
-  // we have to assume a default dimension and default Number type
-  // for the automatic generation of a default input file
-  unsigned int const Dim = 2;
-  typedef double     Number;
-  get_application<Dim, Number>(input_file)->add_parameters(prm);
+  try
+  {
+    // we have to assume a default dimension and default Number type
+    // for the automatic generation of a default input file
+    unsigned int const Dim = 2;
+    typedef double     Number;
+    get_application<Dim, Number>(input_file)->add_parameters(prm);
+  }
+  catch(...)
+  {
+  }
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |

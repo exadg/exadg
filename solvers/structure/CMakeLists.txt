@@ -4,5 +4,8 @@
 
 PROJECT(structure)
 
-EXADG_PICKUP_EXE(solver.cpp structure solver)
-EXADG_PICKUP_EXE(throughput.cpp structure_throughput throughput)
+ADD_SUBDIRECTORY(bar)
+ADD_SUBDIRECTORY(beam)
+ADD_SUBDIRECTORY(can)
+ADD_SUBDIRECTORY(manufactured)
+ADD_SUBDIRECTORY(template)

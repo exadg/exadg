@@ -15,7 +15,6 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-        "Name": "Beam",
         "Length": "1100.0",
         "Height": "100.0",
         "Width": "20.0",
