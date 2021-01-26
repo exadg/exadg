@@ -253,6 +253,10 @@ create_cylinder(double       radius1,
     point_out = (1 - beta) * Point<3>(offset + transform_top * point_out_alpha) +
                 beta * Point<3>(offset + transform_bottom * point_out_beta);
 
+    /************************************************************************
+    * Fill skeleton vector with corner nodes
+    ************************************************************************/
+
     if((beta == 0.0 || beta == 1.0) && (std::abs(std::abs(point_in[0]) - 1.0) < 1e-8 ||
                                         std::abs(std::abs(point_in[1]) - 1.0) < 1e-8))
     {
@@ -536,6 +540,21 @@ process_node(Node *                                   node,
       left_right_mixed_up = true;
     }
   }
+  else if(node->has_child()) // left child filled
+  {
+    auto normal_parent_left  = -node->get_normal_vector_parent_left();
+
+    // tangents of vectors
+    auto tangent_parent      = -node->get_tangential_vector();
+    auto tangent_left_child  = node->left_child->get_tangential_vector();
+
+    normal_rotation_left_child = normal_parent_left;
+    normal_rotation_parent = normal_parent_left;
+
+    degree_parent_left_child  = Node::get_degree(tangent_parent, tangent_left_child) / 2.0;
+    degree_parent_right_child = -degree_parent_left_child;
+    degree_left_child_right_child = degree_parent_left_child;
+  }
 
   dealii::Tensor<2, 3> transform_top;
   dealii::Tensor<2, 3> transform_bottom;
@@ -555,7 +574,7 @@ process_node(Node *                                   node,
 
   // compute bottom rotation matrix
 
-  if(node->has_children())
+  if(node->has_children() or node->has_child())
   {
     auto dst_n_bottom = normal_rotation_parent;
 
@@ -783,6 +802,27 @@ process_node(Node *                                   node,
                    degree_separation_children,
                    degree_right_child_intersection,
                    normal_rotation_right_child,
+                   left_right_mixed_up);
+    }
+    catch(const std::exception & e)
+    {
+      std::cout << e.what();
+    }
+  }
+  else if(node->has_child())
+  {
+    // left child (only child):
+    try
+    {
+      process_node(node->get_left_child(),
+                   cell_data_3d_global,
+                   vertices_3d_global,
+                   node->left_child->id,
+                   os,
+                   degree_1,
+                   -degree_1,
+                   degree_left_child_intersection,
+                   normal_rotation_left_child,
                    left_right_mixed_up);
     }
     catch(const std::exception & e)
