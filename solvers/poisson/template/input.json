@@ -1,0 +1,23 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "Resolution": {
+        "RunType": "RefineHAndP",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/template/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

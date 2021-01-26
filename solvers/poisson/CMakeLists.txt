@@ -4,7 +4,12 @@
 
 PROJECT(poisson)
 
-EXADG_PICKUP_EXE(solver.cpp poisson solver)
-EXADG_PICKUP_EXE(throughput.cpp poisson_throughput throughput)
-
-ADD_SUBDIRECTORY(tests)
+ADD_SUBDIRECTORY(gaussian)
+ADD_SUBDIRECTORY(lung)
+ADD_SUBDIRECTORY(lung_tubus)
+ADD_SUBDIRECTORY(nozzle)
+ADD_SUBDIRECTORY(sine)
+ADD_SUBDIRECTORY(slit)
+ADD_SUBDIRECTORY(template)
+ADD_SUBDIRECTORY(throughput)
+ADD_SUBDIRECTORY(torus)

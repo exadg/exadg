@@ -1,0 +1,23 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "Resolution": {
+        "RunType": "RefineHAndP",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/nozzle/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

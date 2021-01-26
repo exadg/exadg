@@ -34,10 +34,6 @@ template<int dim, typename Number>
 std::shared_ptr<Poisson::ApplicationBase<dim, Number>>
 get_application(std::string input_file);
 
-template<int dim, typename Number>
-void
-add_parameters_application(dealii::ParameterHandler & prm, std::string const & input_file);
-
 void
 create_input_file(std::string const & input_file)
 {
@@ -56,7 +52,7 @@ create_input_file(std::string const & input_file)
   // for the automatic generation of a default input file
   unsigned int const Dim = 2;
   typedef double     Number;
-  add_parameters_application<Dim, Number>(prm, input_file);
+  get_application<Dim, Number>(input_file)->add_parameters(prm);
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
