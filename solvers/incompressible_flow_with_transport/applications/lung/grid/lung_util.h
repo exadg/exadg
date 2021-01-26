@@ -320,6 +320,15 @@ public:
     return left_child != nullptr && right_child != nullptr;
   }
 
+  [[nodiscard]] bool
+  has_child() const
+  {
+    if(left_child == nullptr and right_child != nullptr)
+      AssertThrow(false, ExcMessage("single child is only allowed as left child"));
+
+    return (left_child != nullptr and right_child == nullptr);
+  }
+
   [[nodiscard]] Point<3>
   get_source() const
   {

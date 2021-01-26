@@ -1102,7 +1102,7 @@ public:
     AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
     std::vector<std::string> files;
-    files.push_back(directory_lung_files + "airways_complete");
+    files.push_back(directory_lung_files + "airways");
 
     // call to setup root
     auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
@@ -1144,10 +1144,6 @@ public:
     {
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
-
-    // check if all outlet ids are set correctly
-    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, max_resolved_generation),
-                ExcMessage("Number of outlets has to be 2^{max_resolved_generation}."));
   }
 
   void
