@@ -170,7 +170,7 @@ protected:
       const Tensor<1, dim> residual = original - data.first;
       error_norm_sqr                = residual.norm_square();
       const double det              = determinant(data.second);
-      if(std::abs(det) < 1e-10)
+      if(det == 0.)
         return Point<dim>(-1, -1, -1);
       else
       {
@@ -181,7 +181,7 @@ protected:
           Point<dim> tentative = result + alpha * update;
           data                 = transform_to_prism(section, tentative);
           if((original - data.first).norm_square() <= error_norm_sqr &&
-             std::abs(determinant(data.second)) > 1e-10)
+             determinant(data.second) != 0.)
           {
             result = tentative;
             break;
