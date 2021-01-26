@@ -23,10 +23,6 @@ template<int dim, typename Number>
 std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>>
 get_application(std::string input_file);
 
-template<int dim, typename Number>
-void
-add_parameters_application(dealii::ParameterHandler & prm, std::string const & input_file);
-
 struct ResolutionParameters
 {
   ResolutionParameters()
@@ -75,12 +71,17 @@ create_input_file(std::string const & input_file)
   ResolutionParameters resolution;
   resolution.add_parameters(prm);
 
-  // we have to assume a default dimension and default Number type
-  // for the automatic generation of a default input file
-  unsigned int const Dim = 2;
-  typedef double     Number;
-
-  add_parameters_application<Dim, Number>(prm, input_file);
+  try
+  {
+    // we have to assume a default dimension and default Number type
+    // for the automatic generation of a default input file
+    unsigned int const Dim = 2;
+    typedef double     Number;
+    get_application<Dim, Number>(input_file)->add_parameters(prm);
+  }
+  catch(...)
+  {
+  }
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
