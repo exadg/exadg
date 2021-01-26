@@ -9,11 +9,10 @@
         "RefineSpace": "4"
     },
     "Application": {
-       	"Name": "CavityNaturalConvection"
     },
     "Output": {
-        "OutputDirectory": "output/cavity_natural_convection/",
-        "OutputName": "l4_k3",
+        "OutputDirectory": "output/mantle_convection/",
+        "OutputName": "test",
         "WriteOutput": "false"
     }
 }

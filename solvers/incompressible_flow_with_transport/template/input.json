@@ -9,7 +9,6 @@
         "RefineSpace": "2"
     },
     "Application": {
-       	"Name": "Template"
     },
     "Output": {
         "OutputDirectory": "output/template/",

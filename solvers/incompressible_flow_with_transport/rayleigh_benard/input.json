@@ -9,7 +9,6 @@
         "RefineSpace": "4"
     },
     "Application": {
-       	"Name": "RayleighBenard"
     },
     "Output": {
         "OutputDirectory": "output/rayleigh_benard/",

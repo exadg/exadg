@@ -15,7 +15,6 @@
         "RefineTimeMax": "0"
     },
     "Application": {
-      "Name": "Lung",
       "DirectoryLungFiles": "solvers/incompressible_flow_with_transport/applications/lung/grid/patients/baby/output/",
       "MaxGeneration": "5"
     },

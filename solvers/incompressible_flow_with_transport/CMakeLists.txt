@@ -4,4 +4,10 @@
 
 PROJECT(incompressible_flow_with_transport)
 
-EXADG_PICKUP_EXE(solver.cpp incompressible_flow_with_transport solver)
+ADD_SUBDIRECTORY(cavity)
+ADD_SUBDIRECTORY(cavity_natural_convection)
+ADD_SUBDIRECTORY(lung)
+ADD_SUBDIRECTORY(mantle_convection)
+ADD_SUBDIRECTORY(rayleigh_benard)
+ADD_SUBDIRECTORY(rising_bubble)
+ADD_SUBDIRECTORY(template)

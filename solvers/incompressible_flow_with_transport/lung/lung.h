@@ -10,15 +10,19 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
+#include <exadg/convection_diffusion/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h>
+#include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
 #include <exadg/postprocessor/mean_scalar_calculation.h>
 
 // lung grid generator
 #include "grid/lung_environment.h"
 #include "grid/lung_grid.h"
 
-namespace ExaDG::FTI::Lung
+namespace ExaDG
+{
+namespace FTI
 {
 using namespace dealii;
 
@@ -828,10 +832,10 @@ private:
 };
 
 template<int dim, typename Number>
-class Application : public FTI::ApplicationBase<dim, Number>
+class Application : public ApplicationBase<dim, Number>
 {
 public:
-  explicit Application(std::string input_file) : FTI::ApplicationBase<dim, Number>(input_file)
+  explicit Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -1285,6 +1289,7 @@ public:
   }
 };
 
-} // namespace ExaDG::FTI::Lung
+}
+} // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_ */

@@ -12,8 +12,6 @@ namespace ExaDG
 {
 namespace FTI
 {
-namespace RayleighBenard
-{
 using namespace dealii;
 
 template<int dim>
@@ -453,8 +451,16 @@ public:
   }
 };
 
-} // namespace RayleighBenard
 } // namespace FTI
+
+template<int dim, typename Number>
+std::shared_ptr<FTI::ApplicationBase<dim, Number>>
+get_application(std::string input_file)
+{
+  return std::shared_ptr<FTI::ApplicationBase<dim, Number>>(
+    new FTI::Application<dim, Number>(input_file));
+}
+
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_RAYLEIGH_BENARD_H_ */

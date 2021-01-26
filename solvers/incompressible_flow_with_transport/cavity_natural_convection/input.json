@@ -6,14 +6,13 @@
     },
     "SpatialResolution": {
         "Degree": "3",
-        "RefineSpace": "5"
+        "RefineSpace": "4"
     },
     "Application": {
-       	"Name": "RisingBubble"
     },
     "Output": {
-        "OutputDirectory": "output/rising_bubble/",
-        "OutputName": "test",
+        "OutputDirectory": "output/cavity_natural_convection/",
+        "OutputName": "l4_k3",
         "WriteOutput": "false"
     }
 }

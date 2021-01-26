@@ -9,7 +9,6 @@
       "RefineSpace": "0"
     },
     "Application": {
-      "Name": "Lung",
       "DirectoryLungFiles": "/home/bergbauer/code/exadg/solvers/incompressible_flow_with_transport/applications/lung/grid/patients/new_format/08gen/",
       "MaxGeneration": "5"
     },

@@ -8,8 +8,8 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_LUNG_H_
 #define APPLICATIONS_POISSON_TEST_CASES_LUNG_H_
 
-#include "../../incompressible_flow_with_transport/applications/lung/grid/lung_environment.h"
-#include "../../incompressible_flow_with_transport/applications/lung/grid/lung_grid.h"
+#include "../../incompressible_flow_with_transport/lung/grid/lung_environment.h"
+#include "../../incompressible_flow_with_transport/lung/grid/lung_grid.h"
 
 namespace ExaDG
 {

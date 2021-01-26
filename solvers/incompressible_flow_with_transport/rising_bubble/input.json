@@ -6,14 +6,13 @@
     },
     "SpatialResolution": {
         "Degree": "3",
-        "RefineSpace": "4"
+        "RefineSpace": "5"
     },
     "Application": {
-       	"Name": "Cavity"
     },
     "Output": {
-        "OutputDirectory": "output/cavity/",
-        "OutputName": "l4_k3",
+        "OutputDirectory": "output/rising_bubble/",
+        "OutputName": "test",
         "WriteOutput": "false"
     }
 }
