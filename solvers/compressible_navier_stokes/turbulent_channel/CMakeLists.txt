@@ -1,0 +1,7 @@
+##
+#  CMake script
+##
+
+PROJECT(compressible_turbulent_channel)
+
+EXADG_PICKUP_EXE(solver.cpp compressible_turbulent_channel solver)

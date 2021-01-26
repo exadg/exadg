@@ -4,5 +4,12 @@
 
 PROJECT(compressible_navier_stokes)
 
-EXADG_PICKUP_EXE(solver.cpp compressible_navier_stokes solver)
-EXADG_PICKUP_EXE(throughput.cpp compressible_navier_stokes_throughput throughput)
+ADD_SUBDIRECTORY(couette)
+ADD_SUBDIRECTORY(euler_vortex)
+ADD_SUBDIRECTORY(flow_past_cylinder)
+ADD_SUBDIRECTORY(manufactured_solution)
+ADD_SUBDIRECTORY(poiseuille)
+ADD_SUBDIRECTORY(shear_flow)
+ADD_SUBDIRECTORY(taylor_green)
+ADD_SUBDIRECTORY(template)
+ADD_SUBDIRECTORY(turbulent_channel)

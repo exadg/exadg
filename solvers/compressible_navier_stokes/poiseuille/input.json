@@ -1,0 +1,24 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "5",
+        "DegreeMax": "5",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/poiseuille/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}
