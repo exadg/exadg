@@ -4,5 +4,11 @@
 
 PROJECT(convection_diffusion)
 
-EXADG_PICKUP_EXE(solver.cpp convection_diffusion solver)
-EXADG_PICKUP_EXE(throughput.cpp convection_diffusion_throughput throughput)
+ADD_SUBDIRECTORY(boundary_layer)
+ADD_SUBDIRECTORY(const_rhs)
+ADD_SUBDIRECTORY(decaying_hill)
+ADD_SUBDIRECTORY(deforming_hill)
+ADD_SUBDIRECTORY(throughput)
+ADD_SUBDIRECTORY(rotating_hill)
+ADD_SUBDIRECTORY(sine_wave)
+ADD_SUBDIRECTORY(template)
