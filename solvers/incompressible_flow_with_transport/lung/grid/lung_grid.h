@@ -596,7 +596,9 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
         GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
       },
       tria.get_communicator(),
-      1 /*group size*/);
+      1 /*group size*/,
+      Triangulation<3>::none,
+      TriangulationDescription::construct_multigrid_hierarchy);
   tria.create_triangulation(construction_data);
   mesh = std::make_shared<MeshByDeformation<3>>(tria, 5, deform);
 
