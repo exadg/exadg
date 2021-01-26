@@ -10,8 +10,6 @@ namespace ExaDG
 {
 namespace FSI
 {
-namespace Template
-{
 using namespace dealii;
 
 //  Example of a user defined function
@@ -216,8 +214,16 @@ public:
   }
 };
 
-} // namespace Template
 } // namespace FSI
+
+template<int dim, typename Number>
+std::shared_ptr<FSI::ApplicationBase<dim, Number>>
+get_application(std::string input_file)
+{
+  return std::shared_ptr<FSI::ApplicationBase<dim, Number>>(
+    new FSI::Application<dim, Number>(input_file));
+}
+
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_FSI_TEMPLATE_H_ */

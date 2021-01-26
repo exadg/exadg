@@ -23,10 +23,6 @@ template<int dim, typename Number>
 std::shared_ptr<FSI::ApplicationBase<dim, Number>>
 get_application(std::string input_file);
 
-template<int dim, typename Number>
-void
-add_parameters_application(dealii::ParameterHandler & prm, std::string const & input_file);
-
 struct ResolutionParameters
 {
   ResolutionParameters()
@@ -93,7 +89,13 @@ create_input_file(std::string const & input_file)
   FSI::PartitionedData fsi_data;
   FSI::Driver<Dim, Number>::add_parameters(prm, fsi_data);
 
-  add_parameters_application<Dim, Number>(prm, input_file);
+  try
+  {
+    get_application<Dim, Number>(input_file)->add_parameters(prm);
+  }
+  catch(...)
+  {
+  }
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |

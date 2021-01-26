@@ -12,16 +12,17 @@
     },
     "FSI" : {
         "Method": "IQN-ILS",
-        "AbsTol": "1.e-12",
+        "AbsTol": "1.e-9",
         "RelTol": "1.e-3",
-        "OmegaInit": "0.1",
-        "PartitionedIterMax": "100"
+        "OmegaInit": "0.3",
+        "PartitionedIterMax": "100",
+        "ReusedTimeSteps": "10",
+        "GeometricTolerance": "1.e-8"
     },
     "Application": {
-       	"Name": "BendingWall"
     },
     "Output": {
-        "OutputDirectory": "output/bending_wall/",
+        "OutputDirectory": "output/pressure_wave/",
         "OutputName": "fsi_test",
         "WriteOutput": "false"
     }

@@ -4,4 +4,7 @@
 
 PROJECT(fluid_structure_interaction)
 
-EXADG_PICKUP_EXE(solver.cpp fluid_structure_interaction solver)
+ADD_SUBDIRECTORY(bending_wall)
+ADD_SUBDIRECTORY(cylinder_with_flag)
+ADD_SUBDIRECTORY(pressure_wave)
+ADD_SUBDIRECTORY(template)

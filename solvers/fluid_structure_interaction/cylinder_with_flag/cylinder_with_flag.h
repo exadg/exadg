@@ -14,8 +14,6 @@ namespace ExaDG
 {
 namespace FSI
 {
-namespace CylinderWithFlag
-{
 using namespace dealii;
 
 // set problem specific parameters
@@ -1028,8 +1026,16 @@ public:
   }
 };
 
-} // namespace CylinderWithFlag
 } // namespace FSI
+
+template<int dim, typename Number>
+std::shared_ptr<FSI::ApplicationBase<dim, Number>>
+get_application(std::string input_file)
+{
+  return std::shared_ptr<FSI::ApplicationBase<dim, Number>>(
+    new FSI::Application<dim, Number>(input_file));
+}
+
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_FSI_CYLINDER_WITH_FLAG_H_ */
