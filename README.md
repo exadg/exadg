@@ -200,11 +200,13 @@ Download **fftw** from homepage http://www.fftw.org/download.html and copy to fo
 wget http://fftw.org/fftw-3.3.7.tar.gz
 tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
-./configure --enable-mpi --prefix=$WORKING_DIRECTORY/sw/fftw-3.3.7-install
+./configure --enable-mpi --enable-shared --enable-static --prefix=$WORKING_DIRECTORY/sw/fftw-3.3.7-install
 make
 make install
 cd ../fftw-3.3.7-install/lib/
 ```
+Note: During configuration, vectorization (AVX) can be enabled, e.g. by `--enable-avx512`.
+
 Copy the script *combine_fftw.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
 
 ```bash
