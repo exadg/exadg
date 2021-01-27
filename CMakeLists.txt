@@ -216,7 +216,7 @@ enable_testing()
 
 ADD_SUBDIRECTORY(cmake)
 
-ADD_SUBDIRECTORY(solvers)
+ADD_SUBDIRECTORY(applications)
 ADD_SUBDIRECTORY(prototypes)
 ADD_SUBDIRECTORY(tests)
 
