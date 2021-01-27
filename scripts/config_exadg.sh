@@ -1,11 +1,15 @@
-rm -rf CMakeFiles/ CMakeCache.txt include/exadg/configuration/config.h
+#rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
 
-# issue the build - must usually not be modified
+FFTW_INSTALL=$WORKING_DIRECTORY/path/to/fftw-install
+LIKWID_INSTALL=$WORKING_DIRECTORY/path/to/likwid-install
+
 cmake \
+    -D DEGREE_MAX=15 \
     -D DEAL_II_DIR="$WORKING_DIRECTORY/sw/dealii-build" \
     -D USE_FFTW=ON \
-    -D FFTW_INC="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/include" \
-    -D FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/combined" \
-    -D LIKWID_LIB="/path_to_likwid-install/lib" \
-    -D LIKWID_INCLUDE="/path_to_likwid-install/include" \
+    -D FFTW_LIB="$FFTW_INSTALL/lib" \
+    -D FFTW_INCLUDE="$FFTW_INSTALL/include" \
+    -D LIKWID_LIB="$LIKWID_INSTALL/lib" \
+    -D LIKWID_INCLUDE="$LIKWID_INSTALL/include" \
+    -D BUILD_SHARED_LIBS=ON \
     ../
