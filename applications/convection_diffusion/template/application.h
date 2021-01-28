@@ -101,8 +101,7 @@ template<int dim, typename Number>
 std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>
 get_application(std::string input_file)
 {
-  return std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>(
-    new ConvDiff::Application<dim, Number>(input_file));
+  return std::make_shared<ConvDiff::Application<dim, Number>>(input_file);
 }
 
 } // namespace ExaDG

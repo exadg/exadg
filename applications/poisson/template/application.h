@@ -104,8 +104,7 @@ template<int dim, typename Number>
 std::shared_ptr<Poisson::ApplicationBase<dim, Number>>
 get_application(std::string input_file)
 {
-  return std::shared_ptr<Poisson::ApplicationBase<dim, Number>>(
-    new Poisson::Application<dim, Number>(input_file));
+  return std::make_shared<Poisson::Application<dim, Number>>(input_file);
 }
 
 } // namespace ExaDG
