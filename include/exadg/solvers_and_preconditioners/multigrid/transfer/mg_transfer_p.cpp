@@ -1,9 +1,12 @@
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_tools.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_p.h>
 
 namespace ExaDG
 {
@@ -21,6 +24,7 @@ convert_to_eo(AlignedVector<VectorizedArray<Number>> & shape_values,
   const unsigned int stride = (n_q_points_1d + 1) / 2;
   shape_values_eo.resize((fe_degree + 1) * stride);
   for(unsigned int i = 0; i < (fe_degree + 1) / 2; ++i)
+  {
     for(unsigned int q = 0; q < stride; ++q)
     {
       shape_values_eo[i * stride + q] =
@@ -30,12 +34,15 @@ convert_to_eo(AlignedVector<VectorizedArray<Number>> & shape_values,
         0.5 * (shape_values[i * n_q_points_1d + q] -
                shape_values[i * n_q_points_1d + n_q_points_1d - 1 - q]);
     }
+  }
   if(fe_degree % 2 == 0)
+  {
     for(unsigned int q = 0; q < stride; ++q)
     {
       shape_values_eo[fe_degree / 2 * stride + q] =
         shape_values[(fe_degree / 2) * n_q_points_1d + q];
     }
+  }
 }
 
 template<typename Number>
@@ -54,7 +61,9 @@ fill_shape_values(AlignedVector<VectorizedArray<Number>> & shape_values,
     matrix.copy_transposed(matrix_temp);
   }
   else
+  {
     FETools::get_projection_matrix(FE_DGQ<1>(fe_degree_src), FE_DGQ<1>(fe_degree_dst), matrix);
+  }
 
   // ... and convert to linearized format
   AlignedVector<VectorizedArray<Number>> shape_values_temp;
@@ -75,12 +84,14 @@ loop_over_face_points(Number values, Number2 w)
 
   // collapsed iteration
   for(unsigned int i = 0; i < Utilities::pow(points, dim - d - 1); i++)
+  {
     for(unsigned int j = 0; j < Utilities::pow(points, d); j++)
     {
       unsigned int index = (i * Utilities::pow(points, d + 1) +
                             (s == 0 ? 0 : (points - 1)) * Utilities::pow(points, d) + j);
       values[index]      = values[index] * w;
     }
+  }
 }
 
 template<int dim, int fe_degree_1, typename Number, typename MatrixFree, typename FEEval>
@@ -93,7 +104,7 @@ weight_residuum(MatrixFree &                                   data_1,
 #if false
   (void) weights;
   const int          POINTS         = fe_degree_1 + 1;
-  const unsigned int n_filled_lanes = data_1.n_components_filled(cell);
+  const unsigned int n_filled_lanes = data_1.n_active_entries_per_cell_batch(cell);
   for(int surface = 0; surface < 2 * dim; surface++)
   {
     VectorizedArray<Number> weights;
@@ -150,17 +161,17 @@ weight_residuum(MatrixFree &                                   data_1,
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
-MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
-                                                                   const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
+                                                                 const VectorType & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
                                                                                quad_index);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*matrixfree_2,
                                                                                dof_handler_index,
                                                                                quad_index);
 
-  for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
   {
     fe_eval1.reinit(cell);
     fe_eval2.reinit(cell);
@@ -190,18 +201,17 @@ MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType & 
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
-MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
-  VectorType &       dst,
-  const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType &       dst,
+                                                                      const VectorType & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
                                                                                quad_index);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*matrixfree_2,
                                                                                dof_handler_index,
                                                                                quad_index);
 
-  for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
   {
     fe_eval1.reinit(cell);
     fe_eval2.reinit(cell);
@@ -209,7 +219,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
     fe_eval1.read_dof_values(src);
 
     if(!is_dg)
-      weight_residuum<dim, fe_degree_1, Number>(*data_1_cm, fe_eval1, cell, this->weights);
+      weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
 
     internal::FEEvaluationImplBasisChange<
       internal::evaluate_evenodd,
@@ -234,17 +244,17 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
-MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
-                                                                  const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
+                                                                const VectorType & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
                                                                                quad_index);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*matrixfree_2,
                                                                                dof_handler_index,
                                                                                quad_index);
 
-  for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+  for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
   {
     fe_eval1.reinit(cell);
     fe_eval2.reinit(cell);
@@ -269,16 +279,16 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
     }
     else
     {
-      weight_residuum<dim, fe_degree_1, Number>(*data_1_cm, fe_eval1, cell, this->weights);
+      weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
       fe_eval1.distribute_local_to_global(dst);
     }
   }
 }
 
 template<int dim, typename Number, typename VectorType, int components>
-MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP()
-  : data_1_cm(nullptr),
-    data_2_cm(nullptr),
+MGTransferP<dim, Number, VectorType, components>::MGTransferP()
+  : matrixfree_1(nullptr),
+    matrixfree_2(nullptr),
     degree_1(0),
     degree_2(0),
     dof_handler_index(0),
@@ -288,27 +298,27 @@ MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP()
 }
 
 template<int dim, typename Number, typename VectorType, int components>
-MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP(
-  const MatrixFree<dim, value_type> * data_1_cm,
-  const MatrixFree<dim, value_type> * data_2_cm,
+MGTransferP<dim, Number, VectorType, components>::MGTransferP(
+  const MatrixFree<dim, value_type> * matrixfree_1,
+  const MatrixFree<dim, value_type> * matrixfree_2,
   int                                 degree_1,
   int                                 degree_2,
   int                                 dof_handler_index)
 {
-  reinit(data_1_cm, data_2_cm, degree_1, degree_2, dof_handler_index);
+  reinit(matrixfree_1, matrixfree_2, degree_1, degree_2, dof_handler_index);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::reinit(
-  const MatrixFree<dim, value_type> * data_1_cm,
-  const MatrixFree<dim, value_type> * data_2_cm,
+MGTransferP<dim, Number, VectorType, components>::reinit(
+  const MatrixFree<dim, value_type> * matrixfree_1,
+  const MatrixFree<dim, value_type> * matrixfree_2,
   int                                 degree_1,
   int                                 degree_2,
   int                                 dof_handler_index)
 {
-  this->data_1_cm = data_1_cm;
-  this->data_2_cm = data_2_cm;
+  this->matrixfree_1 = matrixfree_1;
+  this->matrixfree_2 = matrixfree_2;
 
   this->degree_1 = degree_1;
   this->degree_2 = degree_2;
@@ -319,10 +329,11 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
   const unsigned int n_q_points_1d = degree_1 + 1;
   const unsigned int n_q_points    = std::pow(n_q_points_1d, dim);
 
-  for(unsigned int quad_index = 0; quad_index < data_1_cm->get_mapping_info().cell_data.size();
+  for(unsigned int quad_index = 0; quad_index < matrixfree_1->get_mapping_info().cell_data.size();
       quad_index++)
   {
-    if(data_1_cm->get_mapping_info().cell_data[quad_index].descriptor[0].n_q_points == n_q_points)
+    if(matrixfree_1->get_mapping_info().cell_data[quad_index].descriptor[0].n_q_points ==
+       n_q_points)
     {
       this->quad_index = quad_index;
       break;
@@ -332,7 +343,7 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
   AssertThrow(this->quad_index != numbers::invalid_unsigned_int,
               ExcMessage("You need for p-transfer quadrature of type k+1"));
 
-  this->is_dg = data_1_cm->get_dof_handler().get_fe().dofs_per_vertex == 0;
+  this->is_dg = matrixfree_1->get_dof_handler().get_fe().dofs_per_vertex == 0;
 
   fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1, false);
   fill_shape_values(interpolation_matrix_1d, this->degree_2, this->degree_1, true);
@@ -341,55 +352,59 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
   {
     LinearAlgebra::distributed::Vector<Number> vec;
     IndexSet                                   relevant_dofs;
-    DoFTools::extract_locally_relevant_level_dofs(data_1_cm->get_dof_handler(dof_handler_index),
-                                                  data_1_cm->get_mg_level(),
+    DoFTools::extract_locally_relevant_level_dofs(matrixfree_1->get_dof_handler(dof_handler_index),
+                                                  matrixfree_1->get_mg_level(),
                                                   relevant_dofs);
-    vec.reinit(data_1_cm->get_dof_handler(dof_handler_index)
-                 .locally_owned_mg_dofs(data_1_cm->get_mg_level()),
+    vec.reinit(matrixfree_1->get_dof_handler(dof_handler_index)
+                 .locally_owned_mg_dofs(matrixfree_1->get_mg_level()),
                relevant_dofs,
-               data_1_cm->get_vector_partitioner()->get_mpi_communicator());
+               matrixfree_1->get_vector_partitioner()->get_mpi_communicator());
 
     std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1 + 1, dim) *
                                                      components);
-    for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
-      for(unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
+    for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
+    {
+      for(unsigned int v = 0; v < matrixfree_1->n_active_entries_per_cell_batch(cell); v++)
       {
-        auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
+        auto cell_v = matrixfree_1->get_cell_iterator(cell, v, dof_handler_index);
         cell_v->get_mg_dof_indices(dof_indices);
         for(auto i : dof_indices)
           vec[i]++;
       }
+    }
 
     vec.compress(VectorOperation::add);
     vec.update_ghost_values();
 
-    weights.resize(data_1_cm->n_macro_cells() * Utilities::pow(this->degree_1 + 1, dim) *
+    weights.resize(matrixfree_1->n_cell_batches() * Utilities::pow(this->degree_1 + 1, dim) *
                    components);
 
-    for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
-      for(unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
+    for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
+    {
+      for(unsigned int v = 0; v < matrixfree_1->n_active_entries_per_cell_batch(cell); v++)
       {
-        auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
+        auto cell_v = matrixfree_1->get_cell_iterator(cell, v, dof_handler_index);
         cell_v->get_mg_dof_indices(dof_indices);
 
         for(unsigned int i = 0; i < Utilities::pow(this->degree_1 + 1, dim) * components; i++)
           weights[cell * Utilities::pow(this->degree_1 + 1, dim) * components + i][v] =
-            1.0 / vec[dof_indices[data_1_cm->get_shape_info(dof_handler_index)
+            1.0 / vec[dof_indices[matrixfree_1->get_shape_info(dof_handler_index)
                                     .lexicographic_numbering[i]]];
       }
+    }
   }
 }
 
 template<int dim, typename Number, typename VectorType, int components>
-MGTransferMFP<dim, Number, VectorType, components>::~MGTransferMFP()
+MGTransferP<dim, Number, VectorType, components>::~MGTransferP()
 {
 }
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::interpolate(const unsigned int level,
-                                                                VectorType &       dst,
-                                                                const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::interpolate(const unsigned int level,
+                                                              VectorType &       dst,
+                                                              const VectorType & src) const
 {
   (void)level;
   if(!this->is_dg) // only if CG
@@ -453,16 +468,16 @@ MGTransferMFP<dim, Number, VectorType, components>::interpolate(const unsigned i
     case 1514: do_interpolate<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
+      AssertThrow(false, ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
   }
   // clang-format on
 }
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
-                                                                     VectorType &       dst,
-                                                                     const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
+                                                                   VectorType &       dst,
+                                                                   const VectorType & src) const
 {
   if(!this->is_dg) // only if CG
     src.update_ghost_values();
@@ -525,7 +540,7 @@ MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsig
     case 1514: do_restrict_and_add<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
+      AssertThrow(false, ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
   }
   // clang-format on
 
@@ -535,9 +550,9 @@ MGTransferMFP<dim, Number, VectorType, components>::restrict_and_add(const unsig
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
-                                                               VectorType &       dst,
-                                                               const VectorType & src) const
+MGTransferP<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
+                                                             VectorType &       dst,
+                                                             const VectorType & src) const
 {
   if(!this->is_dg) // only if CG
   {
@@ -603,7 +618,7 @@ MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned in
     case 1514: do_prolongate<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferMFP::prolongate not implemented for this degree combination!"));
+      AssertThrow(false, ExcMessage("MGTransferP::prolongate() not implemented for this degree combination!"));
   }
   // clang-format on
 
@@ -615,16 +630,16 @@ MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned in
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
 typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-template class MGTransferMFP<2, float, VectorTypeFloat, 1>;
-template class MGTransferMFP<2, float, VectorTypeFloat, 2>;
+template class MGTransferP<2, float, VectorTypeFloat, 1>;
+template class MGTransferP<2, float, VectorTypeFloat, 2>;
 
-template class MGTransferMFP<3, float, VectorTypeFloat, 1>;
-template class MGTransferMFP<3, float, VectorTypeFloat, 3>;
+template class MGTransferP<3, float, VectorTypeFloat, 1>;
+template class MGTransferP<3, float, VectorTypeFloat, 3>;
 
-template class MGTransferMFP<2, double, VectorTypeDouble, 1>;
-template class MGTransferMFP<2, double, VectorTypeDouble, 2>;
+template class MGTransferP<2, double, VectorTypeDouble, 1>;
+template class MGTransferP<2, double, VectorTypeDouble, 2>;
 
-template class MGTransferMFP<3, double, VectorTypeDouble, 1>;
-template class MGTransferMFP<3, double, VectorTypeDouble, 3>;
+template class MGTransferP<3, double, VectorTypeDouble, 1>;
+template class MGTransferP<3, double, VectorTypeDouble, 3>;
 
 } // namespace ExaDG

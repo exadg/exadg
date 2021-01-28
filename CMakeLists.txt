@@ -51,8 +51,10 @@ SET( TARGET_SRC
      include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_p.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_c.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_h.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.cpp
      include/exadg/postprocessor/error_calculation.cpp
      include/exadg/postprocessor/mean_scalar_calculation.cpp
      include/exadg/postprocessor/lift_and_drag_calculation.cpp

@@ -4,9 +4,13 @@
 namespace ExaDG
 {
 template<typename VectorType>
-class MGTransferMF
+class MGTransfer
 {
 public:
+  virtual ~MGTransfer()
+  {
+  }
+
   virtual void
   interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
 

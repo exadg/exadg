@@ -83,7 +83,7 @@ public:
   is_empty_locally() const
   {
     MatrixFree<dim, Number> const & matrix_free = get_matrix_free();
-    return (matrix_free.n_macro_cells() == 0);
+    return (matrix_free.n_cell_batches() == 0);
   }
 
   virtual AffineConstraints<double> const &

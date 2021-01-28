@@ -6,6 +6,7 @@
  */
 
 // deal.II
+#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
 
 // ExaDG
