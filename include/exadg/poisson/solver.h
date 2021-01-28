@@ -24,10 +24,6 @@ template<int dim, typename Number>
 std::shared_ptr<Poisson::ApplicationBase<dim, Number>>
 get_application(std::string input_file);
 
-template<int dim, typename Number>
-void
-add_parameters_application(dealii::ParameterHandler & prm, std::string const & input_file);
-
 void
 create_input_file(std::string const & input_file)
 {
@@ -39,11 +35,17 @@ create_input_file(std::string const & input_file)
   HypercubeResolutionParameters resolution;
   resolution.add_parameters(prm);
 
-  // we have to assume a default dimension and default Number type
-  // for the automatic generation of a default input file
-  unsigned int const Dim = 2;
-  typedef double     Number;
-  add_parameters_application<Dim, Number>(prm, input_file);
+  try
+  {
+    // we have to assume a default dimension and default Number type
+    // for the automatic generation of a default input file
+    unsigned int const Dim = 2;
+    typedef double     Number;
+    get_application<Dim, Number>(input_file)->add_parameters(prm);
+  }
+  catch(...)
+  {
+  }
 
   prm.print_parameters(input_file,
                        dealii::ParameterHandler::Short |
@@ -141,7 +143,7 @@ main(int argc, char ** argv)
         results, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
     else
       AssertThrow(false,
-                  dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+                  dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
   }
 
   if(not(general.is_test))

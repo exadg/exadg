@@ -1,0 +1,15 @@
+##
+#  CMake script
+##
+
+PROJECT(poisson)
+
+ADD_SUBDIRECTORY(gaussian)
+ADD_SUBDIRECTORY(lung)
+ADD_SUBDIRECTORY(lung_tubus)
+ADD_SUBDIRECTORY(nozzle)
+ADD_SUBDIRECTORY(sine)
+ADD_SUBDIRECTORY(slit)
+ADD_SUBDIRECTORY(template)
+ADD_SUBDIRECTORY(throughput)
+ADD_SUBDIRECTORY(torus)

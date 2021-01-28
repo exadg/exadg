@@ -1,0 +1,32 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "MeshType": "Cartesian",
+        "NCoarseCells1D": "1",
+        "ExploitSymmetry": "false",
+        "MovingMesh": "false",
+        "Inviscid": "false",
+        "ReynoldsNumber": "1600.0",
+        "WriteRestart": "false",
+        "ReadRestart": "false"
+    },
+    "Output": {
+        "OutputDirectory": "output/tgv/",
+        "OutputName": "Re1600",
+        "WriteOutput": "false"
+    }
+}

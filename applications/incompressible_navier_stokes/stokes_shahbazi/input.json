@@ -1,0 +1,24 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "4",
+        "DegreeMax": "4",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "1",
+        "RefineTimeMax": "16"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/stokes_shahbazi/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

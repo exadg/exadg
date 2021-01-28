@@ -1,0 +1,29 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeFluid": "2",
+        "DegreeStructure": "1",
+        "RefineFluid": "0",
+        "RefineStructure": "0"
+    },
+    "FSI" : {
+        "Method": "IQN-ILS",
+        "AbsTol": "1.e-9",
+        "RelTol": "1.e-3",
+        "OmegaInit": "0.3",
+        "PartitionedIterMax": "100",
+        "ReusedTimeSteps": "10",
+        "GeometricTolerance": "1.e-8"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/pressure_wave/",
+        "OutputName": "fsi_test",
+        "WriteOutput": "false"
+    }
+}

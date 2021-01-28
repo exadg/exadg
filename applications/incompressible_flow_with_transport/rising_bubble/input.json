@@ -1,0 +1,18 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "Degree": "3",
+        "RefineSpace": "5"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/rising_bubble/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

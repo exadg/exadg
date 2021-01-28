@@ -1,0 +1,7 @@
+##
+#  CMake script
+##
+
+PROJECT(incompressible_taylor_green)
+
+EXADG_PICKUP_EXE(solver.cpp incompressible_taylor_green solver)

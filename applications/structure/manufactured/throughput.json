@@ -1,0 +1,28 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "Resolution": {
+        "RunType": "FixedProblemSize",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3",
+        "DofsMin": "30000",
+        "DofsMax": "100000"
+    },
+    "Throughput": {
+        "OperatorType": "Linearized",
+        "RepetitionsInner": "100",
+        "RepetitionsOuter": "3"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/manufactured/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

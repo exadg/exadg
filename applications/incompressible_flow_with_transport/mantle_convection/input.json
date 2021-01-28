@@ -1,0 +1,18 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "Degree": "3",
+        "RefineSpace": "4"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/mantle_convection/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

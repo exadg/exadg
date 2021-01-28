@@ -1,0 +1,18 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "Degree": "2",
+        "RefineSpace": "0"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/template_precursor/",
+        "OutputName": "template",
+        "WriteOutput": "false"
+    }
+}

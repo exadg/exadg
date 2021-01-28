@@ -1,0 +1,29 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "3",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "1",
+        "DegreeMax": "1",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "Length": "1100.0",
+        "Height": "100.0",
+        "Width": "20.0",
+        "BoundaryType": "BendingMoment",
+        "Force": "2500.0"
+    },
+    "Output": {
+        "OutputDirectory": "output/beam/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

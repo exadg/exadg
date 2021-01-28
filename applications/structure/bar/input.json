@@ -1,0 +1,32 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "1",
+        "DegreeMax": "1",
+        "RefineSpaceMin": "4",
+        "RefineSpaceMax": "4"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+        "Length": "100.0",
+        "Height": "10.0",
+        "Width": "10.0",
+        "UseVolumeForce": "false",
+        "VolumeForce": "1.0",
+        "BoundaryType": "Dirichlet",
+        "Displacement": "20.0",
+        "Traction":	"0.0" 
+    },
+    "Output": {
+        "OutputDirectory": "output/bar/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

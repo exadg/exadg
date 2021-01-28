@@ -1,0 +1,10 @@
+##
+#  CMake script
+##
+
+PROJECT(fluid_structure_interaction)
+
+ADD_SUBDIRECTORY(bending_wall)
+ADD_SUBDIRECTORY(cylinder_with_flag)
+ADD_SUBDIRECTORY(pressure_wave)
+ADD_SUBDIRECTORY(template)

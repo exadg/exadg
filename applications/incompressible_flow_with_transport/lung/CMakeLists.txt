@@ -1,0 +1,8 @@
+##
+#  CMake script
+##
+
+PROJECT(fti_lung)
+
+EXADG_PICKUP_EXE(solver.cpp fti_lung solver)
+EXADG_PICKUP_EXE(solver_incompressible.cpp fti_lung_incompressible solver_incompressible)

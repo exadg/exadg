@@ -1,0 +1,24 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "Resolution": {
+        "RunType": "RefineHAndP",
+        "DegreeMin": "1",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "3",
+        "RefineSpaceMax": "3",
+        "DofsMin": "1000",
+        "DofsMax": "10000"
+    },
+    "Application": {
+        "MeshType": "Cartesian"
+    },
+    "Output": {
+        "OutputDirectory": "output/poisson/gaussian/",
+        "OutputName": "gaussian",
+        "WriteOutput": "false"
+    }
+}

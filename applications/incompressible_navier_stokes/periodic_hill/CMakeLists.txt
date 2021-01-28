@@ -1,0 +1,7 @@
+##
+#  CMake script
+##
+
+PROJECT(incompressible_periodic_hill)
+
+EXADG_PICKUP_EXE(solver.cpp incompressible_periodic_hill solver)

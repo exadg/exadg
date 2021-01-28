@@ -1,0 +1,14 @@
+##
+#  CMake script
+##
+
+PROJECT(convection_diffusion)
+
+ADD_SUBDIRECTORY(boundary_layer)
+ADD_SUBDIRECTORY(const_rhs)
+ADD_SUBDIRECTORY(decaying_hill)
+ADD_SUBDIRECTORY(deforming_hill)
+ADD_SUBDIRECTORY(throughput)
+ADD_SUBDIRECTORY(rotating_hill)
+ADD_SUBDIRECTORY(sine_wave)
+ADD_SUBDIRECTORY(template)

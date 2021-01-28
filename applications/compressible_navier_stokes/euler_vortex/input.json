@@ -1,0 +1,24 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "15",
+        "DegreeMax": "15",
+        "RefineSpaceMin": "4",
+        "RefineSpaceMax": "4"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+    },
+    "Output": {
+        "OutputDirectory": "output/euler_vortex/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}

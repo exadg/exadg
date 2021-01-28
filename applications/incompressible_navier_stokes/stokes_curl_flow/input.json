@@ -1,0 +1,25 @@
+{
+    "General": {
+        "Precision": "double",
+        "Dim": "2",
+        "IsTest": "false"
+    },
+    "SpatialResolution": {
+        "DegreeMin": "4",
+        "DegreeMax": "4",
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
+    },
+    "TemporalResolution": {
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+       	"Viscosity": "1.e-5"
+    },
+    "Output": {
+        "OutputDirectory": "output/stokes_curl_flow/",
+        "OutputName": "test",
+        "WriteOutput": "false"
+    }
+}
