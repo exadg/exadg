@@ -9,15 +9,13 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 
 #include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/operators/multigrid_operator_base.h>
 #include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_h.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_mg_level_object.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.h>
 
 namespace ExaDG
 {
@@ -158,7 +156,7 @@ protected:
   MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>> matrix_free_data_objects;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>>     matrix_free_objects;
   MGLevelObject<std::shared_ptr<Operator>>                             operators;
-  MGTransferMF_MGLevelObject<dim, VectorTypeMG>                        transfers;
+  MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>         transfers;
 
   Mapping<dim> const * mapping;
 

@@ -739,9 +739,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
 {
-  this->transfers.template reinit<MultigridNumber>(matrix_free_objects,
-                                                   constraints,
-                                                   constrained_dofs);
+  this->transfers.reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
 }
 
 template<int dim, typename Number>

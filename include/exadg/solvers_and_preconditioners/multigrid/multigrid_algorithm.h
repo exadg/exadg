@@ -18,7 +18,7 @@
 #include <deal.II/multigrid/multigrid.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
 
 /*
  * Activate timings if desired.
@@ -125,7 +125,7 @@ class MultigridPreconditioner
 public:
   MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &   matrix,
                           const MGCoarseGridBase<VectorType> &                 coarse,
-                          const MGTransferMF<VectorType> &                     transfer,
+                          const MGTransfer<VectorType> &                       transfer,
                           const MGLevelObject<std::shared_ptr<SmootherType>> & smoother,
                           const MPI_Comm &                                     comm,
                           const unsigned int                                   n_cycles = 1)
@@ -370,7 +370,7 @@ private:
   /**
    * Object for grid transfer.
    */
-  const MGTransferMF<VectorType> & transfer;
+  const MGTransfer<VectorType> & transfer;
 
   /**
    * The smoothing object.
