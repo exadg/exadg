@@ -9,10 +9,11 @@ MESSAGE("            High-order Discontinuous Galerkin for the Exa-Scale        
 MESSAGE("_________________________________________________________________________________")
 
 
-# this is the standard deal.II search mechanism, including check for Trilinos and p4est
-
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
 
+ADD_SUBDIRECTORY(cmake)
+
+# deal.II
 FIND_PACKAGE(deal.II 9.3 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
@@ -24,6 +25,7 @@ IF(NOT ${deal.II_FOUND})
     )
 ENDIF()
 
+# p4est
 IF(NOT DEAL_II_WITH_P4EST)
   MESSAGE(FATAL_ERROR
     "\nExaDG requires a deal.II installation built with support for p4est but it appears to be missing!\n"
@@ -160,8 +162,8 @@ SET( TARGET_SRC
      include/exadg/structure/postprocessor/postprocessor.cpp
      include/exadg/structure/driver.cpp
      # fluid-structure-interaction
-        include/exadg/fluid_structure_interaction/driver.cpp
-        )
+     include/exadg/fluid_structure_interaction/driver.cpp
+     )
 
 # Set the include directories and the name of the project
 INCLUDE_DIRECTORIES(include)
@@ -171,35 +173,43 @@ SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
 
 PROJECT(exadg)
 
-set(EXADG_DEGREE_MAX ${DEGREE_MAX})
-
 # Configure config.h
-MESSAGE("max compiled degree = " ${EXADG_DEGREE_MAX})
+SET(EXADG_DEGREE_MAX ${DEGREE_MAX})
+MESSAGE("Compile kernels up to polynomial degree = " ${EXADG_DEGREE_MAX})
 CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/exadg/configuration/config.h.in
-        ${CMAKE_CURRENT_BINARY_DIR}/include/exadg/configuration/config.h
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/exadg/configuration/config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/exadg/configuration/config.h
+    )
 
 ADD_LIBRARY(exadg ${TARGET_SRC})
 
-option(USE_FFTW "Use fftw" OFF)
+# FFTW
+OPTION(USE_FFTW "Use FFTW" OFF)
 IF(${USE_FFTW})
-    add_definitions(-DUSE_FFTW)
-    include_directories(${FFTW_INC})
-    FIND_LIBRARY(FFTW3 fftw3 HINTS ${FFTW_LIB})
+    ADD_DEFINITIONS(-DUSE_FFTW)
+    INCLUDE_DIRECTORIES(${FFTW_INCLUDE})
+    IF(${BUILD_SHARED_LIBS})
+        FIND_LIBRARY(FFTW3 fftw3 HINTS ${FFTW_LIB})
+        FIND_LIBRARY(FFTW3_MPI fftw3_mpi HINTS ${FFTW_LIB})
+    ELSE()
+        FIND_LIBRARY(FFTW3 libfftw3.a HINTS ${FFTW_LIB})
+        FIND_LIBRARY(FFTW3_MPI libfftw3_mpi.a HINTS ${FFTW_LIB})
+    ENDIF()
     MESSAGE(${FFTW3})
-    target_link_libraries(exadg ${FFTW3})
+    MESSAGE(${FFTW3_MPI})
+    TARGET_LINK_FFTW(exadg)
 ENDIF()
 
+# LIKWID
 FIND_LIBRARY(LIKWID likwid HINTS ${LIKWID_LIB})
 MESSAGE(${LIKWID}) 
 IF(LIKWID)
-      TARGET_COMPILE_DEFINITIONS(exadg PUBLIC LIKWID_PERFMON)
-      TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${LIKWID_INCLUDE})
-      TARGET_LINK_LIBRARIES(exadg ${LIKWID})
+    TARGET_COMPILE_DEFINITIONS(exadg PUBLIC LIKWID_PERFMON)
+    TARGET_INCLUDE_DIRECTORIES(exadg PUBLIC ${LIKWID_INCLUDE})
+    TARGET_LINK_LIBRARIES(exadg ${LIKWID})
 ENDIF()
 
-# Define custom targets to easily switch the build type:
+# DEBUG vs. RELEASE
 ADD_CUSTOM_TARGET(debug
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
   COMMENT "Switch CMAKE_BUILD_TYPE to Debug\nPlease call 'make' to build the debug project"
@@ -214,9 +224,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
 DEAL_II_SETUP_TARGET(exadg)
 
-enable_testing()
-
-ADD_SUBDIRECTORY(cmake)
+ENABLE_TESTING()
 
 ADD_SUBDIRECTORY(solvers)
 ADD_SUBDIRECTORY(prototypes)
