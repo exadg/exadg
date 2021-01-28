@@ -8,9 +8,10 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_PERIODIC_HILL_H_
 
-#include "flow_rate_controller.h"
-#include "manifold.h"
-#include "postprocessor.h"
+// periodic hill application
+#include "include/flow_rate_controller.h"
+#include "include/manifold.h"
+#include "include/postprocessor.h"
 
 namespace ExaDG
 {

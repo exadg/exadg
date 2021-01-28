@@ -9,16 +9,16 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_
 
 // ExaDG
-#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
 #include <exadg/convection_diffusion/postprocessor/postprocessor.h>
+#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
+#include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h>
-#include <exadg/incompressible_flow_with_transport/user_interface/application_base.h>
 #include <exadg/postprocessor/mean_scalar_calculation.h>
 
-// lung grid generator
-#include "grid/lung_environment.h"
-#include "grid/lung_grid.h"
+// lung application
+#include "include/grid/lung_environment.h"
+#include "include/grid/lung_grid.h"
 
 namespace ExaDG
 {
@@ -154,7 +154,7 @@ types::boundary_id const TRACHEA_ID = 1;
 // outlet boundary IDs
 types::boundary_id const OUTLET_ID_FIRST = TRACHEA_ID + 1;
 // initialize with OUTLET_ID_FIRST, changed later
-types::boundary_id       OUTLET_ID_LAST  = OUTLET_ID_FIRST;
+types::boundary_id OUTLET_ID_LAST = OUTLET_ID_FIRST;
 
 // restart
 bool const   WRITE_RESTART         = false;
@@ -178,9 +178,9 @@ get_equivalent_resistance(unsigned int const max_resolved_generation,
       RESISTANCE_VECTOR_DYNAMIC[min_unresolved_generation + i] / std::pow(2.0, (double)i);
   }
 
-  // beyond the current outflow boundary, we have two branches from generation max_resolved_generation to
-  // generation max_generation, but the resistance computed above corresponds to only one of the
-  // two branches
+  // beyond the current outflow boundary, we have two branches from generation
+  // max_resolved_generation to generation max_generation, but the resistance computed above
+  // corresponds to only one of the two branches
   resistance /= 2.0;
 
 
@@ -234,7 +234,7 @@ public:
   {
   }
 
-  [[nodiscard]] double
+  double
   get_pressure(double const & time) const
   {
     const int    n_period = int(time / PERIOD);
@@ -355,7 +355,7 @@ public:
   {
   }
 
-  [[nodiscard]] double
+  double
   get_pressure_difference() const
   {
     return pressure_difference_tubus;
@@ -442,19 +442,19 @@ public:
     time_old = time;
   }
 
-  [[nodiscard]] double
+  double
   get_pressure() const
   {
     return resistance * flow_rate + volume / compliance;
   }
 
-  [[nodiscard]] double
+  double
   get_volume() const
   {
     return volume;
   }
 
-  [[nodiscard]] types::boundary_id
+  types::boundary_id
   get_boundary_id() const
   {
     return boundary_id;
@@ -1003,9 +1003,9 @@ public:
     using namespace ConvDiff;
 
     // MATHEMATICAL MODEL
-    param.problem_type              = ProblemType::Unsteady;
-    param.equation_type             = EquationType::ConvectionDiffusion;
-    param.analytical_velocity_field = false;
+    param.problem_type                = ProblemType::Unsteady;
+    param.equation_type               = EquationType::ConvectionDiffusion;
+    param.analytical_velocity_field   = false;
     param.right_hand_side             = false;
     param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
@@ -1289,7 +1289,7 @@ public:
   }
 };
 
-}
+} // namespace FTI
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_LUNG_H_ */

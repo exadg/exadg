@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/convection_diffusion/solver.h>
 
 // application
-#include "rotating_hill.h"
+#include "application.h"

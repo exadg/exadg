@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/incompressible_navier_stokes/solver.h>
 
 // application
-#include "periodic_hill.h"
+#include "application.h"

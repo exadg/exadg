@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/fluid_structure_interaction/solver.h>
 
 // application
-#include "bending_wall.h"
+#include "application.h"

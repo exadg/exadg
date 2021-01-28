@@ -13,6 +13,7 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
 #include <exadg/postprocessor/statistics_manager.h>
 
+// backward facing step application
 #include "geometry.h"
 
 namespace ExaDG

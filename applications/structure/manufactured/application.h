@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_
-#define APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_
+#ifndef APPLICATIONS_STRUCTURE_MANUFACTURED_APPLICATION_H_
+#define APPLICATIONS_STRUCTURE_MANUFACTURED_APPLICATION_H_
 
 /*
  * Manufactured solution for nonlinear elasticity problem with St. Venant-Kirchhoff
@@ -443,4 +443,4 @@ get_application(std::string input_file)
 
 } // namespace ExaDG
 
-#endif /* APPLICATIONS_STRUCTURE_MANUFACTURED_MANUFACTURED_H_ */
+#endif /* APPLICATIONS_STRUCTURE_MANUFACTURED_APPLICATION_H_ */

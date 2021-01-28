@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/poisson/throughput.h>
 
 // application
-#include "periodic_box.h"
+#include "application.h"

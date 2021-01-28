@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/incompressible_navier_stokes/solver_precursor.h>
 
 // application
-#include "backward_facing_step.h"
+#include "application.h"

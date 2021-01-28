@@ -1,8 +1,8 @@
-// ExaDG
+// solver
 #include <exadg/incompressible_flow_with_transport/solver.h>
 
 // application
-#include "lung.h"
+#include "application.h"
 
 namespace ExaDG
 {
@@ -13,4 +13,4 @@ get_application(std::string input_file)
   return std::shared_ptr<FTI::ApplicationBase<dim, Number>>(
     new FTI::Application<dim, Number>(input_file));
 }
-}
+} // namespace ExaDG

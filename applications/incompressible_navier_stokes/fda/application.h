@@ -8,17 +8,13 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_
 
-// inflow profile
+// ExaDG
 #include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
 
-// nozzle geometry
-#include "grid.h"
-
-// flow-rate controller
-#include "flow_rate_controller.h"
-
-// postprocessor
-#include "postprocessor.h"
+// FDA nozzle benchmark application
+#include "include/flow_rate_controller.h"
+#include "include/grid.h"
+#include "include/postprocessor.h"
 
 namespace ExaDG
 {

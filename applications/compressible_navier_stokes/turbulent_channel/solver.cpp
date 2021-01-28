@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/compressible_navier_stokes/solver.h>
 
 // application
-#include "turbulent_channel.h"
+#include "application.h"

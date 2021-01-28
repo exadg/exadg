@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/structure/solver.h>
 
 // application
-#include "template.h"
+#include "application.h"

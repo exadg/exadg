@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/poisson/solver.h>
 
 // application
-#include "torus.h"
+#include "application.h"

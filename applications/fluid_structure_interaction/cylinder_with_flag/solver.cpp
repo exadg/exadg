@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/fluid_structure_interaction/solver.h>
 
 // application
-#include "cylinder_with_flag.h"
+#include "application.h"

@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/convection_diffusion/solver.h>
 
 // application
-#include "sine_wave.h"
+#include "application.h"

@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/structure/throughput.h>
 
 // application
-#include "manufactured.h"
+#include "application.h"

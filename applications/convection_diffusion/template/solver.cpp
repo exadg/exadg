@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/convection_diffusion/solver.h>
 
 // application
-#include "template.h"
+#include "application.h"

@@ -1,5 +1,5 @@
-// ExaDG
+// solver
 #include <exadg/incompressible_navier_stokes/solver.h>
 
 // application
-#include "kovasznay.h"
+#include "application.h"

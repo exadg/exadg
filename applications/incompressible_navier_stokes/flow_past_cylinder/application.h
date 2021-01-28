@@ -11,7 +11,8 @@
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
 
-#include "grid.h"
+// flow past cylinder application
+#include "include/grid.h"
 
 namespace ExaDG
 {

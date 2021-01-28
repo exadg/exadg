@@ -8,8 +8,9 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_ORR_SOMMERFELD_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_ORR_SOMMERFELD_H_
 
-#include "orr_sommerfeld_equation.h"
-#include "postprocessor.h"
+// Orr-Sommerfeld application
+#include "include/orr_sommerfeld_equation.h"
+#include "include/postprocessor.h"
 
 namespace ExaDG
 {

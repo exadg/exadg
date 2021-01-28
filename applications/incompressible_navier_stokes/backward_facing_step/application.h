@@ -11,8 +11,10 @@
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/linear_interpolation.h>
 
-#include "inflow_data_storage.h"
-#include "postprocessor.h"
+// backward facing step application
+#include "include/geometry.h"
+#include "include/inflow_data_storage.h"
+#include "include/postprocessor.h"
 
 namespace ExaDG
 {
