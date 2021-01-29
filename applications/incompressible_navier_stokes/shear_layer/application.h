@@ -237,8 +237,7 @@ template<int dim, typename Number>
 std::shared_ptr<IncNS::ApplicationBase<dim, Number>>
 get_application(std::string input_file)
 {
-  return std::shared_ptr<IncNS::ApplicationBase<dim, Number>>(
-    new IncNS::Application<dim, Number>(input_file));
+  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
 }
 
 } // namespace ExaDG
