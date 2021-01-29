@@ -110,31 +110,42 @@ public:
   }
 
   void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces) override
+  create_grid(
+    std::shared_ptr<parallel::TriangulationBase<dim>>,
+    unsigned int const,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &) override
+  {
+#ifdef DEBUG
+    std::cout << "create_grid() is empty for lung application" << std::endl;
+#endif
+  }
+
+  void
+  create_grid_and_mesh(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                 periodic_faces,
+    std::shared_ptr<Mesh<dim>> & mesh) override
   {
     (void)periodic_faces;
 
-    AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim = 3!"));
+    AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
     std::vector<std::string> files;
-    files.push_back(directory_lung_files + "leftbot.dat");
-    files.push_back(directory_lung_files + "lefttop.dat");
-    files.push_back(directory_lung_files + "rightbot.dat");
-    files.push_back(directory_lung_files + "rightmid.dat");
-    files.push_back(directory_lung_files + "righttop.dat");
+    files.push_back(directory_lung_files + "airways");
+
+    // call to setup root
     auto tree_factory = ExaDG::GridGen::lung_files_to_node(files);
 
-    std::string spline_file = directory_lung_files + "../splines_raw6.dat";
+    // TODO: automate deform via spline
+    std::string spline_file = directory_lung_files + "splines_raw6.dat";
 
     std::map<std::string, double> timings;
 
-    std::shared_ptr<Mesh<dim>> mesh;
-
     // create triangulation
-    if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+    if(auto tria =
+         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(triangulation.get()))
     {
       ExaDG::GridGen::lung(*tria,
                            n_refine_space,
@@ -147,7 +158,8 @@ public:
                            spline_file,
                            max_resolved_generation);
     }
-    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+    else if(auto tria =
+              dynamic_cast<parallel::distributed::Triangulation<dim> *>(triangulation.get()))
     {
       ExaDG::GridGen::lung(*tria,
                            n_refine_space,
@@ -163,12 +175,10 @@ public:
     {
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
-
-    AssertThrow(OUTLET_ID_LAST - OUTLET_ID_FIRST == std::pow(2, max_resolved_generation),
-                ExcMessage("Number of outlets has to be 2^{max_resolved_generation}."));
   }
 
-  void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
+  void
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
