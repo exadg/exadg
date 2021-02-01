@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(convection_diffusion)
 
 ADD_SUBDIRECTORY(boundary_layer)

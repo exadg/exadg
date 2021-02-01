@@ -198,11 +198,11 @@ void
 DriverQuasiStatic<dim, Number>::output_solver_info_header(double const load_factor)
 {
   pcout << std::endl
-        << "______________________________________________________________________" << std::endl
+        << print_horizontal_line() << std::endl
         << std::endl
         << " Solve non-linear problem for load factor = " << std::scientific << std::setprecision(4)
         << load_factor << std::endl
-        << "______________________________________________________________________" << std::endl;
+        << print_horizontal_line() << std::endl;
 }
 
 template<int dim, typename Number>

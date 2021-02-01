@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(fda_benchmark)
 
 EXADG_PICKUP_EXE(solver_poisson.cpp poisson_fda solver_poisson)

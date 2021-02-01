@@ -21,6 +21,25 @@ namespace ExaDG
 {
 using namespace dealii;
 
+inline void
+print_exadg_header(ConditionalOStream const & pcout)
+{
+  // clang-format off
+  pcout << std::endl << std::endl << std::endl
+  << print_horizontal_line() << std::endl
+  << "                                                                                " << std::endl
+  << "                ////////                      ///////   ////////                " << std::endl
+  << "                ///                           ///  ///  ///                     " << std::endl
+  << "                //////    ///  ///  ///////   ///  ///  /// ////                " << std::endl
+  << "                ///         ////    //   //   ///  ///  ///  ///                " << std::endl
+  << "                ////////  ///  ///  ///////// ///////   ////////                " << std::endl
+  << "                                                                                " << std::endl
+  << "               High-Order Discontinuous Galerkin for the Exa-Scale              " << std::endl
+  << print_horizontal_line() << std::endl
+  << std::endl;
+  // clang-format on
+}
+
 // print MPI info
 inline void
 print_MPI_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)

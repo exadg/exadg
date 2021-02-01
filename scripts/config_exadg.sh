@@ -1,3 +1,9 @@
+#######               ######  #######
+##                    ##   ## ##
+#####   ##  ## #####  ##   ## ## ####
+##       ####  ## ##  ##   ## ##   ##
+####### ##  ## ###### ######  #######
+
 #rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
 
 FFTW_INSTALL=$WORKING_DIRECTORY/path/to/fftw-install

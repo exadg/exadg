@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(compressible_navier_stokes)
 
 ADD_SUBDIRECTORY(couette)

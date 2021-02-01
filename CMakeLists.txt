@@ -1,17 +1,14 @@
-##
-#  CMake script
-##
-
-MESSAGE("_________________________________________________________________________________")
-MESSAGE("                                                                                 ")
-MESSAGE("                                   ExaDG                                         ")
-MESSAGE("            High-order Discontinuous Galerkin for the Exa-Scale                  ")
-MESSAGE("_________________________________________________________________________________")
-
+#######               ######  #######
+##                    ##   ## ##
+#####   ##  ## #####  ##   ## ## ####
+##       ####  ## ##  ##   ## ##   ##
+####### ##  ## ###### ######  #######
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
 
 ADD_SUBDIRECTORY(cmake)
+
+PRINT_EXADG_HEADER()
 
 # deal.II
 FIND_PACKAGE(deal.II 9.3 QUIET

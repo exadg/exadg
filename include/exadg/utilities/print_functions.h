@@ -87,6 +87,13 @@ print_value(ConditionalOStream const & pcout, double const value)
 {
   pcout << std::scientific << std::setprecision(4) << value << std::endl;
 }
+
+inline std::string
+print_horizontal_line()
+{
+  return "________________________________________________________________________________";
+}
+
 } // namespace ExaDG
 
 #endif /* INCLUDE_FUNCTIONALITIES_PRINTFUNCTIONS_H_ */

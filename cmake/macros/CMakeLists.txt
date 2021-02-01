@@ -1,2 +1,3 @@
+INCLUDE(macro_print_exadg_header.cmake)
 INCLUDE(macro_target_link_fftw.cmake)
 INCLUDE(macro_exadg_pickup_exe.cmake)

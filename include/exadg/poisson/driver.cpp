@@ -32,21 +32,6 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_header()
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                            scalar Poisson equation                              " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, typename Number>
-void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
                            unsigned int const                            refine_space,
@@ -56,7 +41,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   Timer timer;
   timer.restart();
 
-  print_header();
+  print_exadg_header(pcout);
+  pcout << "Setting up Poisson solver:" << std::endl;
+
   if(not(is_test))
   {
     print_dealii_info(pcout);
@@ -206,10 +193,7 @@ template<int dim, typename Number>
 SolverResult
 Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
 {
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
+  this->pcout << std::endl << print_horizontal_line() << std::endl << std::endl;
 
   this->pcout << "Performance results for Poisson solver:" << std::endl;
 
@@ -250,9 +234,7 @@ Driver<dim, Number>::print_performance_results(double const total_time, bool con
     print_costs(pcout, overall_time_avg, N_mpi_processes);
   }
 
-  this->pcout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
+  this->pcout << print_horizontal_line() << std::endl << std::endl;
 
   double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
   return SolverResult(poisson_operator->get_degree(), DoFs, n_10, tau_10);

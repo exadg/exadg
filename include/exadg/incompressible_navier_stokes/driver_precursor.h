@@ -48,9 +48,6 @@ public:
 
 private:
   void
-  print_header() const;
-
-  void
   set_start_time() const;
 
   void

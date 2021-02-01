@@ -29,20 +29,6 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_header() const
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                    High-order matrix-free elasticity solver                     " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, typename Number>
-void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
                            unsigned int const                            refine_space,
@@ -53,7 +39,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   Timer timer;
   timer.restart();
 
-  print_header();
+  print_exadg_header(pcout);
+  pcout << "Setting up elasticity solver:" << std::endl;
+
   if(not(is_test))
   {
     print_dealii_info(pcout);

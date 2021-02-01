@@ -90,9 +90,6 @@ public:
         bool const                                    is_throughput_study);
 
   void
-  solve() const;
-
-  void
   print_performance_results(double const total_time, bool const is_test) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
@@ -102,10 +99,10 @@ public:
                  unsigned int const  n_repetitions_outer,
                  bool const          is_test) const;
 
-private:
   void
-  print_header() const;
+  solve() const;
 
+private:
   // MPI communicator
   MPI_Comm mpi_comm;
 

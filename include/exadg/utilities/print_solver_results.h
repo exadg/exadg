@@ -29,7 +29,7 @@ print_throughput(
   {
     // clang-format off
     std::cout << std::endl
-              << "_________________________________________________________________________________"
+              << print_horizontal_line()
               << std::endl << std::endl
               << "Operator type: " << operator_type
               << std::endl << std::endl
@@ -50,8 +50,7 @@ print_throughput(
                 << std::endl << std::flush;
     }
 
-    std::cout << "_________________________________________________________________________________"
-              << std::endl << std::endl << std::flush;
+    std::cout << print_horizontal_line() << std::endl << std::endl << std::flush;
     // clang-format on
   }
 }

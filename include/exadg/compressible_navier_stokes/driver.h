@@ -119,9 +119,6 @@ public:
                  bool const          is_test) const;
 
 private:
-  void
-  print_header();
-
   // MPI communicator
   MPI_Comm const & mpi_comm;
 

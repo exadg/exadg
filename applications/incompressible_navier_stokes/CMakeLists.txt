@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(incompressible_navier_stokes)
 
 ADD_SUBDIRECTORY(backward_facing_step)

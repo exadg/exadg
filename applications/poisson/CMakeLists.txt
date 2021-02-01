@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(poisson)
 
 ADD_SUBDIRECTORY(gaussian)
