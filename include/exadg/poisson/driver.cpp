@@ -88,6 +88,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   application->create_grid(triangulation, refine_space, periodic_faces);
+
+  // mapping
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
+
+  // currently required for lung test case, TODO: find a better solution
+  if(triangulation->n_cells() == 0)
+    application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
+  else
+    mesh.reset(new Mesh<dim>(mapping_degree));
+
   print_grid_data(pcout, refine_space, *triangulation);
 
   boundary_descriptor.reset(new BoundaryDescriptor<0, dim>());
@@ -96,10 +106,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
-
-  // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  mesh.reset(new Mesh<dim>(mapping_degree));
 
   // compute aspect ratio
   if(false)
