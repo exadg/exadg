@@ -82,7 +82,8 @@ print_throughput_10(ConditionalOStream const &    pcout,
   double const tau_10 = t_10 * (double)N_mpi_processes / n_dofs;
 
   // clang-format off
-  pcout << "Throughput of linear solver (numbers based on n_10):" << std::endl
+  pcout << std::endl
+        << "Throughput of linear solver (numbers based on n_10):" << std::endl
         << "  Number of MPI processes = " << N_mpi_processes << std::endl
         << "  Degrees of freedom      = " << n_dofs << std::endl
         << "  Wall time t_10          = " << std::scientific << std::setprecision(2) << t_10 << " s" << std::endl
