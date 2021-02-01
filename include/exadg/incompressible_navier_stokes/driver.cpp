@@ -86,18 +86,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   application->create_grid(triangulation, refine_space, periodic_faces);
-  print_grid_data(pcout, refine_space, *triangulation);
-
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
-
-  application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
-
-  // field functions and boundary conditions
-  field_functions.reset(new FieldFunctions<dim>());
-  application->set_field_functions(field_functions);
 
   // mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
@@ -178,8 +166,26 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
   else // static mesh
   {
-    mesh.reset(new Mesh<dim>(mapping_degree));
+    // currently required for lung test case, TODO: find a better solution
+    if(triangulation->n_cells() == 0)
+      application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
+    else
+      mesh.reset(new Mesh<dim>(mapping_degree));
   }
+
+  print_grid_data(pcout, refine_space, *triangulation);
+
+  // boundary conditions
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
+
+  application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
+  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
+
+  // field functions and boundary conditions
+  field_functions.reset(new FieldFunctions<dim>());
+  application->set_field_functions(field_functions);
 
   if(param.solver_type == SolverType::Unsteady)
   {

@@ -27,6 +27,9 @@
 
 namespace ExaDG
 {
+template<int>
+class Mesh;
+
 namespace IncNS
 {
 using namespace dealii;
@@ -64,6 +67,18 @@ public:
               unsigned int const                                n_refine_space,
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces) = 0;
+
+  virtual void
+  create_grid_and_mesh(
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                 periodic_faces,
+    std::shared_ptr<Mesh<dim>> & deformation)
+  {
+    (void)deformation;
+    this->create_grid(triangulation, n_refine_space, periodic_faces);
+  }
 
   virtual void
   set_boundary_conditions(
