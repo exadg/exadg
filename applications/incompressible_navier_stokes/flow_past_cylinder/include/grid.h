@@ -17,8 +17,7 @@
 namespace ExaDG
 {
 using namespace dealii;
-namespace IncNS
-{
+
 namespace FlowPastCylinder
 {
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
@@ -1311,7 +1310,6 @@ create_cylinder_grid(
 }
 
 } // namespace FlowPastCylinder
-} // namespace IncNS
 } // namespace ExaDG
 
 #endif /* APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_ */
