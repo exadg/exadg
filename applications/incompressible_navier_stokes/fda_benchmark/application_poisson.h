@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_POISSON_TEST_CASES_NOZZLE_H_
 #define APPLICATIONS_POISSON_TEST_CASES_NOZZLE_H_
 
-#include "../../incompressible_navier_stokes/fda/include/grid.h"
+#include "include/grid.h"
 
 namespace ExaDG
 {
