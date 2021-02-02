@@ -215,7 +215,6 @@ InputParameters::InputParameters()
 
     // preconditioner pressure/Schur-complement block
     preconditioner_pressure_block(SchurComplementPreconditioner::PressureConvectionDiffusion),
-    discretization_of_laplacian(DiscretizationOfLaplacian::Classical),
     multigrid_data_pressure_block(MultigridData()),
     exact_inversion_of_laplace_operator(false),
     solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100))
@@ -1088,13 +1087,8 @@ InputParameters::print_parameters_coupled_solver(ConditionalOStream & pcout)
 
   if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator ||
      preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard ||
-     preconditioner_pressure_block == SchurComplementPreconditioner::Elman ||
      preconditioner_pressure_block == SchurComplementPreconditioner::PressureConvectionDiffusion)
   {
-    print_parameter(pcout,
-                    "Discretization of Laplacian",
-                    enum_to_string(discretization_of_laplacian));
-
     multigrid_data_pressure_block.print(pcout);
 
     print_parameter(pcout,

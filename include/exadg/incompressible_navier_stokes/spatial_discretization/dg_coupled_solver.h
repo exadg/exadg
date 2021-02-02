@@ -9,7 +9,6 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COUPLED_SOLVER_H_
 
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
-#include <exadg/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 
@@ -339,9 +338,6 @@ private:
   void
   initialize_preconditioner_pressure_block();
 
-  CompatibleLaplaceOperatorData<dim> const
-  get_compatible_laplace_operator_data() const;
-
   void
   setup_multigrid_preconditioner_schur_complement();
 
@@ -402,9 +398,7 @@ private:
 
   std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
 
-  std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator_classical;
-
-  std::shared_ptr<CompatibleLaplaceOperator<dim, Number>> laplace_operator_compatible;
+  std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> solver_pressure_block;
 

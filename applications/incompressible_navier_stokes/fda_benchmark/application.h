@@ -404,7 +404,6 @@ public:
     // preconditioner Schur-complement block
     param.preconditioner_pressure_block =
       SchurComplementPreconditioner::CahouetChabard; // PressureConvectionDiffusion;
-    param.discretization_of_laplacian = DiscretizationOfLaplacian::Classical;
 
     // Chebyshev moother
     param.multigrid_data_pressure_block.smoother_data.smoother = MultigridSmoother::Chebyshev;

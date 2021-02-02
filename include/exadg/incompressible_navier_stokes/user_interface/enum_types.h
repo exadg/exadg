@@ -617,31 +617,11 @@ enum class SchurComplementPreconditioner
   InverseMassMatrix,
   LaplaceOperator,
   CahouetChabard,
-  Elman,
   PressureConvectionDiffusion
 };
 
 std::string
 enum_to_string(SchurComplementPreconditioner const enum_type);
-
-
-/*
- *  Discretization of Laplacian:
- *
- *  use Classical as default.
- *
- *  Option Compatible is only used for testing (Compatible Laplace operator means
- *   BM^{-1}B^T with B: negative divergence operator, B^T gradient operator).
- */
-enum class DiscretizationOfLaplacian
-{
-  Classical,
-  Compatible
-};
-
-std::string
-enum_to_string(DiscretizationOfLaplacian const enum_type);
-
 
 
 /**************************************************************************************/
@@ -670,15 +650,6 @@ enum class TurbulenceEddyViscosityModel
 
 std::string
 enum_to_string(TurbulenceEddyViscosityModel const enum_type);
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               OUTPUT AND POSTPROCESSING                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
 
 } // namespace IncNS
 } // namespace ExaDG

@@ -1,16 +1,18 @@
 /*
- * beltrami.h
+ * unstable_beltrami.h
  *
- *  Created on: Aug 18, 2016
+ *  Created on: July, 2018
  *      Author: fehn
  */
 
-#ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_
-#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_
+#ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_UNSTABLE_BELTRAMI_H_
+#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_UNSTABLE_BELTRAMI_H_
 
 namespace ExaDG
 {
 namespace IncNS
+{
+namespace UnstableBeltrami
 {
 using namespace dealii;
 
@@ -25,19 +27,54 @@ public:
   double
   value(const Point<dim> & p, const unsigned int component = 0) const
   {
-    double const t = this->get_time();
-    double const a = 0.25 * numbers::PI;
-    double const d = 2 * a;
-
+    double t      = this->get_time();
     double result = 0.0;
-    // clang-format off
-    if (component == 0)
-      result = -a*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-nu*d*d*t);
-    else if (component == 1)
-      result = -a*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-nu*d*d*t);
-    else if (component == 2)
-      result = -a*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-nu*d*d*t);
-    // clang-format on
+
+    const double pi = numbers::PI;
+
+    if(component == 0)
+      result = std::sin(2.0 * pi * p[0]) * std::sin(2.0 * pi * p[1]);
+    else if(component == 1)
+      result = std::cos(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+    else if(component == 2)
+      result = std::sqrt(2.0) * std::sin(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+
+    result *= std::exp(-8.0 * pi * pi * nu * t);
+
+    return result;
+  }
+
+  Tensor<1, dim, double>
+  gradient(const Point<dim> & p, const unsigned int component = 0) const
+  {
+    double                 t = this->get_time();
+    Tensor<1, dim, double> result;
+
+    const double pi = numbers::PI;
+
+    AssertThrow(dim == 3, ExcMessage("not implemented."));
+
+    if(component == 0)
+    {
+      result[0] = 2.0 * pi * std::cos(2.0 * pi * p[0]) * std::sin(2.0 * pi * p[1]);
+      result[1] = 2.0 * pi * std::sin(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+      result[2] = 0.0;
+    }
+    else if(component == 1)
+    {
+      result[0] = -2.0 * pi * std::sin(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+      result[1] = -2.0 * pi * std::cos(2.0 * pi * p[0]) * std::sin(2.0 * pi * p[1]);
+      result[2] = 0.0;
+    }
+    else if(component == 2)
+    {
+      result[0] = 2.0 * pi * std::sqrt(2.0) * std::cos(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+      result[1] =
+        -2.0 * pi * std::sqrt(2.0) * std::sin(2.0 * pi * p[0]) * std::sin(2.0 * pi * p[1]);
+      result[2] = 0.0;
+    }
+
+    result *= std::exp(-8.0 * pi * pi * nu * t);
 
     return result;
   }
@@ -45,6 +82,7 @@ public:
 private:
   double const nu;
 };
+
 
 template<int dim>
 class AnalyticalSolutionPressure : public Function<dim>
@@ -58,16 +96,13 @@ public:
   double
   value(const Point<dim> & p, const unsigned int /*component*/) const
   {
-    double const t = this->get_time();
-    double const a = 0.25 * numbers::PI;
-    double const d = 2 * a;
+    double       t  = this->get_time();
+    const double pi = numbers::PI;
 
-    // clang-format off
-    double result = -a*a*0.5*(std::exp(2*a*p[0]) + std::exp(2*a*p[1]) + std::exp(2*a*p[2]) +
-                     2*std::sin(a*p[0]+d*p[1])*std::cos(a*p[2]+d*p[0])*std::exp(a*(p[1]+p[2])) +
-                     2*std::sin(a*p[1]+d*p[2])*std::cos(a*p[0]+d*p[1])*std::exp(a*(p[2]+p[0])) +
-                     2*std::sin(a*p[2]+d*p[0])*std::cos(a*p[1]+d*p[2])*std::exp(a*(p[0]+p[1]))) * std::exp(-2*nu*d*d*t);
-    // clang-format on
+    double result = -0.5 * (+std::sin(2.0 * pi * p[0]) * std::sin(2.0 * pi * p[0]) +
+                            std::cos(2.0 * pi * p[1]) * std::cos(2.0 * pi * p[1]) - 1.0);
+
+    result *= std::exp(-16.0 * pi * pi * nu * t);
 
     return result;
   }
@@ -87,19 +122,19 @@ public:
   double
   value(const Point<dim> & p, const unsigned int component = 0) const
   {
-    double const t = this->get_time();
-    double const a = 0.25 * numbers::PI;
-    double const d = 2 * a;
-
+    double t      = this->get_time();
     double result = 0.0;
-    // clang-format off
-    if (component == 0)
-      result = a*nu*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-nu*d*d*t);
-    else if (component == 1)
-      result = a*nu*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-nu*d*d*t);
-    else if (component == 2)
-      result = a*nu*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-nu*d*d*t);
-    // clang-format on
+
+    const double pi = numbers::PI;
+
+    if(component == 0)
+      result = std::sin(2.0 * pi * p[0]) * std::sin(2.0 * pi * p[1]);
+    else if(component == 1)
+      result = std::cos(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+    else if(component == 2)
+      result = std::sqrt(2.0) * std::sin(2.0 * pi * p[0]) * std::cos(2.0 * pi * p[1]);
+
+    result *= -8.0 * pi * pi * nu * std::exp(-8.0 * pi * pi * nu * t);
 
     return result;
   }
@@ -120,10 +155,10 @@ public:
     prm.parse_input(input_file, "", true, true);
   }
 
-  double const viscosity = 0.1;
+  double const viscosity = 1.0 / (2.0e3);
 
   double const start_time = 0.0;
-  double const end_time   = 1.0;
+  double const end_time   = 20.0;
 
   void
   set_input_parameters(InputParameters & param)
@@ -142,17 +177,16 @@ public:
 
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type = SolverType::Unsteady;
-    param.temporal_discretization =
-      TemporalDiscretization::BDFPressureCorrection; // BDFCoupledSolution;
-    param.treatment_of_convective_term =
-      TreatmentOfConvectiveTerm::Explicit; // Explicit; //Implicit;
-    param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    param.max_velocity                  = 3.5;
-    param.cfl                           = 1.0e-1;
-    param.time_step_size                = 1.0e-3; // 1.0e-4;
-    param.order_time_integrator         = 2;      // 1; // 2; // 3;
-    param.start_with_low_order          = false;  // true; // false;
+    param.solver_type                     = SolverType::Unsteady;
+    param.temporal_discretization         = TemporalDiscretization::BDFDualSplittingScheme;
+    param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
+    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
+    param.max_velocity                    = std::sqrt(2.0);
+    param.cfl                             = 0.1;
+    param.cfl_exponent_fe_degree_velocity = 1.5;
+    param.time_step_size                  = 1.0e-3;
+    param.order_time_integrator           = 2;     // 1; // 2; // 3;
+    param.start_with_low_order            = false; // true; // false;
 
     // output of solver information
     param.solver_info_data.interval_time = (param.end_time - param.start_time) / 10;
@@ -168,8 +202,15 @@ public:
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // pressure level is undefined
-    param.adjust_pressure_level =
-      AdjustPressureLevel::ApplyAnalyticalMeanValue; // ApplyAnalyticalSolutionInPoint;
+    param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalMeanValue;
+
+    // div-div and continuity penalty
+    param.use_divergence_penalty                     = true;
+    param.divergence_penalty_factor                  = 1.0e0;
+    param.use_continuity_penalty                     = true;
+    param.continuity_penalty_factor                  = param.divergence_penalty_factor;
+    param.apply_penalty_terms_in_postprocessing_step = true;
+
 
     // PROJECTION METHODS
 
@@ -180,7 +221,7 @@ public:
 
     // projection step
     param.solver_projection         = SolverProjection::CG;
-    param.solver_data_projection    = SolverData(1000, 1.e-20, 1.e-12);
+    param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-12);
     param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -192,14 +233,14 @@ public:
     // viscous step
     param.solver_viscous         = SolverViscous::CG;
     param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-8);
-    param.preconditioner_viscous = PreconditionerViscous::Multigrid;
+    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
 
     // PRESSURE-CORRECTION SCHEME
 
     // momentum step
 
     // Newton solver
-    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-10, 1.e-8);
+    param.newton_solver_data_momentum = Newton::SolverData(100, 1.e-12, 1.e-8);
 
     // linear solver
     param.solver_momentum                = SolverMomentum::GMRES;
@@ -226,11 +267,10 @@ public:
     param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
     // preconditioner velocity/momentum block
-    param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
     // preconditioner Schur-complement block
-    param.preconditioner_pressure_block =
-      SchurComplementPreconditioner::PressureConvectionDiffusion; // CahouetChabard;
+    param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   }
 
   void
@@ -239,10 +279,31 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {
-    (void)periodic_faces;
+    AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
-    const double left = -1.0, right = 1.0;
+    const double left = 0.0, right = 1.0;
     GridGenerator::hyper_cube(*triangulation, left, right);
+
+    // periodicity in x-,y-, and z-direction
+
+    // x-direction
+    triangulation->begin()->face(0)->set_all_boundary_ids(0);
+    triangulation->begin()->face(1)->set_all_boundary_ids(1);
+    // y-direction
+    triangulation->begin()->face(2)->set_all_boundary_ids(2);
+    triangulation->begin()->face(3)->set_all_boundary_ids(3);
+    // z-direction
+    triangulation->begin()->face(4)->set_all_boundary_ids(4);
+    triangulation->begin()->face(5)->set_all_boundary_ids(5);
+
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
+    GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
+    GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
+    GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
+
+    triangulation->add_periodicity(periodic_faces);
+
+    // global refinements
     triangulation->refine_global(n_refine_space);
   }
 
@@ -250,13 +311,8 @@ public:
   set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
                           std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
   {
-    // set boundary conditions
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-
-    boundary_descriptor_velocity->dirichlet_bc.insert(
-      pair(0, new AnalyticalSolutionVelocity<dim>(viscosity)));
-
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new PressureBC_dudt<dim>(viscosity)));
+    (void)boundary_descriptor_velocity;
+    (void)boundary_descriptor_pressure;
   }
 
   void
@@ -281,23 +337,36 @@ public:
     pp_data.output_data.output_folder        = this->output_directory + "vtu/";
     pp_data.output_data.output_name          = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 10;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 100;
     pp_data.output_data.write_divergence     = false;
     pp_data.output_data.degree               = degree;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;
     pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>(viscosity));
-    pp_data.error_data_u.error_calc_start_time    = start_time;
-    pp_data.error_data_u.error_calc_interval_time = (end_time - start_time) / 10;
-    pp_data.error_data_u.name                     = "velocity";
+    pp_data.error_data_u.calculate_H1_seminorm_error = true;
+    pp_data.error_data_u.calculate_relative_errors   = true;
+    pp_data.error_data_u.error_calc_start_time       = start_time;
+    pp_data.error_data_u.error_calc_interval_time    = 10;
+    pp_data.error_data_u.write_errors_to_file        = true;
+    pp_data.error_data_u.folder                      = this->output_directory;
+    pp_data.error_data_u.name                        = this->output_name + "_velocity";
 
     // ... pressure error
     pp_data.error_data_p.analytical_solution_available = true;
     pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>(viscosity));
-    pp_data.error_data_p.error_calc_start_time    = start_time;
-    pp_data.error_data_p.error_calc_interval_time = (end_time - start_time) / 10;
-    pp_data.error_data_p.name                     = "pressure";
+    pp_data.error_data_p.calculate_relative_errors = true;
+    pp_data.error_data_p.error_calc_start_time     = start_time;
+    pp_data.error_data_p.error_calc_interval_time  = 10;
+    pp_data.error_data_p.write_errors_to_file      = true;
+    pp_data.error_data_p.folder                    = this->output_directory;
+    pp_data.error_data_p.name                      = this->output_name + "_pressure";
+
+    // kinetic energy
+    pp_data.kinetic_energy_data.calculate                  = true;
+    pp_data.kinetic_energy_data.calculate_every_time_steps = 10;
+    pp_data.kinetic_energy_data.viscosity                  = viscosity;
+    pp_data.kinetic_energy_data.filename = this->output_directory + this->output_name + "_energy";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
@@ -306,16 +375,9 @@ public:
   }
 };
 
+} // namespace UnstableBeltrami
 } // namespace IncNS
-
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
 
-#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_BELTRAMI_H_ */
+#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_UNSTABLE_BELTRAMI_H_ */

@@ -644,9 +644,6 @@ public:
   // description: see enum declaration
   SchurComplementPreconditioner preconditioner_pressure_block;
 
-  // description: see enum declaration
-  DiscretizationOfLaplacian discretization_of_laplacian;
-
   // description: see declaration
   MultigridData multigrid_data_pressure_block;
 
@@ -654,7 +651,7 @@ public:
   // by solving the Laplace problem to a given relative tolerance
   bool exact_inversion_of_laplace_operator;
 
-  // solver data for schur complement
+  // solver data for Schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
 };

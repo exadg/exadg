@@ -855,32 +855,8 @@ enum_to_string(SchurComplementPreconditioner const enum_type)
     case SchurComplementPreconditioner::CahouetChabard:
       string_type = "CahouetChabard";
       break;
-    case SchurComplementPreconditioner::Elman:
-      string_type = "Elman";
-      break;
     case SchurComplementPreconditioner::PressureConvectionDiffusion:
       string_type = "PressureConvectionDiffusion";
-      break;
-    default:
-      AssertThrow(false, ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
-}
-
-std::string
-enum_to_string(DiscretizationOfLaplacian const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case DiscretizationOfLaplacian::Classical:
-      string_type = "Classical";
-      break;
-    case DiscretizationOfLaplacian::Compatible:
-      string_type = "Compatible";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
@@ -925,14 +901,6 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type)
 
   return string_type;
 }
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               OUTPUT AND POSTPROCESSING                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
 
 } // namespace IncNS
 } // namespace ExaDG
