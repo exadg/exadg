@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(structure)
 
 ADD_SUBDIRECTORY(bar)

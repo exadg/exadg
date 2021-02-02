@@ -73,10 +73,7 @@ print_results(std::vector<SolverResult> const & results, MPI_Comm const & mpi_co
   // summarize results for all polynomial degrees and problem sizes
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
-  pcout << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
+  pcout << std::endl << print_horizontal_line() << std::endl << std::endl;
 
   pcout << "Summary of results:" << std::endl << std::endl;
 
@@ -84,9 +81,7 @@ print_results(std::vector<SolverResult> const & results, MPI_Comm const & mpi_co
   for(std::vector<SolverResult>::const_iterator it = results.begin(); it != results.end(); ++it)
     it->print_results(pcout);
 
-  pcout << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
+  pcout << print_horizontal_line() << std::endl << std::endl;
 }
 } // namespace ExaDG
 

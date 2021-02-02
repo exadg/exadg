@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(applications)
 
 INCLUDE_DIRECTORIES(

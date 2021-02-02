@@ -25,22 +25,6 @@ DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::print_header() const
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
-  << "                     based on a matrix-free implementation                       " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, typename Number>
-void
 DriverPrecursor<dim, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
@@ -105,7 +89,9 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   Timer timer;
   timer.restart();
 
-  print_header();
+  print_exadg_header(pcout);
+  pcout << "Setting up incompressible Navier-Stokes solver:" << std::endl;
+
   if(not(is_test))
   {
     print_dealii_info(pcout);

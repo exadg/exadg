@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(incompressible_flow_with_transport)
 
 ADD_SUBDIRECTORY(cavity)

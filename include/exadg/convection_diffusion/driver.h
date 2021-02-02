@@ -121,9 +121,6 @@ public:
 
 private:
   void
-  print_header();
-
-  void
   ale_update() const;
 
   // MPI communicator

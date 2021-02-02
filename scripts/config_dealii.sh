@@ -1,9 +1,13 @@
-# name of deal.II library directory
-DEAL=dealii
+#######               ######  #######
+##                    ##   ## ##
+#####   ##  ## #####  ##   ## ## ####
+##       ####  ## ##  ##   ## ##   ##
+####### ##  ## ###### ######  #######
+
+DEAL=$WORKING_DIRECTORY/sw/dealii
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
-# issue the build - must usually not be modified
 cmake \
     -D CMAKE_CXX_FLAGS="-std=c++17 -march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
     -D DEAL_II_CXX_FLAGS_RELEASE="-O3" \
@@ -21,4 +25,4 @@ cmake \
     -D DEAL_II_WITH_P4EST="ON" \
     -D P4EST_DIR="$WORKING_DIRECTORY/sw" \
     -D DEAL_II_COMPONENT_DOCUMENTATION="OFF" \
-    $WORKING_DIRECTORY/sw/$DEAL
+    $DEAL

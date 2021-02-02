@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(structure_manufactured)
 
 EXADG_PICKUP_EXE(solver.cpp structure_manufactured solver)

@@ -179,7 +179,7 @@ TimeIntBase::write_restart() const
   if(restart_data.do_restart(wall_time, time - start_time, time_step_number, time_step_number == 2))
   {
     pcout << std::endl
-          << "______________________________________________________________________" << std::endl
+          << print_horizontal_line() << std::endl
           << std::endl
           << " Writing restart file at time t = " << this->get_time() << ":" << std::endl;
 
@@ -189,9 +189,7 @@ TimeIntBase::write_restart() const
 
     do_write_restart(restart_filename(restart_data.filename, mpi_comm));
 
-    pcout << std::endl
-          << " ... done!" << std::endl
-          << "______________________________________________________________________" << std::endl;
+    pcout << std::endl << " ... done!" << std::endl << print_horizontal_line() << std::endl;
   }
 }
 
@@ -199,7 +197,7 @@ void
 TimeIntBase::read_restart()
 {
   pcout << std::endl
-        << "______________________________________________________________________" << std::endl
+        << print_horizontal_line() << std::endl
         << std::endl
         << " Reading restart file:" << std::endl;
 
@@ -211,7 +209,7 @@ TimeIntBase::read_restart()
 
   pcout << std::endl
         << " ... done!" << std::endl
-        << "______________________________________________________________________" << std::endl
+        << print_horizontal_line() << std::endl
         << std::endl;
 }
 
@@ -219,12 +217,12 @@ void
 TimeIntBase::output_solver_info_header() const
 {
   pcout << std::endl
-        << "______________________________________________________________________" << std::endl
+        << print_horizontal_line() << std::endl
         << std::endl
         << " Time step number = " << std::left << std::setw(8) << time_step_number
         << "t = " << std::scientific << std::setprecision(5) << time
         << " -> t + dt = " << time + get_time_step_size() << std::endl
-        << "______________________________________________________________________" << std::endl;
+        << print_horizontal_line() << std::endl;
 }
 
 /*

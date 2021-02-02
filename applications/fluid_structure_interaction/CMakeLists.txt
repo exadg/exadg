@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(fluid_structure_interaction)
 
 ADD_SUBDIRECTORY(bending_wall)

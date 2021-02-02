@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(prototypes)
 
 INCLUDE_DIRECTORIES(

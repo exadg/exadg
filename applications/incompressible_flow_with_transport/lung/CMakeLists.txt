@@ -1,7 +1,3 @@
-##
-#  CMake script
-##
-
 PROJECT(fti_lung)
 
 EXADG_PICKUP_EXE(solver.cpp fti_lung solver)

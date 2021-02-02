@@ -74,20 +74,6 @@ Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedD
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_header() const
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "           High-order solver for fluid-structure interaction problems            " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, typename Number>
-void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree_fluid,
                            unsigned int const                            degree_structure,
@@ -99,7 +85,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   Timer timer;
   timer.restart();
 
-  print_header();
+  print_exadg_header(pcout);
+  pcout << "Setting up fluid-structure interaction solver:" << std::endl;
+
   if(not(is_test))
   {
     print_dealii_info(pcout);
