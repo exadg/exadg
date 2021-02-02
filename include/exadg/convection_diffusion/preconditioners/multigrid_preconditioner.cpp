@@ -195,7 +195,8 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   Base::initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
-  if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
+  if(data.convective_problem &&
+     data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     FESystem<dim> fe_velocity(FE_DGQ<dim>(fe.degree), dim);
     Map           dirichlet_bc_velocity;
@@ -218,12 +219,15 @@ MultigridPreconditioner<dim, Number>::initialize_transfer_operators()
 {
   Base::initialize_transfer_operators();
 
-  if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
+  if(data.convective_problem &&
+     data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
+  {
     this->transfers_velocity.reinit(*this->mapping,
                                     this->matrix_free_objects,
                                     this->constraints_velocity,
                                     this->constrained_dofs_velocity,
                                     1);
+  }
 }
 
 template<int dim, typename Number>
@@ -238,11 +242,8 @@ MultigridPreconditioner<dim, Number>::update_operators()
   set_time(pde_operator->get_time());
   set_scaling_factor_mass_matrix(pde_operator->get_scaling_factor_mass_matrix());
 
-  TypeVelocityField velocity_type = data.convective_kernel_data.velocity_type;
-
-  if(velocity_type == TypeVelocityField::DoFVector &&
-     (mg_operator_type == MultigridOperatorType::ReactionConvection ||
-      mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion))
+  if(data.convective_problem &&
+     data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
     VectorType const & velocity = pde_operator->get_velocity();
 
