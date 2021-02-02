@@ -90,29 +90,24 @@ public:
                                   unsigned int const              dof_index,
                                   unsigned int const              quad_index)
   {
-    fe_eval.reset(new Integrator(matrix_free, dof_index, quad_index));
-    inverse.reset(new CellwiseInverseMass(*fe_eval));
-
-    coefficients.resize(fe_eval->n_q_points);
+    integrator.reset(new Integrator(matrix_free, dof_index, quad_index));
+    inverse.reset(new CellwiseInverseMass(*integrator));
   }
 
   void
   setup(const unsigned int cell)
   {
-    fe_eval->reinit(cell);
-    inverse->fill_inverse_JxW_values(coefficients);
+    integrator->reinit(cell);
   }
 
   void
   vmult(VectorizedArray<Number> * dst, VectorizedArray<Number> const * src) const
   {
-    inverse->apply(coefficients, n_components, src, dst);
+    inverse->apply(src, dst);
   }
 
 private:
-  std::shared_ptr<Integrator> fe_eval;
-
-  AlignedVector<VectorizedArray<Number>> coefficients;
+  std::shared_ptr<Integrator> integrator;
 
   std::shared_ptr<CellwiseInverseMass> inverse;
 };
