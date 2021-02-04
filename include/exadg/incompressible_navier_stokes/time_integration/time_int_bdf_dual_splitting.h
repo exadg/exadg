@@ -10,9 +10,6 @@
 
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
 
-// TODO
-//#define EXTRAPOLATE_ACCELERATION
-
 namespace ExaDG
 {
 namespace IncNS
@@ -151,9 +148,6 @@ private:
 
   VectorType pressure_np;
 
-#ifdef EXTRAPOLATE_ACCELERATION
-  std::vector<VectorType> acceleration;
-#endif
   std::vector<VectorType> velocity_dbc;
   VectorType              velocity_dbc_np;
 

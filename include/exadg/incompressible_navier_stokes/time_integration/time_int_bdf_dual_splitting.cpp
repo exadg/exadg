@@ -39,9 +39,6 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
     pde_operator(operator_in),
     velocity(this->order),
     pressure(this->order),
-#ifdef EXTRAPOLATE_ACCELERATION
-    acceleration(this->param.order_extrapolation_pressure_nbc),
-#endif
     velocity_dbc(this->order),
     iterations_pressure({0, 0}),
     iterations_projection({0, 0}),
@@ -96,13 +93,6 @@ TimeIntBDFDualSplitting<dim, Number>::read_restart_vectors(boost::archive::binar
 
   if(this->param.store_previous_boundary_values)
   {
-#ifdef EXTRAPOLATE_ACCELERATION
-    for(unsigned int i = 0; i < acceleration.size(); i++)
-    {
-      ia >> acceleration[i];
-    }
-#endif
-
     for(unsigned int i = 0; i < velocity_dbc.size(); i++)
     {
       ia >> velocity_dbc[i];
@@ -119,13 +109,6 @@ TimeIntBDFDualSplitting<dim, Number>::write_restart_vectors(
 
   if(this->param.store_previous_boundary_values)
   {
-#ifdef EXTRAPOLATE_ACCELERATION
-    for(unsigned int i = 0; i < acceleration.size(); i++)
-    {
-      oa << acceleration[i];
-    }
-#endif
-
     for(unsigned int i = 0; i < velocity_dbc.size(); i++)
     {
       oa << velocity_dbc[i];
@@ -154,11 +137,6 @@ TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
   // acceleration
   if(this->param.store_previous_boundary_values)
   {
-#ifdef EXTRAPOLATE_ACCELERATION
-    for(unsigned int i = 0; i < acceleration.size(); ++i)
-      pde_operator->initialize_vector_velocity(acceleration[i]);
-#endif
-
     for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
       pde_operator->initialize_vector_velocity(velocity_dbc[i]);
 
@@ -197,67 +175,6 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::initialize_acceleration_and_velocity_on_boundary()
 {
-#ifdef EXTRAPOLATE_ACCELERATION
-  // accelerations will only be accessed if the order of extrapolation in the pressure
-  // Neumann boundary condition is larger than 0.
-  if(this->param.order_extrapolation_pressure_nbc > 0)
-  {
-    // temporary vectors used to store the velocity at different instants of time and
-    // used to calculate the acceleration via BDF time derivative
-    VectorType vel_np;
-    pde_operator->initialize_vector_velocity(vel_np);
-
-    // Note that for BDF1 it can not be guaranteed that the results are the same for
-    // start_with_low_order = true and false if the time derivative of the velocity
-    // in the pressure Neumann boundary condition is computed numerically. This is due to
-    // the fact that computing the time derivative requires knowledge about the velocity
-    // at previous times, which is only available for start_with_low_order = false.
-    // Hence, the acceleration at start_time will be zero for start_with_low_order = true
-    // and this acceleration will be used in the first time step.
-    if(this->start_with_low_order == false)
-    {
-      // compute acceleration at start_time
-      if(this->param.ale_formulation)
-        this->move_mesh_and_update_dependent_data_structures(this->get_time());
-      pde_operator->interpolate_velocity_dirichlet_bc(vel_np, this->get_time());
-
-      for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
-      {
-        double const time = this->get_time() - double(i + 1) * this->get_time_step_size();
-        if(this->param.ale_formulation)
-          this->move_mesh_and_update_dependent_data_structures(time);
-        pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
-      }
-
-      compute_bdf_time_derivative(
-        acceleration[0], vel_np, velocity_dbc, this->bdf, this->get_time_step_size());
-    }
-
-    // compute accelerations at previous times t_j = start_time - j * dt, j = 1, ...
-    if(this->start_with_low_order == false)
-    {
-      for(unsigned int j = 1; j < acceleration.size(); ++j)
-      {
-        double const time = this->get_time() - double(j) * this->get_time_step_size();
-        if(this->param.ale_formulation)
-          this->move_mesh_and_update_dependent_data_structures(time);
-        pde_operator->interpolate_velocity_dirichlet_bc(vel_np, time);
-
-        for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
-        {
-          double const time = this->get_time() - double(j + i + 1) * this->get_time_step_size();
-          if(this->param.ale_formulation)
-            this->move_mesh_and_update_dependent_data_structures(time);
-          pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
-        }
-
-        compute_bdf_time_derivative(
-          acceleration[j], vel_np, velocity_dbc, this->bdf, this->get_time_step_size());
-      }
-    }
-  }
-#endif
-
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
   if(this->param.ale_formulation)
     this->move_mesh_and_update_dependent_data_structures(this->get_time());
@@ -393,11 +310,9 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::solve_timestep()
 {
-#ifndef EXTRAPOLATE_ACCELERATION
   // pre-computations
   if(this->param.store_previous_boundary_values)
     update_velocity_dbc();
-#endif
 
   // perform the sub-steps of the dual-splitting method
   convective_step();
@@ -631,20 +546,10 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
   // II.3. pressure Neumann boundary condition: temporal derivative of velocity
   if(this->param.store_previous_boundary_values)
   {
-#ifdef EXTRAPOLATE_ACCELERATION
-    VectorType temp(rhs);
-    for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
-    {
-      temp = 0.0;
-      pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(temp, acceleration[i]);
-      rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
-    }
-#else
     VectorType acceleration(velocity_dbc_np);
     compute_bdf_time_derivative(
       acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
     pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
-#endif
   }
   else
   {
@@ -947,70 +852,10 @@ TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 
   if(this->param.store_previous_boundary_values)
   {
-#ifdef EXTRAPOLATE_ACCELERATION
-    // push back accelerations and compute new acceleration at the end
-    // of the current time step before velocity_dbc is pushed back
-    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-
-    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
-
-    push_back(acceleration);
-
-    if(this->param.order_extrapolation_pressure_nbc)
-    {
-      compute_bdf_time_derivative(
-        acceleration[0], velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
-    }
-
+    // We have to care about the history of velocity Dirichlet boundary conditions,
+    // where velocity_dbc_np has already been updated.
     push_back(velocity_dbc);
     velocity_dbc[0].swap(velocity_dbc_np);
-
-
-    // Variant 3:
-    // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
-    // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
-    // velocity. Note: This variant leads to instabilities for small time step sizes.
-    /*
-    push_back(acceleration);
-
-    if(this->param.order_extrapolation_pressure_nbc)
-    {
-      compute_bdf_time_derivative(
-        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-    }
-
-    push_back(velocity_dbc);
-    velocity_dbc[0].swap(velocity_np);
-    */
-
-    // Variant 3b:
-    // Compute acceleration used for inhomogeneous boundary condition terms
-    // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
-    // velocity. But use boundary data g_u for velocity_dbc for intermediate velocity u_hat.
-    /*
-    push_back(acceleration);
-
-    // use interior solution u only for computation of time derivative (acceleration)
-    if(this->param.order_extrapolation_pressure_nbc)
-    {
-      compute_bdf_time_derivative(
-        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-    }
-
-    // use boundary condition g_u for velocity_dbc!
-    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
-    this->get_next_time());
-
-    push_back(velocity_dbc);
-    velocity_dbc[0].swap(velocity_dbc_np);
-    */
-#else
-    // If we do not extrapolate the acceleration, we only have to care about the history of
-    // velocity Dirichlet boundary conditions, where velocity_dbc_np has already been updated.
-    push_back(velocity_dbc);
-    velocity_dbc[0].swap(velocity_dbc_np);
-#endif
   }
 
   push_back(velocity);
