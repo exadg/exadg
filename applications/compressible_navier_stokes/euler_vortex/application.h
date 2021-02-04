@@ -220,7 +220,7 @@ public:
     // TEMPORAL DISCRETIZATION
     param.temporal_discretization       = TemporalDiscretization::ExplRK3Stage7Reg2;
     param.order_time_integrator         = 2;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
+    param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     param.time_step_size                = 1.0e-3;
     param.max_velocity                  = U_0;
     param.cfl_number                    = 1.0;
@@ -229,7 +229,7 @@ public:
     param.exponent_fe_degree_viscous    = 4.0;
 
     // output of solver information
-    param.solver_info_data.interval_time = (param.end_time - param.start_time) / 20;
+    param.solver_info_data.interval_time = (param.end_time - param.start_time) / 10;
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type    = TriangulationType::Distributed;
@@ -300,13 +300,13 @@ public:
     pp_data.output_data.write_vorticity      = true;
     pp_data.output_data.write_divergence     = true;
     pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
+    pp_data.output_data.output_interval_time = (end_time - start_time) / 10;
     pp_data.output_data.degree               = degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
     pp_data.error_data.error_calc_start_time    = start_time;
-    pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 20;
+    pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 10;
 
     std::shared_ptr<CompNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));

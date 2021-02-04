@@ -2,7 +2,7 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
         "DegreeMin": "6",
@@ -17,7 +17,7 @@
     "Application": {
     },
     "Output": {
-        "OutputDirectory": "output/manufactured_solution/",
+        "OutputDirectory": "output/shear_flow/",
         "OutputName": "test",
         "WriteOutput": "false"
     }
