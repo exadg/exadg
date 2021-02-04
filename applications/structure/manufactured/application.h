@@ -10,8 +10,8 @@
 
 /*
  * Manufactured solution for nonlinear elasticity problem with St. Venant-Kirchhoff
- * material. The test case can be used in both 2d and 3d, as well as for testing both
- * steady and unsteady solvers.
+ * material. The test case can be used in both 2d (plane strain!) and 3d, as well as for testing
+ * both steady and unsteady solvers.
  *
  * Consider the following displacement field
  *
@@ -296,9 +296,9 @@ public:
 
   double length = 1.0, height = 1.0, width = 1.0;
 
-  double const E_modul = 1.0;
-  double const poisson = 0.3;
-  double const f0      = E_modul * (1.0 - poisson) / (1 + poisson) / (1.0 - 2.0 * poisson);
+  double const E  = 1.0;
+  double const nu = 0.3;
+  double const f0 = E * (1.0 - nu) / (1 + nu) / (1.0 - 2.0 * nu); // plane strain
 
   double const density = 1.0;
 
@@ -389,10 +389,9 @@ public:
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
-    Type2D const       two_dim_type = Type2D::PlaneStress;
+    Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    material_descriptor.insert(
-      Pair(0, new StVenantKirchhoffData<dim>(type, E_modul, poisson, two_dim_type)));
+    material_descriptor.insert(Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
   }
 
   void
