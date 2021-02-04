@@ -1,0 +1,3 @@
+SET(TEST_LIBRARIES exadg)
+SET(TEST_TARGET poisson_sine)
+DEAL_II_PICKUP_TESTS(poisson_sine)

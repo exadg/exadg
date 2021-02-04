@@ -2,12 +2,12 @@
     "General": {
         "Precision": "double",
         "Dim": "3",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "Resolution": {
         "RunType": "RefineHAndP",
         "DegreeMin": "1",
-        "DegreeMax": "15",
+        "DegreeMax": "7",
         "RefineSpaceMin": "2",
         "RefineSpaceMax": "2",
         "DofsMin": "1000",
