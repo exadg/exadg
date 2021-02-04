@@ -2,13 +2,13 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
-        "DegreeMin": "6",
-        "DegreeMax": "6",
-        "RefineSpaceMin": "1",
-        "RefineSpaceMax": "1"
+        "DegreeMin": "3",
+        "DegreeMax": "3",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
@@ -17,7 +17,7 @@
     "Application": {
     },
     "Output": {
-        "OutputDirectory": "output/manufactured_solution/",
+        "OutputDirectory": "output/couette/",
         "OutputName": "test",
         "WriteOutput": "false"
     }

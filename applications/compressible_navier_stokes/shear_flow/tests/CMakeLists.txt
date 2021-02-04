@@ -1,0 +1,3 @@
+SET(TEST_LIBRARIES exadg)
+SET(TEST_TARGET compressible_shear_flow)
+DEAL_II_PICKUP_TESTS(compressible_shear_flow)
