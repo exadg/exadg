@@ -25,7 +25,7 @@ public:
   void
   reinit(const Mapping<dim> &                                        mapping,
          MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
-         MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & mg_constraints,
+         MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
          MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
          const unsigned int                                          dof_handler_index = 0);
 

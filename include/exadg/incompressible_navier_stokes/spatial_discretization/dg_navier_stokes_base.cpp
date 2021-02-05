@@ -297,7 +297,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
   viscous_kernel->reinit(*matrix_free, viscous_kernel_data, get_dof_index_velocity());
 
-  AffineConstraints<double> constraint_dummy;
+  AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
 
   // mass matrix operator
@@ -707,7 +707,7 @@ DGNavierStokesBase<dim, Number>::get_dof_handler_p() const
 }
 
 template<int dim, typename Number>
-AffineConstraints<double> const &
+AffineConstraints<Number> const &
 DGNavierStokesBase<dim, Number>::get_constraint_p() const
 {
   return constraint_p;
@@ -1092,7 +1092,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   typedef Poisson::LaplaceOperator<dim, Number, 1> Laplace;
   Laplace                                          laplace_operator;
-  AffineConstraints<double>                        constraint_dummy;
+  AffineConstraints<Number>                        constraint_dummy;
   laplace_operator.initialize(*matrix_free, constraint_dummy, laplace_operator_data);
 
   // setup preconditioner

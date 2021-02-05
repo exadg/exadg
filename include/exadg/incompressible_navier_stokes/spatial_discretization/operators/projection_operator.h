@@ -85,14 +85,14 @@ public:
 
   void
   initialize(MatrixFree<dim, Number> const &                matrix_free,
-             AffineConstraints<double> const &              constraint_matrix,
+             AffineConstraints<Number> const &              constraint_matrix,
              ProjectionOperatorData<dim> const &            data,
              Operators::DivergencePenaltyKernelData const & div_kernel_data,
              Operators::ContinuityPenaltyKernelData const & conti_kernel_data);
 
   void
   initialize(MatrixFree<dim, Number> const &     matrix_free,
-             AffineConstraints<double> const &   constraint_matrix,
+             AffineConstraints<Number> const &   constraint_matrix,
              ProjectionOperatorData<dim> const & data,
              std::shared_ptr<DivKernel>          div_penalty_kernel,
              std::shared_ptr<ContiKernel>        conti_penalty_kernel);

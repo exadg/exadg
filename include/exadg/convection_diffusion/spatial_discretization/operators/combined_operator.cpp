@@ -22,7 +22,7 @@ Operator<dim, Number>::Operator() : scaling_factor_mass_matrix(1.0)
 template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                  AffineConstraints<double> const & constraint_matrix,
+                                  AffineConstraints<Number> const & constraint_matrix,
                                   OperatorData<dim> const &         data)
 {
   operator_data = data;
@@ -64,7 +64,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<double> const &                         constraint_matrix,
+  AffineConstraints<Number> const &                         constraint_matrix,
   OperatorData<dim> const &                                 data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel_in,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel_in)

@@ -38,7 +38,7 @@ public:
     return pde_operator;
   }
 
-  virtual AffineConstraints<double> const &
+  virtual AffineConstraints<typename Operator::value_type> const &
   get_constraint_matrix() const
   {
     return pde_operator->get_constraint_matrix();

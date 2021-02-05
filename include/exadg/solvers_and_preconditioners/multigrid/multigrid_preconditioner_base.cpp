@@ -2,6 +2,7 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
+#include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
 #include <exadg/matrix_free/categorization.h>
@@ -332,16 +333,16 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
-  bool                                                        is_singular,
-  PeriodicFacePairs &                                         periodic_face_pairs,
-  FiniteElement<dim> const &                                  fe,
-  parallel::TriangulationBase<dim> const *                    tria,
-  Map const &                                                 dirichlet_bc,
-  std::vector<MGLevelInfo> &                                  level_info,
-  std::vector<MGDoFHandlerIdentifier> &                       p_levels,
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &     dof_handlers,
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         constrained_dofs,
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & constraints)
+  bool                                                                 is_singular,
+  PeriodicFacePairs &                                                  periodic_face_pairs,
+  FiniteElement<dim> const &                                           fe,
+  parallel::TriangulationBase<dim> const *                             tria,
+  Map const &                                                          dirichlet_bc,
+  std::vector<MGLevelInfo> &                                           level_info,
+  std::vector<MGDoFHandlerIdentifier> &                                p_levels,
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              dof_handlers,
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
+  MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints)
 {
   constrained_dofs.resize(0, this->n_levels - 1);
   dof_handlers.resize(0, this->n_levels - 1);
@@ -384,7 +385,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
   for(unsigned int level = coarse_level; level <= fine_level; level++)
   {
-    auto constraint_own = new AffineConstraints<double>;
+    auto constraint_own = new AffineConstraints<MultigridNumber>;
 
     ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
                                          is_singular,

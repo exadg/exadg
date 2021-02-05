@@ -59,12 +59,12 @@ public:
 
   void
   initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<double> const & constraint_matrix,
+             AffineConstraints<Number> const & constraint_matrix,
              MomentumOperatorData<dim> const & data);
 
   void
   initialize(MatrixFree<dim, Number> const &                           matrix_free,
-             AffineConstraints<double> const &                         constraint_matrix,
+             AffineConstraints<Number> const &                         constraint_matrix,
              MomentumOperatorData<dim> const &                         data,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
              std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel);

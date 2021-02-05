@@ -371,9 +371,9 @@ private:
 
   FESystem<dim>             fe;
   DoFHandler<dim>           dof_handler;
-  AffineConstraints<double> constraint_matrix;
+  AffineConstraints<Number> constraint_matrix;
   // constraints for mass matrix operator (i.e., do not apply any constraints)
-  AffineConstraints<double> constraints_mass;
+  AffineConstraints<Number> constraints_mass;
 
   std::string const dof_index                = "dof";
   std::string const dof_index_mass           = "dof_mass";

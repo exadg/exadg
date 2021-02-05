@@ -137,9 +137,9 @@ private:
 
   MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG> transfers_velocity;
 
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     dof_handlers_velocity;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         constrained_dofs_velocity;
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>              dof_handlers_velocity;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                  constrained_dofs_velocity;
+  MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> constraints_velocity;
 
   OperatorData<dim> data;
 

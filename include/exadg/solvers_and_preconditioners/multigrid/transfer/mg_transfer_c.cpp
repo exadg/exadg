@@ -15,8 +15,8 @@ MGTransferC<dim, Number, VectorType, components>::MGTransferC(
   const Mapping<dim> &              mapping,
   const MatrixFree<dim, Number> &   matrixfree_dg,
   const MatrixFree<dim, Number> &   matrixfree_cg,
-  const AffineConstraints<double> & constraints_dg,
-  const AffineConstraints<double> & constraints_cg,
+  const AffineConstraints<Number> & constraints_dg,
+  const AffineConstraints<Number> & constraints_cg,
   const unsigned int                level,
   const unsigned int                fe_degree,
   const unsigned int                dof_handler_index)
@@ -26,7 +26,7 @@ MGTransferC<dim, Number, VectorType, components>::MGTransferC(
     &matrixfree_cg.get_dof_handler(dof_handler_index),
     &matrixfree_dg.get_dof_handler(dof_handler_index)};
 
-  std::vector<const AffineConstraints<double> *> constraint_matrices = {&constraints_cg,
+  std::vector<const AffineConstraints<Number> *> constraint_matrices = {&constraints_cg,
                                                                         &constraints_dg};
   QGauss<1>                                      quadrature(1);
 

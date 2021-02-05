@@ -227,7 +227,7 @@ private:
   /*
    * Constraints.
    */
-  AffineConstraints<double> constraint;
+  AffineConstraints<Number> constraint;
 
 
   std::string const dof_index_all    = "all_fields";

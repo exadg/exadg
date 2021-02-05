@@ -203,7 +203,7 @@ private:
 public:
   void
   initialize(MatrixFree<dim, Number> const &                          matrix_free,
-             AffineConstraints<double> const &                        constraint_matrix,
+             AffineConstraints<Number> const &                        constraint_matrix,
              DiffusiveOperatorData<dim> const &                       data,
              std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel);
 

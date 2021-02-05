@@ -178,7 +178,7 @@ private:
 
   DoFHandler<dim> dof_handler;
 
-  mutable AffineConstraints<double> affine_constraints;
+  mutable AffineConstraints<Number> affine_constraints;
 
   std::string const dof_index                = "laplace";
   std::string const quad_index               = "laplace";

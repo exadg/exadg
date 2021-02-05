@@ -28,7 +28,7 @@ public:
     return dof_handler_vec;
   }
 
-  std::vector<AffineConstraints<double> const *> &
+  std::vector<AffineConstraints<Number> const *> &
   get_constraint_vector()
   {
     return constraint_vec;
@@ -70,7 +70,7 @@ public:
   }
 
   void
-  insert_constraint(AffineConstraints<double> const * constraint, std::string const & name)
+  insert_constraint(AffineConstraints<Number> const * constraint, std::string const & name)
   {
     insert_element(constraint_vec, constraint_index_map, constraint, name);
   }
@@ -153,7 +153,7 @@ private:
 
   // collection of data structures required for initialization and update of matrix_free
   std::vector<DoFHandler<dim> const *>           dof_handler_vec;
-  std::vector<AffineConstraints<double> const *> constraint_vec;
+  std::vector<AffineConstraints<Number> const *> constraint_vec;
   std::vector<Quadrature<1>>                     quadrature_vec;
 };
 } // namespace ExaDG
