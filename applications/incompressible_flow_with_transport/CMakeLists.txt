@@ -1,6 +1,5 @@
 PROJECT(incompressible_flow_with_transport)
 
-ADD_SUBDIRECTORY(cavity)
 ADD_SUBDIRECTORY(differentially_heated_cavity)
 ADD_SUBDIRECTORY(mantle_convection)
 ADD_SUBDIRECTORY(rayleigh_benard)

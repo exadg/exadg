@@ -215,8 +215,16 @@ InputParameters::check_input_parameters()
 
       // for the explicit RK method both the convective and the diffusive term are
       // treated explicitly -> one has to specify both the CFL-number and the Diffusion-number
-      AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
-      AssertThrow(diffusion_number > 0., ExcMessage("parameter must be defined"));
+      if(calculation_of_time_step_size == TimeStepCalculation::CFL ||
+         calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+      {
+        AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
+      }
+      if(calculation_of_time_step_size == TimeStepCalculation::Diffusion ||
+         calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+      {
+        AssertThrow(diffusion_number > 0., ExcMessage("parameter must be defined"));
+      }
     }
 
     if(temporal_discretization == TemporalDiscretization::BDF)

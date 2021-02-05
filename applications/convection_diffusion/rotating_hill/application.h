@@ -94,23 +94,22 @@ public:
     param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization      = TemporalDiscretization::ExplRK; // BDF; //ExplRK;
-    param.time_integrator_rk           = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    param.temporal_discretization      = TemporalDiscretization::BDF;
     param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
-    param.start_with_low_order         = false;
     param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; // ExplicitOIF;
+    param.start_with_low_order         = false;
     param.time_integrator_oif =
       TimeIntegratorRK::ExplRK2Stage2; // ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
+
+//    param.temporal_discretization      = TemporalDiscretization::ExplRK;
+//    param.time_integrator_rk           = TimeIntegratorRK::ExplRK3Stage7Reg2;
 
     param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     param.adaptive_time_stepping        = false;
     param.time_step_size                = 1.e-2;
-    param.cfl_oif                       = 0.5;
+    param.cfl_oif                       = 0.25;
     param.cfl                           = param.cfl_oif * 1.0;
-    param.diffusion_number              = 0.01;
-    param.exponent_fe_degree_convection = 2.0;
-    param.exponent_fe_degree_diffusion  = 3.0;
-    param.c_eff                         = 1.0e0;
+    param.exponent_fe_degree_convection = 1.5;
 
     // restart
     param.restart_data.write_restart = false;
@@ -140,7 +139,7 @@ public:
     param.update_preconditioner = true;
 
     // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
-    param.implement_block_diagonal_preconditioner_matrix_free = true;
+    param.implement_block_diagonal_preconditioner_matrix_free = false; //true;
     param.solver_block_diagonal                               = Elementwise::Solver::GMRES;
     param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
     param.solver_data_block_diagonal    = SolverData(1000, 1.e-12, 1.e-2, 1000);

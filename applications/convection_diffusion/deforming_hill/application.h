@@ -99,17 +99,17 @@ public:
     param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    //  param.temporal_discretization = TemporalDiscretization::BDF;
-    //  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+//    param.temporal_discretization = TemporalDiscretization::BDF;
+//    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+//    param.order_time_integrator         = 3;
+//    param.start_with_low_order          = true;
     param.temporal_discretization       = TemporalDiscretization::ExplRK;
     param.time_integrator_rk            = TimeIntegratorRK::ExplRK3Stage7Reg2;
     param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator         = 3;
-    param.start_with_low_order          = true;
     param.calculation_of_time_step_size = TimeStepCalculation::CFL;
     param.time_step_size                = 1.0e-4;
-    param.cfl                           = 0.2;
-    param.diffusion_number              = 0.01;
+    param.cfl                           = 0.4;
+    param.exponent_fe_degree_convection = 1.5;
 
     // SPATIAL DISCRETIZATION
 

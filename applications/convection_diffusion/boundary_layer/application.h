@@ -139,18 +139,15 @@ public:
     // set boundary indicator
     for(auto cell : *triangulation)
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        if((std::fabs(cell.face(face_number)->center()(1) - left) < 1e-12) ||
-           (std::fabs(cell.face(face_number)->center()(1) - right) < 1e-12) ||
-           ((dim == 3) && ((std::fabs(cell.face(face_number)->center()(2) - left) < 1e-12) ||
-                           (std::fabs(cell.face(face_number)->center()(2) - right) < 1e-12))))
-          cell.face(face_number)->set_boundary_id(1);
-
-        // TODO Neumann boundary condition at right boundary
-        //      if (std::fabs(cell.face(face_number)->center()(0) - right) < 1e-12)
-        //        cell->face(face_number)->set_boundary_id (2);
+        if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) ||
+           (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) ||
+           ((dim == 3) && ((std::fabs(cell.face(f)->center()(2) - left) < 1e-12) ||
+                           (std::fabs(cell.face(f)->center()(2) - right) < 1e-12))))
+        {
+          cell.face(f)->set_boundary_id(1);
+        }
       }
     }
 
@@ -164,7 +161,6 @@ public:
 
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>(diffusivity)));
     boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ConstantFunction<dim>(-10.0, 1)));
   }
 
   void
