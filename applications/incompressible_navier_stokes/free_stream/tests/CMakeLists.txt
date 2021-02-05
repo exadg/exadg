@@ -1,0 +1,3 @@
+SET(TEST_LIBRARIES exadg)
+SET(TEST_TARGET incompressible_free_stream)
+DEAL_II_PICKUP_TESTS(incompressible_free_stream)

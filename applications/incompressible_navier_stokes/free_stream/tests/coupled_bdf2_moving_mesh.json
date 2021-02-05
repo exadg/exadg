@@ -2,13 +2,13 @@
     "General": {
         "Precision": "double",
         "Dim": "2",
-        "IsTest": "false"
+        "IsTest": "true"
     },
     "SpatialResolution": {
         "DegreeMin": "3",
         "DegreeMax": "3",
-        "RefineSpaceMin": "3",
-        "RefineSpaceMax": "3"
+        "RefineSpaceMin": "2",
+        "RefineSpaceMax": "2"
     },
     "TemporalResolution": {
         "RefineTimeMin": "0",
@@ -19,7 +19,7 @@
     },
     "Output": {
         "OutputDirectory": "output/free_stream/",
-        "OutputName": "l3_k3",
+        "OutputName": "test",
         "WriteOutput": "false"
     }
 }

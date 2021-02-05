@@ -144,11 +144,11 @@ public:
     // COUPLED NAVIER-STOKES SOLVER
 
     // nonlinear solver (Newton solver)
-    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-12, 1.e-12);
+    param.newton_solver_data_coupled = Newton::SolverData(100, 1.e-14, 1.e-14);
 
     // linear solver
     param.solver_coupled      = SolverCoupled::FGMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 100);
+    param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-2, 100);
 
     // preconditioning linear solver
     param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
