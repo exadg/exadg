@@ -1,0 +1,3 @@
+SET(TEST_LIBRARIES exadg)
+SET(TEST_TARGET conv_diff_rotating_hill)
+DEAL_II_PICKUP_TESTS(conv_diff_rotating_hill)
