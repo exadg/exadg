@@ -101,7 +101,7 @@ public:
   unsigned int
   get_level() const;
 
-  AffineConstraints<double> const &
+  AffineConstraints<Number> const &
   get_constraint_matrix() const;
 
   MatrixFree<dim, Number> const &
@@ -261,7 +261,7 @@ public:
 protected:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraints,
+         AffineConstraints<Number> const & constraints,
          OperatorBaseData const &          data);
 
   /*
@@ -331,7 +331,9 @@ protected:
   /*
    * Constraint matrix.
    */
-  mutable lazy_ptr<AffineConstraints<double>> constraint;
+  mutable lazy_ptr<AffineConstraints<Number>> constraint;
+
+  mutable AffineConstraints<double> constraint_double;
 
   /*
    * Cell and face integrator flags.

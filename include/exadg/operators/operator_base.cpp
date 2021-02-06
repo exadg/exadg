@@ -29,12 +29,13 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const &   matrix_free,
-                                                AffineConstraints<double> const & constraints,
+                                                AffineConstraints<Number> const & constraints,
                                                 OperatorBaseData const &          data)
 {
   // reinit data structures
   this->matrix_free.reset(matrix_free);
   this->constraint.reset(constraints);
+  this->constraint_double.copy_from(*constraint);
   this->data = data;
 
   // check if DG or CG
@@ -112,7 +113,7 @@ OperatorBase<dim, Number, n_components>::get_level() const
 }
 
 template<int dim, typename Number, int n_components>
-AffineConstraints<double> const &
+AffineConstraints<Number> const &
 OperatorBase<dim, Number, n_components>::get_constraint_matrix() const
 {
   return *constraint;
@@ -646,12 +647,12 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
 namespace
 {
 // temporary hack
-template<int dim, int spacedim, typename SparsityPatternType>
+template<int dim, int spacedim, typename SparsityPatternType, typename Number>
 void
 make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
                       SparsityPatternType &             sparsity,
                       const unsigned int                level,
-                      const AffineConstraints<double> & constraints,
+                      const AffineConstraints<Number> & constraints,
                       const bool                        keep_constrained_dofs = true)
 {
   const types::global_dof_index n_dofs = dof.n_dofs(level);
@@ -701,7 +702,10 @@ OperatorBase<dim, Number, n_components>::init_system_matrix(SparseMatrix & syste
   else if(is_dg && !is_mg)
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   else if(/*!is_dg &&*/ is_mg)
-    make_sparsity_pattern(dof_handler, dsp, this->level, *this->constraint);
+    make_sparsity_pattern<dim, dim, TrilinosWrappers::SparsityPattern, Number>(dof_handler,
+                                                                               dsp,
+                                                                               this->level,
+                                                                               *this->constraint);
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
@@ -1708,7 +1712,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
           dof_indices[j] = temp[matrix_free.get_shape_info().lexicographic_numbering[j]];
       }
 
-      constraint->distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
+      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
     }
   }
 }
@@ -1804,9 +1808,15 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
       }
 
       // save M_mm
-      constraint->distribute_local_to_global(matrices_m[v], dof_indices_m, dof_indices_m, dst);
+      constraint_double.distribute_local_to_global(matrices_m[v],
+                                                   dof_indices_m,
+                                                   dof_indices_m,
+                                                   dst);
       // save M_pm
-      constraint->distribute_local_to_global(matrices_p[v], dof_indices_p, dof_indices_m, dst);
+      constraint_double.distribute_local_to_global(matrices_p[v],
+                                                   dof_indices_p,
+                                                   dof_indices_m,
+                                                   dst);
     }
 
     // process positive trial function
@@ -1865,9 +1875,15 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
       }
 
       // save M_mp
-      constraint->distribute_local_to_global(matrices_m[v], dof_indices_m, dof_indices_p, dst);
+      constraint_double.distribute_local_to_global(matrices_m[v],
+                                                   dof_indices_m,
+                                                   dof_indices_p,
+                                                   dst);
       // save M_pp
-      constraint->distribute_local_to_global(matrices_p[v], dof_indices_p, dof_indices_p, dst);
+      constraint_double.distribute_local_to_global(matrices_p[v],
+                                                   dof_indices_p,
+                                                   dof_indices_p,
+                                                   dst);
     }
   }
 }
@@ -1927,7 +1943,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
       else
         cell_v->get_dof_indices(dof_indices);
 
-      constraint->distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
+      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
     }
   }
 }

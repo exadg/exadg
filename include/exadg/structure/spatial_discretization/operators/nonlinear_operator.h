@@ -37,7 +37,7 @@ private:
 public:
   void
   initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<double> const & constraint_matrix,
+             AffineConstraints<Number> const & constraint_matrix,
              OperatorData<dim> const &         data) override;
 
   /*

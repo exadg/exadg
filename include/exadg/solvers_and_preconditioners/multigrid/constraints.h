@@ -11,13 +11,13 @@ namespace // anonymous namespace
 {
 using namespace dealii;
 
-template<int dim>
+template<int dim, typename Number>
 void
 add_periodicity_constraints(unsigned int const                            level,
                             unsigned int const                            target_level,
                             typename DoFHandler<dim>::face_iterator const face1,
                             typename DoFHandler<dim>::face_iterator const face2,
-                            AffineConstraints<double> &                   constraints)
+                            AffineConstraints<Number> &                   constraints)
 {
   if(level == 0)
   {
@@ -54,14 +54,14 @@ add_periodicity_constraints(unsigned int const                            level,
 }
 
 
-template<int dim>
+template<int dim, typename Number>
 void
 add_periodicity_constraints(
   DoFHandler<dim> const & dof_handler,
   unsigned int const      level,
   std::vector<typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                               periodic_face_pairs_level0,
-  AffineConstraints<double> & constraint_own)
+  AffineConstraints<Number> & constraint_own)
 {
   // loop over all periodic face pairs of level 0
   for(auto & it : periodic_face_pairs_level0)
@@ -78,18 +78,18 @@ add_periodicity_constraints(
 
     // get reference to periodic faces on level and add recursively their
     // subfaces on the given level
-    add_periodicity_constraints<dim>(
+    add_periodicity_constraints<dim, Number>(
       level, level, cell1->face(it.face_idx[1]), cell0->face(it.face_idx[0]), constraint_own);
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 void
 add_constraints(
   bool                        is_dg,
   bool                        operator_is_singular,
   DoFHandler<dim> const &     dof_handler,
-  AffineConstraints<double> & constraint_own,
+  AffineConstraints<Number> & constraint_own,
   MGConstrainedDoFs const &   mg_constrained_dofs,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                      periodic_face_pairs,
@@ -110,7 +110,7 @@ add_constraints(
   constraint_own.reinit(relevant_dofs);
 
   // 1) add periodic BCs
-  add_periodicity_constraints<dim>(dof_handler, level, periodic_face_pairs, constraint_own);
+  add_periodicity_constraints<dim, Number>(dof_handler, level, periodic_face_pairs, constraint_own);
 
   // 2) add Dirichlet BCs
   constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
@@ -126,8 +126,7 @@ add_constraints(
     types::global_dof_index line_index = 0;
     while(true)
     {
-      std::vector<std::pair<types::global_dof_index, double>> const * lines =
-        constraint_own.get_constraint_entries(line_index);
+      auto const * lines = constraint_own.get_constraint_entries(line_index);
 
       if(lines == 0)
       {

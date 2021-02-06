@@ -22,7 +22,7 @@ public:
   {
   }
 
-  virtual AffineConstraints<double> const &
+  virtual AffineConstraints<Number> const &
   get_constraint_matrix() const = 0;
 
   virtual MatrixFree<dim, Number> const &

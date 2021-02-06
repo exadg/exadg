@@ -223,7 +223,7 @@ public:
   DoFHandler<dim> const &
   get_dof_handler_p() const;
 
-  AffineConstraints<double> const &
+  AffineConstraints<Number> const &
   get_constraint_p() const;
 
   types::global_dof_index
@@ -532,7 +532,7 @@ private:
   DoFHandler<dim> dof_handler_p;
   DoFHandler<dim> dof_handler_u_scalar;
 
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+  AffineConstraints<Number> constraint_u, constraint_p, constraint_u_scalar;
 
   std::string const dof_index_u        = "velocity";
   std::string const dof_index_p        = "pressure";

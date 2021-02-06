@@ -18,7 +18,7 @@ using namespace dealii;
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                           AffineConstraints<double> const & constraint_matrix,
+                                           AffineConstraints<Number> const & constraint_matrix,
                                            OperatorData<dim> const &         data)
 {
   Base::initialize(matrix_free, constraint_matrix, data);

@@ -20,7 +20,7 @@ template<int dim, int n_components, typename Number>
 void
 MassMatrixOperator<dim, n_components, Number>::initialize(
   MatrixFree<dim, Number> const &     matrix_free,
-  AffineConstraints<double> const &   constraint_matrix,
+  AffineConstraints<Number> const &   constraint_matrix,
   MassMatrixOperatorData<dim> const & data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);

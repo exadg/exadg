@@ -15,7 +15,7 @@ template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::initialize(
   MatrixFree<dim, Number> const &        matrix_free,
-  AffineConstraints<double> const &      constraint_matrix,
+  AffineConstraints<Number> const &      constraint_matrix,
   LaplaceOperatorData<rank, dim> const & data)
 {
   operator_data = data;

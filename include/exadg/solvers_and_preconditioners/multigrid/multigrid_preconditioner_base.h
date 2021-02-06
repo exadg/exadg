@@ -133,16 +133,16 @@ protected:
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool                                                        is_singular,
-    PeriodicFacePairs &                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                  fe,
-    parallel::TriangulationBase<dim> const *                    tria,
-    Map const &                                                 dirichlet_bc,
-    std::vector<MGLevelInfo> &                                  level_info,
-    std::vector<MGDoFHandlerIdentifier> &                       p_levels,
-    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &     dofhandlers,
-    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         constrained_dofs,
-    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & constraints);
+    bool                                                                 is_singular,
+    PeriodicFacePairs &                                                  periodic_face_pairs,
+    FiniteElement<dim> const &                                           fe,
+    parallel::TriangulationBase<dim> const *                             tria,
+    Map const &                                                          dirichlet_bc,
+    std::vector<MGLevelInfo> &                                           level_info,
+    std::vector<MGDoFHandlerIdentifier> &                                p_levels,
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              dofhandlers,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
+    MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints);
 
   /*
    * Transfer operators.
@@ -152,7 +152,7 @@ protected:
 
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>                dof_handlers;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                    constrained_dofs;
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>>            constraints;
+  MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>>   constraints;
   MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>> matrix_free_data_objects;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>>     matrix_free_objects;
   MGLevelObject<std::shared_ptr<Operator>>                             operators;

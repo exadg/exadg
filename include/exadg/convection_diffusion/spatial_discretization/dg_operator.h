@@ -354,7 +354,7 @@ private:
   /*
    * Constraints.
    */
-  AffineConstraints<double> constraint_matrix;
+  AffineConstraints<Number> constraint_matrix;
 
   std::string const dof_index_std      = "conv_diff";
   std::string const dof_index_velocity = "conv_diff_velocity";

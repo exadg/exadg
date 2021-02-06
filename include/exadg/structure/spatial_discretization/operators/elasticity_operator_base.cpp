@@ -56,7 +56,7 @@ ElasticityOperatorBase<dim, Number>::get_mapping_flags()
 template<int dim, typename Number>
 void
 ElasticityOperatorBase<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                                AffineConstraints<double> const & constraint_matrix,
+                                                AffineConstraints<Number> const & constraint_matrix,
                                                 OperatorData<dim> const &         data)
 {
   operator_data = data;
