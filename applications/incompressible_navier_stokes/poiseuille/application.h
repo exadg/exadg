@@ -21,6 +21,17 @@ enum class BoundaryCondition
   Periodic
 };
 
+inline void
+string_to_enum(BoundaryCondition & enum_type, std::string const string_type)
+{
+  // clang-format off
+  if     (string_type == "ParabolicInflow") enum_type = BoundaryCondition::ParabolicInflow;
+  else if(string_type == "PressureInflow")  enum_type = BoundaryCondition::PressureInflow;
+  else if(string_type == "Periodic")        enum_type = BoundaryCondition::Periodic;
+  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  // clang-format on
+}
+
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -157,13 +168,35 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    this->add_parameters(prm);
+    add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
+
+    string_to_enum(boundary_condition, boundary_condition_string);
   }
 
-  BoundaryCondition const boundary_condition = BoundaryCondition::ParabolicInflow;
+  void
+  add_parameters(ParameterHandler & prm)
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
 
-  bool const apply_symmetry_bc = false;
+    // clang-format off
+    prm.enter_subsection("Application");
+      prm.add_parameter("BoundaryConditionType",
+                        boundary_condition_string,
+                        "Type of boundary condition.",
+                        Patterns::Selection("ParabolicInflow|PressureInflow|Periodic"));
+      prm.add_parameter("ApplySymmetryBC",
+                        apply_symmetry_bc,
+                        "Apply symmetry boundary condition.",
+                        Patterns::Bool());
+    prm.leave_subsection();
+    // clang-format on
+  }
+
+  std::string       boundary_condition_string = "ParabolicInflow";
+  BoundaryCondition boundary_condition        = BoundaryCondition::ParabolicInflow;
+
+  bool apply_symmetry_bc = false;
 
   FormulationViscousTerm const formulation_viscous_term =
     FormulationViscousTerm::LaplaceFormulation;
@@ -229,6 +262,9 @@ public:
     param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // PROJECTION METHODS
+
+    // formulation
+    param.store_previous_boundary_values = true;
 
     // pressure Poisson equation
     param.solver_pressure_poisson         = SolverPressurePoisson::CG;
@@ -353,14 +389,20 @@ public:
     {
       // inflow
       if(boundary_condition == BoundaryCondition::ParabolicInflow)
+      {
         boundary_descriptor_velocity->dirichlet_bc.insert(
           pair(1, new AnalyticalSolutionVelocity<dim>(max_velocity, H)));
+      }
       else if(boundary_condition == BoundaryCondition::PressureInflow)
+      {
         boundary_descriptor_velocity->neumann_bc.insert(
           pair(1,
                new NeumannBoundaryVelocity<dim>(formulation_viscous_term, max_velocity, H, -1.0)));
+      }
       else
+      {
         AssertThrow(false, ExcMessage("not implemented."));
+      }
 
       // outflow
       boundary_descriptor_velocity->neumann_bc.insert(
@@ -384,13 +426,19 @@ public:
     {
       // inflow
       if(boundary_condition == BoundaryCondition::ParabolicInflow)
+      {
         boundary_descriptor_pressure->neumann_bc.insert(
           pair(1, new Functions::ZeroFunction<dim>(dim)));
+      }
       else if(boundary_condition == BoundaryCondition::PressureInflow)
+      {
         boundary_descriptor_pressure->dirichlet_bc.insert(
           pair(1, new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H)));
+      }
       else
+      {
         AssertThrow(false, ExcMessage("not implemented."));
+      }
 
       // outflow
       boundary_descriptor_pressure->dirichlet_bc.insert(
@@ -431,7 +479,7 @@ public:
     pp_data.output_data.output_folder             = this->output_directory + "vtu/";
     pp_data.output_data.output_name               = this->output_name;
     pp_data.output_data.output_start_time         = start_time;
-    pp_data.output_data.output_interval_time      = (end_time - start_time) / 100;
+    pp_data.output_data.output_interval_time      = (end_time - start_time) / 10;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -448,7 +496,7 @@ public:
       new AnalyticalSolutionVelocity<dim>(max_velocity, H));
     pp_data.error_data_u.calculate_relative_errors = false;
     pp_data.error_data_u.error_calc_start_time     = start_time;
-    pp_data.error_data_u.error_calc_interval_time  = (end_time - start_time) / 100;
+    pp_data.error_data_u.error_calc_interval_time  = (end_time - start_time) / 10;
     pp_data.error_data_u.name                      = "velocity";
 
     // ... pressure error
@@ -460,7 +508,7 @@ public:
         new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H));
     pp_data.error_data_p.calculate_relative_errors = false;
     pp_data.error_data_p.error_calc_start_time     = start_time;
-    pp_data.error_data_p.error_calc_interval_time  = (end_time - start_time) / 100;
+    pp_data.error_data_p.error_calc_interval_time  = (end_time - start_time) / 10;
     pp_data.error_data_p.name                      = "pressure";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;

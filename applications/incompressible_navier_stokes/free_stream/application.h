@@ -36,8 +36,23 @@ public:
   {
     // parse application-specific parameters
     ParameterHandler prm;
-    this->add_parameters(prm);
+    add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
+  }
+
+  void
+  add_parameters(ParameterHandler & prm)
+  {
+    ApplicationBase<dim, Number>::add_parameters(prm);
+
+    // clang-format off
+    prm.enter_subsection("Application");
+      prm.add_parameter("ALE",
+                        ALE,
+                        "Moving mesh (ALE).",
+                        Patterns::Bool());
+    prm.leave_subsection();
+    // clang-format on
   }
 
   double const left  = -0.5;
@@ -46,7 +61,7 @@ public:
   double const start_time = 0.0;
   double const end_time   = 10.0;
 
-  bool const ALE = true;
+  bool ALE = true;
 
   void
   set_input_parameters(InputParameters & param)
@@ -71,7 +86,7 @@ public:
     param.solver_type                     = SolverType::Unsteady;
     param.temporal_discretization         = TemporalDiscretization::BDFCoupledSolution;
     param.treatment_of_convective_term    = TreatmentOfConvectiveTerm::Explicit;
-    param.order_time_integrator           = 1;
+    param.order_time_integrator           = 2;
     param.start_with_low_order            = false;
     param.adaptive_time_stepping          = true;
     param.calculation_of_time_step_size   = TimeStepCalculation::CFL;

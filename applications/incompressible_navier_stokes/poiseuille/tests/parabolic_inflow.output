@@ -1,0 +1,420 @@
+
+
+
+________________________________________________________________________________
+                                                                                
+                ////////                      ///////   ////////                
+                ///                           ///  ///  ///                     
+                //////    ///  ///  ///////   ///  ///  /// ////                
+                ///         ////    //   //   ///  ///  ///  ///                
+                ////////  ///  ///  ///////// ///////   ////////                
+                                                                                
+               High-Order Discontinuous Galerkin for the Exa-Scale              
+________________________________________________________________________________
+
+Setting up incompressible Navier-Stokes solver:
+
+MPI info:
+
+  Number of processes:                       1
+
+List of input parameters:
+
+Mathematical model:
+  Problem type:                              Unsteady
+  Equation type:                             NavierStokes
+  Formulation of viscous term:               LaplaceFormulation
+  Formulation of convective term:            ConvectiveFormulation
+  Outflow BC for convective term:            false
+  Right-hand side:                           false
+  Boussinesq term:                           false
+  Boussinesq - dynamic part only:            false
+  Use ALE formulation:                       false
+
+Physical quantities:
+  Start time:                                0.0000e+00
+  End time:                                  1.0000e+02
+  Viscosity:                                 1.0000e-01
+  Density:                                   1.0000e+00
+
+Temporal discretization:
+  Temporal discretization method:            BDF dual splitting scheme
+  Treatment of convective term:              Explicit
+  Calculation of time step size:             CFL
+  Adaptive time stepping:                    true
+  Adaptive time stepping limiting factor:    1.2000e+00
+  Maximum allowable time step size:          1.7977e+308
+  Type of CFL condition:                     VelocityNorm
+  Maximum number of time steps:              4294967295
+  Order of time integration scheme:          2
+  Start with low order method:               true
+  Solver information:
+  Interval physical time:                    1.0000e+01
+  Interval wall time:                        1.7977e+308
+  Interval time steps:                       4294967295
+  Restarted simulation:                      false
+  Restart:
+  Write restart:                             false
+
+Spatial discretization:
+  Triangulation type:                        Distributed
+  Mapping:                                   Isoparametric
+  Polynomial degree pressure:                Mixed-order
+  Convective term - Upwind factor:           1.0000e+00
+  Convective term - Type of Dirichlet BC's:  Mirror
+  Viscous term - IP formulation:             SIPG
+  Viscous term - IP factor:                  1.0000e+00
+  Grad(p) - integration by parts:            true
+  Grad(p) - formulation:                     Weak
+  Grad(p) - use boundary data:               true
+  Div(u) . integration by parts:             true
+  Div(u) - formulation:                      Weak
+  Div(u) - use boundary data:                true
+  Adjust pressure level (if undefined):      ApplyZeroMeanValue
+  Use divergence penalty term:               true
+  Penalty factor divergence:                 1.0000e+00
+  Use continuity penalty term:               true
+  Apply penalty terms in postprocessing step:true
+  Use boundary data:                         false
+  Penalty factor continuity:                 1.0000e+00
+  Continuity penalty term components:        Normal
+  Type of penalty parameter:                 ConvectiveTerm
+
+Turbulence:
+  Use turbulence model:                      false
+
+Numerical parameters:
+  Block Jacobi matrix-free:                  false
+  Use cell-based face loops:                 false
+  Quadrature rule linearization:             Over-integration (3/2k)
+
+High-order dual splitting scheme:
+  Order of extrapolation pressure NBC:       2
+  Formulation convective term in BC:         ConvectiveFormulation
+  Store previous boundary values:            true
+
+  Pressure Poisson equation (PPE):
+  interior penalty factor:                   1.0000e+00
+  Solver:                                    CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-20
+  Relative solver tolerance:                 1.0000e-06
+  Maximum size of Krylov space:              100
+  Preconditioner:                            Multigrid
+  Update preconditioner pressure step:       false
+  Multigrid type:                            h-MG
+  p-sequence:                                Bisect
+  Smoother:                                  Chebyshev
+  Preconditioner smoother:                   PointJacobi
+  Iterations smoother:                       5
+  Smoothing range:                           2.0000e+01
+  Iterations eigenvalue estimation:          20
+  Coarse grid solver:                        Chebyshev
+  Coarse grid preconditioner:                PointJacobi
+  Maximum number of iterations:              10000
+  Absolute solver tolerance:                 1.0000e-12
+  Relative solver tolerance:                 1.0000e-03
+  Maximum size of Krylov space:              30
+
+  Projection step:
+  Solver projection step:                    CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-20
+  Relative solver tolerance:                 1.0000e-12
+  Maximum size of Krylov space:              30
+  Preconditioner projection step:            InverseMassMatrix
+  Update preconditioner projection step:     false
+
+  Viscous step:
+  Solver viscous step:                       CG
+  Maximum number of iterations:              1000
+  Absolute solver tolerance:                 1.0000e-20
+  Relative solver tolerance:                 1.0000e-06
+  Maximum size of Krylov space:              30
+  Preconditioner viscous step:               InverseMassMatrix
+  Update preconditioner viscous:             false
+
+Generating grid for 2-dimensional problem:
+
+  Number of refinements:                     0
+  Number of cells:                           2
+
+Construct incompressible Navier-Stokes operator ...
+
+Discontinuous Galerkin finite element discretization:
+
+Velocity:
+  degree of 1D polynomials:                  2
+  number of dofs per cell:                   18
+  number of dofs (total):                    36
+Pressure:
+  degree of 1D polynomials:                  1
+  number of dofs per cell:                   4
+  number of dofs (total):                    8
+Velocity and pressure:
+  number of dofs per cell:                   22
+  number of dofs (total):                    44
+
+... done!
+
+Setup incompressible Navier-Stokes operator ...
+
+... done!
+
+Setup BDF time integrator ...
+
+Calculation of time step size according to CFL condition:
+
+  h_min:                                     2.0000e+00
+  U_max:                                     1.0000e+00
+  CFL:                                       2.0000e-01
+  exponent fe_degree:                        2.0000e+00
+  Time step size (global):                   1.0000e-01
+  Time step size (adaptive):                 1.0000e-01
+
+... done!
+
+Setup incompressible Navier-Stokes solver ...
+
+... done!
+
+Starting time loop ...
+
+Calculate error for velocity at time t = 0.0000e+00:
+  Absolute error (L2-norm): 2.06559e+00
+
+Calculate error for pressure at time t = 0.0000e+00:
+  Absolute error (L2-norm): 1.30639e+00
+
+________________________________________________________________________________
+
+ Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:              9
+
+Solve penalty step:
+  Iterations:              0
+
+Calculate error for velocity at time t = 1.0002e+01:
+  Absolute error (L2-norm): 6.45968e-16
+
+Calculate error for pressure at time t = 1.0002e+01:
+  Absolute error (L2-norm): 2.22174e-14
+
+________________________________________________________________________________
+
+ Time step number = 101     t = 1.00018e+01 -> t + dt = 1.01018e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 2.0001e+01:
+  Absolute error (L2-norm): 6.42477e-16
+
+Calculate error for pressure at time t = 2.0001e+01:
+  Absolute error (L2-norm): 2.92074e-14
+
+________________________________________________________________________________
+
+ Time step number = 201     t = 2.00008e+01 -> t + dt = 2.01008e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 3.0100e+01:
+  Absolute error (L2-norm): 7.32150e-16
+
+Calculate error for pressure at time t = 3.0100e+01:
+  Absolute error (L2-norm): 2.70024e-14
+
+________________________________________________________________________________
+
+ Time step number = 302     t = 3.00998e+01 -> t + dt = 3.01998e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 4.0099e+01:
+  Absolute error (L2-norm): 1.19375e-15
+
+Calculate error for pressure at time t = 4.0099e+01:
+  Absolute error (L2-norm): 1.98536e-14
+
+________________________________________________________________________________
+
+ Time step number = 402     t = 4.00988e+01 -> t + dt = 4.01988e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 5.0098e+01:
+  Absolute error (L2-norm): 1.02016e-15
+
+Calculate error for pressure at time t = 5.0098e+01:
+  Absolute error (L2-norm): 6.08310e-15
+
+________________________________________________________________________________
+
+ Time step number = 502     t = 5.00978e+01 -> t + dt = 5.01978e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 6.0097e+01:
+  Absolute error (L2-norm): 8.84541e-16
+
+Calculate error for pressure at time t = 6.0097e+01:
+  Absolute error (L2-norm): 1.43934e-14
+
+________________________________________________________________________________
+
+ Time step number = 602     t = 6.00968e+01 -> t + dt = 6.01968e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 7.0096e+01:
+  Absolute error (L2-norm): 4.99730e-16
+
+Calculate error for pressure at time t = 7.0096e+01:
+  Absolute error (L2-norm): 8.06736e-15
+
+________________________________________________________________________________
+
+ Time step number = 702     t = 7.00958e+01 -> t + dt = 7.01958e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 8.0095e+01:
+  Absolute error (L2-norm): 8.63803e-16
+
+Calculate error for pressure at time t = 8.0095e+01:
+  Absolute error (L2-norm): 2.86110e-14
+
+________________________________________________________________________________
+
+ Time step number = 802     t = 8.00948e+01 -> t + dt = 8.01948e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:             10
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 9.0094e+01:
+  Absolute error (L2-norm): 8.19143e-16
+
+Calculate error for pressure at time t = 9.0094e+01:
+  Absolute error (L2-norm): 3.39269e-14
+
+________________________________________________________________________________
+
+ Time step number = 902     t = 9.00938e+01 -> t + dt = 9.01938e+01
+________________________________________________________________________________
+
+Explicit convective step:
+Solve pressure step:
+  Iterations:              2
+
+Explicit projection step:
+Solve viscous step:
+  Iterations:              9
+
+Solve penalty step:
+  Iterations:              7
+
+Calculate error for velocity at time t = 1.0009e+02:
+  Absolute error (L2-norm): 7.71099e-16
+
+Calculate error for pressure at time t = 1.0009e+02:
+  Absolute error (L2-norm): 4.58205e-15
+
+_________________________________________________________________________________
+
+Performance results for incompressible Navier-Stokes solver:
+
+Average number of iterations:
+  Convective step    0.00
+  Pressure step      2.00
+  Projection step    0.00
+  Viscous step       9.87
+  Penalty step       6.95
+_________________________________________________________________________________
+
