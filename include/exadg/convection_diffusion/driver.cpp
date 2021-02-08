@@ -72,6 +72,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+  // mapping
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+
   application->create_grid(triangulation, refine_space, periodic_faces);
   print_grid_data(pcout, refine_space, *triangulation);
 
@@ -82,20 +86,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 
-  // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, param.start_time));
+      *triangulation, mapping, degree, mpi_comm, mesh_motion, param.start_time));
 
     mesh = moving_mesh;
   }
   else // static mesh
   {
-    mesh.reset(new Mesh<dim>(mapping_degree));
+    mesh.reset(new Mesh<dim>(mapping));
   }
 
   // initialize convection-diffusion operator

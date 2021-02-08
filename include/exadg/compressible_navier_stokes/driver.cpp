@@ -95,11 +95,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // Mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  mesh.reset(new Mesh<dim>(mapping_degree));
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
-                                                                mesh->get_mapping(),
+                                                                *mapping,
                                                                 degree,
                                                                 boundary_descriptor_density,
                                                                 boundary_descriptor_velocity,
@@ -117,7 +117,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   comp_navier_stokes_operator->fill_matrix_free_data(*matrix_free_data);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

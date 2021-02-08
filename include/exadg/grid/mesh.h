@@ -21,9 +21,8 @@ template<int dim>
 class Mesh
 {
 public:
-  Mesh(unsigned int const mapping_degree)
+  Mesh(std::shared_ptr<Mapping<dim>> mapping_in) : mapping(mapping_in)
   {
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   virtual ~Mesh()
@@ -37,7 +36,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<Mapping<dim>> mapping;
 };
 
 } // namespace ExaDG

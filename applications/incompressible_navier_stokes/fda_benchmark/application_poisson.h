@@ -20,6 +20,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
+  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
+
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -60,13 +62,16 @@ public:
 
   void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+              PeriodicFaces &                                   periodic_faces,
               unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces)
+              std::shared_ptr<Mapping<dim>>                     mapping,
+              unsigned int const                                mapping_degree)
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
                                                        n_refine_space,
                                                        periodic_faces);
+
+    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)

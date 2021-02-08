@@ -74,23 +74,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, refine_space, periodic_faces);
-
-  // mapping
+  // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-
-  // currently required for lung test case, TODO: find a better solution
-  if(triangulation->n_cells() == 0)
-    application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
-  else
-    mesh.reset(new Mesh<dim>(mapping_degree));
-
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
+  // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<0, dim>());
   application->set_boundary_conditions(boundary_descriptor);
   verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
 
+  // field functions
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 
@@ -102,13 +96,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(mesh->get_mapping(), *triangulation, quadrature);
+    AR = GridTools::compute_maximum_aspect_ratio(*mapping, *triangulation, quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   // initialize Poisson operator
   poisson_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                   mesh->get_mapping(),
+                                                   *mapping,
                                                    degree,
                                                    periodic_faces,
                                                    boundary_descriptor,
@@ -129,7 +123,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
   poisson_operator->fill_matrix_free_data(*matrix_free_data);
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -147,7 +141,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(not(is_throughput_study))
   {
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
+    postprocessor->setup(poisson_operator->get_dof_handler(), *mapping);
   }
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());

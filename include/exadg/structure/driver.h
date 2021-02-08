@@ -119,6 +119,9 @@ private:
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
   // mapping
+  std::shared_ptr<Mapping<dim>> mapping;
+
+  // mesh
   std::shared_ptr<Mesh<dim>> mesh;
 
   // periodic boundaries

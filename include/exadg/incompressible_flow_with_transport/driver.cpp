@@ -105,9 +105,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, refine_space, periodic_faces);
   // mapping
   unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree);
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+
+  application->create_grid(triangulation, refine_space, periodic_faces);
 
   if(fluid_param.ale_formulation) // moving mesh
   {
@@ -124,7 +126,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, fluid_param.start_time));
+      *triangulation, mapping, degree, mpi_comm, mesh_motion, fluid_param.start_time));
 
     mesh = moving_mesh;
   }
@@ -134,7 +136,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(triangulation->n_cells() == 0)
       application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
     else
-      mesh.reset(new Mesh<dim>(mapping_degree));
+      mesh.reset(new Mesh<dim>(mapping));
   }
 
   // print after call to create_grid or create_grid_and_mesh

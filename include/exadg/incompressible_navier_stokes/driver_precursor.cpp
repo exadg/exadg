@@ -191,10 +191,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   // mapping
   unsigned int const mapping_degree_pre = get_mapping_degree(param_pre.mapping, degree);
-  mesh_pre.reset(new Mesh<dim>(mapping_degree_pre));
+  mapping_pre.reset(new MappingQGeneric<dim>(mapping_degree_pre));
+  mesh_pre.reset(new Mesh<dim>(mapping_pre));
 
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  mesh.reset(new Mesh<dim>(mapping_degree));
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+  mesh.reset(new Mesh<dim>(mapping));
 
   // initialize navier_stokes_operator_pre (precursor domain)
   if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
