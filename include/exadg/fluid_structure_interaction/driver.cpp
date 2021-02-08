@@ -126,9 +126,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
     }
 
+    // triangulation and mapping
+    unsigned int const mapping_degree_structure =
+      get_mapping_degree(structure_param.mapping, degree_structure);
     application->create_grid_structure(structure_triangulation,
+                                       structure_periodic_faces,
                                        refine_space_structure,
-                                       structure_periodic_faces);
+                                       structure_mapping,
+                                       mapping_degree_structure);
     print_grid_data(pcout, refine_space_structure, *structure_triangulation);
 
     // boundary conditions
@@ -145,11 +150,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // field functions
     structure_field_functions.reset(new Structure::FieldFunctions<dim>());
     application->set_field_functions_structure(structure_field_functions);
-
-    // mapping
-    unsigned int const mapping_degree_structure =
-      get_mapping_degree(structure_param.mapping, degree_structure);
-    structure_mapping.reset(new MappingQGeneric<dim>(mapping_degree_structure));
 
     // setup spatial operator
     structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
@@ -223,11 +223,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
     }
 
-    // mapping
+    // triangulation and mapping
     unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
-    fluid_mapping.reset(new MappingQGeneric<dim>(mapping_degree_fluid));
-
-    application->create_grid_fluid(fluid_triangulation, refine_space_fluid, fluid_periodic_faces);
+    application->create_grid_fluid(fluid_triangulation,
+                                   fluid_periodic_faces,
+                                   refine_space_fluid,
+                                   fluid_mapping,
+                                   mapping_degree_fluid);
     print_grid_data(pcout, refine_space_fluid, *fluid_triangulation);
 
     // field functions and boundary conditions
