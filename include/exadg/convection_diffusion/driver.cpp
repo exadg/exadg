@@ -72,17 +72,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  // mapping
+  // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
-
-  application->create_grid(triangulation, refine_space, periodic_faces);
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
+  // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   application->set_boundary_conditions(boundary_descriptor);
   verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
 
+  // field functions
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 

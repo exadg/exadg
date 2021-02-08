@@ -43,6 +43,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
+  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
+
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -120,26 +122,27 @@ public:
 
   void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+              PeriodicFaces &                                   periodic_faces,
               unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces)
+              std::shared_ptr<Mapping<dim>> &                   mapping,
+              unsigned int const                                mapping_degree)
   {
     (void)periodic_faces;
 
-    // hypercube volume is [left,right]^dim
     GridGenerator::hyper_cube(*triangulation, left, right);
 
     // set boundary id of 1 at right boundary (outflow)
     for(auto cell : *triangulation)
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        if((std::fabs(cell.face(face_number)->center()(0) - right) < 1e-12))
-          cell.face(face_number)->set_boundary_id(1);
+        if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
+          cell.face(f)->set_boundary_id(1);
       }
     }
     triangulation->refine_global(n_refine_space);
+
+    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   std::shared_ptr<Function<dim>>
