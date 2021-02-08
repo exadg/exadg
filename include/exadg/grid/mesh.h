@@ -8,7 +8,8 @@
 #ifndef INCLUDE_FUNCTIONALITIES_MESH_H_
 #define INCLUDE_FUNCTIONALITIES_MESH_H_
 
-#include <deal.II/fe/mapping_q_generic.h>
+// deal.II
+#include <deal.II/fe/mapping.h>
 
 namespace ExaDG
 {

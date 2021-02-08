@@ -64,7 +64,7 @@ public:
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
               PeriodicFaces &                                   periodic_faces,
               unsigned int const                                n_refine_space,
-              std::shared_ptr<Mapping<dim>>                     mapping,
+              std::shared_ptr<Mapping<dim>> &                   mapping,
               unsigned int const                                mapping_degree)
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
