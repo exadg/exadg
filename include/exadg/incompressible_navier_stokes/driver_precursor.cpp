@@ -145,9 +145,14 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+  // triangulation and mapping
+  unsigned int const mapping_degree_pre = get_mapping_degree(param_pre.mapping, degree);
+  unsigned int const mapping_degree     = get_mapping_degree(param.mapping, degree);
+
   // create grid
-  application->create_grid_precursor(triangulation_pre, refine_space, periodic_faces_pre);
-  application->create_grid(triangulation, refine_space, periodic_faces);
+  application->create_grid_precursor(
+    triangulation_pre, periodic_faces_pre, refine_space, mapping_pre, mapping_degree_pre);
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
 
   print_grid_data(pcout, refine_space, *triangulation_pre);
   print_grid_data(pcout, refine_space, *triangulation);
@@ -189,20 +194,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                 param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
-  // mapping
-  unsigned int const mapping_degree_pre = get_mapping_degree(param_pre.mapping, degree);
-  mapping_pre.reset(new MappingQGeneric<dim>(mapping_degree_pre));
-  mesh_pre.reset(new Mesh<dim>(mapping_pre));
-
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
-  mesh.reset(new Mesh<dim>(mapping));
-
   // initialize navier_stokes_operator_pre (precursor domain)
   if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operator_coupled_pre.reset(new DGCoupled(*triangulation_pre,
-                                                           mesh_pre->get_mapping(),
+                                                           *mapping_pre,
                                                            degree,
                                                            periodic_faces_pre,
                                                            boundary_descriptor_velocity_pre,
@@ -218,7 +214,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     navier_stokes_operator_dual_splitting_pre.reset(
       new DGDualSplitting(*triangulation_pre,
-                          mesh_pre->get_mapping(),
+                          *mapping_pre,
                           degree,
                           periodic_faces_pre,
                           boundary_descriptor_velocity_pre,
@@ -234,7 +230,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     navier_stokes_operator_pressure_correction_pre.reset(
       new DGPressureCorrection(*triangulation_pre,
-                               mesh_pre->get_mapping(),
+                               *mapping_pre,
                                degree,
                                periodic_faces_pre,
                                boundary_descriptor_velocity_pre,
@@ -255,7 +251,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
-                                                       mesh->get_mapping(),
+                                                       *mapping,
                                                        degree,
                                                        periodic_faces,
                                                        boundary_descriptor_velocity,
@@ -270,7 +266,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operator_dual_splitting.reset(new DGDualSplitting(*triangulation,
-                                                                    mesh->get_mapping(),
+                                                                    *mapping,
                                                                     degree,
                                                                     periodic_faces,
                                                                     boundary_descriptor_velocity,
@@ -286,7 +282,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation,
-                               mesh->get_mapping(),
+                               *mapping,
                                degree,
                                periodic_faces,
                                boundary_descriptor_velocity,
@@ -315,7 +311,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   }
   navier_stokes_operator_pre->fill_matrix_free_data(*matrix_free_data_pre);
   matrix_free_pre.reset(new MatrixFree<dim, Number>());
-  matrix_free_pre->reinit(mesh_pre->get_mapping(),
+  matrix_free_pre->reinit(*mapping_pre,
                           matrix_free_data_pre->get_dof_handler_vector(),
                           matrix_free_data_pre->get_constraint_vector(),
                           matrix_free_data_pre->get_quadrature_vector(),
@@ -333,7 +329,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   }
   navier_stokes_operator->fill_matrix_free_data(*matrix_free_data);
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

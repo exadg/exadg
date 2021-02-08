@@ -147,6 +147,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
+  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
+
   Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -425,21 +427,24 @@ public:
 
   void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+              PeriodicFaces &                                   periodic_faces,
               unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces)
+              std::shared_ptr<Mapping<dim>> &                   mapping,
+              unsigned int const                                mapping_degree)
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
                                                        n_refine_space,
                                                        periodic_faces);
+
+    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   void
-  create_grid_precursor(
-    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-    unsigned int const                                n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-      periodic_faces)
+  create_grid_precursor(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+                        PeriodicFaces &                                   periodic_faces,
+                        unsigned int const                                n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &                   mapping,
+                        unsigned int const                                mapping_degree)
   {
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
@@ -527,6 +532,8 @@ public:
 
     // perform global refinements
     triangulation->refine_global(n_refine_space + additional_refinements_precursor);
+
+    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   void

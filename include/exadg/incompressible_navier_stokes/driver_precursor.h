@@ -10,7 +10,6 @@
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_degree.h>
-#include <exadg/grid/mesh.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
@@ -75,9 +74,6 @@ private:
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_pre, periodic_faces;
-
-  // mesh (static or moving)
-  std::shared_ptr<Mesh<dim>> mesh_pre, mesh;
 
   bool use_adaptive_time_stepping;
 

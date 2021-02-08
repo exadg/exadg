@@ -105,11 +105,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  // mapping
+  // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree);
-  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
-
-  application->create_grid(triangulation, refine_space, periodic_faces);
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   if(fluid_param.ale_formulation) // moving mesh
   {
@@ -132,16 +131,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
   else // static mesh
   {
-    // currently required for lung test case, TODO: find a better solution
-    if(triangulation->n_cells() == 0)
-      application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
-    else
-      mesh.reset(new Mesh<dim>(mapping));
+    mesh.reset(new Mesh<dim>(mapping));
   }
-
-  // print after call to create_grid or create_grid_and_mesh
-  print_grid_data(pcout, refine_space, *triangulation);
-
 
   // boundary conditions
   fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());

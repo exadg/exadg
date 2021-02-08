@@ -30,6 +30,8 @@ template<int dim, typename Number>
 class ApplicationBase : public IncNS::ApplicationBase<dim, Number>
 {
 public:
+  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
+
   virtual void
   add_parameters(ParameterHandler & prm)
   {
