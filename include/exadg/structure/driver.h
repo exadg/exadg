@@ -121,9 +121,6 @@ private:
   // mapping
   std::shared_ptr<Mapping<dim>> mapping;
 
-  // mesh
-  std::shared_ptr<Mesh<dim>> mesh;
-
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
