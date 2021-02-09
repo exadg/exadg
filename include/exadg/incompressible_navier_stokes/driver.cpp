@@ -72,10 +72,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, refine_space, periodic_faces);
-
-  // mapping
+  // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
+  print_grid_data(pcout, refine_space, *triangulation);
 
   if(param.ale_formulation) // moving mesh
   {
@@ -84,7 +84,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
       moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-        *triangulation, mapping_degree, mapping_degree, mpi_comm, mesh_motion, param.start_time));
+        *triangulation, mapping, mapping_degree, mpi_comm, mesh_motion, param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -103,14 +103,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                   ExcMessage("Poisson problem is used for mesh movement. Hence, "
                              "the right-hand side has to be zero for the Poisson problem."));
 
-      // static mapping for Poisson solver is defined by poisson_param
-      unsigned int const mapping_degree_poisson =
-        get_mapping_degree(poisson_param.mapping, mapping_degree);
-      poisson_mesh.reset(new Mesh<dim>(mapping_degree_poisson));
+      AssertThrow(poisson_param.mapping == param.mapping,
+                  ExcMessage("Use the same mapping degree for Poisson mesh motion problem "
+                             "as for actual application problem."));
 
       // initialize Poisson operator
       poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*triangulation,
-                                                                     poisson_mesh->get_mapping(),
+                                                                     *mapping,
                                                                      mapping_degree,
                                                                      periodic_faces,
                                                                      poisson_boundary_descriptor,
@@ -132,7 +131,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->fill_matrix_free_data(*poisson_matrix_free_data);
 
       poisson_matrix_free.reset(new MatrixFree<dim, Number>());
-      poisson_matrix_free->reinit(poisson_mesh->get_mapping(),
+      poisson_matrix_free->reinit(*mapping,
                                   poisson_matrix_free_data->get_dof_handler_vector(),
                                   poisson_matrix_free_data->get_constraint_vector(),
                                   poisson_matrix_free_data->get_quadrature_vector(),
@@ -141,8 +140,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-        mapping_degree, mpi_comm, not(is_test), poisson_operator));
+      moving_mesh.reset(
+        new MovingMeshPoisson<dim, Number>(mapping, mpi_comm, not(is_test), poisson_operator));
     }
     else
     {
@@ -153,14 +152,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
   else // static mesh
   {
-    // currently required for lung test case, TODO: find a better solution
-    if(triangulation->n_cells() == 0)
-      application->create_grid_and_mesh(triangulation, refine_space, periodic_faces, mesh);
-    else
-      mesh.reset(new Mesh<dim>(mapping_degree));
+    mesh.reset(new Mesh<dim>(mapping));
   }
-
-  print_grid_data(pcout, refine_space, *triangulation);
 
   // boundary conditions
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
@@ -170,7 +163,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
   verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
 
-  // field functions and boundary conditions
+  // field functions
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 

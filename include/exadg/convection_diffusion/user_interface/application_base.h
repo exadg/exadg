@@ -28,6 +28,10 @@ template<int dim, typename Number>
 class ApplicationBase
 {
 public:
+  typedef
+    typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      PeriodicFaces;
+
   virtual void
   add_parameters(ParameterHandler & prm)
   {
@@ -54,9 +58,10 @@ public:
 
   virtual void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+              PeriodicFaces &                                   periodic_faces,
               unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces) = 0;
+              std::shared_ptr<Mapping<dim>> &                   mapping,
+              unsigned int const                                mapping_degree) = 0;
 
   virtual std::shared_ptr<Function<dim>>
   set_mesh_movement_function()

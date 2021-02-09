@@ -71,6 +71,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
+  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
+
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -99,10 +101,10 @@ public:
     param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-//    param.temporal_discretization = TemporalDiscretization::BDF;
-//    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-//    param.order_time_integrator         = 3;
-//    param.start_with_low_order          = true;
+    //    param.temporal_discretization = TemporalDiscretization::BDF;
+    //    param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+    //    param.order_time_integrator         = 3;
+    //    param.start_with_low_order          = true;
     param.temporal_discretization       = TemporalDiscretization::ExplRK;
     param.time_integrator_rk            = TimeIntegratorRK::ExplRK3Stage7Reg2;
     param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Explicit;
@@ -145,15 +147,17 @@ public:
 
   void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+              PeriodicFaces &                                   periodic_faces,
               unsigned int const                                n_refine_space,
-              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                periodic_faces)
+              std::shared_ptr<Mapping<dim>> &                   mapping,
+              unsigned int const                                mapping_degree)
   {
     (void)periodic_faces;
 
-    // hypercube volume is [left,right]^dim
     GridGenerator::hyper_cube(*triangulation, left, right);
     triangulation->refine_global(n_refine_space);
+
+    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   void

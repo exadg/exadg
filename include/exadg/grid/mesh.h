@@ -8,7 +8,8 @@
 #ifndef INCLUDE_FUNCTIONALITIES_MESH_H_
 #define INCLUDE_FUNCTIONALITIES_MESH_H_
 
-#include <deal.II/fe/mapping_q_generic.h>
+// deal.II
+#include <deal.II/fe/mapping.h>
 
 namespace ExaDG
 {
@@ -21,9 +22,8 @@ template<int dim>
 class Mesh
 {
 public:
-  Mesh(unsigned int const mapping_degree)
+  Mesh(std::shared_ptr<Mapping<dim>> mapping_in) : mapping(mapping_in)
   {
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
   }
 
   virtual ~Mesh()
@@ -37,7 +37,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<Mapping<dim>> mapping;
 };
 
 } // namespace ExaDG

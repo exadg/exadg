@@ -14,12 +14,12 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   MovingMeshFunction(parallel::TriangulationBase<dim> const & triangulation_in,
-                     unsigned int const                       mapping_degree_static_in,
+                     std::shared_ptr<Mapping<dim>>            mapping_in,
                      unsigned int const                       mapping_degree_moving_in,
                      MPI_Comm const &                         mpi_comm_in,
                      std::shared_ptr<Function<dim>> const     mesh_movement_function_in,
                      double const                             start_time)
-    : MovingMeshBase<dim, Number>(mapping_degree_static_in, mapping_degree_moving_in, mpi_comm_in),
+    : MovingMeshBase<dim, Number>(mapping_in, mapping_degree_moving_in, mpi_comm_in),
       mesh_movement_function(mesh_movement_function_in),
       triangulation(triangulation_in)
   {

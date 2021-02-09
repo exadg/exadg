@@ -72,30 +72,31 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, refine_space, periodic_faces);
+  // triangulation and mapping
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
+  // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   application->set_boundary_conditions(boundary_descriptor);
   verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
 
+  // field functions
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
-
-  // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
 
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      *triangulation, mapping_degree, degree, mpi_comm, mesh_motion, param.start_time));
+      *triangulation, mapping, degree, mpi_comm, mesh_motion, param.start_time));
 
     mesh = moving_mesh;
   }
   else // static mesh
   {
-    mesh.reset(new Mesh<dim>(mapping_degree));
+    mesh.reset(new Mesh<dim>(mapping));
   }
 
   // initialize convection-diffusion operator

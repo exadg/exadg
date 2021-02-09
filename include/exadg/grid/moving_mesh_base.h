@@ -32,10 +32,10 @@ class MovingMeshBase : public Mesh<dim>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMeshBase(unsigned int const mapping_degree_static_in,
-                 unsigned int const mapping_degree_moving_in,
-                 MPI_Comm const &   mpi_comm_in)
-    : Mesh<dim>(mapping_degree_static_in), mpi_comm(mpi_comm_in)
+  MovingMeshBase(std::shared_ptr<Mapping<dim>> mapping_in,
+                 unsigned int const            mapping_degree_moving_in,
+                 MPI_Comm const &              mpi_comm_in)
+    : Mesh<dim>(mapping_in), mpi_comm(mpi_comm_in)
   {
     mapping_ale.reset(new MappingQCache<dim>(mapping_degree_moving_in));
     hierarchic_to_lexicographic_numbering =

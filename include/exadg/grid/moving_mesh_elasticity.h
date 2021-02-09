@@ -22,12 +22,12 @@ class MovingMeshElasticity : public MovingMeshBase<dim, Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMeshElasticity(unsigned int const                                mapping_degree_static,
+  MovingMeshElasticity(std::shared_ptr<Mapping<dim>>                     mapping,
                        MPI_Comm const &                                  mpi_comm,
                        bool const                                        print_wall_times,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
-    : MovingMeshBase<dim, Number>(mapping_degree_static,
+    : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
                                   mpi_comm),

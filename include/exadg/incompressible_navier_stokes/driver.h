@@ -201,14 +201,17 @@ private:
   // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
+  // mapping
+  std::shared_ptr<Mapping<dim>> mapping;
+
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  // mapping for static mesh
+  // mesh (static or moving)
   std::shared_ptr<Mesh<dim>> mesh;
 
-  // mapping for moving mesh
+  // moving mesh (ALE)
   std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
 
   // solve mesh deformation by a Poisson problem

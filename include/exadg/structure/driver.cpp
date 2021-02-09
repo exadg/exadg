@@ -73,8 +73,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  application->create_grid(triangulation, refine_space, periodic_faces);
-
+  // triangulation and mapping
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
+  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
   // boundary conditions
@@ -85,17 +86,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   material_descriptor.reset(new MaterialDescriptor);
   application->set_material(*material_descriptor);
 
-  // field functions and boundary conditions
+  // field functions
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 
-  // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  mesh.reset(new Mesh<dim>(mapping_degree));
-
   // setup spatial operator
   pde_operator.reset(new Operator<dim, Number>(*triangulation,
-                                               mesh->get_mapping(),
+                                               *mapping,
                                                degree,
                                                periodic_faces,
                                                boundary_descriptor,
@@ -112,7 +109,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   pde_operator->fill_matrix_free_data(*matrix_free_data);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

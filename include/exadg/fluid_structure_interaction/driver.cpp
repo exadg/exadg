@@ -126,9 +126,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
     }
 
+    // triangulation and mapping
+    unsigned int const mapping_degree_structure =
+      get_mapping_degree(structure_param.mapping, degree_structure);
     application->create_grid_structure(structure_triangulation,
+                                       structure_periodic_faces,
                                        refine_space_structure,
-                                       structure_periodic_faces);
+                                       structure_mapping,
+                                       mapping_degree_structure);
     print_grid_data(pcout, refine_space_structure, *structure_triangulation);
 
     // boundary conditions
@@ -146,14 +151,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     structure_field_functions.reset(new Structure::FieldFunctions<dim>());
     application->set_field_functions_structure(structure_field_functions);
 
-    // mapping
-    unsigned int const mapping_degree_structure =
-      get_mapping_degree(structure_param.mapping, degree_structure);
-    structure_mesh.reset(new Mesh<dim>(mapping_degree_structure));
-
     // setup spatial operator
     structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
-                                                                  structure_mesh->get_mapping(),
+                                                                  *structure_mapping,
                                                                   degree_structure,
                                                                   structure_periodic_faces,
                                                                   structure_boundary_descriptor,
@@ -170,7 +170,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     structure_operator->fill_matrix_free_data(*structure_matrix_free_data);
 
     structure_matrix_free.reset(new MatrixFree<dim, Number>());
-    structure_matrix_free->reinit(structure_mesh->get_mapping(),
+    structure_matrix_free->reinit(*structure_mapping,
                                   structure_matrix_free_data->get_dof_handler_vector(),
                                   structure_matrix_free_data->get_constraint_vector(),
                                   structure_matrix_free_data->get_quadrature_vector(),
@@ -181,8 +181,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // initialize postprocessor
     structure_postprocessor =
       application->construct_postprocessor_structure(degree_structure, mpi_comm);
-    structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                   structure_mesh->get_mapping());
+    structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_mapping);
 
     timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
@@ -224,7 +223,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
     }
 
-    application->create_grid_fluid(fluid_triangulation, refine_space_fluid, fluid_periodic_faces);
+    // triangulation and mapping
+    unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
+    application->create_grid_fluid(fluid_triangulation,
+                                   fluid_periodic_faces,
+                                   refine_space_fluid,
+                                   fluid_mapping,
+                                   mapping_degree_fluid);
     print_grid_data(pcout, refine_space_fluid, *fluid_triangulation);
 
     // field functions and boundary conditions
@@ -243,8 +248,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
     application->set_field_functions_fluid(fluid_field_functions);
-
-    unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
 
     // ALE
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
@@ -266,13 +269,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
       application->set_field_functions_ale(ale_poisson_field_functions);
 
-      // mapping for ALE solver (static mesh)
-      ale_mesh.reset(new Mesh<dim>(mapping_degree_fluid));
-
       // initialize Poisson operator
       ale_poisson_operator.reset(
         new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
-                                                ale_mesh->get_mapping(),
+                                                *fluid_mapping,
                                                 mapping_degree_fluid,
                                                 fluid_periodic_faces,
                                                 ale_poisson_boundary_descriptor,
@@ -306,13 +306,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_elasticity_field_functions.reset(new Structure::FieldFunctions<dim>());
       application->set_field_functions_ale(ale_elasticity_field_functions);
 
-      // mapping for ALE solver (static mesh)
-      ale_mesh.reset(new Mesh<dim>(mapping_degree_fluid));
-
       // setup spatial operator
       ale_elasticity_operator.reset(
         new Structure::Operator<dim, Number>(*fluid_triangulation,
-                                             ale_mesh->get_mapping(),
+                                             *fluid_mapping,
                                              mapping_degree_fluid,
                                              fluid_periodic_faces,
                                              ale_elasticity_boundary_descriptor,
@@ -352,7 +349,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
 
     ale_matrix_free.reset(new MatrixFree<dim, Number>());
-    ale_matrix_free->reinit(ale_mesh->get_mapping(),
+    ale_matrix_free->reinit(*fluid_mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
                             ale_matrix_free_data->get_constraint_vector(),
                             ale_matrix_free_data->get_quadrature_vector(),
@@ -377,15 +374,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-        mapping_degree_fluid, mpi_comm, not(is_test), ale_poisson_operator));
+        fluid_mapping, mpi_comm, not(is_test), ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(mapping_degree_fluid,
-                                                                    mpi_comm,
-                                                                    not(is_test),
-                                                                    ale_elasticity_operator,
-                                                                    ale_elasticity_param));
+      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(
+        fluid_mapping, mpi_comm, not(is_test), ale_elasticity_operator, ale_elasticity_param));
     }
     else
     {
@@ -511,7 +505,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               ale_poisson_boundary_descriptor->dirichlet_mortar_bc,
                               structure_triangulation,
                               structure_operator->get_dof_handler(),
-                              structure_mesh->get_mapping(),
+                              *structure_mapping,
                               displacement_structure,
                               fsi_data.geometric_tolerance);
     }
@@ -529,7 +523,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               ale_elasticity_boundary_descriptor->dirichlet_mortar_bc,
                               structure_triangulation,
                               structure_operator->get_dof_handler(),
-                              structure_mesh->get_mapping(),
+                              *structure_mapping,
                               displacement_structure,
                               fsi_data.geometric_tolerance);
     }
@@ -564,7 +558,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               fluid_boundary_descriptor_velocity->dirichlet_mortar_bc,
                               structure_triangulation,
                               structure_operator->get_dof_handler(),
-                              structure_mesh->get_mapping(),
+                              *structure_mapping,
                               velocity_structure,
                               fsi_data.geometric_tolerance);
 

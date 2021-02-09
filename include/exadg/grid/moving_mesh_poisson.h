@@ -26,11 +26,11 @@ class MovingMeshPoisson : public MovingMeshBase<dim, Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMeshPoisson(unsigned int const                                   mapping_degree_static,
+  MovingMeshPoisson(std::shared_ptr<Mapping<dim>>                        mapping,
                     MPI_Comm const &                                     mpi_comm,
                     bool const                                           print_wall_times,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
-    : MovingMeshBase<dim, Number>(mapping_degree_static,
+    : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
                                   mpi_comm),

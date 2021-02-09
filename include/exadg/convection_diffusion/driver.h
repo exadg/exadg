@@ -135,8 +135,13 @@ private:
   // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
-  // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>                       mesh;
+  // mapping
+  std::shared_ptr<Mapping<dim>> mapping;
+
+  // mesh (static or moving)
+  std::shared_ptr<Mesh<dim>> mesh;
+
+  // moving mesh (ALE)
   std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mesh;
 
   // periodic boundaries

@@ -305,7 +305,7 @@ private:
   std::shared_ptr<parallel::TriangulationBase<dim>> structure_triangulation;
 
   // mapping
-  std::shared_ptr<Mesh<dim>> structure_mesh;
+  std::shared_ptr<Mapping<dim>> structure_mapping;
 
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -343,8 +343,13 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     fluid_periodic_faces;
 
-  // moving mesh for fluid problem
-  std::shared_ptr<Mesh<dim>>                   fluid_mesh;
+  // mapping
+  std::shared_ptr<Mapping<dim>> fluid_mapping;
+
+  // mesh (static or moving)
+  std::shared_ptr<Mesh<dim>> fluid_mesh;
+
+  // moving mesh (ALE)
   std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
 
   // parameters
@@ -377,7 +382,6 @@ private:
   /************************************ ALE - MOVING MESH *************************************/
 
   // use a PDE solver for moving mesh problem
-  std::shared_ptr<Mesh<dim>>                   ale_mesh;
   std::shared_ptr<MatrixFreeData<dim, Number>> ale_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     ale_matrix_free;
 
