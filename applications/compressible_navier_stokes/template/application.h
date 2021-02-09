@@ -54,7 +54,7 @@ public:
     (void)param;
 
     // Here, set all parameters differing from their default values as initialized in
-    // CompNS::InputParameters::InputParameters()
+    // InputParameters::InputParameters()
   }
 
   void
@@ -73,11 +73,10 @@ public:
 
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure,
-    std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy)
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_density,
+                          std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_velocity,
+                          std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pressure,
+                          std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
@@ -94,7 +93,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim + 2));
@@ -108,12 +107,12 @@ public:
   {
     (void)degree;
 
-    CompNS::PostProcessorData<dim> pp_data;
+    PostProcessorData<dim> pp_data;
 
     // Here, fill postprocessor data
 
-    std::shared_ptr<CompNS::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
+    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }

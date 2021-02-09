@@ -193,11 +193,10 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure,
-    std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy)
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_density,
+                          std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_velocity,
+                          std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pressure,
+                          std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
@@ -223,9 +222,9 @@ public:
 
     // energy: prescribe temperature
     boundary_descriptor_energy->boundary_variable.insert(
-      pair_variable(0, CompNS::EnergyBoundaryVariable::Temperature));
+      pair_variable(0, EnergyBoundaryVariable::Temperature));
     boundary_descriptor_energy->boundary_variable.insert(
-      pair_variable(1, CompNS::EnergyBoundaryVariable::Temperature));
+      pair_variable(1, EnergyBoundaryVariable::Temperature));
 
     boundary_descriptor_energy->dirichlet_bc.insert(
       pair(0, new Functions::ConstantFunction<dim>(T_0, 1)));
@@ -233,7 +232,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     field_functions->initial_solution.reset(new InitialSolution<dim>());
     field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
@@ -241,10 +240,10 @@ public:
     field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
   }
 
-  std::shared_ptr<CompNS::PostProcessorBase<dim, Number>>
+  std::shared_ptr<PostProcessorBase<dim, Number>>
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
-    CompNS::PostProcessorData<dim> pp_data;
+    PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = this->write_output;
     pp_data.output_data.output_folder        = this->output_directory + "vtu/";
     pp_data.output_data.output_name          = this->output_name;
@@ -258,8 +257,8 @@ public:
     pp_data.output_data.degree               = degree;
     pp_data.output_data.write_higher_order   = false;
 
-    std::shared_ptr<CompNS::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
+    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }
