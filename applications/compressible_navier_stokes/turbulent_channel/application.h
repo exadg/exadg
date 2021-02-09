@@ -198,8 +198,8 @@ public:
 template<int dim>
 struct MyPostProcessorData
 {
-  CompNS::PostProcessorData<dim> pp_data;
-  TurbulentChannelData           turb_ch_data;
+  PostProcessorData<dim> pp_data;
+  TurbulentChannelData   turb_ch_data;
 };
 
 template<int dim, typename Number>
@@ -355,11 +355,10 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure,
-    std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy)
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_density,
+                          std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_velocity,
+                          std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pressure,
+                          std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
@@ -373,7 +372,7 @@ public:
 
     // energy: prescribe temperature
     boundary_descriptor_energy->boundary_variable.insert(
-      pair_variable(0, CompNS::EnergyBoundaryVariable::Temperature));
+      pair_variable(0, EnergyBoundaryVariable::Temperature));
     boundary_descriptor_energy->dirichlet_bc.insert(
       pair(0, new Functions::ConstantFunction<dim>(T_0, 1)));
   }
