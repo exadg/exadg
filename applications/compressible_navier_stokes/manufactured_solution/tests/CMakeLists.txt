@@ -1,3 +1,3 @@
 SET(TEST_LIBRARIES exadg)
 SET(TEST_TARGET compressible_manufactured)
-DEAL_II_PICKUP_TESTS(compressible_manufactured)
+EXADG_PICKUP_TESTS(compressible_manufactured)
