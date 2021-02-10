@@ -169,8 +169,12 @@ SET(DEAL_II_HAVE_TESTS_DIRECTORY TRUE)
 PROJECT(exadg)
 
 # Configure config.h
-SET(EXADG_DEGREE_MAX ${DEGREE_MAX})
-MESSAGE("Compile kernels up to polynomial degree = " ${EXADG_DEGREE_MAX})
+IF(DEGREE_MAX)
+  SET(EXADG_DEGREE_MAX ${DEGREE_MAX})
+  MESSAGE("Use EXADG_DEGREE_MAX = " ${EXADG_DEGREE_MAX} ".")
+ELSE()
+  MESSAGE("Use EXADG_DEGREE_MAX defined in exadg/include/exadg/configuration/config.h.in.")
+ENDIF()
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/exadg/configuration/config.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/include/exadg/configuration/config.h
