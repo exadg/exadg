@@ -203,7 +203,6 @@ cd fftw-3.3.7
 ./configure --enable-mpi --enable-shared --enable-static --prefix=$WORKING_DIRECTORY/sw/fftw-3.3.7-install
 make
 make install
-cd ../fftw-3.3.7-install/lib/
 ```
 Note: During configuration, vectorization (AVX) can be enabled, e.g. by `--enable-avx512`.
 
