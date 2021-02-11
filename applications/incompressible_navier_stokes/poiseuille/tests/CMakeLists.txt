@@ -1,3 +1,3 @@
 SET(TEST_LIBRARIES exadg)
 SET(TEST_TARGET incompressible_poiseuille)
-DEAL_II_PICKUP_TESTS(incompressible_poiseuille)
+EXADG_PICKUP_TESTS(incompressible_poiseuille)

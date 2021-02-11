@@ -18,4 +18,5 @@ cmake \
     -D LIKWID_LIB="$LIKWID_INSTALL/lib" \
     -D LIKWID_INCLUDE="$LIKWID_INSTALL/include" \
     -D BUILD_SHARED_LIBS=ON \
+    -D PICKUP_TESTS=ON \
     ../

@@ -1,3 +1,3 @@
 SET(TEST_LIBRARIES exadg)
 SET(TEST_TARGET structure_manufactured)
-DEAL_II_PICKUP_TESTS(structure_manufactured)
+EXADG_PICKUP_TESTS(structure_manufactured)
