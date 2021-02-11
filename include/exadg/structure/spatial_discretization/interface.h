@@ -45,7 +45,7 @@ public:
                                double const       time) const = 0;
 
   virtual void
-  apply_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
+  apply_mass_operator(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
   compute_rhs_linear(VectorType & dst, double const time) const = 0;

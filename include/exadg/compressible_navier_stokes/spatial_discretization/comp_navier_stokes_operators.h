@@ -387,9 +387,9 @@ private:
   double mutable eval_time;
 };
 
-struct MassMatrixOperatorData
+struct MassOperatorData
 {
-  MassMatrixOperatorData() : dof_index(0), quad_index(0)
+  MassOperatorData() : dof_index(0), quad_index(0)
   {
   }
 
@@ -398,22 +398,22 @@ struct MassMatrixOperatorData
 };
 
 template<int dim, typename Number>
-class MassMatrixOperator
+class MassOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef MassMatrixOperator<dim, Number> This;
+  typedef MassOperator<dim, Number> This;
 
   typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
 
-  MassMatrixOperator() : matrix_free(nullptr)
+  MassOperator() : matrix_free(nullptr)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in, MassMatrixOperatorData const & data_in)
+  initialize(MatrixFree<dim, Number> const & matrix_free_in, MassOperatorData const & data_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
@@ -469,7 +469,7 @@ private:
   }
 
   MatrixFree<dim, Number> const * matrix_free;
-  MassMatrixOperatorData          data;
+  MassOperatorData                data;
 };
 
 template<int dim>

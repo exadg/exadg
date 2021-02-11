@@ -11,7 +11,7 @@
 // ExaDG
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 #include <exadg/time_integration/time_step_calculation.h>
 
@@ -105,7 +105,7 @@ DGNavierStokesBase<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, Number> & matrix_free_data) const
 {
   // append mapping flags
-  matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+  matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
   matrix_free_data.append_mapping_flags(
     Operators::DivergenceKernel<dim, Number>::get_mapping_flags());
   matrix_free_data.append_mapping_flags(
@@ -186,10 +186,10 @@ DGNavierStokesBase<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::setup_solvers(double const & scaling_factor_time_derivative_term,
+DGNavierStokesBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
                                                VectorType const & velocity)
 {
-  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
+  momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
   momentum_operator.set_velocity_ptr(velocity);
 
   // remaining setup of preconditioners and solvers is done in derived classes
@@ -300,18 +300,18 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
 
-  // mass matrix operator
-  MassMatrixOperatorData<dim> mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index  = get_dof_index_velocity();
-  mass_matrix_operator_data.quad_index = get_quad_index_velocity_linear();
-  mass_matrix_operator.initialize(*matrix_free, constraint_dummy, mass_matrix_operator_data);
+  // mass operator
+  MassOperatorData<dim> mass_operator_data;
+  mass_operator_data.dof_index  = get_dof_index_velocity();
+  mass_operator_data.quad_index = get_quad_index_velocity_linear();
+  mass_operator.initialize(*matrix_free, constraint_dummy, mass_operator_data);
 
-  // inverse mass matrix operator
+  // inverse mass operator
   inverse_mass_velocity.initialize(*matrix_free,
                                    get_dof_index_velocity(),
                                    get_quad_index_velocity_linear());
 
-  // inverse mass matrix operator velocity scalar
+  // inverse mass operator velocity scalar
   inverse_mass_velocity_scalar.initialize(*matrix_free,
                                           get_dof_index_velocity_scalar(),
                                           get_quad_index_velocity_linear());
@@ -904,17 +904,17 @@ DGNavierStokesBase<dim, Number>::calculate_cfl_from_time_step(VectorType &      
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::apply_mass_matrix(VectorType & dst, VectorType const & src) const
+DGNavierStokesBase<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
 {
-  mass_matrix_operator.apply(dst, src);
+  mass_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::apply_mass_matrix_add(VectorType &       dst,
-                                                       VectorType const & src) const
+DGNavierStokesBase<dim, Number>::apply_mass_operator_add(VectorType &       dst,
+                                                         VectorType const & src) const
 {
-  mass_matrix_operator.apply_add(dst, src);
+  mass_operator.apply_add(dst, src);
 }
 
 template<int dim, typename Number>
@@ -1147,8 +1147,8 @@ DGNavierStokesBase<dim, Number>::compute_q_criterion(VectorType & dst, VectorTyp
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::apply_inverse_mass_matrix(VectorType &       dst,
-                                                           VectorType const & src) const
+DGNavierStokesBase<dim, Number>::apply_inverse_mass_operator(VectorType &       dst,
+                                                             VectorType const & src) const
 {
   inverse_mass_velocity.apply(dst, src);
 }
@@ -1191,7 +1191,7 @@ DGNavierStokesBase<dim, Number>::evaluate_velocity_divergence_term(VectorType & 
 // OIF splitting
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
   VectorType &       dst,
   VectorType const & src,
   Number const       time) const
@@ -1206,7 +1206,7 @@ DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inv
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
   VectorType &       dst,
   VectorType const & src,
   Number const       time,
@@ -1353,7 +1353,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       }
       else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
       {
-        typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
+        typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
 
         elementwise_preconditioner_projection.reset(
           new INVERSE_MASS(projection_operator->get_matrix_free(),
@@ -1395,7 +1395,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
+      preconditioner_projection.reset(new InverseMassPreconditioner<dim, dim, Number>(
         *matrix_free, get_dof_index_velocity(), get_quad_index_velocity_linear()));
     }
     else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)

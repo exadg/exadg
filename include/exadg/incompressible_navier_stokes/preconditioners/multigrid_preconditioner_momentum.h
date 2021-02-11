@@ -102,10 +102,10 @@ private:
   /*
    * This function updates scaling_factor_time_derivative_term. In order to update the
    * operators this function has to be called. This is necessary if adaptive time stepping
-   * is used where the scaling factor of the derivative term is variable.
+   * is used where the scaling factor of the mass operator is variable.
    */
   void
-  set_scaling_factor_time_derivative_term(double const & scaling_factor_time_derivative_term);
+  set_scaling_factor_mass_operator(double const & scaling_factor_mass);
 
   std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level);

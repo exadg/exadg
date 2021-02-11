@@ -109,7 +109,7 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
   const_vector.reinit(displacement_n);
   rhs.reinit(displacement_n);
   this->compute_const_vector(rhs, displacement_n, velocity_n, acceleration_n);
-  pde_operator->apply_mass_matrix(const_vector, rhs);
+  pde_operator->apply_mass_operator(const_vector, rhs);
   // set entries of constant vector corresponding to Dirichlet degrees of freedom
   // to zero in order to allow convergence of solvers (especially for Newton solver,
   // linear solver should converge without this line because the linear operator

@@ -33,8 +33,8 @@ enum class Operator
   ConvectiveTerm,
   ViscousTerm,
   ViscousAndConvectiveTerms,
-  InverseMassMatrix,
-  InverseMassMatrixDstDst,
+  InverseMassOperator,
+  InverseMassOperatorDstDst,
   VectorUpdate,
   EvaluateOperatorExplicit
 };
@@ -50,8 +50,8 @@ enum_to_string(Operator const enum_type)
     case Operator::ConvectiveTerm:            string_type = "ConvectiveTerm";           break;
     case Operator::ViscousTerm:               string_type = "ViscousTerm";              break;
     case Operator::ViscousAndConvectiveTerms: string_type = "ViscousAndConvectiveTerms";break;
-    case Operator::InverseMassMatrix:         string_type = "InverseMassMatrix";        break;
-    case Operator::InverseMassMatrixDstDst:   string_type = "InverseMassMatrixDstDst";  break;
+    case Operator::InverseMassOperator:       string_type = "InverseMassOperator";      break;
+    case Operator::InverseMassOperatorDstDst: string_type = "InverseMassOperatorDstDst";break;
     case Operator::VectorUpdate:              string_type = "VectorUpdate";             break;
     case Operator::EvaluateOperatorExplicit:  string_type = "EvaluateOperatorExplicit"; break;
 
@@ -69,8 +69,8 @@ string_to_enum(Operator & enum_type, std::string const string_type)
   if     (string_type == "ConvectiveTerm")            enum_type = Operator::ConvectiveTerm;
   else if(string_type == "ViscousTerm")               enum_type = Operator::ViscousTerm;
   else if(string_type == "ViscousAndConvectiveTerms") enum_type = Operator::ViscousAndConvectiveTerms;
-  else if(string_type == "InverseMassMatrix")         enum_type = Operator::InverseMassMatrix;
-  else if(string_type == "InverseMassMatrixDstDst")   enum_type = Operator::InverseMassMatrixDstDst;
+  else if(string_type == "InverseMassOperator")       enum_type = Operator::InverseMassOperator;
+  else if(string_type == "InverseMassOperatorDstDst") enum_type = Operator::InverseMassOperatorDstDst;
   else if(string_type == "VectorUpdate")              enum_type = Operator::VectorUpdate;
   else if(string_type == "EvaluateOperatorExplicit")  enum_type = Operator::EvaluateOperatorExplicit;
   else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));

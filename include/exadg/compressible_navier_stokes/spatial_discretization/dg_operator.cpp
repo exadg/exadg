@@ -196,7 +196,7 @@ DGOperator<dim, Number>::evaluate(VectorType & dst, VectorType const & src, Numb
     body_force_operator.evaluate_add(dst, src, time);
   }
 
-  // apply inverse mass matrix
+  // apply inverse mass operator
   inverse_mass_all.apply(dst, dst);
 
   wall_time_operator_evaluation += timer.wall_time();
@@ -262,7 +262,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::apply_inverse_mass(VectorType & dst, VectorType const & src) const
 {
-  // apply inverse mass matrix
+  // apply inverse mass operator
   inverse_mass_all.apply(dst, src);
 }
 
@@ -445,13 +445,13 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_operators()
 {
-  // mass matrix operator
-  MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index  = get_dof_index_all();
-  mass_matrix_operator_data.quad_index = get_quad_index_standard();
-  mass_matrix_operator.initialize(*matrix_free, mass_matrix_operator_data);
+  // mass operator
+  MassOperatorData mass_operator_data;
+  mass_operator_data.dof_index  = get_dof_index_all();
+  mass_operator_data.quad_index = get_quad_index_standard();
+  mass_operator.initialize(*matrix_free, mass_operator_data);
 
-  // inverse mass matrix operator
+  // inverse mass operator
   inverse_mass_all.initialize(*matrix_free, get_dof_index_all(), get_quad_index_standard());
   inverse_mass_vector.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
   inverse_mass_scalar.initialize(*matrix_free, get_dof_index_scalar(), get_quad_index_standard());

@@ -33,7 +33,7 @@ private:
 
 public:
   NonlinearOperatorCoupled()
-    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass_matrix(1.0)
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0)
   {
   }
 
@@ -46,9 +46,9 @@ public:
   void
   update(VectorType const & rhs_vector, double const & time, double const & scaling_factor)
   {
-    this->rhs_vector                 = &rhs_vector;
-    this->time                       = time;
-    this->scaling_factor_mass_matrix = scaling_factor;
+    this->rhs_vector          = &rhs_vector;
+    this->time                = time;
+    this->scaling_factor_mass = scaling_factor;
   }
 
   /*
@@ -58,8 +58,7 @@ public:
   void
   evaluate_residual(BlockVectorType & dst, BlockVectorType const & src) const
   {
-    pde_operator->evaluate_nonlinear_residual(
-      dst, src, rhs_vector, time, scaling_factor_mass_matrix);
+    pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
   }
 
 private:
@@ -67,7 +66,7 @@ private:
 
   VectorType const * rhs_vector;
   double             time;
-  double             scaling_factor_mass_matrix;
+  double             scaling_factor_mass;
 };
 
 template<int dim, typename Number>
@@ -80,7 +79,7 @@ private:
 
 public:
   LinearOperatorCoupled()
-    : dealii::Subscriptor(), pde_operator(nullptr), time(0.0), scaling_factor_mass_matrix(1.0)
+    : dealii::Subscriptor(), pde_operator(nullptr), time(0.0), scaling_factor_mass(1.0)
   {
   }
 
@@ -103,8 +102,8 @@ public:
   void
   update(double const & time, double const & scaling_factor)
   {
-    this->time                       = time;
-    this->scaling_factor_mass_matrix = scaling_factor;
+    this->time                = time;
+    this->scaling_factor_mass = scaling_factor;
   }
 
   /*
@@ -114,14 +113,14 @@ public:
   void
   vmult(BlockVectorType & dst, BlockVectorType const & src) const
   {
-    pde_operator->apply_linearized_problem(dst, src, time, scaling_factor_mass_matrix);
+    pde_operator->apply_linearized_problem(dst, src, time, scaling_factor_mass);
   }
 
 private:
   PDEOperator const * pde_operator;
 
   double time;
-  double scaling_factor_mass_matrix;
+  double scaling_factor_mass;
 };
 
 template<int dim, typename Number>
@@ -240,15 +239,15 @@ public:
   /*
    * This function solves the linear Stokes problem (Stokes equations or Navier-Stokes
    * equations with an explicit treatment of the convective term). The parameter
-   * scaling_factor_mass_matrix_term has to be specified for unsteady problem and
+   * scaling_factor_mass has to be specified for unsteady problem and
    * can be omitted for steady problems.
    */
   unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
                               bool const &            update_preconditioner,
-                              double const &          time                            = 0.0,
-                              double const &          scaling_factor_mass_matrix_term = 1.0);
+                              double const &          time                = 0.0,
+                              double const &          scaling_factor_mass = 1.0);
 
   /*
    * Convective term treated implicitly: solve non-linear system of equations
@@ -261,8 +260,8 @@ public:
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & rhs_vector,
                           bool const &       update_preconditioner,
-                          double const &     time                            = 0.0,
-                          double const &     scaling_factor_mass_matrix_term = 1.0);
+                          double const &     time                = 0.0,
+                          double const &     scaling_factor_mass = 1.0);
 
 
   /*
@@ -273,7 +272,7 @@ public:
                               BlockVectorType const & src,
                               VectorType const *      rhs_vector,
                               double const &          time,
-                              double const &          scaling_factor_mass_matrix) const;
+                              double const &          scaling_factor_mass) const;
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
@@ -293,7 +292,7 @@ public:
   apply_linearized_problem(BlockVectorType &       dst,
                            BlockVectorType const & src,
                            double const &          time,
-                           double const &          scaling_factor_mass_matrix) const;
+                           double const &          scaling_factor_mass) const;
 
   /*
    * This function calculates the right-hand side of the steady Stokes problem, or unsteady Stokes
@@ -394,7 +393,7 @@ private:
 
   // preconditioner pressure/Schur-complement block
   std::shared_ptr<PreconditionerBase<Number>> multigrid_preconditioner_schur_complement;
-  std::shared_ptr<PreconditionerBase<Number>> inv_mass_matrix_preconditioner_schur_complement;
+  std::shared_ptr<PreconditionerBase<Number>> inverse_mass_preconditioner_schur_complement;
 
   std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
 

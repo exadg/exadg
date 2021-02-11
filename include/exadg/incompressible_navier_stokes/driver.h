@@ -45,7 +45,7 @@ enum class Operator{
   HelmholtzOperator,        // mass + viscous (vectorial quantity, velocity)
   ProjectionOperator,       // mass + divergence penalty + continuity penalty (vectorial quantity, velocity)
   VelocityConvDiffOperator, // mass + convective + viscous (vectorial quantity, velocity)
-  InverseMassMatrix         // inverse mass matrix operator (vectorial quantity, velocity)
+  InverseMassOperator       // inverse mass operator (vectorial quantity, velocity)
 };
 // clang-format on
 
@@ -64,7 +64,7 @@ enum_to_string(Operator const enum_type)
     case Operator::HelmholtzOperator:        string_type = "HelmholtzOperator";        break;
     case Operator::ProjectionOperator:       string_type = "ProjectionOperator";       break;
     case Operator::VelocityConvDiffOperator: string_type = "VelocityConvDiffOperator"; break;
-    case Operator::InverseMassMatrix:        string_type = "InverseMassMatrix";        break;
+    case Operator::InverseMassOperator:      string_type = "InverseMassOperator";      break;
 
     default:AssertThrow(false, ExcMessage("Not implemented.")); break;
       // clang-format on
@@ -84,7 +84,7 @@ string_to_enum(Operator & enum_type, std::string const string_type)
   else if(string_type == "HelmholtzOperator")         enum_type = Operator::HelmholtzOperator;
   else if(string_type == "ProjectionOperator")        enum_type = Operator::ProjectionOperator;
   else if(string_type == "VelocityConvDiffOperator")  enum_type = Operator::VelocityConvDiffOperator;
-  else if(string_type == "InverseMassMatrix")         enum_type = Operator::InverseMassMatrix;
+  else if(string_type == "InverseMassOperator")       enum_type = Operator::InverseMassOperator;
   else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
@@ -137,7 +137,7 @@ get_dofs_per_element(std::string const & input_file,
           operator_type == Operator::VelocityConvDiffOperator ||
           operator_type == Operator::HelmholtzOperator ||
           operator_type == Operator::ProjectionOperator ||
-          operator_type == Operator::InverseMassMatrix)
+          operator_type == Operator::InverseMassOperator)
   {
     return velocity_dofs_per_element;
   }

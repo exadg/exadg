@@ -13,7 +13,7 @@
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/time_integration/time_step_calculation.h>
@@ -71,7 +71,7 @@ DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & mat
   // append mapping flags
   if(param.problem_type == ProblemType::Unsteady)
   {
-    matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.right_hand_side)
@@ -125,18 +125,18 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
 
   dof_index_velocity_external = dof_index_velocity_external_in;
 
-  // mass matrix operator
-  MassMatrixOperatorData<dim> mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index            = get_dof_index();
-  mass_matrix_operator_data.quad_index           = get_quad_index();
-  mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+  // mass operator
+  MassOperatorData<dim> mass_operator_data;
+  mass_operator_data.dof_index            = get_dof_index();
+  mass_operator_data.quad_index           = get_quad_index();
+  mass_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+  mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  mass_matrix_operator.initialize(*matrix_free, constraint_matrix, mass_matrix_operator_data);
+  mass_operator.initialize(*matrix_free, constraint_matrix, mass_operator_data);
 
-  // inverse mass matrix operator
-  inverse_mass_matrix_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
+  // inverse mass operator
+  inverse_mass_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
 
   // convective operator
   unsigned int const quad_index_convective =
@@ -370,14 +370,13 @@ DGOperator<dim, Number>::get_quad_index_overintegration() const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_solver(double const       scaling_factor_mass_matrix,
-                                      VectorType const * velocity)
+DGOperator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType const * velocity)
 {
   pcout << std::endl << "Setup solver ..." << std::endl;
 
   if(param.linear_system_has_to_be_solved())
   {
-    combined_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix);
+    combined_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
     // The velocity vector needs to be set in case the velocity field is stored in DoF vector.
     // Otherwise, certain preconditioners requiring the velocity field during initialization can not
@@ -405,9 +404,9 @@ DGOperator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    preconditioner.reset(new InverseMassMatrixPreconditioner<dim, 1, Number>(*matrix_free,
-                                                                             get_dof_index(),
-                                                                             get_quad_index()));
+    preconditioner.reset(new InverseMassPreconditioner<dim, 1, Number>(*matrix_free,
+                                                                       get_dof_index(),
+                                                                       get_quad_index()));
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
@@ -648,7 +647,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
   }
   else // param.use_combined_operator == true
   {
-    // no need to set scaling_factor_mass_matrix because the mass matrix is not evaluated
+    // no need to set scaling_factor_mass because the mass operator is not evaluated
     // in case of explicit time integration
 
     if(param.convective_problem())
@@ -673,8 +672,8 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     }
   }
 
-  // apply inverse mass matrix
-  inverse_mass_matrix_operator.apply(dst, dst);
+  // apply inverse mass operator
+  inverse_mass_operator.apply(dst, dst);
 }
 
 template<int dim, typename Number>
@@ -715,14 +714,14 @@ DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
   // shift convective term to the rhs of the equation
   dst *= -1.0;
 
-  inverse_mass_matrix_operator.apply(dst, dst);
+  inverse_mass_operator.apply(dst, dst);
 }
 
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
 {
-  // no need to set scaling_factor_mass_matrix because the mass matrix does not contribute to rhs
+  // no need to set scaling_factor_mass because the mass operator does not contribute to rhs
 
   if(param.linear_system_including_convective_term_has_to_be_solved())
   {
@@ -746,16 +745,16 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType con
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_mass_matrix(VectorType & dst, VectorType const & src) const
+DGOperator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
 {
-  mass_matrix_operator.apply(dst, src);
+  mass_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_mass_matrix_add(VectorType & dst, VectorType const & src) const
+DGOperator<dim, Number>::apply_mass_operator_add(VectorType & dst, VectorType const & src) const
 {
-  mass_matrix_operator.apply_add(dst, src);
+  mass_operator.apply_add(dst, src);
 }
 
 template<int dim, typename Number>
@@ -800,7 +799,7 @@ DGOperator<dim, Number>::update_conv_diff_operator(double const       time,
                                                    double const       scaling_factor,
                                                    VectorType const * velocity)
 {
-  combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
+  combined_operator.set_scaling_factor_mass_operator(scaling_factor);
   combined_operator.set_time(time);
 
   if(param.linear_system_including_convective_term_has_to_be_solved())

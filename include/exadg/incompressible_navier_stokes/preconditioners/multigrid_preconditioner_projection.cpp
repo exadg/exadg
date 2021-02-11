@@ -6,7 +6,7 @@
  */
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
-#include <exadg/operators/mass_matrix_kernel.h>
+#include <exadg/operators/mass_kernel.h>
 
 namespace ExaDG
 {
@@ -72,7 +72,7 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
     MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
   MappingFlags flags;
-  matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+  matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
   if(data.use_divergence_penalty)
     matrix_free_data.append_mapping_flags(
       Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());

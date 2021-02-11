@@ -564,7 +564,7 @@ private:
 
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
-   * such as the mass matrix operator only involve cell integrals.
+   * such as the mass operator only involve cell integrals.
    */
   bool
   evaluate_face_integrals() const;

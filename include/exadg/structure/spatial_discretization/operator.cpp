@@ -100,7 +100,7 @@ Operator<dim, Number>::distribute_dofs()
 
   constraint_matrix.close();
 
-  // no constraints for mass matrix operator
+  // no constraints for mass operator
   constraints_mass.clear();
   constraints_mass.close();
 
@@ -237,22 +237,23 @@ Operator<dim, Number>::setup_operators()
     elasticity_operator_linear.initialize(*matrix_free, constraint_matrix, operator_data);
   }
 
-  // mass matrix operator and related solver for inversion
+  // mass operator and related solver for inversion
   if(param.problem_type == ProblemType::Unsteady)
   {
-    MassMatrixOperatorData<dim> mass_data;
+    MassOperatorData<dim> mass_data;
     mass_data.dof_index  = get_dof_index_mass();
     mass_data.quad_index = get_quad_index();
-    mass.initialize(*matrix_free, constraints_mass, mass_data);
+    mass_operator.initialize(*matrix_free, constraints_mass, mass_data);
 
-    mass.set_scaling_factor(param.density);
+    mass_operator.set_scaling_factor(param.density);
 
-    // preconditioner and solver for mass matrix have to be initialized in
-    // setup_operators() since the mass matrix solver is already needed in
+    // preconditioner and solver for mass operator have to be initialized in
+    // setup_operators() since the mass solver is already needed in
     // setup() function of time integration scheme.
 
     // preconditioner
-    mass_preconditioner.reset(new JacobiPreconditioner<MassMatrixOperator<dim, dim, Number>>(mass));
+    mass_preconditioner.reset(
+      new JacobiPreconditioner<MassOperator<dim, dim, Number>>(mass_operator));
 
     // initialize solver
     CGSolverData solver_data;
@@ -272,8 +273,8 @@ Operator<dim, Number>::setup_operators()
     }
 
     mass_solver.reset(
-      new CGSolver<MassMatrixOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>(
-        mass, *mass_preconditioner, solver_data));
+      new CGSolver<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>(
+        mass_operator, *mass_preconditioner, solver_data));
   }
 
   // setup rhs operator
@@ -499,8 +500,8 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   {
     // elasticity operator
     elasticity_operator_nonlinear.set_time(time);
-    // NB: we have to deactivate the mass matrix term
-    elasticity_operator_nonlinear.set_scaling_factor_mass(0.0);
+    // NB: we have to deactivate the mass operator term
+    elasticity_operator_nonlinear.set_scaling_factor_mass_operator(0.0);
     // evaluate nonlinear operator including Neumann BCs
     elasticity_operator_nonlinear.evaluate_nonlinear(rhs, displacement);
     // shift to right-hand side
@@ -516,8 +517,8 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
   {
     // elasticity operator
     elasticity_operator_linear.set_time(time);
-    // NB: we have to deactivate the mass matrix term
-    elasticity_operator_linear.set_scaling_factor_mass(0.0);
+    // NB: we have to deactivate the mass operator
+    elasticity_operator_linear.set_scaling_factor_mass_operator(0.0);
 
     // compute action of homogeneous operator
     elasticity_operator_linear.apply(rhs, displacement);
@@ -537,15 +538,15 @@ Operator<dim, Number>::compute_initial_acceleration(VectorType &       accelerat
     }
   }
 
-  // invert mass matrix to get acceleration
+  // invert mass operator to get acceleration
   mass_solver->solve(acceleration, rhs, false);
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::apply_mass_matrix(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
 {
-  mass.apply(dst, src);
+  mass_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
@@ -577,7 +578,7 @@ Operator<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
                                                    double const       time) const
 {
   // elasticity operator
-  elasticity_operator_nonlinear.set_scaling_factor_mass(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 
@@ -611,7 +612,7 @@ Operator<dim, Number>::apply_linearized_operator(VectorType &       dst,
                                                  double const       factor,
                                                  double const       time) const
 {
-  elasticity_operator_nonlinear.set_scaling_factor_mass(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.vmult(dst, src);
 }
@@ -623,7 +624,7 @@ Operator<dim, Number>::apply_nonlinear_operator(VectorType &       dst,
                                                 double const       factor,
                                                 double const       time) const
 {
-  elasticity_operator_nonlinear.set_scaling_factor_mass(factor);
+  elasticity_operator_nonlinear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_nonlinear.set_time(time);
   elasticity_operator_nonlinear.evaluate_nonlinear(dst, src);
 }
@@ -635,7 +636,7 @@ Operator<dim, Number>::apply_linear_operator(VectorType &       dst,
                                              double const       factor,
                                              double const       time) const
 {
-  elasticity_operator_linear.set_scaling_factor_mass(factor);
+  elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
   elasticity_operator_linear.vmult(dst, src);
 }
@@ -687,7 +688,7 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
                                     double const       time) const
 {
   // unsteady problems
-  elasticity_operator_linear.set_scaling_factor_mass(factor);
+  elasticity_operator_linear.set_scaling_factor_mass_operator(factor);
   elasticity_operator_linear.set_time(time);
 
   // solve linear system of equations

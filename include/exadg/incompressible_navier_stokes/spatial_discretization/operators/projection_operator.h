@@ -21,11 +21,11 @@ using namespace dealii;
 /*
  *  Combined divergence and continuity penalty operator: applies the operation
  *
- *   mass matrix operator + dt * divergence penalty operator + dt * continuity penalty operator .
+ *   mass operator + dt * divergence penalty operator + dt * continuity penalty operator .
  *
  *  In detail
  *
- *    Mass matrix operator: ( v_h , u_h )_Omega^e where
+ *    Mass operator: ( v_h , u_h )_Omega^e where
  *
  *    Divergence penalty operator: ( div(v_h) , tau_div * div(u_h) )_Omega^e
  *

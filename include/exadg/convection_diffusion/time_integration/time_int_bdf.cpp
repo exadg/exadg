@@ -632,8 +632,8 @@ TimeIntBDF<dim, Number>::solve_timestep()
       sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i]);
   }
 
-  // apply mass matrix to sum_alphai_ui and add to rhs_vector
-  pde_operator->apply_mass_matrix_add(rhs_vector, sum_alphai_ui);
+  // apply mass operator to sum_alphai_ui and add to rhs_vector
+  pde_operator->apply_mass_operator_add(rhs_vector, sum_alphai_ui);
 
   // extrapolate old solution to obtain a good initial guess for the solver
   solution_np.equ(this->extra.get_beta(0), solution[0]);

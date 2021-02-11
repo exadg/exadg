@@ -1,5 +1,5 @@
 /*
- * mass_matrix_operator.h
+ * mass_operator.h
  *
  *  Created on: Jun 27, 2019
  *      Author: fehn
@@ -17,10 +17,10 @@ namespace ExaDG
 using namespace dealii;
 
 template<int dim, typename Number>
-class MassMatrixKernel
+class MassKernel
 {
 public:
-  MassMatrixKernel()
+  MassKernel()
   {
   }
 

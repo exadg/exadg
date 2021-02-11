@@ -14,8 +14,8 @@
 
 // ExaDG
 #include <exadg/matrix_free/matrix_free_wrapper.h>
-#include <exadg/operators/inverse_mass_matrix.h>
-#include <exadg/operators/mass_matrix_operator.h>
+#include <exadg/operators/inverse_mass_operator.h>
+#include <exadg/operators/mass_operator.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
 #include <exadg/structure/spatial_discretization/interface.h>
@@ -212,7 +212,7 @@ public:
                                double const       time) const;
 
   void
-  apply_mass_matrix(VectorType & dst, VectorType const & src) const;
+  apply_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function calculates the right-hand side of the linear system
@@ -347,8 +347,7 @@ private:
   /*
    * Periodic boundaries.
    */
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
+  PeriodicFaces periodic_face_pairs;
 
   /*
    * User interface.
@@ -372,7 +371,7 @@ private:
   FESystem<dim>             fe;
   DoFHandler<dim>           dof_handler;
   AffineConstraints<Number> constraint_matrix;
-  // constraints for mass matrix operator (i.e., do not apply any constraints)
+  // constraints for mass operator (i.e., do not apply any constraints)
   AffineConstraints<Number> constraints_mass;
 
   std::string const dof_index                = "dof";
@@ -395,12 +394,12 @@ private:
   NonLinearOperator<dim, Number> elasticity_operator_nonlinear;
   OperatorData<dim>              operator_data;
 
-  // The mass matrix operator is only relevant for unsteady problems:
+  // The mass operator is only relevant for unsteady problems:
   // it is used to compute the initial acceleration and to evaluate
-  // the mass matrix term applied to a constant vector (independent
+  // the mass operator term applied to a constant vector (independent
   // of new displacements) appearing on the right-hand side for linear
   // problems and in the residual for nonlinear problems.
-  MassMatrixOperator<dim, dim, Number> mass;
+  MassOperator<dim, dim, Number> mass_operator;
 
   /*
    * Solution of nonlinear systems of equations
@@ -425,7 +424,7 @@ private:
 
   std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
 
-  // mass matrix inversion
+  // mass operator inversion
   std::shared_ptr<PreconditionerBase<Number>>      mass_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> mass_solver;
 
