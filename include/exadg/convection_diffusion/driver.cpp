@@ -390,12 +390,12 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     conv_diff_operator->update_convective_term(1.0 /* time */, &velocity);
   else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
     conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
-                                                  1.0 /* scaling_factor_mass_matrix */,
+                                                  1.0 /* scaling_factor_mass */,
                                                   &velocity);
 
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == Operatortype::MassOperator)
-      conv_diff_operator->apply_mass_matrix(dst, src);
+      conv_diff_operator->apply_mass_operator(dst, src);
     else if(operator_type == Operatortype::ConvectiveOperator)
       conv_diff_operator->apply_convective_term(dst, src);
     else if(operator_type == Operatortype::DiffusiveOperator)

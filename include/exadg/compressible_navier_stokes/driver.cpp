@@ -220,9 +220,9 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
       comp_navier_stokes_operator->evaluate_viscous(dst, src, 0.0);
     else if(operator_type == Operator::ViscousAndConvectiveTerms)
       comp_navier_stokes_operator->evaluate_convective_and_viscous(dst, src, 0.0);
-    else if(operator_type == Operator::InverseMassMatrix)
+    else if(operator_type == Operator::InverseMassOperator)
       comp_navier_stokes_operator->apply_inverse_mass(dst, src);
-    else if(operator_type == Operator::InverseMassMatrixDstDst)
+    else if(operator_type == Operator::InverseMassOperatorDstDst)
       comp_navier_stokes_operator->apply_inverse_mass(dst, dst);
     else if(operator_type == Operator::VectorUpdate)
       dst.sadd(2.0, 1.0, src);

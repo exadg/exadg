@@ -15,7 +15,7 @@ namespace ConvDiff
 using namespace dealii;
 
 template<int dim, typename Number>
-Operator<dim, Number>::Operator() : scaling_factor_mass_matrix(1.0)
+Operator<dim, Number>::Operator() : scaling_factor_mass(1.0)
 {
 }
 
@@ -31,7 +31,7 @@ Operator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
 
   if(operator_data.unsteady_problem)
   {
-    mass_kernel.reset(new MassMatrixKernel<dim, Number>());
+    mass_kernel.reset(new MassKernel<dim, Number>());
   }
 
   if(operator_data.convective_problem)
@@ -74,7 +74,7 @@ Operator<dim, Number>::initialize(
   Base::reinit(matrix_free, constraint_matrix, data);
 
   if(operator_data.unsteady_problem)
-    mass_kernel.reset(new MassMatrixKernel<dim, Number>());
+    mass_kernel.reset(new MassKernel<dim, Number>());
 
   if(operator_data.convective_problem)
     convective_kernel = convective_kernel_in;
@@ -133,16 +133,16 @@ Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 
 template<int dim, typename Number>
 Number
-Operator<dim, Number>::get_scaling_factor_mass_matrix() const
+Operator<dim, Number>::get_scaling_factor_mass_operator() const
 {
-  return scaling_factor_mass_matrix;
+  return scaling_factor_mass;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number)
+Operator<dim, Number>::set_scaling_factor_mass_operator(Number const & scaling_factor)
 {
-  scaling_factor_mass_matrix = number;
+  scaling_factor_mass = scaling_factor;
 }
 
 template<int dim, typename Number>
@@ -212,7 +212,7 @@ Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 
     if(operator_data.unsteady_problem)
     {
-      value_flux += mass_kernel->get_volume_flux(scaling_factor_mass_matrix, value);
+      value_flux += mass_kernel->get_volume_flux(scaling_factor_mass, value);
     }
 
     if(operator_data.convective_problem)

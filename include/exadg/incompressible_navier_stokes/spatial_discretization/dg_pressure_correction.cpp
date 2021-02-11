@@ -7,7 +7,7 @@
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 
 namespace ExaDG
@@ -56,18 +56,17 @@ DGNavierStokesPressureCorrection<dim, Number>::setup(
 {
   ProjBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
-  setup_inverse_mass_matrix_operator_pressure();
+  setup_inverse_mass_operator_pressure();
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const & velocity)
+DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
+                                                             VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  ProjBase::setup_solvers(scaling_factor_time_derivative_term, velocity);
+  ProjBase::setup_solvers(scaling_factor_mass, velocity);
 
   setup_momentum_solver();
 
@@ -93,10 +92,10 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
 {
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
-    momentum_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-      this->get_matrix_free(),
-      this->get_dof_index_velocity(),
-      this->get_quad_index_velocity_linear()));
+    momentum_preconditioner.reset(
+      new InverseMassPreconditioner<dim, dim, Number>(this->get_matrix_free(),
+                                                      this->get_dof_index_velocity(),
+                                                      this->get_quad_index_velocity_linear()));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
@@ -116,7 +115,6 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
 
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(momentum_preconditioner);
-
 
     auto & dof_handler = this->get_dof_handler_u();
 
@@ -218,9 +216,9 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_matrix_operator_pressure()
+DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
 {
-  // inverse mass matrix operator pressure (needed for pressure update in case of rotational
+  // inverse mass operator pressure (needed for pressure update in case of rotational
   // formulation)
   inverse_mass_pressure.initialize(this->get_matrix_free(),
                                    this->get_dof_index_pressure(),
@@ -233,9 +231,9 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   VectorType &       solution,
   VectorType const & rhs,
   bool const &       update_preconditioner,
-  double const &     scaling_factor_mass_matrix_term)
+  double const &     scaling_factor_mass)
 {
-  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Note that there is no need to set the evaluation time for the momentum_operator
   // in this because because this function is only called if the convective term is not considered
@@ -261,14 +259,14 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
   VectorType const & rhs_vector,
   double const &     time,
   bool const &       update_preconditioner,
-  double const &     scaling_factor_mass_matrix_term)
+  double const &     scaling_factor_mass)
 {
   // update nonlinear operator
-  nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
+  nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
 
-  // Set time and mass matrix scaling factor for linear operator
+  // Set time and scaling_factor_mass for linear operator
   this->momentum_operator.set_time(time);
-  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
 
   // Solve nonlinear problem
   Newton::UpdateData update;
@@ -287,9 +285,9 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   VectorType const & src,
   VectorType const * rhs_vector,
   double const &     time,
-  double const &     scaling_factor_mass_matrix) const
+  double const &     scaling_factor_mass) const
 {
-  this->mass_matrix_operator.apply_scale(dst, scaling_factor_mass_matrix, src);
+  this->mass_operator.apply_scale(dst, scaling_factor_mass, src);
 
   // always evaluate convective term since this function is only called
   // if a nonlinear problem has to be solved, i.e., if the convective operator
@@ -386,7 +384,7 @@ DGNavierStokesPressureCorrection<dim, Number>::
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_matrix(
+DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_operator(
   VectorType &       dst,
   VectorType const & src) const
 {

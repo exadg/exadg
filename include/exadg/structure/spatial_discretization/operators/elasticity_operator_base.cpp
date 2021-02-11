@@ -78,9 +78,10 @@ ElasticityOperatorBase<dim, Number>::get_data() const
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::set_scaling_factor_mass(double const factor) const
+ElasticityOperatorBase<dim, Number>::set_scaling_factor_mass_operator(
+  double const scaling_factor) const
 {
-  scaling_factor_mass = factor;
+  scaling_factor_mass = scaling_factor;
 }
 
 template<int dim, typename Number>

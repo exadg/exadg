@@ -514,7 +514,7 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
-    typedef Elementwise::InverseMassMatrixPreconditioner<dim, n_components, Number> INVERSE_MASS;
+    typedef Elementwise::InverseMassPreconditioner<dim, n_components, Number> INVERSE_MASS;
 
     elementwise_preconditioner.reset(
       new INVERSE_MASS(get_matrix_free(), get_dof_index(), get_quad_index()));

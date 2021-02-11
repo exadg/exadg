@@ -31,8 +31,8 @@
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
-#include <exadg/operators/inverse_mass_matrix.h>
-#include <exadg/operators/mass_matrix_operator.h>
+#include <exadg/operators/inverse_mass_operator.h>
+#include <exadg/operators/mass_operator.h>
 #include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
@@ -85,12 +85,14 @@ public:
     {
       interpolate(solution_interpolated, time, solutions, times);
 
-      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-        dst, src, time, solution_interpolated);
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass(dst,
+                                                                             src,
+                                                                             time,
+                                                                             solution_interpolated);
     }
     else // nonlinear transport (standard convective term)
     {
-      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst, src, time);
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass(dst, src, time);
     }
   }
 
@@ -164,7 +166,7 @@ public:
    * by derived classes if necessary.
    */
   virtual void
-  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
+  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
 
   /*
    * Getters and setters.
@@ -358,12 +360,12 @@ public:
    * Operators.
    */
 
-  // mass matrix
+  // mass operator
   void
-  apply_mass_matrix(VectorType & dst, VectorType const & src) const;
+  apply_mass_operator(VectorType & dst, VectorType const & src) const;
 
   void
-  apply_mass_matrix_add(VectorType & dst, VectorType const & src) const;
+  apply_mass_operator_add(VectorType & dst, VectorType const & src) const;
 
   // body force term
   void
@@ -387,21 +389,21 @@ public:
 
   // OIF splitting
   void
-  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
-                                                                  VectorType const & src,
-                                                                  Number const       time) const;
+  evaluate_negative_convective_term_and_apply_inverse_mass(VectorType &       dst,
+                                                           VectorType const & src,
+                                                           Number const       time) const;
 
   // OIF splitting: interpolated velocity solution
   void
-  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+  evaluate_negative_convective_term_and_apply_inverse_mass(
     VectorType &       dst,
     VectorType const & src,
     Number const       time,
     VectorType const & solution_interpolated) const;
 
-  // inverse velocity mass matrix
+  // inverse velocity mass operator
   void
-  apply_inverse_mass_matrix(VectorType & dst, VectorType const & src) const;
+  apply_inverse_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
    *  Update turbulence model, i.e., calculate turbulent viscosity.
@@ -565,12 +567,12 @@ protected:
   /*
    * Basic operators.
    */
-  MassMatrixOperator<dim, dim, Number> mass_matrix_operator;
-  ConvectiveOperator<dim, Number>      convective_operator;
-  ViscousOperator<dim, Number>         viscous_operator;
-  RHSOperator<dim, Number>             rhs_operator;
-  GradientOperator<dim, Number>        gradient_operator;
-  DivergenceOperator<dim, Number>      divergence_operator;
+  MassOperator<dim, dim, Number>  mass_operator;
+  ConvectiveOperator<dim, Number> convective_operator;
+  ViscousOperator<dim, Number>    viscous_operator;
+  RHSOperator<dim, Number>        rhs_operator;
+  GradientOperator<dim, Number>   gradient_operator;
+  DivergenceOperator<dim, Number> divergence_operator;
 
   DivergencePenaltyOperator<dim, Number> div_penalty_operator;
   ContinuityPenaltyOperator<dim, Number> conti_penalty_operator;
@@ -581,10 +583,10 @@ protected:
   mutable MomentumOperator<dim, Number> momentum_operator;
 
   /*
-   * Inverse mass matrix operator.
+   * Inverse mass operator.
    */
-  InverseMassMatrixOperator<dim, dim, Number> inverse_mass_velocity;
-  InverseMassMatrixOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
+  InverseMassOperator<dim, dim, Number> inverse_mass_velocity;
+  InverseMassOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
    * Projection operator.

@@ -7,7 +7,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass_matrix(1.0)
+MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass(1.0)
 {
 }
 
@@ -24,7 +24,7 @@ MomentumOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matr
   // create new objects and initialize kernels
   if(operator_data.unsteady_problem)
   {
-    this->mass_kernel.reset(new MassMatrixKernel<dim, Number>());
+    this->mass_kernel.reset(new MassKernel<dim, Number>());
   }
 
   if(operator_data.convective_problem)
@@ -77,7 +77,7 @@ MomentumOperator<dim, Number>::initialize(
   // mass kernel: create new object and initialize kernel
   if(operator_data.unsteady_problem)
   {
-    this->mass_kernel.reset(new MassMatrixKernel<dim, Number>());
+    this->mass_kernel.reset(new MassKernel<dim, Number>());
   }
 
   // simply set pointers for convective and viscous kernels
@@ -154,16 +154,16 @@ MomentumOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity) con
 
 template<int dim, typename Number>
 Number
-MomentumOperator<dim, Number>::get_scaling_factor_mass_matrix() const
+MomentumOperator<dim, Number>::get_scaling_factor_mass_operator() const
 {
-  return this->scaling_factor_mass_matrix;
+  return this->scaling_factor_mass;
 }
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number)
+MomentumOperator<dim, Number>::set_scaling_factor_mass_operator(Number const & number)
 {
-  this->scaling_factor_mass_matrix = number;
+  this->scaling_factor_mass = number;
 }
 
 template<int dim, typename Number>
@@ -279,7 +279,7 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
     if(operator_data.unsteady_problem)
     {
-      value_flux += mass_kernel->get_volume_flux(scaling_factor_mass_matrix, value);
+      value_flux += mass_kernel->get_volume_flux(scaling_factor_mass, value);
     }
 
     if(operator_data.convective_problem)

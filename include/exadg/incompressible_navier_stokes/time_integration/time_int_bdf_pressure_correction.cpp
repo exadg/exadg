@@ -410,7 +410,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     }
     else // Euler equations
     {
-      pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
+      pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
       velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
       if(this->print_solver_info())
@@ -540,7 +540,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
     }
   }
 
-  pde_operator->apply_mass_matrix_add(rhs, sum_alphai_ui);
+  pde_operator->apply_mass_operator_add(rhs, sum_alphai_ui);
 
   /*
    *  Right-hand side viscous term:
@@ -719,7 +719,7 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_update(VectorType const & pr
                                                     velocity_np,
                                                     this->get_next_time());
 
-    pde_operator->apply_inverse_pressure_mass_matrix(pressure_np, pressure_np);
+    pde_operator->apply_inverse_pressure_mass_operator(pressure_np, pressure_np);
 
     double chi = 0.0;
     calculate_chi(chi);
@@ -749,9 +749,9 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_projection(
   VectorType const & pressure_increment) const
 {
   /*
-   *  I. calculate mass matrix term
+   *  I. apply mass operator
    */
-  pde_operator->apply_mass_matrix(rhs, velocity_np);
+  pde_operator->apply_mass_operator(rhs, velocity_np);
 
   /*
    *  II. calculate pressure gradient term including boundary condition g_p(t_{n+1})
@@ -799,9 +799,9 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
   VectorType rhs(velocity_np);
   rhs_projection(rhs, pressure_increment);
 
-  // apply inverse mass matrix: this is the solution if no penalty terms are applied
+  // apply inverse mass operator: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms
-  pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
+  pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
 
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {

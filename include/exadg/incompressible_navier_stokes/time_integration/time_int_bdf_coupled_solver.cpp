@@ -272,8 +272,8 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
       }
     }
 
-    // apply mass matrix to sum_alphai_ui and add to rhs vector
-    pde_operator->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
+    // apply mass operator to sum_alphai_ui and add to rhs vector
+    pde_operator->apply_mass_operator_add(rhs_vector.block(0), sum_alphai_ui);
 
     unsigned int const n_iter =
       pde_operator->solve_linear_stokes_problem(solution_np,
@@ -304,7 +304,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     }
 
     VectorType rhs(sum_alphai_ui);
-    pde_operator->apply_mass_matrix(rhs, sum_alphai_ui);
+    pde_operator->apply_mass_operator(rhs, sum_alphai_ui);
     if(this->param.right_hand_side)
       pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
@@ -384,9 +384,9 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
   Timer timer;
   timer.restart();
 
-  // right-hand side term: apply mass matrix
+  // right-hand side term: apply mass operator
   VectorType rhs(solution_np.block(0));
-  pde_operator->apply_mass_matrix(rhs, solution_np.block(0));
+  pde_operator->apply_mass_operator(rhs, solution_np.block(0));
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // calculate the penalty parameter for the divergence and continuity penalty term

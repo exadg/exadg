@@ -10,7 +10,7 @@
 
 #include <exadg/convection_diffusion/spatial_discretization/operators/convective_operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/operators/diffusive_operator.h>
-#include <exadg/operators/mass_matrix_kernel.h>
+#include <exadg/operators/mass_kernel.h>
 
 namespace ExaDG
 {
@@ -87,10 +87,10 @@ public:
   set_velocity_ptr(VectorType const & velocity) const;
 
   Number
-  get_scaling_factor_mass_matrix() const;
+  get_scaling_factor_mass_operator() const;
 
   void
-  set_scaling_factor_mass_matrix(Number const & number);
+  set_scaling_factor_mass_operator(Number const & scaling_factor);
 
 private:
   void
@@ -132,11 +132,11 @@ private:
 
   OperatorData<dim> operator_data;
 
-  std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
+  std::shared_ptr<MassKernel<dim, Number>>                  mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 
-  double scaling_factor_mass_matrix;
+  double scaling_factor_mass;
 };
 
 } // namespace ConvDiff

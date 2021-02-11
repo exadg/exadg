@@ -1,5 +1,5 @@
 /*
- * inverse_mass_matrix.h
+ * inverse_mass_operator.h
  *
  *  Created on: May 12, 2016
  *      Author: fehn
@@ -20,12 +20,12 @@ namespace ExaDG
 using namespace dealii;
 
 template<int dim, int n_components, typename Number>
-class InverseMassMatrixOperator
+class InverseMassOperator
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef InverseMassMatrixOperator<dim, n_components, Number> This;
+  typedef InverseMassOperator<dim, n_components, Number> This;
 
   typedef CellIntegrator<dim, n_components, Number> Integrator;
 
@@ -36,7 +36,7 @@ private:
   typedef std::pair<unsigned int, unsigned int> Range;
 
 public:
-  InverseMassMatrixOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
+  InverseMassOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
   {
   }
 

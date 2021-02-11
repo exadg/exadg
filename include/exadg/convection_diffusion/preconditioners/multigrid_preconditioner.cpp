@@ -109,7 +109,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   MappingFlags flags;
   if(data.unsteady_problem)
-    matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
   if(data.convective_problem)
     matrix_free_data.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
@@ -174,8 +174,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
   // make sure that scaling factor of time derivative term has been set before the smoothers are
   // initialized
-  pde_operator_level->set_scaling_factor_mass_matrix(
-    pde_operator->get_scaling_factor_mass_matrix());
+  pde_operator_level->set_scaling_factor_mass_operator(
+    pde_operator->get_scaling_factor_mass_operator());
 
   // initialize MGOperator which is a wrapper around the PDEOperatorMG
   std::shared_ptr<MGOperator> mg_operator_level(new MGOperator(pde_operator_level));
@@ -240,7 +240,7 @@ MultigridPreconditioner<dim, Number>::update_operators()
   }
 
   set_time(pde_operator->get_time());
-  set_scaling_factor_mass_matrix(pde_operator->get_scaling_factor_mass_matrix());
+  set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
 
   if(data.convective_problem &&
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
@@ -301,10 +301,11 @@ MultigridPreconditioner<dim, Number>::set_time(double const & time)
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_matrix(double const & scaling_factor)
+MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
+  double const & scaling_factor)
 {
   for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
-    this->get_operator(level)->set_scaling_factor_mass_matrix(scaling_factor);
+    this->get_operator(level)->set_scaling_factor_mass_operator(scaling_factor);
 }
 
 template<int dim, typename Number>

@@ -10,7 +10,7 @@
 
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
-#include <exadg/operators/inverse_mass_matrix.h>
+#include <exadg/operators/inverse_mass_operator.h>
 
 namespace ExaDG
 {
@@ -48,7 +48,7 @@ public:
     matrix_free.cell_loop(&VelocityProjection<dim, Number>::cell_loop, this, vector, src);
 
     // apply M^{-1}
-    InverseMassMatrixOperator<dim, dim, Number> inverse_mass;
+    InverseMassOperator<dim, dim, Number> inverse_mass;
     inverse_mass.initialize(matrix_free, dof_index, quad_index);
     inverse_mass.apply(vector, vector);
   }

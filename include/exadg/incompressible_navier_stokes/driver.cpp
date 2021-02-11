@@ -520,7 +520,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     AssertThrow(operator_type == Operator::ConvectiveOperator ||
                   operator_type == Operator::CoupledNonlinearResidual ||
                   operator_type == Operator::CoupledLinearized ||
-                  operator_type == Operator::InverseMassMatrix,
+                  operator_type == Operator::InverseMassOperator,
                 ExcMessage("Invalid operator specified for coupled solution approach."));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -529,7 +529,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
                   operator_type == Operator::PressurePoissonOperator ||
                   operator_type == Operator::HelmholtzOperator ||
                   operator_type == Operator::ProjectionOperator ||
-                  operator_type == Operator::InverseMassMatrix,
+                  operator_type == Operator::InverseMassOperator,
                 ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
@@ -538,7 +538,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
                   operator_type == Operator::PressurePoissonOperator ||
                   operator_type == Operator::VelocityConvDiffOperator ||
                   operator_type == Operator::ProjectionOperator ||
-                  operator_type == Operator::InverseMassMatrix,
+                  operator_type == Operator::InverseMassOperator,
                 ExcMessage("Invalid operator specified for pressure-correction scheme."));
   }
   else
@@ -566,7 +566,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     src1 = 1.0;
 
     if(operator_type == Operator::ConvectiveOperator ||
-       operator_type == Operator::InverseMassMatrix)
+       operator_type == Operator::InverseMassOperator)
     {
       navier_stokes_operator_coupled->initialize_vector_velocity(src2);
       navier_stokes_operator_coupled->initialize_vector_velocity(dst2);
@@ -577,7 +577,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     if(operator_type == Operator::ConvectiveOperator ||
        operator_type == Operator::HelmholtzOperator ||
        operator_type == Operator::ProjectionOperator ||
-       operator_type == Operator::InverseMassMatrix)
+       operator_type == Operator::InverseMassOperator)
     {
       navier_stokes_operator_dual_splitting->initialize_vector_velocity(src2);
       navier_stokes_operator_dual_splitting->initialize_vector_velocity(dst2);
@@ -598,7 +598,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   {
     if(operator_type == Operator::VelocityConvDiffOperator ||
        operator_type == Operator::ProjectionOperator ||
-       operator_type == Operator::InverseMassMatrix)
+       operator_type == Operator::InverseMassOperator)
     {
       navier_stokes_operator_pressure_correction->initialize_vector_velocity(src2);
       navier_stokes_operator_pressure_correction->initialize_vector_velocity(dst2);
@@ -630,8 +630,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
         navier_stokes_operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
       else if(operator_type == Operator::ConvectiveOperator)
         navier_stokes_operator_coupled->evaluate_convective_term(dst2,src2,0.0);
-      else if(operator_type == Operator::InverseMassMatrix)
-        navier_stokes_operator_coupled->apply_inverse_mass_matrix(dst2,src2);
+      else if(operator_type == Operator::InverseMassOperator)
+        navier_stokes_operator_coupled->apply_inverse_mass_operator(dst2,src2);
       else
         AssertThrow(false,ExcMessage("Not implemented."));
     }
@@ -645,8 +645,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
         navier_stokes_operator_dual_splitting->apply_projection_operator(dst2,src2);
       else if(operator_type == Operator::PressurePoissonOperator)
         navier_stokes_operator_dual_splitting->apply_laplace_operator(dst2,src2);
-      else if(operator_type == Operator::InverseMassMatrix)
-        navier_stokes_operator_dual_splitting->apply_inverse_mass_matrix(dst2,src2);
+      else if(operator_type == Operator::InverseMassOperator)
+        navier_stokes_operator_dual_splitting->apply_inverse_mass_operator(dst2,src2);
       else
         AssertThrow(false,ExcMessage("Not implemented."));
     }
@@ -658,8 +658,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
         navier_stokes_operator_pressure_correction->apply_projection_operator(dst2,src2);
       else if(operator_type == Operator::PressurePoissonOperator)
         navier_stokes_operator_pressure_correction->apply_laplace_operator(dst2,src2);
-      else if(operator_type == Operator::InverseMassMatrix)
-        navier_stokes_operator_pressure_correction->apply_inverse_mass_matrix(dst2,src2);
+      else if(operator_type == Operator::InverseMassOperator)
+        navier_stokes_operator_pressure_correction->apply_inverse_mass_operator(dst2,src2);
       else
         AssertThrow(false,ExcMessage("Not implemented."));
     }
@@ -692,7 +692,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
           operator_type == Operator::VelocityConvDiffOperator ||
           operator_type == Operator::HelmholtzOperator ||
           operator_type == Operator::ProjectionOperator ||
-          operator_type == Operator::InverseMassMatrix)
+          operator_type == Operator::InverseMassOperator)
   {
     dofs = navier_stokes_operator->get_dof_handler_u().n_dofs();
 

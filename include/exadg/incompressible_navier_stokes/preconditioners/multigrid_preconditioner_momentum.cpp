@@ -98,7 +98,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
     MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
   if(data.unsteady_problem)
-    matrix_free_data.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+    matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());
   if(data.convective_problem)
     matrix_free_data.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
@@ -139,8 +139,8 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 
   // make sure that scaling factor of time derivative term has been set before the smoothers are
   // initialized
-  pde_operator_level->set_scaling_factor_mass_matrix(
-    pde_operator->get_scaling_factor_mass_matrix());
+  pde_operator_level->set_scaling_factor_mass_operator(
+    pde_operator->get_scaling_factor_mass_operator());
 
   // initialize MGOperator which is a wrapper around the PDEOperatorMG
   std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
@@ -160,7 +160,7 @@ MultigridPreconditioner<dim, Number>::update_operators()
   if(data.unsteady_problem)
   {
     set_time(pde_operator->get_time());
-    set_scaling_factor_time_derivative_term(pde_operator->get_scaling_factor_mass_matrix());
+    set_scaling_factor_mass_operator(pde_operator->get_scaling_factor_mass_operator());
   }
 
   if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
@@ -224,12 +224,12 @@ MultigridPreconditioner<dim, Number>::update_operators_after_mesh_movement()
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::set_scaling_factor_time_derivative_term(
-  double const & scaling_factor_time_derivative_term)
+MultigridPreconditioner<dim, Number>::set_scaling_factor_mass_operator(
+  double const & scaling_factor_mass)
 {
   for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
   {
-    get_operator(level)->set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
+    get_operator(level)->set_scaling_factor_mass_operator(scaling_factor_mass);
   }
 }
 

@@ -60,7 +60,7 @@ public:
   virtual ~DGNavierStokesDualSplitting();
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
+  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
 
   /*
    * Pressure Poisson equation.
@@ -121,7 +121,7 @@ public:
   solve_viscous(VectorType &       dst,
                 VectorType const & src,
                 bool const &       update_preconditioner,
-                double const &     scaling_factor_time_derivative_term);
+                double const &     scaling_factor_mass);
 
 private:
   /*

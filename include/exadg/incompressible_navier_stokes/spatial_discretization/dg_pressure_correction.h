@@ -31,7 +31,7 @@ private:
 
 public:
   NonlinearMomentumOperator()
-    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass_matrix(1.0)
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass(1.0)
   {
   }
 
@@ -44,9 +44,9 @@ public:
   void
   update(VectorType const & rhs_vector, double const & time, double const & scaling_factor)
   {
-    this->rhs_vector                 = &rhs_vector;
-    this->time                       = time;
-    this->scaling_factor_mass_matrix = scaling_factor;
+    this->rhs_vector          = &rhs_vector;
+    this->time                = time;
+    this->scaling_factor_mass = scaling_factor;
   }
 
   /*
@@ -56,8 +56,7 @@ public:
   void
   evaluate_residual(VectorType & dst, VectorType const & src)
   {
-    pde_operator->evaluate_nonlinear_residual(
-      dst, src, rhs_vector, time, scaling_factor_mass_matrix);
+    pde_operator->evaluate_nonlinear_residual(dst, src, rhs_vector, time, scaling_factor_mass);
   }
 
 private:
@@ -65,7 +64,7 @@ private:
 
   VectorType const * rhs_vector;
   double             time;
-  double             scaling_factor_mass_matrix;
+  double             scaling_factor_mass;
 };
 
 template<int dim, typename Number = double>
@@ -111,9 +110,9 @@ public:
 
   /*
    * Calls setup() function of base class and additionally initializes the inverse pressure mass
-   * matrix operator needed for the pressure correction scheme, as well as the pressure mass matrix
-   * operator needed in the ALE case only (where the mass matrix may be evaluated at different times
-   * depending on the specific ALE formulation chosen).
+   * matrix operator needed for the pressure correction scheme, as well as the pressure mass
+   * operator needed in the ALE case only (where the mass operator may be evaluated at different
+   * times depending on the specific ALE formulation chosen).
    */
   virtual void
   setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
@@ -121,7 +120,7 @@ public:
         std::string const &                          dof_index_temperature = "");
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
+  setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
 
   /*
    * Momentum step:
@@ -134,7 +133,7 @@ public:
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
                                  bool const &       update_preconditioner,
-                                 double const &     scaling_factor_mass_matrix_term);
+                                 double const &     scaling_factor_mass);
 
   /*
    * Calculation of right-hand side vector:
@@ -152,7 +151,7 @@ public:
                                     VectorType const & rhs_vector,
                                     double const &     time,
                                     bool const &       update_preconditioner,
-                                    double const &     scaling_factor_mass_matrix_term);
+                                    double const &     scaling_factor_mass);
 
   /*
    * This function evaluates the nonlinear residual.
@@ -162,7 +161,7 @@ public:
                               VectorType const & src,
                               VectorType const * rhs_vector,
                               double const &     time,
-                              double const &     scaling_factor_mass_matrix) const;
+                              double const &     scaling_factor_mass) const;
 
   /*
    * This function evaluates the nonlinear residual of the steady Navier-Stokes equations (momentum
@@ -202,9 +201,9 @@ public:
    * Pressure update step.
    */
 
-  // apply inverse pressure mass matrix
+  // apply inverse pressure mass operator
   void
-  apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const;
+  apply_inverse_pressure_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
    * pressure Poisson equation.
@@ -232,12 +231,12 @@ private:
   initialize_momentum_solver();
 
   /*
-   * Setup of inverse mass matrix operator for pressure.
+   * Setup of inverse mass operator for pressure.
    */
   void
-  setup_inverse_mass_matrix_operator_pressure();
+  setup_inverse_mass_operator_pressure();
 
-  InverseMassMatrixOperator<dim, 1, Number> inverse_mass_pressure;
+  InverseMassOperator<dim, 1, Number> inverse_mass_pressure;
 
   /*
    * Momentum equation.

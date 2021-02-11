@@ -20,14 +20,10 @@
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/input_parameters.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
-#include <exadg/operators/inverse_mass_matrix.h>
-#include <exadg/operators/mass_matrix_operator.h>
+#include <exadg/operators/inverse_mass_operator.h>
+#include <exadg/operators/mass_operator.h>
 #include <exadg/operators/rhs_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
-
-// operators
-
-// solvers and preconditioners
 
 namespace ExaDG
 {
@@ -77,8 +73,7 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_solver(double const       scaling_factor_mass_matrix = -1.0,
-               VectorType const * velocity                   = nullptr);
+  setup_solver(double const scaling_factor_mass = -1.0, VectorType const * velocity = nullptr);
 
   /*
    * Initialization of dof-vector.
@@ -115,7 +110,7 @@ public:
    *
    * It evaluates the right-hand side operator, the convective and diffusive terms (subsequently
    * multiplied by -1.0 in order to shift these terms to the right-hand side of the equations) and
-   * finally applies the inverse mass matrix operator.
+   * finally applies the inverse mass operator.
    */
   void
   evaluate_explicit_time_int(VectorType &       dst,
@@ -135,7 +130,7 @@ public:
 
   /*
    * This function is called by OIF sub-stepping algorithm. It evaluates the convective term,
-   * multiplies the result by -1.0 and applies the inverse mass matrix operator.
+   * multiplies the result by -1.0 and applies the inverse mass operator.
    */
   void
   evaluate_oif(VectorType &       dst,
@@ -159,18 +154,18 @@ public:
       VectorType const * velocity        = nullptr) const;
 
   /*
-   * This function applies the mass matrix operator to the src-vector and writes the result to the
+   * This function applies the mass operator to the src-vector and writes the result to the
    * dst-vector.
    */
   void
-  apply_mass_matrix(VectorType & dst, VectorType const & src) const;
+  apply_mass_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   * This function applies the mass matrix operator to the src-vector and adds the result to the
+   * This function applies the mass operator to the src-vector and adds the result to the
    * dst-vector.
    */
   void
-  apply_mass_matrix_add(VectorType & dst, VectorType const & src) const;
+  apply_mass_operator_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function applies the convective operator to the src-vector and writes the result to the
@@ -204,7 +199,7 @@ public:
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or
-   * steady-state problems (potentially involving the mass matrix, convective, and diffusive
+   * steady-state problems (potentially involving the mass, convective, and diffusive
    * operators).
    */
   unsigned int
@@ -376,11 +371,11 @@ private:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 
-  MassMatrixOperator<dim, 1, Number>        mass_matrix_operator;
-  InverseMassMatrixOperator<dim, 1, Number> inverse_mass_matrix_operator;
-  ConvectiveOperator<dim, Number>           convective_operator;
-  DiffusiveOperator<dim, Number>            diffusive_operator;
-  RHSOperator<dim, Number>                  rhs_operator;
+  MassOperator<dim, 1, Number>        mass_operator;
+  InverseMassOperator<dim, 1, Number> inverse_mass_operator;
+  ConvectiveOperator<dim, Number>     convective_operator;
+  DiffusiveOperator<dim, Number>      diffusive_operator;
+  RHSOperator<dim, Number>            rhs_operator;
 
   /*
    * Merged operators.

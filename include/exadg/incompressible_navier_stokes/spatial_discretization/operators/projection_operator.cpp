@@ -45,7 +45,7 @@ ProjectionOperator<dim, Number>::initialize(
                                conti_kernel_data);
   }
 
-  // mass matrix
+  // mass operator
   this->integrator_flags.cell_evaluate  = CellFlags(true, false, false);
   this->integrator_flags.cell_integrate = CellFlags(true, false, false);
 
@@ -73,7 +73,7 @@ ProjectionOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &     
   div_kernel   = div_penalty_kernel;
   conti_kernel = conti_penalty_kernel;
 
-  // mass matrix
+  // mass operator
   this->integrator_flags.cell_evaluate  = CellFlags(true, false, false);
   this->integrator_flags.cell_integrate = CellFlags(true, false, false);
 

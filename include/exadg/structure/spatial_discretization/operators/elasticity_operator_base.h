@@ -40,7 +40,7 @@ struct OperatorData : public OperatorBaseData
   // is pulled back to the reference configuration, t_0 = da/dA t.
   bool pull_back_traction;
 
-  // activates mass matrix operator in operator evaluation for unsteady problems
+  // activates mass operator in operator evaluation for unsteady problems
   bool unsteady;
 
   // density
@@ -88,7 +88,7 @@ public:
   get_data() const;
 
   void
-  set_scaling_factor_mass(double const factor) const;
+  set_scaling_factor_mass_operator(double const scaling_factor) const;
 
   void
   set_constrained_values(VectorType & dst, double const time) const override;

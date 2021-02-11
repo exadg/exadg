@@ -76,8 +76,7 @@ private:
 };
 
 template<int dim, int n_components, typename Number>
-class InverseMassMatrixPreconditioner
-  : public Elementwise::PreconditionerBase<VectorizedArray<Number>>
+class InverseMassPreconditioner : public Elementwise::PreconditionerBase<VectorizedArray<Number>>
 {
 public:
   typedef CellIntegrator<dim, n_components, Number> Integrator;
@@ -86,9 +85,9 @@ public:
   typedef MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
     CellwiseInverseMass;
 
-  InverseMassMatrixPreconditioner(MatrixFree<dim, Number> const & matrix_free,
-                                  unsigned int const              dof_index,
-                                  unsigned int const              quad_index)
+  InverseMassPreconditioner(MatrixFree<dim, Number> const & matrix_free,
+                            unsigned int const              dof_index,
+                            unsigned int const              quad_index)
   {
     integrator.reset(new Integrator(matrix_free, dof_index, quad_index));
     inverse.reset(new CellwiseInverseMass(*integrator));

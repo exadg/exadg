@@ -9,7 +9,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
 #include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
 
 namespace ExaDG
@@ -180,15 +180,14 @@ DGNavierStokesCoupled<dim, Number>::set_scaling_factor_continuity(double const s
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
-  BlockVectorType &       dst,
-  BlockVectorType const & src,
-  bool const &            update_preconditioner,
-  double const &          time,
-  double const &          scaling_factor_mass_matrix_term)
+DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
+                                                                BlockVectorType const & src,
+                                                                bool const & update_preconditioner,
+                                                                double const & time,
+                                                                double const & scaling_factor_mass)
 {
   // Update linear operator
-  linear_operator.update(time, scaling_factor_mass_matrix_term);
+  linear_operator.update(time, scaling_factor_mass);
 
   return linear_solver->solve(dst, src, update_preconditioner);
 }
@@ -228,11 +227,11 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
   BlockVectorType &       dst,
   BlockVectorType const & src,
   double const &          time,
-  double const &          scaling_factor_mass_matrix) const
+  double const &          scaling_factor_mass) const
 {
   // (1,1) block of saddle point matrix
   this->momentum_operator.set_time(time);
-  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix);
+  this->momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
   this->momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
@@ -260,18 +259,17 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
 
 template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
-DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
-  BlockVectorType &  dst,
-  VectorType const & rhs_vector,
-  bool const &       update_preconditioner,
-  double const &     time,
-  double const &     scaling_factor_mass_matrix_term)
+DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
+                                                            VectorType const & rhs_vector,
+                                                            bool const &   update_preconditioner,
+                                                            double const & time,
+                                                            double const & scaling_factor_mass)
 {
   // Update nonlinear operator
-  nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
+  nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
 
   // Update linear operator
-  linear_operator.update(time, scaling_factor_mass_matrix_term);
+  linear_operator.update(time, scaling_factor_mass);
 
   // Solve nonlinear problem
   Newton::UpdateData update;
@@ -290,12 +288,12 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
   BlockVectorType const & src,
   VectorType const *      rhs_vector,
   double const &          time,
-  double const &          scaling_factor_mass_matrix) const
+  double const &          scaling_factor_mass) const
 {
   // velocity-block
 
   if(this->unsteady_problem_has_to_be_solved())
-    this->mass_matrix_operator.apply_scale(dst.block(0), scaling_factor_mass_matrix, src.block(0));
+    this->mass_operator.apply_scale(dst.block(0), scaling_factor_mass, src.block(0));
   else
     dst.block(0) = 0.0;
 
@@ -438,10 +436,10 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
-    preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-      this->get_matrix_free(),
-      this->get_dof_index_velocity(),
-      this->get_quad_index_velocity_linear()));
+    preconditioner_momentum.reset(
+      new InverseMassPreconditioner<dim, dim, Number>(this->get_matrix_free(),
+                                                      this->get_dof_index_velocity(),
+                                                      this->get_quad_index_velocity_linear()));
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
@@ -514,10 +512,10 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
-    inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->get_dof_index_pressure(),
-                                                          this->get_quad_index_pressure()));
+    inverse_mass_preconditioner_schur_complement.reset(
+      new InverseMassPreconditioner<dim, 1, Number>(this->get_matrix_free(),
+                                                    this->get_dof_index_pressure(),
+                                                    this->get_quad_index_pressure()));
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -541,12 +539,12 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
       setup_iterative_solver_schur_complement();
     }
 
-    // inverse mass matrix to also include the part of the preconditioner that is beneficial when
+    // inverse mass operator to also include the part of the preconditioner that is beneficial when
     // using large time steps and large viscosities.
-    inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->get_dof_index_pressure(),
-                                                          this->get_quad_index_pressure()));
+    inverse_mass_preconditioner_schur_complement.reset(
+      new InverseMassPreconditioner<dim, 1, Number>(this->get_matrix_free(),
+                                                    this->get_dof_index_pressure(),
+                                                    this->get_quad_index_pressure()));
 
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);
@@ -566,11 +564,11 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // II. pressure convection-diffusion operator
     setup_pressure_convection_diffusion_operator();
 
-    // III. inverse pressure mass matrix
-    inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->get_dof_index_pressure(),
-                                                          this->get_quad_index_pressure()));
+    // III. inverse pressure mass operator
+    inverse_mass_preconditioner_schur_complement.reset(
+      new InverseMassPreconditioner<dim, 1, Number>(this->get_matrix_free(),
+                                                    this->get_dof_index_pressure(),
+                                                    this->get_quad_index_pressure()));
 
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);
@@ -778,7 +776,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
  *
  *  Approximations of velocity block A = 1/dt M_u + C_lin(u) + nu (-L):
  *
- *   1. inverse mass matrix preconditioner (dt small):
+ *   1. inverse mass preconditioner (dt small):
  *
  *     A = 1/dt M_u
  *
@@ -810,7 +808,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
  *
  *      S = div * (- nu * laplace)^{-1} * grad = - 1/nu * I
  *
- *      -> - S^{-1} = nu M_p^{-1} (M_p: pressure mass matrix)
+ *      -> - S^{-1} = nu M_p^{-1} (M_p: pressure mass operator)
  *
  *   3. Cahouet & Chabard (combines 1. and 2., robust preconditioner for whole range of time step sizes and visosities)
  *
@@ -834,12 +832,12 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
   {
     auto const type = this->param.preconditioner_pressure_block;
 
-    // inverse mass matrix
+    // inverse mass operator
     if(type == SchurComplementPreconditioner::InverseMassMatrix ||
        type == SchurComplementPreconditioner::CahouetChabard ||
        type == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
-      inv_mass_matrix_preconditioner_schur_complement->update();
+      inverse_mass_preconditioner_schur_complement->update();
     }
 
     // Laplace operator
@@ -1021,9 +1019,9 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_velocity_block(
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
-    // use the inverse mass matrix as an approximation to the momentum block
+    // use the inverse mass operator as an approximation to the momentum block
     preconditioner_momentum->vmult(dst, src);
-    dst *= 1. / this->momentum_operator.get_scaling_factor_mass_matrix();
+    dst *= 1. / this->momentum_operator.get_scaling_factor_mass_operator();
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
@@ -1088,14 +1086,14 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
   else if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     // - S^{-1} = nu M_p^{-1}
-    inv_mass_matrix_preconditioner_schur_complement->vmult(dst, src);
+    inverse_mass_preconditioner_schur_complement->vmult(dst, src);
     dst *= this->get_viscosity();
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
     // -S^{-1} = 1/dt  (-L)^{-1}
     apply_inverse_negative_laplace_operator(dst, src);
-    dst *= this->momentum_operator.get_scaling_factor_mass_matrix();
+    dst *= this->momentum_operator.get_scaling_factor_mass_operator();
   }
   else if(type == SchurComplementPreconditioner::CahouetChabard)
   {
@@ -1103,11 +1101,11 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
 
     // I. 1/dt (-L)^{-1}
     apply_inverse_negative_laplace_operator(dst, src);
-    dst *= this->momentum_operator.get_scaling_factor_mass_matrix();
+    dst *= this->momentum_operator.get_scaling_factor_mass_operator();
 
-    // II. M_p^{-1}, apply inverse pressure mass matrix to src-vector and store the result in a
+    // II. M_p^{-1}, apply inverse pressure mass operator to src-vector and store the result in a
     // temporary vector
-    inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_pressure, src);
+    inverse_mass_preconditioner_schur_complement->vmult(tmp_scp_pressure, src);
 
     // III. add temporary vector scaled by viscosity
     dst.add(this->get_viscosity(), tmp_scp_pressure);
@@ -1122,8 +1120,8 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
     // II. pressure convection-diffusion operator A_p
     if(this->unsteady_problem_has_to_be_solved())
     {
-      pressure_conv_diff_operator->set_scaling_factor_mass_matrix(
-        this->momentum_operator.get_scaling_factor_mass_matrix());
+      pressure_conv_diff_operator->set_scaling_factor_mass_operator(
+        this->momentum_operator.get_scaling_factor_mass_operator());
     }
 
     if(this->param.nonlinear_problem_has_to_be_solved())
@@ -1131,8 +1129,8 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
-    // III. inverse pressure mass matrix M_p^{-1}
-    inv_mass_matrix_preconditioner_schur_complement->vmult(dst, dst);
+    // III. inverse pressure mass operator M_p^{-1}
+    inverse_mass_preconditioner_schur_complement->vmult(dst, dst);
   }
   else
   {

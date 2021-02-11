@@ -1,5 +1,5 @@
 /*
- * mass_matrix_operator.h
+ * mass_operator.h
  *
  *  Created on: Nov 5, 2018
  *      Author: fehn
@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MASS_MATRIX_OPERATOR_H_
 
 #include <exadg/matrix_free/integrators.h>
-#include <exadg/operators/mass_matrix_kernel.h>
+#include <exadg/operators/mass_kernel.h>
 #include <exadg/operators/operator_base.h>
 
 namespace ExaDG
@@ -17,15 +17,15 @@ namespace ExaDG
 using namespace dealii;
 
 template<int dim>
-struct MassMatrixOperatorData : public OperatorBaseData
+struct MassOperatorData : public OperatorBaseData
 {
-  MassMatrixOperatorData() : OperatorBaseData()
+  MassOperatorData() : OperatorBaseData()
   {
   }
 };
 
 template<int dim, int n_components, typename Number>
-class MassMatrixOperator : public OperatorBase<dim, Number, n_components>
+class MassOperator : public OperatorBase<dim, Number, n_components>
 {
 public:
   typedef Number value_type;
@@ -35,12 +35,12 @@ public:
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::IntegratorCell IntegratorCell;
 
-  MassMatrixOperator();
+  MassOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &     matrix_free,
-             AffineConstraints<Number> const &   constraint_matrix,
-             MassMatrixOperatorData<dim> const & data);
+  initialize(MatrixFree<dim, Number> const &   matrix_free,
+             AffineConstraints<Number> const & constraint_matrix,
+             MassOperatorData<dim> const &     data);
 
   void
   set_scaling_factor(Number const & number);
@@ -55,7 +55,7 @@ private:
   void
   do_cell_integral(IntegratorCell & integrator) const;
 
-  MassMatrixKernel<dim, Number> kernel;
+  MassKernel<dim, Number> kernel;
 
   mutable double scaling_factor;
 };

@@ -7,7 +7,7 @@
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 
 namespace ExaDG
@@ -49,13 +49,12 @@ DGNavierStokesDualSplitting<dim, Number>::~DGNavierStokesDualSplitting()
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const & velocity)
+DGNavierStokesDualSplitting<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
+                                                        VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  ProjBase::setup_solvers(scaling_factor_time_derivative_term, velocity);
+  ProjBase::setup_solvers(scaling_factor_mass, velocity);
 
   ProjBase::setup_pressure_poisson_solver();
 
@@ -85,10 +84,10 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
-    helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-      this->get_matrix_free(),
-      this->get_dof_index_velocity(),
-      this->get_quad_index_velocity_linear()));
+    helmholtz_preconditioner.reset(
+      new InverseMassPreconditioner<dim, dim, Number>(this->get_matrix_free(),
+                                                      this->get_dof_index_velocity(),
+                                                      this->get_quad_index_velocity_linear()));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
@@ -809,7 +808,7 @@ DGNavierStokesDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
                                                         double const &     factor)
 {
   // Update operator
-  this->momentum_operator.set_scaling_factor_mass_matrix(factor);
+  this->momentum_operator.set_scaling_factor_mass_operator(factor);
 
   unsigned int n_iter = helmholtz_solver->solve(dst, src, update_preconditioner);
 

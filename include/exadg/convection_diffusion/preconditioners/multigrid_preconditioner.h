@@ -115,13 +115,13 @@ private:
   set_time(double const & time);
 
   /*
-   *  This function updates scaling_factor_time_derivative_term.
+   *  This function updates the scaling factor of the mass operator.
    *  In order to update operators[level] this function has to be called.
    *  This is necessary if adaptive time stepping is used where
    *  the scaling factor of the derivative term is variable.
    */
   void
-  set_scaling_factor_mass_matrix(double const & scaling_factor);
+  set_scaling_factor_mass_operator(double const & scaling_factor);
 
   /*
    *  This function updates the smoother for all levels of the multigrid

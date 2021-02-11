@@ -372,8 +372,8 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
     pde_operator->evaluate_add_body_force_term(velocity_np, this->get_next_time());
   }
 
-  // apply inverse mass matrix
-  pde_operator->apply_inverse_mass_matrix(velocity_np, velocity_np);
+  // apply inverse mass operator
+  pde_operator->apply_inverse_mass_operator(velocity_np, velocity_np);
 
 
   // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
@@ -614,9 +614,9 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   VectorType rhs(velocity_np);
   rhs_projection(rhs);
 
-  // apply inverse mass matrix: this is the solution if no penalty terms are applied
+  // apply inverse mass operator: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms
-  pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
+  pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
 
   // penalty terms
   if(this->param.apply_penalty_terms_in_postprocessing_step == false &&
@@ -686,9 +686,9 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_projection(VectorType & rhs) const
   rhs *= -this->get_time_step_size() / this->bdf.get_gamma0();
 
   /*
-   *  II. add mass matrix term
+   *  II. add mass operator term
    */
-  pde_operator->apply_mass_matrix_add(rhs, velocity_np);
+  pde_operator->apply_mass_operator_add(rhs, velocity_np);
 }
 
 template<int dim, typename Number>
@@ -776,9 +776,9 @@ void
 TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType & rhs) const
 {
   /*
-   *  I. calculate mass matrix term
+   *  I. apply mass operator
    */
-  pde_operator->apply_mass_matrix(rhs, velocity_np);
+  pde_operator->apply_mass_operator(rhs, velocity_np);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
 
   /*
@@ -798,7 +798,7 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
 
     // compute right-hand-side vector
     VectorType rhs(velocity_np);
-    pde_operator->apply_mass_matrix(rhs, velocity_np);
+    pde_operator->apply_mass_operator(rhs, velocity_np);
 
     // extrapolate velocity to time t_n+1 and use this velocity field to
     // calculate the penalty parameter for the divergence and continuity penalty term

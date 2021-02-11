@@ -20,9 +20,6 @@
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 
 // operators
-#include <exadg/operators/inverse_mass_matrix.h>
-
-// user interface
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
@@ -31,6 +28,7 @@
 #include <exadg/compressible_navier_stokes/spatial_discretization/comp_navier_stokes_calculators.h>
 #include <exadg/compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h>
 #include <exadg/compressible_navier_stokes/spatial_discretization/interface.h>
+#include <exadg/operators/inverse_mass_operator.h>
 
 namespace ExaDG
 {
@@ -86,7 +84,7 @@ public:
    *  This function evaluates the right-hand side operator, the
    *  convective and viscous terms (subsequently multiplied by -1.0 in order
    *  to shift these terms to the right-hand side of the equations)
-   *  and finally applies the inverse mass matrix operator.
+   *  and finally applies the inverse mass operator.
    */
   void
   evaluate(VectorType & dst, VectorType const & src, Number const time) const;
@@ -251,7 +249,7 @@ private:
   /*
    * Basic operators.
    */
-  MassMatrixOperator<dim, Number> mass_matrix_operator;
+  MassOperator<dim, Number>       mass_operator;
   BodyForceOperator<dim, Number>  body_force_operator;
   ConvectiveOperator<dim, Number> convective_operator;
   ViscousOperator<dim, Number>    viscous_operator;
@@ -261,9 +259,9 @@ private:
    */
   CombinedOperator<dim, Number> combined_operator;
 
-  InverseMassMatrixOperator<dim, dim + 2, Number> inverse_mass_all;
-  InverseMassMatrixOperator<dim, dim, Number>     inverse_mass_vector;
-  InverseMassMatrixOperator<dim, 1, Number>       inverse_mass_scalar;
+  InverseMassOperator<dim, dim + 2, Number> inverse_mass_all;
+  InverseMassOperator<dim, dim, Number>     inverse_mass_vector;
+  InverseMassOperator<dim, 1, Number>       inverse_mass_scalar;
 
   // L2 projections to calculate derived quantities
   p_u_T_Calculator<dim, Number>     p_u_T_calculator;
