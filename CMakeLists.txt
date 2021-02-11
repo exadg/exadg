@@ -32,7 +32,7 @@ ENDIF()
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 
 # Set the source files to be compiled
-SET( TARGET_SRC
+SET(TARGET_SRC
      include/exadg/time_integration/bdf_time_integration.cpp
      include/exadg/time_integration/extrapolation_scheme.cpp
      include/exadg/time_integration/time_int_base.cpp
@@ -53,6 +53,7 @@ SET( TARGET_SRC
      include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_p.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_c.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_h.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_coarsening.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.cpp
      include/exadg/postprocessor/error_calculation.cpp
      include/exadg/postprocessor/mean_scalar_calculation.cpp

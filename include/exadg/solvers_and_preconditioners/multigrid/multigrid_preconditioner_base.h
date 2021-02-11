@@ -15,6 +15,7 @@
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_coarsening.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.h>
 
 namespace ExaDG
@@ -156,7 +157,8 @@ protected:
   MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>> matrix_free_data_objects;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>>     matrix_free_objects;
   MGLevelObject<std::shared_ptr<Operator>>                             operators;
-  MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>         transfers;
+  std::shared_ptr<MGTransfer<VectorTypeMG>>                            transfers;
+  std::vector<std::shared_ptr<Triangulation<dim>>>                     coarse_grid_triangulations;
 
   Mapping<dim> const * mapping;
 
@@ -190,12 +192,18 @@ private:
                               MGConstrainedDoFs &,
                               Map const & dirichlet_bc);
 
+  void
+  initialize_affine_constraints(DoFHandler<dim> const &              dof_handler,
+                                AffineConstraints<MultigridNumber> & constraint,
+                                Map const &                          dirichlet_bc);
+
   /*
    * Data structures needed for matrix-free operator evaluation.
    */
   virtual void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
-                        unsigned int const                     level) = 0;
+                        unsigned int const                     level,
+                        unsigned int const                     h_level) = 0;
 
   /*
    * Initializes the multigrid operators for all multigrid levels.

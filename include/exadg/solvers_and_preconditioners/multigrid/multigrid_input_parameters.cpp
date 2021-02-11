@@ -208,4 +208,15 @@ enum_to_string(PreconditionerSmoother const enum_type)
   return string_type;
 }
 
+bool
+MultigridData::involves_h_transfer() const
+{
+  if(type == MultigridType::hMG || type == MultigridType::chMG || type == MultigridType::phMG ||
+     type == MultigridType::hcMG || type == MultigridType::hpMG || type == MultigridType::chpMG ||
+     type == MultigridType::cphMG || type == MultigridType::hcpMG || type == MultigridType::hpcMG ||
+     type == MultigridType::pchMG || type == MultigridType::phcMG)
+    return true;
+  else
+    return false;
+}
 } // namespace ExaDG

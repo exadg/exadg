@@ -70,7 +70,8 @@ public:
 private:
   void
   fill_matrix_free_data(MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
-                        unsigned int const                     level) override;
+                        unsigned int const                     level,
+                        unsigned int const                     h_level) override;
 
   std::shared_ptr<MGOperatorBase>
   initialize_operator(unsigned int const level) override;

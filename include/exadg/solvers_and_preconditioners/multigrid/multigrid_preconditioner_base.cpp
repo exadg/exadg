@@ -318,6 +318,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
   if(dirichlet_bc_in != nullptr)
     periodic_face_pairs = *periodic_face_pairs_in;
 
+
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
                                                   periodic_face_pairs,
                                                   fe,
@@ -344,58 +345,102 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints)
 {
-  constrained_dofs.resize(0, this->n_levels - 1);
-  dof_handlers.resize(0, this->n_levels - 1);
-  constraints.resize(0, this->n_levels - 1);
-
-  const unsigned int n_components = fe.n_components();
-
-  // temporal storage for new DoFHandlers and constraints on each p-level
-  std::map<MGDoFHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
-  std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
-
-  // setup dof-handler and constrained dofs for each p-level
-  for(auto level : p_levels)
+  if(!data.use_global_coarsening)
   {
-    // setup dof_handler: create dof_handler...
-    auto dof_handler = new DoFHandler<dim>(*tria);
-    // ... create FE and distribute it
-    if(level.is_dg)
-      dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(level.degree), n_components));
-    else
-      dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(level.degree), n_components));
-    dof_handler->distribute_mg_dofs();
-    // setup constrained dofs:
-    auto constrained_dofs = new MGConstrainedDoFs();
-    constrained_dofs->clear();
-    this->initialize_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
+    constrained_dofs.resize(0, this->n_levels - 1);
+    dof_handlers.resize(0, this->n_levels - 1);
+    constraints.resize(0, this->n_levels - 1);
 
-    // put in temporal storage
-    map_dofhandlers[level] = std::shared_ptr<DoFHandler<dim> const>(dof_handler);
-    map_constraints[level] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
+    const unsigned int n_components = fe.n_components();
+
+    // temporal storage for new DoFHandlers and constraints on each p-level
+    std::map<MGDoFHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
+    std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
+
+    // setup dof-handler and constrained dofs for each p-level
+    for(auto level : p_levels)
+    {
+      // setup dof_handler: create dof_handler...
+      auto dof_handler = new DoFHandler<dim>(*tria);
+      // ... create FE and distribute it
+      if(level.is_dg)
+        dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(level.degree), n_components));
+      else
+        dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(level.degree), n_components));
+      dof_handler->distribute_mg_dofs();
+      // setup constrained dofs:
+      auto constrained_dofs = new MGConstrainedDoFs();
+      constrained_dofs->clear();
+      this->initialize_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
+
+      // put in temporal storage
+      map_dofhandlers[level] = std::shared_ptr<DoFHandler<dim> const>(dof_handler);
+      map_constraints[level] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
+    }
+
+    // populate dof-handler and constrained dofs to all hp-levels with the same degree
+    for(unsigned int level = 0; level < level_info.size(); level++)
+    {
+      auto p_level            = level_info[level].dof_handler_id();
+      dof_handlers[level]     = map_dofhandlers[p_level];
+      constrained_dofs[level] = map_constraints[p_level];
+    }
+
+    for(unsigned int level = coarse_level; level <= fine_level; level++)
+    {
+      auto constraint_own = new AffineConstraints<MultigridNumber>;
+
+      ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
+                                           is_singular,
+                                           *dof_handlers[level],
+                                           *constraint_own,
+                                           *constrained_dofs[level],
+                                           periodic_face_pairs,
+                                           level_info[level].h_level());
+
+      constraints[level].reset(constraint_own);
+    }
   }
-
-  // populate dof-handler and constrained dofs to all hp-levels with the same degree
-  for(unsigned int level = 0; level < level_info.size(); level++)
+  else
   {
-    auto p_level            = level_info[level].dof_handler_id();
-    dof_handlers[level]     = map_dofhandlers[p_level];
-    constrained_dofs[level] = map_constraints[p_level];
-  }
+    constrained_dofs.resize(0, this->n_levels - 1);
+    dof_handlers.resize(0, this->n_levels - 1);
+    constraints.resize(0, this->n_levels - 1);
 
-  for(unsigned int level = coarse_level; level <= fine_level; level++)
-  {
-    auto constraint_own = new AffineConstraints<MultigridNumber>;
+    // create coarse grid triangulations only once
+    if(data.involves_h_transfer() && coarse_grid_triangulations.empty())
+      coarse_grid_triangulations =
+        MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
 
-    ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
-                                         is_singular,
-                                         *dof_handlers[level],
-                                         *constraint_own,
-                                         *constrained_dofs[level],
-                                         periodic_face_pairs,
-                                         level_info[level].h_level());
+    const unsigned int n_components = fe.n_components();
 
-    constraints[level].reset(constraint_own);
+    // setup dof-handler and constrained dofs for each p-level
+    for(unsigned int i = 0; i < level_info.size(); i++)
+    {
+      const auto & level = level_info[i];
+
+      auto dof_handler = new DoFHandler<dim>((level.h_level() + 1 == tria->n_global_levels()) ?
+                                               *(dynamic_cast<Triangulation<dim> const *>(tria)) :
+                                               *coarse_grid_triangulations[level.h_level()]);
+      // ... create FE and distribute it
+      if(level.is_dg())
+        dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(level.degree()), n_components));
+      else
+        dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(level.degree()), n_components));
+
+      dof_handlers[i].reset(dof_handler);
+
+      auto constraint_own = new AffineConstraints<MultigridNumber>;
+
+      // TODO: integrate periodic constraints into initialize_affine_constraints
+      initialize_affine_constraints(*dof_handler, *constraint_own, dirichlet_bc);
+
+      AssertThrow(is_singular == false, ExcNotImplemented());
+      AssertThrow(periodic_face_pairs.empty(),
+                  ExcMessage("Multigrid transfer option use_global_coarsening "
+                             "is currently not available for problems with periodic boundaries."));
+      constraints[i].reset(constraint_own);
+    }
   }
 }
 
@@ -409,7 +454,10 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
   for(unsigned int level = coarse_level; level <= fine_level; level++)
   {
     matrix_free_data_objects[level].reset(new MatrixFreeData<dim, MultigridNumber>());
-    fill_matrix_free_data(*matrix_free_data_objects[level], level);
+    fill_matrix_free_data(*matrix_free_data_objects[level],
+                          level,
+                          data.use_global_coarsening ? numbers::invalid_unsigned_int :
+                                                       level_info[level].h_level());
 
     matrix_free_objects[level].reset(new MatrixFree<dim, MultigridNumber>());
 
@@ -477,6 +525,24 @@ MultigridPreconditionerBase<dim, Number>::initialize_constrained_dofs(
     dirichlet_boundary.insert(it.first);
   constrained_dofs.initialize(dof_handler);
   constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
+}
+
+template<int dim, typename Number>
+void
+MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
+  DoFHandler<dim> const &              dof_handler,
+  AffineConstraints<MultigridNumber> & constraint,
+  Map const &                          dirichlet_bc)
+{
+  IndexSet locally_relevant_dofs;
+  DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  constraint.reinit(locally_relevant_dofs);
+
+  DoFTools::make_hanging_node_constraints(dof_handler, constraint);
+  for(auto & it : dirichlet_bc)
+    VectorTools::interpolate_boundary_values(
+      *mapping, dof_handler, it.first, Functions::ZeroFunction<dim, MultigridNumber>(), constraint);
+  constraint.close();
 }
 
 template<int dim, typename Number>
@@ -740,7 +806,22 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
 {
-  this->transfers.reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
+  if(!data.use_global_coarsening)
+  {
+    auto tmp = std::make_shared<MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>>();
+
+    tmp->reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
+
+    this->transfers = tmp;
+  }
+  else
+  {
+    auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
+
+    tmp->reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
+
+    this->transfers = tmp;
+  }
 }
 
 template<int dim, typename Number>
@@ -750,7 +831,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_multigrid_preconditioner()
   this->multigrid_preconditioner.reset(
     new MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>(this->operators,
                                                                   *this->coarse_grid_solver,
-                                                                  this->transfers,
+                                                                  *this->transfers,
                                                                   this->smoothers,
                                                                   this->mpi_comm));
 }
