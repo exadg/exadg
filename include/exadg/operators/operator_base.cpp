@@ -1,6 +1,7 @@
 
 // deal.II
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/matrix_free/tools.h>
 
 // ExaDG
 #include <exadg/operators/operator_base.h>
@@ -375,17 +376,22 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   }
   else
   {
-    matrix_free->cell_loop(&This::cell_loop_diagonal, this, diagonal, diagonal);
+    MatrixFreeTools::compute_diagonal<dim, -1, 0, n_components, Number, VectorizedArray<Number>>(
+      *matrix_free,
+      diagonal,
+      [&](auto & integrator) -> void {
+        integrator.evaluate(integrator_flags.cell_evaluate.value,
+                            integrator_flags.cell_evaluate.gradient,
+                            integrator_flags.cell_evaluate.hessian);
+
+        this->do_cell_integral(integrator);
+
+        integrator.integrate(integrator_flags.cell_integrate.value,
+                             integrator_flags.cell_integrate.gradient);
+      },
+      data.dof_index,
+      data.quad_index);
   }
-
-  // multiple processes might have contributions to the same diagonal entry in
-  // the cg case, so we have to sum them up
-  if(!is_dg)
-    diagonal.compress(VectorOperation::add);
-
-  // apply constraints in the case of cg
-  if(!is_dg)
-    set_constraint_diagonal(diagonal);
 }
 
 template<int dim, typename Number, int n_components>

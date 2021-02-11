@@ -14,7 +14,8 @@
         "DofsMax": "10000"
     },
     "Application": {
-        "MeshType": "Cartesian"
+        "MeshType": "Cartesian",
+        "GlobalCoarsening": "false"
     },
     "Output": {
         "OutputDirectory": "output/poisson/gaussian/",

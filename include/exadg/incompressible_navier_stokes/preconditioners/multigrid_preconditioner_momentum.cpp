@@ -91,9 +91,10 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
-  unsigned int const                     level)
+  unsigned int const                     level,
+  unsigned int const                     h_level)
 {
-  matrix_free_data.data.mg_level = this->level_info[level].h_level();
+  matrix_free_data.data.mg_level = h_level;
   matrix_free_data.data.tasks_parallel_scheme =
     MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
@@ -111,9 +112,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
-    Categorization::do_cell_based_loops(*tria,
-                                        matrix_free_data.data,
-                                        this->level_info[level].h_level());
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
@@ -197,7 +196,7 @@ MultigridPreconditioner<dim, Number>::set_vector_linearization(
   {
     auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
     auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
-    this->transfers.interpolate(level, vector_coarse_level, vector_fine_level);
+    this->transfers->interpolate(level, vector_coarse_level, vector_fine_level);
     this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
   }
 }

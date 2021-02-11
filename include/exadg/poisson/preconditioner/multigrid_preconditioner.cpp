@@ -65,9 +65,10 @@ template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
-  unsigned int const                     level)
+  unsigned int const                     level,
+  unsigned int const                     h_level)
 {
-  matrix_free_data.data.mg_level = this->level_info[level].h_level();
+  matrix_free_data.data.mg_level = h_level;
 
   matrix_free_data.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
@@ -78,9 +79,7 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
-    Categorization::do_cell_based_loops(*tria,
-                                        matrix_free_data.data,
-                                        this->level_info[level].h_level());
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "laplace_dof_handler");

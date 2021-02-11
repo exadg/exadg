@@ -66,9 +66,10 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
-  unsigned int const                     level)
+  unsigned int const                     level,
+  unsigned int const                     h_level)
 {
-  matrix_free_data.data.mg_level = this->level_info[level].h_level();
+  matrix_free_data.data.mg_level = h_level;
   matrix_free_data.data.tasks_parallel_scheme =
     MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
@@ -149,7 +150,7 @@ MultigridPreconditioner<dim, Number>::set_solution_linearization(
       this->get_operator_nonlinear(level - 0)->get_solution_linearization();
     auto vector_coarse_level =
       this->get_operator_nonlinear(level - 1)->get_solution_linearization();
-    this->transfers.interpolate(level, vector_coarse_level, vector_fine_level);
+    this->transfers->interpolate(level, vector_coarse_level, vector_fine_level);
     this->get_operator_nonlinear(level - 1)->set_solution_linearization(vector_coarse_level);
   }
 }

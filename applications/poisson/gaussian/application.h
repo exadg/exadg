@@ -187,6 +187,7 @@ public:
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("GlobalCoarsening", global_coarsening, "Use Global Coarsening", Patterns::Bool());
     prm.leave_subsection();
     // clang-format on
   }
@@ -194,6 +195,7 @@ public:
   std::string mesh_type_string = "Cartesian";
   MeshType    mesh_type        = MeshType::Cartesian;
 
+  bool global_coarsening = false;
 
   void
   set_input_parameters(InputParameters & param)
@@ -215,7 +217,8 @@ public:
     param.compute_performance_metrics = true;
     param.preconditioner              = Preconditioner::Multigrid;
     param.multigrid_data.type         = MultigridType::cphMG;
-    param.multigrid_data.p_sequence   = PSequenceType::Bisect;
+    param.multigrid_data.p_sequence            = PSequenceType::Bisect;
+    param.multigrid_data.use_global_coarsening = global_coarsening;
     // MG smoother
     param.multigrid_data.smoother_data.smoother   = MultigridSmoother::Chebyshev;
     param.multigrid_data.smoother_data.iterations = 5;

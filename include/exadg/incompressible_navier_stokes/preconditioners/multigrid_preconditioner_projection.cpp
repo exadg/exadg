@@ -64,9 +64,10 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, MultigridNumber> & matrix_free_data,
-  unsigned int const                     level)
+  unsigned int const                     level,
+  unsigned int const                     h_level)
 {
-  matrix_free_data.data.mg_level = this->level_info[level].h_level();
+  matrix_free_data.data.mg_level = h_level;
   matrix_free_data.data.tasks_parallel_scheme =
     MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
@@ -83,9 +84,7 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
-    Categorization::do_cell_based_loops(*tria,
-                                        matrix_free_data.data,
-                                        this->level_info[level].h_level());
+    Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
@@ -160,7 +159,7 @@ MultigridPreconditionerProjection<dim, Number>::update_operators()
   {
     // interpolate velocity from fine to coarse level
     this->get_operator(level - 1)->initialize_dof_vector(velocity_coarse_level);
-    this->transfers.interpolate(level, velocity_coarse_level, velocity_fine_level);
+    this->transfers->interpolate(level, velocity_coarse_level, velocity_fine_level);
 
     // update operator
     this->get_operator(level - 1)->update(velocity_coarse_level, time_step_size);

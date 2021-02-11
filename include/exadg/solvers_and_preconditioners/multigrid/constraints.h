@@ -106,7 +106,10 @@ add_constraints(
 
   // ... and set local dofs
   IndexSet relevant_dofs;
-  DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+  if(level != numbers::invalid_unsigned_int)
+    DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+  else
+    DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
   constraint_own.reinit(relevant_dofs);
 
   // 1) add periodic BCs
