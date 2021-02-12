@@ -80,7 +80,7 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler.distribute_mg_dofs();
 
   // affine constraints
-  constraint_matrix.clear();
+  affine_constraints.clear();
 
   // standard Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_bc)
@@ -88,17 +88,17 @@ Operator<dim, Number>::distribute_dofs()
     ComponentMask mask =
       this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first)->second;
 
-    DoFTools::make_zero_boundary_constraints(this->dof_handler, it.first, constraint_matrix, mask);
+    DoFTools::make_zero_boundary_constraints(this->dof_handler, it.first, affine_constraints, mask);
   }
 
   // mortar type Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
   {
     ComponentMask mask = ComponentMask();
-    DoFTools::make_zero_boundary_constraints(dof_handler, it.first, constraint_matrix, mask);
+    DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
   }
 
-  constraint_matrix.close();
+  affine_constraints.close();
 
   // no constraints for mass operator
   constraints_mass.clear();
@@ -183,7 +183,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
 
   // DoFHandler, AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
-  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
+  matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -230,11 +230,11 @@ Operator<dim, Number>::setup_operators()
 
   if(param.large_deformation)
   {
-    elasticity_operator_nonlinear.initialize(*matrix_free, constraint_matrix, operator_data);
+    elasticity_operator_nonlinear.initialize(*matrix_free, affine_constraints, operator_data);
   }
   else
   {
-    elasticity_operator_linear.initialize(*matrix_free, constraint_matrix, operator_data);
+    elasticity_operator_linear.initialize(*matrix_free, affine_constraints, operator_data);
   }
 
   // mass operator and related solver for inversion

@@ -81,7 +81,7 @@ public:
 
   virtual void
   initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<Number> const & constraint_matrix,
+             AffineConstraints<Number> const & affine_constraints,
              OperatorData<dim> const &         data);
 
   OperatorData<dim> const &

@@ -14,12 +14,12 @@ MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass(1.0)
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                          AffineConstraints<Number> const & constraint_matrix,
+                                          AffineConstraints<Number> const & affine_constraints,
                                           MomentumOperatorData<dim> const & data)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   // create new objects and initialize kernels
   if(operator_data.unsteady_problem)
@@ -65,14 +65,14 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         constraint_matrix,
+  AffineConstraints<Number> const &                         affine_constraints,
   MomentumOperatorData<dim> const &                         data,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   // mass kernel: create new object and initialize kernel
   if(operator_data.unsteady_problem)

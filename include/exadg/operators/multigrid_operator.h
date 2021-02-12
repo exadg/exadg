@@ -39,9 +39,9 @@ public:
   }
 
   virtual AffineConstraints<typename Operator::value_type> const &
-  get_constraint_matrix() const
+  get_affine_constraints() const
   {
-    return pde_operator->get_constraint_matrix();
+    return pde_operator->get_affine_constraints();
   }
 
   virtual MatrixFree<dim, Number> const &

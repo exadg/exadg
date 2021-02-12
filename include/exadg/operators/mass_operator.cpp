@@ -20,10 +20,10 @@ template<int dim, int n_components, typename Number>
 void
 MassOperator<dim, n_components, Number>::initialize(
   MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<Number> const & constraint_matrix,
+  AffineConstraints<Number> const & affine_constraints,
   MassOperatorData<dim> const &     data)
 {
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }

@@ -18,14 +18,14 @@ template<int dim, typename Number>
 void
 ProjectionOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                matrix_free,
-  AffineConstraints<Number> const &              constraint_matrix,
+  AffineConstraints<Number> const &              affine_constraints,
   ProjectionOperatorData<dim> const &            data,
   Operators::DivergencePenaltyKernelData const & div_kernel_data,
   Operators::ContinuityPenaltyKernelData const & conti_kernel_data)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   if(operator_data.use_divergence_penalty)
   {
@@ -61,14 +61,14 @@ ProjectionOperator<dim, Number>::initialize(
 template<int dim, typename Number>
 void
 ProjectionOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &     matrix_free,
-                                            AffineConstraints<Number> const &   constraint_matrix,
+                                            AffineConstraints<Number> const &   affine_constraints,
                                             ProjectionOperatorData<dim> const & data,
                                             std::shared_ptr<DivKernel>          div_penalty_kernel,
                                             std::shared_ptr<ContiKernel> conti_penalty_kernel)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   div_kernel   = div_penalty_kernel;
   conti_kernel = conti_penalty_kernel;

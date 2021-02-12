@@ -194,7 +194,7 @@ private:
 
   void
   initialize_affine_constraints(DoFHandler<dim> const &              dof_handler,
-                                AffineConstraints<MultigridNumber> & constraint,
+                                AffineConstraints<MultigridNumber> & affine_contraints,
                                 Map const &                          dirichlet_bc);
 
   /*

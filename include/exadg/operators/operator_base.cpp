@@ -115,7 +115,7 @@ OperatorBase<dim, Number, n_components>::get_level() const
 
 template<int dim, typename Number, int n_components>
 AffineConstraints<Number> const &
-OperatorBase<dim, Number, n_components>::get_constraint_matrix() const
+OperatorBase<dim, Number, n_components>::get_affine_constraints() const
 {
   return *constraint;
 }

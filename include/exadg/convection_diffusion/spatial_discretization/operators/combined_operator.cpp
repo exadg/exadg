@@ -22,12 +22,12 @@ Operator<dim, Number>::Operator() : scaling_factor_mass(1.0)
 template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                  AffineConstraints<Number> const & constraint_matrix,
+                                  AffineConstraints<Number> const & affine_constraints,
                                   OperatorData<dim> const &         data)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   if(operator_data.unsteady_problem)
   {
@@ -64,14 +64,14 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         constraint_matrix,
+  AffineConstraints<Number> const &                         affine_constraints,
   OperatorData<dim> const &                                 data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel_in,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel_in)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   if(operator_data.unsteady_problem)
     mass_kernel.reset(new MassKernel<dim, Number>());

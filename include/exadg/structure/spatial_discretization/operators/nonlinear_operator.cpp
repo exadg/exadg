@@ -18,10 +18,10 @@ using namespace dealii;
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                           AffineConstraints<Number> const & constraint_matrix,
+                                           AffineConstraints<Number> const & affine_constraints,
                                            OperatorData<dim> const &         data)
 {
-  Base::initialize(matrix_free, constraint_matrix, data);
+  Base::initialize(matrix_free, affine_constraints, data);
 
   integrator_lin.reset(new IntegratorCell(*this->matrix_free));
   this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index);

@@ -55,13 +55,14 @@ ElasticityOperatorBase<dim, Number>::get_mapping_flags()
 
 template<int dim, typename Number>
 void
-ElasticityOperatorBase<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                                AffineConstraints<Number> const & constraint_matrix,
-                                                OperatorData<dim> const &         data)
+ElasticityOperatorBase<dim, Number>::initialize(
+  MatrixFree<dim, Number> const &   matrix_free,
+  AffineConstraints<Number> const & affine_constraints,
+  OperatorData<dim> const &         data)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   this->integrator_flags = this->get_integrator_flags(data.unsteady);
 

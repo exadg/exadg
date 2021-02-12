@@ -208,7 +208,7 @@ public:
 
   void
   initialize(MatrixFree<dim, Number> const &        matrix_free,
-             AffineConstraints<Number> const &      constraint_matrix,
+             AffineConstraints<Number> const &      affine_constraints,
              LaplaceOperatorData<rank, dim> const & data);
 
   LaplaceOperatorData<rank, dim> const &
