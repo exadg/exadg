@@ -6,15 +6,17 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1.0)
 
+set(CMAKE_CXX_STANDARD 14)
+
 ADD_SUBDIRECTORY(cmake)
 
 PRINT_EXADG_HEADER()
 
 # deal.II
 FIND_PACKAGE(deal.II 9.3 QUIET
-  HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
-  )
-IF(NOT ${deal.II_FOUND})
+        HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
+        )
+IF (NOT ${deal.II_FOUND})
   MESSAGE(FATAL_ERROR "\n"
     "*** Could not locate deal.II. ***\n\n"
     "You may want to either pass a flag -DDEAL_II_DIR=/path/to/deal.II to cmake\n"
