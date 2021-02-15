@@ -39,7 +39,7 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         constraint_matrix,
+  AffineConstraints<Number> const &                         affine_constraints,
   ConvectiveOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
 {
@@ -47,7 +47,7 @@ ConvectiveOperator<dim, Number>::initialize(
 
   kernel = convective_kernel;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   this->integrator_flags = kernel->get_integrator_flags();
 }

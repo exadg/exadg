@@ -102,7 +102,7 @@ public:
   get_level() const;
 
   AffineConstraints<Number> const &
-  get_constraint_matrix() const;
+  get_affine_constraints() const;
 
   MatrixFree<dim, Number> const &
   get_matrix_free() const;

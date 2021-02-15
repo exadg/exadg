@@ -11,7 +11,7 @@ template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                          matrix_free,
-  AffineConstraints<Number> const &                        constraint_matrix,
+  AffineConstraints<Number> const &                        affine_constraints,
   DiffusiveOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel)
 {
@@ -19,7 +19,7 @@ DiffusiveOperator<dim, Number>::initialize(
 
   this->kernel = kernel;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   this->integrator_flags = kernel->get_integrator_flags();
 }

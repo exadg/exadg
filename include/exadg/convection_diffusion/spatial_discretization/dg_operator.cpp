@@ -58,7 +58,7 @@ DGOperator<dim, Number>::DGOperator(
 
   distribute_dofs();
 
-  constraint_matrix.close();
+  affine_constraints.close();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -94,12 +94,12 @@ DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & mat
 
   // DoFHandler, AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
-  matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name());
+  matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
   if(needs_own_dof_handler_velocity())
   {
     matrix_free_data.insert_dof_handler(&(*dof_handler_velocity), get_dof_name_velocity());
-    matrix_free_data.insert_constraint(&constraint_matrix, get_dof_name_velocity());
+    matrix_free_data.insert_constraint(&affine_constraints, get_dof_name_velocity());
   }
 
   // Quadrature
@@ -133,7 +133,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
   mass_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  mass_operator.initialize(*matrix_free, constraint_matrix, mass_operator_data);
+  mass_operator.initialize(*matrix_free, affine_constraints, mass_operator_data);
 
   // inverse mass operator
   inverse_mass_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
@@ -168,7 +168,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
     convective_operator_data.kernel_data = convective_kernel_data;
 
     convective_operator.initialize(*matrix_free,
-                                   constraint_matrix,
+                                   affine_constraints,
                                    convective_operator_data,
                                    convective_kernel);
   }
@@ -194,7 +194,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
     diffusive_operator_data.kernel_data = diffusive_kernel_data;
 
     diffusive_operator.initialize(*matrix_free,
-                                  constraint_matrix,
+                                  affine_constraints,
                                   diffusive_operator_data,
                                   diffusive_kernel);
   }
@@ -263,8 +263,11 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
         get_quad_index_overintegration() :
         get_quad_index();
 
-    combined_operator.initialize(
-      *matrix_free, constraint_matrix, combined_operator_data, convective_kernel, diffusive_kernel);
+    combined_operator.initialize(*matrix_free,
+                                 affine_constraints,
+                                 combined_operator_data,
+                                 convective_kernel,
+                                 diffusive_kernel);
   }
 
   pcout << std::endl << "... done!" << std::endl;

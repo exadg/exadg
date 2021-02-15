@@ -370,7 +370,7 @@ private:
 
   FESystem<dim>             fe;
   DoFHandler<dim>           dof_handler;
-  AffineConstraints<Number> constraint_matrix;
+  AffineConstraints<Number> affine_constraints;
   // constraints for mass operator (i.e., do not apply any constraints)
   AffineConstraints<Number> constraints_mass;
 

@@ -61,7 +61,7 @@ add_periodicity_constraints(
   unsigned int const      level,
   std::vector<typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                               periodic_face_pairs_level0,
-  AffineConstraints<Number> & constraint_own)
+  AffineConstraints<Number> & affine_constraints_own)
 {
   // loop over all periodic face pairs of level 0
   for(auto & it : periodic_face_pairs_level0)
@@ -78,8 +78,11 @@ add_periodicity_constraints(
 
     // get reference to periodic faces on level and add recursively their
     // subfaces on the given level
-    add_periodicity_constraints<dim, Number>(
-      level, level, cell1->face(it.face_idx[1]), cell0->face(it.face_idx[0]), constraint_own);
+    add_periodicity_constraints<dim, Number>(level,
+                                             level,
+                                             cell1->face(it.face_idx[1]),
+                                             cell0->face(it.face_idx[0]),
+                                             affine_constraints_own);
   }
 }
 
@@ -89,7 +92,7 @@ add_constraints(
   bool                        is_dg,
   bool                        operator_is_singular,
   DoFHandler<dim> const &     dof_handler,
-  AffineConstraints<Number> & constraint_own,
+  AffineConstraints<Number> & affine_constraints_own,
   MGConstrainedDoFs const &   mg_constrained_dofs,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                      periodic_face_pairs,
@@ -98,11 +101,11 @@ add_constraints(
   if(is_dg)
   {
     // for DG: nothing to do
-    constraint_own.close();
+    affine_constraints_own.close();
     return;
   }
   // 0) clear old content (to be on the safe side)
-  constraint_own.clear();
+  affine_constraints_own.clear();
 
   // ... and set local dofs
   IndexSet relevant_dofs;
@@ -110,30 +113,33 @@ add_constraints(
     DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
   else
     DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
-  constraint_own.reinit(relevant_dofs);
+  affine_constraints_own.reinit(relevant_dofs);
 
   // 1) add periodic BCs
-  add_periodicity_constraints<dim, Number>(dof_handler, level, periodic_face_pairs, constraint_own);
+  add_periodicity_constraints<dim, Number>(dof_handler,
+                                           level,
+                                           periodic_face_pairs,
+                                           affine_constraints_own);
 
   // 2) add Dirichlet BCs
-  constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
+  affine_constraints_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
 
   // constrain zeroth DoF in continuous case (the mean value constraint will
   // be applied in the DG case). In case we have interface matrices, there are
   // Dirichlet constraints on parts of the boundary and no such transformation
   // is required.
-  if(operator_is_singular && constraint_own.can_store_line(0))
+  if(operator_is_singular && affine_constraints_own.can_store_line(0))
   {
     // if dof 0 is constrained, it must be a periodic dof, so we take the
     // value on the other side
     types::global_dof_index line_index = 0;
     while(true)
     {
-      auto const * lines = constraint_own.get_constraint_entries(line_index);
+      auto const * lines = affine_constraints_own.get_constraint_entries(line_index);
 
       if(lines == 0)
       {
-        constraint_own.add_line(line_index);
+        affine_constraints_own.add_line(line_index);
         // add the constraint back to the MGConstrainedDoFs field. This
         // is potentially dangerous but we know what we are doing... ;-)
         if(level != numbers::invalid_unsigned_int)
@@ -156,7 +162,8 @@ add_constraints(
       }
     }
   }
-  constraint_own.close();
+
+  affine_constraints_own.close();
 }
 
 

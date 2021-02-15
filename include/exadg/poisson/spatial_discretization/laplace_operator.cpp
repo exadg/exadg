@@ -15,12 +15,12 @@ template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::initialize(
   MatrixFree<dim, Number> const &        matrix_free,
-  AffineConstraints<Number> const &      constraint_matrix,
+  AffineConstraints<Number> const &      affine_constraints,
   LaplaceOperatorData<rank, dim> const & data)
 {
   operator_data = data;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
 

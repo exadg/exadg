@@ -18,7 +18,7 @@ template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                        matrix_free,
-  AffineConstraints<Number> const &                      constraint_matrix,
+  AffineConstraints<Number> const &                      affine_constraints,
   ViscousOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel)
 {
@@ -26,7 +26,7 @@ ViscousOperator<dim, Number>::initialize(
 
   kernel = viscous_kernel;
 
-  Base::reinit(matrix_free, constraint_matrix, data);
+  Base::reinit(matrix_free, affine_constraints, data);
 
   this->integrator_flags = kernel->get_integrator_flags();
 }

@@ -355,7 +355,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
     // temporal storage for new DoFHandlers and constraints on each p-level
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
-    std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
+    std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constrained_dofs;
 
     // setup dof-handler and constrained dofs for each p-level
     for(auto level : p_levels)
@@ -374,8 +374,8 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       this->initialize_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
 
       // put in temporal storage
-      map_dofhandlers[level] = std::shared_ptr<DoFHandler<dim> const>(dof_handler);
-      map_constraints[level] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
+      map_dofhandlers[level]      = std::shared_ptr<DoFHandler<dim> const>(dof_handler);
+      map_constrained_dofs[level] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
     }
 
     // populate dof-handler and constrained dofs to all hp-levels with the same degree
@@ -383,22 +383,22 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     {
       auto p_level            = level_info[level].dof_handler_id();
       dof_handlers[level]     = map_dofhandlers[p_level];
-      constrained_dofs[level] = map_constraints[p_level];
+      constrained_dofs[level] = map_constrained_dofs[p_level];
     }
 
     for(unsigned int level = coarse_level; level <= fine_level; level++)
     {
-      auto constraint_own = new AffineConstraints<MultigridNumber>;
+      auto affine_constraints_own = new AffineConstraints<MultigridNumber>;
 
       ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
                                            is_singular,
                                            *dof_handlers[level],
-                                           *constraint_own,
+                                           *affine_constraints_own,
                                            *constrained_dofs[level],
                                            periodic_face_pairs,
                                            level_info[level].h_level());
 
-      constraints[level].reset(constraint_own);
+      constraints[level].reset(affine_constraints_own);
     }
   }
   else
@@ -430,16 +430,16 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
       dof_handlers[i].reset(dof_handler);
 
-      auto constraint_own = new AffineConstraints<MultigridNumber>;
+      auto affine_constraints_own = new AffineConstraints<MultigridNumber>;
 
       // TODO: integrate periodic constraints into initialize_affine_constraints
-      initialize_affine_constraints(*dof_handler, *constraint_own, dirichlet_bc);
+      initialize_affine_constraints(*dof_handler, *affine_constraints_own, dirichlet_bc);
 
       AssertThrow(is_singular == false, ExcNotImplemented());
       AssertThrow(periodic_face_pairs.empty(),
                   ExcMessage("Multigrid transfer option use_global_coarsening "
                              "is currently not available for problems with periodic boundaries."));
-      constraints[i].reset(constraint_own);
+      constraints[i].reset(affine_constraints_own);
     }
   }
 }
@@ -531,18 +531,21 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
   DoFHandler<dim> const &              dof_handler,
-  AffineConstraints<MultigridNumber> & constraint,
+  AffineConstraints<MultigridNumber> & affine_constraints,
   Map const &                          dirichlet_bc)
 {
   IndexSet locally_relevant_dofs;
   DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-  constraint.reinit(locally_relevant_dofs);
+  affine_constraints.reinit(locally_relevant_dofs);
 
-  DoFTools::make_hanging_node_constraints(dof_handler, constraint);
+  DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
   for(auto & it : dirichlet_bc)
-    VectorTools::interpolate_boundary_values(
-      *mapping, dof_handler, it.first, Functions::ZeroFunction<dim, MultigridNumber>(), constraint);
-  constraint.close();
+    VectorTools::interpolate_boundary_values(*mapping,
+                                             dof_handler,
+                                             it.first,
+                                             Functions::ZeroFunction<dim, MultigridNumber>(),
+                                             affine_constraints);
+  affine_constraints.close();
 }
 
 template<int dim, typename Number>
