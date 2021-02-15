@@ -100,15 +100,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
-                                                       mesh->get_mapping(),
-                                                       degree,
-                                                       periodic_faces,
-                                                       boundary_descriptor,
-                                                       field_functions,
-                                                       param,
-                                                       "scalar",
-                                                       mpi_comm));
+  conv_diff_operator.reset(new Operator<dim, Number>(*triangulation,
+                                                     mesh->get_mapping(),
+                                                     degree,
+                                                     periodic_faces,
+                                                     boundary_descriptor,
+                                                     field_functions,
+                                                     param,
+                                                     "scalar",
+                                                     mpi_comm));
 
   // initialize matrix_free
   matrix_free_data.reset(new MatrixFreeData<dim, Number>());
@@ -367,7 +367,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
-  Operatortype operator_type;
+  OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
   LinearAlgebra::distributed::Vector<Number> dst, src;
@@ -386,21 +386,21 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     }
   }
 
-  if(operator_type == Operatortype::ConvectiveOperator)
+  if(operator_type == OperatorType::ConvectiveOperator)
     conv_diff_operator->update_convective_term(1.0 /* time */, &velocity);
-  else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
+  else if(operator_type == OperatorType::MassConvectionDiffusionOperator)
     conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
                                                   1.0 /* scaling_factor_mass */,
                                                   &velocity);
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(operator_type == Operatortype::MassOperator)
+    if(operator_type == OperatorType::MassOperator)
       conv_diff_operator->apply_mass_operator(dst, src);
-    else if(operator_type == Operatortype::ConvectiveOperator)
+    else if(operator_type == OperatorType::ConvectiveOperator)
       conv_diff_operator->apply_convective_term(dst, src);
-    else if(operator_type == Operatortype::DiffusiveOperator)
+    else if(operator_type == OperatorType::DiffusiveOperator)
       conv_diff_operator->apply_diffusive_term(dst, src);
-    else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
+    else if(operator_type == OperatorType::MassConvectionDiffusionOperator)
       conv_diff_operator->apply_conv_diff_operator(dst, src);
   };
 

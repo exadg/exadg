@@ -21,11 +21,11 @@
 #include <exadg/utilities/timer_tree.h>
 
 // ConvDiff
-#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h>
 
 // IncNS
+#include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
@@ -152,7 +152,7 @@ private:
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 
-  std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
+  std::vector<std::shared_ptr<ConvDiff::Operator<dim, Number>>> conv_diff_operator;
 
   std::vector<std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>> scalar_postprocessor;
 

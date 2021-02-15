@@ -21,7 +21,7 @@ using namespace dealii;
 
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
-  std::shared_ptr<Operator>                       operator_in,
+  std::shared_ptr<Interface::Operator<Number>>    operator_in,
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
@@ -278,57 +278,61 @@ TimeIntExplRK<Number>::initialize_time_integrator()
     numerical_velocity_field = (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
   }
 
-  expl_rk_operator.reset(new ExplRKOperator(pde_operator, numerical_velocity_field));
+  expl_rk_operator.reset(new OperatorExplRK<Number>(pde_operator, numerical_velocity_field));
 
   if(param.time_integrator_rk == TimeIntegratorRK::ExplRK1Stage1)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(1, expl_rk_operator));
+      new ExplicitRungeKuttaTimeIntegrator<OperatorExplRK<Number>, VectorType>(1,
+                                                                               expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK2Stage2)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(2, expl_rk_operator));
+      new ExplicitRungeKuttaTimeIntegrator<OperatorExplRK<Number>, VectorType>(2,
+                                                                               expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage3)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(3, expl_rk_operator));
+      new ExplicitRungeKuttaTimeIntegrator<OperatorExplRK<Number>, VectorType>(3,
+                                                                               expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage4)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(4, expl_rk_operator));
+      new ExplicitRungeKuttaTimeIntegrator<OperatorExplRK<Number>, VectorType>(4,
+                                                                               expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage4Reg2C)
   {
     rk_time_integrator.reset(
-      new LowStorageRK3Stage4Reg2C<ExplRKOperator, VectorType>(expl_rk_operator));
+      new LowStorageRK3Stage4Reg2C<OperatorExplRK<Number>, VectorType>(expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg2C)
   {
     rk_time_integrator.reset(
-      new LowStorageRK4Stage5Reg2C<ExplRKOperator, VectorType>(expl_rk_operator));
+      new LowStorageRK4Stage5Reg2C<OperatorExplRK<Number>, VectorType>(expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg3C)
   {
     rk_time_integrator.reset(
-      new LowStorageRK4Stage5Reg3C<ExplRKOperator, VectorType>(expl_rk_operator));
+      new LowStorageRK4Stage5Reg3C<OperatorExplRK<Number>, VectorType>(expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK5Stage9Reg2S)
   {
     rk_time_integrator.reset(
-      new LowStorageRK5Stage9Reg2S<ExplRKOperator, VectorType>(expl_rk_operator));
+      new LowStorageRK5Stage9Reg2S<OperatorExplRK<Number>, VectorType>(expl_rk_operator));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage7Reg2)
   {
     rk_time_integrator.reset(
-      new LowStorageRKTD<ExplRKOperator, VectorType>(expl_rk_operator, 3, 7));
+      new LowStorageRKTD<OperatorExplRK<Number>, VectorType>(expl_rk_operator, 3, 7));
   }
   else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage8Reg2)
   {
     rk_time_integrator.reset(
-      new LowStorageRKTD<ExplRKOperator, VectorType>(expl_rk_operator, 4, 8));
+      new LowStorageRKTD<OperatorExplRK<Number>, VectorType>(expl_rk_operator, 4, 8));
   }
   else
   {

@@ -32,10 +32,10 @@ namespace Interface
 {
 template<typename Number>
 class Operator;
+}
 
 template<typename Number>
 class OperatorExplRK;
-} // namespace Interface
 
 template<typename Number>
 class TimeIntExplRK : public TimeIntExplRKBase<Number>
@@ -43,10 +43,7 @@ class TimeIntExplRK : public TimeIntExplRKBase<Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef Interface::Operator<Number>       Operator;
-  typedef Interface::OperatorExplRK<Number> ExplRKOperator;
-
-  TimeIntExplRK(std::shared_ptr<Operator>                       operator_in,
+  TimeIntExplRK(std::shared_ptr<Interface::Operator<Number>>    operator_in,
                 InputParameters const &                         param_in,
                 unsigned int const                              refine_steps_time_in,
                 MPI_Comm const &                                mpi_comm_in,
@@ -85,11 +82,11 @@ private:
   void
   initialize_time_integrator();
 
-  std::shared_ptr<Operator> pde_operator;
+  std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
-  std::shared_ptr<ExplRKOperator> expl_rk_operator;
+  std::shared_ptr<OperatorExplRK<Number>> expl_rk_operator;
 
-  std::shared_ptr<ExplicitTimeIntegrator<ExplRKOperator, VectorType>> rk_time_integrator;
+  std::shared_ptr<ExplicitTimeIntegrator<OperatorExplRK<Number>, VectorType>> rk_time_integrator;
 
   InputParameters const & param;
 

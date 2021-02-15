@@ -18,8 +18,8 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/postprocessor/postprocessor_base.h>
-#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/interface.h>
+#include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/time_integration/driver_steady_problems.h>
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h>
@@ -41,7 +41,7 @@ namespace ConvDiff
 {
 using namespace dealii;
 
-enum class Operatortype
+enum class OperatorType
 {
   MassOperator,
   ConvectiveOperator,
@@ -50,17 +50,17 @@ enum class Operatortype
 };
 
 inline std::string
-enum_to_string(Operatortype const enum_type)
+enum_to_string(OperatorType const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
     // clang-format off
-    case Operatortype::MassOperator:                    string_type = "MassOperator";                    break;
-    case Operatortype::ConvectiveOperator:              string_type = "ConvectiveOperator";              break;
-    case Operatortype::DiffusiveOperator:               string_type = "DiffusiveOperator";               break;
-    case Operatortype::MassConvectionDiffusionOperator: string_type = "MassConvectionDiffusionOperator"; break;
+    case OperatorType::MassOperator:                    string_type = "MassOperator";                    break;
+    case OperatorType::ConvectiveOperator:              string_type = "ConvectiveOperator";              break;
+    case OperatorType::DiffusiveOperator:               string_type = "DiffusiveOperator";               break;
+    case OperatorType::MassConvectionDiffusionOperator: string_type = "MassConvectionDiffusionOperator"; break;
     default: AssertThrow(false, ExcMessage("Not implemented.")); break;
       // clang-format on
   }
@@ -69,13 +69,13 @@ enum_to_string(Operatortype const enum_type)
 }
 
 inline void
-string_to_enum(Operatortype & enum_type, std::string const string_type)
+string_to_enum(OperatorType & enum_type, std::string const string_type)
 {
   // clang-format off
-  if     (string_type == "MassOperator")                    enum_type = Operatortype::MassOperator;
-  else if(string_type == "ConvectiveOperator")              enum_type = Operatortype::ConvectiveOperator;
-  else if(string_type == "DiffusiveOperator")               enum_type = Operatortype::DiffusiveOperator;
-  else if(string_type == "MassConvectionDiffusionOperator") enum_type = Operatortype::MassConvectionDiffusionOperator;
+  if     (string_type == "MassOperator")                    enum_type = OperatorType::MassOperator;
+  else if(string_type == "ConvectiveOperator")              enum_type = OperatorType::ConvectiveOperator;
+  else if(string_type == "DiffusiveOperator")               enum_type = OperatorType::DiffusiveOperator;
+  else if(string_type == "MassConvectionDiffusionOperator") enum_type = OperatorType::MassConvectionDiffusionOperator;
   else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
@@ -156,7 +156,7 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
-  std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
+  std::shared_ptr<Operator<dim, Number>> conv_diff_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 

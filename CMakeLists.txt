@@ -81,7 +81,7 @@ SET(TARGET_SRC
      include/exadg/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
-     include/exadg/convection_diffusion/spatial_discretization/dg_operator.cpp
+     include/exadg/convection_diffusion/spatial_discretization/operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/interface.cpp
      include/exadg/convection_diffusion/preconditioners/multigrid_preconditioner.cpp
      include/exadg/convection_diffusion/time_integration/time_int_bdf.cpp
@@ -139,7 +139,7 @@ SET(TARGET_SRC
      include/exadg/compressible_navier_stokes/user_interface/input_parameters.cpp
      include/exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/exadg/compressible_navier_stokes/spatial_discretization/interface.cpp
-     include/exadg/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
+     include/exadg/compressible_navier_stokes/spatial_discretization/operator.cpp
      include/exadg/compressible_navier_stokes/postprocessor/output_generator.cpp
      include/exadg/compressible_navier_stokes/postprocessor/postprocessor.cpp
      include/exadg/compressible_navier_stokes/driver.cpp

@@ -29,16 +29,13 @@ namespace ConvDiff
 class InputParameters;
 
 template<int dim, typename Number>
-class DGOperator;
+class Operator;
 
 template<typename Number>
 class PostProcessorInterface;
 
-namespace Interface
-{
 template<typename Number>
 class OperatorOIF;
-} // namespace Interface
 } // namespace ConvDiff
 
 
@@ -50,9 +47,7 @@ class TimeIntBDF : public TimeIntBDFBase<Number>
 public:
   typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
 
-  typedef DGOperator<dim, Number> Operator;
-
-  TimeIntBDF(std::shared_ptr<Operator>                       operator_in,
+  TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
              InputParameters const &                         param_in,
              unsigned int const                              refine_steps_time_in,
              MPI_Comm const &                                mpi_comm_in,
@@ -142,7 +137,7 @@ private:
   void
   postprocessing() const;
 
-  std::shared_ptr<Operator> pde_operator;
+  std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   InputParameters const & param;
 
@@ -170,10 +165,9 @@ private:
   // cfl number for OIF splitting
   double const cfl_oif;
 
-  std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;
+  std::shared_ptr<OperatorOIF<Number>> convective_operator_OIF;
 
-  std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
-    time_integrator_OIF;
+  std::shared_ptr<ExplicitTimeIntegrator<OperatorOIF<Number>, VectorType>> time_integrator_OIF;
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 

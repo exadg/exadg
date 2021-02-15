@@ -96,17 +96,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
-                                                                *mapping,
-                                                                degree,
-                                                                boundary_descriptor_density,
-                                                                boundary_descriptor_velocity,
-                                                                boundary_descriptor_pressure,
-                                                                boundary_descriptor_energy,
-                                                                field_functions,
-                                                                param,
-                                                                "fluid",
-                                                                mpi_comm));
+  comp_navier_stokes_operator.reset(new Operator<dim, Number>(*triangulation,
+                                                              *mapping,
+                                                              degree,
+                                                              boundary_descriptor_density,
+                                                              boundary_descriptor_velocity,
+                                                              boundary_descriptor_pressure,
+                                                              boundary_descriptor_energy,
+                                                              field_functions,
+                                                              param,
+                                                              "fluid",
+                                                              mpi_comm));
 
   // initialize matrix_free
   matrix_free_data.reset(new MatrixFreeData<dim, Number>());
@@ -201,7 +201,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
-  Operator operator_type;
+  OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
   // Vectors
@@ -214,19 +214,19 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   dst = 1.0;
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(operator_type == Operator::ConvectiveTerm)
+    if(operator_type == OperatorType::ConvectiveTerm)
       comp_navier_stokes_operator->evaluate_convective(dst, src, 0.0);
-    else if(operator_type == Operator::ViscousTerm)
+    else if(operator_type == OperatorType::ViscousTerm)
       comp_navier_stokes_operator->evaluate_viscous(dst, src, 0.0);
-    else if(operator_type == Operator::ViscousAndConvectiveTerms)
+    else if(operator_type == OperatorType::ViscousAndConvectiveTerms)
       comp_navier_stokes_operator->evaluate_convective_and_viscous(dst, src, 0.0);
-    else if(operator_type == Operator::InverseMassOperator)
+    else if(operator_type == OperatorType::InverseMassOperator)
       comp_navier_stokes_operator->apply_inverse_mass(dst, src);
-    else if(operator_type == Operator::InverseMassOperatorDstDst)
+    else if(operator_type == OperatorType::InverseMassOperatorDstDst)
       comp_navier_stokes_operator->apply_inverse_mass(dst, dst);
-    else if(operator_type == Operator::VectorUpdate)
+    else if(operator_type == OperatorType::VectorUpdate)
       dst.sadd(2.0, 1.0, src);
-    else if(operator_type == Operator::EvaluateOperatorExplicit)
+    else if(operator_type == OperatorType::EvaluateOperatorExplicit)
       comp_navier_stokes_operator->evaluate(dst, src, 0.0);
     else
       AssertThrow(false, ExcMessage("Specified operator type not implemented"));

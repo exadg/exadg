@@ -24,7 +24,7 @@ namespace ConvDiff
 using namespace dealii;
 
 template<int dim, typename Number>
-class DGOperator;
+class Operator;
 
 template<typename Number>
 class PostProcessorInterface
@@ -48,15 +48,13 @@ class PostProcessorBase : public PostProcessorInterface<Number>
 protected:
   typedef typename PostProcessorInterface<Number>::VectorType VectorType;
 
-  typedef DGOperator<dim, Number> Operator;
-
 public:
   virtual ~PostProcessorBase()
   {
   }
 
   virtual void
-  setup(Operator const & pde_operator, Mapping<dim> const & mapping) = 0;
+  setup(Operator<dim, Number> const & pde_operator, Mapping<dim> const & mapping) = 0;
 };
 
 } // namespace ConvDiff

@@ -36,7 +36,7 @@ public:
 
 // forward declaration
 template<int dim, typename Number>
-class DGOperator;
+class Operator;
 
 template<int dim, typename Number>
 class PostProcessorBase : public PostProcessorInterface<Number>
@@ -50,7 +50,7 @@ public:
   }
 
   virtual void
-  setup(DGOperator<dim, Number> const & pde_operator) = 0;
+  setup(Operator<dim, Number> const & pde_operator) = 0;
 };
 
 } // namespace CompNS

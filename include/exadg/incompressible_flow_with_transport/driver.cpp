@@ -242,15 +242,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
-                                                                      mesh->get_mapping(),
-                                                                      degree,
-                                                                      periodic_faces,
-                                                                      scalar_boundary_descriptor[i],
-                                                                      scalar_field_functions[i],
-                                                                      scalar_param[i],
-                                                                      "scalar" + std::to_string(i),
-                                                                      mpi_comm));
+    conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(*triangulation,
+                                                                    mesh->get_mapping(),
+                                                                    degree,
+                                                                    periodic_faces,
+                                                                    scalar_boundary_descriptor[i],
+                                                                    scalar_field_functions[i],
+                                                                    scalar_param[i],
+                                                                    "scalar" + std::to_string(i),
+                                                                    mpi_comm));
   }
 
   // initialize matrix_free

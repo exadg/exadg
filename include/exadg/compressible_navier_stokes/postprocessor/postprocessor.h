@@ -51,7 +51,7 @@ public:
   virtual ~PostProcessor();
 
   virtual void
-  setup(DGOperator<dim, Number> const & pde_operator);
+  setup(Operator<dim, Number> const & pde_operator);
 
   virtual void
   do_postprocessing(VectorType const & solution, double const time, int const time_step_number);
@@ -77,7 +77,7 @@ private:
 
   PostProcessorData<dim> pp_data;
 
-  SmartPointer<DGOperator<dim, Number> const> navier_stokes_operator;
+  SmartPointer<Operator<dim, Number> const> navier_stokes_operator;
 
   OutputGenerator<dim, Number>                 output_generator;
   ErrorCalculator<dim, Number>                 error_calculator;

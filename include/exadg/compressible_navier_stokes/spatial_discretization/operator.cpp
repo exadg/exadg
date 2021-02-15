@@ -10,7 +10,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/compressible_navier_stokes/spatial_discretization/dg_operator.h>
+#include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 #include <exadg/time_integration/time_step_calculation.h>
 
 namespace ExaDG
@@ -20,7 +20,7 @@ namespace CompNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(
+Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
   Mapping<dim> const &                           mapping_in,
   unsigned int const                             degree_in,
@@ -84,7 +84,7 @@ DGOperator<dim, Number>::DGOperator(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
+Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
   // append mapping flags of compressible solver
   MappingFlags mapping_flags_compressible;
@@ -116,8 +116,8 @@ DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & mat
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-                               std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
+Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
 {
   pcout << std::endl << "Setup compressible Navier-Stokes DG operator ..." << std::endl;
 
@@ -132,35 +132,35 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
 
 template<int dim, typename Number>
 types::global_dof_index
-DGOperator<dim, Number>::get_number_of_dofs() const
+Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
+Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index_all());
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_dof_vector_scalar(VectorType & src) const
+Operator<dim, Number>::initialize_dof_vector_scalar(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index_scalar());
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_dof_vector_dim_components(VectorType & src) const
+Operator<dim, Number>::initialize_dof_vector_dim_components(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index_vector());
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
+Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
   this->field_functions->initial_solution->set_time(time);
 
@@ -180,7 +180,7 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double c
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate(VectorType & dst, VectorType const & src, Number const time) const
+Operator<dim, Number>::evaluate(VectorType & dst, VectorType const & src, Number const time) const
 {
   Timer timer;
   timer.restart();
@@ -204,9 +204,9 @@ DGOperator<dim, Number>::evaluate(VectorType & dst, VectorType const & src, Numb
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_convective(VectorType &       dst,
-                                             VectorType const & src,
-                                             Number const       time) const
+Operator<dim, Number>::evaluate_convective(VectorType &       dst,
+                                           VectorType const & src,
+                                           Number const       time) const
 {
   if(param.equation_type == EquationType::Euler ||
      param.equation_type == EquationType::NavierStokes)
@@ -217,9 +217,9 @@ DGOperator<dim, Number>::evaluate_convective(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_viscous(VectorType &       dst,
-                                          VectorType const & src,
-                                          Number const       time) const
+Operator<dim, Number>::evaluate_viscous(VectorType &       dst,
+                                        VectorType const & src,
+                                        Number const       time) const
 {
   if(param.equation_type == EquationType::NavierStokes)
   {
@@ -229,9 +229,9 @@ DGOperator<dim, Number>::evaluate_viscous(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_convective_and_viscous(VectorType &       dst,
-                                                         VectorType const & src,
-                                                         Number const       time) const
+Operator<dim, Number>::evaluate_convective_and_viscous(VectorType &       dst,
+                                                       VectorType const & src,
+                                                       Number const       time) const
 {
   if(param.use_combined_operator == true)
   {
@@ -260,7 +260,7 @@ DGOperator<dim, Number>::evaluate_convective_and_viscous(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_inverse_mass(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_inverse_mass(VectorType & dst, VectorType const & src) const
 {
   // apply inverse mass operator
   inverse_mass_all.apply(dst, src);
@@ -268,98 +268,98 @@ DGOperator<dim, Number>::apply_inverse_mass(VectorType & dst, VectorType const &
 
 template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-DGOperator<dim, Number>::get_matrix_free() const
+Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
 }
 
 template<int dim, typename Number>
 Mapping<dim> const &
-DGOperator<dim, Number>::get_mapping() const
+Operator<dim, Number>::get_mapping() const
 {
   return mapping;
 }
 
 template<int dim, typename Number>
 FESystem<dim> const &
-DGOperator<dim, Number>::get_fe() const
+Operator<dim, Number>::get_fe() const
 {
   return *fe;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperator<dim, Number>::get_dof_handler() const
+Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperator<dim, Number>::get_dof_handler_scalar() const
+Operator<dim, Number>::get_dof_handler_scalar() const
 {
   return dof_handler_scalar;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperator<dim, Number>::get_dof_handler_vector() const
+Operator<dim, Number>::get_dof_handler_vector() const
 {
   return dof_handler_vector;
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_dof_index_vector() const
+Operator<dim, Number>::get_dof_index_vector() const
 {
   return matrix_free_data->get_dof_index(field + dof_index_vector);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_dof_index_scalar() const
+Operator<dim, Number>::get_dof_index_scalar() const
 {
   return matrix_free_data->get_dof_index(field + dof_index_scalar);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_dof_index_all() const
+Operator<dim, Number>::get_dof_index_all() const
 {
   return matrix_free_data->get_dof_index(field + dof_index_all);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index_standard() const
+Operator<dim, Number>::get_quad_index_standard() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_standard);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index_overintegration_conv() const
+Operator<dim, Number>::get_quad_index_overintegration_conv() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_overintegration_conv);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index_overintegration_vis() const
+Operator<dim, Number>::get_quad_index_overintegration_vis() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_overintegration_vis);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index_l2_projections() const
+Operator<dim, Number>::get_quad_index_l2_projections() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_l2_projections);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::compute_pressure(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::compute_pressure(VectorType & dst, VectorType const & src) const
 {
   p_u_T_calculator.compute_pressure(dst, src);
   inverse_mass_scalar.apply(dst, dst);
@@ -367,7 +367,7 @@ DGOperator<dim, Number>::compute_pressure(VectorType & dst, VectorType const & s
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::compute_velocity(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::compute_velocity(VectorType & dst, VectorType const & src) const
 {
   p_u_T_calculator.compute_velocity(dst, src);
   inverse_mass_vector.apply(dst, dst);
@@ -375,7 +375,7 @@ DGOperator<dim, Number>::compute_velocity(VectorType & dst, VectorType const & s
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::compute_temperature(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::compute_temperature(VectorType & dst, VectorType const & src) const
 {
   p_u_T_calculator.compute_temperature(dst, src);
   inverse_mass_scalar.apply(dst, dst);
@@ -383,7 +383,7 @@ DGOperator<dim, Number>::compute_temperature(VectorType & dst, VectorType const 
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
 {
   vorticity_calculator.compute_vorticity(dst, src);
   inverse_mass_vector.apply(dst, dst);
@@ -391,7 +391,7 @@ DGOperator<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
 {
   divergence_calculator.compute_divergence(dst, src);
   inverse_mass_scalar.apply(dst, dst);
@@ -399,28 +399,28 @@ DGOperator<dim, Number>::compute_divergence(VectorType & dst, VectorType const &
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::get_wall_time_operator_evaluation() const
+Operator<dim, Number>::get_wall_time_operator_evaluation() const
 {
   return wall_time_operator_evaluation;
 }
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::calculate_minimum_element_length() const
+Operator<dim, Number>::calculate_minimum_element_length() const
 {
   return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_polynomial_degree() const
+Operator<dim, Number>::get_polynomial_degree() const
 {
   return degree;
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(*fe);
@@ -443,7 +443,7 @@ DGOperator<dim, Number>::distribute_dofs()
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_operators()
+Operator<dim, Number>::setup_operators()
 {
   // mass operator
   MassOperatorData mass_operator_data;
@@ -529,11 +529,11 @@ DGOperator<dim, Number>::setup_operators()
                                    get_quad_index_standard());
 }
 
-template class DGOperator<2, float>;
-template class DGOperator<2, double>;
+template class Operator<2, float>;
+template class Operator<2, double>;
 
-template class DGOperator<3, float>;
-template class DGOperator<3, double>;
+template class Operator<3, float>;
+template class Operator<3, double>;
 
 } // namespace CompNS
 } // namespace ExaDG

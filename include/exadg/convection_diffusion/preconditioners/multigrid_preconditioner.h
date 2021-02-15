@@ -31,8 +31,8 @@ public:
   typedef typename Base::MultigridNumber MultigridNumber;
 
 private:
-  typedef Operator<dim, Number>          PDEOperator;
-  typedef Operator<dim, MultigridNumber> PDEOperatorMG;
+  typedef CombinedOperator<dim, Number>          PDEOperator;
+  typedef CombinedOperator<dim, MultigridNumber> PDEOperatorMG;
 
   typedef MultigridOperatorBase<dim, MultigridNumber>            MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperatorMG> MGOperator;
@@ -142,7 +142,7 @@ private:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                  constrained_dofs_velocity;
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> constraints_velocity;
 
-  OperatorData<dim> data;
+  CombinedOperatorData<dim> data;
 
   PDEOperator const * pde_operator;
 

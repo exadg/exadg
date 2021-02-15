@@ -15,15 +15,15 @@ namespace ConvDiff
 using namespace dealii;
 
 template<int dim, typename Number>
-Operator<dim, Number>::Operator() : scaling_factor_mass(1.0)
+CombinedOperator<dim, Number>::CombinedOperator() : scaling_factor_mass(1.0)
 {
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                  AffineConstraints<Number> const & affine_constraints,
-                                  OperatorData<dim> const &         data)
+CombinedOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
+                                          AffineConstraints<Number> const & affine_constraints,
+                                          CombinedOperatorData<dim> const & data)
 {
   operator_data = data;
 
@@ -62,10 +62,10 @@ Operator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::initialize(
+CombinedOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                           matrix_free,
   AffineConstraints<Number> const &                         affine_constraints,
-  OperatorData<dim> const &                                 data,
+  CombinedOperatorData<dim> const &                         data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel_in,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel_in)
 {
@@ -94,15 +94,15 @@ Operator<dim, Number>::initialize(
 }
 
 template<int dim, typename Number>
-OperatorData<dim> const &
-Operator<dim, Number>::get_data() const
+CombinedOperatorData<dim> const &
+CombinedOperator<dim, Number>::get_data() const
 {
   return operator_data;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::update_after_mesh_movement()
+CombinedOperator<dim, Number>::update_after_mesh_movement()
 {
   if(operator_data.diffusive_problem)
     diffusive_kernel->calculate_penalty_parameter(*this->matrix_free, operator_data.dof_index);
@@ -110,14 +110,14 @@ Operator<dim, Number>::update_after_mesh_movement()
 
 template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-Operator<dim, Number>::get_velocity() const
+CombinedOperator<dim, Number>::get_velocity() const
 {
   return convective_kernel->get_velocity();
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
+CombinedOperator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
   if(operator_data.convective_problem)
     convective_kernel->set_velocity_copy(velocity);
@@ -125,7 +125,7 @@ Operator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
+CombinedOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
   if(operator_data.convective_problem)
     convective_kernel->set_velocity_ptr(velocity);
@@ -133,21 +133,21 @@ Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 
 template<int dim, typename Number>
 Number
-Operator<dim, Number>::get_scaling_factor_mass_operator() const
+CombinedOperator<dim, Number>::get_scaling_factor_mass_operator() const
 {
   return scaling_factor_mass;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_scaling_factor_mass_operator(Number const & scaling_factor)
+CombinedOperator<dim, Number>::set_scaling_factor_mass_operator(Number const & scaling_factor)
 {
   scaling_factor_mass = scaling_factor;
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::reinit_cell(unsigned int const cell) const
+CombinedOperator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
   Base::reinit_cell(cell);
 
@@ -157,7 +157,7 @@ Operator<dim, Number>::reinit_cell(unsigned int const cell) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::reinit_face(unsigned int const face) const
+CombinedOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
@@ -169,7 +169,7 @@ Operator<dim, Number>::reinit_face(unsigned int const face) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+CombinedOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
 {
   Base::reinit_boundary_face(face);
 
@@ -181,9 +181,9 @@ Operator<dim, Number>::reinit_boundary_face(unsigned int const face) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                              unsigned int const       face,
-                                              types::boundary_id const boundary_id) const
+CombinedOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
+                                                      unsigned int const       face,
+                                                      types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -195,7 +195,7 @@ Operator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
+CombinedOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -249,8 +249,8 @@ Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
-                                        IntegratorFace & integrator_p) const
+CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
+                                                IntegratorFace & integrator_p) const
 {
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -299,8 +299,8 @@ Operator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
-                                            IntegratorFace & integrator_p) const
+CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
+                                                    IntegratorFace & integrator_p) const
 {
   (void)integrator_p;
 
@@ -346,8 +346,8 @@ Operator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
 // cell-based face loops
 template<int dim, typename Number>
 void
-Operator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrator_m,
-                                                       IntegratorFace & integrator_p) const
+CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrator_m,
+                                                               IntegratorFace & integrator_p) const
 {
   (void)integrator_p;
 
@@ -399,8 +399,8 @@ Operator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrat
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
-                                            IntegratorFace & integrator_p) const
+CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
+                                                    IntegratorFace & integrator_p) const
 {
   (void)integrator_m;
 
@@ -447,9 +447,9 @@ Operator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
-                                            OperatorType const &       operator_type,
-                                            types::boundary_id const & boundary_id) const
+CombinedOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
+                                                    OperatorType const &       operator_type,
+                                                    types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -506,11 +506,11 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
   }
 }
 
-template class Operator<2, float>;
-template class Operator<2, double>;
+template class CombinedOperator<2, float>;
+template class CombinedOperator<2, double>;
 
-template class Operator<3, float>;
-template class Operator<3, double>;
+template class CombinedOperator<3, float>;
+template class CombinedOperator<3, double>;
 
 } // namespace ConvDiff
 } // namespace ExaDG

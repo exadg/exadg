@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_OPERATOR_H_
-#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_OPERATOR_H_
+#ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
+#define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -15,19 +15,13 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-
-// matrix-free
-#include <exadg/matrix_free/matrix_free_wrapper.h>
-
-// operators
+#include <exadg/compressible_navier_stokes/spatial_discretization/calculators.h>
+#include <exadg/compressible_navier_stokes/spatial_discretization/interface.h>
+#include <exadg/compressible_navier_stokes/spatial_discretization/kernels_and_operators.h>
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
-
-// spatial discretization
-#include <exadg/compressible_navier_stokes/spatial_discretization/comp_navier_stokes_calculators.h>
-#include <exadg/compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h>
-#include <exadg/compressible_navier_stokes/spatial_discretization/interface.h>
+#include <exadg/matrix_free/matrix_free_wrapper.h>
 #include <exadg/operators/inverse_mass_operator.h>
 
 namespace ExaDG
@@ -37,23 +31,23 @@ namespace CompNS
 using namespace dealii;
 
 template<int dim, typename Number>
-class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,
-             Mapping<dim> const &                           mapping_in,
-             unsigned int const                             degree_in,
-             std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
-             std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
-             std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
-             std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
-             std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
-             InputParameters const &                        param_in,
-             std::string const &                            field_in,
-             MPI_Comm const &                               mpi_comm_in);
+  Operator(parallel::TriangulationBase<dim> const &       triangulation_in,
+           Mapping<dim> const &                           mapping_in,
+           unsigned int const                             degree_in,
+           std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
+           std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
+           std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
+           std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
+           std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
+           InputParameters const &                        param_in,
+           std::string const &                            field_in,
+           MPI_Comm const &                               mpi_comm_in);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
