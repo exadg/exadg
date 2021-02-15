@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_projection_methods.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 #include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
 

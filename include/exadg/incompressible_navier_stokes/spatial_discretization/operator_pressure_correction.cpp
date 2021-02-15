@@ -6,7 +6,7 @@
  */
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 

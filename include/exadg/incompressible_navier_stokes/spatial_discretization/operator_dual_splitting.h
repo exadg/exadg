@@ -5,12 +5,12 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
 
 // base class
 #include <exadg/incompressible_navier_stokes/spatial_discretization/curl_compute.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_projection_methods.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 
 namespace ExaDG
 {
@@ -223,5 +223,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_ \
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_ \
         */

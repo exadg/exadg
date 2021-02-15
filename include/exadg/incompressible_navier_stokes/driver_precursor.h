@@ -11,9 +11,9 @@
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
@@ -115,12 +115,7 @@ private:
   /*
    * Temporal discretization
    */
-  typedef TimeIntBDF<dim, Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeInt> time_integrator_pre, time_integrator;
+  std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_pre, time_integrator;
 
   bool use_adaptive_time_stepping;
 

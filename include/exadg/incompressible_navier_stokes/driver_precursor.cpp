@@ -197,47 +197,49 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   // initialize operator_base_pre (precursor domain)
   if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    operator_coupled_pre.reset(new DGCoupled(*triangulation_pre,
-                                             *mapping_pre,
-                                             degree,
-                                             periodic_faces_pre,
-                                             boundary_descriptor_velocity_pre,
-                                             boundary_descriptor_pressure_pre,
-                                             field_functions_pre,
-                                             param_pre,
-                                             "fluid",
-                                             mpi_comm));
+    operator_coupled_pre.reset(
+      new IncNS::OperatorCoupled<dim, Number>(*triangulation_pre,
+                                              *mapping_pre,
+                                              degree,
+                                              periodic_faces_pre,
+                                              boundary_descriptor_velocity_pre,
+                                              boundary_descriptor_pressure_pre,
+                                              field_functions_pre,
+                                              param_pre,
+                                              "fluid",
+                                              mpi_comm));
 
     operator_base_pre = operator_coupled_pre;
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    operator_dual_splitting_pre.reset(new DGDualSplitting(*triangulation_pre,
-                                                          *mapping_pre,
-                                                          degree,
-                                                          periodic_faces_pre,
-                                                          boundary_descriptor_velocity_pre,
-                                                          boundary_descriptor_pressure_pre,
-                                                          field_functions_pre,
-                                                          param_pre,
-                                                          "fluid",
-                                                          mpi_comm));
+    operator_dual_splitting_pre.reset(
+      new IncNS::OperatorDualSplitting<dim, Number>(*triangulation_pre,
+                                                    *mapping_pre,
+                                                    degree,
+                                                    periodic_faces_pre,
+                                                    boundary_descriptor_velocity_pre,
+                                                    boundary_descriptor_pressure_pre,
+                                                    field_functions_pre,
+                                                    param_pre,
+                                                    "fluid",
+                                                    mpi_comm));
 
     operator_base_pre = operator_dual_splitting_pre;
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     operator_pressure_correction_pre.reset(
-      new DGPressureCorrection(*triangulation_pre,
-                               *mapping_pre,
-                               degree,
-                               periodic_faces_pre,
-                               boundary_descriptor_velocity_pre,
-                               boundary_descriptor_pressure_pre,
-                               field_functions_pre,
-                               param_pre,
-                               "fluid",
-                               mpi_comm));
+      new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation_pre,
+                                                         *mapping_pre,
+                                                         degree,
+                                                         periodic_faces_pre,
+                                                         boundary_descriptor_velocity_pre,
+                                                         boundary_descriptor_pressure_pre,
+                                                         field_functions_pre,
+                                                         param_pre,
+                                                         "fluid",
+                                                         mpi_comm));
 
     operator_base_pre = operator_pressure_correction_pre;
   }
@@ -249,46 +251,48 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   // initialize operator_base (actual domain)
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    operator_coupled.reset(new DGCoupled(*triangulation,
-                                         *mapping,
-                                         degree,
-                                         periodic_faces,
-                                         boundary_descriptor_velocity,
-                                         boundary_descriptor_pressure,
-                                         field_functions,
-                                         param,
-                                         "fluid",
-                                         mpi_comm));
+    operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
+                                                                   *mapping,
+                                                                   degree,
+                                                                   periodic_faces,
+                                                                   boundary_descriptor_velocity,
+                                                                   boundary_descriptor_pressure,
+                                                                   field_functions,
+                                                                   param,
+                                                                   "fluid",
+                                                                   mpi_comm));
 
     operator_base = operator_coupled;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    operator_dual_splitting.reset(new DGDualSplitting(*triangulation,
-                                                      *mapping,
-                                                      degree,
-                                                      periodic_faces,
-                                                      boundary_descriptor_velocity,
-                                                      boundary_descriptor_pressure,
-                                                      field_functions,
-                                                      param,
-                                                      "fluid",
-                                                      mpi_comm));
+    operator_dual_splitting.reset(
+      new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
+                                                    *mapping,
+                                                    degree,
+                                                    periodic_faces,
+                                                    boundary_descriptor_velocity,
+                                                    boundary_descriptor_pressure,
+                                                    field_functions,
+                                                    param,
+                                                    "fluid",
+                                                    mpi_comm));
 
     operator_base = operator_dual_splitting;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    operator_pressure_correction.reset(new DGPressureCorrection(*triangulation,
-                                                                *mapping,
-                                                                degree,
-                                                                periodic_faces,
-                                                                boundary_descriptor_velocity,
-                                                                boundary_descriptor_pressure,
-                                                                field_functions,
-                                                                param,
-                                                                "fluid",
-                                                                mpi_comm));
+    operator_pressure_correction.reset(
+      new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
+                                                         *mapping,
+                                                         degree,
+                                                         periodic_faces,
+                                                         boundary_descriptor_velocity,
+                                                         boundary_descriptor_pressure,
+                                                         field_functions,
+                                                         param,
+                                                         "fluid",
+                                                         mpi_comm));
 
     operator_base = operator_pressure_correction;
   }
@@ -350,30 +354,32 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_pre.reset(new TimeIntCoupled(operator_coupled_pre,
-                                                 param_pre,
-                                                 0 /* refine_time */,
-                                                 mpi_comm,
-                                                 not(is_test),
-                                                 postprocessor_pre));
+    time_integrator_pre.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(operator_coupled_pre,
+                                                                        param_pre,
+                                                                        0 /* refine_time */,
+                                                                        mpi_comm,
+                                                                        not(is_test),
+                                                                        postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_pre.reset(new TimeIntDualSplitting(operator_dual_splitting_pre,
-                                                       param_pre,
-                                                       0 /* refine_time */,
-                                                       mpi_comm,
-                                                       not(is_test),
-                                                       postprocessor_pre));
+    time_integrator_pre.reset(
+      new IncNS::TimeIntBDFDualSplitting<dim, Number>(operator_dual_splitting_pre,
+                                                      param_pre,
+                                                      0 /* refine_time */,
+                                                      mpi_comm,
+                                                      not(is_test),
+                                                      postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pre.reset(new TimeIntPressureCorrection(operator_pressure_correction_pre,
-                                                            param_pre,
-                                                            0 /* refine_time */,
-                                                            mpi_comm,
-                                                            not(is_test),
-                                                            postprocessor_pre));
+    time_integrator_pre.reset(
+      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(operator_pressure_correction_pre,
+                                                           param_pre,
+                                                           0 /* refine_time */,
+                                                           mpi_comm,
+                                                           not(is_test),
+                                                           postprocessor_pre));
   }
   else
   {
@@ -382,22 +388,23 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator.reset(new TimeIntCoupled(
+    time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(
       operator_coupled, param, 0 /* refine_time */, mpi_comm, not(is_test), postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator.reset(new TimeIntDualSplitting(
+    time_integrator.reset(new IncNS::TimeIntBDFDualSplitting<dim, Number>(
       operator_dual_splitting, param, 0 /* refine_time */, mpi_comm, not(is_test), postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator.reset(new TimeIntPressureCorrection(operator_pressure_correction,
-                                                        param,
-                                                        0 /* refine_time */,
-                                                        mpi_comm,
-                                                        not(is_test),
-                                                        postprocessor));
+    time_integrator.reset(
+      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(operator_pressure_correction,
+                                                           param,
+                                                           0 /* refine_time */,
+                                                           mpi_comm,
+                                                           not(is_test),
+                                                           postprocessor));
   }
   else
   {

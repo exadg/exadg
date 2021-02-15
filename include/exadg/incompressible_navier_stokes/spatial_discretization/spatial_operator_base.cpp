@@ -10,7 +10,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_projection.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 #include <exadg/time_integration/time_step_calculation.h>
