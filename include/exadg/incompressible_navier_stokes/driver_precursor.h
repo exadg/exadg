@@ -75,8 +75,6 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_pre, periodic_faces;
 
-  bool use_adaptive_time_stepping;
-
   std::shared_ptr<FieldFunctions<dim>>      field_functions_pre, field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_pre,
     boundary_descriptor_velocity;
@@ -97,20 +95,15 @@ private:
   /*
    * Spatial discretization
    */
-  typedef DGNavierStokesBase<dim, Number>               DGBase;
-  typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
-  typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
-  typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base_pre;
+  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled_pre;
+  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting_pre;
+  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction_pre;
 
-  std::shared_ptr<DGBase>               navier_stokes_operator_pre;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled_pre;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting_pre;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction_pre;
-
-  std::shared_ptr<DGBase>               navier_stokes_operator;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base;
+  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled;
+  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting;
+  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction;
 
   /*
    * Postprocessor
@@ -128,6 +121,8 @@ private:
   typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> time_integrator_pre, time_integrator;
+
+  bool use_adaptive_time_stepping;
 
   /*
    * Computation time (wall clock time).

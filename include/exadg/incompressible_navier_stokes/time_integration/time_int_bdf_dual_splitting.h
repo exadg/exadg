@@ -18,7 +18,7 @@ using namespace dealii;
 
 // forward declarations
 template<int dim, typename Number>
-class DGNavierStokesDualSplitting;
+class OperatorDualSplitting;
 
 template<int dim, typename Number>
 class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
@@ -28,7 +28,7 @@ private:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef DGNavierStokesDualSplitting<dim, Number> Operator;
+  typedef OperatorDualSplitting<dim, Number> Operator;
 
 public:
   TimeIntBDFDualSplitting(std::shared_ptr<Operator>                       pde_operator_in,

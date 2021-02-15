@@ -18,7 +18,7 @@ using namespace dealii;
 
 // forward declarations
 template<int dim, typename Number>
-class DGNavierStokesPressureCorrection;
+class OperatorPressureCorrection;
 
 template<int dim, typename Number>
 class TimeIntBDFPressureCorrection : public TimeIntBDF<dim, Number>
@@ -28,7 +28,7 @@ private:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef DGNavierStokesPressureCorrection<dim, Number> Operator;
+  typedef OperatorPressureCorrection<dim, Number> Operator;
 
 public:
   TimeIntBDFPressureCorrection(

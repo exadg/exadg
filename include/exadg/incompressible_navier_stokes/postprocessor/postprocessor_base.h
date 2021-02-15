@@ -17,7 +17,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-class DGNavierStokesBase;
+class SpatialOperatorBase;
 
 /*
  *  Base class for postprocessor of the incompressible Navier-Stokes equation.
@@ -28,7 +28,7 @@ class PostProcessorBase : public PostProcessorInterface<Number>
 protected:
   typedef typename PostProcessorInterface<Number>::VectorType VectorType;
 
-  typedef DGNavierStokesBase<dim, Number> Operator;
+  typedef SpatialOperatorBase<dim, Number> Operator;
 
 public:
   virtual ~PostProcessorBase()

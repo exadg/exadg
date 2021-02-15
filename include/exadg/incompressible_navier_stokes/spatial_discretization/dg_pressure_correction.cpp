@@ -17,7 +17,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
+OperatorPressureCorrection<dim, Number>::OperatorPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
   unsigned int const                       degree_u_in,
@@ -29,57 +29,57 @@ DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   InputParameters const &                         parameters_in,
   std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
-  : ProjBase(triangulation_in,
-             mapping_in,
-             degree_u_in,
-             periodic_face_pairs_in,
-             boundary_descriptor_velocity_in,
-             boundary_descriptor_pressure_in,
-             field_functions_in,
-             parameters_in,
-             field_in,
-             mpi_comm_in)
+  : ProjectionBase(triangulation_in,
+                   mapping_in,
+                   degree_u_in,
+                   periodic_face_pairs_in,
+                   boundary_descriptor_velocity_in,
+                   boundary_descriptor_pressure_in,
+                   field_functions_in,
+                   parameters_in,
+                   field_in,
+                   mpi_comm_in)
 {
 }
 
 template<int dim, typename Number>
-DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection()
+OperatorPressureCorrection<dim, Number>::~OperatorPressureCorrection()
 {
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup(
+OperatorPressureCorrection<dim, Number>::setup(
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
   std::string const &                          dof_index_temperature)
 {
-  ProjBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
+  ProjectionBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
   setup_inverse_mass_operator_pressure();
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                             VectorType const & velocity)
+OperatorPressureCorrection<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
+                                                       VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  ProjBase::setup_solvers(scaling_factor_mass, velocity);
+  ProjectionBase::setup_solvers(scaling_factor_mass, velocity);
 
   setup_momentum_solver();
 
-  ProjBase::setup_pressure_poisson_solver();
+  ProjectionBase::setup_pressure_poisson_solver();
 
-  ProjBase::setup_projection_solver();
+  ProjectionBase::setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver()
+OperatorPressureCorrection<dim, Number>::setup_momentum_solver()
 {
   initialize_momentum_preconditioner();
 
@@ -88,7 +88,7 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
+OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 {
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
@@ -142,7 +142,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
+OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
 {
   if(this->param.solver_momentum == SolverMomentum::CG)
   {
@@ -216,7 +216,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
+OperatorPressureCorrection<dim, Number>::setup_inverse_mass_operator_pressure()
 {
   // inverse mass operator pressure (needed for pressure update in case of rotational
   // formulation)
@@ -227,7 +227,7 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_operator_press
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
+OperatorPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   VectorType &       solution,
   VectorType const & rhs,
   bool const &       update_preconditioner,
@@ -246,15 +246,15 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(VectorType & dst,
-                                                                    double const time) const
+OperatorPressureCorrection<dim, Number>::rhs_add_viscous_term(VectorType & dst,
+                                                              double const time) const
 {
-  ProjBase::do_rhs_add_viscous_term(dst, time);
+  ProjectionBase::do_rhs_add_viscous_term(dst, time);
 }
 
 template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
-DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
+OperatorPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
   VectorType &       dst,
   VectorType const & rhs_vector,
   double const &     time,
@@ -280,7 +280,7 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
+OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   VectorType &       dst,
   VectorType const & src,
   VectorType const * rhs_vector,
@@ -304,7 +304,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
+OperatorPressureCorrection<dim, Number>::evaluate_nonlinear_residual_steady(
   VectorType &       dst_u,
   VectorType &       dst_p,
   VectorType const & src_u,
@@ -348,8 +348,8 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::apply_momentum_operator(VectorType &       dst,
-                                                                       VectorType const & src)
+OperatorPressureCorrection<dim, Number>::apply_momentum_operator(VectorType &       dst,
+                                                                 VectorType const & src)
 {
   this->momentum_operator.apply(dst, src);
 }
@@ -357,24 +357,24 @@ DGNavierStokesPressureCorrection<dim, Number>::apply_momentum_operator(VectorTyp
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_pressure_gradient_term(VectorType & dst,
-                                                                          double const time) const
+OperatorPressureCorrection<dim, Number>::rhs_pressure_gradient_term(VectorType & dst,
+                                                                    double const time) const
 {
   this->gradient_operator.rhs(dst, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::
-  rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
-                                                          VectorType const & pressure) const
+OperatorPressureCorrection<dim, Number>::rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(
+  VectorType &       dst,
+  VectorType const & pressure) const
 {
   this->gradient_operator.rhs_bc_from_dof_vector(dst, pressure);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::
+OperatorPressureCorrection<dim, Number>::
   evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                                VectorType const & src,
                                                                VectorType const & pressure) const
@@ -384,7 +384,7 @@ DGNavierStokesPressureCorrection<dim, Number>::
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_operator(
+OperatorPressureCorrection<dim, Number>::apply_inverse_pressure_mass_operator(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -393,36 +393,35 @@ DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_opera
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(
-  VectorType &       dst,
-  VectorType const & src,
-  bool const         update_preconditioner) const
+OperatorPressureCorrection<dim, Number>::solve_pressure(VectorType &       dst,
+                                                        VectorType const & src,
+                                                        bool const update_preconditioner) const
 {
-  return ProjBase::do_solve_pressure(dst, src, update_preconditioner);
+  return ProjectionBase::do_solve_pressure(dst, src, update_preconditioner);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
-                                                                   double const & time) const
+OperatorPressureCorrection<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
+                                                             double const & time) const
 {
-  ProjBase::do_rhs_ppe_laplace_add(dst, time);
+  ProjectionBase::do_rhs_ppe_laplace_add(dst, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(
+OperatorPressureCorrection<dim, Number>::rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(
   VectorType &       dst,
   VectorType const & src) const
 {
   this->laplace_operator.rhs_add_dirichlet_bc_from_dof_vector(dst, src);
 }
 
-template class DGNavierStokesPressureCorrection<2, float>;
-template class DGNavierStokesPressureCorrection<2, double>;
+template class OperatorPressureCorrection<2, float>;
+template class OperatorPressureCorrection<2, double>;
 
-template class DGNavierStokesPressureCorrection<3, float>;
-template class DGNavierStokesPressureCorrection<3, double>;
+template class OperatorPressureCorrection<3, float>;
+template class OperatorPressureCorrection<3, double>;
 
 } // namespace IncNS
 } // namespace ExaDG

@@ -119,26 +119,17 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
-  typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
-  typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;
-  typedef IncNS::DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
-  typedef IncNS::DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
-
-  std::shared_ptr<DGBase>               navier_stokes_operator;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
+  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>>   fluid_operator_base;
+  std::shared_ptr<IncNS::OperatorCoupled<dim, Number>>       fluid_operator_coupled;
+  std::shared_ptr<IncNS::OperatorDualSplitting<dim, Number>> fluid_operator_dual_splitting;
+  std::shared_ptr<IncNS::OperatorPressureCorrection<dim, Number>>
+    fluid_operator_pressure_correction;
 
   typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  typedef IncNS::TimeIntBDF<dim, Number>                   TimeInt;
-  typedef IncNS::TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef IncNS::TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeInt> fluid_time_integrator;
+  std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;
 
   // steady solver
   typedef IncNS::DriverSteadyProblems<dim, Number> DriverSteady;

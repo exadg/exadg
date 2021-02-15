@@ -26,7 +26,7 @@ using namespace dealii;
 class InputParameters;
 
 template<int dim, typename Number>
-class DGNavierStokesCoupled;
+class OperatorCoupled;
 
 template<typename Number>
 class PostProcessorInterface;
@@ -38,7 +38,7 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> Operator;
+  typedef OperatorCoupled<dim, Number> Operator;
 
   DriverSteadyProblems(std::shared_ptr<Operator>                       operator_in,
                        InputParameters const &                         param_in,

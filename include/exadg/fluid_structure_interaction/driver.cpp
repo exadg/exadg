@@ -393,7 +393,24 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
        IncNS::TemporalDiscretization::BDFCoupledSolution)
     {
       fluid_operator_coupled.reset(
-        new IncNS::DGNavierStokesCoupled<dim, Number>(*fluid_triangulation,
+        new IncNS::OperatorCoupled<dim, Number>(*fluid_triangulation,
+                                                fluid_mesh->get_mapping(),
+                                                degree_fluid,
+                                                fluid_periodic_faces,
+                                                fluid_boundary_descriptor_velocity,
+                                                fluid_boundary_descriptor_pressure,
+                                                fluid_field_functions,
+                                                fluid_param,
+                                                "fluid",
+                                                mpi_comm));
+
+      fluid_operator = fluid_operator_coupled;
+    }
+    else if(this->fluid_param.temporal_discretization ==
+            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      fluid_operator_dual_splitting.reset(
+        new IncNS::OperatorDualSplitting<dim, Number>(*fluid_triangulation,
                                                       fluid_mesh->get_mapping(),
                                                       degree_fluid,
                                                       fluid_periodic_faces,
@@ -404,39 +421,22 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                       "fluid",
                                                       mpi_comm));
 
-      fluid_operator = fluid_operator_coupled;
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      fluid_operator_dual_splitting.reset(
-        new IncNS::DGNavierStokesDualSplitting<dim, Number>(*fluid_triangulation,
-                                                            fluid_mesh->get_mapping(),
-                                                            degree_fluid,
-                                                            fluid_periodic_faces,
-                                                            fluid_boundary_descriptor_velocity,
-                                                            fluid_boundary_descriptor_pressure,
-                                                            fluid_field_functions,
-                                                            fluid_param,
-                                                            "fluid",
-                                                            mpi_comm));
-
       fluid_operator = fluid_operator_dual_splitting;
     }
     else if(this->fluid_param.temporal_discretization ==
             IncNS::TemporalDiscretization::BDFPressureCorrection)
     {
       fluid_operator_pressure_correction.reset(
-        new IncNS::DGNavierStokesPressureCorrection<dim, Number>(*fluid_triangulation,
-                                                                 fluid_mesh->get_mapping(),
-                                                                 degree_fluid,
-                                                                 fluid_periodic_faces,
-                                                                 fluid_boundary_descriptor_velocity,
-                                                                 fluid_boundary_descriptor_pressure,
-                                                                 fluid_field_functions,
-                                                                 fluid_param,
-                                                                 "fluid",
-                                                                 mpi_comm));
+        new IncNS::OperatorPressureCorrection<dim, Number>(*fluid_triangulation,
+                                                           fluid_mesh->get_mapping(),
+                                                           degree_fluid,
+                                                           fluid_periodic_faces,
+                                                           fluid_boundary_descriptor_velocity,
+                                                           fluid_boundary_descriptor_pressure,
+                                                           fluid_field_functions,
+                                                           fluid_param,
+                                                           "fluid",
+                                                           mpi_comm));
 
       fluid_operator = fluid_operator_pressure_correction;
     }

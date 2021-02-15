@@ -22,7 +22,7 @@ using namespace dealii;
 
 // forward declarations
 template<int dim, typename Number>
-class DGNavierStokesCoupled;
+class OperatorCoupled;
 
 template<int dim, typename Number>
 class TimeIntBDFCoupled : public TimeIntBDF<dim, Number>
@@ -34,7 +34,7 @@ private:
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> Operator;
+  typedef OperatorCoupled<dim, Number> Operator;
 
 public:
   TimeIntBDFCoupled(std::shared_ptr<Operator>                       operator_in,

@@ -22,7 +22,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
+SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
   unsigned int const                       degree_u_in,
@@ -101,7 +101,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::fill_matrix_free_data(
+SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   MatrixFreeData<dim, Number> & matrix_free_data) const
 {
   // append mapping flags
@@ -157,7 +157,7 @@ DGNavierStokesBase<dim, Number>::fill_matrix_free_data(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::setup(
+SpatialOperatorBase<dim, Number>::setup(
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
   std::string const &                          dof_index_temperature)
@@ -186,8 +186,8 @@ DGNavierStokesBase<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                               VectorType const & velocity)
+SpatialOperatorBase<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
+                                                VectorType const & velocity)
 {
   momentum_operator.set_scaling_factor_mass_operator(scaling_factor_mass);
   momentum_operator.set_velocity_ptr(velocity);
@@ -197,7 +197,7 @@ DGNavierStokesBase<dim, Number>::setup_solvers(double const &     scaling_factor
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
+SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
   boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
@@ -225,7 +225,7 @@ DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::distribute_dofs()
+SpatialOperatorBase<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
@@ -265,14 +265,14 @@ DGNavierStokesBase<dim, Number>::distribute_dofs()
 
 template<int dim, typename Number>
 types::global_dof_index
-DGNavierStokesBase<dim, Number>::get_number_of_dofs() const
+SpatialOperatorBase<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler_u.n_dofs() + dof_handler_p.n_dofs();
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
+SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
 {
   // operator kernels
   convective_kernel_data.formulation       = param.formulation_convective_term;
@@ -491,7 +491,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
+SpatialOperatorBase<dim, Number>::initialize_turbulence_model()
 {
   // initialize turbulence model
   TurbulenceModelData model_data;
@@ -506,7 +506,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_calculators_for_derived_quantities()
+SpatialOperatorBase<dim, Number>::initialize_calculators_for_derived_quantities()
 {
   vorticity_calculator.initialize(*matrix_free,
                                   get_dof_index_velocity(),
@@ -527,7 +527,7 @@ DGNavierStokesBase<dim, Number>::initialize_calculators_for_derived_quantities()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialization_pure_dirichlet_bc()
+SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
 {
   dof_index_first_point = 0;
   for(unsigned int d = 0; d < dim; ++d)
@@ -574,77 +574,77 @@ DGNavierStokesBase<dim, Number>::initialization_pure_dirichlet_bc()
 
 template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-DGNavierStokesBase<dim, Number>::get_matrix_free() const
+SpatialOperatorBase<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
 }
 
 template<int dim, typename Number>
 std::string
-DGNavierStokesBase<dim, Number>::get_dof_name_velocity() const
+SpatialOperatorBase<dim, Number>::get_dof_name_velocity() const
 {
   return field + dof_index_u;
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_dof_index_velocity() const
+SpatialOperatorBase<dim, Number>::get_dof_index_velocity() const
 {
   return matrix_free_data->get_dof_index(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_dof_index_pressure() const
+SpatialOperatorBase<dim, Number>::get_dof_index_pressure() const
 {
   return matrix_free_data->get_dof_index(field + dof_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_dof_index_velocity_scalar() const
+SpatialOperatorBase<dim, Number>::get_dof_index_velocity_scalar() const
 {
   return matrix_free_data->get_dof_index(field + dof_index_u_scalar);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linear() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linear() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_u);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
+SpatialOperatorBase<dim, Number>::get_quad_index_pressure() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_velocity_nonlinear() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_nonlinear() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_u_nonlinear);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_u_gauss_lobatto);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
+SpatialOperatorBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linearized() const
+SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linearized() const
 {
   if(param.quad_rule_linearization == QuadratureRuleLinearization::Standard)
   {
@@ -666,64 +666,64 @@ DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linearized() const
 
 template<int dim, typename Number>
 Mapping<dim> const &
-DGNavierStokesBase<dim, Number>::get_mapping() const
+SpatialOperatorBase<dim, Number>::get_mapping() const
 {
   return mapping;
 }
 
 template<int dim, typename Number>
 FESystem<dim> const &
-DGNavierStokesBase<dim, Number>::get_fe_u() const
+SpatialOperatorBase<dim, Number>::get_fe_u() const
 {
   return *fe_u;
 }
 
 template<int dim, typename Number>
 FE_DGQ<dim> const &
-DGNavierStokesBase<dim, Number>::get_fe_p() const
+SpatialOperatorBase<dim, Number>::get_fe_p() const
 {
   return fe_p;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGNavierStokesBase<dim, Number>::get_dof_handler_u() const
+SpatialOperatorBase<dim, Number>::get_dof_handler_u() const
 {
   return dof_handler_u;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGNavierStokesBase<dim, Number>::get_dof_handler_u_scalar() const
+SpatialOperatorBase<dim, Number>::get_dof_handler_u_scalar() const
 {
   return dof_handler_u_scalar;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGNavierStokesBase<dim, Number>::get_dof_handler_p() const
+SpatialOperatorBase<dim, Number>::get_dof_handler_p() const
 {
   return dof_handler_p;
 }
 
 template<int dim, typename Number>
 AffineConstraints<Number> const &
-DGNavierStokesBase<dim, Number>::get_constraint_p() const
+SpatialOperatorBase<dim, Number>::get_constraint_p() const
 {
   return constraint_p;
 }
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::get_viscosity() const
+SpatialOperatorBase<dim, Number>::get_viscosity() const
 {
   return param.viscosity;
 }
 
 template<int dim, typename Number>
 VectorizedArray<Number>
-DGNavierStokesBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
-                                                             unsigned int const q) const
+SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
+                                                              unsigned int const q) const
 {
   VectorizedArray<Number> viscosity = make_vectorized_array<Number>(get_viscosity());
 
@@ -737,44 +737,44 @@ DGNavierStokesBase<dim, Number>::get_viscosity_boundary_face(unsigned int const 
 // Polynomial degree required for CFL condition, e.g., CFL_k = CFL / k^{exp}.
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::get_polynomial_degree() const
+SpatialOperatorBase<dim, Number>::get_polynomial_degree() const
 {
   return degree_u;
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
+SpatialOperatorBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
   convective_kernel->set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_vector_velocity(VectorType & src) const
+SpatialOperatorBase<dim, Number>::initialize_vector_velocity(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index_velocity());
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_vector_velocity_scalar(VectorType & src) const
+SpatialOperatorBase<dim, Number>::initialize_vector_velocity_scalar(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index_velocity_scalar());
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_vector_pressure(VectorType & src) const
+SpatialOperatorBase<dim, Number>::initialize_vector_pressure(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index_pressure());
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
-                                                              VectorType & pressure,
-                                                              double const time) const
+SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
+                                                               VectorType & pressure,
+                                                               double const time) const
 {
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
@@ -803,8 +803,8 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
-                                                                   double const & time)
+SpatialOperatorBase<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
+                                                                    double const & time)
 {
   this->evaluation_time = time;
 
@@ -821,8 +821,8 @@ DGNavierStokesBase<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType & 
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType &   dst,
-                                                                   double const & time)
+SpatialOperatorBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType &   dst,
+                                                                    double const & time)
 {
   this->evaluation_time = time;
 
@@ -839,9 +839,9 @@ DGNavierStokesBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType & 
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::interpolate_stress_bc(VectorType &       stress,
-                                                       VectorType const & velocity,
-                                                       VectorType const & pressure) const
+SpatialOperatorBase<dim, Number>::interpolate_stress_bc(VectorType &       stress,
+                                                        VectorType const & velocity,
+                                                        VectorType const & pressure) const
 {
   velocity_ptr = &velocity;
   pressure_ptr = &pressure;
@@ -862,16 +862,16 @@ DGNavierStokesBase<dim, Number>::interpolate_stress_bc(VectorType &       stress
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::calculate_minimum_element_length() const
+SpatialOperatorBase<dim, Number>::calculate_minimum_element_length() const
 {
   return calculate_minimum_vertex_distance(dof_handler_u.get_triangulation(), mpi_comm);
 }
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velocity,
-                                                         double const       cfl,
-                                                         double const       exponent_degree) const
+SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & velocity,
+                                                          double const       cfl,
+                                                          double const       exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
                                                     get_dof_index_velocity(),
@@ -886,9 +886,9 @@ DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velo
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::calculate_cfl_from_time_step(VectorType &       cfl,
-                                                              VectorType const & velocity,
-                                                              double const time_step_size) const
+SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &       cfl,
+                                                               VectorType const & velocity,
+                                                               double const time_step_size) const
 {
   calculate_cfl<dim, Number>(cfl,
                              triangulation,
@@ -904,30 +904,31 @@ DGNavierStokesBase<dim, Number>::calculate_cfl_from_time_step(VectorType &      
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
+SpatialOperatorBase<dim, Number>::apply_mass_operator(VectorType &       dst,
+                                                      VectorType const & src) const
 {
   mass_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::apply_mass_operator_add(VectorType &       dst,
-                                                         VectorType const & src) const
+SpatialOperatorBase<dim, Number>::apply_mass_operator_add(VectorType &       dst,
+                                                          VectorType const & src) const
 {
   mass_operator.apply_add(dst, src);
 }
 
 template<int dim, typename Number>
 bool
-DGNavierStokesBase<dim, Number>::is_pressure_level_undefined() const
+SpatialOperatorBase<dim, Number>::is_pressure_level_undefined() const
 {
   return pressure_level_is_undefined;
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType &   pressure,
-                                                                    double const & time) const
+SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType &   pressure,
+                                                                     double const & time) const
 {
   if(is_pressure_level_undefined())
   {
@@ -992,7 +993,7 @@ DGNavierStokesBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType &
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_temperature(VectorType const & temperature)
+SpatialOperatorBase<dim, Number>::set_temperature(VectorType const & temperature)
 {
   AssertThrow(param.boussinesq_term, ExcMessage("Invalid parameters detected."));
 
@@ -1001,7 +1002,7 @@ DGNavierStokesBase<dim, Number>::set_temperature(VectorType const & temperature)
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
+SpatialOperatorBase<dim, Number>::compute_vorticity(VectorType & dst, VectorType const & src) const
 {
   vorticity_calculator.compute_vorticity(dst, src);
 
@@ -1010,7 +1011,7 @@ DGNavierStokesBase<dim, Number>::compute_vorticity(VectorType & dst, VectorType 
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
+SpatialOperatorBase<dim, Number>::compute_divergence(VectorType & dst, VectorType const & src) const
 {
   divergence_calculator.compute_divergence(dst, src);
 
@@ -1019,8 +1020,8 @@ DGNavierStokesBase<dim, Number>::compute_divergence(VectorType & dst, VectorType
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_velocity_magnitude(VectorType &       dst,
-                                                            VectorType const & src) const
+SpatialOperatorBase<dim, Number>::compute_velocity_magnitude(VectorType &       dst,
+                                                             VectorType const & src) const
 {
   velocity_magnitude_calculator.compute(dst, src);
 
@@ -1029,8 +1030,8 @@ DGNavierStokesBase<dim, Number>::compute_velocity_magnitude(VectorType &       d
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_vorticity_magnitude(VectorType &       dst,
-                                                             VectorType const & src) const
+SpatialOperatorBase<dim, Number>::compute_vorticity_magnitude(VectorType &       dst,
+                                                              VectorType const & src) const
 {
   velocity_magnitude_calculator.compute(dst, src);
 
@@ -1053,8 +1054,8 @@ DGNavierStokesBase<dim, Number>::compute_vorticity_magnitude(VectorType &       
  */
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
-                                                        VectorType const & src) const
+SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
+                                                         VectorType const & src) const
 {
   AssertThrow(dim == 2, ExcMessage("Calculation of streamfunction can only be used for dim==2."));
 
@@ -1138,7 +1139,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_q_criterion(VectorType & dst, VectorType const & src) const
+SpatialOperatorBase<dim, Number>::compute_q_criterion(VectorType &       dst,
+                                                      VectorType const & src) const
 {
   q_criterion_calculator.compute(dst, src);
 
@@ -1147,43 +1149,43 @@ DGNavierStokesBase<dim, Number>::compute_q_criterion(VectorType & dst, VectorTyp
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::apply_inverse_mass_operator(VectorType &       dst,
-                                                             VectorType const & src) const
+SpatialOperatorBase<dim, Number>::apply_inverse_mass_operator(VectorType &       dst,
+                                                              VectorType const & src) const
 {
   inverse_mass_velocity.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_add_body_force_term(VectorType & dst,
-                                                              double const time) const
+SpatialOperatorBase<dim, Number>::evaluate_add_body_force_term(VectorType & dst,
+                                                               double const time) const
 {
   this->rhs_operator.evaluate_add(dst, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst,
-                                                          VectorType const & src,
-                                                          Number const       time) const
+SpatialOperatorBase<dim, Number>::evaluate_convective_term(VectorType &       dst,
+                                                           VectorType const & src,
+                                                           Number const       time) const
 {
   convective_operator.evaluate_nonlinear_operator(dst, src, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_pressure_gradient_term(VectorType &       dst,
-                                                                 VectorType const & src,
-                                                                 double const       time) const
+SpatialOperatorBase<dim, Number>::evaluate_pressure_gradient_term(VectorType &       dst,
+                                                                  VectorType const & src,
+                                                                  double const       time) const
 {
   gradient_operator.evaluate(dst, src, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &       dst,
-                                                                   VectorType const & src,
-                                                                   double const       time) const
+SpatialOperatorBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &       dst,
+                                                                    VectorType const & src,
+                                                                    double const       time) const
 {
   divergence_operator.evaluate(dst, src, time);
 }
@@ -1191,7 +1193,7 @@ DGNavierStokesBase<dim, Number>::evaluate_velocity_divergence_term(VectorType & 
 // OIF splitting
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
+SpatialOperatorBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
   VectorType &       dst,
   VectorType const & src,
   Number const       time) const
@@ -1206,7 +1208,7 @@ DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inv
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
+SpatialOperatorBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass(
   VectorType &       dst,
   VectorType const & src,
   Number const       time,
@@ -1222,7 +1224,7 @@ DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inv
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::update_turbulence_model(VectorType const & velocity)
+SpatialOperatorBase<dim, Number>::update_turbulence_model(VectorType const & velocity)
 {
   // calculate turbulent viscosity locally in each cell and face quadrature point
   turbulence_model.calculate_turbulent_viscosity(velocity);
@@ -1230,8 +1232,8 @@ DGNavierStokesBase<dim, Number>::update_turbulence_model(VectorType const & velo
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::calculate_dissipation_convective_term(VectorType const & velocity,
-                                                                       double const time) const
+SpatialOperatorBase<dim, Number>::calculate_dissipation_convective_term(VectorType const & velocity,
+                                                                        double const time) const
 {
   if(param.convective_problem())
   {
@@ -1248,7 +1250,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_convective_term(VectorTyp
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::calculate_dissipation_viscous_term(
+SpatialOperatorBase<dim, Number>::calculate_dissipation_viscous_term(
   VectorType const & velocity) const
 {
   if(param.viscous_problem())
@@ -1266,7 +1268,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_viscous_term(
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::calculate_dissipation_divergence_term(
+SpatialOperatorBase<dim, Number>::calculate_dissipation_divergence_term(
   VectorType const & velocity) const
 {
   if(param.use_divergence_penalty == true)
@@ -1284,7 +1286,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_divergence_term(
 
 template<int dim, typename Number>
 double
-DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
+SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
   VectorType const & velocity) const
 {
   if(param.use_continuity_penalty == true)
@@ -1302,7 +1304,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
+SpatialOperatorBase<dim, Number>::update_after_mesh_movement()
 {
   if(this->param.use_turbulence_model)
   {
@@ -1322,14 +1324,14 @@ DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
+SpatialOperatorBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
   convective_kernel->set_grid_velocity_ptr(u_grid_in);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::setup_projection_solver()
+SpatialOperatorBase<dim, Number>::setup_projection_solver()
 {
   // setup projection solver
 
@@ -1505,15 +1507,15 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
 
 template<int dim, typename Number>
 bool
-DGNavierStokesBase<dim, Number>::unsteady_problem_has_to_be_solved() const
+SpatialOperatorBase<dim, Number>::unsteady_problem_has_to_be_solved() const
 {
   return (this->param.solver_type == SolverType::Unsteady);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::update_projection_operator(VectorType const & velocity,
-                                                            double const       time_step_size) const
+SpatialOperatorBase<dim, Number>::update_projection_operator(VectorType const & velocity,
+                                                             double const time_step_size) const
 {
   AssertThrow(projection_operator.get() != 0,
               ExcMessage("Projection operator is not initialized."));
@@ -1525,8 +1527,8 @@ DGNavierStokesBase<dim, Number>::update_projection_operator(VectorType const & v
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::rhs_add_projection_operator(VectorType & dst,
-                                                             double const time) const
+SpatialOperatorBase<dim, Number>::rhs_add_projection_operator(VectorType & dst,
+                                                              double const time) const
 {
   this->projection_operator->set_time(time);
   this->projection_operator->rhs_add(dst);
@@ -1534,9 +1536,9 @@ DGNavierStokesBase<dim, Number>::rhs_add_projection_operator(VectorType & dst,
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesBase<dim, Number>::solve_projection(VectorType &       dst,
-                                                  VectorType const & src,
-                                                  bool const &       update_preconditioner) const
+SpatialOperatorBase<dim, Number>::solve_projection(VectorType &       dst,
+                                                   VectorType const & src,
+                                                   bool const &       update_preconditioner) const
 {
   Assert(projection_solver.get() != 0, ExcMessage("Projection solver has not been initialized."));
 
@@ -1547,7 +1549,7 @@ DGNavierStokesBase<dim, Number>::solve_projection(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundary_face(
+SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &,
@@ -1614,7 +1616,7 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundary_face(
+SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &,
@@ -1663,7 +1665,7 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
+SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &,
@@ -1728,16 +1730,16 @@ DGNavierStokesBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
 template<int dim, typename Number>
 const InputParameters &
-DGNavierStokesBase<dim, Number>::get_param() const
+SpatialOperatorBase<dim, Number>::get_param() const
 {
   return param;
 }
 
-template class DGNavierStokesBase<2, float>;
-template class DGNavierStokesBase<3, float>;
+template class SpatialOperatorBase<2, float>;
+template class SpatialOperatorBase<3, float>;
 
-template class DGNavierStokesBase<2, double>;
-template class DGNavierStokesBase<3, double>;
+template class SpatialOperatorBase<2, double>;
+template class SpatialOperatorBase<3, double>;
 
 } // namespace IncNS
 } // namespace ExaDG

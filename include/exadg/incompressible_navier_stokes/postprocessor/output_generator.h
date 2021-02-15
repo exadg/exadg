@@ -116,7 +116,7 @@ struct OutputData : public OutputDataBase
 };
 
 template<int dim, typename Number>
-class DGNavierStokesBase;
+class SpatialOperatorBase;
 
 template<int dim, typename Number>
 class OutputGenerator
@@ -124,7 +124,7 @@ class OutputGenerator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim, Number> NavierStokesOperator;
+  typedef SpatialOperatorBase<dim, Number> NavierStokesOperator;
 
   OutputGenerator(MPI_Comm const & comm);
 

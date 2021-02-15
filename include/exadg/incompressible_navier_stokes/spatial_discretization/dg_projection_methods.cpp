@@ -16,7 +16,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
+OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
   unsigned int const                       degree_u_in,
@@ -45,13 +45,13 @@ DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
 }
 
 template<int dim, typename Number>
-DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
+OperatorProjectionMethods<dim, Number>::~OperatorProjectionMethods()
 {
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::setup(
+OperatorProjectionMethods<dim, Number>::setup(
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
   std::string const &                          dof_index_temperature)
@@ -63,7 +63,7 @@ DGNavierStokesProjectionMethods<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::update_after_mesh_movement()
+OperatorProjectionMethods<dim, Number>::update_after_mesh_movement()
 {
   Base::update_after_mesh_movement();
 
@@ -74,7 +74,7 @@ DGNavierStokesProjectionMethods<dim, Number>::update_after_mesh_movement()
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
+OperatorProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
 {
   initialize_preconditioner_pressure_poisson();
 
@@ -83,7 +83,7 @@ DGNavierStokesProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
+OperatorProjectionMethods<dim, Number>::initialize_laplace_operator()
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
@@ -144,7 +144,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poisson()
+OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poisson()
 {
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::None)
@@ -191,7 +191,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
+OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
 {
   if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
   {
@@ -242,8 +242,8 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
-                                                                      double const time) const
+OperatorProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
+                                                                double const time) const
 {
   this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst);
@@ -251,8 +251,8 @@ DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
-                                                                     double const & time) const
+OperatorProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
+                                                               double const & time) const
 {
   this->laplace_operator.set_time(time);
   this->laplace_operator.rhs_add(dst);
@@ -260,10 +260,9 @@ DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType 
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(
-  VectorType &       dst,
-  VectorType const & src,
-  bool const         update_preconditioner) const
+OperatorProjectionMethods<dim, Number>::do_solve_pressure(VectorType &       dst,
+                                                          VectorType const & src,
+                                                          bool const update_preconditioner) const
 {
   // Check multigrid algorithm
   //  std::shared_ptr<MultigridPoisson> mg_preconditioner
@@ -288,17 +287,16 @@ DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::apply_laplace_operator(VectorType &       dst,
-                                                                     VectorType const & src) const
+OperatorProjectionMethods<dim, Number>::apply_laplace_operator(VectorType &       dst,
+                                                               VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::apply_projection_operator(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorProjectionMethods<dim, Number>::apply_projection_operator(VectorType &       dst,
+                                                                  VectorType const & src) const
 {
   AssertThrow(this->projection_operator.get() != 0,
               ExcMessage("Projection operator is not initialized correctly."));
@@ -306,11 +304,11 @@ DGNavierStokesProjectionMethods<dim, Number>::apply_projection_operator(
   this->projection_operator->vmult(dst, src);
 }
 
-template class DGNavierStokesProjectionMethods<2, float>;
-template class DGNavierStokesProjectionMethods<2, double>;
+template class OperatorProjectionMethods<2, float>;
+template class OperatorProjectionMethods<2, double>;
 
-template class DGNavierStokesProjectionMethods<3, float>;
-template class DGNavierStokesProjectionMethods<3, double>;
+template class OperatorProjectionMethods<3, float>;
+template class OperatorProjectionMethods<3, double>;
 
 } // namespace IncNS
 } // namespace ExaDG

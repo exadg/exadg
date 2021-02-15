@@ -20,7 +20,7 @@ using namespace dealii;
 
 // forward declaration
 template<int dim, typename Number>
-class DGNavierStokesCoupled;
+class OperatorCoupled;
 
 template<int dim, typename Number>
 class NonlinearOperatorCoupled
@@ -29,7 +29,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+  typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
   NonlinearOperatorCoupled()
@@ -75,7 +75,7 @@ class LinearOperatorCoupled : public dealii::Subscriptor
 private:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+  typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
   LinearOperatorCoupled()
@@ -129,7 +129,7 @@ class BlockPreconditioner
 private:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+  typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
   BlockPreconditioner() : pde_operator(nullptr)
@@ -158,11 +158,11 @@ public:
 };
 
 template<int dim, typename Number = double>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>
+class OperatorCoupled : public SpatialOperatorBase<dim, Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, Number>    Base;
-  typedef DGNavierStokesCoupled<dim, Number> This;
+  typedef SpatialOperatorBase<dim, Number> Base;
+  typedef OperatorCoupled<dim, Number>     This;
 
   typedef typename Base::MultigridPoisson MultigridPoisson;
 
@@ -174,7 +174,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesCoupled(
+  OperatorCoupled(
     parallel::TriangulationBase<dim> const & triangulation_in,
     Mapping<dim> const &                     mapping_in,
     unsigned int const                       degree_u_in,
@@ -190,7 +190,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesCoupled();
+  virtual ~OperatorCoupled();
 
   void
   setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,

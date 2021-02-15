@@ -21,10 +21,10 @@ using namespace dealii;
  * splitting (velocity-correction) scheme or pressure correction schemes.
  */
 template<int dim, typename Number>
-class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, Number>
+class OperatorProjectionMethods : public SpatialOperatorBase<dim, Number>
 {
 protected:
-  typedef DGNavierStokesBase<dim, Number> Base;
+  typedef SpatialOperatorBase<dim, Number> Base;
 
   typedef typename Base::VectorType       VectorType;
   typedef typename Base::MultigridPoisson MultigridPoisson;
@@ -33,7 +33,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesProjectionMethods(
+  OperatorProjectionMethods(
     parallel::TriangulationBase<dim> const & triangulation,
     Mapping<dim> const &                     mapping,
     unsigned int const                       degree_u,
@@ -49,7 +49,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesProjectionMethods();
+  virtual ~OperatorProjectionMethods();
 
   /*
    * Calls setup() function of base class and additionally initializes the pressure Poisson operator
