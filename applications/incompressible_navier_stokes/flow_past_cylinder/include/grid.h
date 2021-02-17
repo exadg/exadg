@@ -111,8 +111,7 @@ set_boundary_ids(Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void
-create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
+void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
               ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
@@ -627,8 +626,7 @@ create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
 }
 
 
-void
-create_triangulation(Triangulation<3> & tria)
+void create_triangulation(Triangulation<3> & tria)
 {
   Triangulation<2> tria_2d;
   create_triangulation(tria_2d, false);
@@ -942,14 +940,13 @@ double const h_x_2 = (L - X_2) / nele_x_right;
 double const h_x_1 = D / nele_x_middle_middle;
 double const h_x_0 = (X_1 - X_0) / nele_x_left;
 
-void
-create_trapezoid(Triangulation<2> &        tria,
-                 std::vector<unsigned int> ref,
-                 Point<2> const            x_0,
-                 double const              length,
-                 double const              height,
-                 double const              max_shift,
-                 double const              min_shift)
+void create_trapezoid(Triangulation<2> &        tria,
+                      std::vector<unsigned int> ref,
+                      Point<2> const            x_0,
+                      double const              length,
+                      double const              height,
+                      double const              max_shift,
+                      double const              min_shift)
 {
   Triangulation<2> tmp;
 
@@ -1011,8 +1008,7 @@ set_boundary_ids(Triangulation<dim> & tria)
 }
 
 template<unsigned int dim>
-void
-create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
+void create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
 {
   Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top, middle_bottom,
     middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
@@ -1245,8 +1241,7 @@ create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
 }
 
 template<unsigned int dim>
-void
-create_triangulation(Triangulation<3> & triangulation)
+void create_triangulation(Triangulation<3> & triangulation)
 {
   Triangulation<2> tria_2D;
   create_triangulation<2>(tria_2D, false);

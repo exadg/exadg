@@ -210,13 +210,13 @@ public:
     param.IP_factor              = 1.0e0;
 
     // SOLVER
-    param.solver                      = Poisson::Solver::CG;
-    param.solver_data.abs_tol         = 1.e-20;
-    param.solver_data.rel_tol         = 1.e-10;
-    param.solver_data.max_iter        = 1e4;
-    param.compute_performance_metrics = true;
-    param.preconditioner              = Preconditioner::Multigrid;
-    param.multigrid_data.type         = MultigridType::cphMG;
+    param.solver                               = Poisson::Solver::CG;
+    param.solver_data.abs_tol                  = 1.e-20;
+    param.solver_data.rel_tol                  = 1.e-10;
+    param.solver_data.max_iter                 = 1e4;
+    param.compute_performance_metrics          = true;
+    param.preconditioner                       = Preconditioner::Multigrid;
+    param.multigrid_data.type                  = MultigridType::cphMG;
     param.multigrid_data.p_sequence            = PSequenceType::Bisect;
     param.multigrid_data.use_global_coarsening = global_coarsening;
     // MG smoother
