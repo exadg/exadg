@@ -15,7 +15,7 @@ Our motto is to provide a software that is intuitive to use and where changes an
 
 ## Getting started
 
-The wiki page [Installation](https://github.com/exadg/exadg/wiki/Installation) contains a detailed description of the installation steps of **ExaDG** and the required third-party libraries such as [**deal.II**](https://github.com/dealii).
+The wiki page [Installation](https://github.com/exadg/exadg/wiki/Installation) contains a detailed description of the installation steps of **ExaDG** and the required third-party libraries such as [**deal.II**](https://github.com/dealii). The documentation can be found [here](https://exadg.github.io/exadg/index.html).
 
 ### For the impatient ...
 
