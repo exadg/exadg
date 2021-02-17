@@ -13,9 +13,9 @@
 #include <exadg/grid/moving_mesh_function.h>
 #include <exadg/grid/moving_mesh_poisson.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
@@ -31,13 +31,13 @@ namespace IncNS
 using namespace dealii;
 
 // Note: Make sure that the correct time integration scheme is selected in the input file that is
-//       compatible with the Operator type specified here. This also includes the treatment of the
+//       compatible with the OperatorType specified here. This also includes the treatment of the
 //       convective term (explicit/implicit), e.g., specifying VelocityConvDiffOperator together
 //       with an explicit treatment of the convective term will only apply the Helmholtz-like
 //       operator.
 
 // clang-format off
-enum class Operator{
+enum class OperatorType{
   CoupledNonlinearResidual, // nonlinear residual of coupled system of equations
   CoupledLinearized,        // linearized system of equations for coupled solution approach
   PressurePoissonOperator,  // negative Laplace operator (scalar quantity, pressure)
@@ -50,21 +50,21 @@ enum class Operator{
 // clang-format on
 
 inline std::string
-enum_to_string(Operator const enum_type)
+enum_to_string(OperatorType const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
     // clang-format off
-    case Operator::CoupledNonlinearResidual: string_type = "CoupledNonlinearResidual"; break;
-    case Operator::CoupledLinearized:        string_type = "CoupledLinearized";        break;
-    case Operator::PressurePoissonOperator:  string_type = "PressurePoissonOperator";  break;
-    case Operator::ConvectiveOperator:       string_type = "ConvectiveOperator";       break;
-    case Operator::HelmholtzOperator:        string_type = "HelmholtzOperator";        break;
-    case Operator::ProjectionOperator:       string_type = "ProjectionOperator";       break;
-    case Operator::VelocityConvDiffOperator: string_type = "VelocityConvDiffOperator"; break;
-    case Operator::InverseMassOperator:      string_type = "InverseMassOperator";      break;
+    case OperatorType::CoupledNonlinearResidual: string_type = "CoupledNonlinearResidual"; break;
+    case OperatorType::CoupledLinearized:        string_type = "CoupledLinearized";        break;
+    case OperatorType::PressurePoissonOperator:  string_type = "PressurePoissonOperator";  break;
+    case OperatorType::ConvectiveOperator:       string_type = "ConvectiveOperator";       break;
+    case OperatorType::HelmholtzOperator:        string_type = "HelmholtzOperator";        break;
+    case OperatorType::ProjectionOperator:       string_type = "ProjectionOperator";       break;
+    case OperatorType::VelocityConvDiffOperator: string_type = "VelocityConvDiffOperator"; break;
+    case OperatorType::InverseMassOperator:      string_type = "InverseMassOperator";      break;
 
     default:AssertThrow(false, ExcMessage("Not implemented.")); break;
       // clang-format on
@@ -74,17 +74,17 @@ enum_to_string(Operator const enum_type)
 }
 
 inline void
-string_to_enum(Operator & enum_type, std::string const string_type)
+string_to_enum(OperatorType & enum_type, std::string const string_type)
 {
   // clang-format off
-  if     (string_type == "CoupledNonlinearResidual")  enum_type = Operator::CoupledNonlinearResidual;
-  else if(string_type == "CoupledLinearized")         enum_type = Operator::CoupledLinearized;
-  else if(string_type == "PressurePoissonOperator")   enum_type = Operator::PressurePoissonOperator;
-  else if(string_type == "ConvectiveOperator")        enum_type = Operator::ConvectiveOperator;
-  else if(string_type == "HelmholtzOperator")         enum_type = Operator::HelmholtzOperator;
-  else if(string_type == "ProjectionOperator")        enum_type = Operator::ProjectionOperator;
-  else if(string_type == "VelocityConvDiffOperator")  enum_type = Operator::VelocityConvDiffOperator;
-  else if(string_type == "InverseMassOperator")       enum_type = Operator::InverseMassOperator;
+  if     (string_type == "CoupledNonlinearResidual")  enum_type = OperatorType::CoupledNonlinearResidual;
+  else if(string_type == "CoupledLinearized")         enum_type = OperatorType::CoupledLinearized;
+  else if(string_type == "PressurePoissonOperator")   enum_type = OperatorType::PressurePoissonOperator;
+  else if(string_type == "ConvectiveOperator")        enum_type = OperatorType::ConvectiveOperator;
+  else if(string_type == "HelmholtzOperator")         enum_type = OperatorType::HelmholtzOperator;
+  else if(string_type == "ProjectionOperator")        enum_type = OperatorType::ProjectionOperator;
+  else if(string_type == "VelocityConvDiffOperator")  enum_type = OperatorType::VelocityConvDiffOperator;
+  else if(string_type == "InverseMassOperator")       enum_type = OperatorType::InverseMassOperator;
   else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
@@ -115,7 +115,7 @@ get_dofs_per_element(std::string const & input_file,
   // clang-format on
   prm.parse_input(input_file, "", true, true);
 
-  Operator operator_type;
+  OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
   unsigned int const velocity_dofs_per_element = dim * std::pow(degree + 1, dim);
@@ -127,22 +127,22 @@ get_dofs_per_element(std::string const & input_file,
   else
     AssertThrow(false, ExcMessage("Not implemented."));
 
-  if(operator_type == Operator::CoupledNonlinearResidual ||
-     operator_type == Operator::CoupledLinearized)
+  if(operator_type == OperatorType::CoupledNonlinearResidual ||
+     operator_type == OperatorType::CoupledLinearized)
   {
     return velocity_dofs_per_element + pressure_dofs_per_element;
   }
   // velocity
-  else if(operator_type == Operator::ConvectiveOperator ||
-          operator_type == Operator::VelocityConvDiffOperator ||
-          operator_type == Operator::HelmholtzOperator ||
-          operator_type == Operator::ProjectionOperator ||
-          operator_type == Operator::InverseMassOperator)
+  else if(operator_type == OperatorType::ConvectiveOperator ||
+          operator_type == OperatorType::VelocityConvDiffOperator ||
+          operator_type == OperatorType::HelmholtzOperator ||
+          operator_type == OperatorType::ProjectionOperator ||
+          operator_type == OperatorType::InverseMassOperator)
   {
     return velocity_dofs_per_element;
   }
   // pressure
-  else if(operator_type == Operator::PressurePoissonOperator)
+  else if(operator_type == OperatorType::PressurePoissonOperator)
   {
     return pressure_dofs_per_element;
   }
@@ -248,15 +248,10 @@ private:
   /*
    * Spatial discretization
    */
-  typedef DGNavierStokesBase<dim, Number>               DGBase;
-  typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
-  typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
-  typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
-
-  std::shared_ptr<DGBase>               navier_stokes_operator;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base;
+  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled;
+  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting;
+  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction;
 
   /*
    * Postprocessor
@@ -269,13 +264,8 @@ private:
    * Temporal discretization
    */
 
-  // unsteady solvers
-  typedef TimeIntBDF<dim, Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeInt> time_integrator;
+  // unsteady solver
+  std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator;
 
   // steady solver
   typedef DriverSteadyProblems<dim, Number> DriverSteady;

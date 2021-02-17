@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
@@ -45,7 +45,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-class DGNavierStokesBase;
+class SpatialOperatorBase;
 /*
  * Operator-integration-factor (OIF) sub-stepping.
  */
@@ -55,7 +55,7 @@ class OperatorOIF
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OperatorOIF(std::shared_ptr<DGNavierStokesBase<dim, Number>> operator_in)
+  OperatorOIF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in)
     : pde_operator(operator_in),
       transport_with_interpolated_velocity(true) // TODO adjust this parameter manually
   {
@@ -97,7 +97,7 @@ public:
   }
 
 private:
-  std::shared_ptr<DGNavierStokesBase<dim, Number>> pde_operator;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
 
   // OIF splitting (transport with interpolated velocity)
   bool                            transport_with_interpolated_velocity;
@@ -107,12 +107,12 @@ private:
 };
 
 template<int dim, typename Number>
-class DGNavierStokesBase : public dealii::Subscriptor
+class SpatialOperatorBase : public dealii::Subscriptor
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim, Number> This;
+  typedef SpatialOperatorBase<dim, Number> This;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
@@ -129,7 +129,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesBase(
+  SpatialOperatorBase(
     parallel::TriangulationBase<dim> const & triangulation,
     Mapping<dim> const &                     mapping,
     unsigned int const                       degree_u,
@@ -145,7 +145,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesBase(){};
+  virtual ~SpatialOperatorBase(){};
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
@@ -692,5 +692,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_BASE_H_ \
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_SPATIAL_OPERATOR_BASE_H_ \
         */

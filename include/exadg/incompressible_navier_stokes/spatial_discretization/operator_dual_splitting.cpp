@@ -6,7 +6,7 @@
  */
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
 
@@ -17,7 +17,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
+OperatorDualSplitting<dim, Number>::OperatorDualSplitting(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
   unsigned int const                       degree_u_in,
@@ -29,36 +29,36 @@ DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   InputParameters const &                         parameters_in,
   std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
-  : ProjBase(triangulation_in,
-             mapping_in,
-             degree_u_in,
-             periodic_face_pairs_in,
-             boundary_descriptor_velocity_in,
-             boundary_descriptor_pressure_in,
-             field_functions_in,
-             parameters_in,
-             field_in,
-             mpi_comm_in)
+  : ProjectionBase(triangulation_in,
+                   mapping_in,
+                   degree_u_in,
+                   periodic_face_pairs_in,
+                   boundary_descriptor_velocity_in,
+                   boundary_descriptor_pressure_in,
+                   field_functions_in,
+                   parameters_in,
+                   field_in,
+                   mpi_comm_in)
 {
 }
 
 template<int dim, typename Number>
-DGNavierStokesDualSplitting<dim, Number>::~DGNavierStokesDualSplitting()
+OperatorDualSplitting<dim, Number>::~OperatorDualSplitting()
 {
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
-                                                        VectorType const & velocity)
+OperatorDualSplitting<dim, Number>::setup_solvers(double const &     scaling_factor_mass,
+                                                  VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
-  ProjBase::setup_solvers(scaling_factor_mass, velocity);
+  ProjectionBase::setup_solvers(scaling_factor_mass, velocity);
 
-  ProjBase::setup_pressure_poisson_solver();
+  ProjectionBase::setup_pressure_poisson_solver();
 
-  ProjBase::setup_projection_solver();
+  ProjectionBase::setup_projection_solver();
 
   setup_helmholtz_solver();
 
@@ -67,7 +67,7 @@ DGNavierStokesDualSplitting<dim, Number>::setup_solvers(double const &     scali
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::setup_helmholtz_solver()
+OperatorDualSplitting<dim, Number>::setup_helmholtz_solver()
 {
   initialize_helmholtz_preconditioner();
 
@@ -76,7 +76,7 @@ DGNavierStokesDualSplitting<dim, Number>::setup_helmholtz_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
+OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
 {
   if(this->param.preconditioner_viscous == PreconditionerViscous::None)
   {
@@ -133,7 +133,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
+OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
 {
   if(this->param.solver_viscous == SolverViscous::CG)
   {
@@ -206,16 +206,15 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::apply_velocity_divergence_term(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorDualSplitting<dim, Number>::apply_velocity_divergence_term(VectorType &       dst,
+                                                                   VectorType const & src) const
 {
   this->divergence_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_velocity_divergence_term(
+OperatorDualSplitting<dim, Number>::rhs_velocity_divergence_term(
   VectorType &   dst,
   double const & evaluation_time) const
 {
@@ -224,8 +223,8 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_velocity_divergence_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(VectorType &   dst,
-                                                                           double const & time)
+OperatorDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(VectorType &   dst,
+                                                                     double const & time)
 {
   this->evaluation_time = time;
 
@@ -240,7 +239,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(Vecto
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_face(
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &,
@@ -297,7 +296,7 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(
+OperatorDualSplitting<dim, Number>::rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(
   VectorType &       dst,
   VectorType const & velocity) const
 {
@@ -306,7 +305,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_velocity_divergence_term_dirichlet
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
+OperatorDualSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -320,7 +319,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_boundary_face(
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &              src,
@@ -407,9 +406,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_analytical_time_derivative_add(
-  VectorType &   dst,
-  double const & time)
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_analytical_time_derivative_add(VectorType &   dst,
+                                                                               double const & time)
 {
   this->evaluation_time = time;
 
@@ -425,12 +423,11 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_analytical_time_derivative
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::
-  local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
-    MatrixFree<dim, Number> const & data,
-    VectorType &                    dst,
-    VectorType const &,
-    Range const & face_range) const
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &,
+  Range const & face_range) const
 {
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
   unsigned int quad_index_pressure = this->get_quad_index_pressure();
@@ -480,7 +477,7 @@ DGNavierStokesDualSplitting<dim, Number>::
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_add(
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_add(
   VectorType &       dst,
   VectorType const & acceleration)
 {
@@ -494,12 +491,11 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::
-  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
-    MatrixFree<dim, Number> const & data,
-    VectorType &                    dst,
-    VectorType const &              acceleration,
-    Range const &                   face_range) const
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &              acceleration,
+  Range const &                   face_range) const
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
   unsigned int dof_index_pressure  = this->get_dof_index_pressure();
@@ -547,8 +543,8 @@ DGNavierStokesDualSplitting<dim, Number>::
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(VectorType &   dst,
-                                                                          double const & time)
+OperatorDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(VectorType &   dst,
+                                                                    double const & time)
 {
   this->evaluation_time = time;
 
@@ -563,7 +559,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(Vector
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_boundary_face(
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_boundary_face(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &,
@@ -617,8 +613,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &       dst,
-                                                                 VectorType const & src) const
+OperatorDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &       dst,
+                                                           VectorType const & src) const
 {
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,
@@ -630,7 +626,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &   
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_face(
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &              src,
@@ -709,8 +705,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_bound
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &       dst,
-                                                              VectorType const & src) const
+OperatorDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &       dst,
+                                                        VectorType const & src) const
 {
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,
@@ -722,7 +718,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &      
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
+OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
   VectorType const &              src,
@@ -777,35 +773,35 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
-                                                              double const & evaluation_time) const
+OperatorDualSplitting<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
+                                                        double const & evaluation_time) const
 {
-  ProjBase::do_rhs_ppe_laplace_add(dst, evaluation_time);
+  ProjectionBase::do_rhs_ppe_laplace_add(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
-                                                         VectorType const & src,
-                                                         bool const update_preconditioner) const
+OperatorDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
+                                                   VectorType const & src,
+                                                   bool const         update_preconditioner) const
 {
-  return ProjBase::do_solve_pressure(dst, src, update_preconditioner);
+  return ProjectionBase::do_solve_pressure(dst, src, update_preconditioner);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_add_viscous_term(VectorType & dst,
-                                                               double const evaluation_time) const
+OperatorDualSplitting<dim, Number>::rhs_add_viscous_term(VectorType & dst,
+                                                         double const evaluation_time) const
 {
-  ProjBase::do_rhs_add_viscous_term(dst, evaluation_time);
+  ProjectionBase::do_rhs_add_viscous_term(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
-                                                        VectorType const & src,
-                                                        bool const &       update_preconditioner,
-                                                        double const &     factor)
+OperatorDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
+                                                  VectorType const & src,
+                                                  bool const &       update_preconditioner,
+                                                  double const &     factor)
 {
   // Update operator
   this->momentum_operator.set_scaling_factor_mass_operator(factor);
@@ -817,17 +813,17 @@ DGNavierStokesDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::apply_helmholtz_operator(VectorType &       dst,
-                                                                   VectorType const & src) const
+OperatorDualSplitting<dim, Number>::apply_helmholtz_operator(VectorType &       dst,
+                                                             VectorType const & src) const
 {
   this->momentum_operator.vmult(dst, src);
 }
 
-template class DGNavierStokesDualSplitting<2, float>;
-template class DGNavierStokesDualSplitting<2, double>;
+template class OperatorDualSplitting<2, float>;
+template class OperatorDualSplitting<2, double>;
 
-template class DGNavierStokesDualSplitting<3, float>;
-template class DGNavierStokesDualSplitting<3, double>;
+template class OperatorDualSplitting<3, float>;
+template class OperatorDualSplitting<3, double>;
 
 } // namespace IncNS
 } // namespace ExaDG

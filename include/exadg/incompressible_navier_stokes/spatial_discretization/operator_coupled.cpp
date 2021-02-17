@@ -6,7 +6,7 @@
  */
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
@@ -19,7 +19,7 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
+OperatorCoupled<dim, Number>::OperatorCoupled(
   parallel::TriangulationBase<dim> const & triangulation_in,
   Mapping<dim> const &                     mapping_in,
   unsigned int const                       degree_u_in,
@@ -46,16 +46,15 @@ DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
 }
 
 template<int dim, typename Number>
-DGNavierStokesCoupled<dim, Number>::~DGNavierStokesCoupled()
+OperatorCoupled<dim, Number>::~OperatorCoupled()
 {
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-  std::string const &                          dof_index_temperature)
+OperatorCoupled<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+                                    std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
+                                    std::string const & dof_index_temperature)
 {
   Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
@@ -64,9 +63,8 @@ DGNavierStokesCoupled<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup_solvers(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const & velocity)
+OperatorCoupled<dim, Number>::setup_solvers(double const &     scaling_factor_time_derivative_term,
+                                            VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup incompressible Navier-Stokes solver ..." << std::endl;
 
@@ -84,7 +82,7 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
+OperatorCoupled<dim, Number>::initialize_solver_coupled()
 {
   linear_operator.initialize(*this);
 
@@ -144,22 +142,21 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::update_divergence_penalty_operator(VectorType const & velocity)
+OperatorCoupled<dim, Number>::update_divergence_penalty_operator(VectorType const & velocity)
 {
   this->div_penalty_operator.update(velocity);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::update_continuity_penalty_operator(VectorType const & velocity)
+OperatorCoupled<dim, Number>::update_continuity_penalty_operator(VectorType const & velocity)
 {
   this->conti_penalty_operator.update(velocity);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_block_vector_velocity_pressure(
-  BlockVectorType & src) const
+OperatorCoupled<dim, Number>::initialize_block_vector_velocity_pressure(BlockVectorType & src) const
 {
   // velocity(1st block) + pressure(2nd block)
   src.reinit(2);
@@ -172,7 +169,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_block_vector_velocity_pressure(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling_factor)
+OperatorCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling_factor)
 {
   scaling_factor_continuity = scaling_factor;
   this->gradient_operator.set_scaling_factor_pressure(scaling_factor);
@@ -180,11 +177,11 @@ DGNavierStokesCoupled<dim, Number>::set_scaling_factor_continuity(double const s
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
-                                                                BlockVectorType const & src,
-                                                                bool const & update_preconditioner,
-                                                                double const & time,
-                                                                double const & scaling_factor_mass)
+OperatorCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType &       dst,
+                                                          BlockVectorType const & src,
+                                                          bool const &   update_preconditioner,
+                                                          double const & time,
+                                                          double const & scaling_factor_mass)
 {
   // Update linear operator
   linear_operator.update(time, scaling_factor_mass);
@@ -194,8 +191,7 @@ DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(BlockVectorType 
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
-                                                       double const &    time) const
+OperatorCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst, double const & time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), time);
@@ -223,11 +219,10 @@ DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
-  BlockVectorType &       dst,
-  BlockVectorType const & src,
-  double const &          time,
-  double const &          scaling_factor_mass) const
+OperatorCoupled<dim, Number>::apply_linearized_problem(BlockVectorType &       dst,
+                                                       BlockVectorType const & src,
+                                                       double const &          time,
+                                                       double const & scaling_factor_mass) const
 {
   // (1,1) block of saddle point matrix
   this->momentum_operator.set_time(time);
@@ -259,11 +254,11 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
 
 template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
-DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
-                                                            VectorType const & rhs_vector,
-                                                            bool const &   update_preconditioner,
-                                                            double const & time,
-                                                            double const & scaling_factor_mass)
+OperatorCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  dst,
+                                                      VectorType const & rhs_vector,
+                                                      bool const &       update_preconditioner,
+                                                      double const &     time,
+                                                      double const &     scaling_factor_mass)
 {
   // Update nonlinear operator
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass);
@@ -283,12 +278,11 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(BlockVectorType &  d
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
-  BlockVectorType &       dst,
-  BlockVectorType const & src,
-  VectorType const *      rhs_vector,
-  double const &          time,
-  double const &          scaling_factor_mass) const
+OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &       dst,
+                                                          BlockVectorType const & src,
+                                                          VectorType const *      rhs_vector,
+                                                          double const &          time,
+                                                          double const & scaling_factor_mass) const
 {
   // velocity-block
 
@@ -334,9 +328,9 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
-                                                                       BlockVectorType const & src,
-                                                                       double const & time) const
+OperatorCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
+                                                                 BlockVectorType const & src,
+                                                                 double const &          time) const
 {
   // velocity-block
 
@@ -389,7 +383,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVect
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_block_preconditioner()
+OperatorCoupled<dim, Number>::initialize_block_preconditioner()
 {
   block_preconditioner.initialize(this);
 
@@ -402,7 +396,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_block_preconditioner()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_vectors()
+OperatorCoupled<dim, Number>::initialize_vectors()
 {
   auto type = this->param.preconditioner_coupled;
 
@@ -420,7 +414,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_vectors()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
+OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
 {
   auto type = this->param.preconditioner_velocity_block;
 
@@ -458,7 +452,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
+OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 {
   typedef MultigridPreconditioner<dim, Number> MULTIGRID;
 
@@ -486,7 +480,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_momentum()
+OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
 {
   AssertThrow(preconditioner_momentum.get() != 0,
               ExcMessage("preconditioner_momentum is uninitialized"));
@@ -506,7 +500,7 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_momentum()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
+OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 {
   auto type = this->param.preconditioner_pressure_block;
 
@@ -581,7 +575,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
+OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 {
   // multigrid V-cycle for negative Laplace operator
   Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
@@ -616,7 +610,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
+OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
 {
   AssertThrow(
     multigrid_preconditioner_schur_complement.get() != 0,
@@ -647,7 +641,7 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
+OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
 {
   // pressure convection-diffusion operator
 
@@ -702,7 +696,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   diffusive_kernel_data.diffusivity = this->param.viscosity;
 
   // combined convection-diffusion operator
-  ConvDiff::OperatorData<dim> operator_data;
+  ConvDiff::CombinedOperatorData<dim> operator_data;
   operator_data.dof_index  = this->get_dof_index_pressure();
   operator_data.quad_index = this->get_quad_index_pressure();
 
@@ -716,7 +710,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.convective_kernel_data = convective_kernel_data;
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
+  pressure_conv_diff_operator.reset(new ConvDiff::CombinedOperator<dim, Number>());
   pressure_conv_diff_operator->initialize(this->get_matrix_free(),
                                           this->get_constraint_p(),
                                           operator_data);
@@ -822,7 +816,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
+OperatorCoupled<dim, Number>::update_block_preconditioner()
 {
   // momentum block
   preconditioner_momentum->update();
@@ -857,8 +851,8 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::apply_block_preconditioner(BlockVectorType &       dst,
-                                                               BlockVectorType const & src) const
+OperatorCoupled<dim, Number>::apply_block_preconditioner(BlockVectorType &       dst,
+                                                         BlockVectorType const & src) const
 {
   auto type = this->param.preconditioner_coupled;
 
@@ -1002,9 +996,8 @@ DGNavierStokesCoupled<dim, Number>::apply_block_preconditioner(BlockVectorType &
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::apply_preconditioner_velocity_block(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorCoupled<dim, Number>::apply_preconditioner_velocity_block(VectorType &       dst,
+                                                                  VectorType const & src) const
 {
   auto type = this->param.preconditioner_velocity_block;
 
@@ -1072,9 +1065,8 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_velocity_block(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &       dst,
+                                                                  VectorType const & src) const
 {
   auto type = this->param.preconditioner_pressure_block;
 
@@ -1147,9 +1139,8 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorCoupled<dim, Number>::apply_inverse_negative_laplace_operator(VectorType &       dst,
+                                                                      VectorType const & src) const
 {
   if(this->param.exact_inversion_of_laplace_operator == false)
   {
@@ -1183,11 +1174,11 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
 }
 
 
-template class DGNavierStokesCoupled<2, float>;
-template class DGNavierStokesCoupled<2, double>;
+template class OperatorCoupled<2, float>;
+template class OperatorCoupled<2, double>;
 
-template class DGNavierStokesCoupled<3, float>;
-template class DGNavierStokesCoupled<3, double>;
+template class OperatorCoupled<3, float>;
+template class OperatorCoupled<3, double>;
 
 } // namespace IncNS
 } // namespace ExaDG

@@ -6,7 +6,8 @@
  */
 
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h>
+
+#include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 
 namespace ExaDG
 {

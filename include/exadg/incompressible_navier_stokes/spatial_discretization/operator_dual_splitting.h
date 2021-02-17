@@ -5,12 +5,12 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_
 
 // base class
 #include <exadg/incompressible_navier_stokes/spatial_discretization/curl_compute.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_projection_methods.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 
 namespace ExaDG
 {
@@ -19,12 +19,12 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number = double>
-class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>
+class OperatorDualSplitting : public OperatorProjectionMethods<dim, Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, Number>              Base;
-  typedef DGNavierStokesProjectionMethods<dim, Number> ProjBase;
-  typedef DGNavierStokesDualSplitting<dim, Number>     This;
+  typedef SpatialOperatorBase<dim, Number>       Base;
+  typedef OperatorProjectionMethods<dim, Number> ProjectionBase;
+  typedef OperatorDualSplitting<dim, Number>     This;
 
   typedef typename Base::VectorType VectorType;
 
@@ -41,7 +41,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesDualSplitting(
+  OperatorDualSplitting(
     parallel::TriangulationBase<dim> const & triangulation,
     Mapping<dim> const &                     mapping,
     unsigned int const                       degree_u,
@@ -57,7 +57,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesDualSplitting();
+  virtual ~OperatorDualSplitting();
 
   void
   setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);
@@ -223,5 +223,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_ \
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_DUAL_SPLITTING_H_ \
         */

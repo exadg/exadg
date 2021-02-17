@@ -26,9 +26,9 @@
 
 // IncNS
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
@@ -364,10 +364,10 @@ private:
   std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
 
   // spatial discretization
-  std::shared_ptr<IncNS::DGNavierStokesBase<dim, Number>>          fluid_operator;
-  std::shared_ptr<IncNS::DGNavierStokesCoupled<dim, Number>>       fluid_operator_coupled;
-  std::shared_ptr<IncNS::DGNavierStokesDualSplitting<dim, Number>> fluid_operator_dual_splitting;
-  std::shared_ptr<IncNS::DGNavierStokesPressureCorrection<dim, Number>>
+  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>>   fluid_operator;
+  std::shared_ptr<IncNS::OperatorCoupled<dim, Number>>       fluid_operator_coupled;
+  std::shared_ptr<IncNS::OperatorDualSplitting<dim, Number>> fluid_operator_dual_splitting;
+  std::shared_ptr<IncNS::OperatorPressureCorrection<dim, Number>>
     fluid_operator_pressure_correction;
 
   // temporal discretization

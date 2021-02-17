@@ -11,9 +11,9 @@
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
@@ -75,8 +75,6 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_pre, periodic_faces;
 
-  bool use_adaptive_time_stepping;
-
   std::shared_ptr<FieldFunctions<dim>>      field_functions_pre, field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_pre,
     boundary_descriptor_velocity;
@@ -97,20 +95,15 @@ private:
   /*
    * Spatial discretization
    */
-  typedef DGNavierStokesBase<dim, Number>               DGBase;
-  typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
-  typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
-  typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base_pre;
+  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled_pre;
+  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting_pre;
+  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction_pre;
 
-  std::shared_ptr<DGBase>               navier_stokes_operator_pre;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled_pre;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting_pre;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction_pre;
-
-  std::shared_ptr<DGBase>               navier_stokes_operator;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base;
+  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled;
+  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting;
+  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction;
 
   /*
    * Postprocessor
@@ -122,12 +115,9 @@ private:
   /*
    * Temporal discretization
    */
-  typedef TimeIntBDF<dim, Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
+  std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_pre, time_integrator;
 
-  std::shared_ptr<TimeInt> time_integrator_pre, time_integrator;
+  bool use_adaptive_time_stepping;
 
   /*
    * Computation time (wall clock time).

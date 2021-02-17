@@ -5,11 +5,11 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COUPLED_SOLVER_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COUPLED_SOLVER_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_
 
 #include <exadg/convection_diffusion/spatial_discretization/operators/combined_operator.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 
 namespace ExaDG
@@ -20,7 +20,7 @@ using namespace dealii;
 
 // forward declaration
 template<int dim, typename Number>
-class DGNavierStokesCoupled;
+class OperatorCoupled;
 
 template<int dim, typename Number>
 class NonlinearOperatorCoupled
@@ -29,7 +29,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+  typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
   NonlinearOperatorCoupled()
@@ -75,7 +75,7 @@ class LinearOperatorCoupled : public dealii::Subscriptor
 private:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+  typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
   LinearOperatorCoupled()
@@ -129,7 +129,7 @@ class BlockPreconditioner
 private:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+  typedef OperatorCoupled<dim, Number> PDEOperator;
 
 public:
   BlockPreconditioner() : pde_operator(nullptr)
@@ -158,11 +158,11 @@ public:
 };
 
 template<int dim, typename Number = double>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>
+class OperatorCoupled : public SpatialOperatorBase<dim, Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, Number>    Base;
-  typedef DGNavierStokesCoupled<dim, Number> This;
+  typedef SpatialOperatorBase<dim, Number> Base;
+  typedef OperatorCoupled<dim, Number>     This;
 
   typedef typename Base::MultigridPoisson MultigridPoisson;
 
@@ -174,7 +174,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesCoupled(
+  OperatorCoupled(
     parallel::TriangulationBase<dim> const & triangulation_in,
     Mapping<dim> const &                     mapping_in,
     unsigned int const                       degree_u_in,
@@ -190,7 +190,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesCoupled();
+  virtual ~OperatorCoupled();
 
   void
   setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
@@ -395,7 +395,7 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> multigrid_preconditioner_schur_complement;
   std::shared_ptr<PreconditionerBase<Number>> inverse_mass_preconditioner_schur_complement;
 
-  std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
+  std::shared_ptr<ConvDiff::CombinedOperator<dim, Number>> pressure_conv_diff_operator;
 
   std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator;
 
@@ -413,5 +413,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COUPLED_SOLVER_H_ \
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_COUPLED_H_ \
         */

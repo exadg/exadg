@@ -317,7 +317,8 @@ MultigridPreconditioner<dim, Number>::update_smoothers()
 }
 
 template<int dim, typename Number>
-std::shared_ptr<Operator<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
+std::shared_ptr<
+  CombinedOperator<dim, typename MultigridPreconditionerBase<dim, Number>::MultigridNumber>>
 MultigridPreconditioner<dim, Number>::get_operator(unsigned int level) const
 {
   std::shared_ptr<MGOperator> mg_operator =

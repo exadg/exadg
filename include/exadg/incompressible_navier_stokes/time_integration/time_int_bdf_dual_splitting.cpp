@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>

@@ -11,7 +11,7 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
-#include <exadg/convection_diffusion/spatial_discretization/dg_operator.h>
+#include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
@@ -25,7 +25,7 @@ namespace ConvDiff
 using namespace dealii;
 
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(
+Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
   Mapping<dim> const &                           mapping_in,
   unsigned int const                             degree_in,
@@ -66,7 +66,7 @@ DGOperator<dim, Number>::DGOperator(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
+Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const
 {
   // append mapping flags
   if(param.problem_type == ProblemType::Unsteady)
@@ -114,9 +114,9 @@ DGOperator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & mat
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-                               std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
-                               std::string const & dof_index_velocity_external_in)
+Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+                             std::string const & dof_index_velocity_external_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
@@ -211,7 +211,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
      (param.temporal_discretization == TemporalDiscretization::ExplRK &&
       param.use_combined_operator == true))
   {
-    OperatorData<dim> combined_operator_data;
+    CombinedOperatorData<dim> combined_operator_data;
     combined_operator_data.bc                   = boundary_descriptor;
     combined_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
     combined_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -275,7 +275,7 @@ DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matr
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(fe);
@@ -300,42 +300,42 @@ DGOperator<dim, Number>::distribute_dofs()
 
 template<int dim, typename Number>
 std::string
-DGOperator<dim, Number>::get_dof_name() const
+Operator<dim, Number>::get_dof_name() const
 {
   return field + dof_index_std;
 }
 
 template<int dim, typename Number>
 std::string
-DGOperator<dim, Number>::get_quad_name() const
+Operator<dim, Number>::get_quad_name() const
 {
   return field + quad_index_std;
 }
 
 template<int dim, typename Number>
 std::string
-DGOperator<dim, Number>::get_quad_name_overintegration() const
+Operator<dim, Number>::get_quad_name_overintegration() const
 {
   return field + quad_index_overintegration;
 }
 
 template<int dim, typename Number>
 bool
-DGOperator<dim, Number>::needs_own_dof_handler_velocity() const
+Operator<dim, Number>::needs_own_dof_handler_velocity() const
 {
   return param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector;
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_dof_index() const
+Operator<dim, Number>::get_dof_index() const
 {
   return matrix_free_data->get_dof_index(get_dof_name());
 }
 
 template<int dim, typename Number>
 std::string
-DGOperator<dim, Number>::get_dof_name_velocity() const
+Operator<dim, Number>::get_dof_name_velocity() const
 {
   if(needs_own_dof_handler_velocity())
   {
@@ -349,7 +349,7 @@ DGOperator<dim, Number>::get_dof_name_velocity() const
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_dof_index_velocity() const
+Operator<dim, Number>::get_dof_index_velocity() const
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     return matrix_free_data->get_dof_index(get_dof_name_velocity());
@@ -359,21 +359,21 @@ DGOperator<dim, Number>::get_dof_index_velocity() const
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index() const
+Operator<dim, Number>::get_quad_index() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_std);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index_overintegration() const
+Operator<dim, Number>::get_quad_index_overintegration() const
 {
   return matrix_free_data->get_quad_index(field + quad_index_overintegration);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType const * velocity)
+Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType const * velocity)
 {
   pcout << std::endl << "Setup solver ..." << std::endl;
 
@@ -403,7 +403,7 @@ DGOperator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorTy
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_preconditioner()
+Operator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
@@ -413,13 +413,13 @@ DGOperator<dim, Number>::initialize_preconditioner()
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
-    typedef Operator<dim, Number> Operator;
-    preconditioner.reset(new JacobiPreconditioner<Operator>(combined_operator));
+    preconditioner.reset(
+      new JacobiPreconditioner<CombinedOperator<dim, Number>>(combined_operator));
   }
   else if(param.preconditioner == Preconditioner::BlockJacobi)
   {
-    typedef Operator<dim, Number> Operator;
-    preconditioner.reset(new BlockJacobiPreconditioner<Operator>(combined_operator));
+    preconditioner.reset(
+      new BlockJacobiPreconditioner<CombinedOperator<dim, Number>>(combined_operator));
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -461,7 +461,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
       }
     }
 
-    OperatorData<dim> const & data = combined_operator.get_data();
+    CombinedOperatorData<dim> const & data = combined_operator.get_data();
 
     mg_preconditioner->initialize(mg_data,
                                   tria,
@@ -486,7 +486,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_solver()
+Operator<dim, Number>::initialize_solver()
 {
   if(param.solver == Solver::CG)
   {
@@ -501,9 +501,8 @@ DGOperator<dim, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new CGSolver<Operator<dim, Number>, PreconditionerBase<Number>, VectorType>(combined_operator,
-                                                                                  *preconditioner,
-                                                                                  solver_data));
+      new CGSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+        combined_operator, *preconditioner, solver_data));
   }
   else if(param.solver == Solver::GMRES)
   {
@@ -519,7 +518,7 @@ DGOperator<dim, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new GMRESSolver<Operator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+      new GMRESSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         combined_operator, *preconditioner, solver_data, mpi_comm));
   }
   else if(param.solver == Solver::FGMRES)
@@ -536,7 +535,7 @@ DGOperator<dim, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new FGMRESSolver<Operator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+      new FGMRESSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         combined_operator, *preconditioner, solver_data));
   }
   else
@@ -547,21 +546,21 @@ DGOperator<dim, Number>::initialize_solver()
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
+Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index());
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_dof_vector_velocity(VectorType & velocity) const
+Operator<dim, Number>::initialize_dof_vector_velocity(VectorType & velocity) const
 {
   matrix_free->initialize_dof_vector(velocity, get_dof_index_velocity());
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::interpolate_velocity(VectorType & velocity, double const time) const
+Operator<dim, Number>::interpolate_velocity(VectorType & velocity, double const time) const
 {
   field_functions->velocity->set_time(time);
 
@@ -578,7 +577,7 @@ DGOperator<dim, Number>::interpolate_velocity(VectorType & velocity, double cons
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::project_velocity(VectorType & velocity, double const time) const
+Operator<dim, Number>::project_velocity(VectorType & velocity, double const time) const
 {
   VelocityProjection<dim, Number> l2_projection;
 
@@ -592,7 +591,7 @@ DGOperator<dim, Number>::project_velocity(VectorType & velocity, double const ti
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
+Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
   field_functions->initial_solution->set_time(time);
 
@@ -609,10 +608,10 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double c
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
-                                                    VectorType const & src,
-                                                    double const       time,
-                                                    VectorType const * velocity) const
+Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
+                                                  VectorType const & src,
+                                                  double const       time,
+                                                  VectorType const * velocity) const
 {
   // evaluate each operator separately
   if(param.use_combined_operator == false)
@@ -681,10 +680,10 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
-                                                  VectorType const & src,
-                                                  double const       time,
-                                                  VectorType const * velocity) const
+Operator<dim, Number>::evaluate_convective_term(VectorType &       dst,
+                                                VectorType const & src,
+                                                double const       time,
+                                                VectorType const * velocity) const
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
@@ -699,10 +698,10 @@ DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
-                                      VectorType const & src,
-                                      double const       time,
-                                      VectorType const * velocity) const
+Operator<dim, Number>::evaluate_oif(VectorType &       dst,
+                                    VectorType const & src,
+                                    double const       time,
+                                    VectorType const * velocity) const
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
@@ -722,7 +721,7 @@ DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
+Operator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
 {
   // no need to set scaling_factor_mass because the mass operator does not contribute to rhs
 
@@ -748,29 +747,28 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType con
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_mass_operator(VectorType & dst, VectorType const & src) const
 {
   mass_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_mass_operator_add(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_mass_operator_add(VectorType & dst, VectorType const & src) const
 {
   mass_operator.apply_add(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_convective_term(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_convective_term(VectorType & dst, VectorType const & src) const
 {
   convective_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::update_convective_term(double const       time,
-                                                VectorType const * velocity) const
+Operator<dim, Number>::update_convective_term(double const time, VectorType const * velocity) const
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
@@ -784,23 +782,23 @@ DGOperator<dim, Number>::update_convective_term(double const       time,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_diffusive_term(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_diffusive_term(VectorType & dst, VectorType const & src) const
 {
   diffusive_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_conv_diff_operator(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::apply_conv_diff_operator(VectorType & dst, VectorType const & src) const
 {
   combined_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::update_conv_diff_operator(double const       time,
-                                                   double const       scaling_factor,
-                                                   VectorType const * velocity)
+Operator<dim, Number>::update_conv_diff_operator(double const       time,
+                                                 double const       scaling_factor,
+                                                 VectorType const * velocity)
 {
   combined_operator.set_scaling_factor_mass_operator(scaling_factor);
   combined_operator.set_time(time);
@@ -819,12 +817,12 @@ DGOperator<dim, Number>::update_conv_diff_operator(double const       time,
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::solve(VectorType &       sol,
-                               VectorType const & rhs,
-                               bool const         update_preconditioner,
-                               double const       scaling_factor,
-                               double const       time,
-                               VectorType const * velocity)
+Operator<dim, Number>::solve(VectorType &       sol,
+                             VectorType const & rhs,
+                             bool const         update_preconditioner,
+                             double const       scaling_factor,
+                             double const       time,
+                             VectorType const * velocity)
 {
   update_conv_diff_operator(time, scaling_factor, velocity);
 
@@ -836,7 +834,7 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
 // use numerical velocity field
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
+Operator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
   VectorType const & velocity,
   double const       cfl,
   double const       exponent_degree) const
@@ -854,7 +852,7 @@ DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
+Operator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
   double const time,
   double const cfl,
   double const exponent_degree) const
@@ -873,7 +871,7 @@ DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::calculate_maximum_velocity(double const time) const
+Operator<dim, Number>::calculate_maximum_velocity(double const time) const
 {
   return calculate_max_velocity(dof_handler.get_triangulation(),
                                 field_functions->velocity,
@@ -883,42 +881,42 @@ DGOperator<dim, Number>::calculate_maximum_velocity(double const time) const
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::calculate_minimum_element_length() const
+Operator<dim, Number>::calculate_minimum_element_length() const
 {
   return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperator<dim, Number>::get_dof_handler() const
+Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperator<dim, Number>::get_dof_handler_velocity() const
+Operator<dim, Number>::get_dof_handler_velocity() const
 {
   return matrix_free_data->get_dof_handler(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_polynomial_degree() const
+Operator<dim, Number>::get_polynomial_degree() const
 {
   return degree;
 }
 
 template<int dim, typename Number>
 types::global_dof_index
-DGOperator<dim, Number>::get_number_of_dofs() const
+Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::update_after_mesh_movement()
+Operator<dim, Number>::update_after_mesh_movement()
 {
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements
@@ -930,16 +928,16 @@ DGOperator<dim, Number>::update_after_mesh_movement()
 
 template<int dim, typename Number>
 const MatrixFree<dim, Number> &
-DGOperator<dim, Number>::get_matrix_free() const
+Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
 }
 
-template class DGOperator<2, float>;
-template class DGOperator<2, double>;
+template class Operator<2, float>;
+template class Operator<2, double>;
 
-template class DGOperator<3, float>;
-template class DGOperator<3, double>;
+template class Operator<3, float>;
+template class Operator<3, double>;
 
 } // namespace ConvDiff
 } // namespace ExaDG

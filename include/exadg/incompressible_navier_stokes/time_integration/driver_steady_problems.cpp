@@ -10,7 +10,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_interface.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
 #include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
 #include <exadg/utilities/print_solver_results.h>

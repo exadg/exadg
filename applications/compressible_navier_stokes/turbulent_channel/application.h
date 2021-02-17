@@ -216,7 +216,7 @@ public:
   }
 
   void
-  setup(DGOperator<dim, Number> const & pde_operator)
+  setup(Operator<dim, Number> const & pde_operator)
   {
     // call setup function of base class
     Base::setup(pde_operator);

@@ -16,12 +16,12 @@
 
 namespace ExaDG
 {
+using namespace dealii;
+
 namespace ConvDiff
 {
 namespace Interface
 {
-using namespace dealii;
-
 template<typename Number>
 class Operator
 {
@@ -104,6 +104,7 @@ public:
   virtual unsigned int
   get_polynomial_degree() const = 0;
 };
+} // namespace Interface
 
 template<typename Number>
 class OperatorExplRK
@@ -220,7 +221,6 @@ private:
   VectorType mutable velocity_interpolated;
 };
 
-} // namespace Interface
 } // namespace ConvDiff
 } // namespace ExaDG
 

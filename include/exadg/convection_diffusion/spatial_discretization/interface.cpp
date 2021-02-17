@@ -18,11 +18,11 @@ namespace Interface
 
 // instantiations
 template class Operator<float>;
-template class OperatorOIF<float>;
-
 template class Operator<double>;
+} // namespace Interface
+
+template class OperatorOIF<float>;
 template class OperatorOIF<double>;
 
-} // namespace Interface
 } // namespace ConvDiff
 } // namespace ExaDG

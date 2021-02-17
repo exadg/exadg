@@ -6,7 +6,7 @@
  */
 
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor.h>
-#include <exadg/compressible_navier_stokes/spatial_discretization/dg_operator.h>
+#include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 
 namespace ExaDG
 {
@@ -35,7 +35,7 @@ PostProcessor<dim, Number>::~PostProcessor()
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(DGOperator<dim, Number> const & pde_operator)
+PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
 {
   navier_stokes_operator = &pde_operator;
 

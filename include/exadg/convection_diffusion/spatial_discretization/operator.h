@@ -32,7 +32,7 @@ namespace ConvDiff
 using namespace dealii;
 
 template<int dim, typename Number>
-class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
+class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -44,15 +44,15 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::TriangulationBase<dim> const &       triangulation,
-             Mapping<dim> const &                           mapping,
-             unsigned int const                             degree,
-             PeriodicFaces const                            periodic_face_pairs,
-             std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
-             std::shared_ptr<FieldFunctions<dim>> const     field_functions,
-             InputParameters const &                        param,
-             std::string const &                            field,
-             MPI_Comm const &                               mpi_comm);
+  Operator(parallel::TriangulationBase<dim> const &       triangulation,
+           Mapping<dim> const &                           mapping,
+           unsigned int const                             degree,
+           PeriodicFaces const                            periodic_face_pairs,
+           std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim>> const     field_functions,
+           InputParameters const &                        param,
+           std::string const &                            field,
+           MPI_Comm const &                               mpi_comm);
 
 
   void
@@ -378,12 +378,14 @@ private:
   RHSOperator<dim, Number>            rhs_operator;
 
   /*
-   * Merged operators.
+   * Combined operator.
    */
-  Operator<dim, Number> combined_operator;
+  CombinedOperator<dim, Number> combined_operator;
 
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
-
+  /*
+   * Solvers and preconditioners
+   */
+  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 
   /*

@@ -19,9 +19,9 @@ namespace ConvDiff
 using namespace dealii;
 
 template<int dim>
-struct OperatorData : public OperatorBaseData
+struct CombinedOperatorData : public OperatorBaseData
 {
-  OperatorData()
+  CombinedOperatorData()
     : OperatorBaseData(),
       unsteady_problem(false),
       convective_problem(false),
@@ -40,7 +40,7 @@ struct OperatorData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class Operator : public OperatorBase<dim, Number, 1>
+class CombinedOperator : public OperatorBase<dim, Number, 1>
 {
 public:
   typedef Number value_type;
@@ -57,21 +57,21 @@ private:
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
 public:
-  Operator();
+  CombinedOperator();
 
   void
   initialize(MatrixFree<dim, Number> const &   matrix_free,
              AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &         data);
+             CombinedOperatorData<dim> const & data);
 
   void
   initialize(MatrixFree<dim, Number> const &                           matrix_free,
              AffineConstraints<Number> const &                         affine_constraints,
-             OperatorData<dim> const &                                 data,
+             CombinedOperatorData<dim> const &                         data,
              std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel,
              std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel);
 
-  OperatorData<dim> const &
+  CombinedOperatorData<dim> const &
   get_data() const;
 
   void
@@ -130,7 +130,7 @@ private:
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
 
-  OperatorData<dim> operator_data;
+  CombinedOperatorData<dim> operator_data;
 
   std::shared_ptr<MassKernel<dim, Number>>                  mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;

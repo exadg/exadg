@@ -5,10 +5,10 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_
-#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_
+#ifndef INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PRESSURE_CORRECTION_H_
+#define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PRESSURE_CORRECTION_H_
 
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_projection_methods.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>
 
 namespace ExaDG
@@ -19,7 +19,7 @@ using namespace dealii;
 
 // forward declaration
 template<int dim, typename Number>
-class DGNavierStokesPressureCorrection;
+class OperatorPressureCorrection;
 
 template<int dim, typename Number>
 class NonlinearMomentumOperator
@@ -27,7 +27,7 @@ class NonlinearMomentumOperator
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesPressureCorrection<dim, Number> PDEOperator;
+  typedef OperatorPressureCorrection<dim, Number> PDEOperator;
 
 public:
   NonlinearMomentumOperator()
@@ -68,12 +68,12 @@ private:
 };
 
 template<int dim, typename Number = double>
-class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, Number>
+class OperatorPressureCorrection : public OperatorProjectionMethods<dim, Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, Number>               Base;
-  typedef DGNavierStokesProjectionMethods<dim, Number>  ProjBase;
-  typedef DGNavierStokesPressureCorrection<dim, Number> This;
+  typedef SpatialOperatorBase<dim, Number>        Base;
+  typedef OperatorProjectionMethods<dim, Number>  ProjectionBase;
+  typedef OperatorPressureCorrection<dim, Number> This;
 
   typedef typename Base::VectorType VectorType;
 
@@ -90,7 +90,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesPressureCorrection(
+  OperatorPressureCorrection(
     parallel::TriangulationBase<dim> const & triangulation,
     Mapping<dim> const &                     mapping,
     unsigned int const                       degree_u,
@@ -106,7 +106,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesPressureCorrection();
+  virtual ~OperatorPressureCorrection();
 
   /*
    * Calls setup() function of base class and additionally initializes the inverse pressure mass
@@ -259,5 +259,5 @@ private:
 } // namespace IncNS
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_ \
+#endif /* INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATOR_PRESSURE_CORRECTION_H_ \
         */

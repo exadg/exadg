@@ -13,7 +13,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
-#include <exadg/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/write_output.h>
 
 namespace ExaDG
@@ -346,7 +346,7 @@ OutputGenerator<dim, Number>::initialize_additional_fields()
       SolutionField<dim, Number> sol;
       sol.type   = SolutionFieldType::cellwise;
       sol.name   = "cfl";
-      sol.vector      = &cfl;
+      sol.vector = &cfl;
       this->additional_fields.push_back(sol);
     }
   }

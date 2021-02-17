@@ -8,7 +8,7 @@
 #ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 #define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
-#include <exadg/compressible_navier_stokes/spatial_discretization/dg_operator.h>
+#include <exadg/compressible_navier_stokes/spatial_discretization/operator.h>
 #include <exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h>
 #include <exadg/compressible_navier_stokes/user_interface/analytical_solution.h>
 #include <exadg/compressible_navier_stokes/user_interface/application_base.h>
@@ -28,7 +28,7 @@ namespace CompNS
 using namespace dealii;
 
 // Select the operator to be applied
-enum class Operator
+enum class OperatorType
 {
   ConvectiveTerm,
   ViscousTerm,
@@ -40,20 +40,20 @@ enum class Operator
 };
 
 inline std::string
-enum_to_string(Operator const enum_type)
+enum_to_string(OperatorType const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
     // clang-format off
-    case Operator::ConvectiveTerm:            string_type = "ConvectiveTerm";           break;
-    case Operator::ViscousTerm:               string_type = "ViscousTerm";              break;
-    case Operator::ViscousAndConvectiveTerms: string_type = "ViscousAndConvectiveTerms";break;
-    case Operator::InverseMassOperator:       string_type = "InverseMassOperator";      break;
-    case Operator::InverseMassOperatorDstDst: string_type = "InverseMassOperatorDstDst";break;
-    case Operator::VectorUpdate:              string_type = "VectorUpdate";             break;
-    case Operator::EvaluateOperatorExplicit:  string_type = "EvaluateOperatorExplicit"; break;
+    case OperatorType::ConvectiveTerm:            string_type = "ConvectiveTerm";           break;
+    case OperatorType::ViscousTerm:               string_type = "ViscousTerm";              break;
+    case OperatorType::ViscousAndConvectiveTerms: string_type = "ViscousAndConvectiveTerms";break;
+    case OperatorType::InverseMassOperator:       string_type = "InverseMassOperator";      break;
+    case OperatorType::InverseMassOperatorDstDst: string_type = "InverseMassOperatorDstDst";break;
+    case OperatorType::VectorUpdate:              string_type = "VectorUpdate";             break;
+    case OperatorType::EvaluateOperatorExplicit:  string_type = "EvaluateOperatorExplicit"; break;
 
     default:AssertThrow(false, ExcMessage("Not implemented.")); break;
       // clang-format on
@@ -63,16 +63,16 @@ enum_to_string(Operator const enum_type)
 }
 
 inline void
-string_to_enum(Operator & enum_type, std::string const string_type)
+string_to_enum(OperatorType & enum_type, std::string const string_type)
 {
   // clang-format off
-  if     (string_type == "ConvectiveTerm")            enum_type = Operator::ConvectiveTerm;
-  else if(string_type == "ViscousTerm")               enum_type = Operator::ViscousTerm;
-  else if(string_type == "ViscousAndConvectiveTerms") enum_type = Operator::ViscousAndConvectiveTerms;
-  else if(string_type == "InverseMassOperator")       enum_type = Operator::InverseMassOperator;
-  else if(string_type == "InverseMassOperatorDstDst") enum_type = Operator::InverseMassOperatorDstDst;
-  else if(string_type == "VectorUpdate")              enum_type = Operator::VectorUpdate;
-  else if(string_type == "EvaluateOperatorExplicit")  enum_type = Operator::EvaluateOperatorExplicit;
+  if     (string_type == "ConvectiveTerm")            enum_type = OperatorType::ConvectiveTerm;
+  else if(string_type == "ViscousTerm")               enum_type = OperatorType::ViscousTerm;
+  else if(string_type == "ViscousAndConvectiveTerms") enum_type = OperatorType::ViscousAndConvectiveTerms;
+  else if(string_type == "InverseMassOperator")       enum_type = OperatorType::InverseMassOperator;
+  else if(string_type == "InverseMassOperatorDstDst") enum_type = OperatorType::InverseMassOperatorDstDst;
+  else if(string_type == "VectorUpdate")              enum_type = OperatorType::VectorUpdate;
+  else if(string_type == "EvaluateOperatorExplicit")  enum_type = OperatorType::EvaluateOperatorExplicit;
   else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
@@ -149,7 +149,7 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
-  std::shared_ptr<DGOperator<dim, Number>> comp_navier_stokes_operator;
+  std::shared_ptr<Operator<dim, Number>> comp_navier_stokes_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 
