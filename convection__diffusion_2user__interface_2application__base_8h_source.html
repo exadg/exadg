@@ -69,114 +69,128 @@ $(function() {
 <div class="title">application_base.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*</span></div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> * application_base.h</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *  Created on: 22.03.2020</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *      Author: fehn</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#define INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">// deal.II</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &lt;deal.II/distributed/tria.h&gt;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &lt;deal.II/grid/grid_generator.h&gt;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment">// ExaDG</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/postprocessor/postprocessor.h&gt;</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/boundary_descriptor.h&gt;</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/field_functions.h&gt;</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/input_parameters.h&gt;</span></div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">namespace </span>ExaDG</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;{</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">namespace </span>ConvDiff</div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;{</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a name="l00028"></a><span class="lineno"><a class="line" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">   28</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ApplicationBase</a></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;{</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keyword">typedef</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    <span class="keyword">typename</span> std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;      PeriodicFaces;</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*  ______________________________________________________________________</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *  Copyright (C) 2021 by the ExaDG authors</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> *  This program is free software: you can redistribute it and/or modify</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> *  it under the terms of the GNU General Public License as published by</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> *  the Free Software Foundation, either version 3 of the License, or</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *  (at your option) any later version.</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> *  This program is distributed in the hope that it will be useful,</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> *  but WITHOUT ANY WARRANTY; without even the implied warranty of</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> *  GNU General Public License for more details.</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> *  You should have received a copy of the GNU General Public License</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> *  along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> *  ______________________________________________________________________</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#ifndef INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#define INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment">// deal.II</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;deal.II/distributed/tria.h&gt;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;deal.II/grid/grid_generator.h&gt;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">// ExaDG</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/postprocessor/postprocessor.h&gt;</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/boundary_descriptor.h&gt;</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/field_functions.h&gt;</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/input_parameters.h&gt;</span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  add_parameters(ParameterHandler &amp; prm)</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  {</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    <span class="comment">// clang-format off</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    prm.enter_subsection(<span class="stringliteral">&quot;Output&quot;</span>);</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;      prm.add_parameter(<span class="stringliteral">&quot;OutputDirectory&quot;</span>,  output_directory, <span class="stringliteral">&quot;Directory where output is written.&quot;</span>);</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;      prm.add_parameter(<span class="stringliteral">&quot;OutputName&quot;</span>,       output_name,      <span class="stringliteral">&quot;Name of output files.&quot;</span>);</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;      prm.add_parameter(<span class="stringliteral">&quot;WriteOutput&quot;</span>,      write_output,     <span class="stringliteral">&quot;Decides whether vtu output is written.&quot;</span>);</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    prm.leave_subsection();</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <span class="comment">// clang-format on</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  }</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <a class="code" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file)</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    : parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  {</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  }</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ApplicationBase</a>()</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  {</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  }</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  set_input_parameters(<a class="code" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> &amp; parameters) = 0;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  create_grid(std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; triangulation,</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;              PeriodicFaces &amp;                                   periodic_faces,</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                n_refine_space,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;              std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;                   mapping,</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                mapping_degree) = 0;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">namespace </span>ExaDG</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;{</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">namespace </span>ConvDiff</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;{</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">using namespace </span>dealii;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a name="l00042"></a><span class="lineno"><a class="line" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">   42</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ApplicationBase</a></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;{</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keyword">typedef</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">typename</span> std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      PeriodicFaces;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  add_parameters(ParameterHandler &amp; prm)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  {</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="comment">// clang-format off</span></div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    prm.enter_subsection(<span class="stringliteral">&quot;Output&quot;</span>);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;      prm.add_parameter(<span class="stringliteral">&quot;OutputDirectory&quot;</span>,  output_directory, <span class="stringliteral">&quot;Directory where output is written.&quot;</span>);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;      prm.add_parameter(<span class="stringliteral">&quot;OutputName&quot;</span>,       output_name,      <span class="stringliteral">&quot;Name of output files.&quot;</span>);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;      prm.add_parameter(<span class="stringliteral">&quot;WriteOutput&quot;</span>,      write_output,     <span class="stringliteral">&quot;Decides whether vtu output is written.&quot;</span>);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    prm.leave_subsection();</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="comment">// clang-format on</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  }</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <a class="code" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file)</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    : parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  {</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  }</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Function&lt;dim&gt;&gt;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  set_mesh_movement_function()</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  {</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    std::shared_ptr&lt;Function&lt;dim&gt;&gt; mesh_motion;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    mesh_motion.reset(<span class="keyword">new</span> Functions::ZeroFunction&lt;dim&gt;(dim));</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">return</span> mesh_motion;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  }</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  set_boundary_conditions(std::shared_ptr&lt;<a class="code" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a>&gt; boundary_descriptor) = 0;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  set_field_functions(std::shared_ptr&lt;<a class="code" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a>&gt; field_functions) = 0;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  construct_postprocessor(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm) = 0;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  set_subdivisions_hypercube(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_subdivisions_1d)</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  {</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    n_subdivisions_1d_hypercube = n_subdivisions_1d;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  }</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <a class="code" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> param;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  std::string     parameter_file;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_subdivisions_1d_hypercube;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  std::string output_directory = <span class="stringliteral">&quot;output/&quot;</span>, output_name = <span class="stringliteral">&quot;output&quot;</span>;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">bool</span>        write_output = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;};</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;} <span class="comment">// namespace ConvDiff</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ApplicationBase</a>()</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  {</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  }</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  set_input_parameters(<a class="code" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> &amp; parameters) = 0;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  create_grid(std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; triangulation,</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;              PeriodicFaces &amp;                                   periodic_faces,</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                n_refine_space,</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;              std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;                   mapping,</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                mapping_degree) = 0;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Function&lt;dim&gt;&gt;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  set_mesh_movement_function()</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  {</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    std::shared_ptr&lt;Function&lt;dim&gt;&gt; mesh_motion;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    mesh_motion.reset(<span class="keyword">new</span> Functions::ZeroFunction&lt;dim&gt;(dim));</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordflow">return</span> mesh_motion;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  }</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  set_boundary_conditions(std::shared_ptr&lt;<a class="code" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a>&gt; boundary_descriptor) = 0;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  set_field_functions(std::shared_ptr&lt;<a class="code" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a>&gt; field_functions) = 0;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  construct_postprocessor(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm) = 0;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  set_subdivisions_hypercube(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_subdivisions_1d)</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  {</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    n_subdivisions_1d_hypercube = n_subdivisions_1d;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  }</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ExaDG::ConvDiff::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:29</div></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1InputParameters.html">ExaDG::ConvDiff::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:32</div></div>
-<div class="ttc" id="astructExaDG_1_1ConvDiff_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">ExaDG::ConvDiff::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:36</div></div>
-<div class="ttc" id="astructExaDG_1_1ConvDiff_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">ExaDG::ConvDiff::FieldFunctions</a></div><div class="ttdef"><b>Definition:</b> field_functions.h:19</div></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <a class="code" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> param;</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  std::string     parameter_file;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_subdivisions_1d_hypercube;</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  std::string output_directory = <span class="stringliteral">&quot;output/&quot;</span>, output_name = <span class="stringliteral">&quot;output&quot;</span>;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">bool</span>        write_output = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;};</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;} <span class="comment">// namespace ConvDiff</span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ExaDG::ConvDiff::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:43</div></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1InputParameters.html">ExaDG::ConvDiff::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:46</div></div>
+<div class="ttc" id="astructExaDG_1_1ConvDiff_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">ExaDG::ConvDiff::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:50</div></div>
+<div class="ttc" id="astructExaDG_1_1ConvDiff_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">ExaDG::ConvDiff::FieldFunctions</a></div><div class="ttdef"><b>Definition:</b> field_functions.h:33</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
