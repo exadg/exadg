@@ -70,3 +70,5 @@ Maximilian Bergbauer, Tim Dockhorn, Elias Dejene, Daniel Dengler, Niklas Fehn, A
 Their contributions are highly appreciated!
 
 ## License
+
+**ExaDG** is a free software. You can use the software, redistribute it, and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation (version [GPL-3.0](LICENSE) or any later version).
