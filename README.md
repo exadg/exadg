@@ -71,4 +71,4 @@ Their contributions are highly appreciated!
 
 ## License
 
-**ExaDG** is a free software. You can use the software, redistribute it, and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation (version [GPL-3.0](LICENSE) or any later version).
+**ExaDG** is published under the [GPL-3.0 License](LICENSE). This project is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
