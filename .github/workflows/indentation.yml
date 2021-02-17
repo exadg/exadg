@@ -16,7 +16,7 @@ jobs:
       with:
         source: '.'
         exclude: ''
-        extensions: 'h.in,h,cpp'
+        extensions: 'h.in,h,cc,cpp'
         clangFormatVersion: 6
         inplace: true
     - run: |

@@ -253,4 +253,6 @@ ADD_SUBDIRECTORY(applications)
 ADD_SUBDIRECTORY(prototypes)
 ADD_SUBDIRECTORY(tests)
 
+ADD_SUBDIRECTORY(doc/doxygen)
+
 
