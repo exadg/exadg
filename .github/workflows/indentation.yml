@@ -1,0 +1,24 @@
+name: Indent
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: DoozyX/clang-format-lint-action@v0.11
+      with:
+        source: '.'
+        exclude: ''
+        extensions: 'h,cpp'
+        clangFormatVersion: 6
+        inplace: true
+    - run: |
+        git diff
+        git diff-files --quiet || exit $?
