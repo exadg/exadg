@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['serialize_269',['serialize',['../classdealspectrum_1_1Interpolator.html#ad1c13bac207cda29562e447953b1e13c',1,'dealspectrum::Interpolator::serialize(const char *filename)'],['../classdealspectrum_1_1Interpolator.html#ac81755b81d5806d7d25d09e392006fd5',1,'dealspectrum::Interpolator::serialize(const char *filename, const double *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a8ccc90e23048a05afba1aba430a8db48',1,'dealspectrum::SpectralAnalysis::serialize()']]],
+  ['setup_270',['Setup',['../classdealspectrum_1_1Setup.html',1,'dealspectrum::Setup'],['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup::Setup()']]],
+  ['smootherbase_271',['SmootherBase',['../classExaDG_1_1SmootherBase.html',1,'ExaDG']]],
+  ['smootherdata_272',['SmootherData',['../structExaDG_1_1SmootherData.html',1,'ExaDG']]],
+  ['solutionfield_273',['SolutionField',['../classExaDG_1_1SolutionField.html',1,'ExaDG']]],
+  ['solver_274',['Solver',['../classExaDG_1_1Newton_1_1Solver.html',1,'ExaDG::Newton']]],
+  ['solverbase_275',['SolverBase',['../classExaDG_1_1Elementwise_1_1SolverBase.html',1,'ExaDG::Elementwise']]],
+  ['solvercg_276',['SolverCG',['../classExaDG_1_1Elementwise_1_1SolverCG.html',1,'ExaDG::Elementwise']]],
+  ['solverdata_277',['SolverData',['../structExaDG_1_1Newton_1_1SolverData.html',1,'ExaDG::Newton::SolverData'],['../structExaDG_1_1SolverData.html',1,'ExaDG::SolverData']]],
+  ['solvergmres_278',['SolverGMRES',['../classExaDG_1_1Elementwise_1_1SolverGMRES.html',1,'ExaDG::Elementwise']]],
+  ['solverinfodata_279',['SolverInfoData',['../structExaDG_1_1SolverInfoData.html',1,'ExaDG']]],
+  ['solverresult_280',['SolverResult',['../structExaDG_1_1SolverResult.html',1,'ExaDG']]],
+  ['spatialoperatorbase_281',['SpatialOperatorBase',['../classExaDG_1_1IncNS_1_1SpatialOperatorBase.html',1,'ExaDG::IncNS']]],
+  ['spatialoperatorbase_3c_20dim_2c_20double_20_3e_282',['SpatialOperatorBase&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1SpatialOperatorBase.html',1,'ExaDG::IncNS']]],
+  ['spatialresolutionparameters_283',['SpatialResolutionParameters',['../structExaDG_1_1SpatialResolutionParameters.html',1,'ExaDG']]],
+  ['spectralanalysis_284',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html',1,'dealspectrum::SpectralAnalysis'],['../classdealspectrum_1_1SpectralAnalysis.html#a34a974fb314f0807d96902741be6e156',1,'dealspectrum::SpectralAnalysis::SpectralAnalysis()']]],
+  ['ssprk_285',['SSPRK',['../classExaDG_1_1SSPRK.html',1,'ExaDG']]],
+  ['start_286',['start',['../classdealspectrum_1_1DealSpectrumTimer.html#a140b943f9881e4a1d917941f896cb472',1,'dealspectrum::DealSpectrumTimer']]],
+  ['statisticsdata_287',['StatisticsData',['../structExaDG_1_1IncNS_1_1StatisticsData.html',1,'ExaDG::IncNS']]],
+  ['statisticsmanager_288',['StatisticsManager',['../classExaDG_1_1StatisticsManager.html',1,'ExaDG']]],
+  ['stop_289',['stop',['../classdealspectrum_1_1DealSpectrumTimer.html#ac7f6fa0118b49c8c58f1b8357cc2a371',1,'dealspectrum::DealSpectrumTimer']]],
+  ['streamfunctioncalculatorrhsoperator_290',['StreamfunctionCalculatorRHSOperator',['../classExaDG_1_1IncNS_1_1StreamfunctionCalculatorRHSOperator.html',1,'ExaDG::IncNS']]],
+  ['stvenantkirchhoff_291',['StVenantKirchhoff',['../classExaDG_1_1Structure_1_1StVenantKirchhoff.html',1,'ExaDG::Structure']]],
+  ['stvenantkirchhoffdata_292',['StVenantKirchhoffData',['../structExaDG_1_1Structure_1_1StVenantKirchhoffData.html',1,'ExaDG::Structure']]]
+];
