@@ -1,4 +1,4 @@
-# ExaDG - High-order Discontinuous Galerkin for the Exa-scale
+# ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
 ExaDG is a software project written in C++ using state-of-the-art programming techniques. The software targets the numerical solution of partial differential equations in the field of computational fluid dynamics (CFD).
 
 ## Mission
