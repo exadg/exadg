@@ -22,10 +22,10 @@
 #ifndef CONV_DIFF_DIFFUSIVE_OPERATOR
 #define CONV_DIFF_DIFFUSIVE_OPERATOR
 
+#include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
+#include <exadg/convection_diffusion/user_interface/input_parameters.h>
 #include <exadg/operators/interior_penalty_parameter.h>
 #include <exadg/operators/operator_base.h>
-#include "../../user_interface/boundary_descriptor.h"
-#include "../../user_interface/input_parameters.h"
 
 
 namespace ExaDG
