@@ -1,386 +1,72 @@
-Finite-element-based Navier-Stokes solvers
-==========================================
+# ExaDG - High-order Discontinuous Galerkin for the Exa-scale
+ExaDG is a software project written in C++ using state-of-the-art programming techniques. The software targets the numerical solution of partial differential equations in the field of computational fluid dynamics (CFD).
 
-This project provides efficient solvers for the Navier-Stokes equations based on
-high-order discontinuous Galerkin finite element methods. By the use of efficient solution algorithms as well as solvers and preconditioners based on the matrix-free paradigm, this project aims at offering next generation's fluid solvers exploiting modern computer hardware and being prepared for the massively parallel era.
+## Mission
 
-## Installation of software
+ExaDG aims to provide next generation's fluid dynamics solvers by the use of novel discretization techniques (discontinuous Galerkin methods) and highly performant and scalable implementation techniques (matrix-free methods). ExaDG's core module is a high-performance incompressible Navier-Stokes solver. The project targets scale-resolving simulations of turbulent flows (LES and DNS) with unprecendented accuracy and computational efficiency. LES solvers have fallen behind the expectations in providing efficient solvers applicable to industrial problems, and still require a huge amount of computational resources and simulation time. At the same time, computer hardware has undergone a significant evolution over the last decades towards multicore chips with increasing SIMD parallelism and increasing Flop-to-Byte ratio. ExaDG wants to relax the limitations of state-of-the-art CFD software by innovative concepts from computer science, mathematics, and numerical discretization methods.
 
-As a prerequisite to get access to the code, a new user has to login at https://gitlab.lrz.de/ with the TUMOnline account **ab12xyz** so that the user can be added to the project.
+ExaDG's range of applicability currently also covers coupled flow-transport problems, moving domains and meshes, fluid-structure interaction, and compressible flows. There will be a continued effort in broadening ExaDG's range of applicability towards a multiphysics simulation environment. ExaDG is highly-efficient on structured and unstructured meshes for high-order approximation spaces through the use of on-the-fly matrix-free evaluation of discretized operators. ExaDG is currently limited to conforming meshes composed of quadrilateral/hexahedral elements, and there are efforts to support adaptive mesh refinement and simplicial meshes in the future.
 
-### Structure of folders
+## Philosophy
 
-Go to your *working_directory*
+ExaDG does not intend to reinvent the wheel. This project therefore relies on well-established third party libraries where possible. ExaDG mainly builds upon *deal.II*, a generic finite element library written in C++. The *deal.II* library provides sophisticated interfaces and data structures, and highly-efficient matrix-free algorithms. Aspects of parallelization are almost completely hidden by *deal.II*. While *deal.II* has a strong focus on aspects of computer science and software development, ExaDG bridges the gap to the application world in the field of computational fluid dynamics and offers efficient solver, e.g., for fluid dynamics and turbulence researchers whose primary interest might not be software development.
 
-```bash
-cd /working_directory/
-```
+Our motto is to provide a software that is intuitive to use and where changes and new features can be realized easily. We want to develop computationally efficient solvers at the frontiers of research. This requires agility in software development, and a lightweight code base. In this early stage of ExaDG, we want to enable changes to the software design whenever we realize that parts of the code are too rigid and hinder our daily work, of course, with the goal to maintain compatibility as much as possible. New modules that have proven both robust and computationally efficient, and that can be realized generically, are migrated to third party libraries such as *deal.II*, in order to let a broader community benefit from the developments, and in order to keep the present software project lean. ExaDG is an interdisciplinary effort and a community project where all contributions are highly welcome!
 
-**N.B.**: For students at LNM, the *scratch*-directory has to be used (as opposed to the home directory) as a folder for the subsequent installations
+## Getting started
 
-```bash
-cd /scratch/students_name/
-```
-This directory is called *working_directory* in the following. 
+The wiki page [Installation](https://github.com/exadg/exadg/wiki/Installation) contains a detailed description of the installation steps of **ExaDG** and the required third-party libraries such as [**deal.II**](https://github.com/dealii).
 
-For other users, the working directory might for example be
+### For the impatient ...
+
+For those already working with **deal.II**, only a few steps are required to get **ExaDG** running:
 
 ```bash
-cd /home/username/
-```
-
-Add the following variable to your environment (in case you want to make the setting permanent, e.g. by inserting the following line into your *bashrc*-file)
-```bash
-export WORKING_DIRECTORY=/working_directory
-```
-
-Since we also have to install other software packages apart from the **ExaDG** code, we create another folder called *sw* (software) for third party software packages
-
-```bash
-mkdir sw
-```
-
-
-### ExaDG (first steps)
-
-Go to the working directory
-
-```bash
-cd $WORKING_DIRECTORY
-```
-
-##### Forking ExaDG project
-
-Fork from the supervisor's **ExaDG** project *git@gitlab.lrz.de:supervisor_id/exadg.git*, e.g.,
-
-*git@gitlab.lrz.de:ga34jem/exadg.git* (Niklas) or 
-*git@gitlab.lrz.de:ne96pad/exadg.git* (Martin). 
-
-This has to be done on website https://gitlab.lrz.de/ (open the supervisor's **exadg** project and press the *Fork* button). As a result, an **ExaDG** project with the student's ID **ab12xyz** is created.
-
-```bash
-git clone https://gitlab.lrz.de/ab12xyz/exadg.git
+git clone git@github.com:exadg/exadg.git
 cd exadg/
-git remote add supervisor https://gitlab.lrz.de/supervisor_id/exadg.git
-```
-
-
-### Interlude - installing third party libraries
-
-Go to the *sw*-folder in your working directory
-
-```bash
-cd $WORKING_DIRECTORY/sw/
-```
-
-#### cmake (minimum cmake version required by deal.II is currently 3.1.0)
-
-Install manually if your current **cmake** version is older, e.g.
-```bash
-wget https://github.com/Kitware/CMake/releases/download/v3.19.3/cmake-3.19.3-Linux-x86_64.sh -O cmake.sh
-sudo sh cmake.sh --prefix=/usr/local/ --exclude-subdir
-```
-
-#### Trilinos (optional)
-
-For some functionalities in the **ExaDG** code (e.g., algebraic multigrid solver), **trilinos** is required. The default setting is to not install **trilinos** and installing this package is optional.
-
-Download **trilinos** and run the following commands
-
-```bash
-wget https://github.com/trilinos/Trilinos/archive/trilinos-release-12-12-1.tar.gz
-tar xf trilinos-release-12-12-1.tar.gz 
-cd Trilinos-trilinos-release-12-12-1/
-
 mkdir build
 cd build/
-```
-Copy the script *config_trilinos.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
-
-```bash
-cp $WORKING_DIRECTORY/exadg/scripts/config_trilinos.sh .
-```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
-
-Next, adapt the directory settings at the top of the script and run the script
-
-```bash
-bash ./config_trilinos.sh
-```
-
-For clusters @LNM: Load modules
-```bash
-module load mpi/openmpi-4.0.1
-module load gcc/8
-```
-and adapt MPIDIR in *config_trilinos.sh*. Find out the path by
-```bash
-module show mpi/openmpi-4.0.1
-```
-
-Next, build the code
-
-```bash
-make -j[N_CORES]
-make install
-```
-
-#### Metis (optional)
-
-For some functionalities in the **ExaDG** code (e.g., graph partitioning), **metis** is required. The default setting is to not install **metis** and installing this package is optional.
-
-Download **metis** and run the following commands
-
-```bash
-git clone https://github.com/scibuilder/metis.git
-cd metis
-cmake .
-make
-```
-
-#### deal.II
-
-The **ExaDG** project uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
-
-Clone the **deal.II** code
-
-```bash
-git clone https://github.com/dealii/dealii.git
-```
-Download **p4est**
-
-```bash
-wget http://p4est.github.io/release/p4est-2.0.tar.gz
-```
-and run the command
-
-```bash
-dealii/doc/external-libs/p4est-setup.sh p4est-2.0.tar.gz `pwd`
-```
-Create a *dealii-build* directory
-
-```bash
-mkdir dealii-build
-cd dealii-build/
-```
-Copy the script *config_dealii.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
-
-```bash
-cp $WORKING_DIRECTORY/exadg/scripts/config_dealii.sh .
-```
-**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above, i.e., you have to fork and clone the **ExaDG** project.
-
-Next, adapt the directory settings at the top of the script and switch on trilinos/metis if desired (and adjust the folder if necessary)
-
-```bash
-...
--D DEAL_II_WITH_TRILINOS:BOOL="ON" \
--D DEAL_II_WITH_METIS:BOOL="ON" \
-...
-```
-Run the config-script
-
-```bash
-bash ./config_dealii.sh
-```
-
-Build the **deal.II** code
-
-```bash
-make -j[N_CORES]
-```
-
-#### fftw (optional)
-
-Install **fftw** (Fast Fourier transformation) for evaluation of kinetic energy spectra:
-
-Download **fftw** from homepage http://www.fftw.org/download.html and copy to folder *sw*
-
-```bash
-wget http://fftw.org/fftw-3.3.7.tar.gz
-tar -xf fftw-3.3.7.tar.gz
-cd fftw-3.3.7
-./configure --enable-mpi --enable-shared --enable-static --prefix=$WORKING_DIRECTORY/sw/fftw-3.3.7-install
-make
-make install
-```
-Note: During configuration, vectorization (AVX) can be enabled, e.g. by `--enable-avx512`.
-
-Copy the script *combine_fftw.sh* from the folder *exadg/scripts/* to the current folder, e.g.,
-
-```bash
-cp $WORKING_DIRECTORY/exadg/scripts/combine_fftw.sh .
-```
-
-**N.B.**: To get these scripts, you first have to perform the first steps of the **ExaDG** installation described above,
-i.e., you have to fork and clone the **ExaDG** project.
-
-Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
-
-```bash
-bash ./combine_fftw.sh
-```
-
-### Likwid (optional)
-
-Download likwid release 4.3.3 from github to folder *sw*
-
-```bash
-wget https://github.com/RRZE-HPC/likwid/archive/likwid-4.3.3.tar.gz
-```
-
-Unzip the file with tar
-
-```bash
-tar -xf likwid-4.3.3.tar.gz
-```
-
-Change into the likwid directory
-
-```bash
-cd likwid-likwid-4.3.3
-```
-
-Open the likwid config file
-
-```bash
-vi config.mk
-```
-
-Select the install directory, for example
-
-```bash
-PREFIX = $(WORKING_DIRECTORY)/sw/likwid-install
-```
-
-Build likwid and install it into the selected folder (*sudo* required to install the access daemon with proper
-permissions)
-
-```bash
-make
-sudo make install
-```
-
-Set the likwid install directory in *config_exadg.sh* (see next step)
-
-### Completing ExaDG installation (continued)
-
-#### Linking deal.II code and building the code
-
-```bash
-cd $WORKING_DIRECTORY/exadg/
-mkdir build
-cd build/
-```
-
-Copy the script *config_exadg.sh* from the *exadg/scripts/* directory to the *exadg/build/* directory, e.g.,
-
-```bash
-cp $WORKING_DIRECTORY/exadg/scripts/config_exadg.sh .
-```
-
-Deactivate the **fftw** related lines in *config_exadg.sh* if not needed, i.e., set
-
-```bash
-...
--D USE_DEAL_SPECTRUM=OFF \
-...
-```
-
-and run the config-script 
-```bash
+cp ../scripts/config_exadg.sh .
 bash ./config_exadg.sh
-```
-
-Next, run the command
-
-```bash
 make release
-```
-and build the code
-
-```bash
-make -j[N_CORES]
+make -j<N>
 ```
 
-#### Running simulations in **ExaDG**
+## Publications
 
-To run your first simulations, select a solver, e.g., *incompressible_navier_stokes*, and of the flow examples for this solver in the *exadg/solvers/incompressible_navier_stokes/applications/* directory, where you can set and modify the parameters of the considered flow problem.
 
-```bash
-cd solvers/incompressible_navier_stokes/
-mpirun -np [N_CORES] ./solver $WORKING_DIRECTORY/exadg/solvers/incompressible_navier_stokes/applications/my_application/input.json
+Please consider citing the following paper for acknowledging this software contribution:
+
 ```
-
-#### Debugging
-
-To build the debug-version, run the following commands
-
-```bash
-cd $WORKING_DIRECTORY/exadg/build/
-make debug
-make -j[N_CORES]
+@InProceedings{ExaDG2020,
+title     = {{ExaDG}: High-Order Discontinuous {G}alerkin for the Exa-Scale},
+author    = {Arndt, Daniel and Fehn, Niklas and Kanschat, Guido and Kormann, Katharina 
+             and Kronbichler, Martin and Munch, Peter and Wall, Wolfgang A. and Witte, Julius},
+editor    = {Bungartz, Hans-Joachim and Reiz, Severin and Uekermann, Benjamin 
+             and Neumann, Philipp and Nagel, Wolfgang E.},
+booktitle = {Software for Exascale Computing - SPPEXA 2016-2019},
+year      = {2020},
+publisher = {Springer International Publishing},
+address   = {Cham},
+pages     = {189--224}
+}
 ```
-Debug code with **gdb**
-```bash
-cd solvers/incompressible_navier_stokes/
-gdb --args ./solver path_to_application/input.json
-```
+A detailed list of publications can be found on the wiki page [Publications](https://github.com/exadg/exadg/wiki/Publications).
 
-Don't forget to reactivate release-version after debugging via
+## Authors
 
-```bash
-cd $WORKING_DIRECTORY/exadg/build/
-make release
-make -j[N_CORES]
-```
+ExaDG's principal developers are:
 
-#### Working with git
+- [Niklas Fehn](https://www.lnm.mw.tum.de/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn)), Technical University of Munich, DE
+- [Martin Kronbichler](https://www.lnm.mw.tum.de/staff/martin-kronbichler/) ([@kronbichler](https://github.com/kronbichler)), Technical University of Munich, DE
+- [Peter Munch](https://www.lnm.mw.tum.de/staff/peter-muench/) ([@peterrum](https://github.com/peterrum)), Technical University of Munich and Helmholtz-Zentrum Geesthacht, DE
 
-Get recent updates of the supervisor's project
+## List of contributors
 
-```bash
-git pull supervisor master
-```
-Commit changes and push:
+The following developers contributed to **ExaDG**:
 
-Run *clang-format* for all files that have been changed, e.g.,
+Maximilian Bergbauer, Tim Dockhorn, Elias Dejene, Daniel Dengler, Niklas Fehn, Anian Fuchs, Shahbaz Haider, Christoph Haslinger, Johannes Heinz, Pei-Hsuan Huang, Benjamin Krank, Martin Kronbichler, Stefan Legat, Peter Munch, Oliver Neumann, Leon Riccius, Yingxian Wang, Xuhui Zhang
 
-```bash
-clang-format -i changed_file.cpp
-clang-format -i new_file.h
-```
+Their contributions are highly appreciated!
 
-Get an overview of what has been changed and add/commit. The following commands are used alternatingly
-
-```bash
-git status
-git add changed_file.cpp new_file.h
-git commit -m "a message describing what has been done/changed"
-```
-
-and finally push
-
-```bash
-git push
-```
-
-Start a merge-request on the website https://gitlab.lrz.de/:
-
-Open your own project, and press button *Merge Requests*. Select your own project as source and the supervisor's project as target.
-
-#### Setting up an eclipse project
-
-Start **eclipse** and choose the *working_directory/* as "workspace" in eclipse
-
-1. File > New > Project > C/C++ > Makefile Project with Existing Code
-  * fill in Project Name = exadg
-  * Existing Code Location = /working_directory/exadg/
-  * disable C, enable C++
-  * choose Cross GCC
-2. Project > Properties > C/C++ Build
-  * use default build command or user specified build command, e.g., make -j4
-  * fill in build directory (choose *exadg/build/* directory)
-3. Project > Properties > C/C++ General > Code Analysis: disable 'syntax and semantic errors'
-4. Project > Properties > C/C++ General > Paths and Symbols: use /working_directory/dependencies/dealii/include (for Assembly, GNU C, GNU C++)
-5. Window > Preferences > General > Editors > Text Editors > Annotations > C/C++ Indexer Markers > uncheck all checkboxes > Apply > OK
+## License
