@@ -93,12 +93,12 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6169cfc2b532bfd15936f7cded1be257"><td class="memItemLeft" align="right" valign="top"><a id="a6169cfc2b532bfd15936f7cded1be257"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGTransferH</b> (std::map&lt; unsigned int, unsigned int &gt; level_to_triangulation_level_map, const DoFHandler&lt; dim &gt; &amp;dof_handler)</td></tr>
-<tr class="separator:a6169cfc2b532bfd15936f7cded1be257"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00e468ed21ca30b918adbfa9e0e610ae"><td class="memItemLeft" align="right" valign="top"><a id="a00e468ed21ca30b918adbfa9e0e610ae"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_operator</b> (const MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">MultigridOperatorBase</a>&lt; dim, Number &gt;&gt;&gt; &amp;operator_in)</td></tr>
-<tr class="separator:a00e468ed21ca30b918adbfa9e0e610ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a628be7547b72e300861d38cc5da32048"><td class="memItemLeft" align="right" valign="top"><a id="a628be7547b72e300861d38cc5da32048"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MGTransferH</b> (std::map&lt; unsigned int, unsigned int &gt; level_to_triangulation_level_map, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
+<tr class="separator:a628be7547b72e300861d38cc5da32048"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aebf277a24f92003f703b3e4b4432b8d7"><td class="memItemLeft" align="right" valign="top"><a id="aebf277a24f92003f703b3e4b4432b8d7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_operator</b> (MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">MultigridOperatorBase</a>&lt; dim, Number &gt;&gt;&gt; const &amp;operator_in)</td></tr>
+<tr class="separator:aebf277a24f92003f703b3e4b4432b8d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c1c26cf686dcbdffd74a045ecc160a2"><td class="memItemLeft" align="right" valign="top"><a id="a8c1c26cf686dcbdffd74a045ecc160a2"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate</b> (unsigned int const to_level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a8c1c26cf686dcbdffd74a045ecc160a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,8 +108,8 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_
 <tr class="memitem:a049551197107dbf30cc794eb27d03239"><td class="memItemLeft" align="right" valign="top"><a id="a049551197107dbf30cc794eb27d03239"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level_in, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a049551197107dbf30cc794eb27d03239"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae21580960f6a0ed88e3b747f8e6d3844"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#ae21580960f6a0ed88e3b747f8e6d3844">copy_to_mg</a> (const DoFHandler&lt; dim, dim &gt; &amp;mg_dof, MGLevelObject&lt; VectorType &gt; &amp;dst, const VectorType &amp;src) const</td></tr>
-<tr class="separator:ae21580960f6a0ed88e3b747f8e6d3844"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6a65b8add700d0d07d4d101ee0a655d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#ac6a65b8add700d0d07d4d101ee0a655d">copy_to_mg</a> (DoFHandler&lt; dim, dim &gt; const &amp;mg_dof, MGLevelObject&lt; VectorType &gt; &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:ac6a65b8add700d0d07d4d101ee0a655d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;int dim, typename Number&gt;<br />
@@ -117,8 +117,8 @@ class ExaDG::MGTransferH&lt; dim, Number &gt;</h3>
 
 <p>Specialized matrix-free implementation that overloads the copy_to_mg function for proper initialization of the vectors in matrix-vector products. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="ae21580960f6a0ed88e3b747f8e6d3844"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae21580960f6a0ed88e3b747f8e6d3844">&#9670;&nbsp;</a></span>copy_to_mg()</h2>
+<a id="ac6a65b8add700d0d07d4d101ee0a655d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6a65b8add700d0d07d4d101ee0a655d">&#9670;&nbsp;</a></span>copy_to_mg()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -128,7 +128,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1MGTransferH.html">ExaDG::MGTransferH</a>&lt; dim, Number &gt;::copy_to_mg </td>
           <td>(</td>
-          <td class="paramtype">const DoFHandler&lt; dim, dim &gt; &amp;&#160;</td>
+          <td class="paramtype">DoFHandler&lt; dim, dim &gt; const &amp;&#160;</td>
           <td class="paramname"><em>mg_dof</em>, </td>
         </tr>
         <tr>
@@ -140,7 +140,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const VectorType &amp;&#160;</td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
           <td class="paramname"><em>src</em>&#160;</td>
         </tr>
         <tr>

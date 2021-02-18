@@ -152,7 +152,7 @@ $(function() {
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  }</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  <span class="keywordtype">double</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  value(<span class="keyword">const</span> Point&lt;dim&gt; &amp; x, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> coordinate_direction = 0)<span class="keyword"> const override</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  value(Point&lt;dim&gt; <span class="keyword">const</span> &amp; x, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> coordinate_direction = 0)<span class="keyword"> const override</span></div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keyword">  </span>{</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordtype">double</span> displacement = 0.0;</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
@@ -163,8 +163,8 @@ $(function() {
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  <span class="keywordtype">double</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  compute_displacement_share(<span class="keyword">const</span> Point&lt;dim&gt; &amp; x,</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                             <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> coordinate_direction = 0)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  compute_displacement_share(Point&lt;dim&gt; <span class="keyword">const</span> &amp; x,</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> coordinate_direction = 0)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">  </span>{</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordtype">double</span> solution = 0.0;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
@@ -287,7 +287,7 @@ $(function() {
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;  }</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;  <span class="keywordtype">double</span></div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;  value(<span class="keyword">const</span> Point&lt;dim&gt; &amp; x_in, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> coordinate_direction = 0)<span class="keyword"> const override</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;  value(Point&lt;dim&gt; <span class="keyword">const</span> &amp; x_in, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> coordinate_direction = 0)<span class="keyword"> const override</span></div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="keyword">  </span>{</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;    <span class="comment">// For 2D and 3D the coordinate system is set differently</span></div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    Point&lt;dim&gt; x = x_in;</div>
@@ -303,8 +303,8 @@ $(function() {
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;  <span class="keywordtype">double</span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;  compute_displacement_share(<span class="keyword">const</span> Point&lt;dim&gt; &amp; x,</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                             <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> coordinate_direction = 0)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;  compute_displacement_share(Point&lt;dim&gt; <span class="keyword">const</span> &amp; x,</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;                             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> coordinate_direction = 0)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="keyword">  </span>{</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keywordtype">double</span> solution = 0.0;</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160; </div>

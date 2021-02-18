@@ -108,14 +108,14 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number, <span class="keyword">typename</span> Number2&gt;</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;all_smaller(<span class="keyword">const</span> Number a, <span class="keyword">const</span> Number2 b)</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;all_smaller(Number <span class="keyword">const</span> a, <span class="keyword">const</span> Number2 b)</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;{</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="keywordflow">return</span> a &lt; b;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;}</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number, <span class="keyword">typename</span> Number2&gt;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;all_smaller(<span class="keyword">const</span> VectorizedArray&lt;Number&gt; a, <span class="keyword">const</span> Number2 b)</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;all_smaller(VectorizedArray&lt;Number&gt; <span class="keyword">const</span> a, Number2 <span class="keyword">const</span> b)</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;{</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; VectorizedArray&lt;Number&gt;::size(); ++i)</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordflow">if</span>(a[i] &gt;= b)</div>
@@ -125,14 +125,14 @@ $(function() {
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;all_true(<span class="keyword">const</span> Number a)</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;all_true(Number <span class="keyword">const</span> a)</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;{</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordflow">return</span> (a &gt;= 0);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;}</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Number&gt;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;all_true(<span class="keyword">const</span> VectorizedArray&lt;Number&gt; a)</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;all_true(VectorizedArray&lt;Number&gt; <span class="keyword">const</span> a)</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;{</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; VectorizedArray&lt;Number&gt;::size(); ++i)</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordflow">if</span>(a[i] &lt; 0)</div>
@@ -312,10 +312,10 @@ $(function() {
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        Preconditioner <span class="keyword">const</span> * preconditioner);</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160; </div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>        M;</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">double</span>              ABS_TOL;</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">double</span>              REL_TOL;</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>        MAX_ITER;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>        M;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;  <span class="keywordtype">double</span> <span class="keyword">const</span>              ABS_TOL;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  <span class="keywordtype">double</span> <span class="keyword">const</span>              REL_TOL;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>        MAX_ITER;</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;  AlignedVector&lt;value_type&gt; storage;</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;  value_type *              p, *r, *v;</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;};</div>
@@ -435,17 +435,17 @@ $(function() {
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="comment">// Matrix size MxM</span></div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> M;</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> M;</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  <span class="comment">// absolute and relative solver tolerances</span></div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">double</span> ABS_TOL;</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">double</span> REL_TOL;</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  <span class="keywordtype">double</span> <span class="keyword">const</span> ABS_TOL;</div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  <span class="keywordtype">double</span> <span class="keyword">const</span> REL_TOL;</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160; </div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  <span class="comment">// maximum number of (overall iterations)</span></div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> MAX_ITER;</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> MAX_ITER;</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160; </div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  <span class="comment">// maximum number of iterations before restart</span></div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> MAX_KRYLOV_SIZE;</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> MAX_KRYLOV_SIZE;</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  <span class="comment">// absolute and relative norm of residual</span></div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  value_type norm_r_abs;</div>

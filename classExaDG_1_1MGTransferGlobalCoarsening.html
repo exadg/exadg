@@ -84,18 +84,18 @@ Inheritance diagram for ExaDG::MGTransferGlobalCoarsening&lt; dim, Number, Vecto
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a27c2afb5a4cbaf6fba605b6aac6247b4"><td class="memItemLeft" align="right" valign="top"><a id="a27c2afb5a4cbaf6fba605b6aac6247b4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (const Mapping&lt; dim &gt; &amp;mapping, MGLevelObject&lt; std::shared_ptr&lt; MatrixFree&lt; dim, Number &gt;&gt;&gt; &amp;mg_matrixfree, MGLevelObject&lt; std::shared_ptr&lt; AffineConstraints&lt; Number &gt;&gt;&gt; &amp;mg_constraints, MGLevelObject&lt; std::shared_ptr&lt; MGConstrainedDoFs &gt;&gt; &amp;mg_constrained_dofs, const unsigned int dof_handler_index=0)</td></tr>
-<tr class="separator:a27c2afb5a4cbaf6fba605b6aac6247b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a63ceb27218446fda2a1802a2fcd9700e"><td class="memItemLeft" align="right" valign="top"><a id="a63ceb27218446fda2a1802a2fcd9700e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (const unsigned int level, VectorType &amp;dst, const VectorType &amp;src) const</td></tr>
-<tr class="separator:a63ceb27218446fda2a1802a2fcd9700e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6255e26556c828476d86d7f1f51e3d59"><td class="memItemLeft" align="right" valign="top"><a id="a6255e26556c828476d86d7f1f51e3d59"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_add</b> (const unsigned int level, VectorType &amp;dst, const VectorType &amp;src) const</td></tr>
-<tr class="separator:a6255e26556c828476d86d7f1f51e3d59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a18f755046398d42417617343619070fd"><td class="memItemLeft" align="right" valign="top"><a id="a18f755046398d42417617343619070fd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate</b> (const unsigned int level, VectorType &amp;dst, const VectorType &amp;src) const</td></tr>
-<tr class="separator:a18f755046398d42417617343619070fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2d5d93711d312fa1c4de7bc53a726d7"><td class="memItemLeft" align="right" valign="top"><a id="ac2d5d93711d312fa1c4de7bc53a726d7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (Mapping&lt; dim &gt; const &amp;mapping, MGLevelObject&lt; std::shared_ptr&lt; MatrixFree&lt; dim, Number &gt;&gt;&gt; &amp;mg_matrixfree, MGLevelObject&lt; std::shared_ptr&lt; AffineConstraints&lt; Number &gt;&gt;&gt; &amp;mg_constraints, MGLevelObject&lt; std::shared_ptr&lt; MGConstrainedDoFs &gt;&gt; &amp;mg_constrained_dofs, unsigned int const dof_handler_index=0)</td></tr>
+<tr class="separator:ac2d5d93711d312fa1c4de7bc53a726d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4673e56e9de6d87e4ab93b847326a088"><td class="memItemLeft" align="right" valign="top"><a id="a4673e56e9de6d87e4ab93b847326a088"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:a4673e56e9de6d87e4ab93b847326a088"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9f4c58e2428eef11aea9debe3aee72e"><td class="memItemLeft" align="right" valign="top"><a id="ac9f4c58e2428eef11aea9debe3aee72e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_add</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:ac9f4c58e2428eef11aea9debe3aee72e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a713e8e9280d15d58aa4867605b4b55a2"><td class="memItemLeft" align="right" valign="top"><a id="a713e8e9280d15d58aa4867605b4b55a2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:a713e8e9280d15d58aa4867605b4b55a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/solvers_and_preconditioners/multigrid/transfer/<a class="el" href="mg__transfer__global__coarsening_8h_source.html">mg_transfer_global_coarsening.h</a></li>
