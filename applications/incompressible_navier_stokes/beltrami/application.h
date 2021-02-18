@@ -37,7 +37,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
     double const a = 0.25 * numbers::PI;
@@ -70,7 +70,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const t = this->get_time();
     double const a = 0.25 * numbers::PI;
@@ -99,7 +99,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
     double const a = 0.25 * numbers::PI;

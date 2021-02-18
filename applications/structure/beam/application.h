@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     double factor = 1.0;
     if(incremental_loading)
@@ -65,7 +65,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -98,7 +98,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
     (void)c;

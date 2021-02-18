@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -67,7 +67,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -95,7 +95,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -204,7 +204,7 @@ public:
       {
         if(cell->face(f)->at_boundary())
         {
-          const Point<dim> face_center = cell->face(f)->center();
+          Point<dim> const face_center = cell->face(f)->center();
 
           // bottom
           if(dim == 3 && std::abs(face_center[dim - 1] - 0.0) < 1.e-8)

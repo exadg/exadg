@@ -131,7 +131,7 @@ public:
    *  to point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x = xi;
     x[1]         = grid_transform_y(xi[1]);
@@ -144,7 +144,7 @@ public:
    *  to point xi in reference coordinates
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim> xi = x;
     xi[1]         = inverse_grid_transform_y(x[1]);

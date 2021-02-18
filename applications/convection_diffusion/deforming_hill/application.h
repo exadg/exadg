@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     // The analytical solution is only known at t = start_time and t = end_time
 
@@ -60,7 +60,7 @@ public:
   }
 
   double
-  value(const Point<dim> & point, unsigned int const component = 0) const
+  value(Point<dim> const & point, unsigned int const component = 0) const
   {
     double value = 0.0;
     double t     = this->get_time();

@@ -43,7 +43,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const pi = numbers::PI;
 
@@ -70,7 +70,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const result = 0.5 * (1.0 - std::exp(2.0 * lambda * p[0]));
 
@@ -91,7 +91,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const pi = numbers::PI;
 

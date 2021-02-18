@@ -44,7 +44,7 @@ all_smaller(Number const a, const Number2 b)
 
 template<typename Number, typename Number2>
 bool
-all_smaller(const VectorizedArray<Number> a, Number2 const b)
+all_smaller(VectorizedArray<Number> const a, Number2 const b)
 {
   for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
     if(a[i] >= b)
@@ -61,7 +61,7 @@ all_true(Number const a)
 
 template<typename Number>
 bool
-all_true(const VectorizedArray<Number> a)
+all_true(VectorizedArray<Number> const a)
 {
   for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
     if(a[i] < 0)

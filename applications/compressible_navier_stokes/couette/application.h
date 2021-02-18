@@ -52,7 +52,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const T =
       T_0 + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1] * p[1] / (H * H) - 1.0);
@@ -84,7 +84,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -106,7 +106,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 

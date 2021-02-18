@@ -43,7 +43,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -63,7 +63,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -89,7 +89,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /* component */) const
+  value(Point<dim> const & p, unsigned int const /* component */) const
   {
     double result = FREQUENCY * FREQUENCY * dim;
     for(unsigned int d = 0; d < dim; ++d)

@@ -112,7 +112,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x;
 
@@ -130,7 +130,7 @@ public:
    *  to point xi in reference coordinates [0,1]^d
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim> xi;
 
@@ -162,7 +162,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     AssertThrow(std::abs(p[1]) < DIMENSIONS_X2 / 2.0 + 1.e-12,
                 ExcMessage("Invalid geometry parameters."));

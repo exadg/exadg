@@ -64,7 +64,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double       t  = this->get_time();
     double const pi = numbers::PI;
@@ -115,7 +115,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
@@ -163,7 +163,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double       t       = this->get_time();
     double const pi      = numbers::PI;
@@ -221,7 +221,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
@@ -288,7 +288,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double       t       = this->get_time();
     double const pi      = numbers::PI;
@@ -324,7 +324,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 

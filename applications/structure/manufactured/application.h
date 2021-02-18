@@ -189,7 +189,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     if(c == 0)
     {
@@ -224,7 +224,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     if(c == 0)
     {
@@ -265,7 +265,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c) const
+  value(Point<dim> const & p, unsigned int const c) const
   {
     if(c == 0)
     {

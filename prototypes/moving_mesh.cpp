@@ -53,7 +53,7 @@ do_test()
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         {
           unsigned int const coordinate_direction = fe.system_to_component_index(i).first;
-          const Point<dim>   point                = fe_values.quadrature_point(i);
+          Point<dim> const   point                = fe_values.quadrature_point(i);
           double             sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
           for(unsigned int d = 0; d < dim; ++d)
             sinval *= std::sin(2 * numbers::PI * (point(d) + 1) / (2));
@@ -98,7 +98,7 @@ do_test()
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
       {
         unsigned int const coordinate_direction = fe.system_to_component_index(i).first;
-        const Point<dim>   point                = fe_values.quadrature_point(i);
+        Point<dim> const   point                = fe_values.quadrature_point(i);
         double             sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
         for(unsigned int d = 0; d < dim; ++d)
           sinval *= std::sin(2 * numbers::PI * (point(d) + 1) / (2));

@@ -41,7 +41,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double phi_l = 1.0, phi_r = 0.0;
     double U = 1.0, L = 2.0;

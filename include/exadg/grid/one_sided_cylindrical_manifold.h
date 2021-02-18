@@ -104,7 +104,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x;
 
@@ -262,7 +262,7 @@ public:
    *  push_forward operation and Newton's method
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim>     xi;
     Tensor<1, dim> residual = push_forward(xi) - x;
@@ -412,7 +412,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x;
 
@@ -573,7 +573,7 @@ public:
    *  push_forward operation and Newton's method
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim>     xi;
     Tensor<1, dim> residual = push_forward(xi) - x;

@@ -40,14 +40,14 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const c = 0) const
+  value(Point<dim> const & p, unsigned int const c = 0) const
   {
     (void)c;
     return value<double>(p);
   }
 
   Tensor<1, dim>
-  gradient(const Point<dim> & p, unsigned int const c = 0) const
+  gradient(Point<dim> const & p, unsigned int const c = 0) const
   {
     (void)c;
     (void)p;
@@ -73,7 +73,7 @@ class SolutionBase
 {
 protected:
   static unsigned int const n_source_centers = 3;
-  static const Point<dim>   source_centers[n_source_centers];
+  static Point<dim> const   source_centers[n_source_centers];
   static double const       width;
 };
 
@@ -83,11 +83,11 @@ const Point<1> SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers
   {Point<1>(-1.0 / 3.0), Point<1>(0.0), Point<1>(+1.0 / 3.0)};
 
 template<>
-const Point<2> SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers] =
+Point<2> const SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers] =
   {Point<2>(-0.5, +0.5), Point<2>(-0.5, -0.5), Point<2>(+0.5, -0.5)};
 
 template<>
-const Point<3> SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers] =
+Point<3> const SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers] =
   {Point<3>(-0.5, +0.5, 0.25), Point<3>(-0.6, -0.5, -0.125), Point<3>(+0.5, -0.5, 0.5)};
 
 template<int dim>
@@ -102,7 +102,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/ = 0) const
+  value(Point<dim> const & p, unsigned int const /*component*/ = 0) const
   {
     double return_value = 0;
     for(unsigned int i = 0; i < this->n_source_centers; ++i)
@@ -115,7 +115,7 @@ public:
   }
 
   Tensor<1, dim>
-  gradient(const Point<dim> & p, unsigned int const /*component*/ = 0) const
+  gradient(Point<dim> const & p, unsigned int const /*component*/ = 0) const
   {
     Tensor<1, dim> return_value;
 
@@ -141,7 +141,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/ = 0) const
+  value(Point<dim> const & p, unsigned int const /*component*/ = 0) const
   {
     CoefficientFunction<dim> coefficient;
     double const             coef         = coefficient.value(p);

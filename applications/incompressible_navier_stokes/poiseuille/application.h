@@ -56,7 +56,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -87,7 +87,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     // pressure decreases linearly in flow direction
     double pressure_gradient = -2. * viscosity * max_velocity / std::pow(H / 2., 2.0);
@@ -118,7 +118,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)p;
     (void)component;
@@ -160,7 +160,7 @@ public:
   }
 
   double
-  value(const Point<dim> & /*p*/, unsigned int const component = 0) const
+  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double pressure_gradient = 0.0;
 

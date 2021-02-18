@@ -262,7 +262,7 @@ private:
 
   template<int dim>
   double
-  norm_point_to_lex(const Point<dim> & c, unsigned int const & n_cells_1D)
+  norm_point_to_lex(Point<dim> const & c, unsigned int const & n_cells_1D)
   {
     // convert normalized point [0, 1] to lex
     if(dim == 2)

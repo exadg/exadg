@@ -57,7 +57,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -85,7 +85,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, unsigned int const /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const result = p_0 + V_0 * V_0 / 16.0 *
                                   (std::cos(2.0 * p[0] / L) + std::cos(2.0 * p[1] / L)) *

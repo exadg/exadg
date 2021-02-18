@@ -163,7 +163,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
               // If the new point lies in the current cell, we have to take the current cell into
               // account
-              const Point<dim> p_unit =
+              Point<dim> const p_unit =
                 cell->real_to_unit_cell_affine_approximation(translated_point);
 
               if(GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
@@ -232,7 +232,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
                 // If the new point lies in the current cell, we have to take the current cell into
                 // account
-                const Point<dim> p_unit =
+                Point<dim> const p_unit =
                   cell->real_to_unit_cell_affine_approximation(translated_point);
                 if(GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
                 {
@@ -284,7 +284,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
               // If the new point lies in the current cell, we have to take the current cell into
               // account
-              const Point<dim> p_unit =
+              Point<dim> const p_unit =
                 cell->real_to_unit_cell_affine_approximation(translated_point);
               if(GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
               {

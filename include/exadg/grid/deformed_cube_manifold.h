@@ -41,7 +41,7 @@ public:
   }
 
   Point<dim>
-  push_forward(const Point<dim> & chart_point) const
+  push_forward(Point<dim> const & chart_point) const
   {
     double sinval = deformation;
     for(unsigned int d = 0; d < dim; ++d)
@@ -53,7 +53,7 @@ public:
   }
 
   Point<dim>
-  pull_back(const Point<dim> & space_point) const
+  pull_back(Point<dim> const & space_point) const
   {
     Point<dim> x = space_point;
     Point<dim> one;
