@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double const x1 = p[0];
     double const x2 = p[1];

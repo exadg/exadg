@@ -108,7 +108,7 @@ public:
   }
 
   void
-  setup(const unsigned int cell)
+  setup(unsigned int const cell)
   {
     integrator->reinit(cell);
   }

@@ -109,7 +109,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)p;
     double result = 0.0;
@@ -136,7 +136,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)component;
 

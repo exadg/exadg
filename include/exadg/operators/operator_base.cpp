@@ -216,7 +216,7 @@ OperatorBase<dim, Number, n_components>::n() const
 
 template<int dim, typename Number, int n_components>
 Number
-OperatorBase<dim, Number, n_components>::el(const unsigned int, const unsigned int) const
+OperatorBase<dim, Number, n_components>::el(unsigned int const, const unsigned int) const
 {
   AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
@@ -677,7 +677,7 @@ template<int dim, int spacedim, typename SparsityPatternType, typename Number>
 void
 make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
                       SparsityPatternType &             sparsity,
-                      const unsigned int                level,
+                      unsigned int const                level,
                       const AffineConstraints<Number> & constraints,
                       const bool                        keep_constrained_dofs = true)
 {
@@ -687,7 +687,7 @@ make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
   Assert(sparsity.n_rows() == n_dofs, ExcDimensionMismatch(sparsity.n_rows(), n_dofs));
   Assert(sparsity.n_cols() == n_dofs, ExcDimensionMismatch(sparsity.n_cols(), n_dofs));
 
-  const unsigned int                                dofs_per_cell = dof.get_fe().n_dofs_per_cell();
+  unsigned int const                                dofs_per_cell = dof.get_fe().n_dofs_per_cell();
   std::vector<types::global_dof_index>              dofs_on_this_cell(dofs_per_cell);
   typename DoFHandler<dim, spacedim>::cell_iterator cell = dof.begin(level), endc = dof.end(level);
   for(; cell != endc; ++cell)

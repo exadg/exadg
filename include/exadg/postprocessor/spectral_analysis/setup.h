@@ -46,7 +46,7 @@ class Setup
 {
 public:
   // length of header (8 ints)
-  static const int HEADER_LENGTH = 8;
+  static int const HEADER_LENGTH = 8;
 
   MPI_Comm const & comm;
 

@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component = 0*/) const
+  value(const Point<dim> & p, unsigned int const /*component = 0*/) const
   {
     double radius = 0.0;
     if(dim == 2)
@@ -333,7 +333,7 @@ public:
 
     if(dim == 2)
     {
-      const double left = 0.0, right = L;
+      double const left = 0.0, right = L;
       GridGenerator::hyper_cube(*triangulation, left, right);
     }
     else if(dim == 3)

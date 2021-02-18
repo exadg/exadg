@@ -37,14 +37,14 @@ using namespace dealii;
 
 template<typename Number, typename Number2>
 bool
-all_smaller(const Number a, const Number2 b)
+all_smaller(Number const a, const Number2 b)
 {
   return a < b;
 }
 
 template<typename Number, typename Number2>
 bool
-all_smaller(const VectorizedArray<Number> a, const Number2 b)
+all_smaller(const VectorizedArray<Number> a, Number2 const b)
 {
   for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
     if(a[i] >= b)
@@ -54,7 +54,7 @@ all_smaller(const VectorizedArray<Number> a, const Number2 b)
 
 template<typename Number>
 bool
-all_true(const Number a)
+all_true(Number const a)
 {
   return (a >= 0);
 }
@@ -241,10 +241,10 @@ public:
         Preconditioner const * preconditioner);
 
 private:
-  const unsigned int        M;
-  const double              ABS_TOL;
-  const double              REL_TOL;
-  const unsigned int        MAX_ITER;
+  unsigned int const        M;
+  double const              ABS_TOL;
+  double const              REL_TOL;
+  unsigned int const        MAX_ITER;
   AlignedVector<value_type> storage;
   value_type *              p, *r, *v;
 };
@@ -364,17 +364,17 @@ public:
 
 private:
   // Matrix size MxM
-  const unsigned int M;
+  unsigned int const M;
 
   // absolute and relative solver tolerances
-  const double ABS_TOL;
-  const double REL_TOL;
+  double const ABS_TOL;
+  double const REL_TOL;
 
   // maximum number of (overall iterations)
-  const unsigned int MAX_ITER;
+  unsigned int const MAX_ITER;
 
   // maximum number of iterations before restart
-  const unsigned int MAX_KRYLOV_SIZE;
+  unsigned int const MAX_KRYLOV_SIZE;
 
   // absolute and relative norm of residual
   value_type norm_r_abs;

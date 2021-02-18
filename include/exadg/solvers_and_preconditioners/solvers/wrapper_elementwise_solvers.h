@@ -96,7 +96,7 @@ private:
                                                                 op.get_dof_index(),
                                                                 op.get_quad_index());
 
-    const unsigned int dofs_per_cell = integrator.dofs_per_cell;
+    unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
     AlignedVector<VectorizedArray<Number>> solution(dofs_per_cell);
 

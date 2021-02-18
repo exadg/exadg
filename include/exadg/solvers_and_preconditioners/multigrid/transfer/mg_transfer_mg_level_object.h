@@ -48,16 +48,16 @@ public:
          MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
          MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
          MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
-         const unsigned int                                          dof_handler_index = 0);
+         unsigned int const                                          dof_handler_index = 0);
 
   virtual void
-  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
+  interpolate(unsigned int const level, VectorType & dst, const VectorType & src) const;
 
   virtual void
-  restrict_and_add(const unsigned int level, VectorType & dst, const VectorType & src) const;
+  restrict_and_add(unsigned int const level, VectorType & dst, const VectorType & src) const;
 
   virtual void
-  prolongate(const unsigned int level, VectorType & dst, const VectorType & src) const;
+  prolongate(unsigned int const level, VectorType & dst, const VectorType & src) const;
 
 private:
   MGLevelObject<std::shared_ptr<MGTransfer<VectorType>>> mg_level_object;

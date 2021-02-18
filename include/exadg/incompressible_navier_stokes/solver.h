@@ -108,12 +108,12 @@ main(int argc, char ** argv)
 
 #ifdef USE_SUB_COMMUNICATOR
   // use stride of n cores
-  const int n = 48; // 24;
+  int const n = 48; // 24;
 
-  const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
-  const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
-  const int flag     = 1;
-  const int new_rank = rank + (rank % n) * size;
+  int const rank     = Utilities::MPI::this_mpi_process(mpi_comm);
+  int const size     = Utilities::MPI::n_mpi_processes(mpi_comm);
+  int const flag     = 1;
+  int const new_rank = rank + (rank % n) * size;
 
   // split default communicator into two groups
   MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);

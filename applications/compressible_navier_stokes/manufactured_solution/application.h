@@ -58,16 +58,16 @@ template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const unsigned int n_components = dim + 2, const double time = 0.)
+  Solution(unsigned int const n_components = dim + 2, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double       t  = this->get_time();
-    const double pi = numbers::PI;
+    double const pi = numbers::PI;
 
     double result = 0.0;
 
@@ -109,13 +109,13 @@ template<int dim>
 class RightHandSideDensity : public Function<dim>
 {
 public:
-  RightHandSideDensity(const unsigned int n_components = 1, const double time = 0.)
+  RightHandSideDensity(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)component;
 
@@ -157,26 +157,26 @@ template<int dim>
 class RightHandSideVelocity : public Function<dim>
 {
 public:
-  RightHandSideVelocity(const unsigned int n_components = dim, const double time = 0.)
+  RightHandSideVelocity(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double       t       = this->get_time();
-    const double pi      = numbers::PI;
-    const double sin_pix = sin(pi * p[0]);
-    const double cos_pix = cos(pi * p[0]);
-    const double sin_pit = sin(pi * t);
-    const double cos_pit = cos(pi * t);
-    const double p1      = p[0];
-    const double p2      = p[0] * p[0];
-    const double p3      = p[0] * p[0] * p[0];
-    const double p5      = p[0] * p[0] * p[0] * p[0] * p[0];
-    const double p6      = p5 * p[0];
-    const double p8      = p5 * p3;
+    double const pi      = numbers::PI;
+    double const sin_pix = sin(pi * p[0]);
+    double const cos_pix = cos(pi * p[0]);
+    double const sin_pit = sin(pi * t);
+    double const cos_pit = cos(pi * t);
+    double const p1      = p[0];
+    double const p2      = p[0] * p[0];
+    double const p3      = p[0] * p[0] * p[0];
+    double const p5      = p[0] * p[0] * p[0] * p[0] * p[0];
+    double const p6      = p5 * p[0];
+    double const p8      = p5 * p3;
 
     double result = 0.0;
 
@@ -215,30 +215,30 @@ template<int dim>
 class RightHandSideEnergy : public Function<dim>
 {
 public:
-  RightHandSideEnergy(const unsigned int n_components = 1, const double time = 0.)
+  RightHandSideEnergy(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double       t             = this->get_time();
-    const double pi            = numbers::PI;
-    const double sin_pix       = sin(pi * p[0]);
-    const double cos_pix       = cos(pi * p[0]);
-    const double sin_pit       = sin(pi * t);
-    const double cos_pit       = cos(pi * t);
-    const double p2            = p[0] * p[0];
-    const double p3            = p2 * p[0];
-    const double p4            = p2 * p2;
-    const double p5            = p2 * p3;
-    const double p8            = p3 * p3 * p2;
-    const double p9            = p4 * p5;
-    const double p11           = p8 * p3;
-    const double dyn_viscosity = DYN_VISCOSITY;
+    double const pi            = numbers::PI;
+    double const sin_pix       = sin(pi * p[0]);
+    double const cos_pix       = cos(pi * p[0]);
+    double const sin_pit       = sin(pi * t);
+    double const cos_pit       = cos(pi * t);
+    double const p2            = p[0] * p[0];
+    double const p3            = p2 * p[0];
+    double const p4            = p2 * p2;
+    double const p5            = p2 * p3;
+    double const p8            = p3 * p3 * p2;
+    double const p9            = p4 * p5;
+    double const p11           = p8 * p3;
+    double const dyn_viscosity = DYN_VISCOSITY;
 
     double result = 0.0;
 
@@ -282,16 +282,16 @@ template<int dim>
 class VelocityBC : public Function<dim>
 {
 public:
-  VelocityBC(const unsigned int n_components = dim, const double time = 0.)
+  VelocityBC(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double       t       = this->get_time();
-    const double pi      = numbers::PI;
+    double const pi      = numbers::PI;
     double       x3      = p[0] * p[0] * p[0];
     double       sin_pit = sin(pi * t);
     double       cos_pit = cos(pi * t);
@@ -319,17 +319,17 @@ template<int dim>
 class DensityBC : public Function<dim>
 {
 public:
-  DensityBC(const double time = 0.) : Function<dim>(1, time)
+  DensityBC(double const time = 0.) : Function<dim>(1, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double       t       = this->get_time();
-    const double pi      = numbers::PI;
+    double const pi      = numbers::PI;
     double       sin_pit = sin(pi * t);
     double       sin_pix = sin(pi * p[0]);
     double       x3      = p[0] * p[0] * p[0];
@@ -430,7 +430,7 @@ public:
               unsigned int const                                mapping_degree)
   {
     // hypercube volume is [left,right]^dim
-    const double left = -1.0, right = 0.5;
+    double const left = -1.0, right = 0.5;
     GridGenerator::hyper_cube(*triangulation, left, right);
 
     typename Triangulation<dim>::cell_iterator cell = triangulation->begin(),

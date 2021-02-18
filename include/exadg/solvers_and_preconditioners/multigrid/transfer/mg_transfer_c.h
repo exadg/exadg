@@ -44,20 +44,20 @@ public:
               const MatrixFree<dim, Number> &   matrixfree_cg,
               const AffineConstraints<Number> & constraints_dg,
               const AffineConstraints<Number> & constraints_cg,
-              const unsigned int                level,
-              const unsigned int                fe_degree,
-              const unsigned int                dof_handler_index = 0);
+              unsigned int const                level,
+              unsigned int const                fe_degree,
+              unsigned int const                dof_handler_index = 0);
 
   virtual ~MGTransferC();
 
   void
-  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
+  interpolate(unsigned int const level, VectorType & dst, const VectorType & src) const;
 
   void
-  restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
+  restrict_and_add(unsigned int const /*level*/, VectorType & dst, const VectorType & src) const;
 
   void
-  prolongate(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
+  prolongate(unsigned int const /*level*/, VectorType & dst, const VectorType & src) const;
 
 private:
   template<int degree>
@@ -72,7 +72,7 @@ private:
   void
   do_prolongate(VectorType & dst, const VectorType & src) const;
 
-  const unsigned int      fe_degree;
+  unsigned int const      fe_degree;
   MatrixFree<dim, Number> data_composite;
 };
 

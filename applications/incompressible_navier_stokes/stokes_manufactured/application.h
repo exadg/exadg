@@ -41,13 +41,13 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
-    const double a      = 2.883356;
-    const double lambda = viscosity * (1. + a * a);
+    double const a      = 2.883356;
+    double const lambda = viscosity * (1. + a * a);
 
     double exp_t  = std::exp(-lambda * t);
     double sin_x  = std::sin(p[0]);
@@ -82,13 +82,13 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(const Point<dim> & p, unsigned int const /*component*/) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
-    const double a      = 2.883356;
-    const double lambda = viscosity * (1. + a * a);
+    double const a      = 2.883356;
+    double const lambda = viscosity * (1. + a * a);
 
     double exp_t  = std::exp(-lambda * t);
     double cos_x  = std::cos(p[0]);
@@ -115,13 +115,13 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
-    const double a      = 2.883356;
-    const double lambda = viscosity * (1. + a * a);
+    double const a      = 2.883356;
+    double const lambda = viscosity * (1. + a * a);
 
     double exp_t  = std::exp(-lambda * t);
     double sin_x  = std::sin(p[0]);
@@ -296,7 +296,7 @@ public:
   {
     (void)periodic_faces;
 
-    const double left = -1.0, right = 1.0;
+    double const left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(*triangulation, left, right);
     triangulation->refine_global(n_refine_space);
 

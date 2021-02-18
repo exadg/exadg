@@ -351,7 +351,7 @@ calculate_cfl(LinearAlgebra::distributed::Vector<value_type> &       cfl,
 {
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
-  const unsigned int n_active_cells = triangulation.n_active_cells();
+  unsigned int const n_active_cells = triangulation.n_active_cells();
 
   cfl.reinit(n_active_cells);
 

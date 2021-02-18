@@ -372,7 +372,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     dof_handlers.resize(0, this->n_levels - 1);
     constraints.resize(0, this->n_levels - 1);
 
-    const unsigned int n_components = fe.n_components();
+    unsigned int const n_components = fe.n_components();
 
     // temporal storage for new DoFHandlers and constraints on each p-level
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
@@ -433,7 +433,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       coarse_grid_triangulations =
         MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
 
-    const unsigned int n_components = fe.n_components();
+    unsigned int const n_components = fe.n_components();
 
     // setup dof-handler and constrained dofs for each p-level
     for(unsigned int i = 0; i < level_info.size(); i++)

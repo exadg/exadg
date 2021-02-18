@@ -136,7 +136,7 @@ private:
   KineticEnergySpectrumData data;
   unsigned int              counter;
   bool                      reset_counter;
-  const unsigned int        precision = 12;
+  unsigned int const        precision = 12;
 
   std::shared_ptr<DealSpectrumWrapper> deal_spectrum_wrapper;
 

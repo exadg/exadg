@@ -58,10 +58,10 @@ write_boundary_IDs(Triangulation<dim> const & triangulation,
                    std::string const &        file,
                    MPI_Comm const &           mpi_communicator)
 {
-  const unsigned int rank    = Utilities::MPI::this_mpi_process(mpi_communicator);
-  const unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);
+  unsigned int const rank    = Utilities::MPI::this_mpi_process(mpi_communicator);
+  unsigned int const n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);
 
-  const unsigned int n_digits = static_cast<int>(std::ceil(std::log10(std::fabs(n_ranks))));
+  unsigned int const n_digits = static_cast<int>(std::ceil(std::log10(std::fabs(n_ranks))));
 
   std::string filename =
     folder + file + "_boundary_IDs" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";

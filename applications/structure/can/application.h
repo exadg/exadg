@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     (void)p;
 
@@ -67,7 +67,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     (void)p;
 
@@ -95,7 +95,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     (void)p;
 

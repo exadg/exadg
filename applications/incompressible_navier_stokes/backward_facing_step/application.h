@@ -53,7 +53,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     AssertThrow(dim == 3, ExcMessage("Dimension has to be dim==3."));
 
@@ -108,7 +108,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double result = linear_interpolation_2d_cartesian(
       p, data.y_values, data.z_values, data.velocity_values, component);
@@ -129,7 +129,7 @@ public:
   }
 
   double
-  value(const Point<dim> & /*p*/, const unsigned int component = 0) const
+  value(const Point<dim> & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 

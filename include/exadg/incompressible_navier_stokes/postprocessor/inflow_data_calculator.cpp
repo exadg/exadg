@@ -132,7 +132,7 @@ InflowDataCalculator<dim, Number>::calculate(
     // sum over all processors
     Utilities::MPI::sum(array_counter, mpi_comm, array_counter);
     Utilities::MPI::sum(
-      ArrayView<const double>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()),
+      ArrayView<double const>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()),
       mpi_comm,
       ArrayView<double>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()));
 

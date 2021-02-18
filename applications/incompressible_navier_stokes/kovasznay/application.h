@@ -43,7 +43,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double const pi = numbers::PI;
 
@@ -70,7 +70,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(const Point<dim> & p, unsigned int const /*component*/) const
   {
     double const result = 0.5 * (1.0 - std::exp(2.0 * lambda * p[0]));
 
@@ -91,7 +91,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double const pi = numbers::PI;
 
@@ -274,7 +274,7 @@ public:
   {
     (void)periodic_faces;
 
-    const double left = -1.0, right = 1.0;
+    double const left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(*triangulation, left, right);
 
     // set boundary indicator

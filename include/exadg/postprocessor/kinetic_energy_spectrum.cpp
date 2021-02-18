@@ -183,7 +183,7 @@ public:
    *
    */
   void
-  execute(const double * src, const std::string & file_name = "", const double time = 0.0)
+  execute(double const * src, const std::string & file_name = "", const double time = 0.0)
   {
     if(write)
     {
@@ -206,7 +206,7 @@ public:
       ArrayView<double> dst(
         fftw.u_real,
         s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
-      ArrayView<const double> src_(
+      ArrayView<double const> src_(
         ipol.dst,
         s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim));
       nonconti->export_to_ghosted_array(src_, dst);
@@ -262,7 +262,7 @@ private:
 
   template<int dim>
   double
-  norm_point_to_lex(const Point<dim> & c, const unsigned int & n_cells_1D)
+  norm_point_to_lex(const Point<dim> & c, unsigned int const & n_cells_1D)
   {
     // convert normalized point [0, 1] to lex
     if(dim == 2)
@@ -320,7 +320,7 @@ public:
   }
 
   void
-  execute(const double *, const std::string & = "", const double = 0.0)
+  execute(double const *, const std::string & = "", const double = 0.0)
   {
   }
 
@@ -471,7 +471,7 @@ KineticEnergySpectrumCalculator<dim, Number>::needs_to_be_evaluated(
   else if(data.calculate_every_time_interval > 0.0)
   {
     // small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
+    double const EPSILON = 1.0e-10;
 
     // The current time might be larger than output_start_time. In that case, we first have to
     // reset the counter in order to avoid that output is written every time step.
@@ -507,7 +507,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
                                                           double const       time)
 {
   // extract beginning of vector...
-  const Number * temp = velocity.begin();
+  Number const * temp = velocity.begin();
 
   const std::string file_name = data.filename + "_" + Utilities::int_to_string(counter, 4);
 

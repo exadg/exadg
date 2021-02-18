@@ -37,7 +37,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
     double const a = 0.25 * numbers::PI;
@@ -70,7 +70,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(const Point<dim> & p, unsigned int const /*component*/) const
   {
     double const t = this->get_time();
     double const a = 0.25 * numbers::PI;
@@ -99,7 +99,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
     double const a = 0.25 * numbers::PI;
@@ -258,7 +258,7 @@ public:
   {
     (void)periodic_faces;
 
-    const double left = -1.0, right = 1.0;
+    double const left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(*triangulation, left, right);
     triangulation->refine_global(n_refine_space);
 

@@ -60,15 +60,15 @@ public:
   }
 
   double
-  value(const Point<dim> & x, const unsigned int component = 0) const
+  value(const Point<dim> & x, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
     if(component == 0)
     {
-      const double pi = numbers::PI;
-      const double T  = 1.0;
+      double const pi = numbers::PI;
+      double const T  = 1.0;
       double       coefficient =
         Utilities::fixed_power<dim - 1>(4.) * Um / Utilities::fixed_power<2 * dim - 2>(H);
 
@@ -126,25 +126,25 @@ template<int dim>
 class PressureBC_dudt : public Function<dim>
 {
 public:
-  PressureBC_dudt(const double       Um,
-                  const double       H,
-                  const double       end_time,
-                  const unsigned int test_case)
+  PressureBC_dudt(double const       Um,
+                  double const       H,
+                  double const       end_time,
+                  unsigned int const test_case)
     : Function<dim>(dim, 0.0), Um(Um), H(H), end_time(end_time), test_case(test_case)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
     if(component == 0 && std::abs(p[0] - (dim == 2 ? L1 : 0.0)) < 1.e-12)
     {
-      const double pi = numbers::PI;
+      double const pi = numbers::PI;
 
-      const double T = 1.0;
+      double const T = 1.0;
       double       coefficient =
         Utilities::fixed_power<dim - 1>(4.) * Um / Utilities::fixed_power<2 * dim - 2>(H);
 
@@ -484,7 +484,7 @@ public:
           },
           [](dealii::Triangulation<dim, dim> & tria,
              const MPI_Comm                    comm,
-             const unsigned int /* group_size */) {
+             unsigned int const /* group_size */) {
             // metis partitioning
             GridTools::partition_triangulation(Utilities::MPI::n_mpi_processes(comm), tria);
             // p4est partitioning
@@ -565,7 +565,7 @@ public:
     pp_data.lift_and_drag_data.calculate_lift_and_drag = true;
     pp_data.lift_and_drag_data.viscosity               = viscosity;
 
-    const double U = Um * (dim == 2 ? 2. / 3. : 4. / 9.);
+    double const U = Um * (dim == 2 ? 2. / 3. : 4. / 9.);
     if(dim == 2)
       pp_data.lift_and_drag_data.reference_value = 1.0 / 2.0 * pow(U, 2.0) * D;
     else if(dim == 3)

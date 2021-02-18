@@ -116,14 +116,14 @@ public:
 
   void
   write_output(const std::string output_prefix,
-               const double      dynamic_viscosity,
-               const double      density);
+               double const      dynamic_viscosity,
+               double const      density);
 
   void
   reset();
 
 private:
-  static const unsigned int n_points_y_per_cell_linear = 11;
+  static unsigned int const n_points_y_per_cell_linear = 11;
   unsigned int              n_points_y_per_cell;
 
   void

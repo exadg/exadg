@@ -83,7 +83,7 @@ template<int dim, typename Number>
 class KineticEnergyCalculator
 {
 public:
-  static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
+  static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 

@@ -142,7 +142,7 @@ public:
                           const MGTransfer<VectorType> &                       transfer,
                           const MGLevelObject<std::shared_ptr<SmootherType>> & smoother,
                           const MPI_Comm &                                     comm,
-                          const unsigned int                                   n_cycles = 1)
+                          unsigned int const                                   n_cycles = 1)
     : minlevel(matrix.min_level()),
       maxlevel(matrix.max_level()),
       defect(minlevel, maxlevel),
@@ -393,7 +393,7 @@ private:
 
   MPI_Comm const & mpi_comm;
 
-  const unsigned int n_cycles;
+  unsigned int const n_cycles;
 
 #if ENABLE_TIMING
   MultigridTimings timings;

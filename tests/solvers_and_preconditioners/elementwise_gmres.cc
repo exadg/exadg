@@ -226,7 +226,7 @@ gmres_test_1b()
 {
   std::cout << std::endl << "GMRES solver (double), size M=10000:" << std::endl << std::endl;
 
-  const unsigned int M_large = 10000;
+  unsigned int const M_large = 10000;
   SolverData         solver_data(100, 1e-12, 1e-12, 30);
 
   typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;

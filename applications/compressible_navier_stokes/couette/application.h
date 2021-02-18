@@ -29,35 +29,35 @@ namespace CompNS
 using namespace dealii;
 
 // problem specific parameters
-const double DYN_VISCOSITY = 1.0e-2;
-const double GAMMA         = 1.4;
-const double LAMBDA        = 0.0262;
-const double R             = 287.058;
-const double U_0           = 1.0;
-const double PRESSURE      = 1.0e5;
-const double GAS_CONSTANT  = 287.058;
-const double T_0           = 273.0;
-const double RHO_0         = PRESSURE / (R * T_0);
+double const DYN_VISCOSITY = 1.0e-2;
+double const GAMMA         = 1.4;
+double const LAMBDA        = 0.0262;
+double const R             = 287.058;
+double const U_0           = 1.0;
+double const PRESSURE      = 1.0e5;
+double const GAS_CONSTANT  = 287.058;
+double const T_0           = 273.0;
+double const RHO_0         = PRESSURE / (R * T_0);
 
-const double H = 3.0;
-const double L = 2.0 * H;
+double const H = 3.0;
+double const L = 2.0 * H;
 
 template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const unsigned int n_components = dim + 2, const double time = 0.)
+  Solution(unsigned int const n_components = dim + 2, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
-    const double T =
+    double const T =
       T_0 + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1] * p[1] / (H * H) - 1.0);
-    const double rho = PRESSURE / (R * T);
-    const double u   = U_0 / H * p[1];
+    double const rho = PRESSURE / (R * T);
+    double const u   = U_0 / H * p[1];
 
     double result = 0.0;
 
@@ -78,13 +78,13 @@ template<int dim>
 class VelocityBC : public Function<dim>
 {
 public:
-  VelocityBC(const unsigned int n_components = dim, const double time = 0.)
+  VelocityBC(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -101,19 +101,19 @@ template<int dim>
 class DensityBC : public Function<dim>
 {
 public:
-  DensityBC(const double time = 0.) : Function<dim>(1, time)
+  DensityBC(double const time = 0.) : Function<dim>(1, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)component;
 
-    const double T =
+    double const T =
       T_0 + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1] * p[1] / (H * H) - 1.0);
 
-    const double rho = PRESSURE / (R * T);
+    double const rho = PRESSURE / (R * T);
 
     return rho;
   }

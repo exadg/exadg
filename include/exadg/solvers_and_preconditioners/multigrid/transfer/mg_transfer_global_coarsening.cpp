@@ -29,7 +29,7 @@ using namespace dealii;
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(const unsigned int level,
+MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
                                                                       VectorType &       dst,
                                                                       const VectorType & src) const
 {
@@ -38,7 +38,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(const unsi
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate(const unsigned int level,
+MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate(unsigned int const level,
                                                                 VectorType &       dst,
                                                                 const VectorType & src) const
 {
@@ -52,7 +52,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
   MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
   MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
-  const unsigned int                                          dof_handler_index)
+  unsigned int const                                          dof_handler_index)
 {
   (void)mapping;
   (void)mg_constrained_dofs;
@@ -60,10 +60,10 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
     std::vector<MGLevelInfo>            global_levels;
     std::vector<MGDoFHandlerIdentifier> p_levels;
 
-    const unsigned int min_level = mg_matrixfree.min_level();
+    unsigned int const min_level = mg_matrixfree.min_level();
     AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
 
-    const unsigned int max_level = mg_matrixfree.max_level();
+    unsigned int const max_level = mg_matrixfree.max_level();
 
     // construct global_levels
     for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
@@ -71,9 +71,9 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
       const auto &       matrixfree = mg_matrixfree[global_level];
       const auto &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
       const bool         is_dg      = fe.dofs_per_vertex == 0;
-      const unsigned int level =
+      unsigned int const level =
         matrixfree->get_dof_handler().get_triangulation().n_global_levels();
-      const unsigned int degree =
+      unsigned int const degree =
         (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(), 1.0 / dim)) - 1;
 
       global_levels.push_back(MGLevelInfo(level, degree, is_dg));
@@ -125,7 +125,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::interpolate(const unsigned int level,
+MGTransferGlobalCoarsening<dim, Number, VectorType>::interpolate(unsigned int const level,
                                                                  VectorType &       dst,
                                                                  const VectorType & src) const
 {

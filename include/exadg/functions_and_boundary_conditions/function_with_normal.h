@@ -34,7 +34,7 @@ template<int dim>
 class FunctionWithNormal : public Function<dim>
 {
 public:
-  FunctionWithNormal(unsigned int const n_components, const double time)
+  FunctionWithNormal(unsigned int const n_components, double const time)
     : Function<dim>(n_components, time)
   {
   }

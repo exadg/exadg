@@ -178,7 +178,7 @@ create_grid_and_set_boundary_ids_nozzle(
   /*
    *   OUTFLOW
    */
-  const unsigned int n_cells_circle = 4;
+  unsigned int const n_cells_circle = 4;
   double const       R_1            = R_INNER + 1.0 / 3.0 * (R_OUTER - R_INNER);
   double const       R_2            = R_INNER + 2.0 / 3.0 * (R_OUTER - R_INNER);
 

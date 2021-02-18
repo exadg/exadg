@@ -32,10 +32,10 @@ template<int dim>
 class DeformedCubeManifold : public ChartManifold<dim, dim, dim>
 {
 public:
-  DeformedCubeManifold(const double       left,
-                       const double       right,
-                       const double       deformation,
-                       const unsigned int frequency = 1)
+  DeformedCubeManifold(double const       left,
+                       double const       right,
+                       double const       deformation,
+                       unsigned int const frequency = 1)
     : left(left), right(right), deformation(deformation), frequency(frequency)
   {
   }
@@ -108,10 +108,10 @@ public:
   }
 
 private:
-  const double       left;
-  const double       right;
-  const double       deformation;
-  const unsigned int frequency;
+  double const       left;
+  double const       right;
+  double const       deformation;
+  unsigned int const frequency;
 };
 
 } // namespace ExaDG

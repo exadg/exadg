@@ -95,7 +95,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
       cell = cell->neighbor(3);
     }
 
-    const unsigned int fe_degree = dof_handler.get_fe().degree;
+    unsigned int const fe_degree = dof_handler.get_fe().degree;
 
     n_points_y_per_cell = n_points_y_per_cell_linear * fe_degree;
 
@@ -104,7 +104,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
     n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels() - 1);
 
-    const unsigned int n_points_y_glob = n_cells_y_dir * (n_points_y_per_cell - 1) + 1;
+    unsigned int const n_points_y_glob = n_cells_y_dir * (n_points_y_per_cell - 1) + 1;
 
     // velocity vector with 3-components
     vel_glob.resize(3);
@@ -170,7 +170,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
       // -> overwrite values in y_glob with values resulting from polynomial mapping
 
       // use 2d quadrature to integrate over x-z-planes
-      const unsigned int fe_degree = dof_handler.get_fe().degree;
+      unsigned int const fe_degree = dof_handler.get_fe().degree;
       QGauss<dim - 1>    gauss_2d(fe_degree + 1);
 
       std::vector<double> y_processor;
@@ -215,7 +215,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
             // find index within the y-values: first do a binary search to find
             // the next larger value of y in the list...
-            const double y = fe_values[i]->quadrature_point(0)[1];
+            double const y = fe_values[i]->quadrature_point(0)[1];
 
             // identify index for first point located on the boundary of the cell because for this
             // point the mapping can not cause any trouble. For interior points, the deviations
@@ -300,7 +300,7 @@ StatisticsManager<dim, Number>::evaluate(VectorType const &   velocity,
   if(turb_channel_data.calculate_statistics == true)
   {
     // EPSILON: small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
+    double const EPSILON = 1.0e-10;
     if((time > turb_channel_data.sample_start_time - EPSILON) &&
        (time < turb_channel_data.sample_end_time + EPSILON) &&
        (time_step_number % turb_channel_data.sample_every_timesteps == 0))
@@ -353,8 +353,8 @@ StatisticsManager<dim, Number>::evaluate(std::vector<VectorType> const & velocit
 template<int dim, typename Number>
 void
 StatisticsManager<dim, Number>::write_output(const std::string output_prefix,
-                                             const double      dynamic_viscosity,
-                                             const double      density)
+                                             double const      dynamic_viscosity,
+                                             double const      density)
 {
   if(Utilities::MPI::this_mpi_process(communicator) == 0)
   {
@@ -460,7 +460,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<const VectorType *
   std::vector<double> veluv_loc(vel_glob[0].size());
 
   // use 2d quadrature to integrate over x-z-planes
-  const unsigned int fe_degree = dof_handler.get_fe().degree;
+  unsigned int const fe_degree = dof_handler.get_fe().degree;
   QGauss<dim - 1>    gauss_2d(fe_degree + 1);
 
   // vector of FEValues for all x-z-planes of a cell
@@ -488,7 +488,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<const VectorType *
                         update_values | update_jacobians | update_quadrature_points));
   }
 
-  const unsigned int scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
+  unsigned int const scalar_dofs_per_cell = dof_handler.get_fe().base_element(0).dofs_per_cell;
   // TODO this variable is not used
   //  std::vector<double> vel_values(fe_values[0]->n_quadrature_points);
   std::vector<Tensor<1, dim>>          velocity_vector(scalar_dofs_per_cell);
@@ -570,7 +570,7 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<const VectorType *
 
         // find index within the y-values: first do a binary search to find
         // the next larger value of y in the list...
-        const double y = fe_values[i]->quadrature_point(0)[1];
+        double const y = fe_values[i]->quadrature_point(0)[1];
         // std::lower_bound: returns iterator to first element that is >= y.
         // Note that the vector y_glob has to be sorted. As a result, the
         // index might be too large.

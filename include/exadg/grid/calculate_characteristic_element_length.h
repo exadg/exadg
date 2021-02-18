@@ -54,7 +54,7 @@ calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation,
     }
   }
 
-  const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, mpi_comm);
+  double const global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, mpi_comm);
 
   return global_min_cell_diameter;
 }

@@ -83,7 +83,7 @@ public:
   }
 
   virtual Number
-  el(const unsigned int i, const unsigned int j) const
+  el(unsigned int const i, const unsigned int j) const
   {
     return pde_operator->el(i, j);
   }

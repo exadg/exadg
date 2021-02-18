@@ -37,9 +37,9 @@ MGTransferC<dim, Number, VectorType, components>::MGTransferC(
   const MatrixFree<dim, Number> &   matrixfree_cg,
   const AffineConstraints<Number> & constraints_dg,
   const AffineConstraints<Number> & constraints_cg,
-  const unsigned int                level,
-  const unsigned int                fe_degree,
-  const unsigned int                dof_handler_index)
+  unsigned int const                level,
+  unsigned int const                fe_degree,
+  unsigned int const                dof_handler_index)
   : fe_degree(fe_degree)
 {
   std::vector<const DoFHandler<dim> *> dofhandlers = {
@@ -147,7 +147,7 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::interpolate(const unsigned int level,
+MGTransferC<dim, Number, VectorType, components>::interpolate(unsigned int const level,
                                                               VectorType &       dst,
                                                               const VectorType & src) const
 {
@@ -179,7 +179,7 @@ MGTransferC<dim, Number, VectorType, components>::interpolate(const unsigned int
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
+MGTransferC<dim, Number, VectorType, components>::restrict_and_add(unsigned int const /*level*/,
                                                                    VectorType &       dst,
                                                                    const VectorType & src) const
 {
@@ -209,7 +209,7 @@ MGTransferC<dim, Number, VectorType, components>::restrict_and_add(const unsigne
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
+MGTransferC<dim, Number, VectorType, components>::prolongate(unsigned int const /*level*/,
                                                              VectorType &       dst,
                                                              const VectorType & src) const
 {

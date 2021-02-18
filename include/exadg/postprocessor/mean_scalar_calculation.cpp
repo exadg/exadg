@@ -28,8 +28,8 @@ using namespace dealii;
 template<int dim, typename Number>
 MeanScalarCalculator<dim, Number>::MeanScalarCalculator(
   const MatrixFree<dim, Number> & matrix_free_in,
-  const unsigned int              dof_index_in,
-  const unsigned int              quad_index_in,
+  unsigned int const              dof_index_in,
+  unsigned int const              quad_index_in,
   MPI_Comm const &                mpi_comm_in)
   : matrix_free(matrix_free_in),
     dof_index(dof_index_in),
@@ -96,12 +96,12 @@ MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
     area_vector[counter]        = (iterator_area++)->second;
   }
 
-  Utilities::MPI::sum(ArrayView<const double>(&(*mean_scalar_vector.begin()),
+  Utilities::MPI::sum(ArrayView<double const>(&(*mean_scalar_vector.begin()),
                                               mean_scalar_vector.size()),
                       mpi_comm,
                       ArrayView<double>(&(*mean_scalar_vector.begin()), mean_scalar_vector.size()));
 
-  Utilities::MPI::sum(ArrayView<const double>(&(*area_vector.begin()), area_vector.size()),
+  Utilities::MPI::sum(ArrayView<double const>(&(*area_vector.begin()), area_vector.size()),
                       mpi_comm,
                       ArrayView<double>(&(*area_vector.begin()), area_vector.size()));
 

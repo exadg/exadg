@@ -41,7 +41,7 @@ convert_to_eo(AlignedVector<VectorizedArray<Number>> & shape_values,
               unsigned int                             fe_degree,
               unsigned int                             n_q_points_1d)
 {
-  const unsigned int stride = (n_q_points_1d + 1) / 2;
+  unsigned int const stride = (n_q_points_1d + 1) / 2;
   shape_values_eo.resize((fe_degree + 1) * stride);
   for(unsigned int i = 0; i < (fe_degree + 1) / 2; ++i)
   {
@@ -99,8 +99,8 @@ template<int dim, int points, int surface, typename Number, typename Number2>
 void
 loop_over_face_points(Number values, Number2 w)
 {
-  const int d = surface / 2; // direction
-  const int s = surface % 2; // left or right surface
+  int const d = surface / 2; // direction
+  int const s = surface % 2; // left or right surface
 
   // collapsed iteration
   for(unsigned int i = 0; i < Utilities::pow(points, dim - d - 1); i++)
@@ -123,8 +123,8 @@ weight_residuum(MatrixFree &                                   data_1,
 {
 #if false
   (void) weights;
-  const int          POINTS         = fe_degree_1 + 1;
-  const unsigned int n_filled_lanes = data_1.n_active_entries_per_cell_batch(cell);
+  int const          POINTS         = fe_degree_1 + 1;
+  unsigned int const n_filled_lanes = data_1.n_active_entries_per_cell_batch(cell);
   for(int surface = 0; surface < 2 * dim; surface++)
   {
     VectorizedArray<Number> weights;
@@ -346,8 +346,8 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
   this->dof_handler_index = dof_handler_index;
 
   this->quad_index                 = numbers::invalid_unsigned_int;
-  const unsigned int n_q_points_1d = degree_1 + 1;
-  const unsigned int n_q_points    = std::pow(n_q_points_1d, dim);
+  unsigned int const n_q_points_1d = degree_1 + 1;
+  unsigned int const n_q_points    = std::pow(n_q_points_1d, dim);
 
   for(unsigned int quad_index = 0; quad_index < matrixfree_1->get_mapping_info().cell_data.size();
       quad_index++)
@@ -422,7 +422,7 @@ MGTransferP<dim, Number, VectorType, components>::~MGTransferP()
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferP<dim, Number, VectorType, components>::interpolate(const unsigned int level,
+MGTransferP<dim, Number, VectorType, components>::interpolate(unsigned int const level,
                                                               VectorType &       dst,
                                                               const VectorType & src) const
 {
@@ -495,7 +495,7 @@ MGTransferP<dim, Number, VectorType, components>::interpolate(const unsigned int
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferP<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
+MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int const /*level*/,
                                                                    VectorType &       dst,
                                                                    const VectorType & src) const
 {
@@ -570,7 +570,7 @@ MGTransferP<dim, Number, VectorType, components>::restrict_and_add(const unsigne
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferP<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
+MGTransferP<dim, Number, VectorType, components>::prolongate(unsigned int const /*level*/,
                                                              VectorType &       dst,
                                                              const VectorType & src) const
 {

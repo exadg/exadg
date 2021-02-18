@@ -329,7 +329,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::evaluate(
   if(data.statistics_data.calculate_statistics == true)
   {
     // EPSILON: small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
+    double const EPSILON = 1.0e-10;
 
     if((time > data.statistics_data.sample_start_time - EPSILON) &&
        (time < data.statistics_data.sample_end_time + EPSILON) &&
@@ -426,7 +426,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
   std::vector<double>                 wall_shear_local(line.n_points);
   std::vector<Tensor<2, dim, double>> reynolds_local(line.n_points);
 
-  const unsigned int scalar_dofs_per_cell =
+  unsigned int const scalar_dofs_per_cell =
     dof_handler_velocity.get_fe().base_element(0).dofs_per_cell;
 
   std::vector<Tensor<1, dim>> velocity_vector(scalar_dofs_per_cell);
@@ -440,7 +440,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
         cell_and_ref_point != cells_and_ref_points_velocity[line_iterator][p].end();
         ++cell_and_ref_point)
     {
-      const unsigned int fe_degree_velocity = dof_handler_velocity.get_fe().degree;
+      unsigned int const fe_degree_velocity = dof_handler_velocity.get_fe().degree;
 
       // use quadrature for averaging in homogeneous direction
       QGauss<1>               gauss_1d(fe_degree_velocity + 1);
@@ -544,7 +544,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     // to sum the contributions of every single processor.
     if((*quantity)->type == QuantityType::Velocity)
     {
-      Utilities::MPI::sum(ArrayView<const double>(&velocity_local[0][0],
+      Utilities::MPI::sum(ArrayView<double const>(&velocity_local[0][0],
                                                   dim * velocity_local.size()),
                           communicator,
                           ArrayView<double>(&velocity_local[0][0], dim * velocity_local.size()));
@@ -560,7 +560,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     else if((*quantity)->type == QuantityType::ReynoldsStresses)
     {
       Utilities::MPI::sum(
-        ArrayView<const double>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()),
+        ArrayView<double const>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()),
         communicator,
         ArrayView<double>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()));
 
@@ -655,7 +655,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
   double &           length_local,
   double &           pressure_local)
 {
-  const unsigned int scalar_dofs_per_cell =
+  unsigned int const scalar_dofs_per_cell =
     dof_handler_pressure.get_fe().base_element(0).dofs_per_cell;
   std::vector<double>                  pressure_vector(scalar_dofs_per_cell);
   std::vector<types::global_dof_index> dof_indices(dof_handler_pressure.get_fe().dofs_per_cell);
@@ -664,7 +664,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
       cell_and_ref_point != vector_cells_and_ref_points.end();
       ++cell_and_ref_point)
   {
-    const unsigned int fe_degree_pressure = dof_handler_pressure.get_fe().degree;
+    unsigned int const fe_degree_pressure = dof_handler_pressure.get_fe().degree;
 
     // use quadrature for averaging in homogeneous direction
     QGauss<1>               gauss_1d(fe_degree_pressure + 1);

@@ -55,7 +55,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -114,10 +114,10 @@ public:
   }
 
 private:
-  const double H            = 1.0;
-  const double MAX_VELOCITY = 1.0;
-  const double ALPHA        = 1.0;
-  const double EPSILON      = 1.0e-5;
+  double const H            = 1.0;
+  double const MAX_VELOCITY = 1.0;
+  double const ALPHA        = 1.0;
+  double const EPSILON      = 1.0e-5;
 
   FE_DGQ<1> const &                         FE;
   std::complex<double> const &              OMEGA;
@@ -139,7 +139,7 @@ public:
   }
 
   double
-  value(const Point<dim> & /*p*/, const unsigned int component = 0) const
+  value(const Point<dim> & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -178,16 +178,16 @@ public:
     end_time = 2.0 * t0;
   }
 
-  const double Re = 7500.0;
+  double const Re = 7500.0;
 
-  const double H  = 1.0;
-  const double PI = numbers::PI;
-  const double L  = 2.0 * PI * H;
+  double const H  = 1.0;
+  double const PI = numbers::PI;
+  double const L  = 2.0 * PI * H;
 
-  const double MAX_VELOCITY = 1.0;
-  const double VISCOSITY    = MAX_VELOCITY * H / Re;
-  const double ALPHA        = 1.0;
-  const double EPSILON      = 1.0e-5; // perturbations are small (<< 1, linearization)
+  double const MAX_VELOCITY = 1.0;
+  double const VISCOSITY    = MAX_VELOCITY * H / Re;
+  double const ALPHA        = 1.0;
+  double const EPSILON      = 1.0e-5; // perturbations are small (<< 1, linearization)
 
   // Orr-Sommerfeld solver: calculates unstable eigenvalue (OMEGA) of
   // Orr-Sommerfeld equation for Poiseuille flow and corresponding eigenvector (EIG_VEC).

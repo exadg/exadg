@@ -46,12 +46,12 @@ struct AdditionalData
   AdditionalData(
     const bool                           elliptic              = true,
     const bool                           higher_order_elements = false,
-    const unsigned int                   n_cycles              = 1,
+    unsigned int const                   n_cycles              = 1,
     const bool                           w_cycle               = false,
-    const double                         aggregation_threshold = 1e-4,
+    double const                         aggregation_threshold = 1e-4,
     const std::vector<std::vector<bool>> constant_modes        = std::vector<std::vector<bool>>(0),
-    const unsigned int                   smoother_sweeps       = 2,
-    const unsigned int                   smoother_overlap      = 0,
+    unsigned int const                   smoother_sweeps       = 2,
+    unsigned int const                   smoother_overlap      = 0,
     const bool                           output_details        = false,
     const char *                         smoother_type         = "Chebyshev",
     const char *                         coarse_type           = "Amesos-KLU")

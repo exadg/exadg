@@ -35,13 +35,13 @@ template<int dim>
 class MyFunction : public Function<dim>
 {
 public:
-  MyFunction(const unsigned int n_components = 1, const double time = 0.)
+  MyFunction(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(const Point<dim> & p, unsigned int const component = 0) const
   {
     (void)p;
     (void)component;

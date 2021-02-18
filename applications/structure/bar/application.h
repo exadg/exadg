@@ -38,7 +38,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     (void)p;
 
@@ -68,7 +68,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     (void)p;
 
@@ -90,10 +90,10 @@ public:
   {
   }
 
-  const double areaforce;
+  double const areaforce;
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     (void)p;
 
@@ -117,7 +117,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     if(c == 0)
       return A * p[0] * p[0] + B * p[0]; // displacement in x-direction
@@ -143,7 +143,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int c) const
+  value(const Point<dim> & p, unsigned int const c) const
   {
     if(c == 0)
       return A * p[0] * p[0] + B * p[0]; // displacement in x-direction

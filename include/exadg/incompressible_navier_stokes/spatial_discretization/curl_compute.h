@@ -35,7 +35,7 @@ template<int dim, typename FEEval>
 struct CurlCompute
 {
   static Tensor<1, dim, VectorizedArray<typename FEEval::number_type>>
-  compute(FEEval & fe_eval, const unsigned int q_point)
+  compute(FEEval & fe_eval, unsigned int const q_point)
   {
     return fe_eval.get_curl(q_point);
   }
@@ -46,7 +46,7 @@ template<typename FEEval>
 struct CurlCompute<2, FEEval>
 {
   static Tensor<1, 2, VectorizedArray<typename FEEval::number_type>>
-  compute(FEEval & fe_eval, const unsigned int q_point)
+  compute(FEEval & fe_eval, unsigned int const q_point)
   {
     Tensor<1, 2, VectorizedArray<typename FEEval::number_type>> curl;
     /*

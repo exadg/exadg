@@ -44,13 +44,13 @@ template<int dim>
 class VelocityField : public Function<dim>
 {
 public:
-  VelocityField(const unsigned int n_components = dim, const double time = 0.)
+  VelocityField(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & point, const unsigned int component = 0) const
+  value(const Point<dim> & point, unsigned int const component = 0) const
   {
     double value = 0.0;
 
@@ -72,7 +72,7 @@ public:
     }
     else if(VELOCITY_TYPE == VelocityType::CircularZeroAtBoundary)
     {
-      const double pi    = numbers::PI;
+      double const pi    = numbers::PI;
       double       sinx  = std::sin(pi * point[0]);
       double       siny  = std::sin(pi * point[1]);
       double       sin2x = std::sin(2. * pi * point[0]);

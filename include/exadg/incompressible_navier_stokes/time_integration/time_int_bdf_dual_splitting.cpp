@@ -276,7 +276,7 @@ TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
 
   std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
 
-  const unsigned int size = velocity[0].local_size();
+  unsigned int const size = velocity[0].local_size();
 
   LAPACKFullMatrix<Number> propagation_matrix(size, size);
 

@@ -86,7 +86,7 @@ public:
 
 private:
   void
-  print_headline(std::ofstream & f, const unsigned int number_of_samples) const
+  print_headline(std::ofstream & f, unsigned int const number_of_samples) const
   {
     f << "number of samples: N = " << number_of_samples << std::endl;
   }

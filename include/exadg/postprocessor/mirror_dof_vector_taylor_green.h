@@ -50,8 +50,8 @@ template<int dim, typename Number>
 void
 apply_taylor_green_symmetry(const DoFHandler<dim> &                            dof_handler_symm,
                             const DoFHandler<dim> &                            dof_handler,
-                            const double                                       n_cells_1d,
-                            const double                                       delta,
+                            double const                                       n_cells_1d,
+                            double const                                       delta,
                             const LinearAlgebra::distributed::Vector<Number> & vector_symm,
                             LinearAlgebra::distributed::Vector<Number> &       vector)
 {
@@ -89,7 +89,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
         for(unsigned int i = 0; i < dim; i++)
           c[i] = c[i] / delta;
 
-        const unsigned int lid = norm_point_to_lex(c);
+        unsigned int const lid = norm_point_to_lex(c);
 
         range_has_lex.add_index(lid);
         map_lex_to_cell_symm[lid] = cell;
@@ -103,7 +103,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
         for(unsigned int i = 0; i < dim; i++)
           c[i] = std::abs(c[i]) / delta;
 
-        const unsigned int lex = norm_point_to_lex(c);
+        unsigned int const lex = norm_point_to_lex(c);
 
         range_want_lex.add_index(lex);
         map_lex_to_cell_full[lex].emplace_back(cell);
@@ -213,7 +213,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
   {
     auto send_buffer_ptr = &data_buffer[0];
 
-    const unsigned int n_dofs_per_component = fe.n_dofs_per_cell() / dim;
+    unsigned int const n_dofs_per_component = fe.n_dofs_per_cell() / dim;
 
     std::vector<types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
     for(const auto cell_index : range_want_lex)
@@ -239,7 +239,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
             if(c[v] < 0)
               p[v] = fe.degree - p[v];
 
-          const unsigned int shift =
+          unsigned int const shift =
             dim == 2 ? (p[0] + p[1] * (1 + fe.degree)) :
                        (p[0] + p[1] * (1 + fe.degree) + p[2] * (1 + fe.degree) * (1 + fe.degree));
 

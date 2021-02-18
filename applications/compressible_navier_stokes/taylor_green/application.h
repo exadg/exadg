@@ -34,39 +34,39 @@ using namespace dealii;
 // for the simulation of vortical flows at high Reynolds number"):
 
 // set Re, rho_0, V_0, L -> calculate viscosity mu
-const double Re            = 1600.0;
-const double RHO_0         = 1.0;
-const double V_0           = 1.0;
-const double L             = 1.0;
-const double DYN_VISCOSITY = RHO_0 * V_0 * L / Re;
+double const Re            = 1600.0;
+double const RHO_0         = 1.0;
+double const V_0           = 1.0;
+double const L             = 1.0;
+double const DYN_VISCOSITY = RHO_0 * V_0 * L / Re;
 
 // set R, gamma, Pr -> calculate c_p, lambda
-const double R       = 287.0;
-const double GAMMA   = 1.4;
-const double C_P     = GAMMA / (GAMMA - 1.0) * R;
-const double PRANDTL = 0.71; // Pr = mu * c_p / lambda
-const double LAMBDA  = DYN_VISCOSITY * C_P / PRANDTL;
+double const R       = 287.0;
+double const GAMMA   = 1.4;
+double const C_P     = GAMMA / (GAMMA - 1.0) * R;
+double const PRANDTL = 0.71; // Pr = mu * c_p / lambda
+double const LAMBDA  = DYN_VISCOSITY * C_P / PRANDTL;
 
 // set Ma number -> calculate speed of sound c_0, temperature T_0, pressure p_0
-const double MACH           = 0.1;
-const double SPEED_OF_SOUND = V_0 / MACH;
-const double T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
-const double p_0            = RHO_0 * R * T_0;
+double const MACH           = 0.1;
+double const SPEED_OF_SOUND = V_0 / MACH;
+double const T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
+double const p_0            = RHO_0 * R * T_0;
 
-const double MAX_VELOCITY        = V_0;
-const double CHARACTERISTIC_TIME = L / V_0;
+double const MAX_VELOCITY        = V_0;
+double const CHARACTERISTIC_TIME = L / V_0;
 
 template<int dim>
 class InitialSolution : public Function<dim>
 {
 public:
-  InitialSolution(const unsigned int n_components = dim + 2, const double time = 0.)
+  InitialSolution(unsigned int const n_components = dim + 2, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & x, const unsigned int component = 0) const
+  value(const Point<dim> & x, unsigned int const component = 0) const
   {
     double const u1 = V_0 * std::sin(x[0] / L) * std::cos(x[1] / L) * std::cos(x[2] / L);
     double const u2 = -V_0 * std::cos(x[0] / L) * std::sin(x[1] / L) * std::cos(x[2] / L);

@@ -37,13 +37,13 @@ template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const unsigned int n_components = 1, const double time = 0.)
+  Solution(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(const Point<dim> & p, unsigned int const /*component*/) const
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -57,13 +57,13 @@ template<int dim>
 class NeumannBoundary : public Function<dim>
 {
 public:
-  NeumannBoundary(const unsigned int n_components = 1, const double time = 0.)
+  NeumannBoundary(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(const Point<dim> & p, unsigned int const /*component*/) const
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -83,13 +83,13 @@ template<int dim>
 class RightHandSide : public Function<dim>
 {
 public:
-  RightHandSide(const unsigned int n_components = 1, const double time = 0.)
+  RightHandSide(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /* component */) const
+  value(const Point<dim> & p, unsigned int const /* component */) const
   {
     double result = FREQUENCY * FREQUENCY * dim;
     for(unsigned int d = 0; d < dim; ++d)
@@ -186,8 +186,8 @@ public:
   {
     (void)periodic_faces;
 
-    const double length = 1.0;
-    const double left = -length, right = length;
+    double const length = 1.0;
+    double const left = -length, right = length;
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
     unsigned int n_cells_1d = std::max((unsigned int)2, this->n_subdivisions_1d_hypercube);
     GridGenerator::subdivided_hyper_cube(*triangulation, n_cells_1d, left, right);

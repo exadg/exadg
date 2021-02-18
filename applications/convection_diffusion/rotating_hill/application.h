@@ -32,13 +32,13 @@ template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const unsigned int n_components = 1, const double time = 0.)
+  Solution(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(const Point<dim> & p, unsigned int const /*component*/) const
   {
     double t = this->get_time();
 
@@ -56,13 +56,13 @@ template<int dim>
 class VelocityField : public Function<dim>
 {
 public:
-  VelocityField(const unsigned int n_components = dim, const double time = 0.)
+  VelocityField(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & point, const unsigned int component = 0) const
+  value(const Point<dim> & point, unsigned int const component = 0) const
   {
     double value = 0.0;
 
