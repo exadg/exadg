@@ -31,13 +31,13 @@ struct MGDoFHandlerIdentifier
   }
 
   bool
-  operator<(const MGDoFHandlerIdentifier & other) const
+  operator<(MGDoFHandlerIdentifier const & other) const
   {
     return !((degree >= other.degree) && (is_dg >= other.is_dg));
   }
 
   bool
-  operator==(const MGDoFHandlerIdentifier & other) const
+  operator==(MGDoFHandlerIdentifier const & other) const
   {
     return (degree == other.degree) && (is_dg == other.is_dg);
   }

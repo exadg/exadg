@@ -177,7 +177,7 @@ public:
    * @param filename name of file
    */
   void
-  writeHeader(const char * filename)
+  writeHeader(char const * filename)
   {
     FILE * fp;
 

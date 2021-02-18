@@ -45,7 +45,7 @@ do_test()
                             Quadrature<dim>(fe.get_unit_support_points()),
                             update_quadrature_points);
     std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-    for(const auto & cell : dof_handler.active_cell_iterators())
+    for(auto const & cell : dof_handler.active_cell_iterators())
       if(!cell->is_artificial())
       {
         fe_values.reinit(cell);
@@ -91,7 +91,7 @@ do_test()
                             Quadrature<dim>(fe.get_unit_support_points()),
                             update_quadrature_points);
     std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-    for(const auto & cell : dof_handler.active_cell_iterators())
+    for(auto const & cell : dof_handler.active_cell_iterators())
     {
       fe_values.reinit(cell);
       cell->get_dof_indices(dof_indices);

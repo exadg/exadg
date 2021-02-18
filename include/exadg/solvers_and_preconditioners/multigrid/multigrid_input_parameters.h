@@ -44,17 +44,17 @@ namespace PreconditionAMG
 struct AdditionalData
 {
   AdditionalData(
-    const bool                           elliptic              = true,
-    const bool                           higher_order_elements = false,
+    bool const                           elliptic              = true,
+    bool const                           higher_order_elements = false,
     unsigned int const                   n_cycles              = 1,
-    const bool                           w_cycle               = false,
+    bool const                           w_cycle               = false,
     double const                         aggregation_threshold = 1e-4,
-    const std::vector<std::vector<bool>> constant_modes        = std::vector<std::vector<bool>>(0),
+    std::vector<std::vector<bool>> const constant_modes        = std::vector<std::vector<bool>>(0),
     unsigned int const                   smoother_sweeps       = 2,
     unsigned int const                   smoother_overlap      = 0,
-    const bool                           output_details        = false,
-    const char *                         smoother_type         = "Chebyshev",
-    const char *                         coarse_type           = "Amesos-KLU")
+    bool const                           output_details        = false,
+    char const *                         smoother_type         = "Chebyshev",
+    char const *                         coarse_type           = "Amesos-KLU")
     : elliptic(elliptic),
       higher_order_elements(higher_order_elements),
       n_cycles(n_cycles),
@@ -78,8 +78,8 @@ struct AdditionalData
   unsigned int                   smoother_sweeps;
   unsigned int                   smoother_overlap;
   bool                           output_details;
-  const char *                   smoother_type;
-  const char *                   coarse_type;
+  char const *                   smoother_type;
+  char const *                   coarse_type;
 };
 
 } // namespace PreconditionAMG

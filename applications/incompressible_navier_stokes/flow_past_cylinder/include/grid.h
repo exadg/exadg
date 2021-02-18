@@ -125,7 +125,7 @@ set_boundary_ids(Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
+void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
               ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));

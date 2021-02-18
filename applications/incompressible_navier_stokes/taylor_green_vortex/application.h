@@ -157,13 +157,13 @@ public:
   bool write_restart = false;
   bool read_restart  = false;
 
-  double const V_0                 = 1.0;
-  double const L                   = 1.0;
-  double const p_0                 = 0.0;
-  double const max_velocity        = V_0;
-  double const characteristic_time = L / V_0;
-  double const start_time          = 0.0;
-  double const end_time            = 20.0 * characteristic_time;
+  double const V_0                  = 1.0;
+  double const L                    = 1.0;
+  double const p_0                  = 0.0;
+  double const max_velocity         = V_0;
+  double char  constacteristic_time = L / V_0;
+  double const start_time           = 0.0;
+  double const end_time             = 20.0 * characteristic_time;
   double const left = -numbers::PI * L, right = numbers::PI * L;
 
   // viscosity

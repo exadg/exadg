@@ -57,7 +57,7 @@ public:
   {
     // create bounding boxed of local active cells
     std::vector<BoundingBox<spacedim>> local_boxes;
-    for(const auto cell : tria.active_cell_iterators())
+    for(auto const cell : tria.active_cell_iterators())
       if(cell->is_locally_owned())
         local_boxes.push_back(mapping.get_bounding_box(cell));
 
@@ -66,13 +66,13 @@ public:
       local_boxes.resize(1);
 
     // create r-tree of bounding boxes
-    const auto local_tree = pack_rtree(local_boxes);
+    auto const local_tree = pack_rtree(local_boxes);
 
     // compress r-tree to a minimal set of bounding boxes
-    const auto local_reduced_box = extract_rtree_level(local_tree, 0);
+    auto const local_reduced_box = extract_rtree_level(local_tree, 0);
 
     // gather bounding boxes of other processes
-    const auto global_bounding_boxes = Utilities::MPI::all_gather(comm, local_reduced_box);
+    auto const global_bounding_boxes = Utilities::MPI::all_gather(comm, local_reduced_box);
 
     // determine ranks which might poses quadrature point
     auto points_per_process =
@@ -83,9 +83,9 @@ public:
 
     for(unsigned int i = 0; i < quadrature_points.size(); ++i)
     {
-      const auto & point = quadrature_points[i];
+      auto const & point = quadrature_points[i];
       for(unsigned rank = 0; rank < global_bounding_boxes.size(); ++rank)
-        for(const auto & box : global_bounding_boxes[rank])
+        for(auto const & box : global_bounding_boxes[rank])
           if(box.point_inside(point, tolerance))
           {
             points_per_process[rank].emplace_back(point);
@@ -111,7 +111,7 @@ public:
     {
       unsigned int const my_rank = Utilities::MPI::this_mpi_process(comm);
 
-      const auto & potentially_local_points = points_per_process[my_rank];
+      auto const & potentially_local_points = points_per_process[my_rank];
 
 
       {
@@ -119,8 +119,8 @@ public:
         std::vector<unsigned int>    points_offset;
         std::vector<unsigned int>    count;
 
-        const auto & potentially_relevant_points        = points_per_process[my_rank];
-        const auto & potentially_relevant_points_offset = points_per_process_offset[my_rank];
+        auto const & potentially_relevant_points        = points_per_process[my_rank];
+        auto const & potentially_relevant_points_offset = points_per_process_offset[my_rank];
 
         typename Triangulation<dim, dim>::active_cell_iterator cell_hint =
           typename Triangulation<dim, dim>::active_cell_iterator();
@@ -212,8 +212,8 @@ public:
       [&](unsigned int const other_rank, const std::vector<unsigned int> & recv_buffer) {
         // store recv_buffer -> make the algorithm deterministic
 
-        const auto & potentially_relevant_points        = points_per_process[other_rank];
-        const auto & potentially_relevant_points_offset = points_per_process_offset[other_rank];
+        auto const & potentially_relevant_points        = points_per_process[other_rank];
+        auto const & potentially_relevant_points_offset = points_per_process_offset[other_rank];
 
         std::vector<Point<spacedim>> points;
         std::vector<unsigned int>    points_offset;
@@ -243,15 +243,15 @@ public:
 
     quadrature_points_count.resize(quadrature_points.size(), 0);
 
-    for(const auto & i : relevant_points_per_process)
+    for(auto const & i : relevant_points_per_process)
     {
       unsigned int const rank = i.first;
 
       std::vector<std::pair<unsigned int, unsigned int>> indices;
 
-      const auto & relevant_points        = relevant_points_per_process[rank];
-      const auto & relevant_points_offset = relevant_points_per_process_offset[rank];
-      const auto & relevant_points_count  = relevant_points_per_process_count[rank];
+      auto const & relevant_points        = relevant_points_per_process[rank];
+      auto const & relevant_points_offset = relevant_points_per_process_offset[rank];
+      auto const & relevant_points_count  = relevant_points_per_process_count[rank];
 
       for(unsigned int j = 0; j < relevant_points.size(); ++j)
       {
@@ -283,7 +283,7 @@ public:
 
     unsigned int const my_rank = Utilities::MPI::this_mpi_process(comm);
 
-    for(const auto & vec : input)
+    for(auto const & vec : input)
     {
       if(vec.first == my_rank)
         continue;
@@ -305,7 +305,7 @@ public:
     if(input.find(my_rank) != input.end())
       temp_recv_map[my_rank] = input.at(my_rank);
 
-    for(const auto & vec : map_recv)
+    for(auto const & vec : map_recv)
     {
       if(vec.first == my_rank)
         continue;
@@ -326,7 +326,7 @@ public:
 
     MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
 
-    for(const auto & i : temp_recv_map)
+    for(auto const & i : temp_recv_map)
     {
       unsigned int const rank = i.first;
 
@@ -335,8 +335,8 @@ public:
 
       auto it = indices_per_process.at(rank).begin();
 
-      for(const auto & i : temp_recv_map[rank])
-        for(const auto & j : i)
+      for(auto const & i : temp_recv_map[rank])
+        for(auto const & j : i)
         {
           output[it->first][it->second] = j;
           ++it;
@@ -358,7 +358,7 @@ public:
   void
   init_remote_solution_values(std::map<unsigned int, std::vector<std::vector<T>>> & input) const
   {
-    for(const auto & i : this->relevant_remote_points_count_per_process)
+    for(auto const & i : this->relevant_remote_points_count_per_process)
     {
       unsigned int const rank = i.first;
 

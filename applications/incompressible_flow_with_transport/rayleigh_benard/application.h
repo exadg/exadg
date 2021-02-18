@@ -35,7 +35,7 @@ public:
   TemperatureBC(double const T_ref,
                 double const delta_T,
                 double const length,
-                double const characteristic_time)
+                double char  constacteristic_time)
     : Function<dim>(1, 0.0),
       T_ref(T_ref),
       delta_T(delta_T),
@@ -94,9 +94,9 @@ public:
   // u^2 = g * beta * Delta_T * h
   double const delta_T = std::pow(U, 2.0) / beta / g / H;
 
-  double const start_time          = 0.0;
-  double const characteristic_time = H / U;
-  double const end_time            = 200.0 * characteristic_time;
+  double const start_time           = 0.0;
+  double char  constacteristic_time = H / U;
+  double const end_time             = 200.0 * characteristic_time;
 
   // time stepping
   double const CFL                    = 0.4;

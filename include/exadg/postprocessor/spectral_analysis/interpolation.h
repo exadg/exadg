@@ -286,7 +286,7 @@ public:
    * @param filename  filename
    */
   void
-  deserialize(const char * filename)
+  deserialize(char const * filename)
   {
     deserialize(filename, src);
   }
@@ -298,7 +298,7 @@ public:
    * @param src       source vector
    */
   void
-  deserialize(const char * filename, double *& src)
+  deserialize(char const * filename, double *& src)
   {
     io(0, filename, src);
   }
@@ -309,7 +309,7 @@ public:
    * @param filename  filename
    */
   void
-  serialize(const char * filename)
+  serialize(char const * filename)
   {
     double const * src = this->src;
     serialize(filename, src);
@@ -322,7 +322,7 @@ public:
    * @param src       source vector
    */
   void
-  serialize(const char * filename, double const *& src)
+  serialize(char const * filename, double const *& src)
   {
     io(1, filename, src);
   }
@@ -336,7 +336,7 @@ public:
    */
   template<typename VEC>
   void
-  io(int type, const char * filename, VEC & src)
+  io(int type, char const * filename, VEC & src)
   {
     // dofs to read/write per field
     unsigned long int dofs = cells * dofs_source;

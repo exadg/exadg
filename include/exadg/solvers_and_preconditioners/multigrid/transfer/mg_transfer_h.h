@@ -45,7 +45,7 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   MGTransferH(std::map<unsigned int, unsigned int> level_to_triangulation_level_map,
-              const DoFHandler<dim> &              dof_handler);
+              DoFHandler<dim> const &              dof_handler);
 
   virtual ~MGTransferH()
   {
@@ -53,7 +53,7 @@ public:
 
   void
   set_operator(
-    const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> & operator_in);
+    MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const & operator_in);
 
   virtual void
   prolongate(unsigned int const to_level, VectorType & dst, VectorType const & src) const;
@@ -68,12 +68,12 @@ public:
    * Overload copy_to_mg from MGTransferMatrixFree
    */
   void
-  copy_to_mg(const DoFHandler<dim, dim> & mg_dof,
+  copy_to_mg(DoFHandler<dim, dim> const & mg_dof,
              MGLevelObject<VectorType> &  dst,
-             const VectorType &           src) const;
+             VectorType const &           src) const;
 
 private:
-  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> * underlying_operator;
+  MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const * underlying_operator;
 
   /*
    * This map converts the multigrid level as used in the V-cycle to an actual level in the
@@ -82,7 +82,7 @@ private:
    */
   mutable std::map<unsigned int, unsigned int> level_to_triangulation_level_map;
 
-  const DoFHandler<dim> & dof_handler;
+  DoFHandler<dim> const & dof_handler;
 };
 } // namespace ExaDG
 

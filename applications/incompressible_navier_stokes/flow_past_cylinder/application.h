@@ -476,7 +476,7 @@ public:
     if(auto tria_fully_dist =
          dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
     {
-      const auto construction_data =
+      auto const construction_data =
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
                                                                                              dim>(
           [&](dealii::Triangulation<dim, dim> & tria) mutable {

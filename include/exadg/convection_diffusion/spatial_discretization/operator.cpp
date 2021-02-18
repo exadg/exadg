@@ -941,7 +941,7 @@ Operator<dim, Number>::update_after_mesh_movement()
 }
 
 template<int dim, typename Number>
-const MatrixFree<dim, Number> &
+MatrixFree<dim, Number> const &
 Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;

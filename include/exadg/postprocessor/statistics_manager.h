@@ -96,7 +96,7 @@ class StatisticsManager
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  StatisticsManager(const DoFHandler<dim> & dof_handler_velocity, const Mapping<dim> & mapping);
+  StatisticsManager(DoFHandler<dim> const & dof_handler_velocity, Mapping<dim> const & mapping);
 
   // The argument grid_transform indicates how the y-direction that is initially distributed from
   // [0,1] is mapped to the actual grid. This must match the transformation applied to the
@@ -109,7 +109,7 @@ public:
   evaluate(VectorType const & velocity, double const & time, unsigned int const & time_step_number);
 
   void
-  evaluate(const VectorType & velocity);
+  evaluate(VectorType const & velocity);
 
   void
   evaluate(const std::vector<VectorType> & velocity);
@@ -127,10 +127,10 @@ private:
   unsigned int              n_points_y_per_cell;
 
   void
-  do_evaluate(const std::vector<const VectorType *> & velocity);
+  do_evaluate(const std::vector<VectorType const *> & velocity);
 
-  const DoFHandler<dim> & dof_handler;
-  const Mapping<dim> &    mapping;
+  DoFHandler<dim> const & dof_handler;
+  Mapping<dim> const &    mapping;
   MPI_Comm                communicator;
 
   // vector of y-coordinates at which statistical quantities are computed

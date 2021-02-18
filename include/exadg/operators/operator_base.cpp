@@ -678,8 +678,8 @@ void
 make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
                       SparsityPatternType &             sparsity,
                       unsigned int const                level,
-                      const AffineConstraints<Number> & constraints,
-                      const bool                        keep_constrained_dofs = true)
+                      AffineConstraints<Number> const & constraints,
+                      bool const                        keep_constrained_dofs = true)
 {
   const types::global_dof_index n_dofs = dof.n_dofs(level);
   (void)n_dofs;

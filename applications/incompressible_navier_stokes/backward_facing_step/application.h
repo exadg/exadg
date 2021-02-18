@@ -176,7 +176,7 @@ public:
   // start and end time
   double const Re_H                 = 5540.0;
   double const centerline_velocity  = Re_H * viscosity / Geometry::H;
-  double const characteristic_time  = Geometry::H / centerline_velocity;
+  double char  constacteristic_time = Geometry::H / centerline_velocity;
   double const start_time           = 0.0;
   double const precursor_start_time = -300.0 * characteristic_time;
   double const end_time             = 300.0 * characteristic_time;

@@ -37,8 +37,8 @@ namespace ExaDG
 using namespace dealii;
 
 template<int dim, typename Number>
-StatisticsManager<dim, Number>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,
-                                                  const Mapping<dim> &    mapping_in)
+StatisticsManager<dim, Number>::StatisticsManager(DoFHandler<dim> const & dof_handler_velocity,
+                                                  Mapping<dim> const &    mapping_in)
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
@@ -333,7 +333,7 @@ template<int dim, typename Number>
 void
 StatisticsManager<dim, Number>::evaluate(VectorType const & velocity)
 {
-  std::vector<const VectorType *> vecs;
+  std::vector<VectorType const *> vecs;
   vecs.push_back(&velocity);
   do_evaluate(vecs);
 }
@@ -443,7 +443,7 @@ StatisticsManager<dim, Number>::reset()
  */
 template<int dim, typename Number>
 void
-StatisticsManager<dim, Number>::do_evaluate(const std::vector<const VectorType *> & velocity)
+StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *> & velocity)
 {
   // Use local vectors xxx_loc in order to average/integrate over all
   // locally owned cells of current processor.

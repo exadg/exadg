@@ -48,15 +48,15 @@ using namespace dealii;
  */
 template<int dim, typename Number>
 void
-apply_taylor_green_symmetry(const DoFHandler<dim> &                            dof_handler_symm,
-                            const DoFHandler<dim> &                            dof_handler,
+apply_taylor_green_symmetry(DoFHandler<dim> const &                            dof_handler_symm,
+                            DoFHandler<dim> const &                            dof_handler,
                             double const                                       n_cells_1d,
                             double const                                       delta,
                             const LinearAlgebra::distributed::Vector<Number> & vector_symm,
                             LinearAlgebra::distributed::Vector<Number> &       vector)
 {
   // determine some useful constants
-  const auto & fe = dof_handler.get_fe();
+  auto const & fe = dof_handler.get_fe();
 
   const MPI_Comm comm =
     dynamic_cast<const parallel::TriangulationBase<dim> *>(&(dof_handler.get_triangulation()))
@@ -72,7 +72,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
     map_lex_to_cell_full;
 
   {
-    auto norm_point_to_lex = [&](const auto c) {
+    auto norm_point_to_lex = [&](auto const c) {
       // convert normalized point [0, 1] to lex
       if(dim == 2)
         return std::floor(c[0]) + n_cells_1d * std::floor(c[1]);
@@ -82,7 +82,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
     };
 
     // ... has (symm)
-    for(const auto & cell : dof_handler_symm.active_cell_iterators())
+    for(auto const & cell : dof_handler_symm.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
@@ -96,7 +96,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
       }
 
     // want (full)
-    for(const auto & cell : dof_handler.active_cell_iterators())
+    for(auto const & cell : dof_handler.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
@@ -126,7 +126,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
         consensus_algorithm(process, comm);
     consensus_algorithm.run();
 
-    for(const auto & owner : owning_ranks_of_ghosts)
+    for(auto const & owner : owning_ranks_of_ghosts)
       recv_map_proc_to_lex_offset[owner] = std::vector<unsigned int>();
 
     for(unsigned int i = 0; i < owning_ranks_of_ghosts.size(); i++)
@@ -150,7 +150,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
       unsigned int send_couter = 0;
 
       // post recv
-      for(const auto & recv_offset : recv_map_proc_to_lex_offset)
+      for(auto const & recv_offset : recv_map_proc_to_lex_offset)
       {
         recv_buffer[recv_offset.first].resize(recv_offset.second.size() * fe.n_dofs_per_cell());
         MPI_Irecv(recv_buffer[recv_offset.first].data(),
@@ -163,7 +163,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
       }
 
       // post send
-      for(const auto & send_index_set : send_map_proc_to_lex)
+      for(auto const & send_index_set : send_map_proc_to_lex)
       {
         // allocate memory
         auto & send_buffer = send_buffers[send_index_set.first];
@@ -172,9 +172,9 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
         // collect data to be send
         auto                                 send_buffer_ptr = &send_buffer[0];
         std::vector<types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
-        for(const auto cell_index : send_index_set.second)
+        for(auto const cell_index : send_index_set.second)
         {
-          const auto & cell_accessor = map_lex_to_cell_symm[cell_index];
+          auto const & cell_accessor = map_lex_to_cell_symm[cell_index];
           cell_accessor->get_dof_indices(dof_indices);
 
           for(unsigned int i = 0; i < fe.n_dofs_per_cell(); i++)
@@ -197,12 +197,12 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
       MPI_Waitall(send_couter, send_requests.data(), MPI_STATUSES_IGNORE);
 
       // copy received data into a single buffer
-      for(const auto & recv_offset : recv_map_proc_to_lex_offset)
+      for(auto const & recv_offset : recv_map_proc_to_lex_offset)
       {
-        const auto & buffer = recv_buffer[recv_offset.first];
+        auto const & buffer = recv_buffer[recv_offset.first];
 
         unsigned int counter = 0;
-        for(const auto & offset : recv_offset.second)
+        for(auto const & offset : recv_offset.second)
           for(unsigned int i = 0; i < fe.n_dofs_per_cell(); i++)
             data_buffer[offset * fe.n_dofs_per_cell() + i] = buffer[counter++];
       }
@@ -216,11 +216,11 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
     unsigned int const n_dofs_per_component = fe.n_dofs_per_cell() / dim;
 
     std::vector<types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
-    for(const auto cell_index : range_want_lex)
+    for(auto const cell_index : range_want_lex)
     {
-      const auto & cell_accessors = map_lex_to_cell_full[cell_index];
+      auto const & cell_accessors = map_lex_to_cell_full[cell_index];
 
-      for(const auto & cell_accessor : cell_accessors)
+      for(auto const & cell_accessor : cell_accessors)
       {
         cell_accessor->get_dof_indices(dof_indices);
 

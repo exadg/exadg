@@ -39,11 +39,11 @@ template<int dim,
 class MGTransferC : virtual public MGTransfer<VectorType>
 {
 public:
-  MGTransferC(const Mapping<dim> &              mapping,
-              const MatrixFree<dim, Number> &   matrixfree_dg,
-              const MatrixFree<dim, Number> &   matrixfree_cg,
-              const AffineConstraints<Number> & constraints_dg,
-              const AffineConstraints<Number> & constraints_cg,
+  MGTransferC(Mapping<dim> const &              mapping,
+              MatrixFree<dim, Number> const &   matrixfree_dg,
+              MatrixFree<dim, Number> const &   matrixfree_cg,
+              AffineConstraints<Number> const & constraints_dg,
+              AffineConstraints<Number> const & constraints_cg,
               unsigned int const                level,
               unsigned int const                fe_degree,
               unsigned int const                dof_handler_index = 0);
@@ -51,26 +51,26 @@ public:
   virtual ~MGTransferC();
 
   void
-  interpolate(unsigned int const level, VectorType & dst, const VectorType & src) const;
+  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const;
 
   void
-  restrict_and_add(unsigned int const /*level*/, VectorType & dst, const VectorType & src) const;
+  restrict_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
   void
-  prolongate(unsigned int const /*level*/, VectorType & dst, const VectorType & src) const;
+  prolongate(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
 private:
   template<int degree>
   void
-  do_interpolate(VectorType & dst, const VectorType & src) const;
+  do_interpolate(VectorType & dst, VectorType const & src) const;
 
   template<int degree>
   void
-  do_restrict_and_add(VectorType & dst, const VectorType & src) const;
+  do_restrict_and_add(VectorType & dst, VectorType const & src) const;
 
   template<int degree>
   void
-  do_prolongate(VectorType & dst, const VectorType & src) const;
+  do_prolongate(VectorType & dst, VectorType const & src) const;
 
   unsigned int const      fe_degree;
   MatrixFree<dim, Number> data_composite;

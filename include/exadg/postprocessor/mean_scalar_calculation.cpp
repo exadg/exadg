@@ -27,7 +27,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 MeanScalarCalculator<dim, Number>::MeanScalarCalculator(
-  const MatrixFree<dim, Number> & matrix_free_in,
+  MatrixFree<dim, Number> const & matrix_free_in,
   unsigned int const              dof_index_in,
   unsigned int const              quad_index_in,
   MPI_Comm const &                mpi_comm_in)
@@ -41,7 +41,7 @@ MeanScalarCalculator<dim, Number>::MeanScalarCalculator(
 template<int dim, typename Number>
 Number
 MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
-  const VectorType &                     solution,
+  VectorType const &                     solution,
   std::map<types::boundary_id, Number> & mean_scalar)
 {
   // zero mean scalars since we sum into these variables

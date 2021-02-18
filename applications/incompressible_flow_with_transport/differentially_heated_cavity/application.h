@@ -61,10 +61,10 @@ public:
   double const left  = -L / 2.0;
   double const right = L / 2.0;
 
-  double const U                   = std::sqrt(g * beta * delta_T * L);
-  double const characteristic_time = L / U;
-  double const start_time          = 0.0;
-  double const end_time            = 10.0 * characteristic_time;
+  double const U                    = std::sqrt(g * beta * delta_T * L);
+  double char  constacteristic_time = L / U;
+  double const start_time           = 0.0;
+  double const end_time             = 10.0 * characteristic_time;
 
   double const CFL                    = 0.3;
   double const max_velocity           = 1.0;

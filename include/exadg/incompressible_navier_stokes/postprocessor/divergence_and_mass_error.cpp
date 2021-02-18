@@ -101,9 +101,9 @@ DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
-  const MatrixFree<dim, Number> &               data,
+  MatrixFree<dim, Number> const &               data,
   std::vector<Number> &                         dst,
-  const VectorType &                            source,
+  VectorType const &                            source,
   const std::pair<unsigned int, unsigned int> & cell_range)
 {
   CellIntegratorU integrator(data, dof_index, quad_index);
@@ -142,9 +142,9 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
-  const MatrixFree<dim, Number> &               data,
+  MatrixFree<dim, Number> const &               data,
   std::vector<Number> &                         dst,
-  const VectorType &                            source,
+  VectorType const &                            source,
   const std::pair<unsigned int, unsigned int> & face_range)
 {
   FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
@@ -190,9 +190,9 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_boundary_face(
-  const MatrixFree<dim, Number> &,
+  MatrixFree<dim, Number> const &,
   std::vector<Number> &,
-  const VectorType &,
+  VectorType const &,
   const std::pair<unsigned int, unsigned int> &)
 {
 }

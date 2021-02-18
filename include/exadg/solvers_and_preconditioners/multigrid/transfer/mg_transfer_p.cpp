@@ -119,7 +119,7 @@ void
 weight_residuum(MatrixFree &                                   data_1,
                 FEEval &                                       fe_eval1,
                 unsigned int                                   cell,
-                const AlignedVector<VectorizedArray<Number>> & weights)
+                AlignedVector<VectorizedArray<Number>> const & weights)
 {
 #if false
   (void) weights;
@@ -182,7 +182,7 @@ template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
 MGTransferP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
-                                                                 const VectorType & src) const
+                                                                 VectorType const & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
@@ -222,7 +222,7 @@ template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
 MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType &       dst,
-                                                                      const VectorType & src) const
+                                                                      VectorType const & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
@@ -265,7 +265,7 @@ template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
 void
 MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
-                                                                const VectorType & src) const
+                                                                VectorType const & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
                                                                                dof_handler_index,
@@ -319,8 +319,8 @@ MGTransferP<dim, Number, VectorType, components>::MGTransferP()
 
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferP<dim, Number, VectorType, components>::MGTransferP(
-  const MatrixFree<dim, value_type> * matrixfree_1,
-  const MatrixFree<dim, value_type> * matrixfree_2,
+  MatrixFree<dim, value_type> const * matrixfree_1,
+  MatrixFree<dim, value_type> const * matrixfree_2,
   int                                 degree_1,
   int                                 degree_2,
   int                                 dof_handler_index)
@@ -331,8 +331,8 @@ MGTransferP<dim, Number, VectorType, components>::MGTransferP(
 template<int dim, typename Number, typename VectorType, int components>
 void
 MGTransferP<dim, Number, VectorType, components>::reinit(
-  const MatrixFree<dim, value_type> * matrixfree_1,
-  const MatrixFree<dim, value_type> * matrixfree_2,
+  MatrixFree<dim, value_type> const * matrixfree_1,
+  MatrixFree<dim, value_type> const * matrixfree_2,
   int                                 degree_1,
   int                                 degree_2,
   int                                 dof_handler_index)
@@ -424,7 +424,7 @@ template<int dim, typename Number, typename VectorType, int components>
 void
 MGTransferP<dim, Number, VectorType, components>::interpolate(unsigned int const level,
                                                               VectorType &       dst,
-                                                              const VectorType & src) const
+                                                              VectorType const & src) const
 {
   (void)level;
   if(!this->is_dg) // only if CG
@@ -497,7 +497,7 @@ template<int dim, typename Number, typename VectorType, int components>
 void
 MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int const /*level*/,
                                                                    VectorType &       dst,
-                                                                   const VectorType & src) const
+                                                                   VectorType const & src) const
 {
   if(!this->is_dg) // only if CG
     src.update_ghost_values();
@@ -572,7 +572,7 @@ template<int dim, typename Number, typename VectorType, int components>
 void
 MGTransferP<dim, Number, VectorType, components>::prolongate(unsigned int const /*level*/,
                                                              VectorType &       dst,
-                                                             const VectorType & src) const
+                                                             VectorType const & src) const
 {
   if(!this->is_dg) // only if CG
   {

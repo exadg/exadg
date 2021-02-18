@@ -43,7 +43,7 @@ public:
                        MPI_Comm const &                mpi_comm_in);
 
   Number
-  calculate_mean_scalar(const VectorType &                     solution,
+  calculate_mean_scalar(VectorType const &                     solution,
                         std::map<types::boundary_id, Number> & mean_scalar);
 
 private:

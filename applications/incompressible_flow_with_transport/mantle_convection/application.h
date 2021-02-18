@@ -54,7 +54,7 @@ public:
   TemperatureBC(double const T_ref,
                 double const delta_T,
                 double const length,
-                double const characteristic_time)
+                double char  constacteristic_time)
     : Function<dim>(1, 0.0),
       T_ref(T_ref),
       delta_T(delta_T),
@@ -119,9 +119,9 @@ public:
 
   double const H = R1 - R0;
   double const U = std::sqrt(Ra * kinematic_viscosity * thermal_diffusivity / (H * H));
-  double const characteristic_time = H / U;
-  double const start_time          = 0.0;
-  double const end_time            = 200.0 * characteristic_time;
+  double char  constacteristic_time = H / U;
+  double const start_time           = 0.0;
+  double const end_time             = 200.0 * characteristic_time;
 
   // CFL > 4 did not show further speed-up for 2d example
   double const CFL                    = 2.0; // 0.4;

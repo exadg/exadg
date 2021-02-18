@@ -94,7 +94,7 @@ public:
     s.init(dim, n_cells_1D, points_src, points_dst);
 
     std::vector<types::global_dof_index> local_cells;
-    for(const auto & cell : tria.active_cell_iterators())
+    for(auto const & cell : tria.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
@@ -136,7 +136,7 @@ public:
 
     std::vector<types::global_dof_index> indices_has, indices_want;
 
-    for(const auto & I : local_cells)
+    for(auto const & I : local_cells)
       for(types::global_dof_index i = 0; i < pow_(points_dst, dim); i++)
         for(types::global_dof_index d = 0; d < dim; d++)
         {
@@ -279,10 +279,10 @@ private:
   MPI_Comm const & comm;
 
   // flush flow field to hard drive?
-  const bool write;
+  bool const write;
 
   // perform spectral analysis
-  const bool inplace;
+  bool const inplace;
 
   // struct containing the setup
   Setup s;

@@ -33,7 +33,7 @@ using namespace dealii;
 template<int dim, typename Number, typename VectorType>
 void
 MGTransfer_MGLevelObject<dim, Number, VectorType>::reinit(
-  const Mapping<dim> &                                        mapping,
+  Mapping<dim> const &                                        mapping,
   MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
   MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
@@ -52,9 +52,9 @@ MGTransfer_MGLevelObject<dim, Number, VectorType>::reinit(
   // construct global_levels
   for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
   {
-    const auto &       matrixfree = mg_matrixfree[global_level];
-    const auto &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
-    const bool         is_dg      = fe.dofs_per_vertex == 0;
+    auto const &       matrixfree = mg_matrixfree[global_level];
+    auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
+    bool const         is_dg      = fe.dofs_per_vertex == 0;
     unsigned int const level      = matrixfree->get_mg_level();
     unsigned int const degree =
       (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(), 1.0 / dim)) - 1;
@@ -182,7 +182,7 @@ template<int dim, typename Number, typename VectorType>
 void
 MGTransfer_MGLevelObject<dim, Number, VectorType>::interpolate(unsigned int const level,
                                                                VectorType &       dst,
-                                                               const VectorType & src) const
+                                                               VectorType const & src) const
 {
   this->mg_level_object[level]->interpolate(level, dst, src);
 }
@@ -191,7 +191,7 @@ template<int dim, typename Number, typename VectorType>
 void
 MGTransfer_MGLevelObject<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
                                                                     VectorType &       dst,
-                                                                    const VectorType & src) const
+                                                                    VectorType const & src) const
 {
   this->mg_level_object[level]->restrict_and_add(level, dst, src);
 }
@@ -200,7 +200,7 @@ template<int dim, typename Number, typename VectorType>
 void
 MGTransfer_MGLevelObject<dim, Number, VectorType>::prolongate(unsigned int const level,
                                                               VectorType &       dst,
-                                                              const VectorType & src) const
+                                                              VectorType const & src) const
 {
   this->mg_level_object[level]->prolongate(level, dst, src);
 }
