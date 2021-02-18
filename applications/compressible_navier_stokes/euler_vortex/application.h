@@ -29,20 +29,20 @@ namespace CompNS
 using namespace dealii;
 
 // problem specific parameters
-const double DYN_VISCOSITY  = 0.0;
-const double GAMMA          = 1.4;
-const double LAMBDA         = 0.0;
-const double R              = 1.0;
-const double U_0            = 1.0;
-const double MACH           = 0.5;
-const double SPEED_OF_SOUND = U_0 / MACH;
-const double T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
+double const DYN_VISCOSITY  = 0.0;
+double const GAMMA          = 1.4;
+double const LAMBDA         = 0.0;
+double const R              = 1.0;
+double const U_0            = 1.0;
+double const MACH           = 0.5;
+double const SPEED_OF_SOUND = U_0 / MACH;
+double const T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
 
-const double X_0  = 0.0;
-const double Y_0  = 0.0;
-const double H    = 10.0;
-const double L    = 10.0;
-const double BETA = 5.0;
+double const X_0  = 0.0;
+double const Y_0  = 0.0;
+double const H    = 10.0;
+double const L    = 10.0;
+double const BETA = 5.0;
 
 double
 get_r_square(double const x, double const y, double const t)
@@ -53,7 +53,7 @@ get_r_square(double const x, double const y, double const t)
 double
 get_rho(double const r_sq)
 {
-  const double pi = numbers::PI;
+  double const pi = numbers::PI;
   return std::pow(1.0 - ((GAMMA - 1.0) / (16.0 * GAMMA * pi * pi) * BETA * BETA *
                          std::exp(2.0 * (1.0 - r_sq))),
                   1 / (GAMMA - 1.0));
@@ -62,21 +62,21 @@ get_rho(double const r_sq)
 double
 get_u(double const y, double const r_sq)
 {
-  const double pi = numbers::PI;
+  double const pi = numbers::PI;
   return 1.0 - BETA * std::exp(1.0 - r_sq) * (y - Y_0) / (2.0 * pi);
 }
 
 double
 get_v(double const x, double const t, double const r_sq)
 {
-  const double pi = numbers::PI;
+  double const pi = numbers::PI;
   return BETA * std::exp(1.0 - r_sq) * (x - t - X_0) / (2.0 * pi);
 }
 
 double
 get_energy(double const rho, double const u, double const v)
 {
-  const double pressure = std::pow(rho, GAMMA);
+  double const pressure = std::pow(rho, GAMMA);
 
   return pressure / (rho * (GAMMA - 1.0)) + 0.5 * (u * u + v * v);
 }
@@ -85,19 +85,19 @@ template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const unsigned int n_components = dim + 2, const double time = 0.)
+  Solution(unsigned int const n_components = dim + 2, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
-    const double t    = this->get_time();
-    const double r_sq = get_r_square(p[0], p[1], t);
-    const double rho  = get_rho(r_sq);
-    const double u    = get_u(p[1], r_sq);
-    const double v    = get_v(p[0], t, r_sq);
+    double const t    = this->get_time();
+    double const r_sq = get_r_square(p[0], p[1], t);
+    double const rho  = get_rho(r_sq);
+    double const u    = get_u(p[1], r_sq);
+    double const v    = get_v(p[0], t, r_sq);
 
     double result = 0.0;
     if(component == 0)
@@ -130,16 +130,16 @@ template<int dim>
 class VelocityBC : public Function<dim>
 {
 public:
-  VelocityBC(const unsigned int n_components = dim, const double time = 0.)
+  VelocityBC(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
-    const double t    = this->get_time();
-    const double r_sq = get_r_square(p[0], p[1], t);
+    double const t    = this->get_time();
+    double const r_sq = get_r_square(p[0], p[1], t);
 
     double result = 0.0;
     if(component == 0)
@@ -158,20 +158,20 @@ template<int dim>
 class EnergyBC : public Function<dim>
 {
 public:
-  EnergyBC(const double time = 0.) : Function<dim>(1, time)
+  EnergyBC(double const time = 0.) : Function<dim>(1, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
-    const double t      = this->get_time();
-    const double r_sq   = get_r_square(p[0], p[1], t);
-    const double rho    = get_rho(r_sq);
-    const double u      = get_u(p[1], r_sq);
-    const double v      = get_v(p[0], t, r_sq);
+    double const t      = this->get_time();
+    double const r_sq   = get_r_square(p[0], p[1], t);
+    double const rho    = get_rho(r_sq);
+    double const u      = get_u(p[1], r_sq);
+    double const v      = get_v(p[0], t, r_sq);
     double       energy = get_energy(rho, u, v);
 
     return energy;
@@ -182,18 +182,18 @@ template<int dim>
 class DensityBC : public Function<dim>
 {
 public:
-  DensityBC(const double time = 0.) : Function<dim>(1, time)
+  DensityBC(double const time = 0.) : Function<dim>(1, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
-    const double t    = this->get_time();
-    const double r_sq = get_r_square(p[0], p[1], t);
-    const double rho  = get_rho(r_sq);
+    double const t    = this->get_time();
+    double const r_sq = get_r_square(p[0], p[1], t);
+    double const rho  = get_rho(r_sq);
 
     return rho;
   }

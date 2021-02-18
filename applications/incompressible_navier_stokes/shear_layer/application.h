@@ -44,7 +44,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
     if(component == 0)
@@ -182,7 +182,7 @@ public:
               std::shared_ptr<Mapping<dim>> &                   mapping,
               unsigned int const                                mapping_degree)
   {
-    const double left = 0.0, right = 1.0;
+    double const left = 0.0, right = 1.0;
     GridGenerator::hyper_cube(*triangulation, left, right);
 
     // use periodic boundary conditions

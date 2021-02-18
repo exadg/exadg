@@ -154,7 +154,7 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
     flow_rates_vector[counter] = (iterator++)->second;
   }
 
-  Utilities::MPI::sum(ArrayView<const double>(&(*flow_rates_vector.begin()),
+  Utilities::MPI::sum(ArrayView<double const>(&(*flow_rates_vector.begin()),
                                               flow_rates_vector.size()),
                       mpi_comm,
                       ArrayView<double>(&(*flow_rates_vector.begin()), flow_rates_vector.size()));

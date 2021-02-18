@@ -49,7 +49,7 @@ double const VISCOSITY = 1. / 180.; // critical value: 1./50. - 1./75.
 double const MAX_VELOCITY = 18.3;
 
 // flow-through time based on mean centerline velocity
-const double CHARACTERISTIC_TIME = DIMENSIONS_X1 / MAX_VELOCITY;
+double const CHARACTERISTIC_TIME = DIMENSIONS_X1 / MAX_VELOCITY;
 
 double const START_TIME = 0.0;
 double const END_TIME   = 200.0 * CHARACTERISTIC_TIME;
@@ -59,13 +59,13 @@ double const SAMPLE_END_TIME         = END_TIME;
 unsigned int SAMPLE_EVERY_TIME_STEPS = 10;
 
 // use a negative GRID_STRETCH_FAC to deactivate grid stretching
-const double GRID_STRETCH_FAC = 1.8;
+double const GRID_STRETCH_FAC = 1.8;
 
 /*
  *  maps eta in [0,1] --> y in [-1,1]*length_y/2.0 (using a hyperbolic mesh stretching)
  */
 double
-grid_transform_y(const double & eta)
+grid_transform_y(double const & eta)
 {
   double y = 0.0;
 
@@ -84,7 +84,7 @@ grid_transform_y(const double & eta)
  *  maps y in [-1,1]*length_y/2.0 --> eta in [0,1]
  */
 double
-inverse_grid_transform_y(const double & y)
+inverse_grid_transform_y(double const & y)
 {
   double eta = 0.0;
 
@@ -112,7 +112,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x;
 
@@ -130,7 +130,7 @@ public:
    *  to point xi in reference coordinates [0,1]^d
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim> xi;
 
@@ -162,7 +162,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     AssertThrow(std::abs(p[1]) < DIMENSIONS_X2 / 2.0 + 1.e-12,
                 ExcMessage("Invalid geometry parameters."));

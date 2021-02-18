@@ -45,7 +45,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component = 0*/) const
+  value(Point<dim> const & p, unsigned int const /*component = 0*/) const
   {
     double       t           = this->get_time();
     double const time_factor = std::max(0.0, 1.0 - t / characteristic_time);

@@ -29,19 +29,19 @@ namespace CompNS
 using namespace dealii;
 
 // problem specific parameters
-const double DYN_VISCOSITY  = 0.1;
-const double GAMMA          = 1.4;
-const double LAMBDA         = 0.0;
-const double R              = 1.0;
-const double U_0            = 1.0;
-const double MACH           = 0.2;
-const double SPEED_OF_SOUND = U_0 / MACH;
-const double RHO_0          = 1.0;
-const double T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
-const double E_0            = R / (GAMMA - 1.0) * T_0;
+double const DYN_VISCOSITY  = 0.1;
+double const GAMMA          = 1.4;
+double const LAMBDA         = 0.0;
+double const R              = 1.0;
+double const U_0            = 1.0;
+double const MACH           = 0.2;
+double const SPEED_OF_SOUND = U_0 / MACH;
+double const RHO_0          = 1.0;
+double const T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
+double const E_0            = R / (GAMMA - 1.0) * T_0;
 
-const double H = 2.0;
-const double L = 4.0;
+double const H = 2.0;
+double const L = 4.0;
 
 double
 parabolic_velocity_profile(double const y, double const t)
@@ -58,13 +58,13 @@ template<int dim>
 class InitialSolution : public Function<dim>
 {
 public:
-  InitialSolution(const unsigned int n_components = dim + 2, const double time = 0.)
+  InitialSolution(unsigned int const n_components = dim + 2, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
 
@@ -92,13 +92,13 @@ template<int dim>
 class VelocityBC : public Function<dim>
 {
 public:
-  VelocityBC(const unsigned int n_components = dim, const double time = 0.)
+  VelocityBC(unsigned int const n_components = dim, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
 

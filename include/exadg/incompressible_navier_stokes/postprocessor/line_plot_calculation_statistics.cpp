@@ -102,7 +102,7 @@ LinePlotCalculatorStatistics<dim, Number>::evaluate(VectorType const &   velocit
   if(data.statistics_data.calculate_statistics == true)
   {
     // EPSILON: small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
+    double const EPSILON = 1.0e-10;
 
     if((time > data.statistics_data.sample_start_time - EPSILON) &&
        (time < data.statistics_data.sample_end_time + EPSILON) &&
@@ -395,7 +395,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
     if((*quantity)->type == QuantityType::Velocity)
     {
       Utilities::MPI::sum(
-        ArrayView<const Number>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()),
+        ArrayView<Number const>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()),
         communicator,
         ArrayView<Number>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()));
 

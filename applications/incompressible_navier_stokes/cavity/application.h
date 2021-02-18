@@ -224,7 +224,7 @@ public:
   {
     (void)periodic_faces;
 
-    const double left = 0.0, right = L;
+    double const left = 0.0, right = L;
     GridGenerator::hyper_cube(*triangulation, left, right);
     triangulation->refine_global(n_refine_space);
 

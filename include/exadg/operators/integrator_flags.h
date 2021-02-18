@@ -28,7 +28,7 @@ using namespace dealii;
 
 struct CellFlags
 {
-  CellFlags(const bool value = false, const bool gradient = false, const bool hessian = false)
+  CellFlags(bool const value = false, const bool gradient = false, const bool hessian = false)
     : value(value), gradient(gradient), hessian(hessian){};
 
   CellFlags
@@ -50,7 +50,7 @@ struct CellFlags
 
 struct FaceFlags
 {
-  FaceFlags(const bool value = false, const bool gradient = false)
+  FaceFlags(bool const value = false, const bool gradient = false)
     : value(value), gradient(gradient){};
 
   FaceFlags

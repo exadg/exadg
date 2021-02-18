@@ -252,7 +252,7 @@ public:
    * Setters and getters.
    */
 
-  const MatrixFree<dim, Number> &
+  MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
   DoFHandler<dim> const &

@@ -39,7 +39,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
     double const pi = numbers::PI;
@@ -67,7 +67,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const t  = this->get_time();
     double const pi = numbers::PI;
@@ -97,7 +97,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
     double const pi = numbers::PI;
@@ -171,7 +171,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
     double const pi = numbers::PI;
@@ -228,7 +228,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
     double const pi = numbers::PI;
@@ -487,8 +487,8 @@ public:
     {
       // Complex Geometry
       Triangulation<dim> tria1, tria2;
-      const double       radius = (right - left) * 0.25;
-      const double       width  = right - left;
+      double const       radius = (right - left) * 0.25;
+      double const       width  = right - left;
       GridGenerator::hyper_shell(
         tria1, Point<dim>(), radius, 0.5 * width * std::sqrt(dim), 2 * dim);
       tria1.reset_all_manifolds();
@@ -526,8 +526,8 @@ public:
     {
       // Complex Geometry
       Triangulation<dim> tria1, tria2;
-      const double       radius = (right - left) * 0.25;
-      const double       width  = right - left;
+      double const       radius = (right - left) * 0.25;
+      double const       width  = right - left;
       Point<dim>         center = Point<dim>();
 
       GridGenerator::hyper_shell(

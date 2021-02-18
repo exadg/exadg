@@ -19,7 +19,7 @@ using namespace dealii;
 void
 do_test()
 {
-  const int          dim = 2;
+  int const          dim = 2;
   FESystem           fe(FE_Q<dim>(/*degree=*/7), dim);
   Triangulation<dim> tria;
   GridGenerator::hyper_ball(tria);
@@ -45,15 +45,15 @@ do_test()
                             Quadrature<dim>(fe.get_unit_support_points()),
                             update_quadrature_points);
     std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-    for(const auto & cell : dof_handler.active_cell_iterators())
+    for(auto const & cell : dof_handler.active_cell_iterators())
       if(!cell->is_artificial())
       {
         fe_values.reinit(cell);
         cell->get_dof_indices(dof_indices);
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         {
-          const unsigned int coordinate_direction = fe.system_to_component_index(i).first;
-          const Point<dim>   point                = fe_values.quadrature_point(i);
+          unsigned int const coordinate_direction = fe.system_to_component_index(i).first;
+          Point<dim> const   point                = fe_values.quadrature_point(i);
           double             sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
           for(unsigned int d = 0; d < dim; ++d)
             sinval *= std::sin(2 * numbers::PI * (point(d) + 1) / (2));
@@ -91,14 +91,14 @@ do_test()
                             Quadrature<dim>(fe.get_unit_support_points()),
                             update_quadrature_points);
     std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-    for(const auto & cell : dof_handler.active_cell_iterators())
+    for(auto const & cell : dof_handler.active_cell_iterators())
     {
       fe_values.reinit(cell);
       cell->get_dof_indices(dof_indices);
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
       {
-        const unsigned int coordinate_direction = fe.system_to_component_index(i).first;
-        const Point<dim>   point                = fe_values.quadrature_point(i);
+        unsigned int const coordinate_direction = fe.system_to_component_index(i).first;
+        Point<dim> const   point                = fe_values.quadrature_point(i);
         double             sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
         for(unsigned int d = 0; d < dim; ++d)
           sinval *= std::sin(2 * numbers::PI * (point(d) + 1) / (2));

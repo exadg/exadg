@@ -125,7 +125,7 @@ set_boundary_ids(Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = true)
+void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
               ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
@@ -149,8 +149,8 @@ void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = tr
       right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
 
     // create middle part first as a hyper shell
-    const double       outer_radius   = (X_2 - X_1) / 2.0;
-    const unsigned int n_cells        = 4;
+    double const       outer_radius   = (X_2 - X_1) / 2.0;
+    unsigned int const n_cells        = 4;
     Point<2>           current_center = Point<2>((X_1 + X_2) / 2.0, outer_radius);
     GridGenerator::hyper_shell(middle, current_center, R, outer_radius, n_cells, true);
     MyCylindricalManifold<2> boundary(current_center);
@@ -285,15 +285,15 @@ void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = tr
       right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
 
     // create middle part first as a hyper shell
-    const double       outer_radius = (X_2 - X_1) / 2.0;
-    const unsigned int n_cells      = 4;
+    double const       outer_radius = (X_2 - X_1) / 2.0;
+    unsigned int const n_cells      = 4;
     GridGenerator::hyper_shell(middle, center, R_2, outer_radius, n_cells, true);
     middle.set_all_manifold_ids(MANIFOLD_ID);
     middle.set_manifold(MANIFOLD_ID, cylinder_manifold);
     middle.refine_global(1);
 
     // two inner circles in order to refine towards the cylinder surface
-    const unsigned int n_cells_circle = 8;
+    unsigned int const n_cells_circle = 8;
     GridGenerator::hyper_shell(circle_1, center, R, R_1, n_cells_circle, true);
     GridGenerator::hyper_shell(circle_2, center, R_1, R_2, n_cells_circle, true);
 
@@ -416,8 +416,8 @@ void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = tr
       right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
 
     // middle part
-    const double       outer_radius = (X_2 - X_1) / 2.0;
-    const unsigned int n_cells      = 4;
+    double const       outer_radius = (X_2 - X_1) / 2.0;
+    unsigned int const n_cells      = 4;
     Point<2>           origin;
 
     // inner circle around cylinder
@@ -544,8 +544,8 @@ void create_triangulation(Triangulation<2> & tria, const bool compute_in_2d = tr
       right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
 
     // middle part
-    const double       outer_radius = (X_2 - X_1) / 2.0;
-    const unsigned int n_cells      = 4;
+    double const       outer_radius = (X_2 - X_1) / 2.0;
+    unsigned int const n_cells      = 4;
     Point<2>           origin;
 
     // create middle part first as a hyper shell

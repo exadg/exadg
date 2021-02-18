@@ -95,7 +95,7 @@ public:
   typedef CellIntegrator<dim, n_components, Number>  IntegratorCell;
   typedef FaceIntegrator<dim, n_components, Number>  IntegratorFace;
 
-  static const unsigned int vectorization_length = VectorizedArray<Number>::size();
+  static unsigned int const vectorization_length = VectorizedArray<Number>::size();
 
   typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
 
@@ -160,7 +160,7 @@ public:
   n() const;
 
   Number
-  el(const unsigned int, const unsigned int) const;
+  el(unsigned int const, const unsigned int) const;
 
   bool
   is_empty_locally() const;

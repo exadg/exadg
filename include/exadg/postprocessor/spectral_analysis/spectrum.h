@@ -390,7 +390,7 @@ public:
    * @param filename name of file
    */
   void
-  serialize(const char * filename)
+  serialize(char const * filename)
   {
     int start     = local_start;
     int end       = local_end;

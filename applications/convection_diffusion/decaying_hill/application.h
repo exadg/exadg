@@ -44,12 +44,12 @@ template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const double diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
+  Solution(double const diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t      = this->get_time();
     double result = 1.0;
@@ -81,19 +81,19 @@ public:
   }
 
 private:
-  const double diffusivity;
+  double const diffusivity;
 };
 
 template<int dim>
 class RightHandSide : public Function<dim>
 {
 public:
-  RightHandSide(const double diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
+  RightHandSide(double const diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -119,7 +119,7 @@ public:
   }
 
 private:
-  const double diffusivity;
+  double const diffusivity;
 };
 
 template<int dim, typename Number>

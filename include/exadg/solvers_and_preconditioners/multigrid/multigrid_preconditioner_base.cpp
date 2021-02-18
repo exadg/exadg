@@ -362,7 +362,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   Map const &                                                          dirichlet_bc,
   std::vector<MGLevelInfo> &                                           level_info,
   std::vector<MGDoFHandlerIdentifier> &                                p_levels,
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              dof_handlers,
+  MGLevelObject<std::shared_ptr<DoFHandler<dim> const>> &              dof_handlers,
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints)
 {
@@ -372,10 +372,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
     dof_handlers.resize(0, this->n_levels - 1);
     constraints.resize(0, this->n_levels - 1);
 
-    const unsigned int n_components = fe.n_components();
+    unsigned int const n_components = fe.n_components();
 
     // temporal storage for new DoFHandlers and constraints on each p-level
-    std::map<MGDoFHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
+    std::map<MGDoFHandlerIdentifier, std::shared_ptr<DoFHandler<dim> const>> map_dofhandlers;
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constrained_dofs;
 
     // setup dof-handler and constrained dofs for each p-level
@@ -433,12 +433,12 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
       coarse_grid_triangulations =
         MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
 
-    const unsigned int n_components = fe.n_components();
+    unsigned int const n_components = fe.n_components();
 
     // setup dof-handler and constrained dofs for each p-level
     for(unsigned int i = 0; i < level_info.size(); i++)
     {
-      const auto & level = level_info[i];
+      auto const & level = level_info[i];
 
       auto dof_handler = new DoFHandler<dim>((level.h_level() + 1 == tria->n_global_levels()) ?
                                                *(dynamic_cast<Triangulation<dim> const *>(tria)) :

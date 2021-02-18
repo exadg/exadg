@@ -32,21 +32,21 @@ using namespace dealii;
 
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferC<dim, Number, VectorType, components>::MGTransferC(
-  const Mapping<dim> &              mapping,
-  const MatrixFree<dim, Number> &   matrixfree_dg,
-  const MatrixFree<dim, Number> &   matrixfree_cg,
-  const AffineConstraints<Number> & constraints_dg,
-  const AffineConstraints<Number> & constraints_cg,
-  const unsigned int                level,
-  const unsigned int                fe_degree,
-  const unsigned int                dof_handler_index)
+  Mapping<dim> const &              mapping,
+  MatrixFree<dim, Number> const &   matrixfree_dg,
+  MatrixFree<dim, Number> const &   matrixfree_cg,
+  AffineConstraints<Number> const & constraints_dg,
+  AffineConstraints<Number> const & constraints_cg,
+  unsigned int const                level,
+  unsigned int const                fe_degree,
+  unsigned int const                dof_handler_index)
   : fe_degree(fe_degree)
 {
-  std::vector<const DoFHandler<dim> *> dofhandlers = {
+  std::vector<DoFHandler<dim> const *> dofhandlers = {
     &matrixfree_cg.get_dof_handler(dof_handler_index),
     &matrixfree_dg.get_dof_handler(dof_handler_index)};
 
-  std::vector<const AffineConstraints<Number> *> constraint_matrices = {&constraints_cg,
+  std::vector<AffineConstraints<Number> const *> constraint_matrices = {&constraints_cg,
                                                                         &constraints_dg};
   QGauss<1>                                      quadrature(1);
 
@@ -64,7 +64,7 @@ template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
 MGTransferC<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
-                                                                 const VectorType & src) const
+                                                                 VectorType const & src) const
 {
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
@@ -91,7 +91,7 @@ template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
 MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType &       dst,
-                                                                      const VectorType & src) const
+                                                                      VectorType const & src) const
 {
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
@@ -120,7 +120,7 @@ template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
 MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
-                                                                const VectorType & src) const
+                                                                VectorType const & src) const
 {
   src.update_ghost_values();
 
@@ -147,9 +147,9 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::interpolate(const unsigned int level,
+MGTransferC<dim, Number, VectorType, components>::interpolate(unsigned int const level,
                                                               VectorType &       dst,
-                                                              const VectorType & src) const
+                                                              VectorType const & src) const
 {
   (void)level;
 
@@ -179,9 +179,9 @@ MGTransferC<dim, Number, VectorType, components>::interpolate(const unsigned int
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
+MGTransferC<dim, Number, VectorType, components>::restrict_and_add(unsigned int const /*level*/,
                                                                    VectorType &       dst,
-                                                                   const VectorType & src) const
+                                                                   VectorType const & src) const
 {
   switch(this->fe_degree)
   {
@@ -209,9 +209,9 @@ MGTransferC<dim, Number, VectorType, components>::restrict_and_add(const unsigne
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
+MGTransferC<dim, Number, VectorType, components>::prolongate(unsigned int const /*level*/,
                                                              VectorType &       dst,
-                                                             const VectorType & src) const
+                                                             VectorType const & src) const
 {
   switch(this->fe_degree)
   {

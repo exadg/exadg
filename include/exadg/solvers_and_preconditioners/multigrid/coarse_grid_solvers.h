@@ -291,7 +291,7 @@ public:
   }
 
   virtual void
-  operator()(const unsigned int level, Vector & dst, const Vector & src) const
+  operator()(unsigned int const level, Vector & dst, const Vector & src) const
   {
     AssertThrow(inverse_operator.get() != 0,
                 ExcMessage("MGCoarseChebyshev: inverse_operator is not initialized."));

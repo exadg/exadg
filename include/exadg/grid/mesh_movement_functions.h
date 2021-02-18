@@ -81,7 +81,7 @@ public:
   }
 
   double
-  value(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  value(Point<dim> const & x, unsigned int const coordinate_direction = 0) const override
   {
     double displacement = 0.0;
 
@@ -92,8 +92,8 @@ public:
 
 private:
   double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const
+  compute_displacement_share(Point<dim> const & x,
+                             unsigned int const coordinate_direction = 0) const
   {
     double solution = 0.0;
 
@@ -216,7 +216,7 @@ public:
   }
 
   double
-  value(const Point<dim> & x_in, const unsigned int coordinate_direction = 0) const override
+  value(Point<dim> const & x_in, unsigned int const coordinate_direction = 0) const override
   {
     // For 2D and 3D the coordinate system is set differently
     Point<dim> x = x_in;
@@ -232,8 +232,8 @@ public:
 
 private:
   double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const
+  compute_displacement_share(Point<dim> const & x,
+                             unsigned int const coordinate_direction = 0) const
   {
     double solution = 0.0;
 

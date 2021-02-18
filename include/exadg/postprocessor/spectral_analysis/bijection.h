@@ -137,8 +137,8 @@ public:
     int n = s.cells;
 
     {
-      const unsigned int n_active_cells    = triangulation.n_global_active_cells();
-      const unsigned int n_active_cells_1d = std::pow(n_active_cells, 1.0 / s.dim) + 0.49;
+      unsigned int const n_active_cells    = triangulation.n_global_active_cells();
+      unsigned int const n_active_cells_1d = std::pow(n_active_cells, 1.0 / s.dim) + 0.49;
 
       std::vector<int> temp_indices;
 

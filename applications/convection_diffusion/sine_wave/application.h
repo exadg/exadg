@@ -37,13 +37,13 @@ template<int dim>
 class Solution : public Function<dim>
 {
 public:
-  Solution(const unsigned int n_components = 1, const double time = 0.)
+  Solution(unsigned int const n_components = 1, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int /*component*/) const
+  value(Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t = this->get_time();
 

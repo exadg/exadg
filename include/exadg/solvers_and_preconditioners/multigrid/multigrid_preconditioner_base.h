@@ -155,7 +155,7 @@ protected:
     Map const &                                                          dirichlet_bc,
     std::vector<MGLevelInfo> &                                           level_info,
     std::vector<MGDoFHandlerIdentifier> &                                p_levels,
-    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              dofhandlers,
+    MGLevelObject<std::shared_ptr<DoFHandler<dim> const>> &              dofhandlers,
     MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
     MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints);
 
@@ -165,7 +165,7 @@ protected:
   virtual void
   initialize_transfer_operators();
 
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>                dof_handlers;
+  MGLevelObject<std::shared_ptr<DoFHandler<dim> const>>                dof_handlers;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                    constrained_dofs;
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>>   constraints;
   MGLevelObject<std::shared_ptr<MatrixFreeData<dim, MultigridNumber>>> matrix_free_data_objects;

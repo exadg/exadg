@@ -97,9 +97,9 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
         << "Solution of Orr-Sommerfeld equation for Poiseuille flow" << std::endl
         << std::endl;
 
-  const unsigned int fe_degree = fe.get_degree();
-  const double       alpha     = wave_number;
-  const double       Re        = Reynolds_number;
+  unsigned int const fe_degree = fe.get_degree();
+  double const       alpha     = wave_number;
+  double const       Re        = Reynolds_number;
 
   AssertThrow(dim == 1, ExcNotImplemented());
   AssertThrow(fe_degree > 3, ExcNotImplemented());
@@ -114,7 +114,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
   Table<2, std::complex<double>> B(dof_handler.n_dofs(), dof_handler.n_dofs());
 
   // ensures correct integration of (1-y^2) terms
-  const unsigned int n_q_points = fe_degree + 2;
+  unsigned int const n_q_points = fe_degree + 2;
   QGauss<dim>        quadrature(n_q_points);
 
   FEValues<dim> fe_values(fe,
@@ -135,12 +135,12 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
       double sum_a_imag = 0;
       for(unsigned int q = 0; q < n_q_points; ++q)
       {
-        const double phi   = fe_values.shape_value(i, q);
-        const double psi   = fe_values.shape_value(j, q);
-        const double dphi  = fe_values.shape_grad(i, q)[0];
-        const double dpsi  = fe_values.shape_grad(j, q)[0];
-        const double ddphi = fe_values.shape_hessian(i, q)[0][0];
-        const double ddpsi = fe_values.shape_hessian(j, q)[0][0];
+        double const phi   = fe_values.shape_value(i, q);
+        double const psi   = fe_values.shape_value(j, q);
+        double const dphi  = fe_values.shape_grad(i, q)[0];
+        double const dpsi  = fe_values.shape_grad(j, q)[0];
+        double const ddphi = fe_values.shape_hessian(i, q)[0][0];
+        double const ddpsi = fe_values.shape_hessian(j, q)[0][0];
 
         // 1/Re * [(phi'', psi'') + 2*alpha^2*(phi',psi') + alpha^4*(phi,psi)]
         sum_a += (ddphi * ddpsi + 2. * alpha * alpha * dphi * dpsi +
@@ -148,7 +148,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
                  fe_values.JxW(q) / Re;
 
         // alpha * (phi,-2*psi-(1-y^2)*(psi''-alpha^2*psi))
-        const double y = fe_values.quadrature_point(q)[0];
+        double const y = fe_values.quadrature_point(q)[0];
         sum_a_imag -= (phi * alpha * (2 * psi + (1 - y * y) * (ddpsi - alpha * alpha * psi))) *
                       fe_values.JxW(q);
 
@@ -173,7 +173,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
   // TRANSFORMATION AS PART OF A DIRECT STIFFNESS ASSEMBLY PROCESS, IJNME 20.
   // we reformulate eq (2) by inverting the matrix G_i and add that into the
   // matrix G_j as in eq (3)
-  const int                m = A.n_rows();
+  int const                m = A.n_rows();
   LAPACKFullMatrix<double> constraints(4, m - 4);
   for(int i = 0; i < m - 4; ++i)
     constraints(2, i) = fe.shape_grad(i + 2, Point<dim>(0.))[0];
@@ -207,7 +207,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
 
   // create a lambda that eliminates the columns
   auto eliminate_constraints = [](const Table<2, std::complex<double>> & M,
-                                  const unsigned int                     m,
+                                  unsigned int const                     m,
                                   const LAPACKFullMatrix<double> &       constraints,
                                   Table<2, std::complex<double>> &       MM) -> void {
     for(unsigned int i = 0; i < m - 4; ++i)
@@ -355,10 +355,10 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
     /*
     // print eigenvector
     pcout << std::endl << "Eigenvector on uniform grid: " << std::endl;
-    const int n_output = fe_degree + fe_degree%2;
+    int const n_output = fe_degree + fe_degree%2;
     for (int i=0; i<=n_output; ++i)
     {
-      const double y_unit = (double)i/n_output;
+      double const y_unit = (double)i/n_output;
       std::complex<double> evaluated = 0;
       for (int j=0; j<m; ++j)
         evaluated += eigenvector[j] * fe.shape_value(j,Point<dim>(y_unit));

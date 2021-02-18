@@ -37,26 +37,26 @@ double const DIMENSIONS_X3 = numbers::PI;
 
 // set Re = u_tau * delta / nu, density=1, u_tau=1, delta=1 -> calculate kinematic and dynamic
 // viscosities
-const double Re            = 180.0;
-const double RHO_0         = 1.0;
-const double nu            = 1.0 / Re;
-const double DYN_VISCOSITY = RHO_0 * nu;
+double const Re            = 180.0;
+double const RHO_0         = 1.0;
+double const nu            = 1.0 / Re;
+double const DYN_VISCOSITY = RHO_0 * nu;
 
 // set R, gamma, Pr -> calculate c_p, lambda
-const double R       = 287.0;
-const double GAMMA   = 1.4;
-const double C_P     = GAMMA / (GAMMA - 1.0) * R;
-const double PRANDTL = 0.71; // Pr = mu * c_p / lambda
-const double LAMBDA  = DYN_VISCOSITY * C_P / PRANDTL;
+double const R       = 287.0;
+double const GAMMA   = 1.4;
+double const C_P     = GAMMA / (GAMMA - 1.0) * R;
+double const PRANDTL = 0.71; // Pr = mu * c_p / lambda
+double const LAMBDA  = DYN_VISCOSITY * C_P / PRANDTL;
 
 // set Ma number -> calculate speed of sound c_0, temperature T_0
-const double MACH           = 0.1;
-const double MAX_VELOCITY   = 18.3; // 18.3 for Re_tau = 180;
-const double SPEED_OF_SOUND = MAX_VELOCITY / MACH;
-const double T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
+double const MACH           = 0.1;
+double const MAX_VELOCITY   = 18.3; // 18.3 for Re_tau = 180;
+double const SPEED_OF_SOUND = MAX_VELOCITY / MACH;
+double const T_0            = SPEED_OF_SOUND * SPEED_OF_SOUND / GAMMA / R;
 
 // flow-through time based on mean centerline velocity
-const double CHARACTERISTIC_TIME = DIMENSIONS_X1 / MAX_VELOCITY;
+double const CHARACTERISTIC_TIME = DIMENSIONS_X1 / MAX_VELOCITY;
 
 double const START_TIME = 0.0;
 double const END_TIME   = 200.0 * CHARACTERISTIC_TIME;
@@ -71,7 +71,7 @@ double const GRID_STRETCH_FAC = 1.8;
  *  maps eta in [0,1] --> y in [-1,1]*length_y/2.0 (using a hyperbolic mesh stretching)
  */
 double
-grid_transform_y(const double & eta)
+grid_transform_y(double const & eta)
 {
   double y = 0.0;
 
@@ -90,7 +90,7 @@ grid_transform_y(const double & eta)
  *  maps y in [-1,1]*length_y/2.0 --> eta in [0,1]
  */
 double
-inverse_grid_transform_y(const double & y)
+inverse_grid_transform_y(double const & y)
 {
   double eta = 0.0;
 
@@ -118,7 +118,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x;
 
@@ -136,7 +136,7 @@ public:
    *  to point xi in reference coordinates [0,1]^d
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim> xi;
 
@@ -163,15 +163,15 @@ template<int dim>
 class InitialSolution : public Function<dim>
 {
 public:
-  InitialSolution(const unsigned int n_components = dim + 2, const double time = 0.)
+  InitialSolution(unsigned int const n_components = dim + 2, double const time = 0.)
     : Function<dim>(n_components, time)
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
-    const double tol = 1.e-12;
+    double const tol = 1.e-12;
     AssertThrow(std::abs(p[1]) < DIMENSIONS_X2 / 2.0 + tol,
                 ExcMessage("Invalid geometry parameters."));
 

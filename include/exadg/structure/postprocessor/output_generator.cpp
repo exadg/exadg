@@ -131,7 +131,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
     if(time_step_number >= 0) // unsteady problem
     {
       // small number which is much smaller than the time step size
-      const double EPSILON = 1.0e-10;
+      double const EPSILON = 1.0e-10;
 
       // The current time might be larger than output_start_time. In that case, we first have to
       // reset the counter in order to avoid that output is written every time step.

@@ -29,7 +29,7 @@ using namespace dealii;
 template<int dim, typename Number>
 MGTransferH<dim, Number>::MGTransferH(
   std::map<unsigned int, unsigned int> level_to_triangulation_level_map,
-  const DoFHandler<dim> &              dof_handler)
+  DoFHandler<dim> const &              dof_handler)
   : underlying_operator(0),
     level_to_triangulation_level_map(level_to_triangulation_level_map),
     dof_handler(dof_handler)
@@ -120,7 +120,7 @@ template<int dim, typename Number>
 void
 MGTransferH<dim, Number>::copy_to_mg(const DoFHandler<dim, dim> & mg_dof,
                                      MGLevelObject<VectorType> &  dst,
-                                     const VectorType &           src) const
+                                     VectorType const &           src) const
 {
   AssertThrow(underlying_operator != 0, ExcNotInitialized());
 

@@ -85,8 +85,8 @@ public:
   {
     (void)periodic_faces;
 
-    const double length = 1.0;
-    const double left = -length, right = length;
+    double const length = 1.0;
+    double const left = -length, right = length;
 
     GridGenerator::hyper_cube_slit(*triangulation, left, right);
 

@@ -40,15 +40,15 @@ public:
 
   MGTransferP();
 
-  MGTransferP(const MatrixFree<dim, value_type> * matrixfree_1,
-              const MatrixFree<dim, value_type> * matrixfree_2,
+  MGTransferP(MatrixFree<dim, value_type> const * matrixfree_1,
+              MatrixFree<dim, value_type> const * matrixfree_2,
               int                                 degree_1,
               int                                 degree_2,
               int                                 dof_handler_index = 0);
 
   void
-  reinit(const MatrixFree<dim, value_type> * matrixfree_1,
-         const MatrixFree<dim, value_type> * matrixfree_2,
+  reinit(MatrixFree<dim, value_type> const * matrixfree_1,
+         MatrixFree<dim, value_type> const * matrixfree_2,
          int                                 degree_1,
          int                                 degree_2,
          int                                 dof_handler_index = 0);
@@ -56,29 +56,29 @@ public:
   virtual ~MGTransferP();
 
   virtual void
-  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
+  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const;
 
   virtual void
-  restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
+  restrict_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
   virtual void
-  prolongate(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
+  prolongate(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
 private:
   template<int fe_degree_1, int fe_degree_2>
   void
-  do_interpolate(VectorType & dst, const VectorType & src) const;
+  do_interpolate(VectorType & dst, VectorType const & src) const;
 
   template<int fe_degree_1, int fe_degree_2>
   void
-  do_restrict_and_add(VectorType & dst, const VectorType & src) const;
+  do_restrict_and_add(VectorType & dst, VectorType const & src) const;
 
   template<int fe_degree_1, int fe_degree_2>
   void
-  do_prolongate(VectorType & dst, const VectorType & src) const;
+  do_prolongate(VectorType & dst, VectorType const & src) const;
 
-  const MatrixFree<dim, value_type> *    matrixfree_1;
-  const MatrixFree<dim, value_type> *    matrixfree_2;
+  MatrixFree<dim, value_type> const *    matrixfree_1;
+  MatrixFree<dim, value_type> const *    matrixfree_2;
   AlignedVector<VectorizedArray<Number>> prolongation_matrix_1d;
   AlignedVector<VectorizedArray<Number>> interpolation_matrix_1d;
 

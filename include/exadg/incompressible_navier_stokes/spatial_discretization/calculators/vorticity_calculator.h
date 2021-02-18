@@ -46,7 +46,7 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
+  static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
 
   typedef CellIntegrator<dim, dim, Number> Integrator;
 

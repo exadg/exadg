@@ -64,7 +64,7 @@ double const GAMMA_UPPER = 40.0;
  *  maps eta in [-H, 2*H] --> y in [-H,2*H]
  */
 double
-grid_transform_y(const double & eta)
+grid_transform_y(double const & eta)
 {
   double y = 0.0;
   double gamma, xi;
@@ -87,7 +87,7 @@ grid_transform_y(const double & eta)
  *  requires that the input parameter is 0 < xi < 1
  */
 double
-grid_transform_turb_channel(const double & xi)
+grid_transform_turb_channel(double const & xi)
 {
   // map xi in [0,1] --> eta in [0, 2H]
   double eta = HEIGHT_CHANNEL * xi;
@@ -100,7 +100,7 @@ grid_transform_turb_channel(const double & xi)
  *  maps y in [-H,2*H] --> eta in [-H,2*H]
  */
 double
-inverse_grid_transform_y(const double & y)
+inverse_grid_transform_y(double const & y)
 {
   double eta = 0.0;
   double gamma, xi;
@@ -131,7 +131,7 @@ public:
    *  to point x in physical coordinates
    */
   Point<dim>
-  push_forward(const Point<dim> & xi) const
+  push_forward(Point<dim> const & xi) const
   {
     Point<dim> x = xi;
     x[1]         = grid_transform_y(xi[1]);
@@ -144,7 +144,7 @@ public:
    *  to point xi in reference coordinates
    */
   Point<dim>
-  pull_back(const Point<dim> & x) const
+  pull_back(Point<dim> const & x) const
   {
     Point<dim> xi = x;
     xi[1]         = inverse_grid_transform_y(x[1]);

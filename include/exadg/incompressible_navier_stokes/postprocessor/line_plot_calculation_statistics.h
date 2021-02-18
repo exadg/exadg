@@ -70,9 +70,9 @@ public:
     typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
       TYPE;
 
-  LinePlotCalculatorStatistics(const DoFHandler<dim> & dof_handler_velocity_in,
-                               const DoFHandler<dim> & dof_handler_pressure_in,
-                               const Mapping<dim> &    mapping_in,
+  LinePlotCalculatorStatistics(DoFHandler<dim> const & dof_handler_velocity_in,
+                               DoFHandler<dim> const & dof_handler_pressure_in,
+                               Mapping<dim> const &    mapping_in,
                                MPI_Comm const &        mpi_comm_in);
 
   void
@@ -86,7 +86,7 @@ public:
 
 private:
   void
-  print_headline(std::ofstream & f, const unsigned int number_of_samples) const
+  print_headline(std::ofstream & f, unsigned int const number_of_samples) const
   {
     f << "number of samples: N = " << number_of_samples << std::endl;
   }

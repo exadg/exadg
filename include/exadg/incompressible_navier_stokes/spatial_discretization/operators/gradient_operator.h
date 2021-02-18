@@ -137,10 +137,10 @@ public:
 
   // homogeneous operator
   void
-  apply(VectorType & dst, const VectorType & src) const;
+  apply(VectorType & dst, VectorType const & src) const;
 
   void
-  apply_add(VectorType & dst, const VectorType & src) const;
+  apply_add(VectorType & dst, VectorType const & src) const;
 
   // inhomogeneous operator
   void

@@ -142,7 +142,7 @@ public:
    * @params n_points     nr of points
    */
   std::vector<dealii::Point<1>>
-  get_equidistant_inner(const unsigned int n_points)
+  get_equidistant_inner(unsigned int const n_points)
   {
     std::vector<dealii::Point<1>> points(n_points);
 
@@ -180,7 +180,7 @@ public:
   void
   interpolate()
   {
-    const double * src = this->src;
+    double const * src = this->src;
     interpolate(src);
   }
 
@@ -192,14 +192,14 @@ public:
    * @params src      source vector (vector to be interpolated)
    */
   void
-  interpolate(const double *& src)
+  interpolate(double const *& src)
   {
     // allocate dst- and src-vector
     AlignedVector<double> temp1(MAX(dofs_source, dofs_target));
     AlignedVector<double> temp2(MAX(dofs_source, dofs_target));
 
     // get start point of arrays
-    const double * src_ = src;
+    double const * src_ = src;
     double *       dst_ = dst;
     // loop over all cells
     for(int c = 0; c < cells; c++)
@@ -286,7 +286,7 @@ public:
    * @param filename  filename
    */
   void
-  deserialize(const char * filename)
+  deserialize(char const * filename)
   {
     deserialize(filename, src);
   }
@@ -298,7 +298,7 @@ public:
    * @param src       source vector
    */
   void
-  deserialize(const char * filename, double *& src)
+  deserialize(char const * filename, double *& src)
   {
     io(0, filename, src);
   }
@@ -309,9 +309,9 @@ public:
    * @param filename  filename
    */
   void
-  serialize(const char * filename)
+  serialize(char const * filename)
   {
-    const double * src = this->src;
+    double const * src = this->src;
     serialize(filename, src);
   }
 
@@ -322,7 +322,7 @@ public:
    * @param src       source vector
    */
   void
-  serialize(const char * filename, const double *& src)
+  serialize(char const * filename, double const *& src)
   {
     io(1, filename, src);
   }
@@ -336,7 +336,7 @@ public:
    */
   template<typename VEC>
   void
-  io(int type, const char * filename, VEC & src)
+  io(int type, char const * filename, VEC & src)
   {
     // dofs to read/write per field
     unsigned long int dofs = cells * dofs_source;

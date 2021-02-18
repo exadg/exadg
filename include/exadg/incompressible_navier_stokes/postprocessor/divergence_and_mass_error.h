@@ -113,22 +113,22 @@ private:
               Number &                        mass_error_reference);
 
   void
-  local_compute_div(const MatrixFree<dim, Number> &               data,
+  local_compute_div(MatrixFree<dim, Number> const &               data,
                     std::vector<Number> &                         dst,
-                    const VectorType &                            source,
+                    VectorType const &                            source,
                     const std::pair<unsigned int, unsigned int> & cell_range);
 
   void
-  local_compute_div_face(const MatrixFree<dim, Number> &               data,
+  local_compute_div_face(MatrixFree<dim, Number> const &               data,
                          std::vector<Number> &                         dst,
-                         const VectorType &                            source,
+                         VectorType const &                            source,
                          const std::pair<unsigned int, unsigned int> & face_range);
 
   // not needed
   void
-  local_compute_div_boundary_face(const MatrixFree<dim, Number> &,
+  local_compute_div_boundary_face(MatrixFree<dim, Number> const &,
                                   std::vector<Number> &,
-                                  const VectorType &,
+                                  VectorType const &,
                                   const std::pair<unsigned int, unsigned int> &);
 
   void

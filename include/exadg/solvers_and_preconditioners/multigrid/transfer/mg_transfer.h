@@ -33,13 +33,13 @@ public:
   }
 
   virtual void
-  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
+  interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  restrict_and_add(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
+  restrict_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  prolongate(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
+  prolongate(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
 };
 } // namespace ExaDG
 

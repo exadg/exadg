@@ -67,10 +67,10 @@ print_parameter(ConditionalOStream const & pcout, std::string const name, Parame
 inline void
 print_name(ConditionalOStream const & pcout, std::string const name)
 {
-  const unsigned int max_length_name = 45;
+  unsigned int const max_length_name = 45;
 
   pcout << "  " /* 2 */ << name /* name.length*/ << ":" /* 1 */;
-  const int remaining_spaces = max_length_name - 2 - 1 - name.length();
+  int const remaining_spaces = max_length_name - 2 - 1 - name.length();
 
   for(int i = 0; i < remaining_spaces; ++i)
     pcout << " " /* 1 */;

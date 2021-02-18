@@ -137,12 +137,12 @@ template<typename VectorType, typename MatrixType, typename SmootherType>
 class MultigridPreconditioner
 {
 public:
-  MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &   matrix,
-                          const MGCoarseGridBase<VectorType> &                 coarse,
-                          const MGTransfer<VectorType> &                       transfer,
-                          const MGLevelObject<std::shared_ptr<SmootherType>> & smoother,
-                          const MPI_Comm &                                     comm,
-                          const unsigned int                                   n_cycles = 1)
+  MultigridPreconditioner(MGLevelObject<std::shared_ptr<MatrixType>> const &   matrix,
+                          MGCoarseGridBase<VectorType> const &                 coarse,
+                          MGTransfer<VectorType> const &                       transfer,
+                          MGLevelObject<std::shared_ptr<SmootherType>> const & smoother,
+                          MPI_Comm const &                                     comm,
+                          unsigned int const                                   n_cycles = 1)
     : minlevel(matrix.min_level()),
       maxlevel(matrix.max_level()),
       defect(minlevel, maxlevel),
@@ -374,26 +374,26 @@ private:
   /**
    * The matrix for each level.
    */
-  SmartPointer<const MGLevelObject<std::shared_ptr<MatrixType>>> matrix;
+  SmartPointer<MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
 
   /**
    * The matrix for each level.
    */
-  SmartPointer<const MGCoarseGridBase<VectorType>> coarse;
+  SmartPointer<MGCoarseGridBase<VectorType> const> coarse;
 
   /**
    * Object for grid transfer.
    */
-  const MGTransfer<VectorType> & transfer;
+  MGTransfer<VectorType> const & transfer;
 
   /**
    * The smoothing object.
    */
-  SmartPointer<const MGLevelObject<std::shared_ptr<SmootherType>>> smoother;
+  SmartPointer<MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
 
   MPI_Comm const & mpi_comm;
 
-  const unsigned int n_cycles;
+  unsigned int const n_cycles;
 
 #if ENABLE_TIMING
   MultigridTimings timings;

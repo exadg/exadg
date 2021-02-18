@@ -47,7 +47,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     AssertThrow(dim == 3, ExcMessage("Dimension has to be dim==3."));
 
@@ -106,7 +106,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  value(Point<dim> const & p, unsigned int const component = 0) const
   {
     // compute polar coordinates (r, phi) from point p
     // given in Cartesian coordinates (x, y) = inflow plane
@@ -139,7 +139,7 @@ public:
   }
 
   double
-  value(const Point<dim> & /*p*/, const unsigned int component = 0) const
+  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 

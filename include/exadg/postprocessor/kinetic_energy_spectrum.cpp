@@ -94,7 +94,7 @@ public:
     s.init(dim, n_cells_1D, points_src, points_dst);
 
     std::vector<types::global_dof_index> local_cells;
-    for(const auto & cell : tria.active_cell_iterators())
+    for(auto const & cell : tria.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
@@ -136,7 +136,7 @@ public:
 
     std::vector<types::global_dof_index> indices_has, indices_want;
 
-    for(const auto & I : local_cells)
+    for(auto const & I : local_cells)
       for(types::global_dof_index i = 0; i < pow_(points_dst, dim); i++)
         for(types::global_dof_index d = 0; d < dim; d++)
         {
@@ -183,7 +183,7 @@ public:
    *
    */
   void
-  execute(const double * src, const std::string & file_name = "", const double time = 0.0)
+  execute(double const * src, const std::string & file_name = "", const double time = 0.0)
   {
     if(write)
     {
@@ -206,7 +206,7 @@ public:
       ArrayView<double> dst(
         fftw.u_real,
         s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
-      ArrayView<const double> src_(
+      ArrayView<double const> src_(
         ipol.dst,
         s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim));
       nonconti->export_to_ghosted_array(src_, dst);
@@ -262,7 +262,7 @@ private:
 
   template<int dim>
   double
-  norm_point_to_lex(const Point<dim> & c, const unsigned int & n_cells_1D)
+  norm_point_to_lex(Point<dim> const & c, unsigned int const & n_cells_1D)
   {
     // convert normalized point [0, 1] to lex
     if(dim == 2)
@@ -279,10 +279,10 @@ private:
   MPI_Comm const & comm;
 
   // flush flow field to hard drive?
-  const bool write;
+  bool const write;
 
   // perform spectral analysis
-  const bool inplace;
+  bool const inplace;
 
   // struct containing the setup
   Setup s;
@@ -320,7 +320,7 @@ public:
   }
 
   void
-  execute(const double *, const std::string & = "", const double = 0.0)
+  execute(double const *, const std::string & = "", const double = 0.0)
   {
   }
 
@@ -471,7 +471,7 @@ KineticEnergySpectrumCalculator<dim, Number>::needs_to_be_evaluated(
   else if(data.calculate_every_time_interval > 0.0)
   {
     // small number which is much smaller than the time step size
-    const double EPSILON = 1.0e-10;
+    double const EPSILON = 1.0e-10;
 
     // The current time might be larger than output_start_time. In that case, we first have to
     // reset the counter in order to avoid that output is written every time step.
@@ -507,7 +507,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
                                                           double const       time)
 {
   // extract beginning of vector...
-  const Number * temp = velocity.begin();
+  Number const * temp = velocity.begin();
 
   const std::string file_name = data.filename + "_" + Utilities::int_to_string(counter, 4);
 
