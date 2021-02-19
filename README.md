@@ -1,9 +1,9 @@
 # ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
-ExaDG is a software project written in C++ using state-of-the-art programming techniques. The software targets the numerical solution of partial differential equations in the field of computational fluid dynamics (CFD).
+ExaDG is a software project written in C++ using state-of-the-art programming techniques. The software targets the numerical solution of partial differential equations (PDE) in the field of computational fluid dynamics (CFD).
 
 ## Mission
 
-ExaDG aims to provide next generation's fluid dynamics solvers by the use of novel discretization techniques (discontinuous Galerkin methods) and highly performant and scalable implementation techniques (matrix-free methods). ExaDG's core module is a high-performance incompressible Navier-Stokes solver. The project targets scale-resolving simulations of turbulent flows (LES and DNS) with unprecendented accuracy and computational efficiency. LES solvers have fallen behind the expectations in providing efficient solvers applicable to industrial problems, and still require a huge amount of computational resources and simulation time. At the same time, computer hardware has undergone a significant evolution over the last decades towards multicore chips with increasing SIMD parallelism and increasing Flop-to-Byte ratio. ExaDG wants to relax the limitations of state-of-the-art CFD software by innovative concepts from computer science, mathematics, and numerical discretization methods.
+ExaDG aims to provide next generation's fluid dynamics solvers by the use of novel discretization techniques (discontinuous Galerkin methods) and algorithms leading to fast PDE solvers (matrix-free methods). ExaDG's core module is a high-performance incompressible Navier-Stokes solver. The project targets scale-resolving simulations of turbulent flows (LES and DNS) with unprecendented accuracy and computational efficiency. LES solvers have fallen behind the expectations in providing efficient solvers applicable to industrial problems, and still require a huge amount of computational resources and simulation time. At the same time, computer hardware has undergone a significant evolution over the last decades towards multicore chips with increasing SIMD parallelism and increasing Flop-to-Byte ratio. ExaDG wants to relax the limitations of state-of-the-art CFD software by innovative concepts from computer science, mathematics, and numerical discretization methods.
 
 ExaDG's range of applicability currently also covers coupled flow-transport problems, moving domains and meshes, fluid-structure interaction, and compressible flows. There will be a continued effort in broadening ExaDG's range of applicability towards a multiphysics simulation environment. ExaDG is highly-efficient on structured and unstructured meshes for high-order approximation spaces through the use of on-the-fly matrix-free evaluation of discretized operators. ExaDG is currently limited to conforming meshes composed of quadrilateral/hexahedral elements, and there are efforts to support adaptive mesh refinement and simplicial meshes in the future.
 
@@ -17,7 +17,7 @@ Our motto is to provide a software that is intuitive to use and where changes an
 
 The wiki page [Installation](https://github.com/exadg/exadg/wiki/Installation) contains a detailed description of the installation steps of **ExaDG** and the required third-party libraries. To get familar with the code, see also the [doxygen documentation](https://exadg.github.io/exadg/index.html).
 
-### For the impatient ...
+#### For the impatient ...
 
 For those already working with [**deal.II**](https://github.com/dealii), only a few steps are required to get **ExaDG** running:
 
@@ -33,7 +33,6 @@ make -j<N>
 ```
 
 ## Publications
-
 
 Please consider citing the following paper for acknowledging this software contribution:
 
@@ -72,3 +71,7 @@ Their contributions are highly appreciated!
 ## License
 
 **ExaDG** is published under the [GPL-3.0 License](LICENSE). This project is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+## Releases
+
+This project is currently in a pre-release status.
