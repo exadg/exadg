@@ -104,6 +104,7 @@ High-order dual splitting scheme:
   Update preconditioner pressure step:       false
   Multigrid type:                            h-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5

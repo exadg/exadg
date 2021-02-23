@@ -61,6 +61,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -192,6 +193,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -323,6 +325,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -454,6 +457,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -585,6 +589,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -716,6 +721,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -847,6 +853,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -978,6 +985,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
@@ -1109,6 +1117,7 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
   Iterations smoother:                       5
