@@ -61,6 +61,7 @@ Solver:
   Multigrid operator type:                   ReactionConvectionDiffusion
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -184,6 +185,7 @@ Solver:
   Multigrid operator type:                   ReactionConvectionDiffusion
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -307,6 +309,7 @@ Solver:
   Multigrid operator type:                   ReactionConvectionDiffusion
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -430,6 +433,7 @@ Solver:
   Multigrid operator type:                   ReactionConvectionDiffusion
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
@@ -553,6 +557,7 @@ Solver:
   Multigrid operator type:                   ReactionConvectionDiffusion
   Multigrid type:                            ph-MG
   p-sequence:                                Bisect
+  Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
   Iterations smoother:                       5
