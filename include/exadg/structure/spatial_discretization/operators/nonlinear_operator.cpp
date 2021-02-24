@@ -219,15 +219,15 @@ NonLinearOperator<dim, Number>::reinit_cell(unsigned int const cell) const
   Base::reinit_cell(cell);
 
   integrator_lin->reinit(cell);
+
+  integrator_lin->read_dof_values_plain(displacement_lin);
+  integrator_lin->evaluate(false, true);
 }
 
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
-  integrator_lin->read_dof_values_plain(displacement_lin);
-  integrator_lin->evaluate(false, true);
-
   std::shared_ptr<Material<dim, Number>> material = this->material_handler.get_material();
 
   // loop over all quadrature points
