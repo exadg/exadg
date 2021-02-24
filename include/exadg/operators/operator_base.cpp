@@ -400,6 +400,10 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
       *matrix_free,
       diagonal,
       [&](auto & integrator) -> void {
+        // TODO this line is currently needed as bugfix, but should be
+        // removed because reinit is now done twice
+        this->reinit_cell(integrator.get_current_cell_index());
+
         integrator.evaluate(integrator_flags.cell_evaluate.value,
                             integrator_flags.cell_evaluate.gradient,
                             integrator_flags.cell_evaluate.hessian);
