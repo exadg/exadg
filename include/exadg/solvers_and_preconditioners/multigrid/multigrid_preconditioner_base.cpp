@@ -366,12 +366,50 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints)
 {
-  if(!data.use_global_coarsening)
-  {
-    constrained_dofs.resize(0, this->n_levels - 1);
-    dof_handlers.resize(0, this->n_levels - 1);
-    constraints.resize(0, this->n_levels - 1);
+  constrained_dofs.resize(0, this->n_levels - 1);
+  dof_handlers.resize(0, this->n_levels - 1);
+  constraints.resize(0, this->n_levels - 1);
 
+  // this type of transfer has to be used for triangulations with hanging nodes
+  if(data.use_global_coarsening)
+  {
+    // create coarse grid triangulations only once
+    if(data.involves_h_transfer() && coarse_grid_triangulations.empty())
+      coarse_grid_triangulations =
+        MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
+
+    unsigned int const n_components = fe.n_components();
+
+    // setup dof-handler and constrained dofs for each p-level
+    for(unsigned int i = 0; i < level_info.size(); i++)
+    {
+      auto const & level = level_info[i];
+
+      auto dof_handler = new DoFHandler<dim>((level.h_level() + 1 == tria->n_global_levels()) ?
+                                               *(dynamic_cast<Triangulation<dim> const *>(tria)) :
+                                               *coarse_grid_triangulations[level.h_level()]);
+      // ... create FE and distribute it
+      if(level.is_dg())
+        dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(level.degree()), n_components));
+      else
+        dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(level.degree()), n_components));
+
+      dof_handlers[i].reset(dof_handler);
+
+      auto affine_constraints_own = new AffineConstraints<MultigridNumber>;
+
+      // TODO: integrate periodic constraints into initialize_affine_constraints
+      initialize_affine_constraints(*dof_handler, *affine_constraints_own, dirichlet_bc);
+
+      AssertThrow(is_singular == false, ExcNotImplemented());
+      AssertThrow(periodic_face_pairs.empty(),
+                  ExcMessage("Multigrid transfer option use_global_coarsening "
+                             "is currently not available for problems with periodic boundaries."));
+      constraints[i].reset(affine_constraints_own);
+    }
+  }
+  else // can only be used for triangulations without hanging nodes
+  {
     unsigned int const n_components = fe.n_components();
 
     // temporal storage for new DoFHandlers and constraints on each p-level
@@ -420,47 +458,6 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
                                            level_info[level].h_level());
 
       constraints[level].reset(affine_constraints_own);
-    }
-  }
-  else
-  {
-    constrained_dofs.resize(0, this->n_levels - 1);
-    dof_handlers.resize(0, this->n_levels - 1);
-    constraints.resize(0, this->n_levels - 1);
-
-    // create coarse grid triangulations only once
-    if(data.involves_h_transfer() && coarse_grid_triangulations.empty())
-      coarse_grid_triangulations =
-        MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
-
-    unsigned int const n_components = fe.n_components();
-
-    // setup dof-handler and constrained dofs for each p-level
-    for(unsigned int i = 0; i < level_info.size(); i++)
-    {
-      auto const & level = level_info[i];
-
-      auto dof_handler = new DoFHandler<dim>((level.h_level() + 1 == tria->n_global_levels()) ?
-                                               *(dynamic_cast<Triangulation<dim> const *>(tria)) :
-                                               *coarse_grid_triangulations[level.h_level()]);
-      // ... create FE and distribute it
-      if(level.is_dg())
-        dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(level.degree()), n_components));
-      else
-        dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(level.degree()), n_components));
-
-      dof_handlers[i].reset(dof_handler);
-
-      auto affine_constraints_own = new AffineConstraints<MultigridNumber>;
-
-      // TODO: integrate periodic constraints into initialize_affine_constraints
-      initialize_affine_constraints(*dof_handler, *affine_constraints_own, dirichlet_bc);
-
-      AssertThrow(is_singular == false, ExcNotImplemented());
-      AssertThrow(periodic_face_pairs.empty(),
-                  ExcMessage("Multigrid transfer option use_global_coarsening "
-                             "is currently not available for problems with periodic boundaries."));
-      constraints[i].reset(affine_constraints_own);
     }
   }
 }
@@ -830,17 +827,18 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
 {
-  if(!data.use_global_coarsening)
+  // this type of transfer has to be used for triangulations with hanging nodes
+  if(data.use_global_coarsening)
   {
-    auto tmp = std::make_shared<MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>>();
+    auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
     tmp->reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
 
     this->transfers = tmp;
   }
-  else
+  else // can only be used for triangulations without hanging nodes
   {
-    auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
+    auto tmp = std::make_shared<MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>>();
 
     tmp->reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
 
