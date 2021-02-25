@@ -20,6 +20,7 @@
  */
 
 // deal.II
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
@@ -375,8 +376,20 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   {
     // create coarse grid triangulations only once
     if(data.involves_h_transfer() && coarse_grid_triangulations.empty())
+    {
+      AssertThrow(tria->n_global_levels() == 1 ||
+                    dynamic_cast<parallel::fullydistributed::Triangulation<dim> const *>(tria) ==
+                      nullptr,
+                  ExcMessage(
+                    "h-transfer is currently not supported for the option use_global_coarsening "
+                    "in combination with a parallel::fullydistributed::Triangulation that "
+                    "contains refinements. Either use a parallel::fullydistributed::Triangulation "
+                    "without refinements, a parallel::distributed::Triangulation, or a "
+                    "MultigridType without h-transfer."));
+
       coarse_grid_triangulations =
         MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
+    }
 
     unsigned int const n_components = fe.n_components();
 
@@ -410,6 +423,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   }
   else // can only be used for triangulations without hanging nodes
   {
+    Assert(tria->has_hanging_nodes() == false,
+           ExcMessage(
+             "Hanging nodes are only supported with the option use_global_coarsening enabled."));
+
     unsigned int const n_components = fe.n_components();
 
     // temporal storage for new DoFHandlers and constraints on each p-level
