@@ -366,12 +366,12 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints)
 {
+  constrained_dofs.resize(0, this->n_levels - 1);
+  dof_handlers.resize(0, this->n_levels - 1);
+  constraints.resize(0, this->n_levels - 1);
+
   if(!data.use_global_coarsening)
   {
-    constrained_dofs.resize(0, this->n_levels - 1);
-    dof_handlers.resize(0, this->n_levels - 1);
-    constraints.resize(0, this->n_levels - 1);
-
     unsigned int const n_components = fe.n_components();
 
     // temporal storage for new DoFHandlers and constraints on each p-level
@@ -424,10 +424,6 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   }
   else
   {
-    constrained_dofs.resize(0, this->n_levels - 1);
-    dof_handlers.resize(0, this->n_levels - 1);
-    constraints.resize(0, this->n_levels - 1);
-
     // create coarse grid triangulations only once
     if(data.involves_h_transfer() && coarse_grid_triangulations.empty())
       coarse_grid_triangulations =
