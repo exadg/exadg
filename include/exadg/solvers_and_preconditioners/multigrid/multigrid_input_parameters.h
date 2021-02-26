@@ -314,7 +314,8 @@ struct MultigridData
   // Sequence of polynomial degrees during p-multigrid
   PSequenceType p_sequence;
 
-  // enable global coarsening
+  // Enable this option in order to invoke a multigrid transfer implementation that can deal with
+  // hanging nodes
   bool use_global_coarsening;
 
   // Smoother data
