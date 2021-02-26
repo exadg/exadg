@@ -393,7 +393,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
     unsigned int const n_components = fe.n_components();
 
-    // setup dof-handler and constrained dofs for each p-level
+    // setup dof-handler and constrained dofs for all multigrid levels
     for(unsigned int i = 0; i < level_info.size(); i++)
     {
       auto const & level = level_info[i];
