@@ -198,15 +198,26 @@ protected:
   {
     // we have to project the solution onto all coarse levels of the triangulation
     // (required for initialization of MappingQCache)
-    MGLevelObject<VectorType> dof_vector_all_levels;
+    MGLevelObject<VectorType> dof_vector_all_levels, dof_vector_all_levels_ghosted;
     unsigned int const        n_levels = dof_handler.get_triangulation().n_global_levels();
     dof_vector_all_levels.resize(0, n_levels - 1);
+    dof_vector_all_levels_ghosted.resize(0, n_levels - 1);
 
     MGTransferMatrixFree<dim, Number> transfer;
     transfer.build(dof_handler);
     transfer.interpolate_to_mg(dof_handler, dof_vector_all_levels, dof_vector);
     for(unsigned int level = 0; level < n_levels; level++)
-      dof_vector_all_levels[level].update_ghost_values();
+    {
+      IndexSet relevant_dofs;
+      DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+      dof_vector_all_levels_ghosted[level].reinit(
+        dof_handler.locally_owned_mg_dofs(level),
+        relevant_dofs,
+        dof_vector_all_levels[level].get_mpi_communicator());
+      dof_vector_all_levels_ghosted[level].copy_locally_owned_data_from(
+        dof_vector_all_levels[level]);
+      dof_vector_all_levels_ghosted[level].update_ghost_values();
+    }
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
     AssertThrow(fe.element_multiplicity(0) == dim,
@@ -251,10 +262,11 @@ protected:
             std::pair<unsigned int, unsigned int> const id = fe.system_to_component_index(i);
 
             if(fe.dofs_per_vertex > 0) // FE_Q
-              points_moved[id.second][id.first] += dof_vector_all_levels[level](dof_indices[i]);
+              points_moved[id.second][id.first] +=
+                dof_vector_all_levels_ghosted[level](dof_indices[i]);
             else // FE_DGQ
               points_moved[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
-                dof_vector_all_levels[level](dof_indices[i]);
+                dof_vector_all_levels_ghosted[level](dof_indices[i]);
           }
         }
 
