@@ -56,7 +56,7 @@ public:
     poisson->initialize_dof_vector(displacement);
 
     // make sure that the mapping is initialized
-    this->initialize_mapping_q_cache(*this->mapping, poisson->get_dof_handler(), displacement);
+    this->initialize_mapping_q_cache(poisson->get_dof_handler(), displacement);
   }
 
   void
@@ -81,7 +81,7 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
     }
 
-    this->initialize_mapping_q_cache(*this->mapping, poisson->get_dof_handler(), displacement);
+    this->initialize_mapping_q_cache(poisson->get_dof_handler(), displacement);
   }
 
   void

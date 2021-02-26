@@ -58,7 +58,7 @@ public:
 
     mesh_movement_function->set_time(time);
 
-    this->initialize_mapping_q_cache(*this->mapping, triangulation, mesh_movement_function);
+    this->initialize_mapping_q_cache(triangulation, mesh_movement_function);
   }
 
 private:
