@@ -385,20 +385,21 @@ $(function() {
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  <span class="comment">// Sequence of polynomial degrees during p-multigrid</span></div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  PSequenceType p_sequence;</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160; </div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  <span class="comment">// enable global coarsening</span></div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <span class="keywordtype">bool</span> use_global_coarsening;</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="comment">// Smoother data</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  <a class="code" href="structExaDG_1_1SmootherData.html">SmootherData</a> smoother_data;</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="comment">// Coarse grid problem</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  <a class="code" href="structExaDG_1_1CoarseGridData.html">CoarseGridData</a> coarse_problem;</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;};</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160; </div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  <span class="comment">// Enable this option in order to invoke a multigrid transfer implementation that can deal with</span></div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <span class="comment">// hanging nodes</span></div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="keywordtype">bool</span> use_global_coarsening;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  <span class="comment">// Smoother data</span></div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;  <a class="code" href="structExaDG_1_1SmootherData.html">SmootherData</a> smoother_data;</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160; </div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  <span class="comment">// Coarse grid problem</span></div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;  <a class="code" href="structExaDG_1_1CoarseGridData.html">CoarseGridData</a> coarse_problem;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;};</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160; </div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="astructExaDG_1_1AMGData_html"><div class="ttname"><a href="structExaDG_1_1AMGData.html">ExaDG::AMGData</a></div><div class="ttdef"><b>Definition:</b> multigrid_input_parameters.h:162</div></div>
 <div class="ttc" id="astructExaDG_1_1CoarseGridData_html"><div class="ttname"><a href="structExaDG_1_1CoarseGridData.html">ExaDG::CoarseGridData</a></div><div class="ttdef"><b>Definition:</b> multigrid_input_parameters.h:242</div></div>
 <div class="ttc" id="astructExaDG_1_1MultigridData_html"><div class="ttname"><a href="structExaDG_1_1MultigridData.html">ExaDG::MultigridData</a></div><div class="ttdef"><b>Definition:</b> multigrid_input_parameters.h:281</div></div>
