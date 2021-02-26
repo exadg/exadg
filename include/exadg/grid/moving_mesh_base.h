@@ -155,13 +155,12 @@ public:
 
 protected:
   void
-  initialize_mapping_q_cache(Mapping<dim> const &           mapping,
-                             Triangulation<dim> const &     triangulation,
+  initialize_mapping_q_cache(Triangulation<dim> const &     triangulation,
                              std::shared_ptr<Function<dim>> displacement_function)
   {
     // dummy FE for compatibility with interface of FEValues
     FE_Nothing<dim> dummy_fe;
-    FEValues<dim>   fe_values(mapping,
+    FEValues<dim>   fe_values(*this->mapping,
                             dummy_fe,
                             QGaussLobatto<dim>(this->mapping_ale->get_degree() + 1),
                             update_quadrature_points);
@@ -192,9 +191,7 @@ protected:
   }
 
   void
-  initialize_mapping_q_cache(Mapping<dim> const &    mapping,
-                             DoFHandler<dim> const & dof_handler,
-                             VectorType const &      dof_vector)
+  initialize_mapping_q_cache(DoFHandler<dim> const & dof_handler, VectorType const & dof_vector)
   {
     // we have to project the solution onto all coarse levels of the triangulation
     // (required for initialization of MappingQCache)
@@ -224,7 +221,7 @@ protected:
                 ExcMessage("Expected finite element with dim components."));
 
     FE_Nothing<dim> dummy_fe;
-    FEValues<dim>   fe_values(mapping,
+    FEValues<dim>   fe_values(*this->mapping,
                             dummy_fe,
                             QGaussLobatto<dim>(fe.degree + 1),
                             update_quadrature_points);
@@ -278,9 +275,8 @@ protected:
   std::vector<unsigned int>           hierarchic_to_lexicographic_numbering;
   std::vector<unsigned int>           lexicographic_to_hierarchic_numbering;
 
-private:
   // MPI communicator
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 };
 
 } // namespace ExaDG

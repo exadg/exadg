@@ -54,7 +54,7 @@ public:
     pde_operator->initialize_dof_vector(displacement);
 
     // make sure that the mapping is initialized
-    this->initialize_mapping_q_cache(*this->mapping, pde_operator->get_dof_handler(), displacement);
+    this->initialize_mapping_q_cache(pde_operator->get_dof_handler(), displacement);
   }
 
   void
@@ -100,7 +100,7 @@ public:
       }
     }
 
-    this->initialize_mapping_q_cache(*this->mapping, pde_operator->get_dof_handler(), displacement);
+    this->initialize_mapping_q_cache(pde_operator->get_dof_handler(), displacement);
   }
 
   void
