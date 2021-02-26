@@ -125,7 +125,7 @@ $(function() {
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    pde_operator-&gt;initialize_dof_vector(displacement);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="comment">// make sure that the mapping is initialized</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    this-&gt;initialize_mapping_q_cache(*this-&gt;mapping, pde_operator-&gt;get_dof_handler(), displacement);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    this-&gt;initialize_mapping_q_cache(pde_operator-&gt;get_dof_handler(), displacement);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  }</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">void</span></div>
@@ -171,7 +171,7 @@ $(function() {
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;      }</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    this-&gt;initialize_mapping_q_cache(*this-&gt;mapping, pde_operator-&gt;get_dof_handler(), displacement);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    this-&gt;initialize_mapping_q_cache(pde_operator-&gt;get_dof_handler(), displacement);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  }</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <span class="keywordtype">void</span></div>
