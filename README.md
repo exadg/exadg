@@ -32,6 +32,10 @@ make release
 make -j<N>
 ```
 
+## Discussions
+
+Please feel free to start a [discussion](https://github.com/exadg/exadg/discussions) to ask questions, share ideas, or get advice. In case you plan major contributions to the project, we suggest to start a discussion in an early stage of your work to make sure that your efforts are well-directed.
+
 ## Publications
 
 Please consider citing the following paper for acknowledging this software contribution:
