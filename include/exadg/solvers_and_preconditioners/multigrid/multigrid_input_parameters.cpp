@@ -233,4 +233,15 @@ MultigridData::involves_h_transfer() const
   else
     return false;
 }
+
+bool
+MultigridData::involves_c_transfer() const
+{
+  if(type == MultigridType::hMG || type == MultigridType::pMG || type == MultigridType::hpMG ||
+     type == MultigridType::phMG)
+    return false;
+  else
+    return true;
+}
+
 } // namespace ExaDG

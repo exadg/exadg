@@ -179,9 +179,6 @@ protected:
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>>     matrix_free_objects;
   MGLevelObject<std::shared_ptr<Operator>>                             operators;
   std::shared_ptr<MGTransfer<VectorTypeMG>>                            transfers;
-  std::vector<std::shared_ptr<Triangulation<dim>>>                     coarse_grid_triangulations;
-
-  Mapping<dim> const * mapping;
 
   std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;
@@ -190,9 +187,6 @@ protected:
   unsigned int                        fine_level;
 
 private:
-  bool
-  mg_transfer_to_continuous_elements() const;
-
   /*
    * Multigrid levels (i.e. coarsening strategy, h-/p-/hp-/ph-MG).
    */
@@ -204,15 +198,23 @@ private:
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
+  /*
+   * Coarse grid triangulations in case of global coarsening transfer type.
+   */
+  void
+  initialize_coarse_grid_triangulations(parallel::TriangulationBase<dim> const * tria);
 
   /*
-   * Constrained dofs.
+   * Constrained dofs. This function is required for MGTransfer_MGLevelObject.
    */
   virtual void
-  initialize_constrained_dofs(DoFHandler<dim> const &,
-                              MGConstrainedDoFs &,
-                              Map const & dirichlet_bc);
+  initialize_constrained_dofs(DoFHandler<dim> const & dof_handler,
+                              MGConstrainedDoFs &     constrained_dofs,
+                              Map const &             dirichlet_bc);
 
+  /*
+   * Constrained dofs. This function is required for MGTransferGlobalCoarsening.
+   */
   void
   initialize_affine_constraints(DoFHandler<dim> const &              dof_handler,
                                 AffineConstraints<MultigridNumber> & affine_contraints,
@@ -271,6 +273,9 @@ private:
   MPI_Comm const & mpi_comm;
 
   MultigridData data;
+
+  Mapping<dim> const *                                   mapping;
+  std::vector<std::shared_ptr<Triangulation<dim> const>> coarse_grid_triangulations;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> smoothers;

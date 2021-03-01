@@ -308,6 +308,9 @@ struct MultigridData
   bool
   involves_h_transfer() const;
 
+  bool
+  involves_c_transfer() const;
+
   // Multigrid type: p-MG vs. h-MG
   MultigridType type;
 
