@@ -220,9 +220,9 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
                                                     dirichlet_bc_velocity,
                                                     this->level_info,
                                                     this->p_levels,
-                                                    this->dof_handlers_velocity,
-                                                    this->constrained_dofs_velocity,
-                                                    this->constraints_velocity);
+                                                    dof_handlers_velocity,
+                                                    constrained_dofs_velocity,
+                                                    constraints_velocity);
   }
 }
 
@@ -235,11 +235,11 @@ MultigridPreconditioner<dim, Number>::initialize_transfer_operators()
   if(data.convective_problem &&
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
-    this->transfers_velocity.reinit(*this->mapping,
-                                    this->matrix_free_objects,
-                                    this->constraints_velocity,
-                                    this->constrained_dofs_velocity,
-                                    1);
+    unsigned int const dof_index = 1;
+    this->do_initialize_transfer_operators(transfers_velocity,
+                                           constraints_velocity,
+                                           constrained_dofs_velocity,
+                                           dof_index);
   }
 }
 
@@ -289,7 +289,7 @@ MultigridPreconditioner<dim, Number>::set_velocity(VectorTypeMG const & velocity
   {
     auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
     auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
-    transfers_velocity.interpolate(level, vector_coarse_level, vector_fine_level);
+    transfers_velocity->interpolate(level, vector_coarse_level, vector_fine_level);
     this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
   }
 }

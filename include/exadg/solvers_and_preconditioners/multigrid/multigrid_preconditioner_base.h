@@ -165,6 +165,13 @@ protected:
   virtual void
   initialize_transfer_operators();
 
+  void
+  do_initialize_transfer_operators(
+    std::shared_ptr<MGTransfer<VectorTypeMG>> &                          transfers,
+    MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
+    unsigned int const                                                   dof_index);
+
   MGLevelObject<std::shared_ptr<DoFHandler<dim> const>>                dof_handlers;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                    constrained_dofs;
   MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>>   constraints;
