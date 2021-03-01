@@ -187,9 +187,6 @@ protected:
   unsigned int                        fine_level;
 
 private:
-  bool
-  mg_transfer_to_continuous_elements() const;
-
   /*
    * Multigrid levels (i.e. coarsening strategy, h-/p-/hp-/ph-MG).
    */

@@ -299,19 +299,6 @@ MultigridPreconditionerBase<dim, Number>::check_levels(std::vector<MGLevelInfo> 
 }
 
 template<int dim, typename Number>
-bool
-MultigridPreconditionerBase<dim, Number>::mg_transfer_to_continuous_elements() const
-{
-  MultigridType const mg_type = data.type;
-
-  if(mg_type == MultigridType::hMG || mg_type == MultigridType::pMG ||
-     mg_type == MultigridType::hpMG || mg_type == MultigridType::phMG)
-    return false;
-  else
-    return true;
-}
-
-template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                               operator_is_singular,
@@ -320,11 +307,11 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
   parallel::TriangulationBase<dim> const * tria,
   Map const *                              dirichlet_bc_in)
 {
-  bool const is_dg = fe.dofs_per_vertex == 0;
+  bool const is_dg = (fe.dofs_per_vertex == 0);
 
   if(data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
      data.coarse_problem.solver == MultigridCoarseGridSolver::AMG || !is_dg ||
-     this->mg_transfer_to_continuous_elements())
+     data.involves_c_transfer())
   {
     AssertThrow(
       dirichlet_bc_in != nullptr && periodic_face_pairs_in != nullptr,
@@ -340,7 +327,6 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
   PeriodicFacePairs periodic_face_pairs;
   if(dirichlet_bc_in != nullptr)
     periodic_face_pairs = *periodic_face_pairs_in;
-
 
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
                                                   periodic_face_pairs,
