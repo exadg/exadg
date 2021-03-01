@@ -274,8 +274,8 @@ private:
 
   MultigridData data;
 
-  Mapping<dim> const *                             mapping;
-  std::vector<std::shared_ptr<Triangulation<dim>>> coarse_grid_triangulations;
+  Mapping<dim> const *                                   mapping;
+  std::vector<std::shared_ptr<Triangulation<dim> const>> coarse_grid_triangulations;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> smoothers;
