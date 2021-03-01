@@ -44,7 +44,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm const & comm)
-  : mapping(nullptr), n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm)
+  : n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm), mapping(nullptr)
 {
 }
 
@@ -290,10 +290,11 @@ MultigridPreconditionerBase<dim, Number>::check_levels(std::vector<MGLevelInfo> 
     auto fine   = level_info[l];
     auto coarse = level_info[l - 1];
 
-    AssertThrow((fine.h_level() != coarse.h_level()) ^ (fine.degree() != coarse.degree()) ^
-                  (fine.is_dg() != coarse.is_dg()),
-                ExcMessage(
-                  "Between levels there is only ONE change allowed: either in h- or p-level!"));
+    AssertThrow(
+      (fine.h_level() != coarse.h_level()) xor (fine.degree() != coarse.degree()) xor
+        (fine.is_dg() != coarse.is_dg()),
+      ExcMessage(
+        "Between two consecutive multigrid levels, only one type of transfer is allowed."));
   }
 }
 

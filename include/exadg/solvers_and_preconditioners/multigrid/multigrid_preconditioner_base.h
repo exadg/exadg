@@ -179,9 +179,6 @@ protected:
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>>     matrix_free_objects;
   MGLevelObject<std::shared_ptr<Operator>>                             operators;
   std::shared_ptr<MGTransfer<VectorTypeMG>>                            transfers;
-  std::vector<std::shared_ptr<Triangulation<dim>>>                     coarse_grid_triangulations;
-
-  Mapping<dim> const * mapping;
 
   std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;
@@ -271,6 +268,9 @@ private:
   MPI_Comm const & mpi_comm;
 
   MultigridData data;
+
+  Mapping<dim> const *                             mapping;
+  std::vector<std::shared_ptr<Triangulation<dim>>> coarse_grid_triangulations;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> smoothers;
