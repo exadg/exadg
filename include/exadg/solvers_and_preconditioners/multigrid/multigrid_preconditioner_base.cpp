@@ -509,7 +509,7 @@ void
 MultigridPreconditionerBase<dim, Number>::update_matrix_free()
 {
   for(unsigned int level = coarse_level; level <= fine_level; level++)
-    this->matrix_free_objects[level]->update_mapping(*this->mapping);
+    matrix_free_objects[level]->update_mapping(*mapping);
 }
 
 template<int dim, typename Number>
@@ -844,22 +844,34 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_transfer_operators()
 {
+  unsigned int const dof_index = 0;
+  this->do_initialize_transfer_operators(transfers, constraints, constrained_dofs, dof_index);
+}
+
+template<int dim, typename Number>
+void
+MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
+  std::shared_ptr<MGTransfer<VectorTypeMG>> &                          transfers,
+  MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> & constraints,
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
+  unsigned int const                                                   dof_index)
+{
   // this type of transfer has to be used for triangulations with hanging nodes
   if(data.use_global_coarsening)
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
+    tmp->reinit(*mapping, matrix_free_objects, constraints, constrained_dofs, dof_index);
 
-    this->transfers = tmp;
+    transfers = tmp;
   }
   else // can only be used for triangulations without hanging nodes
   {
     auto tmp = std::make_shared<MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(*this->mapping, matrix_free_objects, constraints, constrained_dofs);
+    tmp->reinit(*mapping, matrix_free_objects, constraints, constrained_dofs, dof_index);
 
-    this->transfers = tmp;
+    transfers = tmp;
   }
 }
 
