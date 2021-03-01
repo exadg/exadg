@@ -66,6 +66,8 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 
   this->initialize_levels(tria, fe.degree, is_dg);
 
+  this->initialize_coarse_grid_triangulations(tria);
+
   this->initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
