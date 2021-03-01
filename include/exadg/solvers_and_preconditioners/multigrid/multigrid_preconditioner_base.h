@@ -198,15 +198,23 @@ private:
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
 
+  /*
+   * Coarse grid triangulations in case of global coarsening transfer type.
+   */
+  void
+  initialize_coarse_grid_triangulations(parallel::TriangulationBase<dim> const * tria);
 
   /*
-   * Constrained dofs.
+   * Constrained dofs. This function is required for MGTransfer_MGLevelObject.
    */
   virtual void
-  initialize_constrained_dofs(DoFHandler<dim> const &,
-                              MGConstrainedDoFs &,
-                              Map const & dirichlet_bc);
+  initialize_constrained_dofs(DoFHandler<dim> const & dof_handler,
+                              MGConstrainedDoFs &     constrained_dofs,
+                              Map const &             dirichlet_bc);
 
+  /*
+   * Constrained dofs. This function is required for MGTransferGlobalCoarsening.
+   */
   void
   initialize_affine_constraints(DoFHandler<dim> const &              dof_handler,
                                 AffineConstraints<MultigridNumber> & affine_contraints,
