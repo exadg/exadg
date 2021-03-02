@@ -96,8 +96,7 @@ OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & 
   // initialize n_mpi_proceses
   DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
 
-  Triangulation<dim> const & tria = dof_handler.get_triangulation();
-  n_mpi_processes                 = Utilities::MPI::n_mpi_processes(tria.get_communicator());
+  n_mpi_processes = Utilities::MPI::n_mpi_processes(dof_handler.get_communicator());
 }
 
 template<int dim, typename Number, int n_components>
@@ -696,12 +695,11 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(SparseMatrix & system_matrix) const
 {
-  DoFHandler<dim> const &    dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
-  Triangulation<dim> const & tria        = dof_handler.get_triangulation();
+  DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
 
   TrilinosWrappers::SparsityPattern dsp(is_mg ? dof_handler.locally_owned_mg_dofs(this->level) :
                                                 dof_handler.locally_owned_dofs(),
-                                        tria.get_communicator());
+                                        dof_handler.get_communicator());
 
   if(is_dg && is_mg)
     MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);

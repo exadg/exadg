@@ -42,7 +42,7 @@ StatisticsManager<dim, Number>::StatisticsManager(DoFHandler<dim> const & dof_ha
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
-    communicator(dof_handler_velocity.get_triangulation().get_communicator()),
+    communicator(dof_handler_velocity.get_communicator()),
     number_of_samples(0),
     write_final_output(true),
     turb_channel_data(TurbulentChannelData())

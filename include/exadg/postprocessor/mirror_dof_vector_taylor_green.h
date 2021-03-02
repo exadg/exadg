@@ -58,7 +58,7 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
   // determine some useful constants
   auto const & fe = dof_handler.get_fe();
 
-  MPI_Comm const comm = dof_handler.get_triangulation().get_communicator();
+  MPI_Comm const comm = dof_handler.get_communicator();
 
   // determine which process has which index (lex numbering) and wants which
   IndexSet range_has_lex(dof_handler_symm.n_dofs());  // has in symm system
@@ -259,7 +259,7 @@ initialize_dof_vector(LinearAlgebra::distributed::Vector<Number> & vec,
   IndexSet locally_relevant_dofs;
   DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
-  MPI_Comm const comm = dof_handler.get_triangulation().get_communicator();
+  MPI_Comm const comm = dof_handler.get_communicator();
 
   vec.reinit(dof_handler.locally_owned_dofs(), locally_relevant_dofs, comm);
 }
