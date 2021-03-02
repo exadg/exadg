@@ -270,7 +270,7 @@ private:
   virtual void
   initialize_multigrid_preconditioner();
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   MultigridData data;
 

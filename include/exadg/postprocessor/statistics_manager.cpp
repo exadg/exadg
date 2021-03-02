@@ -42,12 +42,7 @@ StatisticsManager<dim, Number>::StatisticsManager(DoFHandler<dim> const & dof_ha
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                   &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                      &dof_handler_velocity.get_triangulation())
-                      ->get_communicator()) :
-                   MPI_COMM_SELF),
+    communicator(dof_handler_velocity.get_triangulation().get_communicator()),
     number_of_samples(0),
     write_final_output(true),
     turb_channel_data(TurbulentChannelData())

@@ -381,7 +381,7 @@ public:
   }
 
 private:
-  const MPI_Comm & comm;
+  MPI_Comm const comm;
 
   // receiver side
   std::vector<unsigned int> quadrature_points_count;

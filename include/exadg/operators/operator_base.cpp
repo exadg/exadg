@@ -96,20 +96,8 @@ OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & 
   // initialize n_mpi_proceses
   DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
 
-  MPI_Comm comm;
-
-  // extract communicator
-  {
-    auto tria =
-      dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
-
-    if(tria != NULL)
-      comm = tria->get_communicator();
-    else // not distributed triangulation
-      comm = MPI_COMM_SELF;
-  }
-
-  n_mpi_processes = Utilities::MPI::n_mpi_processes(comm);
+  Triangulation<dim> const & tria = dof_handler.get_triangulation();
+  n_mpi_processes                 = Utilities::MPI::n_mpi_processes(tria.get_communicator());
 }
 
 template<int dim, typename Number, int n_components>
@@ -708,24 +696,12 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(SparseMatrix & system_matrix) const
 {
-  DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
-
-  MPI_Comm comm;
-
-  // extract communicator
-  {
-    auto tria =
-      dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
-
-    if(tria != NULL)
-      comm = tria->get_communicator();
-    else // not distributed triangulation
-      comm = MPI_COMM_SELF;
-  }
+  DoFHandler<dim> const &    dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
+  Triangulation<dim> const & tria        = dof_handler.get_triangulation();
 
   TrilinosWrappers::SparsityPattern dsp(is_mg ? dof_handler.locally_owned_mg_dofs(this->level) :
                                                 dof_handler.locally_owned_dofs(),
-                                        comm);
+                                        tria.get_communicator());
 
   if(is_dg && is_mg)
     MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
