@@ -48,13 +48,11 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate(unsigned int con
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
-  Mapping<dim> const &                                        mapping,
   MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
   MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
   unsigned int const                                          dof_handler_index)
 {
-  (void)mapping;
   (void)mg_constrained_dofs;
   {
     std::vector<MGLevelInfo>            global_levels;
