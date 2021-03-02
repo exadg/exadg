@@ -22,6 +22,10 @@
 #ifndef INCLUDE_EXADG_GRID_MOVING_MESH_ELASTICITY_H_
 #define INCLUDE_EXADG_GRID_MOVING_MESH_ELASTICITY_H_
 
+// deal.II
+#include <deal.II/base/timer.h>
+
+// ExaDG
 #include <exadg/grid/moving_mesh_base.h>
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/utilities/print_solver_results.h>

@@ -22,15 +22,38 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 
+// deal.II
+#include <deal.II/base/mg_level_object.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/multigrid/mg_constrained_dofs.h>
+
+// ExaDG
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 #include <exadg/operators/multigrid_operator_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_coarsening.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+
+// forward declarations
+namespace ExaDG
+{
+template<typename VectorType, typename Operator, typename Smoother>
+class MultigridPreconditioner;
+
+template<int dim, typename Number, typename VectorType>
+class MGTransferGlobalCoarsening;
+
+template<int dim, typename Number, typename VectorType>
+class MGTransfer_MGLevelObject;
+} // namespace ExaDG
+
+namespace dealii
+{
+template<typename VectorType>
+class MGCoarseGridBase;
+}
 
 namespace ExaDG
 {
