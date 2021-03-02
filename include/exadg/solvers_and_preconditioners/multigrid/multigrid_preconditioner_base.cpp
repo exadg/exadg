@@ -28,14 +28,16 @@
 
 // ExaDG
 #include <exadg/matrix_free/categorization.h>
-#include <exadg/operators/operator_base.h>
+#include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/constraints.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_algorithm.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/cg_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/chebyshev_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/gmres_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/jacobi_smoother.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_amg.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_coarsening.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.h>
 #include <exadg/solvers_and_preconditioners/util/compute_eigenvalues.h>
 
 namespace ExaDG
