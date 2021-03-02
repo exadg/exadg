@@ -325,7 +325,33 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
 
       coarse_grid_triangulations =
         MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
+
+      // We also need separate mappings for the coarse grid triangulations
+      unsigned int const n_h_levels = coarse_grid_triangulations.size();
+      coarse_grid_mappings.resize(n_h_levels - 1);
+      for(unsigned int h_level = 0; h_level < coarse_grid_mappings.size(); ++h_level)
+      {
+        // TODO
+        coarse_grid_mappings[h_level].reset(new MappingQGeneric<dim>(1));
+      }
     }
+  }
+}
+
+template<int dim, typename Number>
+Mapping<dim> const &
+MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level) const
+{
+  if(data.use_global_coarsening)
+  {
+    if(data.involves_h_transfer() && h_level < coarse_grid_mappings.size())
+      return *(coarse_grid_mappings[h_level]);
+    else
+      return *mapping;
+  }
+  else
+  {
+    return *mapping;
   }
 }
 
@@ -496,7 +522,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
 
     matrix_free_objects[level].reset(new MatrixFree<dim, MultigridNumber>());
 
-    matrix_free_objects[level]->reinit(*mapping,
+    auto const & mg_level_info = level_info[level];
+    matrix_free_objects[level]->reinit(get_mapping(mg_level_info.h_level()),
                                        matrix_free_data_objects[level]->get_dof_handler_vector(),
                                        matrix_free_data_objects[level]->get_constraint_vector(),
                                        matrix_free_data_objects[level]->get_quadrature_vector(),
@@ -509,7 +536,7 @@ void
 MultigridPreconditionerBase<dim, Number>::update_matrix_free()
 {
   for(unsigned int level = coarse_level; level <= fine_level; level++)
-    matrix_free_objects[level]->update_mapping(*mapping);
+    matrix_free_objects[level]->update_mapping(get_mapping(level_info[level].h_level()));
 }
 
 template<int dim, typename Number>
@@ -575,11 +602,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
 
   DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
   for(auto & it : dirichlet_bc)
-    VectorTools::interpolate_boundary_values(*mapping,
+  {
+    MappingQGeneric<dim> mapping_dummy(1);
+    VectorTools::interpolate_boundary_values(mapping_dummy,
                                              dof_handler,
                                              it.first,
                                              Functions::ZeroFunction<dim, MultigridNumber>(),
                                              affine_constraints);
+  }
   affine_constraints.close();
 }
 
@@ -861,7 +891,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(*mapping, matrix_free_objects, constraints, constrained_dofs, dof_index);
+    tmp->reinit(matrix_free_objects, constraints, dof_index);
 
     transfers = tmp;
   }
