@@ -603,7 +603,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
   DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
   for(auto & it : dirichlet_bc)
   {
-    MappingQGeneric<dim> mapping_dummy(MappingQGeneric<dim>(1));
+    MappingQGeneric<dim> mapping_dummy(1);
     VectorTools::interpolate_boundary_values(mapping_dummy,
                                              dof_handler,
                                              it.first,
@@ -891,7 +891,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
-    MappingQGeneric<dim> mapping_dummy(MappingQGeneric<dim>(1));
+    MappingQGeneric<dim> mapping_dummy(1);
     tmp->reinit(mapping_dummy, matrix_free_objects, constraints, constrained_dofs, dof_index);
 
     transfers = tmp;
