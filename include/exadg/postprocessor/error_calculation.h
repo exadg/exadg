@@ -118,7 +118,7 @@ private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   unsigned int error_counter;
   bool         reset_counter;

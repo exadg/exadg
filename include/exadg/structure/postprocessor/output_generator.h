@@ -51,7 +51,7 @@ public:
   evaluate(VectorType const & solution, double const & time, int const & time_step_number);
 
 private:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   unsigned int output_counter;
   bool         reset_counter;

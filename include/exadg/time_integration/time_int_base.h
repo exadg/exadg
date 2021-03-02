@@ -234,7 +234,7 @@ protected:
   /*
    * MPI communicator.
    */
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   /*
    * Computation time (wall clock time).

@@ -68,7 +68,7 @@ public:
                     int const          time_step_number = -1);
 
 protected:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
 private:
   PostProcessorData<dim> pp_data;

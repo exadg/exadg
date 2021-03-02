@@ -112,7 +112,7 @@ private:
   unsigned int                        dof_index, quad_index;
   bool                                clear_files;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 };
 
 } // namespace IncNS

@@ -74,7 +74,7 @@ public:
   evaluate(VectorType const & pressure, double const & time) const;
 
 private:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   mutable bool clear_files_pressure_difference;
 

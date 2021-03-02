@@ -164,7 +164,7 @@ private:
   double                                  area, volume;
   mutable bool                            clear_files;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 };
 
 } // namespace IncNS

@@ -87,7 +87,7 @@ private:
   void
   calculate_additional_vectors(VectorType const & solution);
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   PostProcessorData<dim> pp_data;
 

@@ -89,7 +89,7 @@ private:
   synchronize_time_step_size() const;
 
   // MPI communicator
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   // number of scalar quantities
   unsigned int n_scalars;

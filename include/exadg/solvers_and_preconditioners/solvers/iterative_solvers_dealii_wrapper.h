@@ -257,7 +257,7 @@ private:
   Preconditioner &      preconditioner;
   GMRESSolverData const solver_data;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 };
 
 struct FGMRESSolverData

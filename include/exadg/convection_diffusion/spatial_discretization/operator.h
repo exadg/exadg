@@ -405,7 +405,7 @@ private:
   /*
    * MPI
    */
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   /*
    * Output to screen.

@@ -97,7 +97,7 @@ private:
 
   InputParameters const & param;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   bool const print_wall_times;
 

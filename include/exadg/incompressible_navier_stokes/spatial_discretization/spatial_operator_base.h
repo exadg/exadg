@@ -631,7 +631,7 @@ protected:
   VelocityMagnitudeCalculator<dim, Number> velocity_magnitude_calculator;
   QCriterionCalculator<dim, Number>        q_criterion_calculator;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   ConditionalOStream pcout;
 

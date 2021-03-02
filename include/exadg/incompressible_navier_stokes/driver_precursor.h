@@ -67,7 +67,7 @@ private:
   synchronize_time_step_size() const;
 
   // MPI communicator
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   // output to std::cout
   ConditionalOStream pcout;

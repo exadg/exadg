@@ -119,7 +119,7 @@ private:
 
   InputParameters const & param;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   ConditionalOStream pcout;
 
