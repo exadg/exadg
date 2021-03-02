@@ -120,7 +120,7 @@ $(function() {
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Operator&gt;</div>
 <div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classExaDG_1_1MGCoarseKrylov.html">   51</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1MGCoarseKrylov.html">MGCoarseKrylov</a></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  : <span class="keyword">public</span> MGCoarseGridBase&lt;LinearAlgebra::distributed::Vector&lt;typename Operator::value_type&gt;&gt;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  : <span class="keyword">public</span> <a class="code" href="classdealii_1_1MGCoarseGridBase.html">MGCoarseGridBase</a>&lt;LinearAlgebra::distributed::Vector&lt;typename Operator::value_type&gt;&gt;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;{</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keyword">typedef</span> <span class="keywordtype">double</span> TrilinosNumber;</div>
@@ -347,7 +347,7 @@ $(function() {
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160; </div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Vector, <span class="keyword">typename</span> InverseOperator&gt;</div>
-<div class="line"><a name="l00282"></a><span class="lineno"><a class="line" href="classExaDG_1_1MGCoarseChebyshev.html">  282</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1MGCoarseChebyshev.html">MGCoarseChebyshev</a> : <span class="keyword">public</span> MGCoarseGridBase&lt;Vector&gt;</div>
+<div class="line"><a name="l00282"></a><span class="lineno"><a class="line" href="classExaDG_1_1MGCoarseChebyshev.html">  282</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1MGCoarseChebyshev.html">MGCoarseChebyshev</a> : <span class="keyword">public</span> <a class="code" href="classdealii_1_1MGCoarseGridBase.html">MGCoarseGridBase</a>&lt;Vector&gt;</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;{</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;  <a class="code" href="classExaDG_1_1MGCoarseChebyshev.html">MGCoarseChebyshev</a>(std::shared_ptr&lt;InverseOperator const&gt; inverse) : inverse_operator(inverse)</div>
@@ -374,7 +374,7 @@ $(function() {
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160; </div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span> Operator&gt;</div>
 <div class="line"><a name="l00308"></a><span class="lineno"><a class="line" href="classExaDG_1_1MGCoarseAMG.html">  308</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1MGCoarseAMG.html">MGCoarseAMG</a></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  : <span class="keyword">public</span> MGCoarseGridBase&lt;LinearAlgebra::distributed::Vector&lt;typename Operator::value_type&gt;&gt;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  : <span class="keyword">public</span> <a class="code" href="classdealii_1_1MGCoarseGridBase.html">MGCoarseGridBase</a>&lt;LinearAlgebra::distributed::Vector&lt;typename Operator::value_type&gt;&gt;</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;{</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;  <span class="keyword">typedef</span> <span class="keywordtype">double</span> TrilinosNumber;</div>
@@ -428,6 +428,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1MGCoarseChebyshev_html"><div class="ttname"><a href="classExaDG_1_1MGCoarseChebyshev.html">ExaDG::MGCoarseChebyshev</a></div><div class="ttdef"><b>Definition:</b> coarse_grid_solvers.h:283</div></div>
 <div class="ttc" id="aclassExaDG_1_1MGCoarseKrylov_html"><div class="ttname"><a href="classExaDG_1_1MGCoarseKrylov.html">ExaDG::MGCoarseKrylov</a></div><div class="ttdef"><b>Definition:</b> coarse_grid_solvers.h:53</div></div>
 <div class="ttc" id="aclassExaDG_1_1PreconditionerAMG_html"><div class="ttname"><a href="classExaDG_1_1PreconditionerAMG.html">ExaDG::PreconditionerAMG</a></div><div class="ttdef"><b>Definition:</b> preconditioner_amg.h:39</div></div>
+<div class="ttc" id="aclassdealii_1_1MGCoarseGridBase_html"><div class="ttname"><a href="classdealii_1_1MGCoarseGridBase.html">dealii::MGCoarseGridBase</a></div><div class="ttdef"><b>Definition:</b> multigrid_preconditioner_base.h:55</div></div>
 <div class="ttc" id="astructExaDG_1_1AMGData_html"><div class="ttname"><a href="structExaDG_1_1AMGData.html">ExaDG::AMGData</a></div><div class="ttdef"><b>Definition:</b> multigrid_input_parameters.h:162</div></div>
 <div class="ttc" id="astructExaDG_1_1MGCoarseKrylov_1_1AdditionalData_html"><div class="ttname"><a href="structExaDG_1_1MGCoarseKrylov_1_1AdditionalData.html">ExaDG::MGCoarseKrylov::AdditionalData</a></div><div class="ttdef"><b>Definition:</b> coarse_grid_solvers.h:64</div></div>
 <div class="ttc" id="astructExaDG_1_1MGCoarseKrylov_1_1AdditionalData_html_aeada604c6ca13817c5101c6ee18126df"><div class="ttname"><a href="structExaDG_1_1MGCoarseKrylov_1_1AdditionalData.html#aeada604c6ca13817c5101c6ee18126df">ExaDG::MGCoarseKrylov::AdditionalData::AdditionalData</a></div><div class="ttdeci">AdditionalData()</div><div class="ttdef"><b>Definition:</b> coarse_grid_solvers.h:68</div></div>
