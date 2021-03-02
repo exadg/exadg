@@ -150,7 +150,7 @@ public:
   }
 
 private:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   // postprocessor data supplemented with data required for FDA benchmark
   PostProcessorDataFDA<dim> pp_data_fda;

@@ -200,7 +200,7 @@ private:
   ale_update() const;
 
   // MPI communicator
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   // output to std::cout
   ConditionalOStream pcout;

@@ -114,7 +114,7 @@ public:
   }
 
 private:
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   mutable std::vector<std::map<std::string, double>> vec;
 };

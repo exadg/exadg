@@ -235,7 +235,7 @@ private:
     }
   }
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   bool   clear_files;
   bool   initial_perturbation_energy_has_been_calculated;

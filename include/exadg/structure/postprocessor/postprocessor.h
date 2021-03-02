@@ -64,7 +64,7 @@ public:
 private:
   PostProcessorData<dim> pp_data;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   OutputGenerator<dim, Number> output_generator;
   ErrorCalculator<dim, Number> error_calculator;

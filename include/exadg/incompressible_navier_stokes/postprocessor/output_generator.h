@@ -170,7 +170,7 @@ private:
                               double const &     time,
                               int const &        time_step_number);
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   unsigned int output_counter;
   bool         reset_counter;

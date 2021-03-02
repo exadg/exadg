@@ -137,7 +137,7 @@ protected:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range);
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   bool clear_files;
 

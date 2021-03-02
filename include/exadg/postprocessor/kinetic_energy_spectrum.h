@@ -130,7 +130,7 @@ private:
   void
   do_evaluate(VectorType const & velocity, double const time);
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   bool                      clear_files;
   KineticEnergySpectrumData data;

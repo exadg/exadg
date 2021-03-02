@@ -391,7 +391,7 @@ private:
    */
   SmartPointer<MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   unsigned int const n_cycles;
 

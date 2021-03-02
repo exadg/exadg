@@ -116,7 +116,7 @@ private:
   InflowData<dim>                     inflow_data;
   bool                                inflow_data_has_been_initialized;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 
   std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>
     array_dof_indices_and_shape_values;

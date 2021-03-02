@@ -50,7 +50,7 @@ private:
   MatrixFree<dim, Number> const & matrix_free;
   unsigned int                    dof_index, quad_index;
 
-  MPI_Comm const & mpi_comm;
+  MPI_Comm const mpi_comm;
 };
 
 } // namespace ExaDG
