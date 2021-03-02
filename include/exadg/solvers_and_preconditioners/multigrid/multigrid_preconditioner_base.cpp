@@ -891,7 +891,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   {
     auto tmp = std::make_shared<MGTransferGlobalCoarsening<dim, MultigridNumber, VectorTypeMG>>();
 
-    tmp->reinit(matrix_free_objects, constraints, constrained_dofs, dof_index);
+    tmp->reinit(matrix_free_objects, constraints, dof_index);
 
     transfers = tmp;
   }

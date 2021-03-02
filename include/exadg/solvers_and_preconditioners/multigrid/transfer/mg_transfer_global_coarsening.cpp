@@ -50,73 +50,69 @@ void
 MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
   MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
   MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
   unsigned int const                                          dof_handler_index)
 {
-  (void)mg_constrained_dofs;
+  std::vector<MGLevelInfo>            global_levels;
+  std::vector<MGDoFHandlerIdentifier> p_levels;
+
+  unsigned int const min_level = mg_matrixfree.min_level();
+  AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
+
+  unsigned int const max_level = mg_matrixfree.max_level();
+
+  // construct global_levels
+  for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
   {
-    std::vector<MGLevelInfo>            global_levels;
-    std::vector<MGDoFHandlerIdentifier> p_levels;
+    auto const &       matrixfree = mg_matrixfree[global_level];
+    auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
+    bool const         is_dg      = fe.dofs_per_vertex == 0;
+    unsigned int const level = matrixfree->get_dof_handler().get_triangulation().n_global_levels();
+    unsigned int const degree =
+      (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(), 1.0 / dim)) - 1;
 
-    unsigned int const min_level = mg_matrixfree.min_level();
-    AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
+    global_levels.push_back(MGLevelInfo(level, degree, is_dg));
+  }
 
-    unsigned int const max_level = mg_matrixfree.max_level();
+  // construct and p_levels
+  for(auto i : global_levels)
+    p_levels.push_back(i.dof_handler_id());
 
-    // construct global_levels
-    for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
+  sort(p_levels.begin(), p_levels.end());
+  p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
+  std::reverse(std::begin(p_levels), std::end(p_levels));
+
+  // create transfer-operator instances
+  transfers.resize(0, global_levels.size() - 1);
+
+  // fill mg_transfer with the correct transfers
+  for(unsigned int i = 1; i < global_levels.size(); i++)
+  {
+    auto coarse_level = global_levels[i - 1];
+    auto fine_level   = global_levels[i];
+
+    if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
-      auto const &       matrixfree = mg_matrixfree[global_level];
-      auto const &       fe         = matrixfree->get_dof_handler(dof_handler_index).get_fe();
-      bool const         is_dg      = fe.dofs_per_vertex == 0;
-      unsigned int const level =
-        matrixfree->get_dof_handler().get_triangulation().n_global_levels();
-      unsigned int const degree =
-        (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(), 1.0 / dim)) - 1;
-
-      global_levels.push_back(MGLevelInfo(level, degree, is_dg));
+      transfers[i].reinit_geometric_transfer(mg_matrixfree[i]->get_dof_handler(dof_handler_index),
+                                             mg_matrixfree[i - 1]->get_dof_handler(
+                                               dof_handler_index),
+                                             *mg_constraints[i],
+                                             *mg_constraints[i - 1]);
     }
-
-    // construct and p_levels
-    for(auto i : global_levels)
-      p_levels.push_back(i.dof_handler_id());
-
-    sort(p_levels.begin(), p_levels.end());
-    p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
-    std::reverse(std::begin(p_levels), std::end(p_levels));
-
-    // create transfer-operator instances
-    transfers.resize(0, global_levels.size() - 1);
-
-    // fill mg_transfer with the correct transfers
-    for(unsigned int i = 1; i < global_levels.size(); i++)
+    else if(coarse_level.degree() != fine_level.degree() || // p-transfer
+            coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
     {
-      auto coarse_level = global_levels[i - 1];
-      auto fine_level   = global_levels[i];
-
-      if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
-      {
-        transfers[i].reinit_geometric_transfer(mg_matrixfree[i]->get_dof_handler(dof_handler_index),
-                                               mg_matrixfree[i - 1]->get_dof_handler(
-                                                 dof_handler_index),
-                                               *mg_constraints[i],
-                                               *mg_constraints[i - 1]);
-      }
-      else if(coarse_level.degree() != fine_level.degree() || // p-transfer
-              coarse_level.is_dg() != fine_level.is_dg())     // c-transfer
-      {
-        transfers[i].reinit_polynomial_transfer(
-          mg_matrixfree[i]->get_dof_handler(dof_handler_index),
-          mg_matrixfree[i - 1]->get_dof_handler(dof_handler_index),
-          *mg_constraints[i],
-          *mg_constraints[i - 1]);
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Cannot create MGTransfer!"));
-      }
+      transfers[i].reinit_polynomial_transfer(mg_matrixfree[i]->get_dof_handler(dof_handler_index),
+                                              mg_matrixfree[i - 1]->get_dof_handler(
+                                                dof_handler_index),
+                                              *mg_constraints[i],
+                                              *mg_constraints[i - 1]);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Cannot create MGTransfer!"));
     }
   }
+
   mg_transfer_global_coarsening =
     std::make_unique<dealii::MGTransferGlobalCoarsening<dim, VectorType>>(transfers);
 }
