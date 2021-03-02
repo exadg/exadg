@@ -228,6 +228,12 @@ private:
   initialize_coarse_grid_triangulations(parallel::TriangulationBase<dim> const * tria);
 
   /*
+   * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
+   */
+  Mapping<dim> const &
+  get_mapping(unsigned int const h_level) const;
+
+  /*
    * Constrained dofs. This function is required for MGTransfer_MGLevelObject.
    */
   virtual void
@@ -297,8 +303,16 @@ private:
 
   MultigridData data;
 
-  Mapping<dim> const *                                   mapping;
+  // Only relevant for global coarsening, where this vector contains coarse level triangulations,
+  // and the fine level triangulation as the last element of the vector.
   std::vector<std::shared_ptr<Triangulation<dim> const>> coarse_grid_triangulations;
+
+  // In case of global coarsening, this is the mapping associated to the fine level triangulation.
+  Mapping<dim> const * mapping;
+
+  // Only relevant for global coarsening, where this vector contains only the mappings for
+  // triangulations coarser than the fine level triangulation.
+  std::vector<std::shared_ptr<Mapping<dim> const>> coarse_grid_mappings;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> smoothers;
