@@ -358,13 +358,13 @@ private:
     fluid_periodic_faces;
 
   // mapping
+  std::shared_ptr<Mapping<dim>> fluid_static_mapping;
+
+  // moving mapping (ALE)
+  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mapping;
+
+  // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> fluid_mapping;
-
-  // mesh (static or moving)
-  std::shared_ptr<Mesh<dim>> fluid_mesh;
-
-  // moving mesh (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
 
   // parameters
   IncNS::InputParameters fluid_param;

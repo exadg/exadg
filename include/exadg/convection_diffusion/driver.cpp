@@ -88,7 +88,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
+  application->create_grid(
+    triangulation, periodic_faces, refine_space, static_mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
   // boundary conditions
@@ -103,19 +104,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      *triangulation, mapping, degree, mpi_comm, mesh_motion, param.start_time));
+    moving_mapping.reset(new MovingMeshFunction<dim, Number>(
+      *triangulation, static_mapping, degree, mpi_comm, mesh_motion, param.start_time));
 
-    mesh = moving_mesh;
+    mapping = moving_mapping;
   }
-  else // static mesh
+  else // static mapping
   {
-    mesh.reset(new Mesh<dim>(mapping));
+    mapping = static_mapping;
   }
 
   // initialize convection-diffusion operator
   conv_diff_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                     mesh->get_mapping(),
+                                                     *mapping,
                                                      degree,
                                                      periodic_faces,
                                                      boundary_descriptor,
@@ -137,7 +138,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   conv_diff_operator->fill_matrix_free_data(*matrix_free_data);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -150,7 +151,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     // initialize postprocessor
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(*conv_diff_operator, mesh->get_mapping());
+    postprocessor->setup(*conv_diff_operator, *mapping);
 
     // initialize time integrator or driver for steady problems
     if(param.problem_type == ProblemType::Unsteady)
@@ -168,7 +169,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                           mpi_comm,
                                                           not(is_test),
                                                           postprocessor,
-                                                          moving_mesh,
+                                                          moving_mapping,
                                                           matrix_free));
       }
       else
@@ -244,8 +245,8 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  moving_mesh->move_mesh(time_integrator->get_next_time());
-  matrix_free->update_mapping(moving_mesh->get_mapping());
+  moving_mapping->update(time_integrator->get_next_time());
+  matrix_free->update_mapping(*mapping);
   conv_diff_operator->update_after_mesh_movement();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
     std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);

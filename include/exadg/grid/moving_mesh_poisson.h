@@ -60,7 +60,7 @@ public:
   }
 
   void
-  move_mesh(double const time, bool const print_solver_info = false)
+  update(double const time, bool const print_solver_info = false)
   {
     Timer timer;
     timer.restart();

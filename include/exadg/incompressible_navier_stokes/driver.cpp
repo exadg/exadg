@@ -88,7 +88,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
+  application->create_grid(
+    triangulation, periodic_faces, refine_space, static_mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
   if(param.ale_formulation) // moving mesh
@@ -97,8 +98,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
-      moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-        *triangulation, mapping, mapping_degree, mpi_comm, mesh_motion, param.start_time));
+      moving_mapping.reset(new MovingMeshFunction<dim, Number>(
+        *triangulation, static_mapping, mapping_degree, mpi_comm, mesh_motion, param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -145,7 +146,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->fill_matrix_free_data(*poisson_matrix_free_data);
 
       poisson_matrix_free.reset(new MatrixFree<dim, Number>());
-      poisson_matrix_free->reinit(*mapping,
+      poisson_matrix_free->reinit(*static_mapping,
                                   poisson_matrix_free_data->get_dof_handler_vector(),
                                   poisson_matrix_free_data->get_constraint_vector(),
                                   poisson_matrix_free_data->get_quadrature_vector(),
@@ -154,19 +155,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mesh.reset(
-        new MovingMeshPoisson<dim, Number>(mapping, mpi_comm, not(is_test), poisson_operator));
+      moving_mapping.reset(new MovingMeshPoisson<dim, Number>(
+        static_mapping, mpi_comm, not(is_test), poisson_operator));
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    mesh = moving_mesh;
+    mapping = moving_mapping;
   }
   else // static mesh
   {
-    mesh.reset(new Mesh<dim>(mapping));
+    mapping = static_mapping;
   }
 
   // boundary conditions
@@ -187,7 +188,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
       operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                                     mesh->get_mapping(),
+                                                                     *mapping,
                                                                      degree,
                                                                      periodic_faces,
                                                                      boundary_descriptor_velocity,
@@ -203,7 +204,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       operator_dual_splitting.reset(
         new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                      mesh->get_mapping(),
+                                                      *mapping,
                                                       degree,
                                                       periodic_faces,
                                                       boundary_descriptor_velocity,
@@ -219,7 +220,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       operator_pressure_correction.reset(
         new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                           mesh->get_mapping(),
+                                                           *mapping,
                                                            degree,
                                                            periodic_faces,
                                                            boundary_descriptor_velocity,
@@ -239,7 +240,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(param.solver_type == SolverType::Steady)
   {
     operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                                   mesh->get_mapping(),
+                                                                   *mapping,
                                                                    degree,
                                                                    periodic_faces,
                                                                    boundary_descriptor_velocity,
@@ -269,7 +270,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   operator_base->fill_matrix_free_data(*matrix_free_data);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -298,7 +299,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                         mpi_comm,
                                                                         not(is_test),
                                                                         postprocessor,
-                                                                        moving_mesh,
+                                                                        moving_mapping,
                                                                         matrix_free));
       }
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -310,7 +311,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                           mpi_comm,
                                                           not(is_test),
                                                           postprocessor,
-                                                          moving_mesh,
+                                                          moving_mapping,
                                                           matrix_free));
       }
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
@@ -322,7 +323,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                mpi_comm,
                                                                not(is_test),
                                                                postprocessor,
-                                                               moving_mesh,
+                                                               moving_mapping,
                                                                matrix_free));
       }
       else
@@ -374,11 +375,11 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mesh->move_mesh(time_integrator->get_next_time());
+  moving_mapping->update(time_integrator->get_next_time());
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  matrix_free->update_mapping(moving_mesh->get_mapping());
+  matrix_free->update_mapping(*mapping);
   timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

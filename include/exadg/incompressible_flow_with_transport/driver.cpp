@@ -121,7 +121,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // triangulation and mapping
   unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
+  application->create_grid(
+    triangulation, periodic_faces, refine_space, static_mapping, mapping_degree);
   print_grid_data(pcout, refine_space, *triangulation);
 
   if(fluid_param.ale_formulation) // moving mesh
@@ -138,14 +139,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      *triangulation, mapping, degree, mpi_comm, mesh_motion, fluid_param.start_time));
+    moving_mapping.reset(new MovingMeshFunction<dim, Number>(
+      *triangulation, static_mapping, degree, mpi_comm, mesh_motion, fluid_param.start_time));
 
-    mesh = moving_mesh;
+    mapping = moving_mapping;
   }
   else // static mesh
   {
-    mesh.reset(new Mesh<dim>(mapping));
+    mapping = static_mapping;
   }
 
   // boundary conditions
@@ -183,7 +184,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_coupled.reset(
         new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                mesh->get_mapping(),
+                                                *mapping,
                                                 degree,
                                                 periodic_faces,
                                                 fluid_boundary_descriptor_velocity,
@@ -200,7 +201,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_dual_splitting.reset(
         new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                      mesh->get_mapping(),
+                                                      *mapping,
                                                       degree,
                                                       periodic_faces,
                                                       fluid_boundary_descriptor_velocity,
@@ -217,7 +218,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_pressure_correction.reset(
         new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                           mesh->get_mapping(),
+                                                           *mapping,
                                                            degree,
                                                            periodic_faces,
                                                            fluid_boundary_descriptor_velocity,
@@ -238,7 +239,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_operator_coupled.reset(
       new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                              mesh->get_mapping(),
+                                              *mapping,
                                               degree,
                                               periodic_faces,
                                               fluid_boundary_descriptor_velocity,
@@ -259,7 +260,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(*triangulation,
-                                                                    mesh->get_mapping(),
+                                                                    *mapping,
                                                                     degree,
                                                                     periodic_faces,
                                                                     scalar_boundary_descriptor[i],
@@ -284,7 +285,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     conv_diff_operator[i]->fill_matrix_free_data(*matrix_free_data);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(mesh->get_mapping(),
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -302,8 +303,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(false)
   {
     QGauss<dim> quadrature(degree + 1);
-    double      AR =
-      GridTools::compute_maximum_aspect_ratio(mesh->get_mapping(), *triangulation, quadrature);
+    double      AR = GridTools::compute_maximum_aspect_ratio(*mapping, *triangulation, quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
@@ -336,7 +336,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_postprocessor[i] = application->construct_postprocessor_scalar(degree, mpi_comm, i);
-    scalar_postprocessor[i]->setup(*conv_diff_operator[i], mesh->get_mapping());
+    scalar_postprocessor[i]->setup(*conv_diff_operator[i], *mapping);
   }
 
   // setup time integrator before calling setup_solvers
@@ -353,7 +353,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             mpi_comm,
                                                                             not(is_test),
                                                                             fluid_postprocessor,
-                                                                            moving_mesh,
+                                                                            moving_mapping,
                                                                             matrix_free));
     }
     else if(this->fluid_param.temporal_discretization ==
@@ -366,7 +366,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                         mpi_comm,
                                                         not(is_test),
                                                         fluid_postprocessor,
-                                                        moving_mesh,
+                                                        moving_mapping,
                                                         matrix_free));
     }
     else if(this->fluid_param.temporal_discretization ==
@@ -379,7 +379,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                              mpi_comm,
                                                              not(is_test),
                                                              fluid_postprocessor,
-                                                             moving_mesh,
+                                                             moving_mapping,
                                                              matrix_free));
     }
     else
@@ -438,7 +438,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             mpi_comm,
                                                                             not(is_test),
                                                                             scalar_postprocessor[i],
-                                                                            moving_mesh,
+                                                                            moving_mapping,
                                                                             matrix_free));
     }
     else
@@ -704,11 +704,11 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+  moving_mapping->update(fluid_time_integrator->get_next_time());
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  matrix_free->update_mapping(moving_mesh->get_mapping());
+  matrix_free->update_mapping(*mapping);
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
