@@ -19,7 +19,7 @@
  *  ______________________________________________________________________
  */
 
-#include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
+#include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 
 namespace ExaDG
 {

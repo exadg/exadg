@@ -22,8 +22,8 @@
 #ifndef INCLUDE_EXADG_STRUCTURE_PRECONDITIONERS_AMG_PRECONDITIONER_H_
 #define INCLUDE_EXADG_STRUCTURE_PRECONDITIONERS_AMG_PRECONDITIONER_H_
 
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_amg.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
 {

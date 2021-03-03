@@ -37,7 +37,7 @@
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/operators/rhs_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
 {

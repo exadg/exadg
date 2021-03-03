@@ -69,15 +69,15 @@ SET(TARGET_SRC
      include/exadg/matrix_free/resolve_templates_float_3d.cpp
      include/exadg/matrix_free/resolve_templates_double_2d.cpp
      include/exadg/matrix_free/resolve_templates_double_3d.cpp
-     include/exadg/solvers_and_preconditioners/preconditioner/enum_types.cpp
+     include/exadg/solvers_and_preconditioners/preconditioners/enum_types.cpp
      include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_p.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_c.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_h.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_coarsening.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mg_level_object.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_c.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_coarsening.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.cpp
      include/exadg/postprocessor/error_calculation.cpp
      include/exadg/postprocessor/mean_scalar_calculation.cpp
      include/exadg/postprocessor/lift_and_drag_calculation.cpp
@@ -93,7 +93,7 @@ SET(TARGET_SRC
      include/exadg/poisson/user_interface/input_parameters.cpp
      include/exadg/poisson/spatial_discretization/operator.cpp
      include/exadg/poisson/spatial_discretization/laplace_operator.cpp
-     include/exadg/poisson/preconditioner/multigrid_preconditioner.cpp
+     include/exadg/poisson/preconditioners/multigrid_preconditioner.cpp
      include/exadg/poisson/postprocessor/postprocessor.cpp
      include/exadg/poisson/driver.cpp
      # convection-diffusion equation

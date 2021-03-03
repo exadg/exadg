@@ -29,17 +29,17 @@
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
 
 namespace ExaDG
 {
 using namespace dealii;
 
 template<int dim, typename Number, typename VectorType = LinearAlgebra::distributed::Vector<Number>>
-class MGTransfer_MGLevelObject : virtual public MGTransfer<VectorType>
+class MGTransferGlobalRefinement : virtual public MGTransfer<VectorType>
 {
 public:
-  virtual ~MGTransfer_MGLevelObject()
+  virtual ~MGTransferGlobalRefinement()
   {
   }
 

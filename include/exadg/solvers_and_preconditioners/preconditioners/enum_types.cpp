@@ -23,7 +23,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/preconditioner/enum_types.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 
 namespace ExaDG
 {

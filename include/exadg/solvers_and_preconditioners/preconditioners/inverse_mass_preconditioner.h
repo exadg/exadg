@@ -23,7 +23,7 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERSEMASSMATRIXPRECONDITIONER_H_
 
 #include <exadg/operators/inverse_mass_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
 {

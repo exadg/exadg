@@ -20,9 +20,9 @@
  */
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_projection_methods.h>
-#include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
+#include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
 
 namespace ExaDG
 {

@@ -33,20 +33,14 @@
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 // forward declarations
 namespace ExaDG
 {
 template<typename VectorType, typename Operator, typename Smoother>
-class MultigridPreconditioner;
-
-template<int dim, typename Number, typename VectorType>
-class MGTransferGlobalCoarsening;
-
-template<int dim, typename Number, typename VectorType>
-class MGTransfer_MGLevelObject;
+class MultigridAlgorithm;
 } // namespace ExaDG
 
 namespace dealii
@@ -77,6 +71,8 @@ private:
   typedef MultigridOperatorBase<dim, MultigridNumber> Operator;
 
   typedef std::vector<std::pair<unsigned int, unsigned int>> Levels;
+
+  typedef SmootherBase<VectorTypeMG> Smoother;
 
 public:
   /*
@@ -297,7 +293,7 @@ private:
    * Initialization of actual multigrid algorithm.
    */
   virtual void
-  initialize_multigrid_preconditioner();
+  initialize_multigrid_algorithm();
 
   MPI_Comm const mpi_comm;
 
@@ -314,13 +310,11 @@ private:
   // triangulations coarser than the fine level triangulation.
   std::vector<std::shared_ptr<Mapping<dim> const>> coarse_grid_mappings;
 
-  typedef SmootherBase<VectorTypeMG>       SMOOTHER;
-  MGLevelObject<std::shared_ptr<SMOOTHER>> smoothers;
+  MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 
   std::shared_ptr<MGCoarseGridBase<VectorTypeMG>> coarse_grid_solver;
 
-  std::shared_ptr<MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>>
-    multigrid_preconditioner;
+  std::shared_ptr<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>> multigrid_algorithm;
 };
 } // namespace ExaDG
 

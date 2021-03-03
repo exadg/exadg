@@ -26,7 +26,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
 
 namespace ExaDG
 {

@@ -26,7 +26,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
 {

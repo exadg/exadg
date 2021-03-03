@@ -26,13 +26,13 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
+#include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/block_jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
-#include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
+#include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
 
 namespace ExaDG
 {
