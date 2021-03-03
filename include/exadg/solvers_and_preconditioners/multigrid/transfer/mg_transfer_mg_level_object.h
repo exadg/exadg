@@ -36,10 +36,10 @@ namespace ExaDG
 using namespace dealii;
 
 template<int dim, typename Number, typename VectorType = LinearAlgebra::distributed::Vector<Number>>
-class MGTransfer_MGLevelObject : virtual public MGTransfer<VectorType>
+class MGTransferGlobalRefinement : virtual public MGTransfer<VectorType>
 {
 public:
-  virtual ~MGTransfer_MGLevelObject()
+  virtual ~MGTransferGlobalRefinement()
   {
   }
 

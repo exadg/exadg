@@ -32,7 +32,7 @@ using namespace dealii;
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransfer_MGLevelObject<dim, Number, VectorType>::reinit(
+MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
   Mapping<dim> const &                                        mapping,
   MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
   MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
@@ -180,27 +180,27 @@ MGTransfer_MGLevelObject<dim, Number, VectorType>::reinit(
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransfer_MGLevelObject<dim, Number, VectorType>::interpolate(unsigned int const level,
-                                                               VectorType &       dst,
-                                                               VectorType const & src) const
+MGTransferGlobalRefinement<dim, Number, VectorType>::interpolate(unsigned int const level,
+                                                                 VectorType &       dst,
+                                                                 VectorType const & src) const
 {
   this->mg_level_object[level]->interpolate(level, dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransfer_MGLevelObject<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
-                                                                    VectorType &       dst,
-                                                                    VectorType const & src) const
+MGTransferGlobalRefinement<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
+                                                                      VectorType &       dst,
+                                                                      VectorType const & src) const
 {
   this->mg_level_object[level]->restrict_and_add(level, dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransfer_MGLevelObject<dim, Number, VectorType>::prolongate(unsigned int const level,
-                                                              VectorType &       dst,
-                                                              VectorType const & src) const
+MGTransferGlobalRefinement<dim, Number, VectorType>::prolongate(unsigned int const level,
+                                                                VectorType &       dst,
+                                                                VectorType const & src) const
 {
   this->mg_level_object[level]->prolongate(level, dst, src);
 }
@@ -208,12 +208,12 @@ MGTransfer_MGLevelObject<dim, Number, VectorType>::prolongate(unsigned int const
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
 typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
-template class MGTransfer_MGLevelObject<2, float, VectorTypeFloat>;
+template class MGTransferGlobalRefinement<2, float, VectorTypeFloat>;
 
-template class MGTransfer_MGLevelObject<3, float, VectorTypeFloat>;
+template class MGTransferGlobalRefinement<3, float, VectorTypeFloat>;
 
-template class MGTransfer_MGLevelObject<2, double, VectorTypeDouble>;
+template class MGTransferGlobalRefinement<2, double, VectorTypeDouble>;
 
-template class MGTransfer_MGLevelObject<3, double, VectorTypeDouble>;
+template class MGTransferGlobalRefinement<3, double, VectorTypeDouble>;
 
 } // namespace ExaDG

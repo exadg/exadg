@@ -897,7 +897,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
   }
   else // can only be used for triangulations without hanging nodes
   {
-    auto tmp = std::make_shared<MGTransfer_MGLevelObject<dim, MultigridNumber, VectorTypeMG>>();
+    auto tmp = std::make_shared<MGTransferGlobalRefinement<dim, MultigridNumber, VectorTypeMG>>();
 
     tmp->reinit(*mapping, matrix_free_objects, constraints, constrained_dofs, dof_index);
 
