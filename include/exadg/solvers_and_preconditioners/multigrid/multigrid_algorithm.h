@@ -134,15 +134,15 @@ private:
  * its individual components and avoid inner products and other expensive stuff.
  */
 template<typename VectorType, typename MatrixType, typename SmootherType>
-class MultigridPreconditioner
+class MultigridAlgorithm
 {
 public:
-  MultigridPreconditioner(MGLevelObject<std::shared_ptr<MatrixType>> const &   matrix,
-                          MGCoarseGridBase<VectorType> const &                 coarse,
-                          MGTransfer<VectorType> const &                       transfer,
-                          MGLevelObject<std::shared_ptr<SmootherType>> const & smoother,
-                          MPI_Comm const &                                     comm,
-                          unsigned int const                                   n_cycles = 1)
+  MultigridAlgorithm(MGLevelObject<std::shared_ptr<MatrixType>> const &   matrix,
+                     MGCoarseGridBase<VectorType> const &                 coarse,
+                     MGTransfer<VectorType> const &                       transfer,
+                     MGLevelObject<std::shared_ptr<SmootherType>> const & smoother,
+                     MPI_Comm const &                                     comm,
+                     unsigned int const                                   n_cycles = 1)
     : minlevel(matrix.min_level()),
       maxlevel(matrix.max_level()),
       defect(minlevel, maxlevel),
@@ -175,7 +175,7 @@ public:
 #endif
   }
 
-  virtual ~MultigridPreconditioner()
+  virtual ~MultigridAlgorithm()
   {
 #if ENABLE_TIMING
     timings.print(mpi_comm);

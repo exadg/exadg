@@ -83,7 +83,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 
   this->initialize_transfer_operators();
 
-  this->initialize_multigrid_preconditioner();
+  this->initialize_multigrid_algorithm();
 }
 
 /*
@@ -624,14 +624,14 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
 {
-  multigrid_preconditioner->vmult(dst, src);
+  multigrid_algorithm->vmult(dst, src);
 }
 
 template<int dim, typename Number>
 unsigned int
 MultigridPreconditionerBase<dim, Number>::solve(VectorType & dst, VectorType const & src) const
 {
-  return multigrid_preconditioner->solve(dst, src);
+  return multigrid_algorithm->solve(dst, src);
 }
 
 template<int dim, typename Number>
@@ -661,44 +661,41 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
     }
     case MultigridSmoother::GMRES:
     {
-      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES_SMOOTHER;
-      smoothers[level].reset(new GMRES_SMOOTHER());
+      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES;
+      smoothers[level].reset(new GMRES());
 
-      typename GMRES_SMOOTHER::AdditionalData smoother_data;
+      typename GMRES::AdditionalData smoother_data;
       smoother_data.preconditioner       = data.smoother_data.preconditioner;
       smoother_data.number_of_iterations = data.smoother_data.iterations;
 
-      std::shared_ptr<GMRES_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<GMRES_SMOOTHER>(smoothers[level]);
+      std::shared_ptr<GMRES> smoother = std::dynamic_pointer_cast<GMRES>(smoothers[level]);
       smoother->initialize(mg_operator, smoother_data);
       break;
     }
     case MultigridSmoother::CG:
     {
-      typedef CGSmoother<Operator, VectorTypeMG> CG_SMOOTHER;
-      smoothers[level].reset(new CG_SMOOTHER());
+      typedef CGSmoother<Operator, VectorTypeMG> CG;
+      smoothers[level].reset(new CG());
 
-      typename CG_SMOOTHER::AdditionalData smoother_data;
+      typename CG::AdditionalData smoother_data;
       smoother_data.preconditioner       = data.smoother_data.preconditioner;
       smoother_data.number_of_iterations = data.smoother_data.iterations;
 
-      std::shared_ptr<CG_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<CG_SMOOTHER>(smoothers[level]);
+      std::shared_ptr<CG> smoother = std::dynamic_pointer_cast<CG>(smoothers[level]);
       smoother->initialize(mg_operator, smoother_data);
       break;
     }
     case MultigridSmoother::Jacobi:
     {
-      typedef JacobiSmoother<Operator, VectorTypeMG> JACOBI_SMOOTHER;
-      smoothers[level].reset(new JACOBI_SMOOTHER());
+      typedef JacobiSmoother<Operator, VectorTypeMG> Jacobi;
+      smoothers[level].reset(new Jacobi());
 
-      typename JACOBI_SMOOTHER::AdditionalData smoother_data;
+      typename Jacobi::AdditionalData smoother_data;
       smoother_data.preconditioner            = data.smoother_data.preconditioner;
       smoother_data.number_of_smoothing_steps = data.smoother_data.iterations;
       smoother_data.damping_factor            = data.smoother_data.relaxation_factor;
 
-      std::shared_ptr<JACOBI_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<JACOBI_SMOOTHER>(smoothers[level]);
+      std::shared_ptr<Jacobi> smoother = std::dynamic_pointer_cast<Jacobi>(smoothers[level]);
       smoother->initialize(mg_operator, smoother_data);
       break;
     }
@@ -736,28 +733,25 @@ MultigridPreconditionerBase<dim, Number>::update_smoother(unsigned int level)
     }
     case MultigridSmoother::GMRES:
     {
-      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES_SMOOTHER;
+      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES;
 
-      std::shared_ptr<GMRES_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<GMRES_SMOOTHER>(smoothers[level]);
+      std::shared_ptr<GMRES> smoother = std::dynamic_pointer_cast<GMRES>(smoothers[level]);
       smoother->update();
       break;
     }
     case MultigridSmoother::CG:
     {
-      typedef CGSmoother<Operator, VectorTypeMG> CG_SMOOTHER;
+      typedef CGSmoother<Operator, VectorTypeMG> CG;
 
-      std::shared_ptr<CG_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<CG_SMOOTHER>(smoothers[level]);
+      std::shared_ptr<CG> smoother = std::dynamic_pointer_cast<CG>(smoothers[level]);
       smoother->update();
       break;
     }
     case MultigridSmoother::Jacobi:
     {
-      typedef JacobiSmoother<Operator, VectorTypeMG> JACOBI_SMOOTHER;
+      typedef JacobiSmoother<Operator, VectorTypeMG> Jacobi;
 
-      std::shared_ptr<JACOBI_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<JACOBI_SMOOTHER>(smoothers[level]);
+      std::shared_ptr<Jacobi> smoother = std::dynamic_pointer_cast<Jacobi>(smoothers[level]);
       smoother->update();
       break;
     }
@@ -833,7 +827,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
                                                 data.coarse_problem.solver_data,
                                                 operator_is_singular);
 
-      coarse_grid_solver.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(smoothers[0]));
+      coarse_grid_solver.reset(new MGCoarseChebyshev<VectorTypeMG, Smoother>(smoothers[0]));
       break;
     }
     case MultigridCoarseGridSolver::CG:
@@ -907,14 +901,10 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_transfer_operators(
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_multigrid_preconditioner()
+MultigridPreconditionerBase<dim, Number>::initialize_multigrid_algorithm()
 {
-  this->multigrid_preconditioner.reset(
-    new MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>(this->operators,
-                                                                  *this->coarse_grid_solver,
-                                                                  *this->transfers,
-                                                                  this->smoothers,
-                                                                  this->mpi_comm));
+  this->multigrid_algorithm.reset(new MultigridAlgorithm<VectorTypeMG, Operator, Smoother>(
+    this->operators, *this->coarse_grid_solver, *this->transfers, this->smoothers, this->mpi_comm));
 }
 
 template<int dim, typename Number>
@@ -922,8 +912,8 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother(Operator &   mg_operator,
                                                                         unsigned int level)
 {
-  typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
-  typename CHEBYSHEV_SMOOTHER::AdditionalData       smoother_data;
+  typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
+  typename Chebyshev::AdditionalData                smoother_data;
 
   std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix;
   diagonal_matrix.reset(new DiagonalMatrix<VectorTypeMG>());
@@ -937,8 +927,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother(Operator
   smoother_data.degree              = data.smoother_data.iterations;
   smoother_data.eig_cg_n_iterations = data.smoother_data.iterations_eigenvalue_estimation;
 
-  std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother =
-    std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(smoothers[level]);
+  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[level]);
   smoother->initialize(mg_operator, smoother_data);
 }
 
@@ -950,8 +939,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_coarse_g
   bool const         operator_is_singular)
 {
   // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-  typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
-  typename CHEBYSHEV_SMOOTHER::AdditionalData       smoother_data;
+  typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
+  typename Chebyshev::AdditionalData                smoother_data;
 
   std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix;
   diagonal_matrix.reset(new DiagonalMatrix<VectorTypeMG>());
@@ -979,8 +968,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_coarse_g
   smoother_data.degree = std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma);
   smoother_data.eig_cg_n_iterations = 0;
 
-  std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother =
-    std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(smoothers[0]);
+  std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[0]);
   smoother->initialize(coarse_operator, smoother_data);
 }
 
