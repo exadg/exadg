@@ -32,7 +32,7 @@
 #include <deal.II/multigrid/multigrid.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
 
 /*
  * Activate timings if desired.

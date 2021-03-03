@@ -27,7 +27,7 @@
 
 // ExaDG
 #include <exadg/operators/multigrid_operator_base.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
 
 namespace ExaDG
 {

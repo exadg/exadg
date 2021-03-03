@@ -30,7 +30,7 @@
 
 // ExaDG
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer.h>
 
 namespace ExaDG
 {

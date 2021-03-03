@@ -20,10 +20,10 @@
  */
 
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_c.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_refinement.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_h.h>
-#include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_p.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_c.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_global_refinement.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.h>
+#include <exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.h>
 
 namespace ExaDG
 {
