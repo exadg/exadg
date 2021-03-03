@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::MultigridPreconditioner&lt; VectorType, MatrixType, SmootherType &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::MultigridAlgorithm&lt; VectorType, MatrixType, SmootherType &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -61,35 +61,35 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1MultigridPreconditioner.html">MultigridPreconditioner</a></li>  </ul>
+<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1MultigridAlgorithm.html">MultigridAlgorithm</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1MultigridPreconditioner-members.html">List of all members</a>  </div>
+<a href="classExaDG_1_1MultigridAlgorithm-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ExaDG::MultigridPreconditioner&lt; VectorType, MatrixType, SmootherType &gt; Class Template Reference</div>  </div>
+<div class="title">ExaDG::MultigridAlgorithm&lt; VectorType, MatrixType, SmootherType &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a135dbc75c985c63213c57cb8698ed649"><td class="memItemLeft" align="right" valign="top"><a id="a135dbc75c985c63213c57cb8698ed649"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditioner</b> (MGLevelObject&lt; std::shared_ptr&lt; MatrixType &gt;&gt; const &amp;matrix, <a class="el" href="classdealii_1_1MGCoarseGridBase.html">MGCoarseGridBase</a>&lt; VectorType &gt; const &amp;coarse, <a class="el" href="classExaDG_1_1MGTransfer.html">MGTransfer</a>&lt; VectorType &gt; const &amp;transfer, MGLevelObject&lt; std::shared_ptr&lt; SmootherType &gt;&gt; const &amp;smoother, MPI_Comm const &amp;comm, unsigned int const n_cycles=1)</td></tr>
-<tr class="separator:a135dbc75c985c63213c57cb8698ed649"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af815e31671dab1519bce306624022a9e"><td class="memTemplParams" colspan="2"><a id="af815e31671dab1519bce306624022a9e"></a>
+<tr class="memitem:a9d366d8a0d8ea939734e6d5907dfd5e6"><td class="memItemLeft" align="right" valign="top"><a id="a9d366d8a0d8ea939734e6d5907dfd5e6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MultigridAlgorithm</b> (MGLevelObject&lt; std::shared_ptr&lt; MatrixType &gt;&gt; const &amp;matrix, <a class="el" href="classdealii_1_1MGCoarseGridBase.html">MGCoarseGridBase</a>&lt; VectorType &gt; const &amp;coarse, <a class="el" href="classExaDG_1_1MGTransfer.html">MGTransfer</a>&lt; VectorType &gt; const &amp;transfer, MGLevelObject&lt; std::shared_ptr&lt; SmootherType &gt;&gt; const &amp;smoother, MPI_Comm const &amp;comm, unsigned int const n_cycles=1)</td></tr>
+<tr class="separator:a9d366d8a0d8ea939734e6d5907dfd5e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54dfdea956be0bd5ac41c86a445622f1"><td class="memTemplParams" colspan="2"><a id="a54dfdea956be0bd5ac41c86a445622f1"></a>
 template&lt;class OtherVectorType &gt; </td></tr>
-<tr class="memitem:af815e31671dab1519bce306624022a9e"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>vmult</b> (OtherVectorType &amp;dst, OtherVectorType const &amp;src) const</td></tr>
-<tr class="separator:af815e31671dab1519bce306624022a9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6de3e4573c7a9f7070233964b3c98f17"><td class="memTemplParams" colspan="2"><a id="a6de3e4573c7a9f7070233964b3c98f17"></a>
+<tr class="memitem:a54dfdea956be0bd5ac41c86a445622f1"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>vmult</b> (OtherVectorType &amp;dst, OtherVectorType const &amp;src) const</td></tr>
+<tr class="separator:a54dfdea956be0bd5ac41c86a445622f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a835cd93ce03ba45b0d8f2feff8af8358"><td class="memTemplParams" colspan="2"><a id="a835cd93ce03ba45b0d8f2feff8af8358"></a>
 template&lt;class OtherVectorType &gt; </td></tr>
-<tr class="memitem:a6de3e4573c7a9f7070233964b3c98f17"><td class="memTemplItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memTemplItemRight" valign="bottom"><b>solve</b> (OtherVectorType &amp;dst, OtherVectorType const &amp;src) const</td></tr>
-<tr class="separator:a6de3e4573c7a9f7070233964b3c98f17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4dffb14bfaa5a34f12044440e5960054"><td class="memTemplParams" colspan="2"><a id="a4dffb14bfaa5a34f12044440e5960054"></a>
+<tr class="memitem:a835cd93ce03ba45b0d8f2feff8af8358"><td class="memTemplItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memTemplItemRight" valign="bottom"><b>solve</b> (OtherVectorType &amp;dst, OtherVectorType const &amp;src) const</td></tr>
+<tr class="separator:a835cd93ce03ba45b0d8f2feff8af8358"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83aaee6bdaf324567a02853b28ab2cbb"><td class="memTemplParams" colspan="2"><a id="a83aaee6bdaf324567a02853b28ab2cbb"></a>
 template&lt;class OtherVectorType &gt; </td></tr>
-<tr class="memitem:a4dffb14bfaa5a34f12044440e5960054"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><b>calculate_residual</b> (OtherVectorType &amp;residual) const</td></tr>
-<tr class="separator:a4dffb14bfaa5a34f12044440e5960054"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83aaee6bdaf324567a02853b28ab2cbb"><td class="memTemplItemLeft" align="right" valign="top">double&#160;</td><td class="memTemplItemRight" valign="bottom"><b>calculate_residual</b> (OtherVectorType &amp;residual) const</td></tr>
+<tr class="separator:a83aaee6bdaf324567a02853b28ab2cbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/solvers_and_preconditioners/multigrid/<a class="el" href="multigrid__algorithm_8h_source.html">multigrid_algorithm.h</a></li>
