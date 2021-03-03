@@ -27,7 +27,7 @@
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG

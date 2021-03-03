@@ -24,8 +24,8 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_amg.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/structure/preconditioners/amg_preconditioner.h>
 #include <exadg/structure/preconditioners/multigrid_preconditioner.h>

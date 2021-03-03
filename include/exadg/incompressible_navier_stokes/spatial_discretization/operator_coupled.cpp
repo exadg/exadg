@@ -21,11 +21,11 @@
 
 #include <exadg/incompressible_navier_stokes/preconditioners/multigrid_preconditioner_momentum.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
-#include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
+#include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/block_jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
 
 namespace ExaDG

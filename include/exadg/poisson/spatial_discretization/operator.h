@@ -33,7 +33,7 @@
 // operators
 #include <exadg/operators/rhs_operator.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 // user interface
 #include <exadg/poisson/user_interface/analytical_solution.h>

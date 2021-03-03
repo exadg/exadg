@@ -47,9 +47,9 @@
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
-#include <exadg/poisson/preconditioner/multigrid_preconditioner.h>
+#include <exadg/poisson/preconditioners/multigrid_preconditioner.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/time_integration/interpolate.h>
 
 namespace ExaDG

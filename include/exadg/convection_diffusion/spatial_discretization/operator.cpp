@@ -27,9 +27,9 @@
 #include <exadg/convection_diffusion/preconditioners/multigrid_preconditioner.h>
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/spatial_discretization/project_velocity.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/block_jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/inverse_mass_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/time_integration/time_step_calculation.h>
 

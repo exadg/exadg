@@ -28,7 +28,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/elementwise_preconditioners.h>
 #include <exadg/solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h>
 #include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>

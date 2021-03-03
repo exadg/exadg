@@ -35,7 +35,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/elementwise_preconditioners.h>
 #include <exadg/solvers_and_preconditioners/solvers/elementwise_krylov_solvers.h>
 
 namespace ExaDG

@@ -37,8 +37,8 @@
 #include <exadg/matrix_free/categorization.h>
 #include <exadg/matrix_free/integrators.h>
 
-#include <exadg/solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/enum_types.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/elementwise_preconditioners.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h>
 #include <exadg/solvers_and_preconditioners/util/invert_diagonal.h>

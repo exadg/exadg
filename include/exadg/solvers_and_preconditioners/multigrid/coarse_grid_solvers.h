@@ -30,10 +30,10 @@
 #include <deal.II/multigrid/mg_base.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/preconditioner/block_jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_amg.h>
-#include <exadg/solvers_and_preconditioners/preconditioner/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_amg.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 
