@@ -57,7 +57,7 @@ public:
     : MappingQCache<dim>(mapping_degree_q_cache), mapping(mapping), mpi_comm(mpi_comm)
   {
     hierarchic_to_lexicographic_numbering =
-      FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_q_cache_in);
+      FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_q_cache);
     lexicographic_to_hierarchic_numbering =
       Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
   }
