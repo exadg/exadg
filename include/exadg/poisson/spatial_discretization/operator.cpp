@@ -32,7 +32,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/inverse_mass_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
-#include <exadg/solvers_and_preconditioners/util/check_multigrid.h>
+#include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
 
 namespace ExaDG
 {

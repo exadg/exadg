@@ -25,9 +25,9 @@
 
 // ExaDG
 #include <exadg/operators/operator_base.h>
-#include <exadg/solvers_and_preconditioners/util/block_jacobi_matrices.h>
-#include <exadg/solvers_and_preconditioners/util/invert_diagonal.h>
-#include <exadg/solvers_and_preconditioners/util/verify_calculation_of_diagonal.h>
+#include <exadg/solvers_and_preconditioners/utilities/block_jacobi_matrices.h>
+#include <exadg/solvers_and_preconditioners/utilities/invert_diagonal.h>
+#include <exadg/solvers_and_preconditioners/utilities/verify_calculation_of_diagonal.h>
 
 namespace ExaDG
 {

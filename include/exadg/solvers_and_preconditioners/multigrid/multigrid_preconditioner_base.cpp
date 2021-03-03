@@ -38,7 +38,7 @@
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/jacobi_smoother.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_coarsening.h>
 #include <exadg/solvers_and_preconditioners/multigrid/transfer/mg_transfer_global_refinement.h>
-#include <exadg/solvers_and_preconditioners/util/compute_eigenvalues.h>
+#include <exadg/solvers_and_preconditioners/utilities/compute_eigenvalues.h>
 
 namespace ExaDG
 {
