@@ -256,7 +256,9 @@ public:
 
   /**
    * Use this function to initialize the mapping for use in multigrid with global refinement
-   * transfer type.
+   * transfer type. This function only takes the grid coordinates described by the static mapping
+   * without adding displacements in order to initialize the MappingQCache object for all multigrid
+   * levels.
    */
   void
   initialize_multigrid()
@@ -301,12 +303,8 @@ public:
     AssertThrow(fe.element_multiplicity(0) == dim,
                 ExcMessage("Expected finite element with dim components."));
 
-    FE_Nothing<dim> fe_nothing;
-    FEValues<dim>   fe_values(*mapping,
-                            fe_nothing,
-                            QGaussLobatto<dim>(fe.degree + 1),
-                            update_quadrature_points);
-
+    // update mapping for all multigrid levels according to grid coordinates described by static
+    // mapping
     MappingQCache<dim>::initialize(
       dof_handler.get_triangulation(),
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
@@ -323,16 +321,8 @@ public:
 
         if(cell->level_subdomain_id() != numbers::artificial_subdomain_id)
         {
-          fe_values.reinit(typename Triangulation<dim>::cell_iterator(cell));
           std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
           cell->get_mg_dof_indices(dof_indices);
-
-          // extract displacement and add to original position
-          for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
-          {
-            grid_coordinates[i] =
-              fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
-          }
 
           for(unsigned int i = 0; i < dof_indices.size(); ++i)
           {
@@ -340,12 +330,12 @@ public:
 
             if(fe.dofs_per_vertex > 0) // FE_Q
             {
-              grid_coordinates[id.second][id.first] +=
+              grid_coordinates[id.second][id.first] =
                 grid_coordinates_all_levels_ghosted[level](dof_indices[i]);
             }
             else // FE_DGQ
             {
-              grid_coordinates[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
+              grid_coordinates[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] =
                 grid_coordinates_all_levels_ghosted[level](dof_indices[i]);
             }
           }
