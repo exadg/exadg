@@ -34,12 +34,18 @@ namespace ExaDG
 {
 using namespace dealii;
 
+/**
+ * Class for moving mesh problems based on a Poisson-type mesh motion technique.
+ */
 template<int dim, typename Number>
 class MovingMeshPoisson : public MovingMeshBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
+  /**
+   * Constructor.
+   */
   MovingMeshPoisson(std::shared_ptr<Mapping<dim>>                        mapping,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
     : MovingMeshBase<dim, Number>(mapping,
@@ -57,6 +63,9 @@ public:
     this->initialize(poisson->get_dof_handler(), displacement);
   }
 
+  /**
+   * Updates the mapping, i.e., moves the mesh by solving a Poisson-type problem.
+   */
   void
   update(double const time, bool const print_solver_info, bool const print_wall_times) override
   {
@@ -82,6 +91,9 @@ public:
     this->initialize(poisson->get_dof_handler(), displacement);
   }
 
+  /**
+   * Prints information on iteration counts.
+   */
   void
   print_iterations() const override
   {

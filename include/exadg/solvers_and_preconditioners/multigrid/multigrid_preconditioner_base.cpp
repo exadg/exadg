@@ -27,6 +27,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
+#include <exadg/grid/mapping_finite_element.h>
 #include <exadg/matrix_free/categorization.h>
 #include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/constraints.h>
@@ -46,7 +47,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm const & comm)
-  : n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm), mapping(nullptr)
+  : n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm)
 {
 }
 
@@ -334,6 +335,20 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
         // TODO
         coarse_grid_mappings[h_level].reset(new MappingQGeneric<dim>(1));
       }
+    }
+  }
+  else
+  {
+    MappingFiniteElement<dim, Number> * mapping_fine =
+      dynamic_cast<MappingFiniteElement<dim, Number> *>(const_cast<Mapping<dim> *>(mapping));
+    if(mapping_fine != nullptr)
+    {
+      std::shared_ptr<MappingFiniteElement<dim, Number>> mapping_fine_ptr(mapping_fine);
+      mapping_global_refinement =
+        std::make_shared<MappingFiniteElement<dim, Number>>(mapping_fine_ptr,
+                                                            mapping_fine->get_degree(),
+                                                            *tria);
+      mapping_global_refinement->initialize_multigrid();
     }
   }
 }

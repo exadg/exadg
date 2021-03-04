@@ -34,12 +34,18 @@ namespace ExaDG
 {
 using namespace dealii;
 
+/**
+ * Class for moving mesh problems based on a pseudo-solid mesh motion technique.
+ */
 template<int dim, typename Number>
 class MovingMeshElasticity : public MovingMeshBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
+  /**
+   * Constructor.
+   */
   MovingMeshElasticity(std::shared_ptr<Mapping<dim>>                     mapping,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
@@ -59,6 +65,9 @@ public:
     this->initialize(pde_operator->get_dof_handler(), displacement);
   }
 
+  /**
+   * Updates the mapping, i.e., moves the mesh by solving a pseudo-solid problem.
+   */
   void
   update(double const time, bool const print_solver_info, bool const print_wall_times) override
   {
@@ -105,6 +114,9 @@ public:
     this->initialize(pde_operator->get_dof_handler(), displacement);
   }
 
+  /**
+   * Prints information on iteration counts.
+   */
   void
   print_iterations() const override
   {

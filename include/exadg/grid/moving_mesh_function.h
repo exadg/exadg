@@ -29,8 +29,8 @@ namespace ExaDG
 using namespace dealii;
 
 /**
- * A mapping class based on MappingQCache equipped with practical interfaces that can be used to
- * initialize the mapping by providing a Function<dim> object.
+ * Class for moving mesh problems based on mesh motions that can be described analytically via a
+ * Function<dim> object.
  */
 template<int dim, typename Number>
 class MovingMeshFunction : public MovingMeshBase<dim, Number>
@@ -65,6 +65,47 @@ public:
     mesh_movement_function->set_time(time);
 
     this->initialize(triangulation, mesh_movement_function);
+  }
+
+  /**
+   * Initializes the MappingQCache object by providing a Function<dim> that describes the
+   * displacement of the mesh compared to an undeformed reference configuration described by the
+   * static mapping of this class.
+   */
+  void
+  initialize(Triangulation<dim> const &     triangulation,
+             std::shared_ptr<Function<dim>> displacement_function)
+  {
+    // dummy FE for compatibility with interface of FEValues
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(*this->mapping,
+                            dummy_fe,
+                            QGaussLobatto<dim>(this->get_degree() + 1),
+                            update_quadrature_points);
+
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
+    MappingQCache<dim>::initialize(
+      triangulation,
+      [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
+        fe_values.reinit(cell);
+
+        // compute displacement and add to original position
+        std::vector<Point<dim>> points_moved(fe_values.n_quadrature_points);
+        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+        {
+          // need to adjust for hierarchic numbering of MappingQCache
+          Point<dim> const point =
+            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          Point<dim> displacement;
+          for(unsigned int d = 0; d < dim; ++d)
+            displacement[d] = displacement_function->value(point, d);
+
+          points_moved[i] = point + displacement;
+        }
+
+        return points_moved;
+      });
   }
 
 private:

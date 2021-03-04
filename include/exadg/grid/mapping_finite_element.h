@@ -26,6 +26,7 @@
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/fe/fe_nothing.h>
+#include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/fe/fe_values.h>
@@ -55,6 +56,7 @@ public:
                        Triangulation<dim> const &    triangulation)
     : MappingQCache<dim>(mapping_degree_q_cache),
       mapping(mapping),
+      triangulation(triangulation),
       mpi_comm(triangulation.get_communicator())
   {
     hierarchic_to_lexicographic_numbering =
@@ -62,10 +64,11 @@ public:
     lexicographic_to_hierarchic_numbering =
       Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
 
-    // make sure that mapping_q_cache is initialized
-    std::shared_ptr<Function<dim>> zero_function;
-    zero_function.reset(new Functions::ZeroFunction<dim>(dim));
-    initialize(triangulation, zero_function);
+    FESystem<dim>   fe(FE_Q<dim>(this->get_degree()), dim);
+    DoFHandler<dim> dof_handler(triangulation);
+    dof_handler.distribute_dofs(fe);
+    VectorType dof_vector;
+    initialize(dof_handler, dof_vector);
   }
 
   /**
@@ -82,10 +85,19 @@ public:
   void
   fill_grid_coordinates_vector(VectorType & vector, DoFHandler<dim> const & dof_handler)
   {
-    // This function computes the current mesh coordinates, so that the MappingQCache object
-    // describing the deformed configuration has to be used here.
-    Mapping<dim> const & mapping = *this;
+    // use the deformed state described by the MappingQCache object (*this)
+    fill_grid_coordinates_vector(*this, vector, dof_handler);
+  }
 
+  /**
+   * Extract the grid coordinates for a given external mapping and fill a
+   * dof-vector given a corresponding DoFHandler object.
+   */
+  void
+  fill_grid_coordinates_vector(Mapping<dim> const &    mapping,
+                               VectorType &            vector,
+                               DoFHandler<dim> const & dof_handler)
+  {
     if(vector.size() != dof_handler.n_dofs())
     {
       IndexSet relevant_dofs_grid;
@@ -157,39 +169,76 @@ public:
   }
 
   /**
-   * Initializes the MappingQCache object by providing a Function<dim> that describes the
-   * displacement of the mesh compared to an undeformed reference configuration.
+   * Initializes the MappingQCache object by providing a dof-vector (with a corresponding DoFHandler
+   * object) that describes the displacement of the mesh compared to an undeformed reference
+   * configuration. If the dof-vector is empty or uninitialized, this implies that no displacements
+   * will be added to the grid coordinates described by the static mapping.
    */
   void
-  initialize(Triangulation<dim> const &     triangulation,
-             std::shared_ptr<Function<dim>> displacement_function)
+  initialize(DoFHandler<dim> const & dof_handler, VectorType const & dof_vector)
   {
-    // dummy FE for compatibility with interface of FEValues
-    FE_Nothing<dim> dummy_fe;
-    FEValues<dim>   fe_values(*this->mapping,
-                            dummy_fe,
-                            QGaussLobatto<dim>(this->get_degree() + 1),
-                            update_quadrature_points);
+    // we have to project the solution onto all coarse levels of the triangulation
+    // (required for initialization of MappingQCache)
+    VectorType ghosted_dof_vector;
+    IndexSet   locally_relevant_dofs;
+    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    ghosted_dof_vector.copy_locally_owned_data_from(dof_vector);
+    ghosted_dof_vector.update_ghost_values();
+
+    FiniteElement<dim> const & fe = dof_handler.get_fe();
+    AssertThrow(fe.element_multiplicity(0) == dim,
+                ExcMessage("Expected finite element with dim components."));
 
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(*mapping,
+                            dummy_fe,
+                            QGaussLobatto<dim>(fe.degree + 1),
+                            update_quadrature_points);
+
+    // update mapping according to mesh deformation computed above
     MappingQCache<dim>::initialize(
-      triangulation,
-      [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
-        fe_values.reinit(cell);
+      dof_handler.get_triangulation(),
+      [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
+        unsigned int const scalar_dofs_per_cell = Utilities::pow(fe.degree + 1, dim);
 
-        // compute displacement and add to original position
-        std::vector<Point<dim>> points_moved(fe_values.n_quadrature_points);
-        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+        std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
+
+        fe_values.reinit(cell_tria);
+        // extract displacement and add to original position
+        for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
         {
-          // need to adjust for hierarchic numbering of MappingQCache
-          Point<dim> const point =
+          points_moved[i] =
             fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
-          Point<dim> displacement;
-          for(unsigned int d = 0; d < dim; ++d)
-            displacement[d] = displacement_function->value(point, d);
+        }
 
-          points_moved[i] = point + displacement;
+        // if this function is called with an empty dof-vector, this indicates that the
+        // displacements are zero and the points do not have to be moved
+        if(dof_vector.size() > 0 && cell_tria->is_active() && !cell_tria->is_artificial())
+        {
+          typename DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
+                                                       cell_tria->level(),
+                                                       cell_tria->index(),
+                                                       &dof_handler);
+
+          std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+          cell->get_dof_indices(dof_indices);
+
+          for(unsigned int i = 0; i < dof_indices.size(); ++i)
+          {
+            std::pair<unsigned int, unsigned int> const id = fe.system_to_component_index(i);
+
+            if(fe.dofs_per_vertex > 0) // FE_Q
+            {
+              points_moved[id.second][id.first] += ghosted_dof_vector(dof_indices[i]);
+            }
+            else // FE_DGQ
+            {
+              points_moved[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
+                ghosted_dof_vector(dof_indices[i]);
+            }
+          }
         }
 
         return points_moved;
@@ -197,19 +246,25 @@ public:
   }
 
   /**
-   * Initializes the MappingQCache object by providing a dof-vector (with a corresponding DoFHandler
-   * object) that describes the displacement of the mesh compared to an undeformed reference
-   * configuration.
+   * Use this function to initialize the mapping for use in multigrid with global refinement
+   * transfer type.
    */
   void
-  initialize(DoFHandler<dim> const & dof_handler, VectorType const & dof_vector)
+  initialize_multigrid()
   {
     // we have to project the solution onto all coarse levels of the triangulation
     // (required for initialization of MappingQCache)
     MGLevelObject<VectorType> dof_vector_all_levels, dof_vector_all_levels_ghosted;
-    unsigned int const        n_levels = dof_handler.get_triangulation().n_global_levels();
+    unsigned int const        n_levels = triangulation.n_global_levels();
     dof_vector_all_levels.resize(0, n_levels - 1);
     dof_vector_all_levels_ghosted.resize(0, n_levels - 1);
+
+    FESystem<dim>   fe(FE_Q<dim>(this->get_degree()), dim);
+    DoFHandler<dim> dof_handler(triangulation);
+    dof_handler.distribute_dofs(fe);
+    dof_handler.distribute_mg_dofs();
+    VectorType dof_vector;
+    fill_grid_coordinates_vector(*this->mapping, dof_vector, dof_handler);
 
     MGTransferMatrixFree<dim, Number> transfer;
     transfer.build(dof_handler);
@@ -227,9 +282,10 @@ public:
       dof_vector_all_levels_ghosted[level].update_ghost_values();
     }
 
-    FiniteElement<dim> const & fe = dof_handler.get_fe();
     AssertThrow(fe.element_multiplicity(0) == dim,
                 ExcMessage("Expected finite element with dim components."));
+
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
     FE_Nothing<dim> dummy_fe;
     FEValues<dim>   fe_values(*mapping,
@@ -289,6 +345,8 @@ public:
 protected:
   // static mapping describing undeformed state
   std::shared_ptr<Mapping<dim>> mapping;
+
+  Triangulation<dim> const & triangulation;
 
   std::vector<unsigned int> hierarchic_to_lexicographic_numbering;
   std::vector<unsigned int> lexicographic_to_hierarchic_numbering;
