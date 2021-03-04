@@ -29,9 +29,12 @@ namespace FSI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & comm)
+Driver<dim, Number>::Driver(std::string const & input_file,
+                            MPI_Comm const &    comm,
+                            bool const          is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    is_test(is_test),
     partitioned_iterations({0, 0})
 {
   dealii::ParameterHandler prm;
@@ -92,8 +95,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree_fluid,
                            unsigned int const                            degree_structure,
                            unsigned int const                            refine_space_fluid,
-                           unsigned int const                            refine_space_structure,
-                           bool const                                    is_test)
+                           unsigned int const                            refine_space_structure)
 
 {
   Timer timer;
@@ -387,14 +389,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // mapping for fluid problem (moving mesh)
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      fluid_moving_mapping.reset(new MovingMeshPoisson<dim, Number>(
-        fluid_static_mapping, mpi_comm, not(is_test), ale_poisson_operator));
+      fluid_moving_mapping.reset(
+        new MovingMeshPoisson<dim, Number>(fluid_static_mapping, ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
       fluid_moving_mapping.reset(new MovingMeshElasticity<dim, Number>(fluid_static_mapping,
-                                                                       mpi_comm,
-                                                                       not(is_test),
                                                                        ale_elasticity_operator,
                                                                        ale_elasticity_param));
     }
@@ -733,7 +733,9 @@ Driver<dim, Number>::solve_ale() const
 
   sub_timer.restart();
   bool const print_solver_info = fluid_time_integrator->print_solver_info();
-  fluid_moving_mapping->update(fluid_time_integrator->get_next_time(), print_solver_info);
+  fluid_moving_mapping->update(fluid_time_integrator->get_next_time(),
+                               print_solver_info,
+                               not(is_test));
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -1232,7 +1234,7 @@ Driver<dim, Number>::print_partitioned_iterations() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   pcout << std::endl
         << "_________________________________________________________________________________"

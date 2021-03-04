@@ -43,9 +43,8 @@ public:
    */
   MovingMeshBase(std::shared_ptr<Mapping<dim>> mapping,
                  unsigned int const            mapping_degree_q_cache,
-                 Triangulation<dim> const &    triangulation,
-                 MPI_Comm const &              mpi_comm)
-    : MappingFiniteElement<dim, Number>(mapping, mapping_degree_q_cache, triangulation, mpi_comm)
+                 Triangulation<dim> const &    triangulation)
+    : MappingFiniteElement<dim, Number>(mapping, mapping_degree_q_cache, triangulation)
   {
   }
 
@@ -60,7 +59,7 @@ public:
    * Updates the mapping, i.e., moves the mesh.
    */
   virtual void
-  update(double const time, bool const print_solver_info = false) = 0;
+  update(double const time, bool const print_solver_info, bool const print_wall_times) = 0;
 
   /**
    * Print the number of iterations for PDE type mesh motion problems.

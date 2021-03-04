@@ -93,25 +93,23 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & comm);
+  Driver(MPI_Comm const & comm, bool const is_test);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const                            degree,
         unsigned int const                            refine_space,
         unsigned int const                            refine_time,
-        bool const                                    is_test,
         bool const                                    is_throughput_study);
 
   void
-  print_performance_results(double const total_time, bool const is_test) const;
+  print_performance_results(double const total_time) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(unsigned int const  degree,
                  std::string const & operator_type_string,
                  unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer,
-                 bool const          is_test) const;
+                 unsigned int const  n_repetitions_outer) const;
 
   void
   solve() const;
@@ -122,6 +120,9 @@ private:
 
   // output to std::cout
   ConditionalOStream pcout;
+
+  // do not print wall times if is_test
+  bool const is_test;
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;

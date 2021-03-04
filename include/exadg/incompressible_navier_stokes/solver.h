@@ -80,16 +80,16 @@ run(std::string const & input_file,
   timer.restart();
 
   std::shared_ptr<IncNS::Driver<dim, Number>> driver;
-  driver.reset(new IncNS::Driver<dim, Number>(mpi_comm));
+  driver.reset(new IncNS::Driver<dim, Number>(mpi_comm, is_test));
 
   std::shared_ptr<IncNS::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
 
-  driver->setup(application, degree, refine_space, refine_time, is_test, false);
+  driver->setup(application, degree, refine_space, refine_time, false);
 
   driver->solve();
 
-  driver->print_performance_results(timer.wall_time(), is_test);
+  driver->print_performance_results(timer.wall_time());
 }
 
 } // namespace ExaDG

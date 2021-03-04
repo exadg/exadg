@@ -52,9 +52,10 @@ public:
    */
   MappingFiniteElement(std::shared_ptr<Mapping<dim>> mapping,
                        unsigned int const            mapping_degree_q_cache,
-                       Triangulation<dim> const &    triangulation,
-                       MPI_Comm const &              mpi_comm)
-    : MappingQCache<dim>(mapping_degree_q_cache), mapping(mapping), mpi_comm(mpi_comm)
+                       Triangulation<dim> const &    triangulation)
+    : MappingQCache<dim>(mapping_degree_q_cache),
+      mapping(mapping),
+      mpi_comm(triangulation.get_communicator())
   {
     hierarchic_to_lexicographic_numbering =
       FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_q_cache);

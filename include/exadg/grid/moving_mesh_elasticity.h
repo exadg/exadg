@@ -41,20 +41,18 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   MovingMeshElasticity(std::shared_ptr<Mapping<dim>>                     mapping,
-                       MPI_Comm const &                                  mpi_comm,
-                       bool const                                        print_wall_times,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
     : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
-                                  structure_operator->get_dof_handler().get_triangulation(),
-                                  mpi_comm),
+                                  structure_operator->get_dof_handler().get_triangulation()),
       pde_operator(structure_operator),
       param(structure_parameters),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-      iterations({0, {0, 0}}),
-      print_wall_times(print_wall_times)
+      pcout(std::cout,
+            Utilities::MPI::this_mpi_process(
+              structure_operator->get_dof_handler().get_communicator()) == 0),
+      iterations({0, {0, 0}})
   {
     // make sure that the mapping is initialized
     pde_operator->initialize_dof_vector(displacement);
@@ -62,7 +60,7 @@ public:
   }
 
   void
-  update(double const time, bool const print_solver_info = false)
+  update(double const time, bool const print_solver_info, bool const print_wall_times) override
   {
     Timer timer;
     timer.restart();
@@ -108,7 +106,7 @@ public:
   }
 
   void
-  print_iterations() const
+  print_iterations() const override
   {
     std::vector<std::string> names;
     std::vector<double>      iterations_avg;
@@ -156,8 +154,6 @@ private:
     unsigned int /* calls */,
     std::tuple<unsigned long long, unsigned long long> /* iteration counts {Newton, linear}*/>
     iterations;
-
-  bool print_wall_times;
 };
 
 } // namespace ExaDG

@@ -243,7 +243,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Driver(std::string const & input_file, MPI_Comm const & comm);
+  Driver(std::string const & input_file, MPI_Comm const & comm, bool const is_test);
 
   static void
   add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data);
@@ -253,14 +253,13 @@ public:
         unsigned int const                            degree_fluid,
         unsigned int const                            degree_structure,
         unsigned int const                            refine_space_fluid,
-        unsigned int const                            refine_space_structure,
-        bool const                                    is_test);
+        unsigned int const                            refine_space_structure);
 
   void
   solve() const;
 
   void
-  print_performance_results(double const total_time, bool const is_test) const;
+  print_performance_results(double const total_time) const;
 
 private:
   void
@@ -306,6 +305,9 @@ private:
 
   // output to std::cout
   ConditionalOStream pcout;
+
+  // do not print wall times if is_test
+  bool const is_test;
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;

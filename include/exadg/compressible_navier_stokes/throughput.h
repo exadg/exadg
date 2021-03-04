@@ -82,7 +82,7 @@ run(ThroughputParameters const & throughput,
     bool const                   is_test)
 {
   std::shared_ptr<CompNS::Driver<dim, Number>> driver;
-  driver.reset(new CompNS::Driver<dim, Number>(mpi_comm));
+  driver.reset(new CompNS::Driver<dim, Number>(mpi_comm, is_test));
 
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
@@ -90,15 +90,14 @@ run(ThroughputParameters const & throughput,
   application->set_subdivisions_hypercube(n_cells_1d);
 
   unsigned int const refine_time = 0; // not used
-  driver->setup(application, degree, refine_space, refine_time, is_test, true);
+  driver->setup(application, degree, refine_space, refine_time, true);
 
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(degree,
                            throughput.operator_type,
                            throughput.n_repetitions_inner,
-                           throughput.n_repetitions_outer,
-                           is_test);
+                           throughput.n_repetitions_outer);
 
   throughput.wall_times.push_back(wall_time);
 }

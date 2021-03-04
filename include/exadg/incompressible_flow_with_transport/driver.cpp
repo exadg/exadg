@@ -29,11 +29,12 @@ namespace FTI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm)
+Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
   : mpi_comm(comm),
-    n_scalars(1),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    is_test(is_test),
     use_adaptive_time_stepping(false),
+    n_scalars(1),
     N_time_steps(0)
 {
 }
@@ -42,8 +43,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
-                           unsigned int const                            refine_space,
-                           bool const                                    is_test)
+                           unsigned int const                            refine_space)
 {
   Timer timer;
   timer.restart();
@@ -140,7 +140,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
     moving_mapping.reset(new MovingMeshFunction<dim, Number>(
-      *triangulation, static_mapping, degree, mpi_comm, mesh_motion, fluid_param.start_time));
+      static_mapping, degree, *triangulation, mesh_motion, fluid_param.start_time));
 
     mapping = moving_mapping;
   }
@@ -704,7 +704,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(fluid_time_integrator->get_next_time());
+  moving_mapping->update(fluid_time_integrator->get_next_time(), false, false);
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -817,7 +817,7 @@ Driver<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"

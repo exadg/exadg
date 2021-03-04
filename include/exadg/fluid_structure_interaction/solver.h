@@ -127,7 +127,7 @@ run(std::string const &          input_file,
   timer.restart();
 
   std::shared_ptr<FSI::Driver<dim, Number>> driver;
-  driver.reset(new FSI::Driver<dim, Number>(input_file, mpi_comm));
+  driver.reset(new FSI::Driver<dim, Number>(input_file, mpi_comm, is_test));
 
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
@@ -136,12 +136,11 @@ run(std::string const &          input_file,
                 resolution.degree_fluid,
                 resolution.degree_structure,
                 resolution.refine_fluid,
-                resolution.refine_structure,
-                is_test);
+                resolution.refine_structure);
 
   driver->solve();
 
-  driver->print_performance_results(timer.wall_time(), is_test);
+  driver->print_performance_results(timer.wall_time());
 }
 } // namespace ExaDG
 

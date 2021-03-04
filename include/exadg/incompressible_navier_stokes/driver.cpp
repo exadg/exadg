@@ -36,8 +36,8 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm)
-  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0)
+Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
+  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0), is_test(is_test)
 {
 }
 
@@ -47,7 +47,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
                            unsigned int const                            refine_space,
                            unsigned int const                            refine_time,
-                           bool const                                    is_test,
                            bool const                                    is_throughput_study)
 {
   Timer timer;
@@ -99,7 +98,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
       moving_mapping.reset(new MovingMeshFunction<dim, Number>(
-        *triangulation, static_mapping, mapping_degree, mpi_comm, mesh_motion, param.start_time));
+        static_mapping, mapping_degree, *triangulation, mesh_motion, param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -155,8 +154,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mapping.reset(new MovingMeshPoisson<dim, Number>(
-        static_mapping, mpi_comm, not(is_test), poisson_operator));
+      moving_mapping.reset(new MovingMeshPoisson<dim, Number>(static_mapping, poisson_operator));
     }
     else
     {
@@ -375,7 +373,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(time_integrator->get_next_time());
+  moving_mapping->update(time_integrator->get_next_time(), false, false);
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -446,7 +444,7 @@ Driver<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -514,8 +512,7 @@ std::tuple<unsigned int, types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(unsigned int const  degree,
                                     std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer,
-                                    bool const          is_test) const
+                                    unsigned int const  n_repetitions_outer) const
 {
   (void)degree;
 

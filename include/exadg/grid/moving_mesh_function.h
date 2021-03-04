@@ -41,26 +41,26 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshFunction(parallel::TriangulationBase<dim> const & triangulation,
-                     std::shared_ptr<Mapping<dim>>            mapping,
+  MovingMeshFunction(std::shared_ptr<Mapping<dim>>            mapping,
                      unsigned int const                       mapping_degree_q_cache,
-                     MPI_Comm const &                         mpi_comm,
+                     parallel::TriangulationBase<dim> const & triangulation,
                      std::shared_ptr<Function<dim>> const     mesh_movement_function,
                      double const                             start_time)
-    : MovingMeshBase<dim, Number>(mapping, mapping_degree_q_cache, triangulation, mpi_comm),
+    : MovingMeshBase<dim, Number>(mapping, mapping_degree_q_cache, triangulation),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
-    update(start_time);
+    update(start_time, false, false);
   }
 
   /**
    * Updates the mesh coordinates using a Function<dim> object evaluated at a given time.
    */
   void
-  update(double const time, bool const print_solver_info = false)
+  update(double const time, bool const print_solver_info, bool const print_wall_times) override
   {
     (void)print_solver_info;
+    (void)print_wall_times;
 
     mesh_movement_function->set_time(time);
 
