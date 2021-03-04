@@ -57,7 +57,7 @@ public:
    */
   OperatorDualSplitting(
     parallel::TriangulationBase<dim> const & triangulation,
-    Mapping<dim> const &                     mapping,
+    std::shared_ptr<Mapping<dim> const>      mapping,
     unsigned int const                       degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs,

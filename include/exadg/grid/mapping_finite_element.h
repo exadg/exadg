@@ -51,9 +51,9 @@ public:
   /**
    * Constructor.
    */
-  MappingDoFVector(std::shared_ptr<Mapping<dim>> mapping,
-                   unsigned int const            mapping_degree_q_cache,
-                   Triangulation<dim> const &    triangulation)
+  MappingDoFVector(std::shared_ptr<Mapping<dim> const> mapping,
+                   unsigned int const                  mapping_degree_q_cache,
+                   Triangulation<dim> const &          triangulation)
     : MappingQCache<dim>(mapping_degree_q_cache),
       mapping(mapping),
       triangulation(triangulation),
@@ -353,7 +353,7 @@ public:
 
 protected:
   // static mapping describing undeformed state
-  std::shared_ptr<Mapping<dim>> mapping;
+  std::shared_ptr<Mapping<dim> const> mapping;
 
   Triangulation<dim> const & triangulation;
 

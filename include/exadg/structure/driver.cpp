@@ -105,7 +105,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // setup spatial operator
   pde_operator.reset(new Operator<dim, Number>(*triangulation,
-                                               *mapping,
+                                               mapping,
                                                degree,
                                                periodic_faces,
                                                boundary_descriptor,

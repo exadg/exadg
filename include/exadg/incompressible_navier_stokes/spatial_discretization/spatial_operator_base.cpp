@@ -39,7 +39,7 @@ using namespace dealii;
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
-  Mapping<dim> const &                     mapping_in,
+  std::shared_ptr<Mapping<dim> const>      mapping_in,
   unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
@@ -516,7 +516,7 @@ SpatialOperatorBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = get_dof_index_velocity();
   model_data.quad_index          = get_quad_index_velocity_linear();
   model_data.degree              = degree_u;
-  turbulence_model.initialize(*matrix_free, get_mapping(), viscous_kernel, model_data);
+  turbulence_model.initialize(*matrix_free, *mapping, viscous_kernel, model_data);
 }
 
 template<int dim, typename Number>
@@ -683,7 +683,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 SpatialOperatorBase<dim, Number>::get_mapping() const
 {
-  return mapping;
+  return *mapping;
 }
 
 template<int dim, typename Number>
@@ -802,12 +802,12 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
   velocity_double = velocity;
   pressure_double = pressure;
 
-  VectorTools::interpolate(get_mapping(),
+  VectorTools::interpolate(*mapping,
                            dof_handler_u,
                            *(field_functions->initial_solution_velocity),
                            velocity_double);
 
-  VectorTools::interpolate(get_mapping(),
+  VectorTools::interpolate(*mapping,
                            dof_handler_p,
                            *(field_functions->initial_solution_pressure),
                            pressure_double);
@@ -984,7 +984,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       vec_double = pressure; // initialize
 
       field_functions->analytical_solution_pressure->set_time(time);
-      VectorTools::interpolate(get_mapping(),
+      VectorTools::interpolate(*mapping,
                                dof_handler_p,
                                *(field_functions->analytical_solution_pressure),
                                vec_double);
@@ -1133,7 +1133,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   mg_preconditioner->initialize(mg_data,
                                 tria,
                                 fe,
-                                get_mapping(),
+                                mapping,
                                 laplace_operator.get_data(),
                                 this->param.ale_formulation,
                                 &laplace_operator.get_data().bc->dirichlet_bc,
@@ -1324,7 +1324,7 @@ SpatialOperatorBase<dim, Number>::update_after_mesh_movement()
   if(this->param.use_turbulence_model)
   {
     // the mesh (and hence the filter width) changes in case of ALE formulation
-    turbulence_model.calculate_filter_width(get_mapping());
+    turbulence_model.calculate_filter_width(*mapping);
   }
 
   if(this->param.viscous_problem())
@@ -1452,7 +1452,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     tria,
                                     fe,
-                                    this->get_mapping(),
+                                    this->mapping,
                                     *this->projection_operator,
                                     this->param.ale_formulation,
                                     &this->projection_operator->get_data().bc->dirichlet_bc,

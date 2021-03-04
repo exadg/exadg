@@ -123,7 +123,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       // initialize Poisson operator
       poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*triangulation,
-                                                                     *mapping,
+                                                                     mapping,
                                                                      mapping_degree,
                                                                      periodic_faces,
                                                                      poisson_boundary_descriptor,
@@ -186,7 +186,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
       operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                                     *mapping,
+                                                                     mapping,
                                                                      degree,
                                                                      periodic_faces,
                                                                      boundary_descriptor_velocity,
@@ -202,7 +202,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       operator_dual_splitting.reset(
         new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                      *mapping,
+                                                      mapping,
                                                       degree,
                                                       periodic_faces,
                                                       boundary_descriptor_velocity,
@@ -218,7 +218,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       operator_pressure_correction.reset(
         new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                           *mapping,
+                                                           mapping,
                                                            degree,
                                                            periodic_faces,
                                                            boundary_descriptor_velocity,
@@ -238,7 +238,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(param.solver_type == SolverType::Steady)
   {
     operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                                   *mapping,
+                                                                   mapping,
                                                                    degree,
                                                                    periodic_faces,
                                                                    boundary_descriptor_velocity,

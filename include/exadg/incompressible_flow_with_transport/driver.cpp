@@ -184,7 +184,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_coupled.reset(
         new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                *mapping,
+                                                mapping,
                                                 degree,
                                                 periodic_faces,
                                                 fluid_boundary_descriptor_velocity,
@@ -201,7 +201,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_dual_splitting.reset(
         new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                      *mapping,
+                                                      mapping,
                                                       degree,
                                                       periodic_faces,
                                                       fluid_boundary_descriptor_velocity,
@@ -218,7 +218,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_pressure_correction.reset(
         new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                           *mapping,
+                                                           mapping,
                                                            degree,
                                                            periodic_faces,
                                                            fluid_boundary_descriptor_velocity,
@@ -239,7 +239,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_operator_coupled.reset(
       new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                              *mapping,
+                                              mapping,
                                               degree,
                                               periodic_faces,
                                               fluid_boundary_descriptor_velocity,
@@ -260,7 +260,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(*triangulation,
-                                                                    *mapping,
+                                                                    mapping,
                                                                     degree,
                                                                     periodic_faces,
                                                                     scalar_boundary_descriptor[i],

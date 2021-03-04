@@ -97,7 +97,7 @@ public:
   initialize(MultigridData const &                    data,
              parallel::TriangulationBase<dim> const * tria,
              FiniteElement<dim> const &               fe,
-             Mapping<dim> const &                     mapping,
+             std::shared_ptr<Mapping<dim> const>      mapping,
              bool const                               operator_is_singular = false,
              Map const *                              dirichlet_bc         = nullptr,
              PeriodicFacePairs *                      periodic_face_pairs  = nullptr);
@@ -307,7 +307,7 @@ private:
   std::vector<std::shared_ptr<Triangulation<dim> const>> coarse_grid_triangulations;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
-  Mapping<dim> const * mapping;
+  std::shared_ptr<Mapping<dim> const> mapping;
 
   // Only relevant for global coarsening, where this vector contains only the mappings for
   // triangulations coarser than the fine level triangulation.

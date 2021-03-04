@@ -117,7 +117,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // initialize convection-diffusion operator
   conv_diff_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                     *mapping,
+                                                     mapping,
                                                      degree,
                                                      periodic_faces,
                                                      boundary_descriptor,

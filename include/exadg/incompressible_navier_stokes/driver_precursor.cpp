@@ -213,7 +213,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     operator_coupled_pre.reset(
       new IncNS::OperatorCoupled<dim, Number>(*triangulation_pre,
-                                              *mapping_pre,
+                                              mapping_pre,
                                               degree,
                                               periodic_faces_pre,
                                               boundary_descriptor_velocity_pre,
@@ -229,7 +229,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     operator_dual_splitting_pre.reset(
       new IncNS::OperatorDualSplitting<dim, Number>(*triangulation_pre,
-                                                    *mapping_pre,
+                                                    mapping_pre,
                                                     degree,
                                                     periodic_faces_pre,
                                                     boundary_descriptor_velocity_pre,
@@ -245,7 +245,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     operator_pressure_correction_pre.reset(
       new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation_pre,
-                                                         *mapping_pre,
+                                                         mapping_pre,
                                                          degree,
                                                          periodic_faces_pre,
                                                          boundary_descriptor_velocity_pre,
@@ -266,7 +266,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                                   *mapping,
+                                                                   mapping,
                                                                    degree,
                                                                    periodic_faces,
                                                                    boundary_descriptor_velocity,
@@ -282,7 +282,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     operator_dual_splitting.reset(
       new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                    *mapping,
+                                                    mapping,
                                                     degree,
                                                     periodic_faces,
                                                     boundary_descriptor_velocity,
@@ -298,7 +298,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   {
     operator_pressure_correction.reset(
       new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                         *mapping,
+                                                         mapping,
                                                          degree,
                                                          periodic_faces,
                                                          boundary_descriptor_velocity,

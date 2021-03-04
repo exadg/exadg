@@ -169,7 +169,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // setup spatial operator
     structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
-                                                                  *structure_mapping,
+                                                                  structure_mapping,
                                                                   degree_structure,
                                                                   structure_periodic_faces,
                                                                   structure_boundary_descriptor,
@@ -288,7 +288,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // initialize Poisson operator
       ale_poisson_operator.reset(
         new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
-                                                *fluid_static_mapping,
+                                                fluid_static_mapping,
                                                 mapping_degree_fluid,
                                                 fluid_periodic_faces,
                                                 ale_poisson_boundary_descriptor,
@@ -325,7 +325,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // setup spatial operator
       ale_elasticity_operator.reset(
         new Structure::Operator<dim, Number>(*fluid_triangulation,
-                                             *fluid_static_mapping,
+                                             fluid_static_mapping,
                                              mapping_degree_fluid,
                                              fluid_periodic_faces,
                                              ale_elasticity_boundary_descriptor,
@@ -411,7 +411,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_coupled.reset(
         new IncNS::OperatorCoupled<dim, Number>(*fluid_triangulation,
-                                                *fluid_mapping,
+                                                fluid_mapping,
                                                 degree_fluid,
                                                 fluid_periodic_faces,
                                                 fluid_boundary_descriptor_velocity,
@@ -428,7 +428,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_dual_splitting.reset(
         new IncNS::OperatorDualSplitting<dim, Number>(*fluid_triangulation,
-                                                      *fluid_mapping,
+                                                      fluid_mapping,
                                                       degree_fluid,
                                                       fluid_periodic_faces,
                                                       fluid_boundary_descriptor_velocity,
@@ -445,7 +445,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_pressure_correction.reset(
         new IncNS::OperatorPressureCorrection<dim, Number>(*fluid_triangulation,
-                                                           *fluid_mapping,
+                                                           fluid_mapping,
                                                            degree_fluid,
                                                            fluid_periodic_faces,
                                                            fluid_boundary_descriptor_velocity,

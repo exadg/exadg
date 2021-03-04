@@ -64,7 +64,7 @@ public:
   initialize(MultigridData const &                       mg_data,
              parallel::TriangulationBase<dim> const *    tria,
              FiniteElement<dim> const &                  fe,
-             Mapping<dim> const &                        mapping,
+             std::shared_ptr<Mapping<dim> const>         mapping,
              ElasticityOperatorBase<dim, Number> const & pde_operator,
              bool const                                  nonlinear_operator,
              Map const *                                 dirichlet_bc        = nullptr,

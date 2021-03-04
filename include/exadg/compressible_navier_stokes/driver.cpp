@@ -112,7 +112,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                              *mapping,
+                                                              mapping,
                                                               degree,
                                                               boundary_descriptor_density,
                                                               boundary_descriptor_velocity,

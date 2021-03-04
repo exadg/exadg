@@ -56,14 +56,14 @@ void
 MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &                    data,
                                                      parallel::TriangulationBase<dim> const * tria,
                                                      FiniteElement<dim> const &               fe,
-                                                     Mapping<dim> const & mapping,
-                                                     bool const           operator_is_singular,
-                                                     Map const *          dirichlet_bc,
-                                                     PeriodicFacePairs *  periodic_face_pairs)
+                                                     std::shared_ptr<Mapping<dim> const> mapping,
+                                                     bool const          operator_is_singular,
+                                                     Map const *         dirichlet_bc,
+                                                     PeriodicFacePairs * periodic_face_pairs)
 {
   this->data = data;
 
-  this->mapping = &mapping;
+  this->mapping = mapping;
 
   bool const is_dg = fe.dofs_per_vertex == 0;
 
@@ -337,17 +337,21 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
       }
     }
   }
-  else
+  else // global refinement
   {
-    MappingDoFVector<dim, Number> * mapping_fine =
-      dynamic_cast<MappingDoFVector<dim, Number> *>(const_cast<Mapping<dim> *>(mapping));
-    if(mapping_fine != nullptr)
+    std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
+      std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(mapping);
+
+    // We only need to initialize the mapping for all multigrid levels if it is of type
+    // MappingDoFVector, i.e. MappingQCache, while MappingQGeneric is unproblematic.
+    if(mapping_dof_vector != nullptr)
     {
-      std::shared_ptr<MappingDoFVector<dim, Number>> mapping_fine_ptr(mapping_fine);
       mapping_global_refinement =
-        std::make_shared<MappingDoFVector<dim, Number>>(mapping_fine_ptr,
-                                                        mapping_fine->get_degree(),
+        std::make_shared<MappingDoFVector<dim, Number>>(mapping_dof_vector,
+                                                        mapping_dof_vector->get_degree(),
                                                         *tria);
+
+      // transfers mapping information from fine level to coarser multigrid levels
       mapping_global_refinement->initialize_multigrid();
     }
   }
@@ -364,9 +368,12 @@ MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level
     else
       return *mapping;
   }
-  else
+  else // global refinement
   {
-    return *mapping;
+    if(mapping_global_refinement.get() != 0)
+      return *mapping_global_refinement;
+    else
+      return *mapping;
   }
 }
 

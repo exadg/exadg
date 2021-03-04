@@ -41,7 +41,7 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
   MultigridData const &                    mg_data,
   parallel::TriangulationBase<dim> const * tria,
   FiniteElement<dim> const &               fe,
-  Mapping<dim> const &                     mapping,
+  std::shared_ptr<Mapping<dim> const>      mapping,
   PDEOperator const &                      pde_operator,
   bool const                               mesh_is_moving,
   Map const *                              dirichlet_bc,

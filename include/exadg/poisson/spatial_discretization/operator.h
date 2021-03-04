@@ -66,7 +66,7 @@ private:
 
 public:
   Operator(parallel::TriangulationBase<dim> const &             triangulation,
-           Mapping<dim> const &                                 mapping,
+           std::shared_ptr<Mapping<dim> const>                  mapping,
            unsigned int const                                   degree,
            PeriodicFaces const                                  periodic_face_pairs,
            std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
@@ -159,7 +159,7 @@ private:
   /*
    * Mapping
    */
-  Mapping<dim> const & mapping;
+  std::shared_ptr<Mapping<dim> const> mapping;
 
   /*
    * Polynomial degree
