@@ -130,6 +130,13 @@ public:
 
 protected:
   /*
+   * Initialization of mapping depending on multigrid transfer type. Note that the mapping needs to
+   * be re-initialized if the domain changes over time.
+   */
+  void
+  initialize_mapping();
+
+  /*
    * This function initializes the matrix-free objects for all multigrid levels.
    */
   virtual void
@@ -227,12 +234,6 @@ private:
   initialize_coarse_grid_triangulations(parallel::TriangulationBase<dim> const * tria);
 
   /*
-   * Initialization of mapping depending on multigrid transfer type.
-   */
-  void
-  initialize_mapping(parallel::TriangulationBase<dim> const * tria);
-
-  /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
    */
   Mapping<dim> const &
@@ -307,6 +308,8 @@ private:
   MPI_Comm const mpi_comm;
 
   MultigridData data;
+
+  parallel::TriangulationBase<dim> const * triangulation;
 
   // Only relevant for global coarsening, where this vector contains coarse level triangulations,
   // and the fine level triangulation as the last element of the vector.

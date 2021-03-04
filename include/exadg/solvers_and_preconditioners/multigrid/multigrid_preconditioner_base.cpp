@@ -47,7 +47,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm const & comm)
-  : n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm)
+  : n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm), triangulation(nullptr)
 {
 }
 
@@ -63,6 +63,8 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 {
   this->data = data;
 
+  this->triangulation = tria;
+
   this->mapping = mapping;
 
   bool const is_dg = fe.dofs_per_vertex == 0;
@@ -71,7 +73,7 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 
   this->initialize_coarse_grid_triangulations(tria);
 
-  this->initialize_mapping(tria);
+  this->initialize_mapping();
 
   this->initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
@@ -334,8 +336,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_mapping(
-  parallel::TriangulationBase<dim> const * tria)
+MultigridPreconditionerBase<dim, Number>::initialize_mapping()
 {
   // We only need to initialize the mapping for all multigrid h-levels if it is of type
   // MappingQCache (including MappingDoFVector as a derived class), while MappingQGeneric is
@@ -361,7 +362,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping(
       mapping_global_refinement =
         std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache,
                                                         mapping_q_cache->get_degree(),
-                                                        *tria);
+                                                        *triangulation);
 
       // transfers mapping information from fine level to coarser multigrid levels
       mapping_global_refinement->initialize_multigrid();

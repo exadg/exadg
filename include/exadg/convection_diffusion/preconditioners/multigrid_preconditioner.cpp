@@ -101,6 +101,8 @@ MultigridPreconditioner<dim, Number>::update()
 {
   if(mesh_is_moving)
   {
+    this->initialize_mapping();
+
     this->update_matrix_free();
   }
 
