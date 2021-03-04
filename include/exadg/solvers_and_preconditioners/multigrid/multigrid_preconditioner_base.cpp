@@ -71,6 +71,8 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 
   this->initialize_coarse_grid_triangulations(tria);
 
+  this->initialize_mapping(tria);
+
   this->initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
@@ -326,29 +328,39 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
 
       coarse_grid_triangulations =
         MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
+    }
+  }
+}
 
-      // We also need separate mappings for the coarse grid triangulations
+template<int dim, typename Number>
+void
+MultigridPreconditionerBase<dim, Number>::initialize_mapping(
+  parallel::TriangulationBase<dim> const * tria)
+{
+  // We only need to initialize the mapping for all multigrid h-levels if it is of type
+  // MappingQCache (including MappingDoFVector as a derived class), while MappingQGeneric is
+  // unproblematic.
+  std::shared_ptr<MappingQCache<dim> const> mapping_q_cache =
+    std::dynamic_pointer_cast<MappingQCache<dim> const>(mapping);
+
+  if(data.involves_h_transfer() && mapping_q_cache.get() != 0)
+  {
+    if(data.use_global_coarsening) // global coarsening
+    {
       unsigned int const n_h_levels = coarse_grid_triangulations.size();
-      coarse_grid_mappings.resize(n_h_levels - 1);
-      for(unsigned int h_level = 0; h_level < coarse_grid_mappings.size(); ++h_level)
+      coarse_grid_mappings.resize(n_h_levels);
+      for(unsigned int h_level = 0; h_level < n_h_levels - 1; ++h_level)
       {
         // TODO
         coarse_grid_mappings[h_level].reset(new MappingQGeneric<dim>(1));
       }
+      coarse_grid_mappings[n_h_levels - 1] = mapping;
     }
-  }
-  else // global refinement
-  {
-    std::shared_ptr<MappingDoFVector<dim, Number> const> mapping_dof_vector =
-      std::dynamic_pointer_cast<MappingDoFVector<dim, Number> const>(mapping);
-
-    // We only need to initialize the mapping for all multigrid levels if it is of type
-    // MappingDoFVector, i.e. MappingQCache, while MappingQGeneric is unproblematic.
-    if(mapping_dof_vector != nullptr)
+    else // global refinement
     {
       mapping_global_refinement =
-        std::make_shared<MappingDoFVector<dim, Number>>(mapping_dof_vector,
-                                                        mapping_dof_vector->get_degree(),
+        std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache,
+                                                        mapping_q_cache->get_degree(),
                                                         *tria);
 
       // transfers mapping information from fine level to coarser multigrid levels
@@ -361,19 +373,29 @@ template<int dim, typename Number>
 Mapping<dim> const &
 MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level) const
 {
-  if(data.use_global_coarsening)
+  std::shared_ptr<MappingQCache<dim> const> mapping_q_cache =
+    std::dynamic_pointer_cast<MappingQCache<dim> const>(mapping);
+
+  if(data.involves_h_transfer() && mapping_q_cache.get() != 0)
   {
-    if(data.involves_h_transfer() && h_level < coarse_grid_mappings.size())
+    if(data.use_global_coarsening)
+    {
+      AssertThrow(h_level < coarse_grid_mappings.size(),
+                  ExcMessage("coarse_grid_mappings are not initialized correctly."));
+
       return *(coarse_grid_mappings[h_level]);
-    else
-      return *mapping;
-  }
-  else // global refinement
-  {
-    if(mapping_global_refinement.get() != 0)
+    }
+    else // global refinement
+    {
+      AssertThrow(mapping_global_refinement.get() != 0,
+                  ExcMessage("mapping_global_refinement is not initialized correctly."));
+
       return *mapping_global_refinement;
-    else
-      return *mapping;
+    }
+  }
+  else
+  {
+    return *mapping;
   }
 }
 

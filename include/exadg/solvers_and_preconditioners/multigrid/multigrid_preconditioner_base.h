@@ -227,6 +227,12 @@ private:
   initialize_coarse_grid_triangulations(parallel::TriangulationBase<dim> const * tria);
 
   /*
+   * Initialization of mapping depending on multigrid transfer type.
+   */
+  void
+  initialize_mapping(parallel::TriangulationBase<dim> const * tria);
+
+  /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
    */
   Mapping<dim> const &
@@ -309,8 +315,8 @@ private:
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
   std::shared_ptr<Mapping<dim> const> mapping;
 
-  // Only relevant for global coarsening, where this vector contains only the mappings for
-  // triangulations coarser than the fine level triangulation.
+  // Only relevant for global coarsening,where this vector contains coarse level mappings,
+  // and the fine level mapping as the last element of the vector.
   std::vector<std::shared_ptr<Mapping<dim> const>> coarse_grid_mappings;
 
   // Only relevant for global refinement and in case that a mapping of type MappingDoFVector is
