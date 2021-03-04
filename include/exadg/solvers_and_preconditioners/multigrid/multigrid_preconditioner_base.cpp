@@ -27,7 +27,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
-#include <exadg/grid/mapping_finite_element.h>
+#include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/categorization.h>
 #include <exadg/solvers_and_preconditioners/multigrid/coarse_grid_solvers.h>
 #include <exadg/solvers_and_preconditioners/multigrid/constraints.h>

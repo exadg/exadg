@@ -28,7 +28,7 @@
 
 // ExaDG
 #include <exadg/grid/mapping_degree.h>
-#include <exadg/grid/mapping_finite_element.h>
+#include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/matrix_free_wrapper.h>
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/structure/time_integration/driver_quasi_static_problems.h>

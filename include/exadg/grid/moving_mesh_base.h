@@ -23,7 +23,7 @@
 #define INCLUDE_EXADG_GRID_MOVING_MESH_BASE_H_
 
 // ExaDG
-#include <exadg/grid/mapping_finite_element.h>
+#include <exadg/grid/mapping_dof_vector.h>
 
 namespace ExaDG
 {
