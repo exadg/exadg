@@ -43,7 +43,7 @@ using namespace dealii;
  * initialize the mapping.
  */
 template<int dim, typename Number>
-class MappingFiniteElement : public MappingQCache<dim>
+class MappingDoFVector : public MappingQCache<dim>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -51,9 +51,9 @@ public:
   /**
    * Constructor.
    */
-  MappingFiniteElement(std::shared_ptr<Mapping<dim>> mapping,
-                       unsigned int const            mapping_degree_q_cache,
-                       Triangulation<dim> const &    triangulation)
+  MappingDoFVector(std::shared_ptr<Mapping<dim>> mapping,
+                   unsigned int const            mapping_degree_q_cache,
+                   Triangulation<dim> const &    triangulation)
     : MappingQCache<dim>(mapping_degree_q_cache),
       mapping(mapping),
       triangulation(triangulation),
@@ -64,29 +64,32 @@ public:
     lexicographic_to_hierarchic_numbering =
       Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
 
+    // Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,
+    // hence, no displacements are added to the reference configuration described by the static
+    // mapping.
     FESystem<dim>   fe(FE_Q<dim>(this->get_degree()), dim);
     DoFHandler<dim> dof_handler(triangulation);
     dof_handler.distribute_dofs(fe);
-    VectorType dof_vector;
-    initialize(dof_handler, dof_vector);
+    VectorType displacement_vector;
+    initialize(dof_handler, displacement_vector);
   }
 
   /**
    * Destructor.
    */
-  virtual ~MappingFiniteElement()
+  virtual ~MappingDoFVector()
   {
   }
 
   /**
-   * Extract the grid coordinates of the current mesh configuration and fill a
-   * dof-vector given a corresponding DoFHandler object.
+   * Extract the grid coordinates of the current mesh configuration described by the MappingQCache
+   * object and fill a dof-vector given a corresponding DoFHandler object.
    */
   void
-  fill_grid_coordinates_vector(VectorType & vector, DoFHandler<dim> const & dof_handler)
+  fill_grid_coordinates_vector(VectorType & grid_coordinates, DoFHandler<dim> const & dof_handler)
   {
     // use the deformed state described by the MappingQCache object (*this)
-    fill_grid_coordinates_vector(*this, vector, dof_handler);
+    fill_grid_coordinates_vector(*this, grid_coordinates, dof_handler);
   }
 
   /**
@@ -95,18 +98,18 @@ public:
    */
   void
   fill_grid_coordinates_vector(Mapping<dim> const &    mapping,
-                               VectorType &            vector,
+                               VectorType &            grid_coordinates,
                                DoFHandler<dim> const & dof_handler)
   {
-    if(vector.size() != dof_handler.n_dofs())
+    if(grid_coordinates.size() != dof_handler.n_dofs())
     {
       IndexSet relevant_dofs_grid;
       DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
-      vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
+      grid_coordinates.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
     }
     else
     {
-      vector = 0;
+      grid_coordinates = 0;
     }
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
@@ -155,41 +158,42 @@ public:
           Point<dim> const point = fe_values.quadrature_point(i);
           for(unsigned int d = 0; d < dim; ++d)
           {
-            if(vector.get_partitioner()->in_local_range(
+            if(grid_coordinates.get_partitioner()->in_local_range(
                  dof_indices[component_to_system_index[i][d]]))
             {
-              vector(dof_indices[component_to_system_index[i][d]]) = point[d];
+              grid_coordinates(dof_indices[component_to_system_index[i][d]]) = point[d];
             }
           }
         }
       }
     }
 
-    vector.update_ghost_values();
+    grid_coordinates.update_ghost_values();
   }
 
   /**
-   * Initializes the MappingQCache object by providing a dof-vector (with a corresponding DoFHandler
-   * object) that describes the displacement of the mesh compared to an undeformed reference
-   * configuration. If the dof-vector is empty or uninitialized, this implies that no displacements
-   * will be added to the grid coordinates described by the static mapping.
+   * Initializes the MappingQCache object by providing a displacement dof-vector (with a
+   * corresponding DoFHandler object) that describes the displacement of the mesh compared to an
+   * undeformed reference configuration. If the displacement dof-vector is empty or uninitialized,
+   * this implies that no displacements will be added to the grid coordinates described by the
+   * static mapping.
    */
   void
-  initialize(DoFHandler<dim> const & dof_handler, VectorType const & dof_vector)
+  initialize(DoFHandler<dim> const & dof_handler, VectorType const & displacement_vector)
   {
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
     // we have to project the solution onto all coarse levels of the triangulation
     // (required for initialization of MappingQCache)
-    VectorType ghosted_dof_vector;
+    VectorType displacement_vector_ghosted;
     IndexSet   locally_relevant_dofs;
     DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-    ghosted_dof_vector.copy_locally_owned_data_from(dof_vector);
-    ghosted_dof_vector.update_ghost_values();
+    displacement_vector_ghosted.copy_locally_owned_data_from(displacement_vector);
+    displacement_vector_ghosted.update_ghost_values();
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
     AssertThrow(fe.element_multiplicity(0) == dim,
                 ExcMessage("Expected finite element with dim components."));
-
-    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
     FE_Nothing<dim> dummy_fe;
     FEValues<dim>   fe_values(*mapping,
@@ -203,19 +207,19 @@ public:
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
         unsigned int const scalar_dofs_per_cell = Utilities::pow(fe.degree + 1, dim);
 
-        std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
+        std::vector<Point<dim>> grid_coordinates(scalar_dofs_per_cell);
 
         fe_values.reinit(cell_tria);
         // extract displacement and add to original position
         for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
         {
-          points_moved[i] =
+          grid_coordinates[i] =
             fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
         }
 
         // if this function is called with an empty dof-vector, this indicates that the
         // displacements are zero and the points do not have to be moved
-        if(dof_vector.size() > 0 && cell_tria->is_active() && !cell_tria->is_artificial())
+        if(displacement_vector.size() > 0 && cell_tria->is_active() && !cell_tria->is_artificial())
         {
           typename DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
                                                        cell_tria->level(),
@@ -231,17 +235,17 @@ public:
 
             if(fe.dofs_per_vertex > 0) // FE_Q
             {
-              points_moved[id.second][id.first] += ghosted_dof_vector(dof_indices[i]);
+              grid_coordinates[id.second][id.first] += displacement_vector_ghosted(dof_indices[i]);
             }
             else // FE_DGQ
             {
-              points_moved[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
-                ghosted_dof_vector(dof_indices[i]);
+              grid_coordinates[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
+                displacement_vector_ghosted(dof_indices[i]);
             }
           }
         }
 
-        return points_moved;
+        return grid_coordinates;
       });
   }
 
@@ -252,40 +256,45 @@ public:
   void
   initialize_multigrid()
   {
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
     // we have to project the solution onto all coarse levels of the triangulation
     // (required for initialization of MappingQCache)
-    MGLevelObject<VectorType> dof_vector_all_levels, dof_vector_all_levels_ghosted;
+    MGLevelObject<VectorType> grid_coordinates_all_levels, grid_coordinates_all_levels_ghosted;
     unsigned int const        n_levels = triangulation.n_global_levels();
-    dof_vector_all_levels.resize(0, n_levels - 1);
-    dof_vector_all_levels_ghosted.resize(0, n_levels - 1);
+    grid_coordinates_all_levels.resize(0, n_levels - 1);
+    grid_coordinates_all_levels_ghosted.resize(0, n_levels - 1);
 
     FESystem<dim>   fe(FE_Q<dim>(this->get_degree()), dim);
     DoFHandler<dim> dof_handler(triangulation);
     dof_handler.distribute_dofs(fe);
     dof_handler.distribute_mg_dofs();
-    VectorType dof_vector;
-    fill_grid_coordinates_vector(*this->mapping, dof_vector, dof_handler);
+    VectorType grid_coordinates_fine_level;
+    fill_grid_coordinates_vector(*this->mapping, grid_coordinates_fine_level, dof_handler);
 
     MGTransferMatrixFree<dim, Number> transfer;
     transfer.build(dof_handler);
-    transfer.interpolate_to_mg(dof_handler, dof_vector_all_levels, dof_vector);
+    transfer.interpolate_to_mg(dof_handler,
+                               grid_coordinates_all_levels,
+                               grid_coordinates_fine_level);
     for(unsigned int level = 0; level < n_levels; level++)
     {
       IndexSet relevant_dofs;
       DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
-      dof_vector_all_levels_ghosted[level].reinit(
+
+      grid_coordinates_all_levels_ghosted[level].reinit(
         dof_handler.locally_owned_mg_dofs(level),
         relevant_dofs,
-        dof_vector_all_levels[level].get_mpi_communicator());
-      dof_vector_all_levels_ghosted[level].copy_locally_owned_data_from(
-        dof_vector_all_levels[level]);
-      dof_vector_all_levels_ghosted[level].update_ghost_values();
+        grid_coordinates_all_levels[level].get_mpi_communicator());
+
+      grid_coordinates_all_levels_ghosted[level].copy_locally_owned_data_from(
+        grid_coordinates_all_levels[level]);
+
+      grid_coordinates_all_levels_ghosted[level].update_ghost_values();
     }
 
     AssertThrow(fe.element_multiplicity(0) == dim,
                 ExcMessage("Expected finite element with dim components."));
-
-    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
     FE_Nothing<dim> dummy_fe;
     FEValues<dim>   fe_values(*mapping,
@@ -306,7 +315,7 @@ public:
 
         unsigned int const scalar_dofs_per_cell = Utilities::pow(fe.degree + 1, dim);
 
-        std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
+        std::vector<Point<dim>> grid_coordinates(scalar_dofs_per_cell);
 
         if(cell->level_subdomain_id() != numbers::artificial_subdomain_id)
         {
@@ -317,7 +326,7 @@ public:
           // extract displacement and add to original position
           for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
           {
-            points_moved[i] =
+            grid_coordinates[i] =
               fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
           }
 
@@ -327,18 +336,18 @@ public:
 
             if(fe.dofs_per_vertex > 0) // FE_Q
             {
-              points_moved[id.second][id.first] +=
-                dof_vector_all_levels_ghosted[level](dof_indices[i]);
+              grid_coordinates[id.second][id.first] +=
+                grid_coordinates_all_levels_ghosted[level](dof_indices[i]);
             }
             else // FE_DGQ
             {
-              points_moved[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
-                dof_vector_all_levels_ghosted[level](dof_indices[i]);
+              grid_coordinates[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
+                grid_coordinates_all_levels_ghosted[level](dof_indices[i]);
             }
           }
         }
 
-        return points_moved;
+        return grid_coordinates;
       });
   }
 

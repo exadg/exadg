@@ -43,7 +43,7 @@ template<typename VectorType, typename Operator, typename Smoother>
 class MultigridAlgorithm;
 
 template<int dim, typename Number>
-class MappingFiniteElement;
+class MappingDoFVector;
 } // namespace ExaDG
 
 namespace dealii
@@ -313,9 +313,9 @@ private:
   // triangulations coarser than the fine level triangulation.
   std::vector<std::shared_ptr<Mapping<dim> const>> coarse_grid_mappings;
 
-  // Only relevant for global refinement and in case that a mapping of type MappingFiniteElement is
+  // Only relevant for global refinement and in case that a mapping of type MappingDoFVector is
   // used.
-  std::shared_ptr<MappingFiniteElement<dim, Number>> mapping_global_refinement;
+  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_global_refinement;
 
   MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

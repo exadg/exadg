@@ -33,7 +33,7 @@ using namespace dealii;
  * Base class for moving mesh problems based on MappingFiniteElement.
  */
 template<int dim, typename Number>
-class MovingMeshBase : public MappingFiniteElement<dim, Number>
+class MovingMeshBase : public MappingDoFVector<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -44,7 +44,7 @@ public:
   MovingMeshBase(std::shared_ptr<Mapping<dim>> mapping,
                  unsigned int const            mapping_degree_q_cache,
                  Triangulation<dim> const &    triangulation)
-    : MappingFiniteElement<dim, Number>(mapping, mapping_degree_q_cache, triangulation)
+    : MappingDoFVector<dim, Number>(mapping, mapping_degree_q_cache, triangulation)
   {
   }
 

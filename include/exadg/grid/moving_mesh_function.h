@@ -76,14 +76,14 @@ public:
   initialize(Triangulation<dim> const &     triangulation,
              std::shared_ptr<Function<dim>> displacement_function)
   {
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
     // dummy FE for compatibility with interface of FEValues
     FE_Nothing<dim> dummy_fe;
     FEValues<dim>   fe_values(*this->mapping,
                             dummy_fe,
                             QGaussLobatto<dim>(this->get_degree() + 1),
                             update_quadrature_points);
-
-    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
     MappingQCache<dim>::initialize(
       triangulation,

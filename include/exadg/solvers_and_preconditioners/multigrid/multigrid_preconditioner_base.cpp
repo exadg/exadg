@@ -339,15 +339,15 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
   }
   else
   {
-    MappingFiniteElement<dim, Number> * mapping_fine =
-      dynamic_cast<MappingFiniteElement<dim, Number> *>(const_cast<Mapping<dim> *>(mapping));
+    MappingDoFVector<dim, Number> * mapping_fine =
+      dynamic_cast<MappingDoFVector<dim, Number> *>(const_cast<Mapping<dim> *>(mapping));
     if(mapping_fine != nullptr)
     {
-      std::shared_ptr<MappingFiniteElement<dim, Number>> mapping_fine_ptr(mapping_fine);
+      std::shared_ptr<MappingDoFVector<dim, Number>> mapping_fine_ptr(mapping_fine);
       mapping_global_refinement =
-        std::make_shared<MappingFiniteElement<dim, Number>>(mapping_fine_ptr,
-                                                            mapping_fine->get_degree(),
-                                                            *tria);
+        std::make_shared<MappingDoFVector<dim, Number>>(mapping_fine_ptr,
+                                                        mapping_fine->get_degree(),
+                                                        *tria);
       mapping_global_refinement->initialize_multigrid();
     }
   }

@@ -58,6 +58,7 @@ public:
               poisson_operator->get_dof_handler().get_communicator()) == 0),
       iterations({0, 0})
   {
+    // TODO can be removed later
     // make sure that the mapping is initialized
     poisson->initialize_dof_vector(displacement);
     this->initialize(poisson->get_dof_handler(), displacement);
