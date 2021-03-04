@@ -183,29 +183,29 @@ public:
   {
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
-    // we have to project the solution onto all coarse levels of the triangulation
-    // (required for initialization of MappingQCache)
     VectorType displacement_vector_ghosted;
-    IndexSet   locally_relevant_dofs;
-    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
-    displacement_vector_ghosted.copy_locally_owned_data_from(displacement_vector);
-    displacement_vector_ghosted.update_ghost_values();
+    if(dof_handler.n_dofs() > 0 && displacement_vector.size() == dof_handler.n_dofs())
+    {
+      IndexSet locally_relevant_dofs;
+      DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+      displacement_vector_ghosted.reinit(dof_handler.locally_owned_dofs(),
+                                         locally_relevant_dofs,
+                                         dof_handler.get_communicator());
+      displacement_vector_ghosted.copy_locally_owned_data_from(displacement_vector);
+      displacement_vector_ghosted.update_ghost_values();
+    }
 
-    FiniteElement<dim> const & fe = dof_handler.get_fe();
-    AssertThrow(fe.element_multiplicity(0) == dim,
-                ExcMessage("Expected finite element with dim components."));
-
-    FE_Nothing<dim> dummy_fe;
+    FE_Nothing<dim> fe_nothing;
     FEValues<dim>   fe_values(*mapping,
-                            dummy_fe,
-                            QGaussLobatto<dim>(fe.degree + 1),
+                            fe_nothing,
+                            QGaussLobatto<dim>(this->get_degree() + 1),
                             update_quadrature_points);
 
-    // update mapping according to mesh deformation computed above
+    // update mapping according to mesh deformation described by displacement vector
     MappingQCache<dim>::initialize(
       dof_handler.get_triangulation(),
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
-        unsigned int const scalar_dofs_per_cell = Utilities::pow(fe.degree + 1, dim);
+        unsigned int const scalar_dofs_per_cell = Utilities::pow(this->get_degree() + 1, dim);
 
         std::vector<Point<dim>> grid_coordinates(scalar_dofs_per_cell);
 
@@ -219,8 +219,13 @@ public:
 
         // if this function is called with an empty dof-vector, this indicates that the
         // displacements are zero and the points do not have to be moved
-        if(displacement_vector.size() > 0 && cell_tria->is_active() && !cell_tria->is_artificial())
+        if(dof_handler.n_dofs() > 0 && displacement_vector.size() > 0 && cell_tria->is_active() &&
+           !cell_tria->is_artificial())
         {
+          FiniteElement<dim> const & fe = dof_handler.get_fe();
+          AssertThrow(fe.element_multiplicity(0) == dim,
+                      ExcMessage("Expected finite element with dim components."));
+
           typename DoFHandler<dim>::cell_iterator cell(&cell_tria->get_triangulation(),
                                                        cell_tria->level(),
                                                        cell_tria->index(),
@@ -259,7 +264,6 @@ public:
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
     // we have to project the solution onto all coarse levels of the triangulation
-    // (required for initialization of MappingQCache)
     MGLevelObject<VectorType> grid_coordinates_all_levels, grid_coordinates_all_levels_ghosted;
     unsigned int const        n_levels = triangulation.n_global_levels();
     grid_coordinates_all_levels.resize(0, n_levels - 1);
@@ -277,6 +281,7 @@ public:
     transfer.interpolate_to_mg(dof_handler,
                                grid_coordinates_all_levels,
                                grid_coordinates_fine_level);
+
     for(unsigned int level = 0; level < n_levels; level++)
     {
       IndexSet relevant_dofs;
@@ -296,13 +301,12 @@ public:
     AssertThrow(fe.element_multiplicity(0) == dim,
                 ExcMessage("Expected finite element with dim components."));
 
-    FE_Nothing<dim> dummy_fe;
+    FE_Nothing<dim> fe_nothing;
     FEValues<dim>   fe_values(*mapping,
-                            dummy_fe,
+                            fe_nothing,
                             QGaussLobatto<dim>(fe.degree + 1),
                             update_quadrature_points);
 
-    // update mapping according to mesh deformation computed above
     MappingQCache<dim>::initialize(
       dof_handler.get_triangulation(),
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
