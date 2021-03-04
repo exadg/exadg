@@ -48,6 +48,7 @@ public:
     : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
+                                  structure_operator->get_dof_handler(),
                                   mpi_comm),
       pde_operator(structure_operator),
       param(structure_parameters),

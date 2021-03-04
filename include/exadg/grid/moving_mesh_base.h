@@ -38,13 +38,20 @@ class MovingMeshBase : public MappingFiniteElement<dim, Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
+  /**
+   * Constructor.
+   */
   MovingMeshBase(std::shared_ptr<Mapping<dim>> mapping,
                  unsigned int const            mapping_degree_q_cache,
+                 Triangulation<dim> const &    triangulation,
                  MPI_Comm const &              mpi_comm)
-    : MappingFiniteElement<dim, Number>(mapping, mapping_degree_q_cache, mpi_comm)
+    : MappingFiniteElement<dim, Number>(mapping, mapping_degree_q_cache, triangulation, mpi_comm)
   {
   }
 
+  /**
+   * Destructor.
+   */
   virtual ~MovingMeshBase()
   {
   }

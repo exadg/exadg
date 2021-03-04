@@ -47,6 +47,7 @@ public:
     : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
+                                  poisson_operator->get_dof_handler().get_triangulation(),
                                   mpi_comm),
       poisson(poisson_operator),
       pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),

@@ -39,8 +39,7 @@ using namespace dealii;
 
 /**
  * A mapping class based on MappingQCache equipped with practical interfaces that can be used to
- * initialize the mapping by providing a Function<dim> object or a
- * LinearAlgebra::distributed::Vector.
+ * initialize the mapping.
  */
 template<int dim, typename Number>
 class MappingFiniteElement : public MappingQCache<dim>
@@ -53,6 +52,7 @@ public:
    */
   MappingFiniteElement(std::shared_ptr<Mapping<dim>> mapping,
                        unsigned int const            mapping_degree_q_cache,
+                       Triangulation<dim> const &    triangulation,
                        MPI_Comm const &              mpi_comm)
     : MappingQCache<dim>(mapping_degree_q_cache), mapping(mapping), mpi_comm(mpi_comm)
   {
@@ -60,6 +60,11 @@ public:
       FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_q_cache);
     lexicographic_to_hierarchic_numbering =
       Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
+
+    // make sure that mapping_q_cache is initialized
+    std::shared_ptr<Function<dim>> zero_function;
+    zero_function.reset(new Functions::ZeroFunction<dim>(dim));
+    initialize(triangulation, zero_function);
   }
 
   /**
@@ -76,6 +81,8 @@ public:
   void
   fill_grid_coordinates_vector(VectorType & vector, DoFHandler<dim> const & dof_handler)
   {
+    // This function computes the current mesh coordinates, so that the MappingQCache object
+    // describing the deformed configuration has to be used here.
     Mapping<dim> const & mapping = *this;
 
     if(vector.size() != dof_handler.n_dofs())
@@ -85,7 +92,9 @@ public:
       vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
     }
     else
+    {
       vector = 0;
+    }
 
     FiniteElement<dim> const & fe = dof_handler.get_fe();
 
@@ -132,9 +141,13 @@ public:
         {
           Point<dim> const point = fe_values.quadrature_point(i);
           for(unsigned int d = 0; d < dim; ++d)
+          {
             if(vector.get_partitioner()->in_local_range(
                  dof_indices[component_to_system_index[i][d]]))
+            {
               vector(dof_indices[component_to_system_index[i][d]]) = point[d];
+            }
+          }
         }
       }
     }
@@ -147,19 +160,19 @@ public:
    * displacement of the mesh compared to an undeformed reference configuration.
    */
   void
-  initialize_mapping_q_cache(Triangulation<dim> const &     triangulation,
-                             std::shared_ptr<Function<dim>> displacement_function)
+  initialize(Triangulation<dim> const &     triangulation,
+             std::shared_ptr<Function<dim>> displacement_function)
   {
     // dummy FE for compatibility with interface of FEValues
     FE_Nothing<dim> dummy_fe;
-    FEValues<dim>   fe_values(*mapping,
+    FEValues<dim>   fe_values(*this->mapping,
                             dummy_fe,
                             QGaussLobatto<dim>(this->get_degree() + 1),
                             update_quadrature_points);
 
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
-    this->initialize(
+    MappingQCache<dim>::initialize(
       triangulation,
       [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
         fe_values.reinit(cell);
@@ -188,7 +201,7 @@ public:
    * configuration.
    */
   void
-  initialize_mapping_q_cache(DoFHandler<dim> const & dof_handler, VectorType const & dof_vector)
+  initialize(DoFHandler<dim> const & dof_handler, VectorType const & dof_vector)
   {
     // we have to project the solution onto all coarse levels of the triangulation
     // (required for initialization of MappingQCache)
@@ -224,7 +237,7 @@ public:
                             update_quadrature_points);
 
     // update mapping according to mesh deformation computed above
-    this->initialize(
+    MappingQCache<dim>::initialize(
       dof_handler.get_triangulation(),
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
         unsigned int const level = cell_tria->level();
@@ -256,11 +269,15 @@ public:
             std::pair<unsigned int, unsigned int> const id = fe.system_to_component_index(i);
 
             if(fe.dofs_per_vertex > 0) // FE_Q
+            {
               points_moved[id.second][id.first] +=
                 dof_vector_all_levels_ghosted[level](dof_indices[i]);
+            }
             else // FE_DGQ
+            {
               points_moved[this->lexicographic_to_hierarchic_numbering[id.second]][id.first] +=
                 dof_vector_all_levels_ghosted[level](dof_indices[i]);
+            }
           }
         }
 

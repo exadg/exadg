@@ -28,28 +28,34 @@ namespace ExaDG
 {
 using namespace dealii;
 
+/**
+ * A mapping class based on MappingQCache equipped with practical interfaces that can be used to
+ * initialize the mapping by providing a Function<dim> object.
+ */
 template<int dim, typename Number>
 class MovingMeshFunction : public MovingMeshBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMeshFunction(parallel::TriangulationBase<dim> const & triangulation_in,
-                     std::shared_ptr<Mapping<dim>>            mapping_in,
-                     unsigned int const                       mapping_degree_moving_in,
-                     MPI_Comm const &                         mpi_comm_in,
-                     std::shared_ptr<Function<dim>> const     mesh_movement_function_in,
+  /**
+   * Constructor.
+   */
+  MovingMeshFunction(parallel::TriangulationBase<dim> const & triangulation,
+                     std::shared_ptr<Mapping<dim>>            mapping,
+                     unsigned int const                       mapping_degree_q_cache,
+                     MPI_Comm const &                         mpi_comm,
+                     std::shared_ptr<Function<dim>> const     mesh_movement_function,
                      double const                             start_time)
-    : MovingMeshBase<dim, Number>(mapping_in, mapping_degree_moving_in, mpi_comm_in),
-      mesh_movement_function(mesh_movement_function_in),
-      triangulation(triangulation_in)
+    : MovingMeshBase<dim, Number>(mapping, mapping_degree_q_cache, triangulation, mpi_comm),
+      mesh_movement_function(mesh_movement_function),
+      triangulation(triangulation)
   {
     update(start_time);
   }
 
-  /*
-   * This function is formulated w.r.t. reference coordinates, i.e., the mapping describing
-   * the initial mesh position has to be used for this function.
+  /**
+   * Updates the mesh coordinates using a Function<dim> object evaluated at a given time.
    */
   void
   update(double const time, bool const print_solver_info = false)
@@ -58,7 +64,7 @@ public:
 
     mesh_movement_function->set_time(time);
 
-    this->initialize_mapping_q_cache(triangulation, mesh_movement_function);
+    this->initialize(triangulation, mesh_movement_function);
   }
 
 private:
