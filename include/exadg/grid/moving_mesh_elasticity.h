@@ -48,7 +48,7 @@ public:
     : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
-                                  structure_operator->get_dof_handler(),
+                                  structure_operator->get_dof_handler().get_triangulation(),
                                   mpi_comm),
       pde_operator(structure_operator),
       param(structure_parameters),
@@ -56,10 +56,9 @@ public:
       iterations({0, {0, 0}}),
       print_wall_times(print_wall_times)
   {
-    pde_operator->initialize_dof_vector(displacement);
-
     // make sure that the mapping is initialized
-    this->initialize_mapping_q_cache(pde_operator->get_dof_handler(), displacement);
+    pde_operator->initialize_dof_vector(displacement);
+    this->initialize(pde_operator->get_dof_handler(), displacement);
   }
 
   void
@@ -105,7 +104,7 @@ public:
       }
     }
 
-    this->initialize_mapping_q_cache(pde_operator->get_dof_handler(), displacement);
+    this->initialize(pde_operator->get_dof_handler(), displacement);
   }
 
   void
