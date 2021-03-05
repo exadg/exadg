@@ -42,7 +42,7 @@ using namespace dealii;
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
-  Mapping<dim> const &                           mapping_in,
+  std::shared_ptr<Mapping<dim> const>            mapping_in,
   unsigned int const                             degree_in,
   PeriodicFaces const                            periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,

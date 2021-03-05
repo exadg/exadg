@@ -112,7 +112,7 @@ TimeIntBDF<dim, Number>::setup_derived()
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
 
-    moving_mesh->move_mesh(this->get_time());
+    moving_mesh->update(this->get_time(), false, false);
     moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[0],
                                               operator_base->get_dof_handler_u());
 
@@ -121,7 +121,7 @@ TimeIntBDF<dim, Number>::setup_derived()
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        moving_mesh->move_mesh(this->get_previous_time(i));
+        moving_mesh->update(this->get_previous_time(i), false, false);
         moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[i],
                                                   operator_base->get_dof_handler_u());
       }
@@ -599,15 +599,15 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::move_mesh(double const time) const
 {
-  moving_mesh->move_mesh(time);
+  moving_mesh->update(time, false, false);
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
 {
-  moving_mesh->move_mesh(time);
-  matrix_free->update_mapping(moving_mesh->get_mapping());
+  moving_mesh->update(time, false, false);
+  matrix_free->update_mapping(*moving_mesh);
   operator_base->update_after_mesh_movement();
 }
 

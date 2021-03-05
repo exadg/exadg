@@ -172,28 +172,26 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & comm);
+  Driver(MPI_Comm const & comm, bool const is_test);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const                            degree,
         unsigned int const                            refine_space,
         unsigned int const                            refine_time,
-        bool const                                    is_test,
         bool const                                    is_throughput_study);
 
   void
   solve() const;
 
   void
-  print_performance_results(double const total_time, bool const is_test) const;
+  print_performance_results(double const total_time) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(unsigned int const  degree,
                  std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer,
-                 bool const          is_test) const;
+                 unsigned int const  n_repetitions_outer) const;
 
 private:
   void
@@ -205,6 +203,9 @@ private:
   // output to std::cout
   ConditionalOStream pcout;
 
+  // do not print wall times if is_test
+  bool const is_test;
+
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
@@ -215,18 +216,18 @@ private:
   // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
-  // mapping
+  // static mapping
+  std::shared_ptr<Mapping<dim>> static_mapping;
+
+  // moving mapping (ALE)
+  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mapping;
+
+  // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> mapping;
 
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
-
-  // mesh (static or moving)
-  std::shared_ptr<Mesh<dim>> mesh;
-
-  // moving mesh (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
 
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;
@@ -235,7 +236,7 @@ private:
   std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
 
   // static mesh for Poisson problem
-  std::shared_ptr<Mesh<dim>> poisson_mesh;
+  std::shared_ptr<Mapping<dim>> poisson_mapping;
 
   std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;

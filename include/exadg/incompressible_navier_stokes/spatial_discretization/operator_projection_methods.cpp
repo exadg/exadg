@@ -33,7 +33,7 @@ using namespace dealii;
 template<int dim, typename Number>
 OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation_in,
-  Mapping<dim> const &                     mapping_in,
+  std::shared_ptr<Mapping<dim> const>      mapping_in,
   unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
@@ -191,7 +191,7 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  this->get_mapping(),
+                                  this->mapping,
                                   laplace_operator.get_data(),
                                   this->param.ale_formulation,
                                   &laplace_operator.get_data().bc->dirichlet_bc,

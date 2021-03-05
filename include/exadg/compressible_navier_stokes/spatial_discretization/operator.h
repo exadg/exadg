@@ -52,7 +52,7 @@ private:
 
 public:
   Operator(parallel::TriangulationBase<dim> const &       triangulation_in,
-           Mapping<dim> const &                           mapping_in,
+           std::shared_ptr<Mapping<dim> const>            mapping_in,
            unsigned int const                             degree_in,
            std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
            std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
@@ -190,7 +190,7 @@ private:
   /*
    * Mapping
    */
-  Mapping<dim> const & mapping;
+  std::shared_ptr<Mapping<dim> const> mapping;
 
   /*
    * polynomial degree

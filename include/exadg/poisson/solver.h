@@ -80,18 +80,18 @@ run(std::vector<SolverResult> & results,
   timer.restart();
 
   std::shared_ptr<Poisson::Driver<dim, Number>> driver;
-  driver.reset(new Poisson::Driver<dim, Number>(mpi_comm));
+  driver.reset(new Poisson::Driver<dim, Number>(mpi_comm, is_test));
 
   std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
 
   application->set_subdivisions_hypercube(n_cells_1d);
 
-  driver->setup(application, degree, refine_space, is_test, false);
+  driver->setup(application, degree, refine_space, false);
 
   driver->solve();
 
-  SolverResult result = driver->print_performance_results(timer.wall_time(), is_test);
+  SolverResult result = driver->print_performance_results(timer.wall_time());
   results.push_back(result);
 }
 } // namespace ExaDG

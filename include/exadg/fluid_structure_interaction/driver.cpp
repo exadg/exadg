@@ -29,9 +29,12 @@ namespace FSI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(std::string const & input_file, MPI_Comm const & comm)
+Driver<dim, Number>::Driver(std::string const & input_file,
+                            MPI_Comm const &    comm,
+                            bool const          is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    is_test(is_test),
     partitioned_iterations({0, 0})
 {
   dealii::ParameterHandler prm;
@@ -92,8 +95,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree_fluid,
                            unsigned int const                            degree_structure,
                            unsigned int const                            refine_space_fluid,
-                           unsigned int const                            refine_space_structure,
-                           bool const                                    is_test)
+                           unsigned int const                            refine_space_structure)
 
 {
   Timer timer;
@@ -167,7 +169,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // setup spatial operator
     structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
-                                                                  *structure_mapping,
+                                                                  structure_mapping,
                                                                   degree_structure,
                                                                   structure_periodic_faces,
                                                                   structure_boundary_descriptor,
@@ -242,7 +244,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->create_grid_fluid(fluid_triangulation,
                                    fluid_periodic_faces,
                                    refine_space_fluid,
-                                   fluid_mapping,
+                                   fluid_static_mapping,
                                    mapping_degree_fluid);
     print_grid_data(pcout, refine_space_fluid, *fluid_triangulation);
 
@@ -286,7 +288,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // initialize Poisson operator
       ale_poisson_operator.reset(
         new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
-                                                *fluid_mapping,
+                                                fluid_static_mapping,
                                                 mapping_degree_fluid,
                                                 fluid_periodic_faces,
                                                 ale_poisson_boundary_descriptor,
@@ -323,7 +325,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // setup spatial operator
       ale_elasticity_operator.reset(
         new Structure::Operator<dim, Number>(*fluid_triangulation,
-                                             *fluid_mapping,
+                                             fluid_static_mapping,
                                              mapping_degree_fluid,
                                              fluid_periodic_faces,
                                              ale_elasticity_boundary_descriptor,
@@ -363,7 +365,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
 
     ale_matrix_free.reset(new MatrixFree<dim, Number>());
-    ale_matrix_free->reinit(*fluid_mapping,
+    ale_matrix_free->reinit(*fluid_static_mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
                             ale_matrix_free_data->get_constraint_vector(),
                             ale_matrix_free_data->get_quadrature_vector(),
@@ -387,20 +389,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // mapping for fluid problem (moving mesh)
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      fluid_moving_mesh.reset(new MovingMeshPoisson<dim, Number>(
-        fluid_mapping, mpi_comm, not(is_test), ale_poisson_operator));
+      fluid_moving_mapping.reset(
+        new MovingMeshPoisson<dim, Number>(fluid_static_mapping, ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(
-        fluid_mapping, mpi_comm, not(is_test), ale_elasticity_operator, ale_elasticity_param));
+      fluid_moving_mapping.reset(new MovingMeshElasticity<dim, Number>(fluid_static_mapping,
+                                                                       ale_elasticity_operator,
+                                                                       ale_elasticity_param));
     }
     else
     {
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    fluid_mesh = fluid_moving_mesh;
+    fluid_mapping = fluid_moving_mapping;
 
     // initialize fluid_operator
     if(this->fluid_param.temporal_discretization ==
@@ -408,7 +411,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_coupled.reset(
         new IncNS::OperatorCoupled<dim, Number>(*fluid_triangulation,
-                                                fluid_mesh->get_mapping(),
+                                                fluid_mapping,
                                                 degree_fluid,
                                                 fluid_periodic_faces,
                                                 fluid_boundary_descriptor_velocity,
@@ -425,7 +428,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_dual_splitting.reset(
         new IncNS::OperatorDualSplitting<dim, Number>(*fluid_triangulation,
-                                                      fluid_mesh->get_mapping(),
+                                                      fluid_mapping,
                                                       degree_fluid,
                                                       fluid_periodic_faces,
                                                       fluid_boundary_descriptor_velocity,
@@ -442,7 +445,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       fluid_operator_pressure_correction.reset(
         new IncNS::OperatorPressureCorrection<dim, Number>(*fluid_triangulation,
-                                                           fluid_mesh->get_mapping(),
+                                                           fluid_mapping,
                                                            degree_fluid,
                                                            fluid_periodic_faces,
                                                            fluid_boundary_descriptor_velocity,
@@ -472,7 +475,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_operator->fill_matrix_free_data(*fluid_matrix_free_data);
 
     fluid_matrix_free.reset(new MatrixFree<dim, Number>());
-    fluid_matrix_free->reinit(fluid_mesh->get_mapping(),
+    fluid_matrix_free->reinit(*fluid_mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
                               fluid_matrix_free_data->get_constraint_vector(),
                               fluid_matrix_free_data->get_quadrature_vector(),
@@ -600,7 +603,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               structure_boundary_descriptor->neumann_mortar_bc,
                               fluid_triangulation,
                               fluid_operator->get_dof_handler_u(),
-                              fluid_mesh->get_mapping(),
+                              *fluid_mapping,
                               stress_fluid,
                               fsi_data.geometric_tolerance);
 
@@ -634,7 +637,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             mpi_comm,
                                                                             not(is_test),
                                                                             fluid_postprocessor,
-                                                                            fluid_moving_mesh,
+                                                                            fluid_moving_mapping,
                                                                             fluid_matrix_free));
     }
     else if(this->fluid_param.temporal_discretization ==
@@ -647,7 +650,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                         mpi_comm,
                                                         not(is_test),
                                                         fluid_postprocessor,
-                                                        fluid_moving_mesh,
+                                                        fluid_moving_mapping,
                                                         fluid_matrix_free));
     }
     else if(this->fluid_param.temporal_discretization ==
@@ -660,7 +663,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                              mpi_comm,
                                                              not(is_test),
                                                              fluid_postprocessor,
-                                                             fluid_moving_mesh,
+                                                             fluid_moving_mapping,
                                                              fluid_matrix_free));
     }
     else
@@ -730,11 +733,13 @@ Driver<dim, Number>::solve_ale() const
 
   sub_timer.restart();
   bool const print_solver_info = fluid_time_integrator->print_solver_info();
-  fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time(), print_solver_info);
+  fluid_moving_mapping->update(fluid_time_integrator->get_next_time(),
+                               print_solver_info,
+                               not(is_test));
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  fluid_matrix_free->update_mapping(fluid_moving_mesh->get_mapping());
+  fluid_matrix_free->update_mapping(*fluid_mapping);
   timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -1229,7 +1234,7 @@ Driver<dim, Number>::print_partitioned_iterations() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   pcout << std::endl
         << "_________________________________________________________________________________"
@@ -1248,7 +1253,7 @@ Driver<dim, Number>::print_performance_results(double const total_time, bool con
   fluid_time_integrator->print_iterations();
 
   pcout << std::endl << "ALE:" << std::endl;
-  fluid_moving_mesh->print_iterations();
+  fluid_moving_mapping->print_iterations();
 
   pcout << std::endl << "Structure:" << std::endl;
   structure_time_integrator->print_iterations();

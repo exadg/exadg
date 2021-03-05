@@ -110,14 +110,13 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & mpi_comm);
+  Driver(MPI_Comm const & mpi_comm, bool const is_test);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const                            degree,
         unsigned int const                            refine_space,
         unsigned int const                            refine_time,
-        bool const                                    is_test,
         bool const                                    is_throughput_study);
 
   void
@@ -127,11 +126,10 @@ public:
   apply_operator(unsigned int const  degree,
                  std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer,
-                 bool const          is_test) const;
+                 unsigned int const  n_repetitions_outer) const;
 
   void
-  print_performance_results(double const total_time, bool const is_test) const;
+  print_performance_results(double const total_time) const;
 
 private:
   void
@@ -143,20 +141,23 @@ private:
   // output to std::cout
   ConditionalOStream pcout;
 
+  // do not print wall times if is_test
+  bool const is_test;
+
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
-  // mapping
+  // static mapping
+  std::shared_ptr<Mapping<dim>> static_mapping;
+
+  // moving mapping (ALE)
+  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mapping;
+
+  // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> mapping;
-
-  // mesh (static or moving)
-  std::shared_ptr<Mesh<dim>> mesh;
-
-  // moving mesh (ALE)
-  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mesh;
 
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>

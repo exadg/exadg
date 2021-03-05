@@ -36,9 +36,10 @@ namespace Poisson
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm)
+Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    is_test(is_test),
     iterations(0),
     solve_time(0.0)
 {
@@ -49,7 +50,6 @@ void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
                            unsigned int const                            refine_space,
-                           bool const                                    is_test,
                            bool const                                    is_throughput_study)
 {
   Timer timer;
@@ -116,7 +116,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // initialize Poisson operator
   poisson_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                   *mapping,
+                                                   mapping,
                                                    degree,
                                                    periodic_faces,
                                                    boundary_descriptor,
@@ -199,7 +199,7 @@ Driver<dim, Number>::solve()
 
 template<int dim, typename Number>
 SolverResult
-Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   this->pcout << std::endl << print_horizontal_line() << std::endl << std::endl;
 
@@ -253,8 +253,7 @@ std::tuple<unsigned int, types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(unsigned int const  degree,
                                     std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer,
-                                    bool const          is_test) const
+                                    unsigned int const  n_repetitions_outer) const
 {
   (void)degree;
 

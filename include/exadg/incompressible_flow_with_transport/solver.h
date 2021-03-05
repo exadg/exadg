@@ -114,16 +114,16 @@ run(std::string const & input_file,
   timer.restart();
 
   std::shared_ptr<FTI::Driver<dim, Number>> driver;
-  driver.reset(new FTI::Driver<dim, Number>(mpi_comm));
+  driver.reset(new FTI::Driver<dim, Number>(mpi_comm, is_test));
 
   std::shared_ptr<FTI::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
 
-  driver->setup(application, degree, refine_space, is_test);
+  driver->setup(application, degree, refine_space);
 
   driver->solve();
 
-  driver->print_performance_results(timer.wall_time(), is_test);
+  driver->print_performance_results(timer.wall_time());
 }
 } // namespace ExaDG
 

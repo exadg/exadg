@@ -40,7 +40,7 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   MultigridData const &                    mg_data,
   const parallel::TriangulationBase<dim> * tria,
   const FiniteElement<dim> &               fe,
-  Mapping<dim> const &                     mapping,
+  std::shared_ptr<Mapping<dim> const>      mapping,
   LaplaceOperatorData<rank, dim> const &   data_in,
   bool const                               mesh_is_moving,
   Map const *                              dirichlet_bc,
@@ -64,6 +64,8 @@ MultigridPreconditioner<dim, Number, n_components>::update()
   // if the mesh is moving
   if(mesh_is_moving)
   {
+    this->initialize_mapping();
+
     this->update_matrix_free();
 
     update_operators_after_mesh_movement();

@@ -28,37 +28,84 @@ namespace ExaDG
 {
 using namespace dealii;
 
+/**
+ * Class for moving mesh problems based on mesh motions that can be described analytically via a
+ * Function<dim> object.
+ */
 template<int dim, typename Number>
 class MovingMeshFunction : public MovingMeshBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMeshFunction(parallel::TriangulationBase<dim> const & triangulation_in,
-                     std::shared_ptr<Mapping<dim>>            mapping_in,
-                     unsigned int const                       mapping_degree_moving_in,
-                     MPI_Comm const &                         mpi_comm_in,
-                     std::shared_ptr<Function<dim>> const     mesh_movement_function_in,
+  /**
+   * Constructor.
+   */
+  MovingMeshFunction(std::shared_ptr<Mapping<dim>>            mapping,
+                     unsigned int const                       mapping_degree_q_cache,
+                     parallel::TriangulationBase<dim> const & triangulation,
+                     std::shared_ptr<Function<dim>> const     mesh_movement_function,
                      double const                             start_time)
-    : MovingMeshBase<dim, Number>(mapping_in, mapping_degree_moving_in, mpi_comm_in),
-      mesh_movement_function(mesh_movement_function_in),
-      triangulation(triangulation_in)
+    : MovingMeshBase<dim, Number>(mapping, mapping_degree_q_cache, triangulation),
+      mesh_movement_function(mesh_movement_function),
+      triangulation(triangulation)
   {
-    move_mesh(start_time);
+    update(start_time, false, false);
   }
 
-  /*
-   * This function is formulated w.r.t. reference coordinates, i.e., the mapping describing
-   * the initial mesh position has to be used for this function.
+  /**
+   * Updates the mesh coordinates using a Function<dim> object evaluated at a given time.
    */
   void
-  move_mesh(double const time, bool const print_solver_info = false)
+  update(double const time, bool const print_solver_info, bool const print_wall_times) override
   {
     (void)print_solver_info;
+    (void)print_wall_times;
 
     mesh_movement_function->set_time(time);
 
-    this->initialize_mapping_q_cache(triangulation, mesh_movement_function);
+    this->initialize(triangulation, mesh_movement_function);
+  }
+
+  /**
+   * Initializes the MappingQCache object by providing a Function<dim> that describes the
+   * displacement of the mesh compared to an undeformed reference configuration described by the
+   * static mapping of this class.
+   */
+  void
+  initialize(Triangulation<dim> const &     triangulation,
+             std::shared_ptr<Function<dim>> displacement_function)
+  {
+    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+
+    // dummy FE for compatibility with interface of FEValues
+    FE_Nothing<dim> dummy_fe;
+    FEValues<dim>   fe_values(*this->mapping,
+                            dummy_fe,
+                            QGaussLobatto<dim>(this->get_degree() + 1),
+                            update_quadrature_points);
+
+    MappingQCache<dim>::initialize(
+      triangulation,
+      [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
+        fe_values.reinit(cell);
+
+        // compute displacement and add to original position
+        std::vector<Point<dim>> points_moved(fe_values.n_quadrature_points);
+        for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
+        {
+          // need to adjust for hierarchic numbering of MappingQCache
+          Point<dim> const point =
+            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          Point<dim> displacement;
+          for(unsigned int d = 0; d < dim; ++d)
+            displacement[d] = displacement_function->value(point, d);
+
+          points_moved[i] = point + displacement;
+        }
+
+        return points_moved;
+      });
   }
 
 private:

@@ -177,7 +177,7 @@ public:
    * Constructor.
    */
   Operator(parallel::TriangulationBase<dim> &             triangulation_in,
-           Mapping<dim> const &                           mapping_in,
+           std::shared_ptr<Mapping<dim> const>            mapping_in,
            unsigned int const &                           degree_in,
            PeriodicFaces const &                          periodic_face_pairs_in,
            std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
@@ -356,7 +356,7 @@ private:
   /*
    * Mapping
    */
-  Mapping<dim> const & mapping;
+  std::shared_ptr<Mapping<dim> const> mapping;
 
   /*
    * Periodic boundaries.

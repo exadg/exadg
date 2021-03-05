@@ -86,16 +86,16 @@ run(std::string const & input_file,
   timer.restart();
 
   std::shared_ptr<ConvDiff::Driver<dim, Number>> solver;
-  solver.reset(new ConvDiff::Driver<dim, Number>(mpi_comm));
+  solver.reset(new ConvDiff::Driver<dim, Number>(mpi_comm, is_test));
 
   std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
 
-  solver->setup(application, degree, refine_space, refine_time, is_test, false);
+  solver->setup(application, degree, refine_space, refine_time, false);
 
   solver->solve();
 
-  solver->print_performance_results(timer.wall_time(), is_test);
+  solver->print_performance_results(timer.wall_time());
 }
 
 } // namespace ExaDG

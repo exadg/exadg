@@ -58,19 +58,18 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & mpi_comm);
+  Driver(MPI_Comm const & mpi_comm, bool const is_test);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const                            degree,
-        unsigned int const                            refine_space,
-        bool const                                    is_test);
+        unsigned int const                            refine_space);
 
   void
   solve() const;
 
   void
-  print_performance_results(double const total_time, bool const is_test) const;
+  print_performance_results(double const total_time) const;
 
 private:
   void
@@ -91,11 +90,11 @@ private:
   // MPI communicator
   MPI_Comm const mpi_comm;
 
-  // number of scalar quantities
-  unsigned int n_scalars;
-
   // output to std::cout
   ConditionalOStream pcout;
+
+  // do not print wall times if is_test
+  bool const is_test;
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
@@ -108,17 +107,17 @@ private:
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
   // mapping
+  std::shared_ptr<Mapping<dim>> static_mapping;
+
+  // moving mapping (ALE)
+  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mapping;
+
+  // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> mapping;
 
   // periodic boundaries
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
-
-  // mesh (static or moving)
-  std::shared_ptr<Mesh<dim>> mesh;
-
-  // moving mesh (ALE)
-  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mesh;
 
   bool use_adaptive_time_stepping;
 
@@ -151,6 +150,9 @@ private:
   std::shared_ptr<DriverSteady> fluid_driver_steady;
 
   // SCALAR TRANSPORT
+
+  // number of scalar quantities
+  unsigned int n_scalars;
 
   std::vector<ConvDiff::InputParameters> scalar_param;
 

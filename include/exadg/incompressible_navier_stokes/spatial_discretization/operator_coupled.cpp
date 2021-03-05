@@ -37,7 +37,7 @@ using namespace dealii;
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
   parallel::TriangulationBase<dim> const & triangulation_in,
-  Mapping<dim> const &                     mapping_in,
+  std::shared_ptr<Mapping<dim> const>      mapping_in,
   unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
@@ -486,7 +486,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
                                 tria,
                                 fe,
-                                this->get_mapping(),
+                                this->mapping,
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
                                 this->param.ale_formulation,
@@ -617,7 +617,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
   mg_preconditioner->initialize(mg_data,
                                 tria,
                                 fe,
-                                this->get_mapping(),
+                                this->mapping,
                                 laplace_operator_data,
                                 this->param.ale_formulation,
                                 &laplace_operator_data.bc->dirichlet_bc,

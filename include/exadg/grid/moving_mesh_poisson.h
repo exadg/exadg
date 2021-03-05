@@ -34,33 +34,38 @@ namespace ExaDG
 {
 using namespace dealii;
 
+/**
+ * Class for moving mesh problems based on a Poisson-type mesh motion technique.
+ */
 template<int dim, typename Number>
 class MovingMeshPoisson : public MovingMeshBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
+  /**
+   * Constructor.
+   */
   MovingMeshPoisson(std::shared_ptr<Mapping<dim>>                        mapping,
-                    MPI_Comm const &                                     mpi_comm,
-                    bool const                                           print_wall_times,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
     : MovingMeshBase<dim, Number>(mapping,
                                   // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
-                                  mpi_comm),
+                                  poisson_operator->get_dof_handler().get_triangulation()),
       poisson(poisson_operator),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-      iterations({0, 0}),
-      print_wall_times(print_wall_times)
+      pcout(std::cout,
+            Utilities::MPI::this_mpi_process(
+              poisson_operator->get_dof_handler().get_communicator()) == 0),
+      iterations({0, 0})
   {
     poisson->initialize_dof_vector(displacement);
-
-    // make sure that the mapping is initialized
-    this->initialize_mapping_q_cache(poisson->get_dof_handler(), displacement);
   }
 
+  /**
+   * Updates the mapping, i.e., moves the mesh by solving a Poisson-type problem.
+   */
   void
-  move_mesh(double const time, bool const print_solver_info = false)
+  update(double const time, bool const print_solver_info, bool const print_wall_times) override
   {
     Timer timer;
     timer.restart();
@@ -81,11 +86,14 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
     }
 
-    this->initialize_mapping_q_cache(poisson->get_dof_handler(), displacement);
+    this->initialize(poisson->get_dof_handler(), displacement);
   }
 
+  /**
+   * Prints information on iteration counts.
+   */
   void
-  print_iterations() const
+  print_iterations() const override
   {
     std::vector<std::string> names;
     std::vector<double>      iterations_avg;
@@ -108,8 +116,6 @@ private:
   ConditionalOStream pcout;
 
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
-
-  bool print_wall_times;
 };
 
 } // namespace ExaDG

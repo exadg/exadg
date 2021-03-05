@@ -41,6 +41,9 @@ namespace ExaDG
 {
 template<typename VectorType, typename Operator, typename Smoother>
 class MultigridAlgorithm;
+
+template<int dim, typename Number>
+class MappingDoFVector;
 } // namespace ExaDG
 
 namespace dealii
@@ -94,7 +97,7 @@ public:
   initialize(MultigridData const &                    data,
              parallel::TriangulationBase<dim> const * tria,
              FiniteElement<dim> const &               fe,
-             Mapping<dim> const &                     mapping,
+             std::shared_ptr<Mapping<dim> const>      mapping,
              bool const                               operator_is_singular = false,
              Map const *                              dirichlet_bc         = nullptr,
              PeriodicFacePairs *                      periodic_face_pairs  = nullptr);
@@ -126,6 +129,13 @@ public:
   update();
 
 protected:
+  /*
+   * Initialization of mapping depending on multigrid transfer type. Note that the mapping needs to
+   * be re-initialized if the domain changes over time.
+   */
+  void
+  initialize_mapping();
+
   /*
    * This function initializes the matrix-free objects for all multigrid levels.
    */
@@ -299,16 +309,22 @@ private:
 
   MultigridData data;
 
+  parallel::TriangulationBase<dim> const * triangulation;
+
   // Only relevant for global coarsening, where this vector contains coarse level triangulations,
   // and the fine level triangulation as the last element of the vector.
   std::vector<std::shared_ptr<Triangulation<dim> const>> coarse_grid_triangulations;
 
   // In case of global coarsening, this is the mapping associated to the fine level triangulation.
-  Mapping<dim> const * mapping;
+  std::shared_ptr<Mapping<dim> const> mapping;
 
-  // Only relevant for global coarsening, where this vector contains only the mappings for
-  // triangulations coarser than the fine level triangulation.
+  // Only relevant for global coarsening,where this vector contains coarse level mappings,
+  // and the fine level mapping as the last element of the vector.
   std::vector<std::shared_ptr<Mapping<dim> const>> coarse_grid_mappings;
+
+  // Only relevant for global refinement and in case that a mapping of type MappingDoFVector is
+  // used.
+  std::shared_ptr<MappingDoFVector<dim, Number>> mapping_global_refinement;
 
   MGLevelObject<std::shared_ptr<Smoother>> smoothers;
 

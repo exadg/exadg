@@ -34,7 +34,7 @@ using namespace dealii;
 template<int dim, typename Number>
 OperatorPressureCorrection<dim, Number>::OperatorPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation_in,
-  Mapping<dim> const &                     mapping_in,
+  std::shared_ptr<Mapping<dim> const>      mapping_in,
   unsigned int const                       degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
@@ -141,7 +141,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
                                   tria,
                                   fe,
-                                  this->get_mapping(),
+                                  this->mapping,
                                   this->momentum_operator,
                                   this->param.multigrid_operator_type_momentum,
                                   this->param.ale_formulation,

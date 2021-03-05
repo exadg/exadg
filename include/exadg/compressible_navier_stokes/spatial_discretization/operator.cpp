@@ -36,7 +36,7 @@ using namespace dealii;
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
-  Mapping<dim> const &                           mapping_in,
+  std::shared_ptr<Mapping<dim> const>            mapping_in,
   unsigned int const                             degree_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
@@ -184,7 +184,7 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double con
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(mapping,
+  VectorTools::interpolate(*mapping,
                            dof_handler,
                            *(this->field_functions->initial_solution),
                            src_double);
@@ -291,7 +291,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 Operator<dim, Number>::get_mapping() const
 {
-  return mapping;
+  return *mapping;
 }
 
 template<int dim, typename Number>

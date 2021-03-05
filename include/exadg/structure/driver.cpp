@@ -36,8 +36,8 @@ namespace Structure
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm)
-  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0)
+Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
+  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0), is_test(is_test)
 {
 }
 
@@ -47,7 +47,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
                            unsigned int const                            refine_space,
                            unsigned int const                            refine_time,
-                           bool const                                    is_test,
                            bool const                                    is_throughput_study)
 {
   Timer timer;
@@ -106,7 +105,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // setup spatial operator
   pde_operator.reset(new Operator<dim, Number>(*triangulation,
-                                               *mapping,
+                                               mapping,
                                                degree,
                                                periodic_faces,
                                                boundary_descriptor,
@@ -191,7 +190,7 @@ Driver<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::print_performance_results(double const total_time, bool const is_test) const
+Driver<dim, Number>::print_performance_results(double const total_time) const
 {
   pcout << std::endl
         << "_________________________________________________________________________________"
@@ -271,8 +270,7 @@ std::tuple<unsigned int, types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(unsigned int const  degree,
                                     std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer,
-                                    bool const          is_test) const
+                                    unsigned int const  n_repetitions_outer) const
 {
   (void)degree;
 
