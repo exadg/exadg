@@ -94,13 +94,13 @@ public:
    * Initialization function.
    */
   void
-  initialize(MultigridData const &                    data,
-             parallel::TriangulationBase<dim> const * tria,
-             FiniteElement<dim> const &               fe,
-             std::shared_ptr<Mapping<dim> const>      mapping,
-             bool const                               operator_is_singular = false,
-             Map const *                              dirichlet_bc         = nullptr,
-             PeriodicFacePairs *                      periodic_face_pairs  = nullptr);
+  initialize(MultigridData const &               data,
+             Triangulation<dim> const *          tria,
+             FiniteElement<dim> const &          fe,
+             std::shared_ptr<Mapping<dim> const> mapping,
+             bool const                          operator_is_singular = false,
+             Map const *                         dirichlet_bc         = nullptr,
+             PeriodicFacePairs *                 periodic_face_pairs  = nullptr);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -172,15 +172,15 @@ protected:
   initialize_dof_handler_and_constraints(bool                       is_singular,
                                          PeriodicFacePairs *        periodic_face_pairs,
                                          FiniteElement<dim> const & fe,
-                                         parallel::TriangulationBase<dim> const * tria,
-                                         Map const *                              dirichlet_bc);
+                                         Triangulation<dim> const * tria,
+                                         Map const *                dirichlet_bc);
 
   void
   do_initialize_dof_handler_and_constraints(
     bool                                                                 is_singular,
     PeriodicFacePairs &                                                  periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
-    parallel::TriangulationBase<dim> const *                             tria,
+    Triangulation<dim> const *                                           tria,
     Map const &                                                          dirichlet_bc,
     std::vector<MGLevelInfo> &                                           level_info,
     std::vector<MGDoFHandlerIdentifier> &                                p_levels,
@@ -220,9 +220,7 @@ private:
    * Multigrid levels (i.e. coarsening strategy, h-/p-/hp-/ph-MG).
    */
   void
-  initialize_levels(parallel::TriangulationBase<dim> const * tria,
-                    unsigned int const                       degree,
-                    bool const                               is_dg);
+  initialize_levels(Triangulation<dim> const * tria, unsigned int const degree, bool const is_dg);
 
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
@@ -231,7 +229,7 @@ private:
    * Coarse grid triangulations in case of global coarsening transfer type.
    */
   void
-  initialize_coarse_grid_triangulations(parallel::TriangulationBase<dim> const * tria);
+  initialize_coarse_grid_triangulations(Triangulation<dim> const * tria);
 
   /*
    * Returns the correct mapping depending on the multigrid transfer type and the current h-level.
@@ -309,7 +307,7 @@ private:
 
   MultigridData data;
 
-  parallel::TriangulationBase<dim> const * triangulation;
+  Triangulation<dim> const * triangulation;
 
   // Only relevant for global coarsening, where this vector contains coarse level triangulations,
   // and the fine level triangulation as the last element of the vector.

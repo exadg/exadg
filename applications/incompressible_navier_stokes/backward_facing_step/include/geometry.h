@@ -161,8 +161,8 @@ public:
 
 template<int dim>
 void
-create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-            unsigned int const                                n_refine_space,
+create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
+            unsigned int const                  n_refine_space,
             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
               periodic_faces)
 {
@@ -243,8 +243,8 @@ create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
 template<int dim>
 void
 create_grid_precursor(
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-  unsigned int const                                n_refine_space,
+  std::shared_ptr<Triangulation<dim>> triangulation,
+  unsigned int const                  n_refine_space,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
     periodic_faces)
 {

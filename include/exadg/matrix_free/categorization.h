@@ -37,9 +37,9 @@ using namespace dealii;
  */
 template<int dim, typename AdditionalData>
 void
-do_cell_based_loops(const parallel::TriangulationBase<dim> & tria,
-                    AdditionalData &                         data,
-                    unsigned int const                       level = numbers::invalid_unsigned_int)
+do_cell_based_loops(const Triangulation<dim> & tria,
+                    AdditionalData &           data,
+                    unsigned int const         level = numbers::invalid_unsigned_int)
 {
   bool is_mg = (level != numbers::invalid_unsigned_int);
 

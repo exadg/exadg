@@ -38,9 +38,9 @@ using namespace dealii;
 
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  parallel::TriangulationBase<dim> const & triangulation_in,
-  std::shared_ptr<Mapping<dim> const>      mapping_in,
-  unsigned int const                       degree_u_in,
+  Triangulation<dim> const &          triangulation_in,
+  std::shared_ptr<Mapping<dim> const> mapping_in,
+  unsigned int const                  degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -1125,14 +1125,9 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   // explicit copy needed since function is called on const
   auto periodic_face_pairs = this->periodic_face_pairs;
 
-  parallel::TriangulationBase<dim> const * tria =
-    dynamic_cast<const parallel::TriangulationBase<dim> *>(
-      &dof_handler_u_scalar.get_triangulation());
-  const FiniteElement<dim> & fe = dof_handler_u_scalar.get_fe();
-
   mg_preconditioner->initialize(mg_data,
-                                tria,
-                                fe,
+                                &dof_handler_u_scalar.get_triangulation(),
+                                dof_handler_u_scalar.get_fe(),
                                 mapping,
                                 laplace_operator.get_data(),
                                 this->param.ale_formulation,
@@ -1443,15 +1438,9 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
         std::dynamic_pointer_cast<MULTIGRID>(preconditioner_projection);
 
       auto const & dof_handler = this->get_dof_handler_u();
-
-      parallel::TriangulationBase<dim> const * tria =
-        dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
-
-      FiniteElement<dim> const & fe = dof_handler.get_fe();
-
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
-                                    tria,
-                                    fe,
+                                    &dof_handler.get_triangulation(),
+                                    dof_handler.get_fe(),
                                     this->mapping,
                                     *this->projection_operator,
                                     this->param.ale_formulation,

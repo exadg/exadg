@@ -41,11 +41,11 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshFunction(std::shared_ptr<Mapping<dim>>            mapping,
-                     unsigned int const                       mapping_degree_q_cache,
-                     parallel::TriangulationBase<dim> const & triangulation,
-                     std::shared_ptr<Function<dim>> const     mesh_movement_function,
-                     double const                             start_time)
+  MovingMeshFunction(std::shared_ptr<Mapping<dim>>        mapping,
+                     unsigned int const                   mapping_degree_q_cache,
+                     Triangulation<dim> const &           triangulation,
+                     std::shared_ptr<Function<dim>> const mesh_movement_function,
+                     double const                         start_time)
     : MovingMeshBase<dim, Number>(mapping, mapping_degree_q_cache, triangulation),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)

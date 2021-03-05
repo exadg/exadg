@@ -53,9 +53,9 @@ MultigridPreconditionerBase<dim, Number>::MultigridPreconditionerBase(MPI_Comm c
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &                    data,
-                                                     parallel::TriangulationBase<dim> const * tria,
-                                                     FiniteElement<dim> const &               fe,
+MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &               data,
+                                                     Triangulation<dim> const *          tria,
+                                                     FiniteElement<dim> const &          fe,
                                                      std::shared_ptr<Mapping<dim> const> mapping,
                                                      bool const          operator_is_singular,
                                                      Map const *         dirichlet_bc,
@@ -127,10 +127,9 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 
 template<int dim, typename Number>
 void
-MultigridPreconditionerBase<dim, Number>::initialize_levels(
-  parallel::TriangulationBase<dim> const * tria,
-  unsigned int const                       degree,
-  bool const                               is_dg)
+MultigridPreconditionerBase<dim, Number>::initialize_levels(Triangulation<dim> const * tria,
+                                                            unsigned int const         degree,
+                                                            bool const                 is_dg)
 {
   MultigridType const mg_type = data.type;
 
@@ -310,7 +309,7 @@ MultigridPreconditionerBase<dim, Number>::check_levels(std::vector<MGLevelInfo> 
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
-  parallel::TriangulationBase<dim> const * tria)
+  Triangulation<dim> const * tria)
 {
   // coarse grid triangulations are only required in case of the multigrid transfer
   // with global coarsening
@@ -403,11 +402,11 @@ MultigridPreconditionerBase<dim, Number>::get_mapping(unsigned int const h_level
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                               operator_is_singular,
-  PeriodicFacePairs *                      periodic_face_pairs_in,
-  FiniteElement<dim> const &               fe,
-  parallel::TriangulationBase<dim> const * tria,
-  Map const *                              dirichlet_bc_in)
+  bool const                 operator_is_singular,
+  PeriodicFacePairs *        periodic_face_pairs_in,
+  FiniteElement<dim> const & fe,
+  Triangulation<dim> const * tria,
+  Map const *                dirichlet_bc_in)
 {
   bool const is_dg = (fe.dofs_per_vertex == 0);
 
@@ -448,7 +447,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   bool                                                                 is_singular,
   PeriodicFacePairs &                                                  periodic_face_pairs,
   FiniteElement<dim> const &                                           fe,
-  parallel::TriangulationBase<dim> const *                             tria,
+  Triangulation<dim> const *                                           tria,
   Map const &                                                          dirichlet_bc,
   std::vector<MGLevelInfo> &                                           level_info,
   std::vector<MGDoFHandlerIdentifier> &                                p_levels,

@@ -37,14 +37,14 @@ MultigridPreconditioner<dim, Number, n_components>::MultigridPreconditioner(
 template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
-  MultigridData const &                    mg_data,
-  const parallel::TriangulationBase<dim> * tria,
-  const FiniteElement<dim> &               fe,
-  std::shared_ptr<Mapping<dim> const>      mapping,
-  LaplaceOperatorData<rank, dim> const &   data_in,
-  bool const                               mesh_is_moving,
-  Map const *                              dirichlet_bc,
-  PeriodicFacePairs *                      periodic_face_pairs)
+  MultigridData const &                  mg_data,
+  const Triangulation<dim> *             tria,
+  const FiniteElement<dim> &             fe,
+  std::shared_ptr<Mapping<dim> const>    mapping,
+  LaplaceOperatorData<rank, dim> const & data_in,
+  bool const                             mesh_is_moving,
+  Map const *                            dirichlet_bc,
+  PeriodicFacePairs *                    periodic_face_pairs)
 {
   data = data_in;
 

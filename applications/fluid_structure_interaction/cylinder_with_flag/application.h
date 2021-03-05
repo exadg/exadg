@@ -407,11 +407,11 @@ public:
   }
 
   void
-  create_grid_fluid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                    PeriodicFaces &                                   periodic_faces,
-                    unsigned int const                                n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &                   mapping,
-                    unsigned int const                                mapping_degree)
+  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
+                    PeriodicFaces &                     periodic_faces,
+                    unsigned int const                  n_refine_space,
+                    std::shared_ptr<Mapping<dim>> &     mapping,
+                    unsigned int const                  mapping_degree)
   {
     (void)periodic_faces;
 
@@ -889,11 +889,11 @@ public:
   }
 
   void
-  create_grid_structure(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                        PeriodicFaces &                                   periodic_faces,
-                        unsigned int const                                n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &                   mapping,
-                        unsigned int const                                mapping_degree)
+  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
+                        PeriodicFaces &                     periodic_faces,
+                        unsigned int const                  n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &     mapping,
+                        unsigned int const                  mapping_degree)
   {
     (void)periodic_faces;
 

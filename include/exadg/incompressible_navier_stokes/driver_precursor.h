@@ -80,7 +80,7 @@ private:
    */
 
   // triangulation
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation_pre, triangulation;
+  std::shared_ptr<Triangulation<dim>> triangulation_pre, triangulation;
 
   // mapping
   std::shared_ptr<Mapping<dim>> mapping_pre, mapping;

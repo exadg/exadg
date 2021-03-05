@@ -140,11 +140,11 @@ public:
   }
 
   void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              PeriodicFaces &                                   periodic_faces,
-              unsigned int const                                n_refine_space,
-              std::shared_ptr<Mapping<dim>> &                   mapping,
-              unsigned int const                                mapping_degree)
+  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
+              PeriodicFaces &                     periodic_faces,
+              unsigned int const                  n_refine_space,
+              std::shared_ptr<Mapping<dim>> &     mapping,
+              unsigned int const                  mapping_degree)
   {
     double const left = -1.0, right = 1.0;
     double const deformation = 0.1;

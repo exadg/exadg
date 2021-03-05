@@ -60,14 +60,14 @@ public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm);
 
   void
-  initialize(MultigridData const &                    mg_data,
-             const parallel::TriangulationBase<dim> * tria,
-             const FiniteElement<dim> &               fe,
-             std::shared_ptr<Mapping<dim> const>      mapping,
-             LaplaceOperatorData<rank, dim> const &   data_in,
-             bool const                               mesh_is_moving,
-             Map const *                              dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                      periodic_face_pairs = nullptr);
+  initialize(MultigridData const &                  mg_data,
+             const Triangulation<dim> *             tria,
+             const FiniteElement<dim> &             fe,
+             std::shared_ptr<Mapping<dim> const>    mapping,
+             LaplaceOperatorData<rank, dim> const & data_in,
+             bool const                             mesh_is_moving,
+             Map const *                            dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                    periodic_face_pairs = nullptr);
 
   void
   update() override;

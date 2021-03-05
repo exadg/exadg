@@ -465,8 +465,8 @@ public:
   }
 
   void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              unsigned int const                                n_refine_space,
+  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
+              unsigned int const                  n_refine_space,
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {

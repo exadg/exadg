@@ -65,7 +65,7 @@ private:
     PeriodicFaces;
 
 public:
-  Operator(parallel::TriangulationBase<dim> const &             triangulation,
+  Operator(Triangulation<dim> const &                           triangulation,
            std::shared_ptr<Mapping<dim> const>                  mapping,
            unsigned int const                                   degree,
            PeriodicFaces const                                  periodic_face_pairs,

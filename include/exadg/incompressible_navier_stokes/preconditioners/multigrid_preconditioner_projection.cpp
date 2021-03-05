@@ -38,14 +38,14 @@ MultigridPreconditionerProjection<dim, Number>::MultigridPreconditionerProjectio
 template<int dim, typename Number>
 void
 MultigridPreconditionerProjection<dim, Number>::initialize(
-  MultigridData const &                    mg_data,
-  parallel::TriangulationBase<dim> const * tria,
-  FiniteElement<dim> const &               fe,
-  std::shared_ptr<Mapping<dim> const>      mapping,
-  PDEOperator const &                      pde_operator,
-  bool const                               mesh_is_moving,
-  Map const *                              dirichlet_bc,
-  PeriodicFacePairs *                      periodic_face_pairs)
+  MultigridData const &               mg_data,
+  Triangulation<dim> const *          tria,
+  FiniteElement<dim> const &          fe,
+  std::shared_ptr<Mapping<dim> const> mapping,
+  PDEOperator const &                 pde_operator,
+  bool const                          mesh_is_moving,
+  Map const *                         dirichlet_bc,
+  PeriodicFacePairs *                 periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 

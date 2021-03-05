@@ -146,7 +146,7 @@ private:
   InputParameters param;
 
   // triangulation
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+  std::shared_ptr<Triangulation<dim>> triangulation;
 
   // mapping
   std::shared_ptr<Mapping<dim>> mapping;

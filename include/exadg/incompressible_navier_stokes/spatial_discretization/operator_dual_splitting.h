@@ -56,9 +56,9 @@ public:
    * Constructor.
    */
   OperatorDualSplitting(
-    parallel::TriangulationBase<dim> const & triangulation,
-    std::shared_ptr<Mapping<dim> const>      mapping,
-    unsigned int const                       degree_u,
+    Triangulation<dim> const &          triangulation,
+    std::shared_ptr<Mapping<dim> const> mapping,
+    unsigned int const                  degree_u,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs,
     std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
