@@ -90,11 +90,11 @@ public:
   set_input_parameters_fluid(IncNS::InputParameters & parameters) = 0;
 
   virtual void
-  create_grid_fluid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                    PeriodicFaces &                                   periodic_faces,
-                    unsigned int const                                n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &                   mapping,
-                    unsigned int const                                mapping_degree) = 0;
+  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
+                    PeriodicFaces &                     periodic_faces,
+                    unsigned int const                  n_refine_space,
+                    std::shared_ptr<Mapping<dim>> &     mapping,
+                    unsigned int const                  mapping_degree) = 0;
 
   // currently required for test cases with analytical mesh movement
   virtual std::shared_ptr<Function<dim>>
@@ -148,11 +148,11 @@ public:
   set_input_parameters_structure(Structure::InputParameters & parameters) = 0;
 
   virtual void
-  create_grid_structure(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                        PeriodicFaces &                                   periodic_faces,
-                        unsigned int const                                n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &                   mapping,
-                        unsigned int const                                mapping_degree) = 0;
+  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
+                        PeriodicFaces &                     periodic_faces,
+                        unsigned int const                  n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &     mapping,
+                        unsigned int const                  mapping_degree) = 0;
 
   virtual void
   set_boundary_conditions_structure(

@@ -65,15 +65,15 @@ public:
    *  This function initializes the multigrid preconditioner.
    */
   void
-  initialize(MultigridData const &                    mg_data,
-             parallel::TriangulationBase<dim> const * tria,
-             FiniteElement<dim> const &               fe,
-             std::shared_ptr<Mapping<dim> const>      mapping,
-             PDEOperator const &                      pde_operator,
-             MultigridOperatorType const &            mg_operator_type,
-             bool const                               mesh_is_moving,
-             Map const *                              dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                      periodic_face_pairs = nullptr);
+  initialize(MultigridData const &               mg_data,
+             Triangulation<dim> const *          tria,
+             FiniteElement<dim> const &          fe,
+             std::shared_ptr<Mapping<dim> const> mapping,
+             PDEOperator const &                 pde_operator,
+             MultigridOperatorType const &       mg_operator_type,
+             bool const                          mesh_is_moving,
+             Map const *                         dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                 periodic_face_pairs = nullptr);
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -94,8 +94,8 @@ private:
   initialize_dof_handler_and_constraints(bool const                 operator_is_singular,
                                          PeriodicFacePairs *        periodic_face_pairs,
                                          FiniteElement<dim> const & fe,
-                                         parallel::TriangulationBase<dim> const * tria,
-                                         Map const * dirichlet_bc) override;
+                                         Triangulation<dim> const * tria,
+                                         Map const *                dirichlet_bc) override;
 
   void
   initialize_transfer_operators() override;

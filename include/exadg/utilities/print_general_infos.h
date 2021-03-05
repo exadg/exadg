@@ -118,9 +118,9 @@ print_matrixfree_info(ConditionalOStream const & pcout)
 // print grid info
 template<int dim>
 inline void
-print_grid_data(ConditionalOStream const &               pcout,
-                unsigned int const                       n_refine_space,
-                parallel::TriangulationBase<dim> const & triangulation)
+print_grid_data(ConditionalOStream const & pcout,
+                unsigned int const         n_refine_space,
+                Triangulation<dim> const & triangulation)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl

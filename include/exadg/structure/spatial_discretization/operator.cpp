@@ -39,7 +39,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  parallel::TriangulationBase<dim> &             triangulation_in,
+  Triangulation<dim> &                           triangulation_in,
   std::shared_ptr<Mapping<dim> const>            mapping_in,
   unsigned int const &                           degree_in,
   PeriodicFaces const &                          periodic_face_pairs_in,
@@ -339,10 +339,6 @@ Operator<dim, Number>::initialize_preconditioner()
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
     if(param.large_deformation)
     {
       typedef MultigridPreconditioner<dim, Number> Multigrid;
@@ -352,8 +348,8 @@ Operator<dim, Number>::initialize_preconditioner()
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
       mg_preconditioner->initialize(param.multigrid_data,
-                                    tria,
-                                    fe,
+                                    &dof_handler.get_triangulation(),
+                                    dof_handler.get_fe(),
                                     mapping,
                                     elasticity_operator_nonlinear,
                                     true,
@@ -369,8 +365,8 @@ Operator<dim, Number>::initialize_preconditioner()
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
       mg_preconditioner->initialize(param.multigrid_data,
-                                    tria,
-                                    fe,
+                                    &dof_handler.get_triangulation(),
+                                    dof_handler.get_fe(),
                                     mapping,
                                     elasticity_operator_linear,
                                     false,

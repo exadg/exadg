@@ -81,11 +81,11 @@ public:
   }
 
   void
-  create_grid_fluid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                    PeriodicFaces &                                   periodic_faces,
-                    unsigned int const                                n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &                   mapping,
-                    unsigned int const                                mapping_degree)
+  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
+                    PeriodicFaces &                     periodic_faces,
+                    unsigned int const                  n_refine_space,
+                    std::shared_ptr<Mapping<dim>> &     mapping,
+                    unsigned int const                  mapping_degree)
   {
     // to avoid warnings (unused variable) use ...
     (void)triangulation;
@@ -190,11 +190,11 @@ public:
   }
 
   void
-  create_grid_structure(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                        PeriodicFaces &                                   periodic_faces,
-                        unsigned int const                                n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &                   mapping,
-                        unsigned int const                                mapping_degree)
+  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
+                        PeriodicFaces &                     periodic_faces,
+                        unsigned int const                  n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &     mapping,
+                        unsigned int const                  mapping_degree)
   {
     (void)triangulation;
     (void)periodic_faces;

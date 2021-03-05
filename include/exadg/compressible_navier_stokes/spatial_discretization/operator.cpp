@@ -35,7 +35,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  parallel::TriangulationBase<dim> const &       triangulation_in,
+  Triangulation<dim> const &                     triangulation_in,
   std::shared_ptr<Mapping<dim> const>            mapping_in,
   unsigned int const                             degree_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,

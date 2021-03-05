@@ -142,10 +142,10 @@ private:
 
   SmartPointer<DoFHandler<dim> const> dof_handler;
 
-  std::shared_ptr<VectorType>                       velocity_full;
-  std::shared_ptr<parallel::TriangulationBase<dim>> tria_full;
-  std::shared_ptr<FESystem<dim>>                    fe_full;
-  std::shared_ptr<DoFHandler<dim>>                  dof_handler_full;
+  std::shared_ptr<VectorType>         velocity_full;
+  std::shared_ptr<Triangulation<dim>> tria_full;
+  std::shared_ptr<FESystem<dim>>      fe_full;
+  std::shared_ptr<DoFHandler<dim>>    dof_handler_full;
 };
 } // namespace ExaDG
 

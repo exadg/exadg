@@ -148,7 +148,7 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   // triangulation
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+  std::shared_ptr<Triangulation<dim>> triangulation;
 
   // static mapping
   std::shared_ptr<Mapping<dim>> static_mapping;

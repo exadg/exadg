@@ -41,7 +41,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  parallel::TriangulationBase<dim> const &       triangulation_in,
+  Triangulation<dim> const &                     triangulation_in,
   std::shared_ptr<Mapping<dim> const>            mapping_in,
   unsigned int const                             degree_in,
   PeriodicFaces const                            periodic_face_pairs_in,
@@ -455,17 +455,12 @@ Operator<dim, Number>::initialize_preconditioner()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
-
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
     if(param.mg_operator_type == MultigridOperatorType::ReactionConvection ||
        param.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
-        unsigned int const degree_scalar = fe.degree;
+        unsigned int const degree_scalar = dof_handler.get_fe().degree;
         unsigned int const degree_velocity =
           matrix_free_data->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
         AssertThrow(
@@ -479,8 +474,8 @@ Operator<dim, Number>::initialize_preconditioner()
     CombinedOperatorData<dim> const & data = combined_operator.get_data();
 
     mg_preconditioner->initialize(mg_data,
-                                  tria,
-                                  fe,
+                                  &dof_handler.get_triangulation(),
+                                  dof_handler.get_fe(),
                                   mapping,
                                   combined_operator,
                                   param.mg_operator_type,

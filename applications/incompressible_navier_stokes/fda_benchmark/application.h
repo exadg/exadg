@@ -440,11 +440,11 @@ public:
   }
 
   void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              PeriodicFaces &                                   periodic_faces,
-              unsigned int const                                n_refine_space,
-              std::shared_ptr<Mapping<dim>> &                   mapping,
-              unsigned int const                                mapping_degree)
+  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
+              PeriodicFaces &                     periodic_faces,
+              unsigned int const                  n_refine_space,
+              std::shared_ptr<Mapping<dim>> &     mapping,
+              unsigned int const                  mapping_degree)
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
                                                        n_refine_space,
@@ -454,11 +454,11 @@ public:
   }
 
   void
-  create_grid_precursor(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                        PeriodicFaces &                                   periodic_faces,
-                        unsigned int const                                n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &                   mapping,
-                        unsigned int const                                mapping_degree)
+  create_grid_precursor(std::shared_ptr<Triangulation<dim>> triangulation,
+                        PeriodicFaces &                     periodic_faces,
+                        unsigned int const                  n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &     mapping,
+                        unsigned int const                  mapping_degree)
   {
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);

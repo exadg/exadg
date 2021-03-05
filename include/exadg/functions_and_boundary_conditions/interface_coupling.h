@@ -47,12 +47,12 @@ public:
   /*
    * Constructor.
    */
-  InterfaceCommunicator(const std::vector<Point<spacedim>> &               quadrature_points,
-                        const parallel::TriangulationBase<dim, spacedim> & tria,
-                        const Mapping<dim, spacedim> &                     mapping,
-                        double const                                       tolerance,
-                        const std::vector<bool> &                          marked_vertices,
-                        std::shared_ptr<GridTools::Cache<dim, dim>> const  cache)
+  InterfaceCommunicator(const std::vector<Point<spacedim>> &              quadrature_points,
+                        const Triangulation<dim, spacedim> &              tria,
+                        const Mapping<dim, spacedim> &                    mapping,
+                        double const                                      tolerance,
+                        const std::vector<bool> &                         marked_vertices,
+                        std::shared_ptr<GridTools::Cache<dim, dim>> const cache)
     : comm(tria.get_communicator())
   {
     // create bounding boxed of local active cells
@@ -430,15 +430,15 @@ public:
   }
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>                matrix_free_dst_in,
-        unsigned int const                                      dof_index_dst_in,
-        std::vector<quad_index> const &                         quad_indices_dst_in,
-        MapBoundaryCondition const &                            map_bc_in,
-        std::shared_ptr<parallel::TriangulationBase<dim>> const triangulation_src_in,
-        DoFHandler<dim> const &                                 dof_handler_src_in,
-        Mapping<dim> const &                                    mapping_src_in,
-        VectorType const &                                      dof_vector_src_in,
-        double const                                            tolerance)
+  setup(std::shared_ptr<MatrixFree<dim, Number>>  matrix_free_dst_in,
+        unsigned int const                        dof_index_dst_in,
+        std::vector<quad_index> const &           quad_indices_dst_in,
+        MapBoundaryCondition const &              map_bc_in,
+        std::shared_ptr<Triangulation<dim>> const triangulation_src_in,
+        DoFHandler<dim> const &                   dof_handler_src_in,
+        Mapping<dim> const &                      mapping_src_in,
+        VectorType const &                        dof_vector_src_in,
+        double const                              tolerance)
   {
     matrix_free_dst   = matrix_free_dst_in;
     dof_index_dst     = dof_index_dst_in;
@@ -695,9 +695,9 @@ private:
   /*
    * src-side
    */
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation_src;
-  DoFHandler<dim> const *                           dof_handler_src;
-  Mapping<dim> const *                              mapping_src;
+  std::shared_ptr<Triangulation<dim>> triangulation_src;
+  DoFHandler<dim> const *             dof_handler_src;
+  Mapping<dim> const *                mapping_src;
 
   mutable std::map<quad_index, std::map<mpi_rank, ArrayQuadraturePoints>> map_q_points_src;
   mutable std::map<quad_index, std::map<mpi_rank, ArrayVectorCache>>      map_cache_src;

@@ -36,9 +36,9 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
-  parallel::TriangulationBase<dim> const & triangulation_in,
-  std::shared_ptr<Mapping<dim> const>      mapping_in,
-  unsigned int const                       degree_u_in,
+  Triangulation<dim> const &          triangulation_in,
+  std::shared_ptr<Mapping<dim> const> mapping_in,
+  unsigned int const                  degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -478,14 +478,9 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
   auto & dof_handler = this->get_dof_handler_u();
-
-  parallel::TriangulationBase<dim> const * tria =
-    dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
-  FiniteElement<dim> const & fe = dof_handler.get_fe();
-
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
-                                tria,
-                                fe,
+                                &dof_handler.get_triangulation(),
+                                dof_handler.get_fe(),
                                 this->mapping,
                                 this->momentum_operator,
                                 this->param.multigrid_operator_type_velocity_block,
@@ -609,14 +604,9 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
     std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
 
   auto & dof_handler = this->get_dof_handler_p();
-
-  parallel::TriangulationBase<dim> const * tria =
-    dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
-  const FiniteElement<dim> & fe = dof_handler.get_fe();
-
   mg_preconditioner->initialize(mg_data,
-                                tria,
-                                fe,
+                                &dof_handler.get_triangulation(),
+                                dof_handler.get_fe(),
                                 this->mapping,
                                 laplace_operator_data,
                                 this->param.ale_formulation,

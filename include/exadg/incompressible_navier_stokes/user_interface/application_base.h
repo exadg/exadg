@@ -81,11 +81,11 @@ public:
   set_input_parameters(InputParameters & parameters) = 0;
 
   virtual void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              PeriodicFaces &                                   periodic_faces,
-              unsigned int const                                n_refine_space,
-              std::shared_ptr<Mapping<dim>> &                   mapping,
-              unsigned int const                                mapping_degree) = 0;
+  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
+              PeriodicFaces &                     periodic_faces,
+              unsigned int const                  n_refine_space,
+              std::shared_ptr<Mapping<dim>> &     mapping,
+              unsigned int const                  mapping_degree) = 0;
 
   virtual void
   set_boundary_conditions(
@@ -174,11 +174,11 @@ public:
   set_input_parameters_precursor(InputParameters & parameters) = 0;
 
   virtual void
-  create_grid_precursor(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                        PeriodicFaces &                                   periodic_faces,
-                        unsigned int const                                n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &                   mapping,
-                        unsigned int const                                mapping_degree) = 0;
+  create_grid_precursor(std::shared_ptr<Triangulation<dim>> triangulation,
+                        PeriodicFaces &                     periodic_faces,
+                        unsigned int const                  n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &     mapping,
+                        unsigned int const                  mapping_degree) = 0;
 
   virtual void
   set_boundary_conditions_precursor(

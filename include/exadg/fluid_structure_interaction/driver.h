@@ -318,7 +318,7 @@ private:
   Structure::InputParameters structure_param;
 
   // triangulation
-  std::shared_ptr<parallel::TriangulationBase<dim>> structure_triangulation;
+  std::shared_ptr<Triangulation<dim>> structure_triangulation;
 
   // mapping
   std::shared_ptr<Mapping<dim>> structure_mapping;
@@ -355,7 +355,7 @@ private:
   /****************************************** FLUID *******************************************/
 
   // triangulation
-  std::shared_ptr<parallel::TriangulationBase<dim>> fluid_triangulation;
+  std::shared_ptr<Triangulation<dim>> fluid_triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     fluid_periodic_faces;
 

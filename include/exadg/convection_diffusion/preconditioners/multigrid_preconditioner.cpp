@@ -44,11 +44,11 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::initialize(MultigridData const &                    mg_data,
-                                                 parallel::TriangulationBase<dim> const * tria,
-                                                 FiniteElement<dim> const &               fe,
-                                                 std::shared_ptr<Mapping<dim> const>      mapping,
-                                                 PDEOperator const &           pde_operator,
+MultigridPreconditioner<dim, Number>::initialize(MultigridData const &               mg_data,
+                                                 Triangulation<dim> const *          tria,
+                                                 FiniteElement<dim> const &          fe,
+                                                 std::shared_ptr<Mapping<dim> const> mapping,
+                                                 PDEOperator const &                 pde_operator,
                                                  MultigridOperatorType const & mg_operator_type,
                                                  bool const                    mesh_is_moving,
                                                  Map const *                   dirichlet_bc,
@@ -201,11 +201,11 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                               operator_is_singular,
-  PeriodicFacePairs *                      periodic_face_pairs,
-  FiniteElement<dim> const &               fe,
-  parallel::TriangulationBase<dim> const * tria,
-  Map const *                              dirichlet_bc)
+  bool const                 operator_is_singular,
+  PeriodicFacePairs *        periodic_face_pairs,
+  FiniteElement<dim> const & fe,
+  Triangulation<dim> const * tria,
+  Map const *                dirichlet_bc)
 {
   Base::initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);

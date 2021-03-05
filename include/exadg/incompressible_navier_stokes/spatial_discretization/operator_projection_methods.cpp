@@ -32,9 +32,9 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
-  parallel::TriangulationBase<dim> const & triangulation_in,
-  std::shared_ptr<Mapping<dim> const>      mapping_in,
-  unsigned int const                       degree_u_in,
+  Triangulation<dim> const &          triangulation_in,
+  std::shared_ptr<Mapping<dim> const> mapping_in,
+  unsigned int const                  degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -183,14 +183,10 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner_pressure_poisson);
 
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(
-        &this->get_dof_handler_p().get_triangulation());
-    const FiniteElement<dim> & fe = this->get_dof_handler_p().get_fe();
-
+    auto & dof_handler = this->get_dof_handler_p();
     mg_preconditioner->initialize(mg_data,
-                                  tria,
-                                  fe,
+                                  &dof_handler.get_triangulation(),
+                                  dof_handler.get_fe(),
                                   this->mapping,
                                   laplace_operator.get_data(),
                                   this->param.ale_formulation,

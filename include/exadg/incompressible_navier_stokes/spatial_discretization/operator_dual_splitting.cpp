@@ -33,9 +33,9 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorDualSplitting<dim, Number>::OperatorDualSplitting(
-  parallel::TriangulationBase<dim> const & triangulation_in,
-  std::shared_ptr<Mapping<dim> const>      mapping_in,
-  unsigned int const                       degree_u_in,
+  Triangulation<dim> const &          triangulation_in,
+  std::shared_ptr<Mapping<dim> const> mapping_in,
+  unsigned int const                  degree_u_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -124,15 +124,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
       std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
 
     auto & dof_handler = this->get_dof_handler_u();
-
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
-
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  tria,
-                                  fe,
+                                  &dof_handler.get_triangulation(),
+                                  dof_handler.get_fe(),
                                   this->mapping,
                                   this->momentum_operator,
                                   MultigridOperatorType::ReactionDiffusion,

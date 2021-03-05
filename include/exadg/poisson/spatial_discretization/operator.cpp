@@ -42,7 +42,7 @@ using namespace dealii;
 
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
-  parallel::TriangulationBase<dim> const &             triangulation_in,
+  Triangulation<dim> const &                           triangulation_in,
   std::shared_ptr<Mapping<dim> const>                  mapping_in,
   unsigned int const                                   degree_in,
   PeriodicFaces const                                  periodic_face_pairs_in,
@@ -253,19 +253,14 @@ Operator<dim, Number, n_components>::setup_solver()
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(
-        &this->dof_handler.get_triangulation());
-    const FiniteElement<dim> & fe = this->dof_handler.get_fe();
-
     mg_preconditioner->initialize(mg_data,
-                                  tria,
-                                  fe,
+                                  &dof_handler.get_triangulation(),
+                                  dof_handler.get_fe(),
                                   mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   &laplace_operator.get_data().bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
+                                  &periodic_face_pairs);
   }
   else
   {

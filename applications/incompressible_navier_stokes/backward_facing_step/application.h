@@ -383,11 +383,11 @@ public:
   }
 
   void
-  create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-              PeriodicFaces &                                   periodic_faces,
-              unsigned int const                                n_refine_space,
-              std::shared_ptr<Mapping<dim>> &                   mapping,
-              unsigned int const                                mapping_degree)
+  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
+              PeriodicFaces &                     periodic_faces,
+              unsigned int const                  n_refine_space,
+              std::shared_ptr<Mapping<dim>> &     mapping,
+              unsigned int const                  mapping_degree)
   {
     Geometry::create_grid(triangulation, n_refine_space, periodic_faces);
 
@@ -395,11 +395,11 @@ public:
   }
 
   void
-  create_grid_precursor(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                        PeriodicFaces &                                   periodic_faces,
-                        unsigned int const                                n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &                   mapping,
-                        unsigned int const                                mapping_degree)
+  create_grid_precursor(std::shared_ptr<Triangulation<dim>> triangulation,
+                        PeriodicFaces &                     periodic_faces,
+                        unsigned int const                  n_refine_space,
+                        std::shared_ptr<Mapping<dim>> &     mapping,
+                        unsigned int const                  mapping_degree)
   {
     Geometry::create_grid_precursor(triangulation,
                                     n_refine_space + additional_refinements_precursor,
