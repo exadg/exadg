@@ -92,9 +92,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter
 <tr class="memitem:ae427d7cc9f2426fd93e6ca2682e13497"><td class="memItemLeft" align="right" valign="top"><a id="ae427d7cc9f2426fd93e6ca2682e13497"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters_fluid</b> (<a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">IncNS::InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:ae427d7cc9f2426fd93e6ca2682e13497"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a88698a6ba3f4a9f7d90ffa2f0507a300"><td class="memItemLeft" align="right" valign="top"><a id="a88698a6ba3f4a9f7d90ffa2f0507a300"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_fluid</b> (std::shared_ptr&lt; parallel::TriangulationBase&lt; dim &gt;&gt; triangulation, PeriodicFaces &amp;periodic_faces, unsigned int const n_refine_space, std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; &amp;mapping, unsigned int const mapping_degree)=0</td></tr>
-<tr class="separator:a88698a6ba3f4a9f7d90ffa2f0507a300"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a848be8c77c70d03d4d4bb610122e34eb"><td class="memItemLeft" align="right" valign="top"><a id="a848be8c77c70d03d4d4bb610122e34eb"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_fluid</b> (std::shared_ptr&lt; Triangulation&lt; dim &gt;&gt; triangulation, PeriodicFaces &amp;periodic_faces, unsigned int const n_refine_space, std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; &amp;mapping, unsigned int const mapping_degree)=0</td></tr>
+<tr class="separator:a848be8c77c70d03d4d4bb610122e34eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75d06788ec490b19f8c412e278525aeb"><td class="memItemLeft" align="right" valign="top"><a id="a75d06788ec490b19f8c412e278525aeb"></a>
 virtual std::shared_ptr&lt; Function&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>set_mesh_movement_function_fluid</b> ()</td></tr>
 <tr class="separator:a75d06788ec490b19f8c412e278525aeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,9 +131,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_field_fun
 <tr class="memitem:a43cd2d4c6e85d9df6ef5d0514dffa10f"><td class="memItemLeft" align="right" valign="top"><a id="a43cd2d4c6e85d9df6ef5d0514dffa10f"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters_structure</b> (<a class="el" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:a43cd2d4c6e85d9df6ef5d0514dffa10f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aada48e8a47b4baebe68ea3fb794f1e36"><td class="memItemLeft" align="right" valign="top"><a id="aada48e8a47b4baebe68ea3fb794f1e36"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_structure</b> (std::shared_ptr&lt; parallel::TriangulationBase&lt; dim &gt;&gt; triangulation, PeriodicFaces &amp;periodic_faces, unsigned int const n_refine_space, std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; &amp;mapping, unsigned int const mapping_degree)=0</td></tr>
-<tr class="separator:aada48e8a47b4baebe68ea3fb794f1e36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae959e7201fdbd0121a411ac21b5c0c04"><td class="memItemLeft" align="right" valign="top"><a id="ae959e7201fdbd0121a411ac21b5c0c04"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_structure</b> (std::shared_ptr&lt; Triangulation&lt; dim &gt;&gt; triangulation, PeriodicFaces &amp;periodic_faces, unsigned int const n_refine_space, std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; &amp;mapping, unsigned int const mapping_degree)=0</td></tr>
+<tr class="separator:ae959e7201fdbd0121a411ac21b5c0c04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6336845811eb4b7a1ff56dfb5c2e59d5"><td class="memItemLeft" align="right" valign="top"><a id="a6336845811eb4b7a1ff56dfb5c2e59d5"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions_structure</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">Structure::BoundaryDescriptor</a>&lt; dim &gt;&gt; boundary_descriptor)=0</td></tr>
 <tr class="separator:a6336845811eb4b7a1ff56dfb5c2e59d5"><td class="memSeparator" colspan="2">&#160;</td></tr>

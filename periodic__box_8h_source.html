@@ -108,8 +108,8 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keywordtype">void</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;create_periodic_box(</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; triangulation,</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                n_refine_space,</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; triangulation,</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  n_refine_space,</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  std::vector&lt;GridTools::PeriodicFacePair&lt;<span class="keyword">typename</span> Triangulation&lt;dim&gt;::cell_iterator&gt;&gt; &amp;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                     periodic_faces,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_subdivisions,</div>

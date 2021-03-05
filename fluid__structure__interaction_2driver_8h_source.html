@@ -389,7 +389,7 @@ $(function() {
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> structure_param;</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="comment">// triangulation</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; structure_triangulation;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; structure_triangulation;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="comment">// mapping</span></div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; structure_mapping;</div>
@@ -426,7 +426,7 @@ $(function() {
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;<span class="comment">  /****************************************** FLUID *******************************************/</span></div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="comment">// triangulation</span></div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; fluid_triangulation;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; fluid_triangulation;</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    fluid_periodic_faces;</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>

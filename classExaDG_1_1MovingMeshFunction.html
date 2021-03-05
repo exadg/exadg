@@ -102,8 +102,8 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2fa9e18f7503e9091c0acbdb7a1690e9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshFunction.html#a2fa9e18f7503e9091c0acbdb7a1690e9">MovingMeshFunction</a> (std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; mapping, unsigned int const mapping_degree_q_cache, parallel::TriangulationBase&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Function&lt; dim &gt;&gt; const mesh_movement_function, double const start_time)</td></tr>
-<tr class="separator:a2fa9e18f7503e9091c0acbdb7a1690e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54a0235fe94566d123b0f43fc4ecf999"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshFunction.html#a54a0235fe94566d123b0f43fc4ecf999">MovingMeshFunction</a> (std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; mapping, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Function&lt; dim &gt;&gt; const mesh_movement_function, double const start_time)</td></tr>
+<tr class="separator:a54a0235fe94566d123b0f43fc4ecf999"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a509865f6e2ff220360295620f16e685b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshFunction.html#a509865f6e2ff220360295620f16e685b">update</a> (double const time, bool const print_solver_info, bool const print_wall_times) override</td></tr>
 <tr class="separator:a509865f6e2ff220360295620f16e685b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52cc6f9f03b2dbc4d64ad3f1a3e30905"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshFunction.html#a52cc6f9f03b2dbc4d64ad3f1a3e30905">initialize</a> (Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Function&lt; dim &gt;&gt; displacement_function)</td></tr>
@@ -154,8 +154,8 @@ class ExaDG::MovingMeshFunction&lt; dim, Number &gt;</h3>
 
 <p>Class for moving mesh problems based on mesh motions that can be described analytically via a Function&lt;dim&gt; object. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2fa9e18f7503e9091c0acbdb7a1690e9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2fa9e18f7503e9091c0acbdb7a1690e9">&#9670;&nbsp;</a></span>MovingMeshFunction()</h2>
+<a id="a54a0235fe94566d123b0f43fc4ecf999"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54a0235fe94566d123b0f43fc4ecf999">&#9670;&nbsp;</a></span>MovingMeshFunction()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -180,7 +180,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">parallel::TriangulationBase&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramtype">Triangulation&lt; dim &gt; const &amp;&#160;</td>
           <td class="paramname"><em>triangulation</em>, </td>
         </tr>
         <tr>

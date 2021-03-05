@@ -189,9 +189,9 @@ $(function() {
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="comment">// print grid info</span></div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;print_grid_data(ConditionalOStream <span class="keyword">const</span> &amp;               pcout,</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                       n_refine_space,</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                parallel::TriangulationBase&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation)</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;print_grid_data(ConditionalOStream <span class="keyword">const</span> &amp; pcout,</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>         n_refine_space,</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;                Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation)</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;{</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;  pcout &lt;&lt; std::endl</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Generating grid for &quot;</span> &lt;&lt; dim &lt;&lt; <span class="stringliteral">&quot;-dimensional problem:&quot;</span> &lt;&lt; std::endl</div>

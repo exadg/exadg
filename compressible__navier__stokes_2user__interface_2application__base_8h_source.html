@@ -147,11 +147,11 @@ $(function() {
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  set_input_parameters(<a class="code" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a> &amp; parameters) = 0;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  create_grid(std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; triangulation,</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;              PeriodicFaces &amp;                                   periodic_faces,</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                n_refine_space,</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;              std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;                   mapping,</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                mapping_degree) = 0;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  create_grid(std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; triangulation,</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;              PeriodicFaces &amp;                     periodic_faces,</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  n_refine_space,</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;              std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;     mapping,</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  mapping_degree) = 0;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  set_boundary_conditions(</div>

@@ -136,15 +136,15 @@ $(function() {
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">   *  This function initializes the multigrid preconditioner.</span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  initialize(<a class="code" href="structExaDG_1_1MultigridData.html">MultigridData</a> <span class="keyword">const</span> &amp;                    mg_data,</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;             parallel::TriangulationBase&lt;dim&gt; <span class="keyword">const</span> * tria,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;             FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp;               fe,</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;             std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;      mapping,</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;             <a class="code" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">PDEOperator</a> <span class="keyword">const</span> &amp;                      pde_operator,</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;             MultigridOperatorType <span class="keyword">const</span> &amp;            mg_operator_type,</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;             <span class="keywordtype">bool</span> <span class="keyword">const</span>                               mesh_is_moving,</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;             Map <span class="keyword">const</span> *                              dirichlet_bc        = <span class="keyword">nullptr</span>,</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;             PeriodicFacePairs *                      periodic_face_pairs = <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  initialize(<a class="code" href="structExaDG_1_1MultigridData.html">MultigridData</a> <span class="keyword">const</span> &amp;               mg_data,</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;             Triangulation&lt;dim&gt; <span class="keyword">const</span> *          tria,</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;             FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp;          fe,</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;             std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping,</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;             <a class="code" href="classExaDG_1_1ConvDiff_1_1CombinedOperator.html">PDEOperator</a> <span class="keyword">const</span> &amp;                 pde_operator,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;             MultigridOperatorType <span class="keyword">const</span> &amp;       mg_operator_type,</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;             <span class="keywordtype">bool</span> <span class="keyword">const</span>                          mesh_is_moving,</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;             Map <span class="keyword">const</span> *                         dirichlet_bc        = <span class="keyword">nullptr</span>,</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;             PeriodicFacePairs *                 periodic_face_pairs = <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="comment">   *  This function updates the multigrid preconditioner.</span></div>
@@ -165,8 +165,8 @@ $(function() {
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  initialize_dof_handler_and_constraints(<span class="keywordtype">bool</span> <span class="keyword">const</span>                 operator_is_singular,</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                         PeriodicFacePairs *        periodic_face_pairs,</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                                         FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe,</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                                         parallel::TriangulationBase&lt;dim&gt; <span class="keyword">const</span> * tria,</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                                         Map <span class="keyword">const</span> * dirichlet_bc) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                                         Triangulation&lt;dim&gt; <span class="keyword">const</span> * tria,</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                                         Map <span class="keyword">const</span> *                dirichlet_bc) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  initialize_transfer_operators() <span class="keyword">override</span>;</div>

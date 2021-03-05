@@ -176,9 +176,9 @@ $(function() {
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment">   * Constructor.</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  <a class="code" href="classExaDG_1_1IncNS_1_1OperatorPressureCorrection.html">OperatorPressureCorrection</a>(</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    parallel::TriangulationBase&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation,</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;      mapping,</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                       degree_u,</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;          triangulation,</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping,</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  degree_u,</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    std::vector&lt;GridTools::PeriodicFacePair&lt;<span class="keyword">typename</span> Triangulation&lt;dim&gt;::cell_iterator&gt;&gt; <span class="keyword">const</span></div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                                                    periodic_face_pairs,</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    std::shared_ptr&lt;<a class="code" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">BoundaryDescriptorU&lt;dim&gt;</a>&gt; <span class="keyword">const</span> boundary_descriptor_velocity,</div>

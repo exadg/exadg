@@ -161,11 +161,11 @@ $(function() {
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  set_input_parameters_fluid(<a class="code" href="classExaDG_1_1IncNS_1_1InputParameters.html">IncNS::InputParameters</a> &amp; parameters) = 0;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  create_grid_fluid(std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; triangulation,</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                    PeriodicFaces &amp;                                   periodic_faces,</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                n_refine_space,</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;                   mapping,</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                mapping_degree) = 0;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  create_grid_fluid(std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; triangulation,</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                    PeriodicFaces &amp;                     periodic_faces,</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  n_refine_space,</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                    std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;     mapping,</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  mapping_degree) = 0;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="comment">// currently required for test cases with analytical mesh movement</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Function&lt;dim&gt;&gt;</div>
@@ -219,11 +219,11 @@ $(function() {
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  set_input_parameters_structure(<a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> &amp; parameters) = 0;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  create_grid_structure(std::shared_ptr&lt;parallel::TriangulationBase&lt;dim&gt;&gt; triangulation,</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                        PeriodicFaces &amp;                                   periodic_faces,</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                n_refine_space,</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                        std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;                   mapping,</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                mapping_degree) = 0;</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  create_grid_structure(std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; triangulation,</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                        PeriodicFaces &amp;                     periodic_faces,</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  n_refine_space,</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                        std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; &amp;     mapping,</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  mapping_degree) = 0;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  set_boundary_conditions_structure(</div>
