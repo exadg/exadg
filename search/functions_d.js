@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['_7ebijection_656',['~Bijection',['../classdealspectrum_1_1Bijection.html#a8af576118e0bb339245e8596f82e613a',1,'dealspectrum::Bijection']]],
-  ['_7epermutator_657',['~Permutator',['../classdealspectrum_1_1Permutator.html#a916c5f88e9231db447a5e7022a9cfb2a',1,'dealspectrum::Permutator']]],
-  ['_7espectralanalysis_658',['~SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a061796e80030ee2628a40e0f5504d215',1,'dealspectrum::SpectralAnalysis']]]
+  ['update_673',['update',['../classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b',1,'ExaDG::MovingMeshBase::update()'],['../classExaDG_1_1MovingMeshElasticity.html#ab7a31223f91543a52f60cfa12aef7847',1,'ExaDG::MovingMeshElasticity::update()'],['../classExaDG_1_1MovingMeshFunction.html#a509865f6e2ff220360295620f16e685b',1,'ExaDG::MovingMeshFunction::update()'],['../classExaDG_1_1MovingMeshPoisson.html#aa2d3b6e44fc4185ad79dd2661c515991',1,'ExaDG::MovingMeshPoisson::update()']]]
 ];

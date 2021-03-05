@@ -75,18 +75,18 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a63583c3b5ede862ed9d6d1324148622e"><td class="memItemLeft" align="right" valign="top"><a id="a63583c3b5ede862ed9d6d1324148622e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Driver</b> (MPI_Comm const &amp;comm)</td></tr>
-<tr class="separator:a63583c3b5ede862ed9d6d1324148622e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3face10a63079688fa0ff14f0c33990f"><td class="memItemLeft" align="right" valign="top"><a id="a3face10a63079688fa0ff14f0c33990f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, Number &gt;&gt; application, unsigned int const degree, unsigned int const refine_space, unsigned int const refine_time, bool const is_test, bool const is_throughput_study)</td></tr>
-<tr class="separator:a3face10a63079688fa0ff14f0c33990f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2e28f2341683741eba26a00c9e4693ff"><td class="memItemLeft" align="right" valign="top"><a id="a2e28f2341683741eba26a00c9e4693ff"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>print_performance_results</b> (double const total_time, bool const is_test) const</td></tr>
-<tr class="separator:a2e28f2341683741eba26a00c9e4693ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a855e0ff2878ea80c3762ec5db76bd2cb"><td class="memItemLeft" align="right" valign="top"><a id="a855e0ff2878ea80c3762ec5db76bd2cb"></a>
-std::tuple&lt; unsigned int, types::global_dof_index, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>apply_operator</b> (unsigned int const degree, std::string const &amp;operator_type_string, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer, bool const is_test) const</td></tr>
-<tr class="separator:a855e0ff2878ea80c3762ec5db76bd2cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9febd9ec4ba0f0f2038f6f6ae21d93ad"><td class="memItemLeft" align="right" valign="top"><a id="a9febd9ec4ba0f0f2038f6f6ae21d93ad"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Driver</b> (MPI_Comm const &amp;comm, bool const is_test)</td></tr>
+<tr class="separator:a9febd9ec4ba0f0f2038f6f6ae21d93ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a855b06592e054a3e8e1f2f7938c6411e"><td class="memItemLeft" align="right" valign="top"><a id="a855b06592e054a3e8e1f2f7938c6411e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, Number &gt;&gt; application, unsigned int const degree, unsigned int const refine_space, unsigned int const refine_time, bool const is_throughput_study)</td></tr>
+<tr class="separator:a855b06592e054a3e8e1f2f7938c6411e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa92a44d63bd4d62287bf88d9a6bff4c"><td class="memItemLeft" align="right" valign="top"><a id="afa92a44d63bd4d62287bf88d9a6bff4c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>print_performance_results</b> (double const total_time) const</td></tr>
+<tr class="separator:afa92a44d63bd4d62287bf88d9a6bff4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a667c4ee81c29dc68578c858d9789c7b9"><td class="memItemLeft" align="right" valign="top"><a id="a667c4ee81c29dc68578c858d9789c7b9"></a>
+std::tuple&lt; unsigned int, types::global_dof_index, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>apply_operator</b> (unsigned int const degree, std::string const &amp;operator_type_string, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer) const</td></tr>
+<tr class="separator:a667c4ee81c29dc68578c858d9789c7b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3da5f1c23d1cc66a2b85d51a8ff2d832"><td class="memItemLeft" align="right" valign="top"><a id="a3da5f1c23d1cc66a2b85d51a8ff2d832"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> () const</td></tr>
 <tr class="separator:a3da5f1c23d1cc66a2b85d51a8ff2d832"><td class="memSeparator" colspan="2">&#160;</td></tr>

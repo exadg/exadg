@@ -106,9 +106,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a12f35f9d5ab25cecf669c2782c7e7fce"><td class="memItemLeft" align="right" valign="top"><a id="a12f35f9d5ab25cecf669c2782c7e7fce"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditionerBase</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a12f35f9d5ab25cecf669c2782c7e7fce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47bbdec0a4d874071f6ba86275a9e62a"><td class="memItemLeft" align="right" valign="top"><a id="a47bbdec0a4d874071f6ba86275a9e62a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, parallel::TriangulationBase&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, Mapping&lt; dim &gt; const &amp;mapping, bool const operator_is_singular=false, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
-<tr class="separator:a47bbdec0a4d874071f6ba86275a9e62a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97a8f090834b4d6b077fc136ee2e04f2"><td class="memItemLeft" align="right" valign="top"><a id="a97a8f090834b4d6b077fc136ee2e04f2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, parallel::TriangulationBase&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, bool const operator_is_singular=false, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
+<tr class="separator:a97a8f090834b4d6b077fc136ee2e04f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01f4c839b9f400f94ea99d1686eba171"><td class="memItemLeft" align="right" valign="top"><a id="a01f4c839b9f400f94ea99d1686eba171"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a01f4c839b9f400f94ea99d1686eba171"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,6 +139,9 @@ typedef LinearAlgebra::distributed::Vector&lt; MultigridNumber &gt;&#160;</td><t
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:ac1313f6ddb5bd31cc89bcdf3a52a9ac8"><td class="memItemLeft" align="right" valign="top"><a id="ac1313f6ddb5bd31cc89bcdf3a52a9ac8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_mapping</b> ()</td></tr>
+<tr class="separator:ac1313f6ddb5bd31cc89bcdf3a52a9ac8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add57813200587f248d9e8ef37bc6ab88"><td class="memItemLeft" align="right" valign="top"><a id="add57813200587f248d9e8ef37bc6ab88"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_matrix_free</b> ()</td></tr>
 <tr class="separator:add57813200587f248d9e8ef37bc6ab88"><td class="memSeparator" colspan="2">&#160;</td></tr>

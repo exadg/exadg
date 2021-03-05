@@ -261,7 +261,7 @@ $(function() {
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;  <a class="code" href="classExaDG_1_1IncNS_1_1OperatorCoupled.html">OperatorCoupled</a>(</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    parallel::TriangulationBase&lt;dim&gt; <span class="keyword">const</span> &amp; triangulation_in,</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                     mapping_in,</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;      mapping_in,</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                       degree_u_in,</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    std::vector&lt;GridTools::PeriodicFacePair&lt;<span class="keyword">typename</span> Triangulation&lt;dim&gt;::cell_iterator&gt;&gt; <span class="keyword">const</span></div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;                                                    periodic_face_pairs_in,</div>

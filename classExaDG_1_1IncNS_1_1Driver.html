@@ -75,21 +75,21 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a83d6e88ceb018fd01f6e71de6faca771"><td class="memItemLeft" align="right" valign="top"><a id="a83d6e88ceb018fd01f6e71de6faca771"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Driver</b> (MPI_Comm const &amp;comm)</td></tr>
-<tr class="separator:a83d6e88ceb018fd01f6e71de6faca771"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b5ebe44933f970628d32b6396e3e25e"><td class="memItemLeft" align="right" valign="top"><a id="a6b5ebe44933f970628d32b6396e3e25e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, Number &gt;&gt; application, unsigned int const degree, unsigned int const refine_space, unsigned int const refine_time, bool const is_test, bool const is_throughput_study)</td></tr>
-<tr class="separator:a6b5ebe44933f970628d32b6396e3e25e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb051a7b4c88cdc84136c43d84a28b39"><td class="memItemLeft" align="right" valign="top"><a id="afb051a7b4c88cdc84136c43d84a28b39"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Driver</b> (MPI_Comm const &amp;comm, bool const is_test)</td></tr>
+<tr class="separator:afb051a7b4c88cdc84136c43d84a28b39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2af481cb98d4bc06f9995bd3ed43f94a"><td class="memItemLeft" align="right" valign="top"><a id="a2af481cb98d4bc06f9995bd3ed43f94a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, Number &gt;&gt; application, unsigned int const degree, unsigned int const refine_space, unsigned int const refine_time, bool const is_throughput_study)</td></tr>
+<tr class="separator:a2af481cb98d4bc06f9995bd3ed43f94a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1f62fed079a7c17cc26b05bd4b4c308"><td class="memItemLeft" align="right" valign="top"><a id="af1f62fed079a7c17cc26b05bd4b4c308"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> () const</td></tr>
 <tr class="separator:af1f62fed079a7c17cc26b05bd4b4c308"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32ecf9f88cfaa8dd8340cfd5609f306d"><td class="memItemLeft" align="right" valign="top"><a id="a32ecf9f88cfaa8dd8340cfd5609f306d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>print_performance_results</b> (double const total_time, bool const is_test) const</td></tr>
-<tr class="separator:a32ecf9f88cfaa8dd8340cfd5609f306d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bbf1c1dd04d4370cadec4ec1683a1cf"><td class="memItemLeft" align="right" valign="top"><a id="a7bbf1c1dd04d4370cadec4ec1683a1cf"></a>
-std::tuple&lt; unsigned int, types::global_dof_index, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>apply_operator</b> (unsigned int const degree, std::string const &amp;operator_type, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer, bool const is_test) const</td></tr>
-<tr class="separator:a7bbf1c1dd04d4370cadec4ec1683a1cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1cc0711e2158c2811cad8257620e7ec2"><td class="memItemLeft" align="right" valign="top"><a id="a1cc0711e2158c2811cad8257620e7ec2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>print_performance_results</b> (double const total_time) const</td></tr>
+<tr class="separator:a1cc0711e2158c2811cad8257620e7ec2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14c09a5ea830dd904d27595562936b0f"><td class="memItemLeft" align="right" valign="top"><a id="a14c09a5ea830dd904d27595562936b0f"></a>
+std::tuple&lt; unsigned int, types::global_dof_index, double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>apply_operator</b> (unsigned int const degree, std::string const &amp;operator_type, unsigned int const n_repetitions_inner, unsigned int const n_repetitions_outer) const</td></tr>
+<tr class="separator:a14c09a5ea830dd904d27595562936b0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/incompressible_navier_stokes/<a class="el" href="incompressible__navier__stokes_2driver_8h_source.html">driver.h</a></li>

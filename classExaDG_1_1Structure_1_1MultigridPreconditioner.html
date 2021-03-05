@@ -136,9 +136,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:abbab30588037ef967b125cd6d482f68d"><td class="memItemLeft" align="right" valign="top"><a id="abbab30588037ef967b125cd6d482f68d"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditioner</b> (MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:abbab30588037ef967b125cd6d482f68d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29ca1706524cbabb78ebce0592a3f4b7"><td class="memItemLeft" align="right" valign="top"><a id="a29ca1706524cbabb78ebce0592a3f4b7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;mg_data, parallel::TriangulationBase&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, Mapping&lt; dim &gt; const &amp;mapping, <a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ElasticityOperatorBase</a>&lt; dim, Number &gt; const &amp;pde_operator, bool const nonlinear_operator, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
-<tr class="separator:a29ca1706524cbabb78ebce0592a3f4b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a518f1952ca411e301332ae136824bcf3"><td class="memItemLeft" align="right" valign="top"><a id="a518f1952ca411e301332ae136824bcf3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;mg_data, parallel::TriangulationBase&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, <a class="el" href="classExaDG_1_1Structure_1_1ElasticityOperatorBase.html">ElasticityOperatorBase</a>&lt; dim, Number &gt; const &amp;pde_operator, bool const nonlinear_operator, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
+<tr class="separator:a518f1952ca411e301332ae136824bcf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a343f06e390be4ed7f9ad687389fe8e15"><td class="memItemLeft" align="right" valign="top"><a id="a343f06e390be4ed7f9ad687389fe8e15"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> () override</td></tr>
 <tr class="separator:a343f06e390be4ed7f9ad687389fe8e15"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -146,9 +146,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> () overrid
 <tr class="memitem:a12f35f9d5ab25cecf669c2782c7e7fce inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a12f35f9d5ab25cecf669c2782c7e7fce"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MultigridPreconditionerBase</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a12f35f9d5ab25cecf669c2782c7e7fce inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47bbdec0a4d874071f6ba86275a9e62a inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a47bbdec0a4d874071f6ba86275a9e62a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, parallel::TriangulationBase&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, Mapping&lt; dim &gt; const &amp;mapping, bool const operator_is_singular=false, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
-<tr class="separator:a47bbdec0a4d874071f6ba86275a9e62a inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97a8f090834b4d6b077fc136ee2e04f2 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a97a8f090834b4d6b077fc136ee2e04f2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, parallel::TriangulationBase&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, bool const operator_is_singular=false, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
+<tr class="separator:a97a8f090834b4d6b077fc136ee2e04f2 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01f4c839b9f400f94ea99d1686eba171 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a01f4c839b9f400f94ea99d1686eba171"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a01f4c839b9f400f94ea99d1686eba171 inherit pub_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,6 +175,9 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 typedef LinearAlgebra::distributed::Vector&lt; MultigridNumber &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorTypeMG</b></td></tr>
 <tr class="separator:ae8187b824b8535e1a06dcdaa9cbd2944 inherit pro_types_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1MultigridPreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1MultigridPreconditionerBase.html">ExaDG::MultigridPreconditionerBase&lt; dim, Number &gt;</a></td></tr>
+<tr class="memitem:ac1313f6ddb5bd31cc89bcdf3a52a9ac8 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="ac1313f6ddb5bd31cc89bcdf3a52a9ac8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_mapping</b> ()</td></tr>
+<tr class="separator:ac1313f6ddb5bd31cc89bcdf3a52a9ac8 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add57813200587f248d9e8ef37bc6ab88 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="add57813200587f248d9e8ef37bc6ab88"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_matrix_free</b> ()</td></tr>
 <tr class="separator:add57813200587f248d9e8ef37bc6ab88 inherit pro_methods_classExaDG_1_1MultigridPreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
