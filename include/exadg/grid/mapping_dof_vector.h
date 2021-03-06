@@ -71,7 +71,7 @@ public:
     DoFHandler<dim> dof_handler(triangulation);
     dof_handler.distribute_dofs(fe);
     VectorType displacement_vector;
-    initialize(dof_handler, displacement_vector);
+    initialize(displacement_vector, dof_handler);
   }
 
   /**
@@ -175,11 +175,11 @@ public:
    * Initializes the MappingQCache object by providing a displacement dof-vector (with a
    * corresponding DoFHandler object) that describes the displacement of the mesh compared to an
    * undeformed reference configuration. If the displacement dof-vector is empty or uninitialized,
-   * this implies that no displacements will be added to the grid coordinates described by the
-   * static mapping.
+   * this implies that no displacements will be added to the grid coordinates of the reference
+   * configuration.
    */
   void
-  initialize(DoFHandler<dim> const & dof_handler, VectorType const & displacement_vector)
+  initialize(VectorType const & displacement_vector, DoFHandler<dim> const & dof_handler)
   {
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 

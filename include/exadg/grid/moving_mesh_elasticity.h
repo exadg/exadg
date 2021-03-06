@@ -109,7 +109,7 @@ public:
       }
     }
 
-    this->initialize(pde_operator->get_dof_handler(), displacement);
+    this->initialize(displacement, pde_operator->get_dof_handler());
   }
 
   /**

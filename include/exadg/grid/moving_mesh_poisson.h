@@ -86,7 +86,7 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
     }
 
-    this->initialize(poisson->get_dof_handler(), displacement);
+    this->initialize(displacement, poisson->get_dof_handler());
   }
 
   /**
