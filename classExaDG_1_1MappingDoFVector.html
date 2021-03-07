@@ -105,8 +105,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af0636314c682a93fb012090e22df6328"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3596495204f5e9484add5b1ff58e8e7f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a3596495204f5e9484add5b1ff58e8e7f">fill_grid_coordinates_vector</a> (Mapping&lt; dim &gt; const &amp;mapping, VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
 <tr class="separator:a3596495204f5e9484add5b1ff58e8e7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae38e9cd882bcb5e1dbc12102ef29e21"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#aae38e9cd882bcb5e1dbc12102ef29e21">initialize</a> (DoFHandler&lt; dim &gt; const &amp;dof_handler, VectorType const &amp;displacement_vector)</td></tr>
-<tr class="separator:aae38e9cd882bcb5e1dbc12102ef29e21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a421e01cddc0b2cd588e20464f3f06bc9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a421e01cddc0b2cd588e20464f3f06bc9">initialize</a> (VectorType const &amp;displacement_vector, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
+<tr class="separator:a421e01cddc0b2cd588e20464f3f06bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc4499ecb303b1dbbd08953313918056"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#afc4499ecb303b1dbbd08953313918056">initialize_multigrid</a> ()</td></tr>
 <tr class="separator:afc4499ecb303b1dbbd08953313918056"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -292,8 +292,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aae38e9cd882bcb5e1dbc12102ef29e21"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae38e9cd882bcb5e1dbc12102ef29e21">&#9670;&nbsp;</a></span>initialize()</h2>
+<a id="a421e01cddc0b2cd588e20464f3f06bc9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a421e01cddc0b2cd588e20464f3f06bc9">&#9670;&nbsp;</a></span>initialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -306,14 +306,14 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector</a>&lt; dim, Number &gt;::initialize </td>
           <td>(</td>
-          <td class="paramtype">DoFHandler&lt; dim &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>dof_handler</em>, </td>
+          <td class="paramtype">VectorType const &amp;&#160;</td>
+          <td class="paramname"><em>displacement_vector</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">VectorType const &amp;&#160;</td>
-          <td class="paramname"><em>displacement_vector</em>&#160;</td>
+          <td class="paramtype">DoFHandler&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>dof_handler</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -327,7 +327,7 @@ template&lt;int dim, typename Number &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Initializes the MappingQCache object by providing a displacement dof-vector (with a corresponding DoFHandler object) that describes the displacement of the mesh compared to an undeformed reference configuration. If the displacement dof-vector is empty or uninitialized, this implies that no displacements will be added to the grid coordinates described by the static mapping. </p>
+<p>Initializes the MappingQCache object by providing a displacement dof-vector (with a corresponding DoFHandler object) that describes the displacement of the mesh compared to an undeformed reference configuration. If the displacement dof-vector is empty or uninitialized, this implies that no displacements will be added to the grid coordinates of the reference configuration. </p>
 
 </div>
 </div>
