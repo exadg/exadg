@@ -318,7 +318,7 @@ private:
 
   // Only relevant for global coarsening,where this vector contains coarse level mappings,
   // and the fine level mapping as the last element of the vector.
-  std::vector<std::shared_ptr<Mapping<dim> const>> coarse_grid_mappings;
+  std::vector<std::shared_ptr<MappingDoFVector<dim, Number>>> coarse_grid_mappings;
 
   // Only relevant for global refinement and in case that a mapping of type MappingDoFVector is
   // used.

@@ -347,24 +347,80 @@ MultigridPreconditionerBase<dim, Number>::initialize_mapping()
   {
     if(data.use_global_coarsening) // global coarsening
     {
-      unsigned int const n_h_levels = coarse_grid_triangulations.size();
-      coarse_grid_mappings.resize(n_h_levels);
-      for(unsigned int h_level = 0; h_level < n_h_levels - 1; ++h_level)
+      FESystem<dim>                          fe(FE_Q<dim>(mapping_q_cache->get_degree()), dim);
+      unsigned int const                     n_h_levels = coarse_grid_triangulations.size();
+      std::vector<DoFHandler<dim>>           coarse_grid_dof_handlers(n_h_levels);
+      std::vector<AffineConstraints<Number>> coarse_grid_constraints(n_h_levels);
+      for(unsigned int i = 0; i < n_h_levels; ++i)
       {
-        // TODO
-        coarse_grid_mappings[h_level].reset(new MappingQGeneric<dim>(1));
+        coarse_grid_dof_handlers[i].reinit(*coarse_grid_triangulations[i]);
+        coarse_grid_dof_handlers[i].distribute_dofs(fe);
+        // constraints are irrelevant for interpolation
+        coarse_grid_constraints[i].close();
       }
-      coarse_grid_mappings[n_h_levels - 1] = mapping;
+      MGLevelObject<MGTwoLevelTransfer<dim, VectorType>> transfers(0, n_h_levels - 1);
+      for(unsigned int i = 1; i < n_h_levels; ++i)
+      {
+        transfers[i].reinit_geometric_transfer(coarse_grid_dof_handlers[i],
+                                               coarse_grid_dof_handlers[i - 1],
+                                               coarse_grid_constraints[i],
+                                               coarse_grid_constraints[i - 1]);
+      }
+
+      // a function that initializes the dof-vector for a given level and dof_handler
+      const std::function<void(const unsigned int, VectorType &)> initialize_dof_vector =
+        [&](const unsigned int h_level, VectorType & vector) {
+          IndexSet locally_relevant_dofs;
+          DoFTools::extract_locally_relevant_dofs(coarse_grid_dof_handlers[h_level],
+                                                  locally_relevant_dofs);
+          vector.reinit(coarse_grid_dof_handlers[h_level].locally_owned_dofs(),
+                        locally_relevant_dofs,
+                        coarse_grid_dof_handlers[h_level].get_communicator());
+        };
+
+      dealii::MGTransferGlobalCoarsening<dim, VectorType> mg_transfer_global_coarsening(
+        transfers, initialize_dof_vector);
+
+      MGLevelObject<VectorType> coarse_grid_coordinates(0, n_h_levels - 1);
+
+      coarse_grid_mappings.resize(n_h_levels);
+      coarse_grid_mappings[n_h_levels - 1] =
+        std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
+
+      // get dof-vector with grid coordinates from the finest h-level
+      coarse_grid_mappings[n_h_levels - 1]->fill_grid_coordinates_vector(
+        *mapping_q_cache,
+        coarse_grid_coordinates[n_h_levels - 1],
+        coarse_grid_dof_handlers[n_h_levels - 1]);
+
+      // transfer grid coordinates to coarser h-levels
+      // the DoFHandler object will not be used for global coarsening
+      DoFHandler<dim> dof_handler_dummy;
+      VectorType      vector_copy(coarse_grid_coordinates[n_h_levels - 1]);
+      mg_transfer_global_coarsening.interpolate_to_mg(dof_handler_dummy,
+                                                      coarse_grid_coordinates,
+                                                      vector_copy);
+
+      // initialize mapping for all h-levels using the dof-vectors with grid coordinates
+      for(unsigned int h_level = 0; h_level < n_h_levels; ++h_level)
+      {
+        coarse_grid_mappings[h_level] =
+          std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
+
+        // coarse_grid_coordinates describes absolute coordinates -> use an uninitialized mapping
+        std::shared_ptr<Mapping<dim> const> mapping_dummy;
+        coarse_grid_mappings[h_level]->initialize(mapping_dummy,
+                                                  coarse_grid_coordinates[h_level],
+                                                  coarse_grid_dof_handlers[h_level]);
+      }
     }
     else // global refinement
     {
       mapping_global_refinement =
-        std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache,
-                                                        mapping_q_cache->get_degree(),
-                                                        *triangulation);
+        std::make_shared<MappingDoFVector<dim, Number>>(mapping_q_cache->get_degree());
 
       // transfers mapping information from fine level to coarser multigrid levels
-      mapping_global_refinement->initialize_multigrid();
+      mapping_global_refinement->initialize_multigrid(mapping_q_cache, *triangulation);
     }
   }
 }

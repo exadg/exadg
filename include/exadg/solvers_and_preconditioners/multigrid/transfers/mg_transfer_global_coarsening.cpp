@@ -123,10 +123,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::interpolate(unsigned int co
                                                                  VectorType &       dst,
                                                                  VectorType const & src) const
 {
-  (void)level;
-  (void)dst;
-  (void)src;
-  AssertThrow(false, ExcNotImplemented());
+  transfers[level].interpolate(dst, src);
 }
 
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
