@@ -46,13 +46,12 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshElasticity(std::shared_ptr<Mapping<dim>>                     mapping,
+  MovingMeshElasticity(std::shared_ptr<Mapping<dim>>                     mapping_undeformed,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
-    : MovingMeshBase<dim, Number>(mapping,
+    : MovingMeshBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from elasticity operator
-                                  structure_operator->get_dof_handler().get_fe().degree,
-                                  structure_operator->get_dof_handler().get_triangulation()),
+                                  structure_operator->get_dof_handler().get_fe().degree),
       pde_operator(structure_operator),
       param(structure_parameters),
       pcout(std::cout,
@@ -109,7 +108,7 @@ public:
       }
     }
 
-    this->initialize(displacement, pde_operator->get_dof_handler());
+    this->initialize(this->mapping_undeformed, displacement, pde_operator->get_dof_handler());
   }
 
   /**
