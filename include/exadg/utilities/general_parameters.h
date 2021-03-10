@@ -59,7 +59,7 @@ struct GeneralParameters
                         true);
       prm.add_parameter("IsTest",
                         is_test,
-                        "Type of throughput study.",
+                        "Set to true if simulation is run as unit test.",
                         Patterns::Bool(),
                         false);
     prm.leave_subsection();
