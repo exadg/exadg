@@ -59,7 +59,7 @@ struct GeneralParameters
                         true);
       prm.add_parameter("IsTest",
                         is_test,
-                        "Set to true if simulation is run as unit test.",
+                        "Set to true if the program is run as a test.",
                         Patterns::Bool(),
                         false);
     prm.leave_subsection();
