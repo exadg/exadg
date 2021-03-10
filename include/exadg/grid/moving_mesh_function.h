@@ -41,12 +41,12 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshFunction(std::shared_ptr<Mapping<dim>>        mapping,
+  MovingMeshFunction(std::shared_ptr<Mapping<dim> const>  mapping_undeformed,
                      unsigned int const                   mapping_degree_q_cache,
                      Triangulation<dim> const &           triangulation,
                      std::shared_ptr<Function<dim>> const mesh_movement_function,
                      double const                         start_time)
-    : MovingMeshBase<dim, Number>(mapping, mapping_degree_q_cache, triangulation),
+    : MovingMeshBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
@@ -80,7 +80,7 @@ public:
 
     // dummy FE for compatibility with interface of FEValues
     FE_Nothing<dim> dummy_fe;
-    FEValues<dim>   fe_values(*this->mapping,
+    FEValues<dim>   fe_values(*this->mapping_undeformed,
                             dummy_fe,
                             QGaussLobatto<dim>(this->get_degree() + 1),
                             update_quadrature_points);

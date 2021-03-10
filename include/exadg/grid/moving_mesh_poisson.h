@@ -46,12 +46,11 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshPoisson(std::shared_ptr<Mapping<dim>>                        mapping,
+  MovingMeshPoisson(std::shared_ptr<Mapping<dim> const>                  mapping_undeformed,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
-    : MovingMeshBase<dim, Number>(mapping,
+    : MovingMeshBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from Poisson operator
-                                  poisson_operator->get_dof_handler().get_fe().degree,
-                                  poisson_operator->get_dof_handler().get_triangulation()),
+                                  poisson_operator->get_dof_handler().get_fe().degree),
       poisson(poisson_operator),
       pcout(std::cout,
             Utilities::MPI::this_mpi_process(
@@ -86,7 +85,7 @@ public:
       print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
     }
 
-    this->initialize(displacement, poisson->get_dof_handler());
+    this->initialize(this->mapping_undeformed, displacement, poisson->get_dof_handler());
   }
 
   /**

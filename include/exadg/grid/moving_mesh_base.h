@@ -41,11 +41,16 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshBase(std::shared_ptr<Mapping<dim>> mapping,
-                 unsigned int const            mapping_degree_q_cache,
-                 Triangulation<dim> const &    triangulation)
-    : MappingDoFVector<dim, Number>(mapping, mapping_degree_q_cache, triangulation)
+  MovingMeshBase(std::shared_ptr<Mapping<dim> const> mapping_undeformed,
+                 unsigned int const                  mapping_degree_q_cache)
+    : MappingDoFVector<dim, Number>(mapping_degree_q_cache), mapping_undeformed(mapping_undeformed)
   {
+    // Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,
+    // hence, no displacements are added to the reference configuration described by
+    // mapping_undeformed.
+    DoFHandler<dim> dof_handler;
+    VectorType      displacement_vector;
+    this->initialize(mapping_undeformed, displacement_vector, dof_handler);
   }
 
   /**
@@ -69,6 +74,10 @@ public:
   {
     AssertThrow(false, ExcMessage("Has to be overwritten by derived classes."));
   }
+
+protected:
+  // mapping describing undeformed reference state
+  std::shared_ptr<Mapping<dim> const> mapping_undeformed;
 };
 
 } // namespace ExaDG

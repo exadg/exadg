@@ -51,27 +51,13 @@ public:
   /**
    * Constructor.
    */
-  MappingDoFVector(std::shared_ptr<Mapping<dim> const> mapping,
-                   unsigned int const                  mapping_degree_q_cache,
-                   Triangulation<dim> const &          triangulation)
-    : MappingQCache<dim>(mapping_degree_q_cache),
-      mapping(mapping),
-      triangulation(triangulation),
-      mpi_comm(triangulation.get_communicator())
+  MappingDoFVector(unsigned int const mapping_degree_q_cache)
+    : MappingQCache<dim>(mapping_degree_q_cache)
   {
     hierarchic_to_lexicographic_numbering =
       FETools::hierarchic_to_lexicographic_numbering<dim>(mapping_degree_q_cache);
     lexicographic_to_hierarchic_numbering =
       Utilities::invert_permutation(hierarchic_to_lexicographic_numbering);
-
-    // Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,
-    // hence, no displacements are added to the reference configuration described by the static
-    // mapping.
-    FESystem<dim>   fe(FE_Q<dim>(this->get_degree()), dim);
-    DoFHandler<dim> dof_handler(triangulation);
-    dof_handler.distribute_dofs(fe);
-    VectorType displacement_vector;
-    initialize(displacement_vector, dof_handler);
   }
 
   /**
@@ -86,7 +72,8 @@ public:
    * object and fill a dof-vector given a corresponding DoFHandler object.
    */
   void
-  fill_grid_coordinates_vector(VectorType & grid_coordinates, DoFHandler<dim> const & dof_handler)
+  fill_grid_coordinates_vector(VectorType &            grid_coordinates,
+                               DoFHandler<dim> const & dof_handler) const
   {
     // use the deformed state described by the MappingQCache object (*this)
     fill_grid_coordinates_vector(*this, grid_coordinates, dof_handler);
@@ -99,13 +86,15 @@ public:
   void
   fill_grid_coordinates_vector(Mapping<dim> const &    mapping,
                                VectorType &            grid_coordinates,
-                               DoFHandler<dim> const & dof_handler)
+                               DoFHandler<dim> const & dof_handler) const
   {
     if(grid_coordinates.size() != dof_handler.n_dofs())
     {
       IndexSet relevant_dofs_grid;
       DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
-      grid_coordinates.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
+      grid_coordinates.reinit(dof_handler.locally_owned_dofs(),
+                              relevant_dofs_grid,
+                              dof_handler.get_communicator());
     }
     else
     {
@@ -172,14 +161,21 @@ public:
   }
 
   /**
-   * Initializes the MappingQCache object by providing a displacement dof-vector (with a
-   * corresponding DoFHandler object) that describes the displacement of the mesh compared to an
-   * undeformed reference configuration. If the displacement dof-vector is empty or uninitialized,
-   * this implies that no displacements will be added to the grid coordinates of the reference
-   * configuration.
+   * Initializes the MappingQCache object by providing a mapping that describes an undeformed
+   * reference configuration and a displacement dof-vector (with a corresponding DoFHandler object)
+   * that describes the displacement of the mesh compared to that reference configuration. There are
+   * two special cases:
+   *
+   * If the mapping pointer is invalid, this implies that the references coordinates are interpreted
+   * as zero, i.e., the displacement vector describes the absolute coordinates of the grid points.
+   *
+   * If the displacement_vector is empty or uninitialized, this implies that no displacements will
+   * be added to the grid coordinates of the reference configuration described by mapping.
    */
   void
-  initialize(VectorType const & displacement_vector, DoFHandler<dim> const & dof_handler)
+  initialize(std::shared_ptr<Mapping<dim> const> mapping,
+             VectorType const &                  displacement_vector,
+             DoFHandler<dim> const &             dof_handler)
   {
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
@@ -195,11 +191,16 @@ public:
       displacement_vector_ghosted.update_ghost_values();
     }
 
+    std::shared_ptr<FEValues<dim>> fe_values;
+
     FE_Nothing<dim> fe_nothing;
-    FEValues<dim>   fe_values(*mapping,
-                            fe_nothing,
-                            QGaussLobatto<dim>(this->get_degree() + 1),
-                            update_quadrature_points);
+    if(mapping.get() != 0)
+    {
+      fe_values = std::make_shared<FEValues<dim>>(*mapping,
+                                                  fe_nothing,
+                                                  QGaussLobatto<dim>(this->get_degree() + 1),
+                                                  update_quadrature_points);
+    }
 
     // update mapping according to mesh deformation described by displacement vector
     MappingQCache<dim>::initialize(
@@ -209,12 +210,15 @@ public:
 
         std::vector<Point<dim>> grid_coordinates(scalar_dofs_per_cell);
 
-        fe_values.reinit(cell_tria);
-        // extract displacement and add to original position
-        for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
+        if(mapping.get() != 0)
         {
-          grid_coordinates[i] =
-            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          fe_values->reinit(cell_tria);
+          // extract displacement and add to original position
+          for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
+          {
+            grid_coordinates[i] =
+              fe_values->quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          }
         }
 
         // if this function is called with an empty dof-vector, this indicates that the
@@ -256,12 +260,12 @@ public:
 
   /**
    * Use this function to initialize the mapping for use in multigrid with global refinement
-   * transfer type. This function only takes the grid coordinates described by the static mapping
-   * without adding displacements in order to initialize the MappingQCache object for all multigrid
-   * levels.
+   * transfer type. This function only takes the grid coordinates described by mapping without
+   * adding displacements in order to initialize the MappingQCache object for all multigrid levels.
    */
   void
-  initialize_multigrid()
+  initialize_multigrid(std::shared_ptr<Mapping<dim> const> mapping,
+                       Triangulation<dim> const &          triangulation)
   {
     AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
 
@@ -276,7 +280,7 @@ public:
     dof_handler.distribute_dofs(fe);
     dof_handler.distribute_mg_dofs();
     VectorType grid_coordinates_fine_level;
-    fill_grid_coordinates_vector(*this->mapping, grid_coordinates_fine_level, dof_handler);
+    fill_grid_coordinates_vector(*mapping, grid_coordinates_fine_level, dof_handler);
 
     MGTransferMatrixFree<dim, Number> transfer;
     transfer.build(dof_handler);
@@ -346,16 +350,8 @@ public:
   }
 
 protected:
-  // static mapping describing undeformed state
-  std::shared_ptr<Mapping<dim> const> mapping;
-
-  Triangulation<dim> const & triangulation;
-
   std::vector<unsigned int> hierarchic_to_lexicographic_numbering;
   std::vector<unsigned int> lexicographic_to_hierarchic_numbering;
-
-  // MPI communicator
-  MPI_Comm const mpi_comm;
 };
 
 } // namespace ExaDG
