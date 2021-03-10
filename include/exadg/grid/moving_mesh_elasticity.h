@@ -108,7 +108,9 @@ public:
       }
     }
 
-    this->initialize(this->mapping_undeformed, displacement, pde_operator->get_dof_handler());
+    this->initialize_mapping_q_cache(this->mapping_undeformed,
+                                     displacement,
+                                     pde_operator->get_dof_handler());
   }
 
   /**
