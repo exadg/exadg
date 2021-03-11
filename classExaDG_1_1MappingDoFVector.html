@@ -68,7 +68,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1MappingDoFVector-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">ExaDG::MappingDoFVector&lt; dim, Number &gt; Class Template Reference</div>  </div>
@@ -105,13 +105,11 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a594a2ba3cd6e94fbad6efb4495fda168"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80dfdd91047e3ac044ebee0a66d830db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a80dfdd91047e3ac044ebee0a66d830db">fill_grid_coordinates_vector</a> (Mapping&lt; dim &gt; const &amp;mapping, VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
 <tr class="separator:a80dfdd91047e3ac044ebee0a66d830db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a21e5a960fe0eecc6644c26e8647516a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a21e5a960fe0eecc6644c26e8647516a7">initialize</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, VectorType const &amp;displacement_vector, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
-<tr class="separator:a21e5a960fe0eecc6644c26e8647516a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5b7e57cdf70eaf644a3e14c63f3f7380"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a5b7e57cdf70eaf644a3e14c63f3f7380">initialize_multigrid</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
-<tr class="separator:a5b7e57cdf70eaf644a3e14c63f3f7380"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5978bd4269b084ec5eacb2bce677d08"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#af5978bd4269b084ec5eacb2bce677d08">initialize_mapping_q_cache</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, VectorType const &amp;displacement_vector, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
+<tr class="separator:af5978bd4269b084ec5eacb2bce677d08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
-Protected Attributes</h2></td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
 <tr class="memitem:a8fff04146c8fa4d657e56b7a094790be"><td class="memItemLeft" align="right" valign="top"><a id="a8fff04146c8fa4d657e56b7a094790be"></a>
 std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>hierarchic_to_lexicographic_numbering</b></td></tr>
 <tr class="separator:a8fff04146c8fa4d657e56b7a094790be"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,7 +121,8 @@ std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bot
 <div class="textblock"><h3>template&lt;int dim, typename Number&gt;<br />
 class ExaDG::MappingDoFVector&lt; dim, Number &gt;</h3>
 
-<p>A mapping class based on MappingQCache equipped with practical interfaces that can be used to initialize the mapping. </p>
+<p>A mapping class based on MappingQCache equipped with practical interfaces that can be used to initialize the mapping.</p>
+<p>The two functions <a class="el" href="classExaDG_1_1MappingDoFVector.html#a594a2ba3cd6e94fbad6efb4495fda168">fill_grid_coordinates_vector()</a> and <a class="el" href="classExaDG_1_1MappingDoFVector.html#af5978bd4269b084ec5eacb2bce677d08">initialize_mapping_q_cache()</a> should become member functions of MappingQCache in dealii, rendering this class superfluous in ExaDG. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a02610a355efa9e0350be9647356e570b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a02610a355efa9e0350be9647356e570b">&#9670;&nbsp;</a></span>MappingDoFVector()</h2>
@@ -267,8 +266,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a21e5a960fe0eecc6644c26e8647516a7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a21e5a960fe0eecc6644c26e8647516a7">&#9670;&nbsp;</a></span>initialize()</h2>
+<a id="af5978bd4269b084ec5eacb2bce677d08"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5978bd4269b084ec5eacb2bce677d08">&#9670;&nbsp;</a></span>initialize_mapping_q_cache()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -279,7 +278,7 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector</a>&lt; dim, Number &gt;::initialize </td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector</a>&lt; dim, Number &gt;::initialize_mapping_q_cache </td>
           <td>(</td>
           <td class="paramtype">std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt;&#160;</td>
           <td class="paramname"><em>mapping</em>, </td>
@@ -311,45 +310,6 @@ template&lt;int dim, typename Number &gt; </div>
 <p>Initializes the MappingQCache object by providing a mapping that describes an undeformed reference configuration and a displacement dof-vector (with a corresponding DoFHandler object) that describes the displacement of the mesh compared to that reference configuration. There are two special cases:</p>
 <p>If the mapping pointer is invalid, this implies that the references coordinates are interpreted as zero, i.e., the displacement vector describes the absolute coordinates of the grid points.</p>
 <p>If the displacement_vector is empty or uninitialized, this implies that no displacements will be added to the grid coordinates of the reference configuration described by mapping. </p>
-
-</div>
-</div>
-<a id="a5b7e57cdf70eaf644a3e14c63f3f7380"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5b7e57cdf70eaf644a3e14c63f3f7380">&#9670;&nbsp;</a></span>initialize_multigrid()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector</a>&lt; dim, Number &gt;::initialize_multigrid </td>
-          <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt;&#160;</td>
-          <td class="paramname"><em>mapping</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">Triangulation&lt; dim &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>triangulation</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Use this function to initialize the mapping for use in multigrid with global refinement transfer type. This function only takes the grid coordinates described by mapping without adding displacements in order to initialize the MappingQCache object for all multigrid levels. </p>
 
 </div>
 </div>
