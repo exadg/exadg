@@ -46,7 +46,7 @@ public:
                      Triangulation<dim> const &           triangulation,
                      std::shared_ptr<Function<dim>> const mesh_movement_function,
                      double const                         start_time)
-    : MovingMeshBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache),
+    : MovingMeshBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
