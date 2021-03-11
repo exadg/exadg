@@ -50,7 +50,7 @@ public:
     // mapping_undeformed.
     DoFHandler<dim> dof_handler;
     VectorType      displacement_vector;
-    this->initialize(mapping_undeformed, displacement_vector, dof_handler);
+    this->initialize_mapping_q_cache(mapping_undeformed, displacement_vector, dof_handler);
   }
 
   /**
