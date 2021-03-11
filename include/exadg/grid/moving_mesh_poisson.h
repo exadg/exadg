@@ -50,7 +50,8 @@ public:
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
     : MovingMeshBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from Poisson operator
-                                  poisson_operator->get_dof_handler().get_fe().degree),
+                                  poisson_operator->get_dof_handler().get_fe().degree,
+                                  poisson_operator->get_dof_handler().get_triangulation()),
       poisson(poisson_operator),
       pcout(std::cout,
             Utilities::MPI::this_mpi_process(

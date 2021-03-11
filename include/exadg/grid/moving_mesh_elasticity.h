@@ -51,7 +51,8 @@ public:
                        Structure::InputParameters const &                structure_parameters)
     : MovingMeshBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from elasticity operator
-                                  structure_operator->get_dof_handler().get_fe().degree),
+                                  structure_operator->get_dof_handler().get_fe().degree,
+                                  structure_operator->get_dof_handler().get_triangulation()),
       pde_operator(structure_operator),
       param(structure_parameters),
       pcout(std::cout,
