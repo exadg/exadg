@@ -101,8 +101,8 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a177af2375047406e226dcf3ef9bde1a0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#a177af2375047406e226dcf3ef9bde1a0">MovingMeshBase</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache)</td></tr>
-<tr class="separator:a177af2375047406e226dcf3ef9bde1a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad82efb4e43882160c3140e98311c0f94"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#ad82efb4e43882160c3140e98311c0f94">MovingMeshBase</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
+<tr class="separator:ad82efb4e43882160c3140e98311c0f94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab4a1e1650172be7a312f6906b82608e6"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">~MovingMeshBase</a> ()</td></tr>
 <tr class="separator:ab4a1e1650172be7a312f6906b82608e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1836697a6496daed97593e7528c1089b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b">update</a> (double const time, bool const print_solver_info, bool const print_wall_times)=0</td></tr>
@@ -143,8 +143,8 @@ class ExaDG::MovingMeshBase&lt; dim, Number &gt;</h3>
 
 <p>Base class for moving mesh problems based on MappingFiniteElement. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a177af2375047406e226dcf3ef9bde1a0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a177af2375047406e226dcf3ef9bde1a0">&#9670;&nbsp;</a></span>MovingMeshBase()</h2>
+<a id="ad82efb4e43882160c3140e98311c0f94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad82efb4e43882160c3140e98311c0f94">&#9670;&nbsp;</a></span>MovingMeshBase()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -164,7 +164,13 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">unsigned int const&#160;</td>
-          <td class="paramname"><em>mapping_degree_q_cache</em>&#160;</td>
+          <td class="paramname"><em>mapping_degree_q_cache</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Triangulation&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>triangulation</em>&#160;</td>
         </tr>
         <tr>
           <td></td>

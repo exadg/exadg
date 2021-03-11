@@ -106,45 +106,46 @@ $(function() {
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#a177af2375047406e226dcf3ef9bde1a0">   44</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshBase.html#a177af2375047406e226dcf3ef9bde1a0">MovingMeshBase</a>(std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed,</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  mapping_degree_q_cache)</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    : <a class="code" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt;dim, Number&gt;(mapping_degree_q_cache), mapping_undeformed(mapping_undeformed)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="comment">// Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="comment">// hence, no displacements are added to the reference configuration described by</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="comment">// mapping_undeformed.</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    DoFHandler&lt;dim&gt; dof_handler;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    VectorType      displacement_vector;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    this-&gt;initialize_mapping_q_cache(mapping_undeformed, displacement_vector, dof_handler);</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  }</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">   59</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">~MovingMeshBase</a>()</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  {</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  }</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b">   67</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_wall_times) = 0;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">   73</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">print_iterations</a>()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">  </span>{</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    AssertThrow(<span class="keyword">false</span>, ExcMessage(<span class="stringliteral">&quot;Has to be overwritten by derived classes.&quot;</span>));</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  }</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  <span class="comment">// mapping describing undeformed reference state</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;};</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_MOVING_MESH_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#ad82efb4e43882160c3140e98311c0f94">   44</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshBase.html#ad82efb4e43882160c3140e98311c0f94">MovingMeshBase</a>(std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed,</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  mapping_degree_q_cache,</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                 Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;          triangulation)</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    : <a class="code" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt;dim, Number&gt;(mapping_degree_q_cache), mapping_undeformed(mapping_undeformed)</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  {</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="comment">// Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,</span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="comment">// hence, no displacements are added to the reference configuration described by</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="comment">// mapping_undeformed.</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    DoFHandler&lt;dim&gt; dof_handler(triangulation);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    VectorType      displacement_vector;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    this-&gt;initialize_mapping_q_cache(mapping_undeformed, displacement_vector, dof_handler);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  }</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">   60</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">~MovingMeshBase</a>()</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  {</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b">   68</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_wall_times) = 0;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">   74</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">print_iterations</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">  </span>{</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    AssertThrow(<span class="keyword">false</span>, ExcMessage(<span class="stringliteral">&quot;Has to be overwritten by derived classes.&quot;</span>));</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  }</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="comment">// mapping describing undeformed reference state</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;};</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_MOVING_MESH_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1MappingDoFVector_html"><div class="ttname"><a href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector</a></div><div class="ttdef"><b>Definition:</b> mapping_dof_vector.h:54</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:37</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_a177af2375047406e226dcf3ef9bde1a0"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#a177af2375047406e226dcf3ef9bde1a0">ExaDG::MovingMeshBase::MovingMeshBase</a></div><div class="ttdeci">MovingMeshBase(std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache)</div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:44</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_a1836697a6496daed97593e7528c1089b"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#a1836697a6496daed97593e7528c1089b">ExaDG::MovingMeshBase::update</a></div><div class="ttdeci">virtual void update(double const time, bool const print_solver_info, bool const print_wall_times)=0</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_ab4a1e1650172be7a312f6906b82608e6"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">ExaDG::MovingMeshBase::~MovingMeshBase</a></div><div class="ttdeci">virtual ~MovingMeshBase()</div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:59</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_aca5a3f4daa44773897c958986cefb4d2"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">ExaDG::MovingMeshBase::print_iterations</a></div><div class="ttdeci">virtual void print_iterations() const</div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:73</div></div>
+<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_ab4a1e1650172be7a312f6906b82608e6"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">ExaDG::MovingMeshBase::~MovingMeshBase</a></div><div class="ttdeci">virtual ~MovingMeshBase()</div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:60</div></div>
+<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_aca5a3f4daa44773897c958986cefb4d2"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">ExaDG::MovingMeshBase::print_iterations</a></div><div class="ttdeci">virtual void print_iterations() const</div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:74</div></div>
+<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html_ad82efb4e43882160c3140e98311c0f94"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html#ad82efb4e43882160c3140e98311c0f94">ExaDG::MovingMeshBase::MovingMeshBase</a></div><div class="ttdeci">MovingMeshBase(std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation)</div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:44</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

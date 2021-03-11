@@ -110,7 +110,7 @@ $(function() {
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                     Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;           triangulation,</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                     std::shared_ptr&lt;Function&lt;dim&gt;&gt; <span class="keyword">const</span> mesh_movement_function,</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                     <span class="keywordtype">double</span> <span class="keyword">const</span>                         start_time)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    : <a class="code" href="classExaDG_1_1MovingMeshBase.html">MovingMeshBase</a>&lt;dim, Number&gt;(mapping_undeformed, mapping_degree_q_cache),</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    : <a class="code" href="classExaDG_1_1MovingMeshBase.html">MovingMeshBase</a>&lt;dim, Number&gt;(mapping_undeformed, mapping_degree_q_cache, triangulation),</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      mesh_movement_function(mesh_movement_function),</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      triangulation(triangulation)</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  {</div>
