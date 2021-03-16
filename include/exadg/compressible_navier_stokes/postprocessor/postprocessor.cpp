@@ -80,7 +80,7 @@ PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator)
                                   pp_data.kinetic_energy_data);
 
   kinetic_energy_spectrum_calculator.setup(pde_operator.get_matrix_free(),
-                                           pde_operator.get_dof_handler().get_triangulation(),
+                                           pde_operator.get_dof_handler(),
                                            pp_data.kinetic_energy_spectrum_data);
 }
 
