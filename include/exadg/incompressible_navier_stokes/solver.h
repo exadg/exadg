@@ -89,7 +89,8 @@ run(std::string const & input_file,
 
   driver->solve();
 
-  driver->print_performance_results(timer.wall_time());
+  if(not(is_test))
+    driver->print_performance_results(timer.wall_time());
 }
 
 } // namespace ExaDG

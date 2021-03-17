@@ -891,32 +891,29 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
                       "Timeloop scalar " + std::to_string(i));
   }
 
-  if(not(is_test))
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index DoFs = this->fluid_operator_base->get_number_of_dofs();
+
+  for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
-
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index DoFs = this->fluid_operator_base->get_number_of_dofs();
-
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
-    }
-
-    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              overall_time_avg  = overall_time_data.avg;
-
-    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
-
-    // computational costs in CPUh
-    print_costs(pcout, overall_time_avg, N_mpi_processes);
+    DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
   }
+
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
+
+  print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+
+  // computational costs in CPUh
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

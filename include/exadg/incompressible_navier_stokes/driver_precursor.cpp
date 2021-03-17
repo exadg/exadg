@@ -30,9 +30,10 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm)
+DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm, bool const is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    is_test(is_test),
     use_adaptive_time_stepping(false)
 {
 }
@@ -97,8 +98,7 @@ template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
                                     unsigned int const                                     degree,
-                                    unsigned int const refine_space,
-                                    bool const         is_test)
+                                    unsigned int const refine_space)
 {
   Timer timer;
   timer.restart();
@@ -475,8 +475,7 @@ DriverPrecursor<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::print_performance_results(double const total_time,
-                                                        bool const   is_test) const
+DriverPrecursor<dim, Number>::print_performance_results(double const total_time) const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -504,24 +503,22 @@ DriverPrecursor<dim, Number>::print_performance_results(double const total_time,
   timer_tree.insert({"Incompressible flow"},
                     time_integrator_pre->get_timings(),
                     "Timeloop precursor");
+
   timer_tree.insert({"Incompressible flow"}, time_integrator->get_timings(), "Timeloop main");
 
-  if(not(is_test))
-  {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
 
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
 
-    // Computational costs in CPUh
-    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  // Computational costs in CPUh
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-    Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              total_time_avg  = total_time_data.avg;
+  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              total_time_avg  = total_time_data.avg;
 
-    print_costs(pcout, total_time_avg, N_mpi_processes);
-  }
+  print_costs(pcout, total_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

@@ -95,7 +95,8 @@ run(std::string const & input_file,
 
   solver->solve();
 
-  solver->print_performance_results(timer.wall_time());
+  if(not(is_test))
+    solver->print_performance_results(timer.wall_time());
 }
 
 } // namespace ExaDG

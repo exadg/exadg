@@ -230,34 +230,31 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(not(is_test))
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
+  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              total_time_avg  = total_time_data.avg;
+
+  if(param.problem_type == ProblemType::Unsteady)
   {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
-
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
-    unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-    Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              total_time_avg  = total_time_data.avg;
-
-    if(param.problem_type == ProblemType::Unsteady)
-    {
-      unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
-      print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
-    }
-    else
-    {
-      print_throughput_steady(pcout, DoFs, total_time_avg, N_mpi_processes);
-    }
-
-    // computational costs in CPUh
-    print_costs(pcout, total_time_avg, N_mpi_processes);
+    unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
+    print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
   }
+  else
+  {
+    print_throughput_steady(pcout, DoFs, total_time_avg, N_mpi_processes);
+  }
+
+  // computational costs in CPUh
+  print_costs(pcout, total_time_avg, N_mpi_processes);
 
   pcout << std::endl
         << "_________________________________________________________________________________"
