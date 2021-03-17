@@ -34,8 +34,7 @@ template<typename VectorType>
 class IterativeSolverBase
 {
 public:
-  IterativeSolverBase()
-    : performance_metrics_available(false), l2_0(1.0), l2_n(1.0), n(0), rho(0.0), /*r(0.0),*/ n10(0)
+  IterativeSolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n10(0)
   {
   }
 
@@ -50,8 +49,6 @@ public:
   void
   compute_performance_metrics(Control const & solver_control) const
   {
-    performance_metrics_available = true;
-
     // get some statistics related to convergence
     this->l2_0 = solver_control.initial_value();
     this->l2_n = solver_control.last_value();
@@ -61,19 +58,16 @@ public:
     if(n > 0)
     {
       this->rho = std::pow(l2_n / l2_0, 1.0 / n);
-      //    this->r   = -std::log(rho) / std::log(10.0);
       this->n10 = -10.0 * std::log(10.0) / std::log(rho);
     }
   }
 
   // performance metrics
-  mutable bool         performance_metrics_available;
   mutable double       l2_0; // norm of initial residual
   mutable double       l2_n; // norm of final residual
   mutable unsigned int n;    // number of iterations
   mutable double       rho;  // average convergence rate
-                             //  mutable double       r;    // logarithmic convergence rate
-  mutable double n10;        // number of iterations needed to reduce the residual by 1e10
+  mutable double       n10;  // number of iterations needed to reduce the residual by 1e10
 };
 
 struct CGSolverData

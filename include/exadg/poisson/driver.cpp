@@ -223,7 +223,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  double const t_10 = solve_time * n_10 / iterations;
+  double const t_10 = iterations > 0 ? solve_time * double(n_10) / double(iterations) : solve_time;
 
   if(not(is_test))
   {
