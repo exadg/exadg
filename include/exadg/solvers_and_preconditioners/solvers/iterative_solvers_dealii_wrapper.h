@@ -35,7 +35,7 @@ class IterativeSolverBase
 {
 public:
   IterativeSolverBase()
-    : performance_metrics_available(false), l2_0(1.0), l2_n(1.0), n(0), rho(1.0), r(1.0), n10(0)
+    : performance_metrics_available(false), l2_0(1.0), l2_n(1.0), n(0), rho(0.0), /*r(0.0),*/ n10(0)
   {
   }
 
@@ -58,10 +58,12 @@ public:
     this->n    = solver_control.last_step();
 
     // compute some derived performance metrics
-    AssertThrow(n != 0, ExcMessage("Division by zero."));
-    this->rho = std::pow(l2_n / l2_0, 1.0 / n);
-    this->r   = -std::log(rho) / std::log(10.0);
-    this->n10 = -10.0 * std::log(10.0) / std::log(rho);
+    if(n > 0)
+    {
+      this->rho = std::pow(l2_n / l2_0, 1.0 / n);
+      //    this->r   = -std::log(rho) / std::log(10.0);
+      this->n10 = -10.0 * std::log(10.0) / std::log(rho);
+    }
   }
 
   // performance metrics
@@ -70,8 +72,8 @@ public:
   mutable double       l2_n; // norm of final residual
   mutable unsigned int n;    // number of iterations
   mutable double       rho;  // average convergence rate
-  mutable double       r;    // logarithmic convergence rate
-  mutable double       n10;  // number of iterations needed to reduce the residual by 1e10
+                             //  mutable double       r;    // logarithmic convergence rate
+  mutable double n10;        // number of iterations needed to reduce the residual by 1e10
 };
 
 struct CGSolverData
@@ -149,13 +151,6 @@ output_eigenvalues(const std::vector<NUMBER> & eigenvalues,
                    const std::string &         text,
                    MPI_Comm const &            mpi_comm)
 {
-  //    deallog << text << std::endl;
-  //    for (unsigned int j = 0; j < eigenvalues.size(); ++j)
-  //      {
-  //        deallog << ' ' << eigenvalues.at(j) << std::endl;
-  //      }
-  //    deallog << std::endl;
-
   if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::cout << text << std::endl;
