@@ -65,7 +65,7 @@ public:
    * Updates the mapping, i.e., moves the mesh.
    */
   virtual void
-  update(double const time, bool const print_solver_info, bool const print_wall_times) = 0;
+  update(double const time, bool const print_solver_info) = 0;
 
   /**
    * Print the number of iterations for PDE type mesh motion problems.

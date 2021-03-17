@@ -635,7 +635,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             fluid_param,
                                                                             0 /* refine_time */,
                                                                             mpi_comm,
-                                                                            not(is_test),
+                                                                            is_test,
                                                                             fluid_postprocessor,
                                                                             fluid_moving_mapping,
                                                                             fluid_matrix_free));
@@ -648,7 +648,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                         fluid_param,
                                                         0 /* refine_time */,
                                                         mpi_comm,
-                                                        not(is_test),
+                                                        is_test,
                                                         fluid_postprocessor,
                                                         fluid_moving_mapping,
                                                         fluid_matrix_free));
@@ -661,7 +661,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                              fluid_param,
                                                              0 /* refine_time */,
                                                              mpi_comm,
-                                                             not(is_test),
+                                                             is_test,
                                                              fluid_postprocessor,
                                                              fluid_moving_mapping,
                                                              fluid_matrix_free));
@@ -691,7 +691,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                   0 /* refine_time */,
                                                   structure_param,
                                                   mpi_comm,
-                                                  not(is_test)));
+                                                  is_test));
     structure_time_integrator->setup(structure_param.restarted_simulation);
 
     structure_operator->setup_solver();
@@ -734,8 +734,7 @@ Driver<dim, Number>::solve_ale() const
   sub_timer.restart();
   bool const print_solver_info = fluid_time_integrator->print_solver_info();
   fluid_moving_mapping->update(fluid_time_integrator->get_next_time(),
-                               print_solver_info,
-                               not(is_test));
+                               print_solver_info and not(is_test));
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

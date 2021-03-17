@@ -295,7 +295,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                         param,
                                                                         refine_time,
                                                                         mpi_comm,
-                                                                        not(is_test),
+                                                                        is_test,
                                                                         postprocessor,
                                                                         moving_mapping,
                                                                         matrix_free));
@@ -307,7 +307,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                           param,
                                                           refine_time,
                                                           mpi_comm,
-                                                          not(is_test),
+                                                          is_test,
                                                           postprocessor,
                                                           moving_mapping,
                                                           matrix_free));
@@ -319,7 +319,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                param,
                                                                refine_time,
                                                                mpi_comm,
-                                                               not(is_test),
+                                                               is_test,
                                                                postprocessor,
                                                                moving_mapping,
                                                                matrix_free));
@@ -333,7 +333,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       // initialize driver for steady state problem that depends on operator_base
       driver_steady.reset(
-        new DriverSteady(operator_coupled, param, mpi_comm, not(is_test), postprocessor));
+        new DriverSteady(operator_coupled, param, mpi_comm, is_test, postprocessor));
     }
     else
     {
@@ -373,7 +373,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(time_integrator->get_next_time(), false, false);
+  moving_mapping->update(time_integrator->get_next_time(), false);
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

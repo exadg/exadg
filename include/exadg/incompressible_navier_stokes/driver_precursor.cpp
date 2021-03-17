@@ -368,12 +368,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_pre.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(operator_coupled_pre,
-                                                                        param_pre,
-                                                                        0 /* refine_time */,
-                                                                        mpi_comm,
-                                                                        not(is_test),
-                                                                        postprocessor_pre));
+    time_integrator_pre.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(
+      operator_coupled_pre, param_pre, 0 /* refine_time */, mpi_comm, is_test, postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -382,7 +378,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                       param_pre,
                                                       0 /* refine_time */,
                                                       mpi_comm,
-                                                      not(is_test),
+                                                      is_test,
                                                       postprocessor_pre));
   }
   else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
@@ -392,7 +388,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                                            param_pre,
                                                            0 /* refine_time */,
                                                            mpi_comm,
-                                                           not(is_test),
+                                                           is_test,
                                                            postprocessor_pre));
   }
   else
@@ -403,22 +399,17 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(
-      operator_coupled, param, 0 /* refine_time */, mpi_comm, not(is_test), postprocessor));
+      operator_coupled, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     time_integrator.reset(new IncNS::TimeIntBDFDualSplitting<dim, Number>(
-      operator_dual_splitting, param, 0 /* refine_time */, mpi_comm, not(is_test), postprocessor));
+      operator_dual_splitting, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator.reset(
-      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(operator_pressure_correction,
-                                                           param,
-                                                           0 /* refine_time */,
-                                                           mpi_comm,
-                                                           not(is_test),
-                                                           postprocessor));
+    time_integrator.reset(new IncNS::TimeIntBDFPressureCorrection<dim, Number>(
+      operator_pressure_correction, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor));
   }
   else
   {

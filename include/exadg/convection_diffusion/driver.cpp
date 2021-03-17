@@ -160,7 +160,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       if(param.temporal_discretization == TemporalDiscretization::ExplRK)
       {
         time_integrator.reset(new TimeIntExplRK<Number>(
-          conv_diff_operator, param, refine_time, mpi_comm, not(is_test), postprocessor));
+          conv_diff_operator, param, refine_time, mpi_comm, is_test, postprocessor));
       }
       else if(param.temporal_discretization == TemporalDiscretization::BDF)
       {
@@ -168,7 +168,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                           param,
                                                           refine_time,
                                                           mpi_comm,
-                                                          not(is_test),
+                                                          is_test,
                                                           postprocessor,
                                                           moving_mapping,
                                                           matrix_free));
@@ -185,7 +185,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     else if(param.problem_type == ProblemType::Steady)
     {
       driver_steady.reset(new DriverSteadyProblems<Number>(
-        conv_diff_operator, param, mpi_comm, not(is_test), postprocessor));
+        conv_diff_operator, param, mpi_comm, is_test, postprocessor));
       driver_steady->setup();
     }
     else
@@ -246,7 +246,7 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  moving_mapping->update(time_integrator->get_next_time(), false, false);
+  moving_mapping->update(time_integrator->get_next_time(), false);
   matrix_free->update_mapping(*mapping);
   conv_diff_operator->update_after_mesh_movement();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =

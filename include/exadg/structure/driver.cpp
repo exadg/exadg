@@ -140,19 +140,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(param.problem_type == ProblemType::Unsteady)
     {
       time_integrator.reset(new TimeIntGenAlpha<dim, Number>(
-        pde_operator, postprocessor, refine_time, param, mpi_comm, not(is_test)));
+        pde_operator, postprocessor, refine_time, param, mpi_comm, is_test));
       time_integrator->setup(param.restarted_simulation);
     }
     else if(param.problem_type == ProblemType::Steady)
     {
       driver_steady.reset(
-        new DriverSteady<dim, Number>(pde_operator, postprocessor, param, mpi_comm, not(is_test)));
+        new DriverSteady<dim, Number>(pde_operator, postprocessor, param, mpi_comm, is_test));
       driver_steady->setup();
     }
     else if(param.problem_type == ProblemType::QuasiStatic)
     {
-      driver_quasi_static.reset(new DriverQuasiStatic<dim, Number>(
-        pde_operator, postprocessor, param, mpi_comm, not(is_test)));
+      driver_quasi_static.reset(
+        new DriverQuasiStatic<dim, Number>(pde_operator, postprocessor, param, mpi_comm, is_test));
       driver_quasi_static->setup();
     }
     else

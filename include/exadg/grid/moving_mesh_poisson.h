@@ -65,7 +65,7 @@ public:
    * Updates the mapping, i.e., moves the mesh by solving a Poisson-type problem.
    */
   void
-  update(double const time, bool const print_solver_info, bool const print_wall_times) override
+  update(double const time, bool const print_solver_info) override
   {
     Timer timer;
     timer.restart();
@@ -83,7 +83,7 @@ public:
     if(print_solver_info)
     {
       this->pcout << std::endl << "Solve moving mesh problem (Poisson):";
-      print_solver_info_linear(pcout, n_iter, timer.wall_time(), print_wall_times);
+      print_solver_info_linear(pcout, n_iter, timer.wall_time());
     }
 
     this->initialize_mapping_q_cache(this->mapping_undeformed,

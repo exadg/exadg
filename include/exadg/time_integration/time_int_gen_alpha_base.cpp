@@ -34,13 +34,13 @@ TimeIntGenAlphaBase<Number>::TimeIntGenAlphaBase(double const &       start_time
                                                  GenAlphaType const & gen_alpha_type_,
                                                  RestartData const &  restart_data_,
                                                  MPI_Comm const &     mpi_comm_,
-                                                 bool const           print_wall_times_)
+                                                 bool const           is_test_)
   : TimeIntBase(start_time_,
                 end_time_,
                 max_number_of_time_steps_,
                 restart_data_,
                 mpi_comm_,
-                print_wall_times_),
+                is_test_),
     spectral_radius(spectral_radius_),
     alpha_m(0.0),
     alpha_f(0.0),

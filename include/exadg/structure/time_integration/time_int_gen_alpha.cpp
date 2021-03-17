@@ -38,7 +38,7 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
   unsigned int const                           refine_steps_time_,
   InputParameters const &                      param_,
   MPI_Comm const &                             mpi_comm_,
-  bool const                                   print_wall_times_)
+  bool const                                   is_test_)
   : TimeIntGenAlphaBase<Number>(param_.start_time,
                                 param_.end_time,
                                 param_.max_number_of_time_steps,
@@ -46,7 +46,7 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
                                 param_.gen_alpha_type,
                                 param_.restart_data,
                                 mpi_comm_,
-                                print_wall_times_),
+                                is_test_),
     pde_operator(operator_),
     postprocessor(postprocessor_),
     refine_steps_time(refine_steps_time_),
@@ -165,11 +165,10 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
     std::get<0>(iterations.second) += std::get<0>(iter);
     std::get<1>(iterations.second) += std::get<1>(iter);
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve nonlinear elasticity problem:";
-      print_solver_info_nonlinear(
-        pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time(), this->print_wall_times);
+      print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
     }
   }
   else // linear case
@@ -183,10 +182,10 @@ TimeIntGenAlpha<dim, Number>::solve_timestep()
     iterations.first += 1;
     std::get<1>(iterations.second) += iter;
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve linear elasticity problem:";
-      print_solver_info_linear(pcout, iter, timer.wall_time(), this->print_wall_times);
+      print_solver_info_linear(pcout, iter, timer.wall_time());
     }
   }
 

@@ -147,7 +147,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize time integrator
     time_integrator.reset(new TimeIntExplRK<Number>(
-      comp_navier_stokes_operator, param, refine_time, mpi_comm, not(is_test), postprocessor));
+      comp_navier_stokes_operator, param, refine_time, mpi_comm, is_test, postprocessor));
     time_integrator->setup(param.restarted_simulation);
   }
 

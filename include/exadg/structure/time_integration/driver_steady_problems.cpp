@@ -32,17 +32,17 @@ namespace Structure
 using namespace dealii;
 
 template<int dim, typename Number>
-DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_in,
-                                        std::shared_ptr<PostProcessorBase<Number>> postprocessor_in,
-                                        InputParameters const &                    param_in,
-                                        MPI_Comm const &                           mpi_comm_in,
-                                        bool const print_wall_times_in)
-  : pde_operator(operator_in),
-    postprocessor(postprocessor_in),
-    param(param_in),
-    mpi_comm(mpi_comm_in),
-    print_wall_times(print_wall_times_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
+DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_,
+                                        std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
+                                        InputParameters const &                      param_,
+                                        MPI_Comm const &                             mpi_comm_,
+                                        bool const                                   is_test_)
+  : pde_operator(operator_),
+    postprocessor(postprocessor_),
+    param(param_),
+    mpi_comm(mpi_comm_),
+    is_test(is_test_),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     timer_tree(new TimerTree())
 {
 }
@@ -115,8 +115,8 @@ DriverSteady<dim, Number>::solve()
     unsigned int const N_iter_nonlinear = std::get<0>(iter);
     unsigned int const N_iter_linear    = std::get<1>(iter);
 
-    print_solver_info_nonlinear(
-      pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time(), print_wall_times);
+    if(not(is_test))
+      print_solver_info_nonlinear(pcout, N_iter_nonlinear, N_iter_linear, timer.wall_time());
   }
   else // linear problem
   {
@@ -126,7 +126,8 @@ DriverSteady<dim, Number>::solve()
     unsigned int const N_iter_linear =
       pde_operator->solve_linear(solution, rhs_vector, 0.0 /* no mass term */, 0.0 /* time */);
 
-    print_solver_info_linear(pcout, N_iter_linear, timer.wall_time(), print_wall_times);
+    if(not(is_test))
+      print_solver_info_linear(pcout, N_iter_linear, timer.wall_time());
   }
 
   pcout << std::endl << "... done!" << std::endl;

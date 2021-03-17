@@ -85,7 +85,7 @@ TimeIntBDF<dim, Number>::setup_derived()
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
 
-    moving_mesh->update(this->get_time(), false, false);
+    moving_mesh->update(this->get_time(), false);
     moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[0],
                                               pde_operator->get_dof_handler_velocity());
 
@@ -94,7 +94,7 @@ TimeIntBDF<dim, Number>::setup_derived()
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        moving_mesh->update(this->get_previous_time(i), false, false);
+        moving_mesh->update(this->get_previous_time(i), false);
         moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[i],
                                                   pde_operator->get_dof_handler_velocity());
       }
@@ -476,14 +476,14 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::move_mesh(double const time) const
 {
-  moving_mesh->update(time, false, false);
+  moving_mesh->update(time, false);
 }
 
 template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
 {
-  moving_mesh->update(time, false, false);
+  moving_mesh->update(time, false);
   matrix_free->update_mapping(*moving_mesh);
   pde_operator->update_after_mesh_movement();
 }
@@ -688,10 +688,10 @@ TimeIntBDF<dim, Number>::solve_timestep()
     }
   }
 
-  if(print_solver_info())
+  if(print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Solve scalar convection-diffusion equation:";
-    print_solver_info_linear(this->pcout, N_iter, timer.wall_time(), this->print_wall_times);
+    print_solver_info_linear(this->pcout, N_iter, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Solve"}, timer.wall_time());
