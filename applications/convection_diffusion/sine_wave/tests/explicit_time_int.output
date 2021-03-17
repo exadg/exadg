@@ -97,7 +97,6 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 5.39949e-03
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 4.0496e-01:
   Relative error (L2-norm): 2.14910e-07
 
@@ -106,7 +105,6 @@ ________________________________________________________________________________
  Time step number = 76      t = 4.04962e-01 -> t + dt = 4.10361e-01
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 8.0452e-01:
   Relative error (L2-norm): 1.54674e-07
 
@@ -115,7 +113,6 @@ ________________________________________________________________________________
  Time step number = 150     t = 8.04524e-01 -> t + dt = 8.09924e-01
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 1.2041e+00:
   Relative error (L2-norm): 1.69285e-07
 
@@ -124,7 +121,6 @@ ________________________________________________________________________________
  Time step number = 224     t = 1.20409e+00 -> t + dt = 1.20949e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 1.6036e+00:
   Relative error (L2-norm): 2.37272e-07
 
@@ -133,7 +129,6 @@ ________________________________________________________________________________
  Time step number = 298     t = 1.60365e+00 -> t + dt = 1.60905e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 2.0032e+00:
   Relative error (L2-norm): 1.26004e-07
 
@@ -142,7 +137,6 @@ ________________________________________________________________________________
  Time step number = 372     t = 2.00321e+00 -> t + dt = 2.00861e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 2.4028e+00:
   Relative error (L2-norm): 2.35538e-07
 
@@ -151,7 +145,6 @@ ________________________________________________________________________________
  Time step number = 446     t = 2.40277e+00 -> t + dt = 2.40817e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 2.8023e+00:
   Relative error (L2-norm): 1.76526e-07
 
@@ -160,7 +153,6 @@ ________________________________________________________________________________
  Time step number = 520     t = 2.80234e+00 -> t + dt = 2.80774e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 3.2019e+00:
   Relative error (L2-norm): 1.76350e-07
 
@@ -169,7 +161,6 @@ ________________________________________________________________________________
  Time step number = 594     t = 3.20190e+00 -> t + dt = 3.20730e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 3.6015e+00:
   Relative error (L2-norm): 2.35636e-07
 
@@ -178,7 +169,6 @@ ________________________________________________________________________________
  Time step number = 668     t = 3.60146e+00 -> t + dt = 3.60686e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 4.0010e+00:
   Relative error (L2-norm): 1.27064e-07
 
@@ -187,7 +177,6 @@ ________________________________________________________________________________
  Time step number = 742     t = 4.00102e+00 -> t + dt = 4.00642e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 4.4006e+00:
   Relative error (L2-norm): 2.35179e-07
 
@@ -196,7 +185,6 @@ ________________________________________________________________________________
  Time step number = 816     t = 4.40059e+00 -> t + dt = 4.40599e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 4.8001e+00:
   Relative error (L2-norm): 1.77332e-07
 
@@ -205,7 +193,6 @@ ________________________________________________________________________________
  Time step number = 890     t = 4.80015e+00 -> t + dt = 4.80555e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 5.2051e+00:
   Relative error (L2-norm): 1.77530e-07
 
@@ -214,7 +201,6 @@ ________________________________________________________________________________
  Time step number = 965     t = 5.20511e+00 -> t + dt = 5.21051e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 5.6047e+00:
   Relative error (L2-norm): 2.35085e-07
 
@@ -223,7 +209,6 @@ ________________________________________________________________________________
  Time step number = 1039    t = 5.60467e+00 -> t + dt = 5.61007e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 6.0042e+00:
   Relative error (L2-norm): 1.27066e-07
 
@@ -232,7 +217,6 @@ ________________________________________________________________________________
  Time step number = 1113    t = 6.00424e+00 -> t + dt = 6.00964e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 6.4038e+00:
   Relative error (L2-norm): 2.35727e-07
 
@@ -241,7 +225,6 @@ ________________________________________________________________________________
  Time step number = 1187    t = 6.40380e+00 -> t + dt = 6.40920e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 6.8034e+00:
   Relative error (L2-norm): 1.76150e-07
 
@@ -250,7 +233,6 @@ ________________________________________________________________________________
  Time step number = 1261    t = 6.80336e+00 -> t + dt = 6.80876e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 7.2029e+00:
   Relative error (L2-norm): 1.76725e-07
 
@@ -259,7 +241,6 @@ ________________________________________________________________________________
  Time step number = 1335    t = 7.20292e+00 -> t + dt = 7.20832e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 7.6025e+00:
   Relative error (L2-norm): 2.35462e-07
 
@@ -268,12 +249,5 @@ ________________________________________________________________________________
  Time step number = 1409    t = 7.60249e+00 -> t + dt = 7.60788e+00
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation explicitly:
 Calculate error for all fields at time t = 8.0020e+00:
   Relative error (L2-norm): 1.27060e-07
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-_________________________________________________________________________________
-

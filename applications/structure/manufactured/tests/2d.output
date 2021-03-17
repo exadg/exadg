@@ -111,25 +111,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e+00
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 5
-  Linear iterations (avg):         8.2
-  Linear iterations (tot):          41
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 1.54981e-02
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     5.00
-  Linear iterations (accumulated)         41.00
-  Linear iterations (per nonlinear it.)    8.20
-
-_________________________________________________________________________________
-
 
 
 
@@ -243,25 +226,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-01
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 6
-  Linear iterations (avg):        10.2
-  Linear iterations (tot):          61
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 9.09311e-03
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     5.00
-  Linear iterations (accumulated)         43.00
-  Linear iterations (per nonlinear it.)    8.60
-
-_________________________________________________________________________________
-
 
 
 
@@ -375,25 +341,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 2.50000e-01
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 5
-  Linear iterations (avg):         9.8
-  Linear iterations (tot):          49
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 2.46504e-02
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     4.75
-  Linear iterations (accumulated)         52.00
-  Linear iterations (per nonlinear it.)   10.95
-
-_________________________________________________________________________________
-
 
 
 
@@ -507,25 +456,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.25000e-01
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 4
-  Linear iterations (avg):        14.2
-  Linear iterations (tot):          57
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 1.08495e-02
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     4.00
-  Linear iterations (accumulated)         61.00
-  Linear iterations (per nonlinear it.)   15.25
-
-_________________________________________________________________________________
-
 
 
 
@@ -639,25 +571,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 6.25000e-02
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 3
-  Linear iterations (avg):        20.7
-  Linear iterations (tot):          62
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 3.25539e-03
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     3.00
-  Linear iterations (accumulated)         62.12
-  Linear iterations (per nonlinear it.)   20.71
-
-_________________________________________________________________________________
-
 
 
 
@@ -771,25 +686,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 3.12500e-02
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 3
-  Linear iterations (avg):        20.3
-  Linear iterations (tot):          61
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 8.33216e-04
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     2.94
-  Linear iterations (accumulated)         69.16
-  Linear iterations (per nonlinear it.)   23.54
-
-_________________________________________________________________________________
-
 
 
 
@@ -903,25 +801,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.56250e-02
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 2
-  Linear iterations (avg):        24.5
-  Linear iterations (tot):          49
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 2.07103e-04
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     2.59
-  Linear iterations (accumulated)         62.56
-  Linear iterations (per nonlinear it.)   24.12
-
-_________________________________________________________________________________
-
 
 
 
@@ -1035,25 +916,8 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 7.81250e-03
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 2
-  Linear iterations (avg):        27.0
-  Linear iterations (tot):          54
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 5.09579e-05
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     2.00
-  Linear iterations (accumulated)         53.82
-  Linear iterations (per nonlinear it.)   26.91
-
-_________________________________________________________________________________
-
 
 
 
@@ -1167,22 +1031,5 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 3.90625e-03
 ________________________________________________________________________________
 
-Solve nonlinear elasticity problem:
-  Newton iterations:                 2
-  Linear iterations (avg):        25.0
-  Linear iterations (tot):          50
-
 Calculate error for all fields at time t = 1.0000e+00:
   Absolute error (L2-norm): 1.22647e-05
-
-_________________________________________________________________________________
-
-Performance results for elasticity solver:
-
-Average number of iterations:
-  Nonlinear iterations                     2.00
-  Linear iterations (accumulated)         54.20
-  Linear iterations (per nonlinear it.)   27.10
-
-_________________________________________________________________________________
-

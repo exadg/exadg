@@ -87,17 +87,6 @@ Calculate error for all fields for initial data:
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 6.97749e-01
 
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 9
-  Iterations n_10      = 8.5
-  Convergence rate rho = 0.0676
-________________________________________________________________________________
-
-
 
 
 ________________________________________________________________________________
@@ -185,17 +174,6 @@ Calculate error for all fields for initial data:
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.44021e-01
-
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 6
-  Iterations n_10      = 5.8
-  Convergence rate rho = 0.0195
-________________________________________________________________________________
-
 
 
 
@@ -285,17 +263,6 @@ Calculate error for all fields for initial data:
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 4.69051e-02
 
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 6
-  Iterations n_10      = 5.9
-  Convergence rate rho = 0.0208
-________________________________________________________________________________
-
-
 
 
 ________________________________________________________________________________
@@ -383,17 +350,6 @@ Calculate error for all fields for initial data:
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.09878e-02
-
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 6
-  Iterations n_10      = 5.5
-  Convergence rate rho = 0.0152
-________________________________________________________________________________
-
 
 
 
@@ -483,17 +439,6 @@ Calculate error for all fields for initial data:
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 2.57754e-03
 
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 7
-  Iterations n_10      = 6.5
-  Convergence rate rho = 0.0289
-________________________________________________________________________________
-
-
 
 
 ________________________________________________________________________________
@@ -582,17 +527,6 @@ Calculate error for all fields for initial data:
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 5.39649e-04
 
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 7
-  Iterations n_10      = 6.3
-  Convergence rate rho = 0.0262
-________________________________________________________________________________
-
-
 
 
 ________________________________________________________________________________
@@ -680,14 +614,3 @@ Calculate error for all fields for initial data:
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.04508e-04
-
-________________________________________________________________________________
-
-Performance results for Poisson solver:
-
-Number of iterations:
-  Iterations n         = 8
-  Iterations n_10      = 7.9
-  Convergence rate rho = 0.0533
-________________________________________________________________________________
-

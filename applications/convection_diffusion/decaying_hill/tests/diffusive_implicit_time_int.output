@@ -113,9 +113,6 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-03
 ________________________________________________________________________________
 
-Solve scalar convection-diffusion equation:
-  Iterations:             21
-
 Calculate error for all fields at time t = 5.0000e-02:
   Relative error (L2-norm): 5.27721e-11
 
@@ -175,12 +172,3 @@ Calculate error for all fields at time t = 9.5000e-01:
 
 Calculate error for all fields at time t = 1.0000e+00:
   Relative error (L2-norm): 5.48260e-11
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-
-Average number of iterations:
-  Linear system   10.96
-_________________________________________________________________________________
-

@@ -192,17 +192,6 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 1.00000e-01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              2
-
-Solve penalty step:
-  Iterations:              0
-
 Calculate error for velocity at time t = 1.0036e+01:
   Absolute error (L2-norm): 1.69108e-01
 
@@ -214,208 +203,96 @@ ________________________________________________________________________________
  Time step number = 69      t = 1.00357e+01 -> t + dt = 1.01446e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              1
-
-Solve penalty step:
-  Iterations:             12
-
 Calculate error for velocity at time t = 2.0037e+01:
   Absolute error (L2-norm): 1.39719e-02
 
 Calculate error for pressure at time t = 2.0037e+01:
-  Absolute error (L2-norm): 5.97343e-11
+  Absolute error (L2-norm): 5.92462e-11
 
 ________________________________________________________________________________
 
  Time step number = 166     t = 2.00370e+01 -> t + dt = 2.01376e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              2
-
-Solve penalty step:
-  Iterations:             11
-
 Calculate error for velocity at time t = 3.0057e+01:
   Absolute error (L2-norm): 1.14904e-03
 
 Calculate error for pressure at time t = 3.0057e+01:
-  Absolute error (L2-norm): 7.94918e-12
+  Absolute error (L2-norm): 3.50761e-12
 
 ________________________________________________________________________________
 
  Time step number = 266     t = 3.00570e+01 -> t + dt = 3.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              1
-
-Solve penalty step:
-  Iterations:             10
-
 Calculate error for velocity at time t = 4.0057e+01:
   Absolute error (L2-norm): 9.49692e-05
 
 Calculate error for pressure at time t = 4.0057e+01:
-  Absolute error (L2-norm): 5.12031e-13
+  Absolute error (L2-norm): 4.45021e-13
 
 ________________________________________________________________________________
 
  Time step number = 366     t = 4.00570e+01 -> t + dt = 4.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              1
-
-Solve penalty step:
-  Iterations:              8
-
 Calculate error for velocity at time t = 5.0057e+01:
   Absolute error (L2-norm): 7.84928e-06
 
 Calculate error for pressure at time t = 5.0057e+01:
-  Absolute error (L2-norm): 3.35254e-14
+  Absolute error (L2-norm): 3.80143e-14
 
 ________________________________________________________________________________
 
  Time step number = 466     t = 5.00570e+01 -> t + dt = 5.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              2
-
-Solve penalty step:
-  Iterations:              8
-
 Calculate error for velocity at time t = 6.0057e+01:
   Absolute error (L2-norm): 6.48750e-07
 
 Calculate error for pressure at time t = 6.0057e+01:
-  Absolute error (L2-norm): 9.18513e-15
+  Absolute error (L2-norm): 8.95339e-15
 
 ________________________________________________________________________________
 
  Time step number = 566     t = 6.00570e+01 -> t + dt = 6.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              1
-
-Solve penalty step:
-  Iterations:              7
-
 Calculate error for velocity at time t = 7.0057e+01:
   Absolute error (L2-norm): 5.36197e-08
 
 Calculate error for pressure at time t = 7.0057e+01:
-  Absolute error (L2-norm): 7.31693e-15
+  Absolute error (L2-norm): 2.97348e-15
 
 ________________________________________________________________________________
 
  Time step number = 666     t = 7.00570e+01 -> t + dt = 7.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              3
-
-Solve penalty step:
-  Iterations:              7
-
 Calculate error for velocity at time t = 8.0057e+01:
   Absolute error (L2-norm): 4.43171e-09
 
 Calculate error for pressure at time t = 8.0057e+01:
-  Absolute error (L2-norm): 3.70040e-15
+  Absolute error (L2-norm): 5.35431e-15
 
 ________________________________________________________________________________
 
  Time step number = 766     t = 8.00570e+01 -> t + dt = 8.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              4
-
-Solve penalty step:
-  Iterations:              7
-
 Calculate error for velocity at time t = 9.0057e+01:
-  Absolute error (L2-norm): 3.66278e-10
+  Absolute error (L2-norm): 3.66279e-10
 
 Calculate error for pressure at time t = 9.0057e+01:
-  Absolute error (L2-norm): 2.88985e-15
+  Absolute error (L2-norm): 5.49098e-15
 
 ________________________________________________________________________________
 
  Time step number = 866     t = 9.00570e+01 -> t + dt = 9.01570e+01
 ________________________________________________________________________________
 
-Explicit convective step:
-Solve pressure step:
-  Iterations:              2
-
-Explicit projection step:
-Solve viscous step:
-  Iterations:              6
-
-Solve penalty step:
-  Iterations:              7
-
 Calculate error for velocity at time t = 1.0006e+02:
-  Absolute error (L2-norm): 3.02636e-11
+  Absolute error (L2-norm): 3.02670e-11
 
 Calculate error for pressure at time t = 1.0006e+02:
-  Absolute error (L2-norm): 3.89078e-15
-
-_________________________________________________________________________________
-
-Performance results for incompressible Navier-Stokes solver:
-
-Average number of iterations:
-  Convective step    0.00
-  Pressure step      2.00
-  Projection step    0.00
-  Viscous step       2.61
-  Penalty step       8.33
-_________________________________________________________________________________
-
+  Absolute error (L2-norm): 1.61940e-15
