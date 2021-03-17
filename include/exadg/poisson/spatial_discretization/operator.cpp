@@ -406,9 +406,6 @@ template<int dim, typename Number, int n_components>
 double
 Operator<dim, Number, n_components>::get_n10() const
 {
-  AssertThrow(iterative_solver->n10 != 0,
-              ExcMessage("Make sure to activate param.compute_performance_metrics!"));
-
   return iterative_solver->n10;
 }
 
