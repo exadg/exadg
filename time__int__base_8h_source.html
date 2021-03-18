@@ -122,7 +122,7 @@ $(function() {
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>  max_number_of_time_steps_,</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;              <a class="code" href="structExaDG_1_1RestartData.html">RestartData</a> <span class="keyword">const</span> &amp; restart_data_,</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;              MPI_Comm <span class="keyword">const</span> &amp;    mpi_comm_,</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;              <span class="keywordtype">bool</span> <span class="keyword">const</span>          print_wall_times_);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;              <span class="keywordtype">bool</span> <span class="keyword">const</span>          is_test_);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classExaDG_1_1TimeIntBase.html">TimeIntBase</a>()</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  {</div>
@@ -312,7 +312,7 @@ $(function() {
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;  Timer                      global_timer;</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;  std::shared_ptr&lt;TimerTree&gt; timer_tree;</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;  <span class="keywordtype">bool</span>                       print_wall_times;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;  <span class="keywordtype">bool</span>                       is_test;</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160; </div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  <span class="comment">/*</span></div>

@@ -96,9 +96,9 @@ Inheritance diagram for ExaDG::TimeIntBase:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a867ed80a953ad2ccebcdc5cef5ab99d7"><td class="memItemLeft" align="right" valign="top"><a id="a867ed80a953ad2ccebcdc5cef5ab99d7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntBase</b> (double const &amp;start_time_, double const &amp;end_time_, unsigned int const max_number_of_time_steps_, <a class="el" href="structExaDG_1_1RestartData.html">RestartData</a> const &amp;restart_data_, MPI_Comm const &amp;mpi_comm_, bool const print_wall_times_)</td></tr>
-<tr class="separator:a867ed80a953ad2ccebcdc5cef5ab99d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf470ff8f2bb3d7b6b0c634d4e84e005"><td class="memItemLeft" align="right" valign="top"><a id="aaf470ff8f2bb3d7b6b0c634d4e84e005"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntBase</b> (double const &amp;start_time_, double const &amp;end_time_, unsigned int const max_number_of_time_steps_, <a class="el" href="structExaDG_1_1RestartData.html">RestartData</a> const &amp;restart_data_, MPI_Comm const &amp;mpi_comm_, bool const is_test_)</td></tr>
+<tr class="separator:aaf470ff8f2bb3d7b6b0c634d4e84e005"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ec2f8f2ebe55056977d3cc71e6d0ed7"><td class="memItemLeft" align="right" valign="top"><a id="a3ec2f8f2ebe55056977d3cc71e6d0ed7"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (bool const do_restart)=0</td></tr>
 <tr class="separator:a3ec2f8f2ebe55056977d3cc71e6d0ed7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -213,9 +213,9 @@ Timer&#160;</td><td class="memItemRight" valign="bottom"><b>global_timer</b></td
 <tr class="memitem:aa7b40a47f6f4f98e84626da44926582e"><td class="memItemLeft" align="right" valign="top"><a id="aa7b40a47f6f4f98e84626da44926582e"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>timer_tree</b></td></tr>
 <tr class="separator:aa7b40a47f6f4f98e84626da44926582e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a712d110c15ad2831a43129ab393d5510"><td class="memItemLeft" align="right" valign="top"><a id="a712d110c15ad2831a43129ab393d5510"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>print_wall_times</b></td></tr>
-<tr class="separator:a712d110c15ad2831a43129ab393d5510"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4012b87f0586755e2e43fda10c1fb4c6"><td class="memItemLeft" align="right" valign="top"><a id="a4012b87f0586755e2e43fda10c1fb4c6"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_test</b></td></tr>
+<tr class="separator:a4012b87f0586755e2e43fda10c1fb4c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/time_integration/<a class="el" href="time__int__base_8h_source.html">time_int_base.h</a></li>

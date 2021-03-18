@@ -124,11 +124,11 @@ $(function() {
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <a class="code" href="classExaDG_1_1Structure_1_1DriverSteady.html">DriverSteady</a>(std::shared_ptr&lt;<a class="code" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">Interface::Operator&lt;Number&gt;</a>&gt; operator_in,</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;               std::shared_ptr&lt;<a class="code" href="classExaDG_1_1Structure_1_1PostProcessorBase.html">PostProcessorBase&lt;Number&gt;</a>&gt;   postprocessor_in,</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;               <a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp;                      param_in,</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;               MPI_Comm <span class="keyword">const</span> &amp;                             mpi_comm_in,</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;               <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   print_wall_times_in);</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <a class="code" href="classExaDG_1_1Structure_1_1DriverSteady.html">DriverSteady</a>(std::shared_ptr&lt;<a class="code" href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">Interface::Operator&lt;Number&gt;</a>&gt; operator_,</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;               std::shared_ptr&lt;<a class="code" href="classExaDG_1_1Structure_1_1PostProcessorBase.html">PostProcessorBase&lt;Number&gt;</a>&gt;   postprocessor_,</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;               <a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp;                      param_,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;               MPI_Comm <span class="keyword">const</span> &amp;                             mpi_comm_,</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;               <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   is_test_);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  setup();</div>
@@ -160,7 +160,7 @@ $(function() {
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keywordtype">bool</span> print_wall_times;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keywordtype">bool</span> is_test;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  ConditionalOStream pcout;</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
