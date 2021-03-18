@@ -207,7 +207,7 @@ OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
   if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
   {
     // setup solver data
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
@@ -219,14 +219,15 @@ OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
     }
 
     // setup solver
-    pressure_poisson_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
-                   PreconditionerBase<Number>,
-                   VectorType>(laplace_operator, *preconditioner_pressure_poisson, solver_data));
+    pressure_poisson_solver.reset(new Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
+                                                       PreconditionerBase<Number>,
+                                                       VectorType>(laplace_operator,
+                                                                   *preconditioner_pressure_poisson,
+                                                                   solver_data));
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
@@ -238,11 +239,10 @@ OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, Number, 1>,
-                                                   PreconditionerBase<Number>,
-                                                   VectorType>(laplace_operator,
-                                                               *preconditioner_pressure_poisson,
-                                                               solver_data));
+    pressure_poisson_solver.reset(new Krylov::SolverFGMRES<Poisson::LaplaceOperator<dim, Number, 1>,
+                                                           PreconditionerBase<Number>,
+                                                           VectorType>(
+      laplace_operator, *preconditioner_pressure_poisson, solver_data));
   }
   else
   {

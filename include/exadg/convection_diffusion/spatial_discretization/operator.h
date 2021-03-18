@@ -399,8 +399,8 @@ private:
   /*
    * Solvers and preconditioners
    */
-  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
-  std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
+  std::shared_ptr<PreconditionerBase<Number>>     preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> iterative_solver;
 
   /*
    * MPI

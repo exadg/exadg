@@ -231,7 +231,7 @@ private:
    */
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
-  std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> helmholtz_solver;
 };
 
 } // namespace IncNS

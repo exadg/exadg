@@ -1135,13 +1135,13 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 &periodic_face_pairs);
 
   // setup solver
-  CGSolverData solver_data;
+  Krylov::SolverDataCG solver_data;
   solver_data.solver_tolerance_rel = 1.e-10;
   solver_data.use_preconditioner   = true;
 
-  CGSolver<Laplace, PreconditionerBase<Number>, VectorType> poisson_solver(laplace_operator,
-                                                                           *preconditioner,
-                                                                           solver_data);
+  Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType> poisson_solver(laplace_operator,
+                                                                                   *preconditioner,
+                                                                                   solver_data);
 
   // solve Poisson problem
   poisson_solver.solve(dst, rhs, /* update preconditioner = */ false);
@@ -1457,7 +1457,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     if(param.solver_projection == SolverProjection::CG)
     {
       // setup solver data
-      CGSolverData solver_data;
+      Krylov::SolverDataCG solver_data;
       solver_data.max_iter             = param.solver_data_projection.max_iter;
       solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
       solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
@@ -1468,15 +1468,16 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       }
 
       // setup solver
-      projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
-        *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
-        *preconditioner_projection,
-        solver_data));
+      projection_solver.reset(
+        new Krylov::SolverCG<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
+          *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
+          *preconditioner_projection,
+          solver_data));
     }
     else if(param.solver_projection == SolverProjection::FGMRES)
     {
       // setup solver data
-      FGMRESSolverData solver_data;
+      Krylov::SolverDataFGMRES solver_data;
       solver_data.max_iter             = param.solver_data_projection.max_iter;
       solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
       solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
@@ -1490,7 +1491,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
 
       // setup solver
       projection_solver.reset(
-        new FGMRESSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
+        new Krylov::SolverFGMRES<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
           *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
           *preconditioner_projection,
           solver_data));

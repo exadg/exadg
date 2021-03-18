@@ -274,7 +274,7 @@ Operator<dim, Number, n_components>::setup_solver()
   if(param.solver == Poisson::Solver::CG)
   {
     // initialize solver_data
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
     solver_data.max_iter                    = param.solver_data.max_iter;
@@ -284,13 +284,13 @@ Operator<dim, Number, n_components>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(new CGSolver<Laplace, PreconditionerBase<Number>, VectorType>(
+    iterative_solver.reset(new Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>(
       laplace_operator, *preconditioner, solver_data));
   }
   else if(param.solver == Solver::FGMRES)
   {
     // initialize solver_data
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
     solver_data.max_iter                    = param.solver_data.max_iter;
@@ -301,8 +301,10 @@ Operator<dim, Number, n_components>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(new FGMRESSolver<Laplace, PreconditionerBase<Number>, VectorType>(
-      laplace_operator, *preconditioner, solver_data));
+    iterative_solver.reset(
+      new Krylov::SolverFGMRES<Laplace, PreconditionerBase<Number>, VectorType>(laplace_operator,
+                                                                                *preconditioner,
+                                                                                solver_data));
   }
   else
   {

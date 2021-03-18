@@ -501,7 +501,7 @@ Operator<dim, Number>::initialize_solver()
   if(param.solver == Solver::CG)
   {
     // initialize solver_data
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
     solver_data.max_iter             = param.solver_data.max_iter;
@@ -511,13 +511,13 @@ Operator<dim, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new CGSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+      new Krylov::SolverCG<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         combined_operator, *preconditioner, solver_data));
   }
   else if(param.solver == Solver::GMRES)
   {
     // initialize solver_data
-    GMRESSolverData solver_data;
+    Krylov::SolverDataGMRES solver_data;
     solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
     solver_data.max_iter             = param.solver_data.max_iter;
@@ -527,14 +527,15 @@ Operator<dim, Number>::initialize_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(
-      new GMRESSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        combined_operator, *preconditioner, solver_data, mpi_comm));
+    iterative_solver.reset(new Krylov::SolverGMRES<CombinedOperator<dim, Number>,
+                                                   PreconditionerBase<Number>,
+                                                   VectorType>(
+      combined_operator, *preconditioner, solver_data, mpi_comm));
   }
   else if(param.solver == Solver::FGMRES)
   {
     // initialize solver_data
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
     solver_data.max_iter             = param.solver_data.max_iter;
@@ -545,8 +546,9 @@ Operator<dim, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new FGMRESSolver<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        combined_operator, *preconditioner, solver_data));
+      new Krylov::SolverFGMRES<CombinedOperator<dim, Number>,
+                               PreconditionerBase<Number>,
+                               VectorType>(combined_operator, *preconditioner, solver_data));
   }
   else
   {
