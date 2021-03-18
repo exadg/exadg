@@ -193,11 +193,10 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
 
     pde_operator->update_turbulence_model(solution_np.block(0));
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Update of turbulent viscosity:";
-      if(this->print_wall_times)
-        print_wall_time(this->pcout, timer_turbulence.wall_time());
+      print_wall_time(this->pcout, timer_turbulence.wall_time());
     }
   }
 
@@ -300,10 +299,10 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     std::get<1>(iterations.second) += n_iter;
 
     // write output
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve linear problem:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -335,14 +334,13 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     std::get<1>(iterations.second) += std::get<1>(iter);
 
     // write output
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve nonlinear problem:";
       print_solver_info_nonlinear(this->pcout,
                                   std::get<0>(iter),
                                   std::get<1>(iter),
-                                  timer.wall_time(),
-                                  this->print_wall_times);
+                                  timer.wall_time());
     }
   }
 
@@ -443,10 +441,10 @@ TimeIntBDFCoupled<dim, Number>::penalty_step()
   iterations_penalty.second += n_iter;
 
   // write output
-  if(this->print_solver_info())
+  if(this->print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Solve penalty step:";
-    print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
   }
 }
 

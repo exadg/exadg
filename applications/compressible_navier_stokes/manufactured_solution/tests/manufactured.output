@@ -207,9 +207,3 @@ Calculate error for all fields at time t = 7.1250e-01:
 
 Calculate error for all fields at time t = 7.5000e-01:
   Relative error (L2-norm): 7.94707e-13
-
-_________________________________________________________________________________
-
-Performance results for compressible Navier-Stokes solver:
-_________________________________________________________________________________
-

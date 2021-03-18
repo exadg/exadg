@@ -67,7 +67,7 @@ public:
    * Updates the mapping, i.e., moves the mesh by solving a pseudo-solid problem.
    */
   void
-  update(double const time, bool const print_solver_info, bool const print_wall_times) override
+  update(double const time, bool const print_solver_info) override
   {
     Timer timer;
     timer.restart();
@@ -86,8 +86,7 @@ public:
       if(print_solver_info)
       {
         this->pcout << std::endl << "Solve moving mesh problem (nonlinear elasticity):";
-        print_solver_info_nonlinear(
-          pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time(), print_wall_times);
+        print_solver_info_nonlinear(pcout, std::get<0>(iter), std::get<1>(iter), timer.wall_time());
       }
     }
     else // linear problem
@@ -105,7 +104,7 @@ public:
       if(print_solver_info)
       {
         this->pcout << std::endl << "Solve moving mesh problem (linear elasticity):";
-        print_solver_info_linear(pcout, iter, timer.wall_time(), print_wall_times);
+        print_solver_info_linear(pcout, iter, timer.wall_time());
       }
     }
 

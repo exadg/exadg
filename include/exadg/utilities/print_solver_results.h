@@ -149,8 +149,7 @@ inline void
 print_solver_info_nonlinear(ConditionalOStream const & pcout,
                             unsigned int const         N_iter_nonlinear,
                             unsigned int const         N_iter_linear,
-                            double const               wall_time,
-                            bool const                 print_wall_time)
+                            double const               wall_time)
 
 {
   double const N_iter_linear_avg =
@@ -160,34 +159,23 @@ print_solver_info_nonlinear(ConditionalOStream const & pcout,
   pcout << std::endl
         << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear << std::endl
         << "  Linear iterations (avg):" << std::setw(12) << std::fixed << std::setprecision(1) << std::right << N_iter_linear_avg << std::endl
-        << "  Linear iterations (tot):" << std::setw(12) << std::right << N_iter_linear << std::endl;
-
-  if(print_wall_time)
-  {
-    pcout << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl;
-  }
-
-  pcout << std::flush;
+        << "  Linear iterations (tot):" << std::setw(12) << std::right << N_iter_linear << std::endl
+        << "  Wall time [s]:          " << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl
+        << std::flush;
   // clang-format on
 }
 
 inline void
 print_solver_info_linear(ConditionalOStream const & pcout,
                          unsigned int const         N_iter_linear,
-                         double const               wall_time,
-                         bool const                 print_wall_time)
+                         double const               wall_time)
 
 {
   // clang-format off
   pcout << std::endl
-        << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl;
-
-  if(print_wall_time)
-  {
-    pcout << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl;
-  }
-
-  pcout << std::flush;
+        << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
+        << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(2) << std::right << wall_time << std::endl
+        << std::flush;
   // clang-format on
 }
 

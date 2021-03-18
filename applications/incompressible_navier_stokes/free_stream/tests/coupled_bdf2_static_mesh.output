@@ -194,9 +194,6 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 8.50500e-03
 ________________________________________________________________________________
 
-Solve linear problem:
-  Iterations:              0
-
 Calculate error for velocity at time t = 1.0036e+00:
   Relative error (L2-norm): 1.82429e-16
 
@@ -256,12 +253,3 @@ Calculate error for velocity at time t = 1.0002e+01:
 
 Calculate error for pressure at time t = 1.0002e+01:
   Relative error (L2-norm): 1.28188e-16
-
-_________________________________________________________________________________
-
-Performance results for incompressible Navier-Stokes solver:
-
-Average number of iterations:
-  Coupled system    0.00
-_________________________________________________________________________________
-

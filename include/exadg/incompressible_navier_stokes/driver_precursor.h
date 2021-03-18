@@ -45,19 +45,18 @@ template<int dim, typename Number>
 class DriverPrecursor
 {
 public:
-  DriverPrecursor(MPI_Comm const & mpi_comm);
+  DriverPrecursor(MPI_Comm const & mpi_comm, bool const is_test);
 
   void
   setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
         unsigned int const                                     degree,
-        unsigned int const                                     refine_space,
-        bool const                                             is_test);
+        unsigned int const                                     refine_space);
 
   void
   solve() const;
 
   void
-  print_performance_results(double const total_time, bool const is_test) const;
+  print_performance_results(double const total_time) const;
 
 private:
   void
@@ -71,6 +70,9 @@ private:
 
   // output to std::cout
   ConditionalOStream pcout;
+
+  // do not print wall times if is_test
+  bool const is_test;
 
   // application
   std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application;

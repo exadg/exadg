@@ -9,39 +9,39 @@ _____________________________________________________________
 
 timings for level = 0:
 
-General          2.31e+04 s
+General          2.20e+04 s
 
 timings for level = 1:
 
-General          2.31e+04 s    100.00 %
-  Part 1         2.10e+03 s      9.09 %
-  Part 2         3.15e+03 s     13.63 %
-  Part 3         4.20e+03 s     18.16 %
-  Other          1.37e+04 s     59.12 %
+General          2.20e+04 s    100.00 %
+  Part 1         2.00e+03 s      9.09 %
+  Part 2         3.00e+03 s     13.64 %
+  Part 3         4.00e+03 s     18.18 %
+  Other          1.30e+04 s     59.09 %
 
 timings for level = 2:
 
 General        
-  Part 2         3.15e+03 s    100.00 %
-    Sub a        7.87e+02 s     24.95 %
-    Sub b        9.45e+02 s     30.00 %
-    Other        1.42e+03 s     45.05 %
-  Part 3         4.20e+03 s    100.00 %
-    Sub a        5.24e+02 s     12.48 %
-    Sub b        1.04e+03 s     24.67 %
-    Other        2.64e+03 s     62.85 %
+  Part 2         3.00e+03 s    100.00 %
+    Sub a        7.50e+02 s     25.00 %
+    Sub b        9.00e+02 s     30.00 %
+    Other        1.35e+03 s     45.00 %
+  Part 3         4.00e+03 s    100.00 %
+    Sub a        5.00e+02 s     12.50 %
+    Sub b        9.88e+02 s     24.69 %
+    Other        2.51e+03 s     62.81 %
 
 timings all:
 
-General          2.31e+04 s
-  Part 1         2.10e+03 s
-  Part 2         3.15e+03 s
-    Sub a        7.87e+02 s
-    Sub b        9.45e+02 s
-  Part 3         4.20e+03 s
-    Sub a        5.24e+02 s
-      sub-sub a  4.19e+01 s
-    Sub b        1.04e+03 s
+General          2.20e+04 s
+  Part 1         2.00e+03 s
+  Part 2         3.00e+03 s
+    Sub a        7.50e+02 s
+    Sub b        9.00e+02 s
+  Part 3         4.00e+03 s
+    Sub a        5.00e+02 s
+      sub-sub a  4.00e+01 s
+    Sub b        9.88e+02 s
 
 
 
@@ -66,7 +66,7 @@ timings for level = 2:
 
 FSI                 
   Fluid               7.00e+01 s    100.00 %
-    Pressure poisson  4.00e+01 s     57.14 %
+    Pressure Poisson  4.00e+01 s     57.14 %
     Postprocessing    1.00e+01 s     14.29 %
     ALE update        1.50e+01 s     21.43 %
     Other             5.00e+00 s      7.14 %
@@ -80,7 +80,7 @@ timings all:
 
 FSI                   1.00e+02 s
   Fluid               7.00e+01 s
-    Pressure poisson  4.00e+01 s
+    Pressure Poisson  4.00e+01 s
     Postprocessing    1.00e+01 s
     ALE update        1.50e+01 s
   Structure           2.50e+01 s

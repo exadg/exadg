@@ -110,18 +110,10 @@ Calculate error for all fields for initial data:
 
 Solving steady state problem ...
 
-  Iterations:             12
-
 ... done!
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.40308e-02
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-_________________________________________________________________________________
-
 
 
 
@@ -234,18 +226,10 @@ Calculate error for all fields for initial data:
 
 Solving steady state problem ...
 
-  Iterations:             11
-
 ... done!
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.43439e-03
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-_________________________________________________________________________________
-
 
 
 
@@ -358,18 +342,10 @@ Calculate error for all fields for initial data:
 
 Solving steady state problem ...
 
-  Iterations:             12
-
 ... done!
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 1.11728e-04
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-_________________________________________________________________________________
-
 
 
 
@@ -482,18 +458,10 @@ Calculate error for all fields for initial data:
 
 Solving steady state problem ...
 
-  Iterations:             11
-
 ... done!
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 6.62444e-06
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-_________________________________________________________________________________
-
 
 
 
@@ -606,15 +574,7 @@ Calculate error for all fields for initial data:
 
 Solving steady state problem ...
 
-  Iterations:             12
-
 ... done!
 
 Calculate error for all fields for solution data:
   Relative error (L2-norm): 4.41737e-07
-
-_________________________________________________________________________________
-
-Performance results for convection-diffusion solver:
-_________________________________________________________________________________
-

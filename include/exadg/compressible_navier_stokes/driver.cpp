@@ -147,7 +147,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize time integrator
     time_integrator.reset(new TimeIntExplRK<Number>(
-      comp_navier_stokes_operator, param, refine_time, mpi_comm, not(is_test), postprocessor));
+      comp_navier_stokes_operator, param, refine_time, mpi_comm, is_test, postprocessor));
     time_integrator->setup(param.restarted_simulation);
   }
 
@@ -177,27 +177,24 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   timer_tree.insert({"Compressible flow"}, time_integrator->get_timings());
 
-  if(not(is_test))
-  {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
 
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
 
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index const DoFs = comp_navier_stokes_operator->get_number_of_dofs();
-    unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-    unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index const DoFs            = comp_navier_stokes_operator->get_number_of_dofs();
+  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
 
-    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              overall_time_avg  = overall_time_data.avg;
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
 
-    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+  print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
 
-    // computational costs in CPUh
-    print_costs(pcout, overall_time_avg, N_mpi_processes);
-  }
+  // computational costs in CPUh
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

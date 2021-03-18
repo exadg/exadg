@@ -635,7 +635,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             fluid_param,
                                                                             0 /* refine_time */,
                                                                             mpi_comm,
-                                                                            not(is_test),
+                                                                            is_test,
                                                                             fluid_postprocessor,
                                                                             fluid_moving_mapping,
                                                                             fluid_matrix_free));
@@ -648,7 +648,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                         fluid_param,
                                                         0 /* refine_time */,
                                                         mpi_comm,
-                                                        not(is_test),
+                                                        is_test,
                                                         fluid_postprocessor,
                                                         fluid_moving_mapping,
                                                         fluid_matrix_free));
@@ -661,7 +661,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                              fluid_param,
                                                              0 /* refine_time */,
                                                              mpi_comm,
-                                                             not(is_test),
+                                                             is_test,
                                                              fluid_postprocessor,
                                                              fluid_moving_mapping,
                                                              fluid_matrix_free));
@@ -691,7 +691,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                   0 /* refine_time */,
                                                   structure_param,
                                                   mpi_comm,
-                                                  not(is_test)));
+                                                  is_test));
     structure_time_integrator->setup(structure_param.restarted_simulation);
 
     structure_operator->setup_solver();
@@ -734,8 +734,7 @@ Driver<dim, Number>::solve_ale() const
   sub_timer.restart();
   bool const print_solver_info = fluid_time_integrator->print_solver_info();
   fluid_moving_mapping->update(fluid_time_integrator->get_next_time(),
-                               print_solver_info,
-                               not(is_test));
+                               print_solver_info and not(is_test));
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -1243,7 +1242,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   pcout << "Performance results for fluid-structure interaction solver:" << std::endl;
 
-  // Average number of iterations
+  // iterations
   pcout << std::endl << "Average number of iterations:" << std::endl;
 
   pcout << std::endl << "FSI:" << std::endl;
@@ -1266,43 +1265,40 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.insert({"FSI"}, fluid_time_integrator->get_timings(), "Fluid");
   timer_tree.insert({"FSI"}, structure_time_integrator->get_timings(), "Structure");
 
-  if(not(is_test))
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index DoFs =
+    fluid_operator->get_number_of_dofs() + structure_operator->get_number_of_dofs();
+
+  if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
   {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
-
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index DoFs =
-      fluid_operator->get_number_of_dofs() + structure_operator->get_number_of_dofs();
-
-    if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
-    {
-      DoFs += ale_poisson_operator->get_number_of_dofs();
-    }
-    else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
-    {
-      DoFs += ale_elasticity_operator->get_number_of_dofs();
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("not implemented."));
-    }
-
-    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-    Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              total_time_avg  = total_time_data.avg;
-
-    unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
-
-    print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
-
-    // computational costs in CPUh
-    print_costs(pcout, total_time_avg, N_mpi_processes);
+    DoFs += ale_poisson_operator->get_number_of_dofs();
   }
+  else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
+  {
+    DoFs += ale_elasticity_operator->get_number_of_dofs();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              total_time_avg  = total_time_data.avg;
+
+  unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
+
+  print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
+
+  // computational costs in CPUh
+  print_costs(pcout, total_time_avg, N_mpi_processes);
 
   pcout << "_________________________________________________________________________________"
         << std::endl

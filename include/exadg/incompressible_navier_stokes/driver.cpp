@@ -295,7 +295,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                         param,
                                                                         refine_time,
                                                                         mpi_comm,
-                                                                        not(is_test),
+                                                                        is_test,
                                                                         postprocessor,
                                                                         moving_mapping,
                                                                         matrix_free));
@@ -307,7 +307,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                           param,
                                                           refine_time,
                                                           mpi_comm,
-                                                          not(is_test),
+                                                          is_test,
                                                           postprocessor,
                                                           moving_mapping,
                                                           matrix_free));
@@ -319,7 +319,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                param,
                                                                refine_time,
                                                                mpi_comm,
-                                                               not(is_test),
+                                                               is_test,
                                                                postprocessor,
                                                                moving_mapping,
                                                                matrix_free));
@@ -333,7 +333,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       // initialize driver for steady state problem that depends on operator_base
       driver_steady.reset(
-        new DriverSteady(operator_coupled, param, mpi_comm, not(is_test), postprocessor));
+        new DriverSteady(operator_coupled, param, mpi_comm, is_test, postprocessor));
     }
     else
     {
@@ -373,7 +373,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(time_integrator->get_next_time(), false, false);
+  moving_mapping->update(time_integrator->get_next_time(), false);
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -473,34 +473,31 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     timer_tree.insert({"Incompressible flow"}, driver_steady->get_timings());
   }
 
-  if(not(is_test))
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index const DoFs            = operator_base->get_number_of_dofs();
+  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
+
+  if(param.solver_type == SolverType::Unsteady)
   {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
-
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index const DoFs            = operator_base->get_number_of_dofs();
-    unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              overall_time_avg  = overall_time_data.avg;
-
-    if(param.solver_type == SolverType::Unsteady)
-    {
-      unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
-      print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
-    }
-    else
-    {
-      print_throughput_steady(pcout, DoFs, overall_time_avg, N_mpi_processes);
-    }
-
-    // computational costs in CPUh
-    print_costs(pcout, overall_time_avg, N_mpi_processes);
+    unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
+    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
   }
+  else
+  {
+    print_throughput_steady(pcout, DoFs, overall_time_avg, N_mpi_processes);
+  }
+
+  // computational costs in CPUh
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

@@ -351,7 +351,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             fluid_param,
                                                                             0 /* refine_time */,
                                                                             mpi_comm,
-                                                                            not(is_test),
+                                                                            is_test,
                                                                             fluid_postprocessor,
                                                                             moving_mapping,
                                                                             matrix_free));
@@ -364,7 +364,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                         fluid_param,
                                                         0 /* refine_time */,
                                                         mpi_comm,
-                                                        not(is_test),
+                                                        is_test,
                                                         fluid_postprocessor,
                                                         moving_mapping,
                                                         matrix_free));
@@ -377,7 +377,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                              fluid_param,
                                                              0 /* refine_time */,
                                                              mpi_comm,
-                                                             not(is_test),
+                                                             is_test,
                                                              fluid_postprocessor,
                                                              moving_mapping,
                                                              matrix_free));
@@ -391,7 +391,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     // initialize driver for steady state problem that depends on fluid_operator_base
     fluid_driver_steady.reset(new DriverSteady(
-      fluid_operator_coupled, fluid_param, mpi_comm, not(is_test), fluid_postprocessor));
+      fluid_operator_coupled, fluid_param, mpi_comm, is_test, fluid_postprocessor));
   }
   else
   {
@@ -427,7 +427,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                           scalar_param[i],
                                                                           0 /* refine_time */,
                                                                           mpi_comm,
-                                                                          not(is_test),
+                                                                          is_test,
                                                                           scalar_postprocessor[i]));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
@@ -436,7 +436,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                             scalar_param[i],
                                                                             0 /* refine_time */,
                                                                             mpi_comm,
-                                                                            not(is_test),
+                                                                            is_test,
                                                                             scalar_postprocessor[i],
                                                                             moving_mapping,
                                                                             matrix_free));
@@ -704,7 +704,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(fluid_time_integrator->get_next_time(), false, false);
+  moving_mapping->update(fluid_time_integrator->get_next_time(), false);
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -891,32 +891,29 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
                       "Timeloop scalar " + std::to_string(i));
   }
 
-  if(not(is_test))
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index DoFs = this->fluid_operator_base->get_number_of_dofs();
+
+  for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
-
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index DoFs = this->fluid_operator_base->get_number_of_dofs();
-
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
-    }
-
-    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-    Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              overall_time_avg  = overall_time_data.avg;
-
-    print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
-
-    // computational costs in CPUh
-    print_costs(pcout, overall_time_avg, N_mpi_processes);
+    DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
   }
+
+  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
+
+  print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
+
+  // computational costs in CPUh
+  print_costs(pcout, overall_time_avg, N_mpi_processes);
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

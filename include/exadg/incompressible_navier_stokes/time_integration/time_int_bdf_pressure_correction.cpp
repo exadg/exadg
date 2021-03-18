@@ -38,7 +38,7 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      print_wall_times_in,
+  bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
@@ -46,7 +46,7 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
          param_in,
          refine_steps_time_in,
          mpi_comm_in,
-         print_wall_times_in,
+         is_test_in,
          postprocessor_in,
          moving_mesh_in,
          matrix_free_in),
@@ -378,11 +378,10 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
     pde_operator->update_turbulence_model(velocity_np);
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Update of turbulent viscosity:";
-      if(this->print_wall_times)
-        print_wall_time(this->pcout, timer_turbulence.wall_time());
+      print_wall_time(this->pcout, timer_turbulence.wall_time());
     }
   }
 
@@ -416,10 +415,10 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       iterations_momentum.first += 1;
       std::get<1>(iterations_momentum.second) += n_iter;
 
-      if(this->print_solver_info())
+      if(this->print_solver_info() and not(this->is_test))
       {
         this->pcout << std::endl << "Solve momentum step:";
-        print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+        print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
       }
     }
     else // Euler equations
@@ -427,11 +426,10 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
       pde_operator->apply_inverse_mass_operator(velocity_np, rhs);
       velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
-      if(this->print_solver_info())
+      if(this->print_solver_info() and not(this->is_test))
       {
         this->pcout << std::endl << "Explicit momentum step:";
-        if(this->print_wall_times)
-          print_wall_time(this->pcout, timer.wall_time());
+        print_wall_time(this->pcout, timer.wall_time());
       }
     }
   }
@@ -451,14 +449,13 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
     std::get<0>(iterations_momentum.second) += std::get<0>(iter);
     std::get<1>(iterations_momentum.second) += std::get<1>(iter);
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve momentum step:";
       print_solver_info_nonlinear(this->pcout,
                                   std::get<0>(iter),
                                   std::get<1>(iter),
-                                  timer.wall_time(),
-                                  this->print_wall_times);
+                                  timer.wall_time());
     }
   }
 
@@ -635,10 +632,10 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_i
   pde_operator->adjust_pressure_level_if_undefined(pressure_np, this->get_next_time());
 
   // write output
-  if(this->print_solver_info())
+  if(this->print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Solve pressure step:";
-    print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Pressure step"}, timer.wall_time());
@@ -860,19 +857,18 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pr
     if(this->store_solution)
       velocity_projection_last_iter = velocity_np;
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve projection step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
   else // no penalty terms
   {
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve projection step:";
-      if(this->print_wall_times)
-        print_wall_time(this->pcout, timer.wall_time());
+      print_wall_time(this->pcout, timer.wall_time());
     }
   }
 

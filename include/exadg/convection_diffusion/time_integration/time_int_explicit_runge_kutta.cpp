@@ -39,7 +39,7 @@ TimeIntExplRK<Number>::TimeIntExplRK(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      print_wall_times_in,
+  bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
@@ -47,7 +47,7 @@ TimeIntExplRK<Number>::TimeIntExplRK(
                               param_in.restart_data,
                               param_in.adaptive_time_stepping,
                               mpi_comm_in,
-                              print_wall_times_in),
+                              is_test_in),
     pde_operator(operator_in),
     param(param_in),
     refine_steps_time(refine_steps_time_in),
@@ -383,11 +383,10 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  if(print_solver_info())
+  if(print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Solve scalar convection-diffusion equation explicitly:";
-    if(this->print_wall_times)
-      print_wall_time(this->pcout, timer.wall_time());
+    print_wall_time(this->pcout, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Solve-explicit"}, timer.wall_time());

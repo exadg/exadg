@@ -44,7 +44,7 @@ public:
                     RestartData const & restart_data_,
                     bool const          adaptive_time_stepping_,
                     MPI_Comm const &    mpi_comm_,
-                    bool const          print_wall_times_);
+                    bool const          is_test_);
 
   void
   setup(bool const do_restart) override;

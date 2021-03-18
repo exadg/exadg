@@ -411,11 +411,10 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   // solve discrete temporal derivative term for intermediate velocity u_hat
   velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
-  if(this->print_solver_info())
+  if(this->print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Explicit convective step:";
-    if(this->print_wall_times)
-      print_wall_time(this->pcout, timer.wall_time());
+    print_wall_time(this->pcout, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Convective step"}, timer.wall_time());
@@ -487,10 +486,10 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
     pressure_last_iter = pressure_np;
 
   // write output
-  if(this->print_solver_info())
+  if(this->print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Solve pressure step:";
-    print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+    print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
   }
 
   this->timer_tree->insert({"Timeloop", "Pressure step"}, timer.wall_time());
@@ -669,19 +668,18 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     if(this->store_solution)
       velocity_projection_last_iter = velocity_np;
 
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve projection step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
   else // no penalty terms
   {
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Explicit projection step:";
-      if(this->print_wall_times)
-        print_wall_time(this->pcout, timer.wall_time());
+      print_wall_time(this->pcout, timer.wall_time());
     }
   }
 
@@ -730,11 +728,10 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
       pde_operator->update_turbulence_model(velocity_extrapolated);
 
-      if(this->print_solver_info())
+      if(this->print_solver_info() and not(this->is_test))
       {
         this->pcout << std::endl << "Update of turbulent viscosity:";
-        if(this->print_wall_times)
-          print_wall_time(this->pcout, timer_turbulence.wall_time());
+        print_wall_time(this->pcout, timer_turbulence.wall_time());
       }
     }
 
@@ -770,10 +767,10 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
       velocity_viscous_last_iter = velocity_np;
 
     // write output
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve viscous step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
   }
   else // inviscid
@@ -848,10 +845,10 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
       velocity_projection_last_iter = velocity_np;
 
     // write output
-    if(this->print_solver_info())
+    if(this->print_solver_info() and not(this->is_test))
     {
       this->pcout << std::endl << "Solve penalty step:";
-      print_solver_info_linear(this->pcout, n_iter, timer.wall_time(), this->print_wall_times);
+      print_solver_info_linear(this->pcout, n_iter, timer.wall_time());
     }
 
     this->timer_tree->insert({"Timeloop", "Penalty step"}, timer.wall_time());

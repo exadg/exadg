@@ -161,21 +161,11 @@ Calculate error for pressure for initial data:
 
 Solve steady state problem:
 
-  Newton iterations:                 7
-  Linear iterations (avg):        17.0
-  Linear iterations (tot):         119
-
 Calculate error for velocity for solution data:
   Absolute error (L2-norm): 7.74871e-13
 
 Calculate error for pressure for solution data:
   Absolute error (L2-norm): 2.09042e-11
-
-_________________________________________________________________________________
-
-Performance results for incompressible Navier-Stokes solver:
-_________________________________________________________________________________
-
 
 
 
@@ -339,21 +329,11 @@ Calculate error for pressure for initial data:
 
 Solve steady state problem:
 
-  Newton iterations:                 7
-  Linear iterations (avg):        17.6
-  Linear iterations (tot):         123
-
 Calculate error for velocity for solution data:
   Absolute error (L2-norm): 8.93060e-13
 
 Calculate error for pressure for solution data:
   Absolute error (L2-norm): 1.71147e-11
-
-_________________________________________________________________________________
-
-Performance results for incompressible Navier-Stokes solver:
-_________________________________________________________________________________
-
 
 
 
@@ -517,21 +497,11 @@ Calculate error for pressure for initial data:
 
 Solve steady state problem:
 
-  Newton iterations:                 8
-  Linear iterations (avg):        18.2
-  Linear iterations (tot):         146
-
 Calculate error for velocity for solution data:
   Absolute error (L2-norm): 3.42529e-14
 
 Calculate error for pressure for solution data:
   Absolute error (L2-norm): 9.59828e-13
-
-_________________________________________________________________________________
-
-Performance results for incompressible Navier-Stokes solver:
-_________________________________________________________________________________
-
 
 
 
@@ -695,18 +665,8 @@ Calculate error for pressure for initial data:
 
 Solve steady state problem:
 
-  Newton iterations:                 7
-  Linear iterations (avg):        18.9
-  Linear iterations (tot):         132
-
 Calculate error for velocity for solution data:
   Absolute error (L2-norm): 9.37557e-12
 
 Calculate error for pressure for solution data:
   Absolute error (L2-norm): 2.32389e-10
-
-_________________________________________________________________________________
-
-Performance results for incompressible Navier-Stokes solver:
-_________________________________________________________________________________
-

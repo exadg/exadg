@@ -30,7 +30,7 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
                          unsigned int const  max_number_of_time_steps_,
                          RestartData const & restart_data_,
                          MPI_Comm const &    mpi_comm_,
-                         bool const          print_wall_times_)
+                         bool const          is_test_)
   : start_time(start_time_),
     end_time(end_time_),
     time(start_time_),
@@ -41,7 +41,7 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
     restart_data(restart_data_),
     mpi_comm(mpi_comm_),
     timer_tree(new TimerTree()),
-    print_wall_times(print_wall_times_)
+    is_test(is_test_)
 {
 }
 
@@ -247,7 +247,7 @@ TimeIntBase::output_solver_info_header() const
 void
 TimeIntBase::output_remaining_time() const
 {
-  if(this->print_wall_times)
+  if(not(this->is_test))
   {
     if(time > start_time)
     {

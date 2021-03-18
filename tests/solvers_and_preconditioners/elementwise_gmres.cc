@@ -49,6 +49,7 @@ using namespace dealii;
 /**************************************************************************************/
 unsigned int const M = 3;
 
+double const tol = 1.e-14;
 
 /*
  * Own implementation of vector class.
@@ -179,7 +180,7 @@ gmres_test_1a()
 {
   std::cout << std::endl << "GMRES solver (double), size M=3:" << std::endl << std::endl;
 
-  SolverData solver_data(100, 1e-12, 1e-12, 30);
+  SolverData solver_data(100, tol, tol, 30);
 
   typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
   typedef MyMatrix<double>                                 Matrix;
@@ -209,7 +210,8 @@ gmres_test_1a()
   matrix.vmult(resi.ptr(), x.ptr());
   resi.sadd(-1.0, b.ptr());
 
-  std::cout << "L2 norm of initial residual = " << resi.l2_norm() << std::endl;
+  std::cout << "L2 norm of initial residual = " << std::scientific << std::setprecision(1)
+            << resi.l2_norm() << std::endl;
 
   gmres_solver.solve(&matrix, x.ptr(), b.ptr(), &preconditioner);
 
@@ -217,7 +219,8 @@ gmres_test_1a()
   matrix.vmult(res.ptr(), x.ptr());
   res.sadd(-1.0, b.ptr());
 
-  std::cout << "L2 norm of final residual = " << res.l2_norm() << std::endl;
+  std::cout << "L2 norm of final residual = " << std::scientific << std::setprecision(1)
+            << res.l2_norm() << std::endl;
 }
 
 // double (larger system)
@@ -227,7 +230,7 @@ gmres_test_1b()
   std::cout << std::endl << "GMRES solver (double), size M=10000:" << std::endl << std::endl;
 
   unsigned int const M_large = 10000;
-  SolverData         solver_data(100, 1e-12, 1e-12, 30);
+  SolverData         solver_data(100, tol, tol, 30);
 
   typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
   typedef MyMatrix<double>                                 Matrix;
@@ -272,7 +275,8 @@ gmres_test_1b()
   matrix.vmult(resi.ptr(), x.ptr());
   resi.sadd(-1.0, b.ptr());
 
-  std::cout << "L2 norm of initial residual = " << resi.l2_norm() << std::endl;
+  std::cout << "L2 norm of initial residual = " << std::scientific << std::setprecision(1)
+            << resi.l2_norm() << std::endl;
 
   gmres_solver.solve(&matrix, x.ptr(), b.ptr(), &preconditioner);
 
@@ -280,7 +284,8 @@ gmres_test_1b()
   matrix.vmult(res.ptr(), x.ptr());
   res.sadd(-1.0, b.ptr());
 
-  std::cout << "L2 norm of final residual = " << res.l2_norm() << std::endl;
+  std::cout << "L2 norm of final residual = " << std::scientific << std::setprecision(1)
+            << res.l2_norm() << std::endl;
 }
 
 // Vectorized Array: start with exact solution
@@ -292,7 +297,7 @@ gmres_test_2a()
             << std::endl
             << std::endl;
 
-  SolverData solver_data(100, 1e-12, 1e-12, 30);
+  SolverData solver_data(100, tol, tol, 30);
 
   typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
   typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
@@ -316,14 +321,17 @@ gmres_test_2a()
   A.set_value(make_vectorized_array<double>(2.0), 1, 1);
   A.set_value(make_vectorized_array<double>(3.0), 2, 2);
 
-  MyVector<VectorizedArray<double>> res2(M);
-  A.vmult(res2.ptr(), x.ptr());
-  res2.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  /*
+  MyVector<VectorizedArray<double>> initial_res(M);
+  A.vmult(initial_res.ptr(), x.ptr());
+  initial_res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm2 = res2.l2_norm();
+  VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
 
   for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm2[v] << std::endl;
+    std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm_initial_res[v] <<
+  std::endl;
+   */
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
 
@@ -334,7 +342,9 @@ gmres_test_2a()
   VectorizedArray<double> l2_norm = res.l2_norm();
 
   for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
+    AssertThrow(l2_norm[v] < 1.e-12, ExcMessage("Did not converge."));
+
+  std::cout << "converged." << std::endl;
 }
 
 // VectorizedArray: start with zero solution
@@ -373,14 +383,17 @@ gmres_test_2b()
   A.set_value(make_vectorized_array<double>(1.0), 2, 1);
   A.set_value(make_vectorized_array<double>(2.0), 2, 2);
 
-  MyVector<VectorizedArray<double>> res2(M);
-  A.vmult(res2.ptr(), x.ptr());
-  res2.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  /*
+  MyVector<VectorizedArray<double>> initial_res(M);
+  A.vmult(initial_res.ptr(), x.ptr());
+  initial_res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm2 = res2.l2_norm();
+  VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
 
   for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm2[v] << std::endl;
+    std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm_initial_res[v] <<
+  std::endl;
+  */
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
 
@@ -391,7 +404,9 @@ gmres_test_2b()
   VectorizedArray<double> l2_norm = res.l2_norm();
 
   for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
+    AssertThrow(l2_norm[v] < 1.e-12, ExcMessage("Did not converge."));
+
+  std::cout << "converged." << std::endl;
 }
 
 // VectorizedArray: solve different systems of equations for the
@@ -404,7 +419,7 @@ gmres_test_2c()
             << std::endl
             << std::endl;
 
-  SolverData solver_data(100, 1e-12, 1e-12, 30);
+  SolverData solver_data(100, tol, tol, 30);
 
   typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
   typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
@@ -434,14 +449,17 @@ gmres_test_2c()
   A.set_value(make_vectorized_array<double>(2.0), 1, 1);
   A.set_value(make_vectorized_array<double>(3.0), 2, 2);
 
-  MyVector<VectorizedArray<double>> res2(M);
-  A.vmult(res2.ptr(), x.ptr());
-  res2.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  /*
+  MyVector<VectorizedArray<double>> initial_res(M);
+  A.vmult(initial_res.ptr(), x.ptr());
+  initial_res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm2 = res2.l2_norm();
+  VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
 
   for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm2[v] << std::endl;
+    std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm_initial_res[v] <<
+  std::endl;
+   */
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
 
@@ -452,7 +470,9 @@ gmres_test_2c()
   VectorizedArray<double> l2_norm = res.l2_norm();
 
   for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    std::cout << "L2 norm of final residual[" << v << "] = " << l2_norm[v] << std::endl;
+    AssertThrow(l2_norm[v] < 1.e-12, ExcMessage("Did not converge."));
+
+  std::cout << "converged." << std::endl;
 }
 
 } // namespace ExaDG

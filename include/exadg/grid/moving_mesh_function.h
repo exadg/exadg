@@ -50,17 +50,16 @@ public:
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
-    update(start_time, false, false);
+    update(start_time, false);
   }
 
   /**
    * Updates the mesh coordinates using a Function<dim> object evaluated at a given time.
    */
   void
-  update(double const time, bool const print_solver_info, bool const print_wall_times) override
+  update(double const time, bool const print_solver_info) override
   {
     (void)print_solver_info;
-    (void)print_wall_times;
 
     mesh_movement_function->set_time(time);
 

@@ -61,7 +61,7 @@ public:
                 InputParameters const &                         param_in,
                 unsigned int const                              refine_steps_time_in,
                 MPI_Comm const &                                mpi_comm_in,
-                bool const                                      print_wall_times_in,
+                bool const                                      is_test_in,
                 std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void

@@ -201,23 +201,7 @@ template<int dim, typename Number>
 SolverResult
 Driver<dim, Number>::print_performance_results(double const total_time) const
 {
-  this->pcout << std::endl << print_horizontal_line() << std::endl << std::endl;
-
-  this->pcout << "Performance results for Poisson solver:" << std::endl;
-
-  // Iterations
   double const n_10 = poisson_operator->get_n10();
-
-  this->pcout << std::endl << "Number of iterations:" << std::endl;
-
-  this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl
-              << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
-              << std::endl
-              << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
-              << poisson_operator->get_average_convergence_rate() << std::endl;
-
-  // wall times
-  timer_tree.insert({"Poisson"}, total_time);
 
   types::global_dof_index const DoFs = poisson_operator->get_number_of_dofs();
 
@@ -225,8 +209,26 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   double const t_10 = iterations > 0 ? solve_time * double(n_10) / double(iterations) : solve_time;
 
+  double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
+
   if(not(is_test))
   {
+    this->pcout << std::endl << print_horizontal_line() << std::endl << std::endl;
+
+    this->pcout << "Performance results for Poisson solver:" << std::endl;
+
+    // Iterations
+    this->pcout << std::endl << "Number of iterations:" << std::endl;
+
+    this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl
+                << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
+                << std::endl
+                << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
+                << poisson_operator->get_average_convergence_rate() << std::endl;
+
+    // wall times
+    timer_tree.insert({"Poisson"}, total_time);
+
     pcout << std::endl << "Timings for level 1:" << std::endl;
     timer_tree.print_level(pcout, 1);
 
@@ -240,11 +242,10 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
     // computational costs in CPUh
     print_costs(pcout, overall_time_avg, N_mpi_processes);
+
+    this->pcout << print_horizontal_line() << std::endl << std::endl;
   }
 
-  this->pcout << print_horizontal_line() << std::endl << std::endl;
-
-  double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
   return SolverResult(poisson_operator->get_degree(), DoFs, n_10, tau_10);
 }
 

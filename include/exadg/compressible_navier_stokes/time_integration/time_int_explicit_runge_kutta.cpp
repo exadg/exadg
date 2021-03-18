@@ -38,7 +38,7 @@ TimeIntExplRK<Number>::TimeIntExplRK(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      print_wall_times_in,
+  bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
@@ -46,7 +46,7 @@ TimeIntExplRK<Number>::TimeIntExplRK(
                               param_in.restart_data,
                               false, // currently no adaptive time stepping implemented
                               mpi_comm_in,
-                              print_wall_times_in),
+                              is_test_in),
     pde_operator(operator_in),
     param(param_in),
     refine_steps_time(refine_steps_time_in),
@@ -284,7 +284,7 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  if(print_solver_info() && this->print_wall_times)
+  if(print_solver_info() and not(this->is_test))
   {
     this->pcout << std::endl << "Solve compressible Navier-Stokes equations explicitly:";
     print_wall_time(this->pcout, timer.wall_time());

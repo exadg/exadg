@@ -51,7 +51,7 @@ public:
               unsigned int const  max_number_of_time_steps_,
               RestartData const & restart_data_,
               MPI_Comm const &    mpi_comm_,
-              bool const          print_wall_times_);
+              bool const          is_test_);
 
   virtual ~TimeIntBase()
   {
@@ -241,7 +241,7 @@ protected:
    */
   Timer                      global_timer;
   std::shared_ptr<TimerTree> timer_tree;
-  bool                       print_wall_times;
+  bool                       is_test;
 
 private:
   /*

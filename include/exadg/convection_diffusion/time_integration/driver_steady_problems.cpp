@@ -33,18 +33,18 @@ using namespace dealii;
 
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(
-  std::shared_ptr<Operator>                       operator_in,
-  InputParameters const &                         param_in,
-  MPI_Comm const &                                mpi_comm_in,
-  bool const                                      print_wall_times_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
-  : pde_operator(operator_in),
-    param(param_in),
-    mpi_comm(mpi_comm_in),
-    print_wall_times(print_wall_times_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
+  std::shared_ptr<Operator>                       operator_,
+  InputParameters const &                         param_,
+  MPI_Comm const &                                mpi_comm_,
+  bool const                                      is_test_,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_)
+  : pde_operator(operator_),
+    param(param_),
+    mpi_comm(mpi_comm_),
+    is_test(is_test_),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     timer_tree(new TimerTree()),
-    postprocessor(postprocessor_in)
+    postprocessor(postprocessor_)
 {
 }
 
@@ -143,7 +143,8 @@ DriverSteadyProblems<Number>::solve()
                                                 0.0 /* time */,
                                                 velocity_ptr);
 
-  print_solver_info_linear(pcout, iterations, timer.wall_time(), print_wall_times);
+  if(not(is_test))
+    print_solver_info_linear(pcout, iterations, timer.wall_time());
 
   pcout << std::endl << "... done!" << std::endl;
 

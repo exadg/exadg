@@ -140,19 +140,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(param.problem_type == ProblemType::Unsteady)
     {
       time_integrator.reset(new TimeIntGenAlpha<dim, Number>(
-        pde_operator, postprocessor, refine_time, param, mpi_comm, not(is_test)));
+        pde_operator, postprocessor, refine_time, param, mpi_comm, is_test));
       time_integrator->setup(param.restarted_simulation);
     }
     else if(param.problem_type == ProblemType::Steady)
     {
       driver_steady.reset(
-        new DriverSteady<dim, Number>(pde_operator, postprocessor, param, mpi_comm, not(is_test)));
+        new DriverSteady<dim, Number>(pde_operator, postprocessor, param, mpi_comm, is_test));
       driver_steady->setup();
     }
     else if(param.problem_type == ProblemType::QuasiStatic)
     {
-      driver_quasi_static.reset(new DriverQuasiStatic<dim, Number>(
-        pde_operator, postprocessor, param, mpi_comm, not(is_test)));
+      driver_quasi_static.reset(
+        new DriverQuasiStatic<dim, Number>(pde_operator, postprocessor, param, mpi_comm, is_test));
       driver_quasi_static->setup();
     }
     else
@@ -230,34 +230,31 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(not(is_test))
+  pcout << std::endl << "Timings for level 1:" << std::endl;
+  timer_tree.print_level(pcout, 1);
+
+  pcout << std::endl << "Timings for level 2:" << std::endl;
+  timer_tree.print_level(pcout, 2);
+
+  // Throughput in DoFs/s per time step per core
+  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
+  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const              total_time_avg  = total_time_data.avg;
+
+  if(param.problem_type == ProblemType::Unsteady)
   {
-    pcout << std::endl << "Timings for level 1:" << std::endl;
-    timer_tree.print_level(pcout, 1);
-
-    pcout << std::endl << "Timings for level 2:" << std::endl;
-    timer_tree.print_level(pcout, 2);
-
-    // Throughput in DoFs/s per time step per core
-    types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
-    unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-    Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-    double const              total_time_avg  = total_time_data.avg;
-
-    if(param.problem_type == ProblemType::Unsteady)
-    {
-      unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
-      print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
-    }
-    else
-    {
-      print_throughput_steady(pcout, DoFs, total_time_avg, N_mpi_processes);
-    }
-
-    // computational costs in CPUh
-    print_costs(pcout, total_time_avg, N_mpi_processes);
+    unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
+    print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
   }
+  else
+  {
+    print_throughput_steady(pcout, DoFs, total_time_avg, N_mpi_processes);
+  }
+
+  // computational costs in CPUh
+  print_costs(pcout, total_time_avg, N_mpi_processes);
 
   pcout << std::endl
         << "_________________________________________________________________________________"

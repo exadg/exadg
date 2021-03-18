@@ -61,7 +61,7 @@ public:
                   unsigned int const                           refine_time_,
                   InputParameters const &                      param_,
                   MPI_Comm const &                             mpi_comm_,
-                  bool const                                   print_wall_times_);
+                  bool const                                   is_test_);
 
   void
   setup(bool const do_restart) override;

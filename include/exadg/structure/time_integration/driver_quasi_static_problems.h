@@ -54,11 +54,11 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  DriverQuasiStatic(std::shared_ptr<Interface::Operator<Number>> operator_in,
-                    std::shared_ptr<PostProcessorBase<Number>>   postprocessor_in,
-                    InputParameters const &                      param_in,
-                    MPI_Comm const &                             mpi_comm_in,
-                    bool const                                   print_wall_times_in);
+  DriverQuasiStatic(std::shared_ptr<Interface::Operator<Number>> operator_,
+                    std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
+                    InputParameters const &                      param_,
+                    MPI_Comm const &                             mpi_comm_,
+                    bool const                                   is_test_);
 
   void
   setup();
@@ -99,7 +99,7 @@ private:
 
   MPI_Comm const mpi_comm;
 
-  bool const print_wall_times;
+  bool const is_test;
 
   ConditionalOStream pcout;
 
