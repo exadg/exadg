@@ -32,12 +32,6 @@
 
 using namespace dealii;
 
-double
-get_fluctuation()
-{
-  return double(std::rand()) / double(RAND_MAX) * 0.1;
-}
-
 void
 test1()
 {
@@ -59,25 +53,25 @@ test1()
 
   for(unsigned int i = 0; i < 1000; ++i)
   {
-    tree.insert({"General"}, 20.0 * (1 + get_fluctuation()));
+    tree.insert({"General"}, 20.0);
 
-    tree.insert({"General", "Part 1"}, 2.0 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 1"}, 2.0);
 
-    tree.insert({"General", "Part 2"}, 3.0 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 2"}, 3.0);
 
-    tree.insert({"General", "Part 2", "Sub a"}, 0.75 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 2", "Sub a"}, 0.75);
 
-    tree.insert({"General", "Part 2", "Sub b"}, 0.9 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 2", "Sub b"}, 0.9);
 
-    tree.insert({"General", "Part 3"}, 4.0 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 3"}, 4.0);
 
-    tree.insert({"General", "Part 3", "Sub a"}, 0.5 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 3", "Sub a"}, 0.5);
 
-    tree.insert({"General", "Part 3", "Sub a", "sub-sub a"}, 0.04 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 3", "Sub a", "sub-sub a"}, 0.04);
 
-    tree.insert({"General", "Part 3", "Sub b"}, 0.98765 * (1 + get_fluctuation()));
+    tree.insert({"General", "Part 3", "Sub b"}, 0.98765);
 
-    tree.insert({"General"}, 2.0 * (1 + get_fluctuation()));
+    tree.insert({"General"}, 2.0);
   }
 
 
@@ -125,7 +119,7 @@ test2()
   std::shared_ptr<ExaDG::TimerTree> tree_fluid;
   tree_fluid.reset(new ExaDG::TimerTree());
   tree_fluid->insert({"Fluid"}, 70.);
-  tree_fluid->insert({"Fluid", "Pressure poisson"}, 40.);
+  tree_fluid->insert({"Fluid", "Pressure Poisson"}, 40.);
   tree_fluid->insert({"Fluid", "Postprocessing"}, 10.);
   tree_fluid->insert({"Fluid", "ALE update"}, 15.);
 
