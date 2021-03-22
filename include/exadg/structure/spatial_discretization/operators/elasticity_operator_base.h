@@ -108,8 +108,8 @@ public:
   set_constrained_values(VectorType & dst, double const time) const override;
 
 protected:
-  virtual void
-  reinit_cell(unsigned int const cell) const;
+  void
+  reinit_cell(unsigned int const cell) const override;
 
   OperatorData<dim> operator_data;
 

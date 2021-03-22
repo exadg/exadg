@@ -63,44 +63,44 @@ public:
   postprocessing_stability_analysis();
 
   void
-  print_iterations() const;
+  print_iterations() const final;
 
   VectorType const &
-  get_velocity_np() const;
+  get_velocity_np() const final;
 
   VectorType const &
-  get_pressure_np() const;
+  get_pressure_np() const final;
 
 private:
   void
-  update_time_integrator_constants();
+  update_time_integrator_constants() final;
 
   void
-  allocate_vectors() override;
+  allocate_vectors() final;
 
   void
-  initialize_current_solution();
+  initialize_current_solution() final;
 
   void
-  initialize_former_solutions();
+  initialize_former_solutions() final;
 
   void
-  setup_derived() override;
+  setup_derived() final;
 
-  virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+  void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
 
-  virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+  void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
 
   void
   initialize_pressure_on_boundary();
 
   void
-  solve_timestep() override;
+  solve_timestep() final;
 
   void
-  solve_steady_problem();
+  solve_steady_problem() final;
 
   double
   evaluate_residual();
@@ -133,22 +133,22 @@ private:
   rhs_pressure(VectorType & rhs) const;
 
   void
-  prepare_vectors_for_next_timestep() override;
+  prepare_vectors_for_next_timestep() final;
 
   VectorType const &
-  get_velocity() const;
+  get_velocity() const final;
 
   VectorType const &
-  get_velocity(unsigned int i /* t_{n-i} */) const;
+  get_velocity(unsigned int i /* t_{n-i} */) const final;
 
   VectorType const &
-  get_pressure(unsigned int i /* t_{n-i} */) const;
+  get_pressure(unsigned int i /* t_{n-i} */) const final;
 
   void
-  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */);
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */) final;
 
   void
-  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) final;
 
   std::shared_ptr<Operator> pde_operator;
 

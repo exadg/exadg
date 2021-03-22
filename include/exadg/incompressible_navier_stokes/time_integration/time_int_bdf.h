@@ -101,22 +101,22 @@ public:
   print_iterations() const = 0;
 
   bool
-  print_solver_info() const;
+  print_solver_info() const final;
 
 protected:
-  virtual void
+  void
   allocate_vectors() override;
 
-  virtual void
+  void
   setup_derived() override;
 
-  virtual void
+  void
   read_restart_vectors(boost::archive::binary_iarchive & ia) override;
 
-  virtual void
+  void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
 
-  virtual void
+  void
   prepare_vectors_for_next_timestep() override;
 
   /*
@@ -126,7 +126,7 @@ protected:
   void
   calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
                                           double const cfl,
-                                          double const cfl_oif);
+                                          double const cfl_oif) final;
 
   void
   move_mesh(double const time) const;
@@ -162,30 +162,27 @@ private:
   initialize_vec_convective_term();
 
   void
-  initialize_oif();
+  initialize_oif() final;
 
   void
-  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i);
+  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i) final;
 
   void
   update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
                                        VectorType const & u_tilde_i,
-                                       unsigned int       i);
+                                       unsigned int       i) final;
 
   void
   do_timestep_oif_substepping(VectorType & solution_tilde_mp,
                               VectorType & solution_tilde_m,
                               double const start_time,
-                              double const time_step_size);
+                              double const time_step_size) final;
 
   double
-  calculate_time_step_size();
+  calculate_time_step_size() final;
 
   double
-  recalculate_time_step_size() const;
-
-  virtual void
-  solve_steady_problem() = 0;
+  recalculate_time_step_size() const final;
 
   virtual VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const = 0;
@@ -200,7 +197,7 @@ private:
   set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) = 0;
 
   void
-  postprocessing() const;
+  postprocessing() const final;
 
   // Operator-integration-factor splitting for convective term
   std::shared_ptr<OperatorOIF<dim, Number>> convective_operator_OIF;

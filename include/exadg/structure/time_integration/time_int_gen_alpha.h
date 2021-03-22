@@ -64,7 +64,7 @@ public:
                   bool const                                   is_test_);
 
   void
-  setup(bool const do_restart) override;
+  setup(bool const do_restart) final;
 
   void
   print_iterations() const;
@@ -92,22 +92,22 @@ public:
 
 private:
   void
-  solve_timestep() override;
+  solve_timestep() final;
 
   void
-  prepare_vectors_for_next_timestep() override;
+  prepare_vectors_for_next_timestep() final;
 
   void
-  do_write_restart(std::string const & filename) const override;
+  do_write_restart(std::string const & filename) const final;
 
   void
-  do_read_restart(std::ifstream & in) override;
+  do_read_restart(std::ifstream & in) final;
 
   void
-  postprocessing() const override;
+  postprocessing() const final;
 
   bool
-  print_solver_info() const;
+  print_solver_info() const final;
 
   std::shared_ptr<Interface::Operator<Number>> pde_operator;
 
