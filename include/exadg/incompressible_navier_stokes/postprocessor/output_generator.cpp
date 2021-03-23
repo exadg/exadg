@@ -70,9 +70,11 @@ write_output(OutputData const &                                 output_data,
   pressure.update_ghost_values();
   data_out.add_data_vector(dof_handler_pressure, pressure, "p");
 
+  // vector needs to survive until build_patches
+  Vector<double> aspect_ratios;
   if(output_data.write_aspect_ratio)
   {
-    Vector<double> aspect_ratios =
+    aspect_ratios =
       GridTools::compute_aspect_ratio_of_cells(mapping,
                                                dof_handler_velocity.get_triangulation(),
                                                QGauss<dim>(4));
