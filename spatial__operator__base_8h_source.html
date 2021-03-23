@@ -691,8 +691,8 @@ $(function() {
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;  std::shared_ptr&lt;ELEMENTWISE_PRECONDITIONER&gt; elementwise_preconditioner_projection;</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160; </div>
 <div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;  <span class="comment">// projection solver</span></div>
-<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;  std::shared_ptr&lt;IterativeSolverBase&lt;VectorType&gt;&gt; projection_solver;</div>
-<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt;      preconditioner_projection;</div>
+<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; projection_solver;</div>
+<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt;     preconditioner_projection;</div>
 <div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160; </div>
 <div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;<span class="comment">   * Calculators used to obtain derived quantities.</span></div>

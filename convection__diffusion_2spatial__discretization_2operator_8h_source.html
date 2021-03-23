@@ -470,8 +470,8 @@ $(function() {
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;<span class="comment">   * Solvers and preconditioners</span></div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt;      preconditioner;</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  std::shared_ptr&lt;IterativeSolverBase&lt;VectorType&gt;&gt; iterative_solver;</div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt;     preconditioner;</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; iterative_solver;</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;<span class="comment">   * MPI</span></div>

@@ -456,14 +456,14 @@ $(function() {
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  std::shared_ptr&lt;<a class="code" href="classExaDG_1_1Newton_1_1Solver.html">Newton::Solver</a>&lt;BlockVectorType,</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                                 <a class="code" href="classExaDG_1_1IncNS_1_1NonlinearOperatorCoupled.html">NonlinearOperatorCoupled&lt;dim, Number&gt;</a>,</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                                 <a class="code" href="classExaDG_1_1IncNS_1_1LinearOperatorCoupled.html">LinearOperatorCoupled&lt;dim, Number&gt;</a>,</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                                 <a class="code" href="classExaDG_1_1IterativeSolverBase.html">IterativeSolverBase&lt;BlockVectorType&gt;</a>&gt;&gt;</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                                 <a class="code" href="classExaDG_1_1Krylov_1_1SolverBase.html">Krylov::SolverBase&lt;BlockVectorType&gt;</a>&gt;&gt;</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    newton_solver;</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160; </div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  <span class="comment">// Linear operator</span></div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;  <a class="code" href="classExaDG_1_1IncNS_1_1LinearOperatorCoupled.html">LinearOperatorCoupled&lt;dim, Number&gt;</a> linear_operator;</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;  <span class="comment">// Linear solver</span></div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;  std::shared_ptr&lt;IterativeSolverBase&lt;BlockVectorType&gt;&gt; linear_solver;</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;  std::shared_ptr&lt;Krylov::SolverBase&lt;BlockVectorType&gt;&gt; linear_solver;</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;<span class="comment">   * Block preconditioner for linear(ized) problem</span></div>
@@ -474,7 +474,7 @@ $(function() {
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  <span class="comment">// preconditioner velocity/momentum block</span></div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt; preconditioner_momentum;</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160; </div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;  std::shared_ptr&lt;IterativeSolverBase&lt;VectorType&gt;&gt; solver_velocity_block;</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; solver_velocity_block;</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160; </div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;  <span class="comment">// preconditioner pressure/Schur-complement block</span></div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;  std::shared_ptr&lt;PreconditionerBase&lt;Number&gt;&gt; multigrid_preconditioner_schur_complement;</div>
@@ -484,7 +484,7 @@ $(function() {
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160; </div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;  std::shared_ptr&lt;Poisson::LaplaceOperator&lt;dim, Number, 1&gt;&gt; laplace_operator;</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160; </div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;  std::shared_ptr&lt;IterativeSolverBase&lt;VectorType&gt;&gt; solver_pressure_block;</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;  std::shared_ptr&lt;Krylov::SolverBase&lt;VectorType&gt;&gt; solver_pressure_block;</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160; </div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;  <span class="comment">// temporary vectors that are necessary when using preconditioners of block-triangular type</span></div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;  VectorType <span class="keyword">mutable</span> vec_tmp_pressure;</div>
@@ -506,7 +506,7 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1NonlinearOperatorCoupled_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1NonlinearOperatorCoupled.html">ExaDG::IncNS::NonlinearOperatorCoupled</a></div><div class="ttdef"><b>Definition:</b> operator_coupled.h:41</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1OperatorCoupled_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1OperatorCoupled.html">ExaDG::IncNS::OperatorCoupled</a></div><div class="ttdef"><b>Definition:</b> operator_coupled.h:176</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1SpatialOperatorBase_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">ExaDG::IncNS::SpatialOperatorBase</a></div><div class="ttdef"><b>Definition:</b> spatial_operator_base.h:125</div></div>
-<div class="ttc" id="aclassExaDG_1_1IterativeSolverBase_html"><div class="ttname"><a href="classExaDG_1_1IterativeSolverBase.html">ExaDG::IterativeSolverBase</a></div><div class="ttdef"><b>Definition:</b> iterative_solvers_dealii_wrapper.h:35</div></div>
+<div class="ttc" id="aclassExaDG_1_1Krylov_1_1SolverBase_html"><div class="ttname"><a href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase</a></div><div class="ttdef"><b>Definition:</b> iterative_solvers_dealii_wrapper.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Newton_1_1Solver_html"><div class="ttname"><a href="classExaDG_1_1Newton_1_1Solver.html">ExaDG::Newton::Solver</a></div><div class="ttdef"><b>Definition:</b> newton_solver.h:42</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1MultigridPreconditioner_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1MultigridPreconditioner.html">ExaDG::Poisson::MultigridPreconditioner</a></div><div class="ttdef"><b>Definition:</b> multigrid_preconditioner.h:40</div></div>
 <div class="ttc" id="astructExaDG_1_1IncNS_1_1BoundaryDescriptorP_html"><div class="ttname"><a href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">ExaDG::IncNS::BoundaryDescriptorP</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:151</div></div>

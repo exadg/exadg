@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::IterativeSolverBase&lt; VectorType &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::Krylov::SolverBase&lt; VectorType &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -61,57 +61,57 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1IterativeSolverBase.html">IterativeSolverBase</a></li>  </ul>
+<li class="navelem"><b>ExaDG</b></li><li class="navelem"><b>Krylov</b></li><li class="navelem"><a class="el" href="classExaDG_1_1Krylov_1_1SolverBase.html">SolverBase</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="classExaDG_1_1IterativeSolverBase-members.html">List of all members</a>  </div>
+<a href="classExaDG_1_1Krylov_1_1SolverBase-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ExaDG::IterativeSolverBase&lt; VectorType &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">ExaDG::Krylov::SolverBase&lt; VectorType &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::IterativeSolverBase&lt; VectorType &gt;:</div>
+Inheritance diagram for ExaDG::Krylov::SolverBase&lt; VectorType &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1IterativeSolverBase.png" usemap="#ExaDG::IterativeSolverBase_3C_20VectorType_20_3E_map" alt=""/>
-  <map id="ExaDG::IterativeSolverBase_3C_20VectorType_20_3E_map" name="ExaDG::IterativeSolverBase_3C_20VectorType_20_3E_map">
-<area href="classExaDG_1_1CGSolver.html" alt="ExaDG::CGSolver&lt; Operator, Preconditioner, VectorType &gt;" shape="rect" coords="0,56,388,80"/>
-<area href="classExaDG_1_1FGMRESSolver.html" alt="ExaDG::FGMRESSolver&lt; Operator, Preconditioner, VectorType &gt;" shape="rect" coords="398,56,786,80"/>
-<area href="classExaDG_1_1GMRESSolver.html" alt="ExaDG::GMRESSolver&lt; Operator, Preconditioner, VectorType &gt;" shape="rect" coords="796,56,1184,80"/>
+  <img src="classExaDG_1_1Krylov_1_1SolverBase.png" usemap="#ExaDG::Krylov::SolverBase_3C_20VectorType_20_3E_map" alt=""/>
+  <map id="ExaDG::Krylov::SolverBase_3C_20VectorType_20_3E_map" name="ExaDG::Krylov::SolverBase_3C_20VectorType_20_3E_map">
+<area href="classExaDG_1_1Krylov_1_1SolverCG.html" alt="ExaDG::Krylov::SolverCG&lt; Operator, Preconditioner, VectorType &gt;" shape="rect" coords="0,56,431,80"/>
+<area href="classExaDG_1_1Krylov_1_1SolverFGMRES.html" alt="ExaDG::Krylov::SolverFGMRES&lt; Operator, Preconditioner, VectorType &gt;" shape="rect" coords="441,56,872,80"/>
+<area href="classExaDG_1_1Krylov_1_1SolverGMRES.html" alt="ExaDG::Krylov::SolverGMRES&lt; Operator, Preconditioner, VectorType &gt;" shape="rect" coords="882,56,1313,80"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5d62e41d4074aadbaf2bfd6d617a6d58"><td class="memItemLeft" align="right" valign="top"><a id="a5d62e41d4074aadbaf2bfd6d617a6d58"></a>
+<tr class="memitem:a52650173d812add1347b2c14285a6b5b"><td class="memItemLeft" align="right" valign="top"><a id="a52650173d812add1347b2c14285a6b5b"></a>
 virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;dst, VectorType const &amp;rhs, bool const update_preconditioner) const =0</td></tr>
-<tr class="separator:a5d62e41d4074aadbaf2bfd6d617a6d58"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a98d68debe5a32469e0d17a4cce94c6f9"><td class="memTemplParams" colspan="2"><a id="a98d68debe5a32469e0d17a4cce94c6f9"></a>
+<tr class="separator:a52650173d812add1347b2c14285a6b5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6410b1ff58b8f88c51003623615e987c"><td class="memTemplParams" colspan="2"><a id="a6410b1ff58b8f88c51003623615e987c"></a>
 template&lt;typename Control &gt; </td></tr>
-<tr class="memitem:a98d68debe5a32469e0d17a4cce94c6f9"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>compute_performance_metrics</b> (Control const &amp;solver_control) const</td></tr>
-<tr class="separator:a98d68debe5a32469e0d17a4cce94c6f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6410b1ff58b8f88c51003623615e987c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>compute_performance_metrics</b> (Control const &amp;solver_control) const</td></tr>
+<tr class="separator:a6410b1ff58b8f88c51003623615e987c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a846f64d494f725e8b53b774cb8ab23bc"><td class="memItemLeft" align="right" valign="top"><a id="a846f64d494f725e8b53b774cb8ab23bc"></a>
+<tr class="memitem:a5bce4b51b6cd972ecb9a3a6c8c3cdd1d"><td class="memItemLeft" align="right" valign="top"><a id="a5bce4b51b6cd972ecb9a3a6c8c3cdd1d"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>l2_0</b></td></tr>
-<tr class="separator:a846f64d494f725e8b53b774cb8ab23bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad6c8006e39834c7d9381f8a85dbf20e"><td class="memItemLeft" align="right" valign="top"><a id="aad6c8006e39834c7d9381f8a85dbf20e"></a>
+<tr class="separator:a5bce4b51b6cd972ecb9a3a6c8c3cdd1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2789b40bbb3ede256e7cc2ae245617c"><td class="memItemLeft" align="right" valign="top"><a id="ae2789b40bbb3ede256e7cc2ae245617c"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>l2_n</b></td></tr>
-<tr class="separator:aad6c8006e39834c7d9381f8a85dbf20e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac794869051676740174fc7a3778aa60b"><td class="memItemLeft" align="right" valign="top"><a id="ac794869051676740174fc7a3778aa60b"></a>
+<tr class="separator:ae2789b40bbb3ede256e7cc2ae245617c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac71fadd9580a9956130634c46776e085"><td class="memItemLeft" align="right" valign="top"><a id="ac71fadd9580a9956130634c46776e085"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>n</b></td></tr>
-<tr class="separator:ac794869051676740174fc7a3778aa60b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2aae83d21182a95d7588bb28ba7caf5"><td class="memItemLeft" align="right" valign="top"><a id="ac2aae83d21182a95d7588bb28ba7caf5"></a>
+<tr class="separator:ac71fadd9580a9956130634c46776e085"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad31ceeed6a6f52168c42a5bebcf9984"><td class="memItemLeft" align="right" valign="top"><a id="aad31ceeed6a6f52168c42a5bebcf9984"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>rho</b></td></tr>
-<tr class="separator:ac2aae83d21182a95d7588bb28ba7caf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb571626ccb5e97d11e69d749ab647d5"><td class="memItemLeft" align="right" valign="top"><a id="abb571626ccb5e97d11e69d749ab647d5"></a>
+<tr class="separator:aad31ceeed6a6f52168c42a5bebcf9984"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57f737b65585ab1dbdba97814ca3375c"><td class="memItemLeft" align="right" valign="top"><a id="a57f737b65585ab1dbdba97814ca3375c"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>n10</b></td></tr>
-<tr class="separator:abb571626ccb5e97d11e69d749ab647d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a57f737b65585ab1dbdba97814ca3375c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/solvers_and_preconditioners/solvers/<a class="el" href="iterative__solvers__dealii__wrapper_8h_source.html">iterative_solvers_dealii_wrapper.h</a></li>
