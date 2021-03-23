@@ -385,14 +385,14 @@ private:
   std::shared_ptr<Newton::Solver<BlockVectorType,
                                  NonlinearOperatorCoupled<dim, Number>,
                                  LinearOperatorCoupled<dim, Number>,
-                                 IterativeSolverBase<BlockVectorType>>>
+                                 Krylov::SolverBase<BlockVectorType>>>
     newton_solver;
 
   // Linear operator
   LinearOperatorCoupled<dim, Number> linear_operator;
 
   // Linear solver
-  std::shared_ptr<IterativeSolverBase<BlockVectorType>> linear_solver;
+  std::shared_ptr<Krylov::SolverBase<BlockVectorType>> linear_solver;
 
   /*
    * Block preconditioner for linear(ized) problem
@@ -403,7 +403,7 @@ private:
   // preconditioner velocity/momentum block
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_momentum;
 
-  std::shared_ptr<IterativeSolverBase<VectorType>> solver_velocity_block;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> solver_velocity_block;
 
   // preconditioner pressure/Schur-complement block
   std::shared_ptr<PreconditionerBase<Number>> multigrid_preconditioner_schur_complement;
@@ -413,7 +413,7 @@ private:
 
   std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator;
 
-  std::shared_ptr<IterativeSolverBase<VectorType>> solver_pressure_block;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> solver_pressure_block;
 
   // temporary vectors that are necessary when using preconditioners of block-triangular type
   VectorType mutable vec_tmp_pressure;

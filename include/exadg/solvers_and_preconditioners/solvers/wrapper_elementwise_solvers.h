@@ -57,7 +57,7 @@ template<int dim,
          typename Number,
          typename Operator,
          typename Preconditioner>
-class IterativeSolver : public IterativeSolverBase<LinearAlgebra::distributed::Vector<Number>>
+class IterativeSolver : public Krylov::SolverBase<LinearAlgebra::distributed::Vector<Number>>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;

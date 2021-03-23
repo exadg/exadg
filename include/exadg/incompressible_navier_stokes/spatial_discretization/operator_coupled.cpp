@@ -105,7 +105,7 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   // setup linear solver
   if(this->param.solver_coupled == SolverCoupled::GMRES)
   {
-    GMRESSolverData solver_data;
+    Krylov::SolverDataGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
@@ -118,12 +118,12 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
     }
 
     linear_solver.reset(
-      new GMRESSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
+      new Krylov::SolverGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
         linear_operator, block_preconditioner, solver_data, this->mpi_comm));
   }
   else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
@@ -135,7 +135,7 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
     }
 
     linear_solver.reset(
-      new FGMRESSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
+      new Krylov::SolverFGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
         linear_operator, block_preconditioner, solver_data));
   }
   else
@@ -151,7 +151,7 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
     newton_solver.reset(new Newton::Solver<BlockVectorType,
                                            NonlinearOperatorCoupled<dim, Number>,
                                            LinearOperatorCoupled<dim, Number>,
-                                           IterativeSolverBase<BlockVectorType>>(
+                                           Krylov::SolverBase<BlockVectorType>>(
       this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver));
   }
 }
@@ -497,7 +497,7 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
               ExcMessage("preconditioner_momentum is uninitialized"));
 
   // use FMGRES for "exact" solution of velocity block system
-  FGMRESSolverData gmres_data;
+  Krylov::SolverDataFGMRES gmres_data;
   gmres_data.use_preconditioner   = true;
   gmres_data.max_iter             = this->param.solver_data_velocity_block.max_iter;
   gmres_data.solver_tolerance_abs = this->param.solver_data_velocity_block.abs_tol;
@@ -505,7 +505,7 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
   gmres_data.max_n_tmp_vectors    = this->param.solver_data_velocity_block.max_krylov_size;
 
   solver_velocity_block.reset(
-    new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+    new Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
       this->momentum_operator, *preconditioner_momentum, gmres_data));
 }
 
@@ -623,7 +623,7 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     ExcMessage(
       "Setup of iterative solver for Schur complement preconditioner: Multigrid preconditioner is uninitialized"));
 
-  CGSolverData solver_data;
+  Krylov::SolverDataCG solver_data;
   solver_data.max_iter             = this->param.solver_data_pressure_block.max_iter;
   solver_data.solver_tolerance_abs = this->param.solver_data_pressure_block.abs_tol;
   solver_data.solver_tolerance_rel = this->param.solver_data_pressure_block.rel_tol;
@@ -640,9 +640,10 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
                                this->get_constraint_p(),
                                laplace_operator_data);
 
-  solver_pressure_block.reset(
-    new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>, PreconditionerBase<Number>, VectorType>(
-      *laplace_operator, *multigrid_preconditioner_schur_complement, solver_data));
+  solver_pressure_block.reset(new Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
+                                                   PreconditionerBase<Number>,
+                                                   VectorType>(
+    *laplace_operator, *multigrid_preconditioner_schur_complement, solver_data));
 }
 
 template<int dim, typename Number>

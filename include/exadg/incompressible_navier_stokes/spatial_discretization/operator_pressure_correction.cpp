@@ -156,7 +156,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
   if(this->param.solver_momentum == SolverMomentum::CG)
   {
     // setup solver data
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
@@ -165,13 +165,13 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
 
     // setup solver
     momentum_linear_solver.reset(
-      new CGSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+      new Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         this->momentum_operator, *momentum_preconditioner, solver_data));
   }
   else if(this->param.solver_momentum == SolverMomentum::GMRES)
   {
     // setup solver data
-    GMRESSolverData solver_data;
+    Krylov::SolverDataGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
@@ -181,13 +181,14 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
       solver_data.use_preconditioner = true;
 
     // setup solver
-    momentum_linear_solver.reset(
-      new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm));
+    momentum_linear_solver.reset(new Krylov::SolverGMRES<MomentumOperator<dim, Number>,
+                                                         PreconditionerBase<Number>,
+                                                         VectorType>(
+      this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm));
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
@@ -195,9 +196,11 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
 
-    momentum_linear_solver.reset(
-      new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *momentum_preconditioner, solver_data));
+    momentum_linear_solver.reset(new Krylov::SolverFGMRES<MomentumOperator<dim, Number>,
+                                                          PreconditionerBase<Number>,
+                                                          VectorType>(this->momentum_operator,
+                                                                      *momentum_preconditioner,
+                                                                      solver_data));
   }
   else
   {
@@ -216,10 +219,10 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
       new Newton::Solver<VectorType,
                          NonlinearMomentumOperator<dim, Number>,
                          MomentumOperator<dim, Number>,
-                         IterativeSolverBase<VectorType>>(this->param.newton_solver_data_momentum,
-                                                          nonlinear_operator,
-                                                          this->momentum_operator,
-                                                          *momentum_linear_solver));
+                         Krylov::SolverBase<VectorType>>(this->param.newton_solver_data_momentum,
+                                                         nonlinear_operator,
+                                                         this->momentum_operator,
+                                                         *momentum_linear_solver));
   }
 }
 

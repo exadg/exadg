@@ -126,7 +126,7 @@ protected:
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 
-  std::shared_ptr<IterativeSolverBase<VectorType>> pressure_poisson_solver;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> pressure_poisson_solver;
 
 private:
   /*

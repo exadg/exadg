@@ -28,20 +28,20 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
+namespace Krylov
+{
 template<typename VectorType>
-class IterativeSolverBase
+class SolverBase
 {
 public:
-  IterativeSolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n10(0)
+  SolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n10(0)
   {
   }
 
   virtual unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const = 0;
 
-  virtual ~IterativeSolverBase()
+  virtual ~SolverBase()
   {
   }
 
@@ -70,9 +70,9 @@ public:
   mutable double       n10;  // number of iterations needed to reduce the residual by 1e10
 };
 
-struct CGSolverData
+struct SolverDataCG
 {
-  CGSolverData()
+  SolverDataCG()
     : max_iter(1e4),
       solver_tolerance_abs(1.e-20),
       solver_tolerance_rel(1.e-6),
@@ -89,12 +89,12 @@ struct CGSolverData
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
-class CGSolver : public IterativeSolverBase<VectorType>
+class SolverCG : public SolverBase<VectorType>
 {
 public:
-  CGSolver(Operator const &     underlying_operator_in,
+  SolverCG(Operator const &     underlying_operator_in,
            Preconditioner &     preconditioner_in,
-           CGSolverData const & solver_data_in)
+           SolverDataCG const & solver_data_in)
     : underlying_operator(underlying_operator_in),
       preconditioner(preconditioner_in),
       solver_data(solver_data_in)
@@ -104,15 +104,15 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
-    ReductionControl solver_control(solver_data.max_iter,
-                                    solver_data.solver_tolerance_abs,
-                                    solver_data.solver_tolerance_rel);
+    dealii::ReductionControl solver_control(solver_data.max_iter,
+                                            solver_data.solver_tolerance_abs,
+                                            solver_data.solver_tolerance_rel);
 
-    SolverCG<VectorType> solver(solver_control);
+    dealii::SolverCG<VectorType> solver(solver_control);
 
     if(solver_data.use_preconditioner == false)
     {
-      solver.solve(underlying_operator, dst, rhs, PreconditionIdentity());
+      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
     }
     else
     {
@@ -125,7 +125,7 @@ public:
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
-                ExcMessage("Solver contained NaN of Inf values"));
+                dealii::ExcMessage("Solver contained NaN of Inf values"));
 
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
@@ -136,16 +136,16 @@ public:
 private:
   Operator const &   underlying_operator;
   Preconditioner &   preconditioner;
-  CGSolverData const solver_data;
+  SolverDataCG const solver_data;
 };
 
-template<class NUMBER>
+template<class Number>
 void
-output_eigenvalues(const std::vector<NUMBER> & eigenvalues,
+output_eigenvalues(const std::vector<Number> & eigenvalues,
                    const std::string &         text,
                    MPI_Comm const &            mpi_comm)
 {
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::cout << text << std::endl;
     for(unsigned int j = 0; j < eigenvalues.size(); ++j)
@@ -156,9 +156,9 @@ output_eigenvalues(const std::vector<NUMBER> & eigenvalues,
   }
 }
 
-struct GMRESSolverData
+struct SolverDataGMRES
 {
-  GMRESSolverData()
+  SolverDataGMRES()
     : max_iter(1e4),
       solver_tolerance_abs(1.e-20),
       solver_tolerance_rel(1.e-6),
@@ -179,12 +179,12 @@ struct GMRESSolverData
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
-class GMRESSolver : public IterativeSolverBase<VectorType>
+class SolverGMRES : public SolverBase<VectorType>
 {
 public:
-  GMRESSolver(Operator const &        underlying_operator_in,
+  SolverGMRES(Operator const &        underlying_operator_in,
               Preconditioner &        preconditioner_in,
-              GMRESSolverData const & solver_data_in,
+              SolverDataGMRES const & solver_data_in,
               MPI_Comm const &        mpi_comm_in)
     : underlying_operator(underlying_operator_in),
       preconditioner(preconditioner_in),
@@ -193,21 +193,21 @@ public:
   {
   }
 
-  virtual ~GMRESSolver()
+  virtual ~SolverGMRES()
   {
   }
 
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
-    ReductionControl solver_control(solver_data.max_iter,
-                                    solver_data.solver_tolerance_abs,
-                                    solver_data.solver_tolerance_rel);
+    dealii::ReductionControl solver_control(solver_data.max_iter,
+                                            solver_data.solver_tolerance_abs,
+                                            solver_data.solver_tolerance_rel);
 
-    typename SolverGMRES<VectorType>::AdditionalData additional_data;
+    typename dealii::SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.max_n_tmp_vectors     = solver_data.max_n_tmp_vectors;
     additional_data.right_preconditioning = true;
-    SolverGMRES<VectorType> solver(solver_control, additional_data);
+    dealii::SolverGMRES<VectorType> solver(solver_control, additional_data);
 
     if(solver_data.compute_eigenvalues == true)
     {
@@ -233,7 +233,7 @@ public:
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
-                ExcMessage("Solver contained NaN of Inf values"));
+                dealii::ExcMessage("Solver contained NaN of Inf values"));
 
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
@@ -244,14 +244,14 @@ public:
 private:
   Operator const &      underlying_operator;
   Preconditioner &      preconditioner;
-  GMRESSolverData const solver_data;
+  SolverDataGMRES const solver_data;
 
   MPI_Comm const mpi_comm;
 };
 
-struct FGMRESSolverData
+struct SolverDataFGMRES
 {
-  FGMRESSolverData()
+  SolverDataFGMRES()
     : max_iter(1e4),
       solver_tolerance_abs(1.e-20),
       solver_tolerance_rel(1.e-6),
@@ -270,34 +270,34 @@ struct FGMRESSolverData
 };
 
 template<typename Operator, typename Preconditioner, typename VectorType>
-class FGMRESSolver : public IterativeSolverBase<VectorType>
+class SolverFGMRES : public SolverBase<VectorType>
 {
 public:
-  FGMRESSolver(Operator const &         underlying_operator_in,
+  SolverFGMRES(Operator const &         underlying_operator_in,
                Preconditioner &         preconditioner_in,
-               FGMRESSolverData const & solver_data_in)
+               SolverDataFGMRES const & solver_data_in)
     : underlying_operator(underlying_operator_in),
       preconditioner(preconditioner_in),
       solver_data(solver_data_in)
   {
   }
 
-  virtual ~FGMRESSolver()
+  virtual ~SolverFGMRES()
   {
   }
 
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
-    ReductionControl solver_control(solver_data.max_iter,
-                                    solver_data.solver_tolerance_abs,
-                                    solver_data.solver_tolerance_rel);
+    dealii::ReductionControl solver_control(solver_data.max_iter,
+                                            solver_data.solver_tolerance_abs,
+                                            solver_data.solver_tolerance_rel);
 
-    typename SolverFGMRES<VectorType>::AdditionalData additional_data;
+    typename dealii::SolverFGMRES<VectorType>::AdditionalData additional_data;
     additional_data.max_basis_size = solver_data.max_n_tmp_vectors;
     // FGMRES always uses right preconditioning
 
-    SolverFGMRES<VectorType> solver(solver_control, additional_data);
+    dealii::SolverFGMRES<VectorType> solver(solver_control, additional_data);
 
     if(solver_data.use_preconditioner == false)
     {
@@ -314,7 +314,7 @@ public:
     }
 
     AssertThrow(std::isfinite(solver_control.last_value()),
-                ExcMessage("Solver contained NaN of Inf values"));
+                dealii::ExcMessage("Solver contained NaN of Inf values"));
 
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
@@ -325,8 +325,10 @@ public:
 private:
   Operator const &       underlying_operator;
   Preconditioner &       preconditioner;
-  FGMRESSolverData const solver_data;
+  SolverDataFGMRES const solver_data;
 };
+} // namespace Krylov
+
 } // namespace ExaDG
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_ */

@@ -202,11 +202,11 @@ public:
     }
     else
     {
-      std::shared_ptr<IterativeSolverBase<VectorType>> solver;
+      std::shared_ptr<Krylov::SolverBase<VectorType>> solver;
 
       if(additional_data.solver_type == KrylovSolverType::CG)
       {
-        CGSolverData solver_data;
+        Krylov::SolverDataCG solver_data;
         solver_data.max_iter             = additional_data.solver_data.max_iter;
         solver_data.solver_tolerance_abs = additional_data.solver_data.abs_tol;
         solver_data.solver_tolerance_rel = additional_data.solver_data.rel_tol;
@@ -225,12 +225,13 @@ public:
           AssertThrow(false, ExcMessage("Not implemented."));
         }
 
-        solver.reset(new CGSolver<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
-          coarse_matrix, *preconditioner, solver_data));
+        solver.reset(
+          new Krylov::SolverCG<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
+            coarse_matrix, *preconditioner, solver_data));
       }
       else if(additional_data.solver_type == KrylovSolverType::GMRES)
       {
-        GMRESSolverData solver_data;
+        Krylov::SolverDataGMRES solver_data;
 
         solver_data.max_iter             = additional_data.solver_data.max_iter;
         solver_data.solver_tolerance_abs = additional_data.solver_data.abs_tol;
@@ -251,8 +252,9 @@ public:
           AssertThrow(false, ExcMessage("Not implemented."));
         }
 
-        solver.reset(new GMRESSolver<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
-          coarse_matrix, *preconditioner, solver_data, mpi_comm));
+        solver.reset(
+          new Krylov::SolverGMRES<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
+            coarse_matrix, *preconditioner, solver_data, mpi_comm));
       }
       else
       {

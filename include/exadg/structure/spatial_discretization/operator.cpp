@@ -270,7 +270,7 @@ Operator<dim, Number>::setup_operators()
       new JacobiPreconditioner<MassOperator<dim, dim, Number>>(mass_operator));
 
     // initialize solver
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.use_preconditioner = true;
     // use the same solver tolerances as for solving the momentum equation
     if(param.large_deformation)
@@ -287,7 +287,7 @@ Operator<dim, Number>::setup_operators()
     }
 
     mass_solver.reset(
-      new CGSolver<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>(
+      new Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>(
         mass_operator, *mass_preconditioner, solver_data));
   }
 
@@ -401,7 +401,7 @@ Operator<dim, Number>::initialize_solver()
   if(param.solver == Solver::CG)
   {
     // initialize solver_data
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
     solver_data.max_iter             = param.solver_data.max_iter;
@@ -411,18 +411,24 @@ Operator<dim, Number>::initialize_solver()
 
     // initialize solver
     if(param.large_deformation)
-      linear_solver.reset(
-        new CGSolver<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-          elasticity_operator_nonlinear, *preconditioner, solver_data));
+    {
+      linear_solver.reset(new Krylov::SolverCG<NonLinearOperator<dim, Number>,
+                                               PreconditionerBase<Number>,
+                                               VectorType>(elasticity_operator_nonlinear,
+                                                           *preconditioner,
+                                                           solver_data));
+    }
     else
+    {
       linear_solver.reset(
-        new CGSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+        new Krylov::SolverCG<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
           elasticity_operator_linear, *preconditioner, solver_data));
+    }
   }
   else if(param.solver == Solver::FGMRES)
   {
     // initialize solver_data
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
     solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
     solver_data.max_iter             = param.solver_data.max_iter;
@@ -433,13 +439,17 @@ Operator<dim, Number>::initialize_solver()
 
     // initialize solver
     if(param.large_deformation)
-      linear_solver.reset(
-        new FGMRESSolver<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-          elasticity_operator_nonlinear, *preconditioner, solver_data));
+      linear_solver.reset(new Krylov::SolverFGMRES<NonLinearOperator<dim, Number>,
+                                                   PreconditionerBase<Number>,
+                                                   VectorType>(elasticity_operator_nonlinear,
+                                                               *preconditioner,
+                                                               solver_data));
     else
-      linear_solver.reset(
-        new FGMRESSolver<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-          elasticity_operator_linear, *preconditioner, solver_data));
+      linear_solver.reset(new Krylov::SolverFGMRES<LinearOperator<dim, Number>,
+                                                   PreconditionerBase<Number>,
+                                                   VectorType>(elasticity_operator_linear,
+                                                               *preconditioner,
+                                                               solver_data));
   }
   else
   {

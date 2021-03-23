@@ -262,12 +262,12 @@ private:
   std::shared_ptr<Newton::Solver<VectorType,
                                  NonlinearMomentumOperator<dim, Number>,
                                  MomentumOperator<dim, Number>,
-                                 IterativeSolverBase<VectorType>>>
+                                 Krylov::SolverBase<VectorType>>>
     momentum_newton_solver;
 
   // linear solver (momentum_operator serves as linear operator)
-  std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
-  std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
+  std::shared_ptr<PreconditionerBase<Number>>     momentum_preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> momentum_linear_solver;
 };
 
 } // namespace IncNS

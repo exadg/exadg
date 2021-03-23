@@ -426,7 +426,7 @@ private:
   typedef Newton::Solver<VectorType,
                          ResidualOperator<dim, Number>,
                          LinearizedOperator<dim, Number>,
-                         IterativeSolverBase<VectorType>>
+                         Krylov::SolverBase<VectorType>>
     NewtonSolver;
 
   std::shared_ptr<NewtonSolver> newton_solver;
@@ -436,11 +436,11 @@ private:
    */
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
-  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> linear_solver;
 
   // mass operator inversion
-  std::shared_ptr<PreconditionerBase<Number>>      mass_preconditioner;
-  std::shared_ptr<IterativeSolverBase<VectorType>> mass_solver;
+  std::shared_ptr<PreconditionerBase<Number>>     mass_preconditioner;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> mass_solver;
 
   /*
    * MPI communicator

@@ -147,7 +147,7 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
   if(this->param.solver_viscous == SolverViscous::CG)
   {
     // setup solver data
-    CGSolverData solver_data;
+    Krylov::SolverDataCG solver_data;
     solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
@@ -161,13 +161,13 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
     }
 
     helmholtz_solver.reset(
-      new CGSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+      new Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         this->momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::GMRES)
   {
     // setup solver data
-    GMRESSolverData solver_data;
+    Krylov::SolverDataGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
@@ -183,13 +183,14 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-    helmholtz_solver.reset(
-      new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm));
+    helmholtz_solver.reset(new Krylov::SolverGMRES<MomentumOperator<dim, Number>,
+                                                   PreconditionerBase<Number>,
+                                                   VectorType>(
+      this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm));
   }
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
-    FGMRESSolverData solver_data;
+    Krylov::SolverDataFGMRES solver_data;
     solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
     solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
     solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
@@ -203,9 +204,11 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-    helmholtz_solver.reset(
-      new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *helmholtz_preconditioner, solver_data));
+    helmholtz_solver.reset(new Krylov::SolverFGMRES<MomentumOperator<dim, Number>,
+                                                    PreconditionerBase<Number>,
+                                                    VectorType>(this->momentum_operator,
+                                                                *helmholtz_preconditioner,
+                                                                solver_data));
   }
   else
   {

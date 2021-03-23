@@ -620,8 +620,8 @@ protected:
   std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
 
   // projection solver
-  std::shared_ptr<IterativeSolverBase<VectorType>> projection_solver;
-  std::shared_ptr<PreconditionerBase<Number>>      preconditioner_projection;
+  std::shared_ptr<Krylov::SolverBase<VectorType>> projection_solver;
+  std::shared_ptr<PreconditionerBase<Number>>     preconditioner_projection;
 
   /*
    * Calculators used to obtain derived quantities.
