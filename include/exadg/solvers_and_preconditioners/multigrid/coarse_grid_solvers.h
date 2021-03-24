@@ -167,7 +167,6 @@ public:
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
        additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
     {
-#ifdef DEAL_II_WITH_TRILINOS
       // create temporal vectors of type TrilinosNumber (double)
       VectorTypeTrilinos dst_tri;
       dst_tri.reinit(dst, false);
@@ -206,7 +205,6 @@ public:
 
       // convert TrilinosNumber (double) -> MultigridNumber (float)
       dst.copy_locally_owned_data_from(dst_tri);
-#endif
     }
     else
     {

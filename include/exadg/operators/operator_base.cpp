@@ -789,7 +789,11 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   // communicate overlapping matrix parts
   system_matrix.compress(VectorOperation::add);
 
-  if(!is_dg)
+  if(!is_dg
+#ifdef DEAL_II_WITH_TRILINOS
+     && std::is_same<SparseMatrix, TrilinosWrappers::SparseMatrix>::value
+#endif
+  )
   {
     // make zero entries on diagonal (due to constrained dofs) to one:
     auto p = system_matrix.local_range();

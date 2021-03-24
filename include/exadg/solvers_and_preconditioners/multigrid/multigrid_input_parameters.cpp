@@ -162,6 +162,9 @@ enum_to_string(MultigridCoarseGridSolver const enum_type)
     case MultigridCoarseGridSolver::AMG:
       string_type = "AMG";
       break;
+    case MultigridCoarseGridSolver::BoomerAMG:
+      string_type = "BoomerAMG";
+      break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
       break;
@@ -189,6 +192,9 @@ enum_to_string(MultigridCoarseGridPreconditioner const enum_type)
       break;
     case MultigridCoarseGridPreconditioner::AMG:
       string_type = "AMG";
+      break;
+    case MultigridCoarseGridPreconditioner::BoomerAMG:
+      string_type = "BoomerAMG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
