@@ -189,7 +189,6 @@ Driver<dim, Number>::solve()
   timer.restart();
   iterations = poisson_operator->solve(sol, rhs, 0.0 /* time */);
   solve_time += timer.wall_time();
-  timer_tree.insert({"Poisson", "Solve"}, solve_time);
 
   // postprocessing of results
   timer.restart();
@@ -229,8 +228,17 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     // wall times
     timer_tree.insert({"Poisson"}, total_time);
 
+    // insert sub-tree for Krylov solver
+    timer_tree.insert({"Poisson"}, poisson_operator->get_timings());
+
     pcout << std::endl << "Timings for level 1:" << std::endl;
     timer_tree.print_level(pcout, 1);
+
+    pcout << std::endl << "Timings for level 2:" << std::endl;
+    timer_tree.print_level(pcout, 2);
+
+    pcout << std::endl << "Timings for level 3:" << std::endl;
+    timer_tree.print_level(pcout, 3);
 
     // Throughput of linear solver in DoFs/s per core
     print_throughput_10(pcout, DoFs, t_10, N_mpi_processes);

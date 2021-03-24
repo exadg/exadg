@@ -127,6 +127,9 @@ public:
   unsigned int
   get_quad_index_gauss_lobatto() const;
 
+  std::shared_ptr<TimerTree>
+  get_timings() const;
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;

@@ -22,7 +22,11 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_BASE_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_PRECONDITIONER_BASE_H_
 
+// deal.II
 #include <deal.II/lac/la_parallel_vector.h>
+
+// ExaDG
+#include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
 {
@@ -43,6 +47,12 @@ public:
 
   virtual void
   update() = 0;
+
+  virtual std::shared_ptr<TimerTree>
+  get_timings() const
+  {
+    return std::make_shared<TimerTree>();
+  }
 };
 
 } // namespace ExaDG

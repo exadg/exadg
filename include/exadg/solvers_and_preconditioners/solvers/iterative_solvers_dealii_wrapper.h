@@ -22,9 +22,14 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_ITERATIVESOLVERS_H_
 
+// deal.II
+#include <deal.II/base/timer.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
+
+// ExaDG
+#include <exadg/utilities/timer_tree.h>
 
 namespace ExaDG
 {
@@ -36,6 +41,7 @@ class SolverBase
 public:
   SolverBase() : l2_0(1.0), l2_n(1.0), n(0), rho(0.0), n10(0)
   {
+    timer_tree = std::make_shared<TimerTree>();
   }
 
   virtual unsigned int
@@ -62,12 +68,21 @@ public:
     }
   }
 
+  virtual std::shared_ptr<TimerTree>
+  get_timings() const
+  {
+    return timer_tree;
+  }
+
   // performance metrics
   mutable double       l2_0; // norm of initial residual
   mutable double       l2_n; // norm of final residual
   mutable unsigned int n;    // number of iterations
   mutable double       rho;  // average convergence rate
   mutable double       n10;  // number of iterations needed to reduce the residual by 1e10
+
+protected:
+  std::shared_ptr<TimerTree> timer_tree;
 };
 
 struct SolverDataCG
@@ -104,6 +119,9 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
+    Timer timer;
+    timer.restart();
+
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
                                             solver_data.solver_tolerance_rel);
@@ -130,7 +148,17 @@ public:
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
 
+    this->timer_tree->insert({"SolverCG"}, timer.wall_time());
+
     return solver_control.last_step();
+  }
+
+  std::shared_ptr<TimerTree>
+  get_timings() const override
+  {
+    this->timer_tree->insert({"SolverCG"}, preconditioner.get_timings());
+
+    return this->timer_tree;
   }
 
 private:
@@ -200,6 +228,9 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
+    Timer timer;
+    timer.restart();
+
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
                                             solver_data.solver_tolerance_rel);
@@ -238,7 +269,17 @@ public:
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
 
+    this->timer_tree->insert({"SolverGMRES"}, timer.wall_time());
+
     return solver_control.last_step();
+  }
+
+  std::shared_ptr<TimerTree>
+  get_timings() const override
+  {
+    this->timer_tree->insert({"SolverGMRES"}, preconditioner.get_timings());
+
+    return this->timer_tree;
   }
 
 private:
@@ -289,6 +330,9 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
+    Timer timer;
+    timer.restart();
+
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
                                             solver_data.solver_tolerance_rel);
@@ -319,7 +363,17 @@ public:
     if(solver_data.compute_performance_metrics)
       this->compute_performance_metrics(solver_control);
 
+    this->timer_tree->insert({"SolverFGMRES"}, timer.wall_time());
+
     return solver_control.last_step();
+  }
+
+  std::shared_ptr<TimerTree>
+  get_timings() const override
+  {
+    this->timer_tree->insert({"SolverFGMRES"}, preconditioner.get_timings());
+
+    return this->timer_tree;
   }
 
 private:

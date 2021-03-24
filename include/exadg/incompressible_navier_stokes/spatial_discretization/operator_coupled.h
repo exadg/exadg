@@ -168,6 +168,15 @@ public:
     pde_operator->apply_block_preconditioner(dst, src);
   }
 
+  std::shared_ptr<TimerTree>
+  get_timings() const
+  {
+    AssertThrow(false,
+                ExcMessage("Function get_timings() is not implemented for BlockPreconditioner."));
+
+    return std::make_shared<TimerTree>();
+  }
+
   PDEOperator * pde_operator;
 };
 
