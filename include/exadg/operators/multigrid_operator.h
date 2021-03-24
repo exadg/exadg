@@ -52,113 +52,113 @@ public:
     return pde_operator;
   }
 
-  AffineConstraints<typename Operator::value_type> const &
-  get_affine_constraints() const override
+  virtual AffineConstraints<typename Operator::value_type> const &
+  get_affine_constraints() const
   {
     return pde_operator->get_affine_constraints();
   }
 
-  MatrixFree<dim, Number> const &
-  get_matrix_free() const override
+  virtual MatrixFree<dim, Number> const &
+  get_matrix_free() const
   {
     return pde_operator->get_matrix_free();
   }
 
-  unsigned int
-  get_dof_index() const override
+  virtual unsigned int
+  get_dof_index() const
   {
     return pde_operator->get_dof_index();
   }
 
-  types::global_dof_index
-  m() const override
+  virtual types::global_dof_index
+  m() const
   {
     return pde_operator->m();
   }
 
-  types::global_dof_index
-  n() const override
+  virtual types::global_dof_index
+  n() const
   {
     return pde_operator->n();
   }
 
-  Number
-  el(unsigned int const i, const unsigned int j) const override
+  virtual Number
+  el(unsigned int const i, const unsigned int j) const
   {
     return pde_operator->el(i, j);
   }
 
-  void
-  initialize_dof_vector(VectorType & vector) const override
+  virtual void
+  initialize_dof_vector(VectorType & vector) const
   {
     pde_operator->initialize_dof_vector(vector);
   }
 
-  void
-  vmult(VectorType & dst, VectorType const & src) const override
+  virtual void
+  vmult(VectorType & dst, VectorType const & src) const
   {
     pde_operator->vmult(dst, src);
   }
 
-  void
-  vmult_add(VectorType & dst, VectorType const & src) const override
+  virtual void
+  vmult_add(VectorType & dst, VectorType const & src) const
   {
     pde_operator->vmult_add(dst, src);
   }
 
-  void
-  vmult_interface_down(VectorType & dst, VectorType const & src) const override
+  virtual void
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
   {
     pde_operator->vmult_interface_down(dst, src);
   }
 
-  void
-  vmult_add_interface_up(VectorType & dst, VectorType const & src) const override
+  virtual void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
   {
     pde_operator->vmult_add_interface_up(dst, src);
   }
 
-  void
-  calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const override
+  virtual void
+  calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const
   {
     pde_operator->calculate_inverse_diagonal(inverse_diagonal_entries);
   }
 
-  void
-  update_block_diagonal_preconditioner() const override
+  virtual void
+  update_block_diagonal_preconditioner() const
   {
     pde_operator->update_block_diagonal_preconditioner();
   }
 
-  void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const override
+  virtual void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
   {
     pde_operator->apply_inverse_block_diagonal(dst, src);
   }
 
 #ifdef DEAL_II_WITH_TRILINOS
-  void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const override
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
   {
     pde_operator->init_system_matrix(system_matrix);
   }
 
-  void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const override
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
   {
     pde_operator->calculate_system_matrix(system_matrix);
   }
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
-  void
-  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const override
+  virtual void
+  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const
   {
     pde_operator->init_system_matrix(system_matrix);
   }
 
-  void
-  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const override
+  virtual void
+  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const
   {
     pde_operator->calculate_system_matrix(system_matrix);
   }
