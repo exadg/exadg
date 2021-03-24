@@ -86,9 +86,7 @@ public:
         defect2[level] = solution[level];
     }
 
-#if ENABLE_TIMING
     timer_tree.reset(new TimerTree());
-#endif
   }
 
   template<class OtherVectorType>
@@ -304,9 +302,7 @@ private:
 
   unsigned int const n_cycles;
 
-#if ENABLE_TIMING
   std::shared_ptr<TimerTree> timer_tree;
-#endif
 };
 
 } // namespace ExaDG
