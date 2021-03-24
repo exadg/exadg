@@ -23,8 +23,8 @@
 #define PRECONDITIONER_AMG
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/petsc_precondition.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 
