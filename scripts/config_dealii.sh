@@ -37,6 +37,7 @@ cmake \
     -D CMAKE_C_FLAGS="-march=native -Wno-array-bounds" \
     -D DEAL_II_WITH_MPI:BOOL="ON" \
     -D DEAL_II_LINKER_FLAGS="-lpthread" \
+    -D DEAL_II_WITH_64BIT_INDICES="ON" \
     -D DEAL_II_WITH_TRILINOS:BOOL="OFF" \
     -D TRILINOS_DIR:FILEPATH="$WORKING_DIRECTORY/sw/trilinos-install" \
     -D DEAL_II_WITH_METIS:BOOL="OFF" \
@@ -44,7 +45,11 @@ cmake \
     -D DEAL_II_FORCE_BUNDLED_BOOST="OFF" \
     -D DEAL_II_WITH_GSL="OFF" \
     -D DEAL_II_WITH_NETCDF="OFF" \
+    -D DEAL_II_WITH_PETSC="OFF" \
+    -D PETSC_DIR="$WORKING_DIRECTORY/sw/petsc-3.14.5" \
+    -D PETSC_ARCH="arch-linux-c-opt" \
     -D DEAL_II_WITH_P4EST="ON" \
     -D P4EST_DIR="$WORKING_DIRECTORY/sw" \
     -D DEAL_II_COMPONENT_DOCUMENTATION="OFF" \
+    -D DEAL_II_COMPONENT_EXAMPLES="OFF" \
     $DEAL
