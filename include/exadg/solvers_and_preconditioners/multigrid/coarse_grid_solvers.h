@@ -113,13 +113,19 @@ public:
       preconditioner_trilinos.reset(
         new PreconditionerAMG<Operator, TrilinosNumber>(matrix, additional_data.amg_data));
     }
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
+    {
+      preconditioner_trilinos.reset(
+        new PreconditionerBoomerAMG<Operator, TrilinosNumber>(matrix, additional_data.amg_data));
+    }
     else
     {
       AssertThrow(
         additional_data.preconditioner == MultigridCoarseGridPreconditioner::None ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi ||
-          additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG,
+          additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+          additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG,
         ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
     }
   }
@@ -140,7 +146,8 @@ public:
     {
       preconditioner->update();
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+            additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
     {
       preconditioner_trilinos->update();
     }
@@ -157,7 +164,8 @@ public:
     if(additional_data.operator_is_singular)
       set_zero_mean_value(r);
 
-    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
+    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+       additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
     {
 #ifdef DEAL_II_WITH_TRILINOS
       // create temporal vectors of type TrilinosNumber (double)
@@ -318,9 +326,12 @@ private:
   typedef LinearAlgebra::distributed::Vector<typename Operator::value_type> VectorTypeMultigrid;
 
 public:
-  MGCoarseAMG(Operator const & op, AMGData data = AMGData())
+  MGCoarseAMG(Operator const & op, bool const use_boomer_amg, AMGData data = AMGData())
   {
-    amg_preconditioner.reset(new PreconditionerAMG<Operator, TrilinosNumber>(op, data));
+    if(use_boomer_amg)
+      amg_preconditioner.reset(new PreconditionerBoomerAMG<Operator, TrilinosNumber>(op, data));
+    else
+      amg_preconditioner.reset(new PreconditionerAMG<Operator, TrilinosNumber>(op, data));
   }
 
   void
@@ -351,7 +362,7 @@ public:
   }
 
 private:
-  std::shared_ptr<PreconditionerAMG<Operator, TrilinosNumber>> amg_preconditioner;
+  std::shared_ptr<PreconditionerBase<TrilinosNumber>> amg_preconditioner;
 };
 
 } // namespace ExaDG

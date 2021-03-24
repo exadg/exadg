@@ -892,7 +892,13 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
     case MultigridCoarseGridSolver::AMG:
     {
       coarse_grid_solver.reset(
-        new MGCoarseAMG<Operator>(coarse_operator, data.coarse_problem.amg_data));
+        new MGCoarseAMG<Operator>(coarse_operator, false, data.coarse_problem.amg_data));
+      return;
+    }
+    case MultigridCoarseGridSolver::BoomerAMG:
+    {
+      coarse_grid_solver.reset(
+        new MGCoarseAMG<Operator>(coarse_operator, true, data.coarse_problem.amg_data));
       return;
     }
     default:
