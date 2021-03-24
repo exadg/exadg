@@ -22,7 +22,7 @@
 #ifndef OPERATOR_PRECONDITIONABLE_H
 #define OPERATOR_PRECONDITIONABLE_H
 
-#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
