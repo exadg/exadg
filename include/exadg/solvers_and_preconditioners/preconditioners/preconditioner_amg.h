@@ -124,8 +124,8 @@ class PreconditionerBoomerAMG : public PreconditionerBase<Number>
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-#ifdef DEAL_II_WITH_PETSC
 public:
+#ifdef DEAL_II_WITH_PETSC
   // distributed sparse system matrix
   PETScWrappers::MPI::SparseMatrix system_matrix;
 
@@ -133,7 +133,6 @@ public:
   PETScWrappers::PreconditionBoomerAMG amg;
 #endif
 
-public:
   PreconditionerBoomerAMG(Operator const & op, AMGData data = AMGData())
     : pde_operator(op), amg_data(data)
   {
