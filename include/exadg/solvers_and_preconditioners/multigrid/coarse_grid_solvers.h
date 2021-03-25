@@ -110,10 +110,10 @@ public:
     {
       preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
     {
       preconditioner_amg.reset(
-        new PreconditionerAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
+        new PreconditionerTrilinosAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
     {
@@ -126,7 +126,7 @@ public:
         additional_data.preconditioner == MultigridCoarseGridPreconditioner::None ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi ||
-          additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+          additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG,
         ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
     }
@@ -148,7 +148,7 @@ public:
     {
       preconditioner->update();
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG ||
             additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
     {
       preconditioner_amg->update();
@@ -166,7 +166,7 @@ public:
     if(additional_data.operator_is_singular)
       set_zero_mean_value(r);
 
-    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
+    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
     {
       // create temporal vectors of type NumberAMG (double)
       VectorTypeAMG dst_tri;
@@ -175,11 +175,13 @@ public:
       src_tri.reinit(r, true);
       src_tri.copy_locally_owned_data_from(r);
 
+      std::shared_ptr<PreconditionerTrilinosAMG<Operator, NumberAMG>> coarse_operator =
+        std::dynamic_pointer_cast<PreconditionerTrilinosAMG<Operator, NumberAMG>>(
+          preconditioner_amg);
+
       ReductionControl solver_control(additional_data.solver_data.max_iter,
                                       additional_data.solver_data.abs_tol,
                                       additional_data.solver_data.rel_tol);
-      std::shared_ptr<PreconditionerAMG<Operator, NumberAMG>> coarse_operator =
-        std::dynamic_pointer_cast<PreconditionerAMG<Operator, NumberAMG>>(preconditioner_amg);
 
       if(additional_data.solver_type == KrylovSolverType::CG)
       {
@@ -213,9 +215,11 @@ public:
           std::shared_ptr<PreconditionerBoomerAMG<Operator, NumberAMG>> coarse_operator =
             std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
               preconditioner_amg);
+
           ReductionControl solver_control(additional_data.solver_data.max_iter,
                                           additional_data.solver_data.abs_tol,
                                           additional_data.solver_data.rel_tol);
+
           if(additional_data.solver_type == KrylovSolverType::CG)
           {
             PETScWrappers::SolverCG solver(solver_control);
@@ -362,7 +366,7 @@ public:
     if(use_boomer_amg)
       amg_preconditioner.reset(new PreconditionerBoomerAMG<Operator, NumberAMG>(op, data));
     else
-      amg_preconditioner.reset(new PreconditionerAMG<Operator, NumberAMG>(op, data));
+      amg_preconditioner.reset(new PreconditionerTrilinosAMG<Operator, NumberAMG>(op, data));
   }
 
   void
@@ -377,19 +381,19 @@ public:
              VectorTypeMultigrid const & src) const
   {
     // create temporal vectors of type VectorTypeAMG (double)
-    VectorTypeAMG dst_trilinos;
-    dst_trilinos.reinit(dst, false);
-    VectorTypeAMG src_trilinos;
-    src_trilinos.reinit(src, true);
+    VectorTypeAMG dst_amg;
+    dst_amg.reinit(dst, false);
+    VectorTypeAMG src_amg;
+    src_amg.reinit(src, true);
 
     // convert: VectorTypeMultigrid -> VectorTypeAMG
-    src_trilinos.copy_locally_owned_data_from(src);
+    src_amg.copy_locally_owned_data_from(src);
 
-    // use Trilinos to perform AMG
-    amg_preconditioner->vmult(dst_trilinos, src_trilinos);
+    // apply AMG as solver
+    amg_preconditioner->vmult(dst_amg, src_amg);
 
     // convert: VectorTypeAMG -> VectorTypeMultigrid
-    dst.copy_locally_owned_data_from(dst_trilinos);
+    dst.copy_locally_owned_data_from(dst_amg);
   }
 
 private:

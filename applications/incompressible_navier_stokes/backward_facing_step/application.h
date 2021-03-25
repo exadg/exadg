@@ -303,7 +303,7 @@ public:
     param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
     param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
 
     // projection step
     param.solver_projection         = SolverProjection::CG;
@@ -367,7 +367,7 @@ public:
     param.multigrid_data_pressure_block.type = MultigridType::cphMG;
     param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     param.multigrid_data_pressure_block.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
   }
 
   void

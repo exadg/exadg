@@ -186,8 +186,11 @@ enum_to_string(Preconditioner const enum_type)
     case Preconditioner::Multigrid:
       string_type = "Multigrid";
       break;
-    case Preconditioner::AMG:
-      string_type = "AMG";
+    case Preconditioner::TrilinosAMG:
+      string_type = "TrilinosAMG";
+      break;
+    case Preconditioner::BoomerAMG:
+      string_type = "BoomerAMG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

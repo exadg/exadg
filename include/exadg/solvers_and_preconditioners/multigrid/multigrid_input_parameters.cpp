@@ -159,8 +159,8 @@ enum_to_string(MultigridCoarseGridSolver const enum_type)
     case MultigridCoarseGridSolver::GMRES:
       string_type = "GMRES";
       break;
-    case MultigridCoarseGridSolver::AMG:
-      string_type = "AMG";
+    case MultigridCoarseGridSolver::TrilinosAMG:
+      string_type = "TrilinosAMG";
       break;
     case MultigridCoarseGridSolver::BoomerAMG:
       string_type = "BoomerAMG";
@@ -190,8 +190,8 @@ enum_to_string(MultigridCoarseGridPreconditioner const enum_type)
     case MultigridCoarseGridPreconditioner::BlockJacobi:
       string_type = "BlockJacobi";
       break;
-    case MultigridCoarseGridPreconditioner::AMG:
-      string_type = "AMG";
+    case MultigridCoarseGridPreconditioner::TrilinosAMG:
+      string_type = "TrilinosAMG";
       break;
     case MultigridCoarseGridPreconditioner::BoomerAMG:
       string_type = "BoomerAMG";
@@ -231,10 +231,7 @@ enum_to_string(PreconditionerSmoother const enum_type)
 bool
 MultigridData::involves_h_transfer() const
 {
-  if(type == MultigridType::hMG || type == MultigridType::chMG || type == MultigridType::phMG ||
-     type == MultigridType::hcMG || type == MultigridType::hpMG || type == MultigridType::chpMG ||
-     type == MultigridType::cphMG || type == MultigridType::hcpMG || type == MultigridType::hpcMG ||
-     type == MultigridType::pchMG || type == MultigridType::phcMG)
+  if(type != MultigridType::pMG && type != MultigridType::cpMG && type != MultigridType::pcMG)
     return true;
   else
     return false;
@@ -248,6 +245,15 @@ MultigridData::involves_c_transfer() const
     return false;
   else
     return true;
+}
+
+bool
+MultigridData::involves_p_transfer() const
+{
+  if(type != MultigridType::hMG && type != MultigridType::hcMG && type != MultigridType::chMG)
+    return true;
+  else
+    return false;
 }
 
 } // namespace ExaDG
