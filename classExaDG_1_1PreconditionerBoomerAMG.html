@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::MGCoarseAMG&lt; Operator &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::PreconditionerBoomerAMG&lt; Operator, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -61,41 +61,39 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1MGCoarseAMG.html">MGCoarseAMG</a></li>  </ul>
+<li class="navelem"><b>ExaDG</b></li><li class="navelem"><a class="el" href="classExaDG_1_1PreconditionerBoomerAMG.html">PreconditionerBoomerAMG</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="classExaDG_1_1MGCoarseAMG-members.html">List of all members</a>  </div>
+<a href="classExaDG_1_1PreconditionerBoomerAMG-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ExaDG::MGCoarseAMG&lt; Operator &gt; Class Template Reference</div>  </div>
+<div class="title">ExaDG::PreconditionerBoomerAMG&lt; Operator, Number &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for ExaDG::MGCoarseAMG&lt; Operator &gt;:</div>
+Inheritance diagram for ExaDG::PreconditionerBoomerAMG&lt; Operator, Number &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="classExaDG_1_1MGCoarseAMG.png" usemap="#ExaDG::MGCoarseAMG_3C_20Operator_20_3E_map" alt=""/>
-  <map id="ExaDG::MGCoarseAMG_3C_20Operator_20_3E_map" name="ExaDG::MGCoarseAMG_3C_20Operator_20_3E_map">
-<area href="classdealii_1_1MGCoarseGridBase.html" alt="dealii::MGCoarseGridBase&lt; LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt; &gt;" shape="rect" coords="0,0,517,24"/>
+  <img src="classExaDG_1_1PreconditionerBoomerAMG.png" usemap="#ExaDG::PreconditionerBoomerAMG_3C_20Operator_2C_20Number_20_3E_map" alt=""/>
+  <map id="ExaDG::PreconditionerBoomerAMG_3C_20Operator_2C_20Number_20_3E_map" name="ExaDG::PreconditionerBoomerAMG_3C_20Operator_2C_20Number_20_3E_map">
+<area href="classExaDG_1_1PreconditionerBase.html" alt="ExaDG::PreconditionerBase&lt; Number &gt;" shape="rect" coords="0,0,340,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a15406b9fbaa7a9dbc69dd3fb96b06f09"><td class="memItemLeft" align="right" valign="top"><a id="a15406b9fbaa7a9dbc69dd3fb96b06f09"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGCoarseAMG</b> (Operator const &amp;op, bool const use_boomer_amg, <a class="el" href="structExaDG_1_1AMGData.html">AMGData</a> data=<a class="el" href="structExaDG_1_1AMGData.html">AMGData</a>())</td></tr>
-<tr class="separator:a15406b9fbaa7a9dbc69dd3fb96b06f09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0aa01f634e1bb974b6614060cab65f1"><td class="memItemLeft" align="right" valign="top"><a id="ab0aa01f634e1bb974b6614060cab65f1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()</td></tr>
-<tr class="separator:ab0aa01f634e1bb974b6614060cab65f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a889ee3bf9b3a2a5d07eb289160299a02"><td class="memItemLeft" align="right" valign="top"><a id="a889ee3bf9b3a2a5d07eb289160299a02"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>operator()</b> (unsigned int const, VectorTypeMultigrid &amp;dst, VectorTypeMultigrid const &amp;src) const</td></tr>
-<tr class="separator:a889ee3bf9b3a2a5d07eb289160299a02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_types_classExaDG_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Number &gt;</a></td></tr>
+<tr class="memitem:a0a071906de1e20283f43e59e0a9b7ff9 inherit pub_types_classExaDG_1_1PreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a0a071906de1e20283f43e59e0a9b7ff9"></a>
+typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a0a071906de1e20283f43e59e0a9b7ff9 inherit pub_types_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classExaDG_1_1PreconditionerBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1PreconditionerBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1PreconditionerBase.html">ExaDG::PreconditionerBase&lt; Number &gt;</a></td></tr>
+<tr class="memitem:a58b2a2f2654760a7bc10257700f6f486 inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memItemLeft" align="right" valign="top"><a id="a58b2a2f2654760a7bc10257700f6f486"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
+<tr class="separator:a58b2a2f2654760a7bc10257700f6f486 inherit pub_methods_classExaDG_1_1PreconditionerBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/exadg/solvers_and_preconditioners/multigrid/<a class="el" href="coarse__grid__solvers_8h_source.html">coarse_grid_solvers.h</a></li>
+<li>include/exadg/solvers_and_preconditioners/preconditioners/<a class="el" href="preconditioner__amg_8h_source.html">preconditioner_amg.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['writeheader_666',['writeHeader',['../classdealspectrum_1_1Setup.html#a8b27d3d9eb4ff3fdec1899fb859def14',1,'dealspectrum::Setup']]]
+  ['writeheader_668',['writeHeader',['../classdealspectrum_1_1Setup.html#a8b27d3d9eb4ff3fdec1899fb859def14',1,'dealspectrum::Setup']]]
 ];
