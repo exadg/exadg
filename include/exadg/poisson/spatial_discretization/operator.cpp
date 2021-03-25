@@ -24,7 +24,7 @@
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
 #ifdef DEAL_II_WITH_PETSC
-#  include <deal.II/lac/petsc_parallel_vector.h>
+#  include <deal.II/lac/petsc_vector.h>
 #endif
 #include <deal.II/numerics/vector_tools.h>
 
@@ -36,6 +36,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
+#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
 
 namespace ExaDG
 {
@@ -480,59 +481,12 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
   PETScWrappers::MPI::SparseMatrix const & system_matrix,
   VectorTypeDouble const &                 src) const
 {
-  // copy to petsc internal vector type because there is currently no such
-  // function in deal.II (and the transition via ReadWriteVector is too
-  // slow/poorly tested)
-  Vec vector_dst, vector_src;
-  VecCreateMPI(dst.get_mpi_communicator(),
-               dst.get_partitioner()->local_size(),
-               PETSC_DETERMINE,
-               &vector_dst);
-  VecCreateMPI(src.get_mpi_communicator(),
-               src.get_partitioner()->local_size(),
-               PETSC_DETERMINE,
-               &vector_src);
-
-  {
-    PetscInt       begin, end;
-    PetscErrorCode ierr = VecGetOwnershipRange(vector_src, &begin, &end);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-    PetscScalar * ptr;
-    ierr = VecGetArray(vector_src, &ptr);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-    const PetscInt local_size = src.get_partitioner()->local_size();
-    AssertDimension(local_size, static_cast<unsigned int>(end - begin));
-    for(PetscInt i = 0; i < local_size; ++i)
-    {
-      ptr[i] = src.local_element(i);
-    }
-
-    ierr = VecRestoreArray(vector_src, &ptr);
-  }
-
-  PETScWrappers::VectorBase petsc_dst(vector_dst);
-  system_matrix.vmult(petsc_dst, PETScWrappers::VectorBase(vector_src));
-
-  {
-    PetscInt       begin, end;
-    PetscErrorCode ierr = VecGetOwnershipRange(vector_dst, &begin, &end);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-    PetscScalar * ptr;
-    ierr = VecGetArray(vector_dst, &ptr);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-    const PetscInt local_size = dst.get_partitioner()->local_size();
-    AssertDimension(local_size, static_cast<unsigned int>(end - begin));
-    for(PetscInt i = 0; i < local_size; ++i)
-    {
-      dst.local_element(i) = ptr[i];
-    }
-
-    ierr = VecRestoreArray(vector_dst, &ptr);
-  }
+  apply_petsc_operation(dst,
+                        src,
+                        [&](PETScWrappers::VectorBase &       petsc_dst,
+                            PETScWrappers::VectorBase const & petsc_src) {
+                          system_matrix.vmult(petsc_dst, petsc_src);
+                        });
 }
 #endif
 

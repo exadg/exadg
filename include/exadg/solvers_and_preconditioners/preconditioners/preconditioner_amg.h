@@ -30,6 +30,7 @@
 
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
+#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -188,63 +189,12 @@ public:
   vmult(VectorType & dst, VectorType const & src) const override
   {
 #ifdef DEAL_II_WITH_PETSC
-    // copy to petsc internal vector type because there is currently no such
-    // function in deal.II (and the transition via ReadWriteVector is too
-    // slow/poorly tested)
-    Vec vector_dst, vector_src;
-    VecCreateMPI(dst.get_mpi_communicator(),
-                 dst.get_partitioner()->local_size(),
-                 PETSC_DETERMINE,
-                 &vector_dst);
-    VecCreateMPI(src.get_mpi_communicator(),
-                 src.get_partitioner()->local_size(),
-                 PETSC_DETERMINE,
-                 &vector_src);
-
-    {
-      PetscInt       begin, end;
-      PetscErrorCode ierr = VecGetOwnershipRange(vector_src, &begin, &end);
-      AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-      PetscScalar * ptr;
-      ierr = VecGetArray(vector_src, &ptr);
-      AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-      const PetscInt local_size = src.get_partitioner()->local_size();
-      AssertDimension(local_size, static_cast<unsigned int>(end - begin));
-      for(PetscInt i = 0; i < local_size; ++i)
-      {
-        ptr[i] = src.local_element(i);
-      }
-
-      ierr = VecRestoreArray(vector_src, &ptr);
-    }
-
-    PETScWrappers::VectorBase petsc_dst(vector_dst);
-    amg.vmult(petsc_dst, PETScWrappers::VectorBase(vector_src));
-
-    {
-      PetscInt       begin, end;
-      PetscErrorCode ierr = VecGetOwnershipRange(vector_dst, &begin, &end);
-      AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-      PetscScalar * ptr;
-      ierr = VecGetArray(vector_dst, &ptr);
-      AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-      const PetscInt local_size = dst.get_partitioner()->local_size();
-      AssertDimension(local_size, static_cast<unsigned int>(end - begin));
-      for(PetscInt i = 0; i < local_size; ++i)
-      {
-        dst.local_element(i) = ptr[i];
-      }
-
-      ierr = VecRestoreArray(vector_dst, &ptr);
-    }
-#else
-    (void)dst;
-    (void)src;
-    AssertThrow(false, ExcMessage("deal.II is not compiled with PETSC!"));
+    apply_petsc_operation(dst,
+                          src,
+                          [&](PETScWrappers::VectorBase &       petsc_dst,
+                              PETScWrappers::VectorBase const & petsc_src) {
+                            amg.vmult(petsc_dst, petsc_src);
+                          });
 #endif
   }
 
