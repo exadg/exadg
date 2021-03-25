@@ -90,7 +90,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -107,7 +106,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -258,7 +256,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -275,7 +272,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -426,7 +422,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -443,7 +438,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
@@ -594,7 +588,6 @@ Linear solver:
   Preconditioner:                            Multigrid
   Multigrid operator type:                   ReactionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi
@@ -611,7 +604,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi
