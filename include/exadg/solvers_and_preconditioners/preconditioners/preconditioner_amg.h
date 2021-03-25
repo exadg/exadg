@@ -133,6 +133,7 @@ public:
   PETScWrappers::PreconditionBoomerAMG amg;
 #endif
 
+public:
   PreconditionerBoomerAMG(Operator const & op, AMGData data = AMGData())
     : pde_operator(op), amg_data(data)
   {
@@ -166,6 +167,8 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
+    (void)dst;
+    (void)src;
 #ifdef DEAL_II_WITH_PETSC
     apply_petsc_operation(dst,
                           src,
