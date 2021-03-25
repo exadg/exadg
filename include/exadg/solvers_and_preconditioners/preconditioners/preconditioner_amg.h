@@ -37,11 +37,11 @@ namespace ExaDG
 {
 using namespace dealii;
 
-template<typename Operator, typename TrilinosNumber>
-class PreconditionerAMG : public PreconditionerBase<TrilinosNumber>
+template<typename Operator, typename Number>
+class PreconditionerTrilinosAMG : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<TrilinosNumber> VectorTypeTrilinos;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 #ifdef DEAL_II_WITH_TRILINOS
 public:
@@ -53,7 +53,7 @@ private:
 #endif
 
 public:
-  PreconditionerAMG(Operator const & op, AMGData data = AMGData())
+  PreconditionerTrilinosAMG(Operator const & op, AMGData data = AMGData())
     : pde_operator(op), amg_data(data)
   {
 #ifdef DEAL_II_WITH_TRILINOS
@@ -96,7 +96,7 @@ public:
   }
 
   void
-  vmult(VectorTypeTrilinos & dst, VectorTypeTrilinos const & src) const override
+  vmult(VectorType & dst, VectorType const & src) const override
   {
 #ifdef DEAL_II_WITH_TRILINOS
     amg.vmult(dst, src);
@@ -167,8 +167,6 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
-    (void)dst;
-    (void)src;
 #ifdef DEAL_II_WITH_PETSC
     apply_petsc_operation(dst,
                           src,
@@ -176,6 +174,10 @@ public:
                               PETScWrappers::VectorBase const & petsc_src) {
                             amg.vmult(petsc_dst, petsc_src);
                           });
+#else
+    (void)dst;
+    (void)src;
+    AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
   }
 

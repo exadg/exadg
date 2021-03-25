@@ -255,7 +255,7 @@ public:
       PreconditionerSmoother::PointJacobi;
     param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
 
     // projection step
     param.solver_projection         = SolverProjection::CG;
@@ -588,11 +588,12 @@ public:
     param.solver_data    = SolverData(1e4, ABS_TOL, REL_TOL, 100);
     param.preconditioner = Preconditioner::Multigrid;
 
-    param.multigrid_data.type                          = MultigridType::phMG;
-    param.multigrid_data.p_sequence                    = PSequenceType::Bisect;
-    param.multigrid_data.smoother_data.smoother        = MultigridSmoother::Chebyshev;
-    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
-    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+    param.multigrid_data.type                   = MultigridType::phMG;
+    param.multigrid_data.p_sequence             = PSequenceType::Bisect;
+    param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+    param.multigrid_data.coarse_problem.solver  = MultigridCoarseGridSolver::CG;
+    param.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
   }
 
   void set_boundary_conditions_ale(
@@ -648,7 +649,7 @@ public:
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     parameters.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
 
     parameters.update_preconditioner                         = parameters.large_deformation;
     parameters.update_preconditioner_every_newton_iterations = 10;
@@ -746,7 +747,7 @@ public:
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     parameters.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
 
     parameters.update_preconditioner                         = true;
     parameters.update_preconditioner_every_time_steps        = 10;

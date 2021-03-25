@@ -140,7 +140,7 @@ enum class MultigridCoarseGridSolver
   Chebyshev,
   CG,
   GMRES,
-  AMG,
+  TrilinosAMG,
   BoomerAMG
 };
 
@@ -153,7 +153,7 @@ enum class MultigridCoarseGridPreconditioner
   None,
   PointJacobi,
   BlockJacobi,
-  AMG,
+  TrilinosAMG,
   BoomerAMG
 };
 
@@ -258,8 +258,9 @@ struct CoarseGridData
 
     solver_data.print(pcout);
 
-    if(solver == MultigridCoarseGridSolver::AMG ||
-       preconditioner == MultigridCoarseGridPreconditioner::AMG)
+    // TODO: BoomerAMG data is currently hard-coded
+    if(solver == MultigridCoarseGridSolver::TrilinosAMG ||
+       preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
     {
       amg_data.print(pcout);
     }
@@ -295,7 +296,7 @@ struct MultigridData
   {
     print_parameter(pcout, "Multigrid type", enum_to_string(type));
 
-    if(type != MultigridType::hMG || type != MultigridType::hcMG || type != MultigridType::chMG)
+    if(involves_p_transfer())
     {
       print_parameter(pcout, "p-sequence", enum_to_string(p_sequence));
     }
@@ -312,6 +313,9 @@ struct MultigridData
 
   bool
   involves_c_transfer() const;
+
+  bool
+  involves_p_transfer() const;
 
   // Multigrid type: p-MG vs. h-MG
   MultigridType type;

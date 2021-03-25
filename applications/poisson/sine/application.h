@@ -172,8 +172,9 @@ public:
     param.multigrid_data.smoother_data.iterations      = 5;
     param.multigrid_data.smoother_data.smoothing_range = 20;
     // MG coarse grid solver
-    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
-    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+    param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    param.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
     param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 

@@ -124,7 +124,6 @@ Linear solver:
   Pressure/Schur-complement block:
   Preconditioner:                            PressureConvectionDiffusion
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Chebyshev
   Preconditioner smoother:                   PointJacobi

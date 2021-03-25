@@ -242,7 +242,7 @@ public:
     parameters.multigrid_data.type                  = MultigridType::phMG;
     parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
     parameters.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
 
     parameters.update_preconditioner                         = true;
     parameters.update_preconditioner_every_time_steps        = 1;

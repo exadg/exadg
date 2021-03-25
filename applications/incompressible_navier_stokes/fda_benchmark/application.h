@@ -354,7 +354,7 @@ public:
     param.multigrid_data_pressure_poisson.smoother_data.iterations = 5;
     param.multigrid_data_pressure_poisson.coarse_problem.solver    = MultigridCoarseGridSolver::CG;
     param.multigrid_data_pressure_poisson.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      MultigridCoarseGridPreconditioner::TrilinosAMG;
 
 
     // projection step

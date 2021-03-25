@@ -61,7 +61,6 @@ Solver:
   Block Jacobi matrix-free:                  false
   Multigrid operator type:                   ReactionConvection
   Multigrid type:                            h-MG
-  p-sequence:                                Bisect
   Global coarsening:                         false
   Smoother:                                  Jacobi
   Preconditioner smoother:                   BlockJacobi

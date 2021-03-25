@@ -32,42 +32,52 @@ namespace Structure
 using namespace dealii;
 
 template<typename Operator, typename Number>
-class AlgebraicMultigridPreconditioner : public PreconditionerBase<Number>
+class PreconditionerAMG : public PreconditionerBase<Number>
 {
 private:
+  typedef double                                          NumberAMG;
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
-  typedef LinearAlgebra::distributed::Vector<double>      VectorTypeTrilinos;
+  typedef LinearAlgebra::distributed::Vector<NumberAMG>   VectorTypeAMG;
 
 public:
-  AlgebraicMultigridPreconditioner(Operator const & pde_operator, AMGData data)
-    : preconditioner_amg(pde_operator, data)
+  PreconditionerAMG(Operator const & pde_operator, bool const use_boomer_amg, AMGData data)
   {
+    if(use_boomer_amg)
+    {
+      preconditioner_amg =
+        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data);
+    }
+    else
+    {
+      preconditioner_amg =
+        std::make_shared<PreconditionerTrilinosAMG<Operator, double>>(pde_operator, data);
+    }
   }
 
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
     // create temporal vectors of type double
-    VectorTypeTrilinos dst_trilinos;
-    dst_trilinos.reinit(dst, false);
-    VectorTypeTrilinos src_trilinos;
-    src_trilinos.reinit(src, true);
-    src_trilinos = src;
+    VectorTypeAMG dst_amg;
+    dst_amg.reinit(dst, false);
+    VectorTypeAMG src_amg;
+    src_amg.reinit(src, true);
+    src_amg = src;
 
-    preconditioner_amg.vmult(dst_trilinos, src_trilinos);
+    preconditioner_amg->vmult(dst_amg, src_amg);
 
     // convert: double -> Number
-    dst.copy_locally_owned_data_from(dst_trilinos);
+    dst.copy_locally_owned_data_from(dst_amg);
   }
 
   void
   update()
   {
-    preconditioner_amg.update();
+    preconditioner_amg->update();
   }
 
 private:
-  PreconditionerAMG<Operator, double> preconditioner_amg;
+  std::shared_ptr<PreconditionerBase<NumberAMG>> preconditioner_amg;
 };
 
 } // namespace Structure
