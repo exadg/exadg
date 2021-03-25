@@ -95,7 +95,6 @@ public:
   {
 #if ENABLE_TIMING
     Timer timer;
-    timer.restart();
 #endif
 
     for(unsigned int i = minlevel; i <= maxlevel; i++)

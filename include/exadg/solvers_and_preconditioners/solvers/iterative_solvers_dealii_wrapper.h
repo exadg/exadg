@@ -120,7 +120,6 @@ public:
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
     Timer timer;
-    timer.restart();
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
@@ -229,7 +228,6 @@ public:
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
     Timer timer;
-    timer.restart();
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
@@ -331,7 +329,6 @@ public:
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
     Timer timer;
-    timer.restart();
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
