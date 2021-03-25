@@ -32,6 +32,7 @@ using namespace dealii;
  *  This function wraps the copy of a PETSc object (sparse matrix,
  *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector.
  */
+#ifdef DEAL_II_WITH_PETSC
 template<typename VectorType>
 void
 apply_petsc_operation(VectorType &                                           dst,
@@ -99,6 +100,7 @@ apply_petsc_operation(VectorType &                                           dst
     AssertThrow(ierr == 0, ExcPETScError(ierr));
   }
 }
+#endif
 
 } // namespace ExaDG
 
