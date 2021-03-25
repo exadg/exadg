@@ -224,7 +224,7 @@ public:
                          petsc_src,
                          coarse_operator->amg);
           }
-          else if(additional_data.solver_type == KrylovSolverType::CG)
+          else if(additional_data.solver_type == KrylovSolverType::GMRES)
           {
             PETScWrappers::SolverGMRES solver(solver_control);
             solver.solve(coarse_operator->system_matrix,
