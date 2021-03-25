@@ -495,6 +495,13 @@ Operator<dim, Number, n_components>::get_quad_index_gauss_lobatto() const
   return matrix_free_data->get_quad_index(get_quad_gauss_lobatto_name());
 }
 
+template<int dim, typename Number, int n_components>
+std::shared_ptr<TimerTree>
+Operator<dim, Number, n_components>::get_timings() const
+{
+  return iterative_solver->get_timings();
+}
+
 template class Operator<2, float, 1>;
 template class Operator<2, double, 1>;
 template class Operator<2, float, 2>;

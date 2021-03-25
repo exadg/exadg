@@ -659,6 +659,13 @@ MultigridPreconditionerBase<dim, Number>::update()
 }
 
 template<int dim, typename Number>
+std::shared_ptr<TimerTree>
+MultigridPreconditionerBase<dim, Number>::get_timings() const
+{
+  return multigrid_algorithm->get_timings();
+}
+
+template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
 {

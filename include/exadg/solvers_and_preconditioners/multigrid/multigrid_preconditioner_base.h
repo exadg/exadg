@@ -128,6 +128,9 @@ public:
   virtual void
   update();
 
+  std::shared_ptr<TimerTree>
+  get_timings() const override;
+
 protected:
   /*
    * Initialization of mapping depending on multigrid transfer type. Note that the mapping needs to
