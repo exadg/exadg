@@ -68,6 +68,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1Krylov_1_1SolverBase-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">ExaDG::Krylov::SolverBase&lt; VectorType &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
@@ -94,6 +95,9 @@ virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve
 template&lt;typename Control &gt; </td></tr>
 <tr class="memitem:a6410b1ff58b8f88c51003623615e987c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>compute_performance_metrics</b> (Control const &amp;solver_control) const</td></tr>
 <tr class="separator:a6410b1ff58b8f88c51003623615e987c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64098b4eebe42c542cdb233e82e88625"><td class="memItemLeft" align="right" valign="top"><a id="a64098b4eebe42c542cdb233e82e88625"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const</td></tr>
+<tr class="separator:a64098b4eebe42c542cdb233e82e88625"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -112,6 +116,12 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>rho</b></td></tr>
 <tr class="memitem:a57f737b65585ab1dbdba97814ca3375c"><td class="memItemLeft" align="right" valign="top"><a id="a57f737b65585ab1dbdba97814ca3375c"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>n10</b></td></tr>
 <tr class="separator:a57f737b65585ab1dbdba97814ca3375c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a50afd7332cf7e83317358d00e2b93795"><td class="memItemLeft" align="right" valign="top"><a id="a50afd7332cf7e83317358d00e2b93795"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>timer_tree</b></td></tr>
+<tr class="separator:a50afd7332cf7e83317358d00e2b93795"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/solvers_and_preconditioners/solvers/<a class="el" href="iterative__solvers__dealii__wrapper_8h_source.html">iterative_solvers_dealii_wrapper.h</a></li>

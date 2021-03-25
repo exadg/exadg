@@ -47,6 +47,5 @@ var searchData=
   ['multigridpreconditioner_202',['MultigridPreconditioner',['../classExaDG_1_1ConvDiff_1_1MultigridPreconditioner.html',1,'ExaDG::ConvDiff::MultigridPreconditioner&lt; dim, Number &gt;'],['../classExaDG_1_1IncNS_1_1MultigridPreconditioner.html',1,'ExaDG::IncNS::MultigridPreconditioner&lt; dim, Number &gt;'],['../classExaDG_1_1Poisson_1_1MultigridPreconditioner.html',1,'ExaDG::Poisson::MultigridPreconditioner&lt; dim, Number, n_components &gt;'],['../classExaDG_1_1Structure_1_1MultigridPreconditioner.html',1,'ExaDG::Structure::MultigridPreconditioner&lt; dim, Number &gt;']]],
   ['multigridpreconditionerbase_203',['MultigridPreconditionerBase',['../classExaDG_1_1MultigridPreconditionerBase.html',1,'ExaDG']]],
   ['multigridpreconditionerprojection_204',['MultigridPreconditionerProjection',['../classExaDG_1_1IncNS_1_1MultigridPreconditionerProjection.html',1,'ExaDG::IncNS']]],
-  ['multigridtimings_205',['MultigridTimings',['../classExaDG_1_1MultigridTimings.html',1,'ExaDG']]],
-  ['mycylindricalmanifold_206',['MyCylindricalManifold',['../classExaDG_1_1MyCylindricalManifold.html',1,'ExaDG']]]
+  ['mycylindricalmanifold_205',['MyCylindricalManifold',['../classExaDG_1_1MyCylindricalManifold.html',1,'ExaDG']]]
 ];
