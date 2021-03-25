@@ -140,7 +140,8 @@ enum class MultigridCoarseGridSolver
   Chebyshev,
   CG,
   GMRES,
-  AMG
+  AMG,
+  BoomerAMG
 };
 
 std::string
@@ -152,7 +153,8 @@ enum class MultigridCoarseGridPreconditioner
   None,
   PointJacobi,
   BlockJacobi,
-  AMG
+  AMG,
+  BoomerAMG
 };
 
 std::string

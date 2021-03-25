@@ -22,6 +22,8 @@
 #ifndef OPERATOR_PRECONDITIONABLE_H
 #define OPERATOR_PRECONDITIONABLE_H
 
+#include <deal.II/lac/petsc_sparse_matrix.h>
+#include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 namespace ExaDG
@@ -91,6 +93,14 @@ public:
 
   virtual void
   calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const = 0;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+  virtual void
+  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const = 0;
+
+  virtual void
+  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const = 0;
 #endif
 };
 

@@ -150,6 +150,20 @@ public:
   }
 #endif
 
+#ifdef DEAL_II_WITH_PETSC
+  virtual void
+  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  {
+    pde_operator->init_system_matrix(system_matrix);
+  }
+
+  virtual void
+  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  {
+    pde_operator->calculate_system_matrix(system_matrix);
+  }
+#endif
+
 private:
   std::shared_ptr<Operator> pde_operator;
 };

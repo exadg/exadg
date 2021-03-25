@@ -31,6 +31,9 @@
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
+#ifdef DEAL_II_WITH_PETSC
+#  include <deal.II/lac/petsc_sparse_matrix.h>
+#endif
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
@@ -99,10 +102,7 @@ public:
 
   typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
 
-#ifdef DEAL_II_WITH_TRILINOS
-  typedef FullMatrix<TrilinosScalar>     FullMatrix_;
-  typedef TrilinosWrappers::SparseMatrix SparseMatrix;
-#endif
+  typedef FullMatrix<TrilinosScalar> FullMatrix_;
 
   OperatorBase();
 
@@ -193,10 +193,21 @@ public:
    */
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(SparseMatrix & system_matrix) const;
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
 
   void
-  calculate_system_matrix(SparseMatrix & system_matrix) const;
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+#endif
+
+  /*
+   * Algebraic multigrid (AMG): sparse matrix (PETSc) methods
+   */
+#ifdef DEAL_II_WITH_PETSC
+  void
+  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
+
+  void
+  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
 #endif
 
   /*
@@ -554,28 +565,41 @@ private:
                                                       VectorType const &              src,
                                                       Range const &                   range) const;
 
-#ifdef DEAL_II_WITH_TRILINOS
+  /*
+   * Set up sparse matrix internally for templated matrix type (Trilinos or
+   * PETSc matrices)
+   */
+  template<typename SparseMatrix>
+  void
+  internal_init_system_matrix(SparseMatrix & system_matrix) const;
+
+  template<typename SparseMatrix>
+  void
+  internal_calculate_system_matrix(SparseMatrix & system_matrix) const;
+
   /*
    * Calculate sparse matrix.
    */
+  template<typename SparseMatrix>
   void
   cell_loop_calculate_system_matrix(MatrixFree<dim, Number> const & matrix_free,
                                     SparseMatrix &                  dst,
                                     SparseMatrix const &            src,
                                     Range const &                   range) const;
 
+  template<typename SparseMatrix>
   void
   face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & matrix_free,
                                     SparseMatrix &                  dst,
                                     SparseMatrix const &            src,
                                     Range const &                   range) const;
 
+  template<typename SparseMatrix>
   void
   boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & matrix_free,
                                              SparseMatrix &                  dst,
                                              SparseMatrix const &            src,
                                              Range const &                   range) const;
-#endif
 
   /*
    * This function sets entries in the diagonal corresponding to constraint DoFs to one.

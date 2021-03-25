@@ -23,6 +23,9 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
+#ifdef DEAL_II_WITH_PETSC
+#  include <deal.II/lac/petsc_vector.h>
+#endif
 #include <deal.II/numerics/vector_tools.h>
 
 // ExaDG
@@ -33,6 +36,7 @@
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h>
 #include <exadg/solvers_and_preconditioners/utilities/check_multigrid.h>
+#include <exadg/solvers_and_preconditioners/utilities/petsc_operation.h>
 
 namespace ExaDG
 {
@@ -450,6 +454,39 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
   VectorTypeDouble const &               src) const
 {
   system_matrix.vmult(dst, src);
+}
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
+template<int dim, typename Number, int n_components>
+void
+Operator<dim, Number, n_components>::init_system_matrix(
+  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+{
+  laplace_operator.init_system_matrix(system_matrix);
+}
+
+template<int dim, typename Number, int n_components>
+void
+Operator<dim, Number, n_components>::calculate_system_matrix(
+  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+{
+  laplace_operator.calculate_system_matrix(system_matrix);
+}
+
+template<int dim, typename Number, int n_components>
+void
+Operator<dim, Number, n_components>::vmult_matrix_based(
+  VectorTypeDouble &                       dst,
+  PETScWrappers::MPI::SparseMatrix const & system_matrix,
+  VectorTypeDouble const &                 src) const
+{
+  apply_petsc_operation(dst,
+                        src,
+                        [&](PETScWrappers::VectorBase &       petsc_dst,
+                            PETScWrappers::VectorBase const & petsc_src) {
+                          system_matrix.vmult(petsc_dst, petsc_src);
+                        });
 }
 #endif
 

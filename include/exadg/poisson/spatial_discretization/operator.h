@@ -143,6 +143,19 @@ public:
                      VectorTypeDouble const &               src) const;
 #endif
 
+#ifdef DEAL_II_WITH_PETSC
+  void
+  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
+
+  void
+  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
+
+  void
+  vmult_matrix_based(VectorTypeDouble &                       dst,
+                     PETScWrappers::MPI::SparseMatrix const & system_matrix,
+                     VectorTypeDouble const &                 src) const;
+#endif
+
 private:
   std::string
   get_dof_name() const;
