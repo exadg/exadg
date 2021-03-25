@@ -788,19 +788,6 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
   // communicate overlapping matrix parts
   system_matrix.compress(VectorOperation::add);
-
-  if(!is_dg
-#ifdef DEAL_II_WITH_TRILINOS
-     && std::is_same<SparseMatrix, TrilinosWrappers::SparseMatrix>::value
-#endif
-  )
-  {
-    // make zero entries on diagonal (due to constrained dofs) to one:
-    auto p = system_matrix.local_range();
-    for(auto i = p.first; i < p.second; i++)
-      if(system_matrix(i, i) == 0.0 && constraint->is_constrained(i))
-        system_matrix.add(i, i, 1);
-  } // nothing to do for dg
 }
 
 template<int dim, typename Number, int n_components>
@@ -1766,7 +1753,12 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
           dof_indices[j] = temp[matrix_free.get_shape_info().lexicographic_numbering[j]];
       }
 
-      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
+      // choose the version of distribute_local_to_global with a single
+      // `dof_indices` argument to indicate that we write to a diagonal block
+      // of the matrix (vs 2 for off-diagonal ones); this implies a non-zero
+      // entry is added to the diagonal of constrained matrix rows, ensuring
+      // positive definiteness
+      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dst);
     }
   }
 }
@@ -1863,10 +1855,7 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
       }
 
       // save M_mm
-      constraint_double.distribute_local_to_global(matrices_m[v],
-                                                   dof_indices_m,
-                                                   dof_indices_m,
-                                                   dst);
+      constraint_double.distribute_local_to_global(matrices_m[v], dof_indices_m, dst);
       // save M_pm
       constraint_double.distribute_local_to_global(matrices_p[v],
                                                    dof_indices_p,
@@ -1935,10 +1924,7 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
                                                    dof_indices_p,
                                                    dst);
       // save M_pp
-      constraint_double.distribute_local_to_global(matrices_p[v],
-                                                   dof_indices_p,
-                                                   dof_indices_p,
-                                                   dst);
+      constraint_double.distribute_local_to_global(matrices_p[v], dof_indices_p, dst);
     }
   }
 }
@@ -1999,7 +1985,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
       else
         cell_v->get_dof_indices(dof_indices);
 
-      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
+      constraint_double.distribute_local_to_global(matrices[v], dof_indices, dst);
     }
   }
 }
