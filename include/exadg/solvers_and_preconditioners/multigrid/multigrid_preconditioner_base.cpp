@@ -306,6 +306,68 @@ MultigridPreconditionerBase<dim, Number>::check_levels(std::vector<MGLevelInfo> 
   }
 }
 
+/**
+ * Similar to dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence
+ * with the difference that the (coarse-grid) p:d:T is converted to a p:f:T
+ * right aways.
+ */
+template<int dim, int spacedim>
+std::vector<std::shared_ptr<Triangulation<dim, spacedim> const>>
+create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_triangulation_in)
+{
+  std::vector<std::shared_ptr<Triangulation<dim, spacedim> const>> coarse_grid_triangulations(
+    fine_triangulation_in.n_global_levels());
+
+  coarse_grid_triangulations.back().reset(&fine_triangulation_in, [](auto *) {
+    // empty deleter, since fine_triangulation_in is an external field
+    // and its destructor is called somewhere else
+  });
+
+  // for a single level nothing has to be done
+  if(fine_triangulation_in.n_global_levels() > 1)
+  {
+    auto const fine_triangulation =
+      dynamic_cast<parallel::distributed::Triangulation<dim, spacedim> const *>(
+        &fine_triangulation_in);
+
+    Assert(fine_triangulation, ExcNotImplemented());
+
+    // clone distributed triangulation for coarsening
+    parallel::distributed::Triangulation<dim, spacedim> temp_tria(
+      fine_triangulation->get_communicator(), fine_triangulation->get_mesh_smoothing());
+
+    temp_tria.copy_triangulation(*fine_triangulation);
+
+    // create coarse meshes
+    for(unsigned int l = (fine_triangulation->n_global_levels() - 1); l > 0; --l)
+    {
+      // coarsen mesh
+      temp_tria.coarsen_global();
+
+      // create empty (fully distributed) triangulation
+      auto new_tria = std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(
+        fine_triangulation->get_communicator());
+
+      for(auto const i : fine_triangulation->get_manifold_ids())
+        if(i != numbers::flat_manifold_id)
+          new_tria->set_manifold(i, fine_triangulation->get_manifold(i));
+
+      // extract relevant information from distributed triangulation
+      auto const construction_data =
+        TriangulationDescription::Utilities::create_description_from_triangulation(
+          temp_tria, fine_triangulation->get_communicator());
+
+      // actually create triangulation
+      new_tria->create_triangulation(construction_data);
+
+      // save mesh
+      coarse_grid_triangulations[l - 1] = new_tria;
+    }
+  }
+
+  return coarse_grid_triangulations;
+}
+
 template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
@@ -327,8 +389,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_grid_triangulations(
                     "without refinements, a parallel::distributed::Triangulation, or a "
                     "MultigridType without h-transfer."));
 
-      coarse_grid_triangulations =
-        MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(*tria);
+      coarse_grid_triangulations = create_geometric_coarsening_sequence(*tria);
     }
   }
 }
