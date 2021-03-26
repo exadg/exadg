@@ -99,6 +99,11 @@ apply_petsc_operation(VectorType &                                           dst
     ierr = VecRestoreArray(vector_dst, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
   }
+
+  PetscErrorCode ierr = VecDestroy(&vector_dst);
+  AssertThrow(ierr == 0, ExcPETScError(ierr));
+  ierr = VecDestroy(&vector_src);
+  AssertThrow(ierr == 0, ExcPETScError(ierr));
 }
 #endif
 
