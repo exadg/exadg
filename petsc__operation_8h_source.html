@@ -170,12 +170,17 @@ $(function() {
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    ierr = VecRestoreArray(vector_dst, &amp;ptr);</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    AssertThrow(ierr == 0, ExcPETScError(ierr));</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  }</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;}</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  PetscErrorCode ierr = VecDestroy(&amp;vector_dst);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  AssertThrow(ierr == 0, ExcPETScError(ierr));</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  ierr = VecDestroy(&amp;vector_src);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  AssertThrow(ierr == 0, ExcPETScError(ierr));</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;}</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_INVERTDIAGONAL_H_ */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
