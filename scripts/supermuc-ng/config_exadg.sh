@@ -26,17 +26,16 @@
 #
 #########################################################################
 
-./configure \
-  --with-cc=mpicc --with-fc=mpif90 \
-  --with-batch \
-  --with-cxx=mpicxx \
-  --known-mpi-shared-libraries=1 \
-  --known-64-bit-blas-indices=0 \
-  --with-64-bit-indices=1 \
-  --with-mpi \
-  --with-shared-libraries=1 \
-  --download-hypre=../hypre-v2.20.0.tar.gz \
-  --with-debugging=0 \
-  CXXOPTFLAGS="-O3 -march=native" \
-  COPTFLAGS="-O3 -march=native -funroll-all-loops" \
-  FOPTFLAGS="-O3 -march=native -funroll-all-loops -malign-double"
+rm -rf CMakeFiles/ CMakeCache.txt libexadg.so libexadg.a include/exadg/configuration/config.h
+
+cmake \
+  -D DEGREE_MAX=15 \
+  -D DEAL_II_DIR="$WORKING_DIRECTORY/sw/dealii-build" \
+  -D USE_FFTW=ON \
+  -D FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/" \
+  -D FFTW_INCLUDE="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/include" \
+  -D LIKWID_LIB="/dss/dsshome1/lrz/sys/spack/release/19.1/opt/x86_avx512/likwid/4.3.3-gcc-axo3q7s/lib" \
+  -D LIKWID_INCLUDE="/dss/dsshome1/lrz/sys/spack/release/19.1/opt/x86_avx512/likwid/4.3.3-gcc-axo3q7s/include" \
+  -D BUILD_SHARED_LIBS=ON \
+  -D PICKUP_TESTS=OFF \
+  ../
