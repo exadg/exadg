@@ -1,0 +1,13 @@
+module load slurm_setup
+module unload  devEnv/Intel/2019 itac/2019 mpi.intel
+module load gcc/9
+module load mpi.intel/2019_gcc
+module load mkl/2019_gcc
+module load cmake
+module load lrztools
+module load boost/1.68.0-intel
+
+export WORKING_DIRECTORY=
+
+#likwid
+module load likwid/4.3.3-perf

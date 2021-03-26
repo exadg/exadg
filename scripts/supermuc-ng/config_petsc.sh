@@ -37,6 +37,7 @@
   --with-shared-libraries=1 \
   --download-hypre=../hypre-v2.20.0.tar.gz \
   --with-debugging=0 \
-  CXXOPTFLAGS="-O3 -march=native" \
-  COPTFLAGS="-O3 -march=native -funroll-all-loops" \
-  FOPTFLAGS="-O3 -march=native -funroll-all-loops -malign-double"
+  --with-blas-lapack-lib=[$MKLROOT/lib/intel64_lin/libmkl_gf_lp64.so,libmkl_sequential.so,libmkl_core.so] \
+  CXXOPTFLAGS="-O3 -march=skylake-avx512" \
+  COPTFLAGS="-O3 -march=skylake-avx512 -funroll-all-loops" \
+  FOPTFLAGS="-O3 -march=skylake-avx512 -funroll-all-loops -malign-double"
