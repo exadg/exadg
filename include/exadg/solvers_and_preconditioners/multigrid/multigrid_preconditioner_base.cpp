@@ -702,15 +702,21 @@ MultigridPreconditionerBase<dim, Number>::initialize_affine_constraints(
   affine_constraints.reinit(locally_relevant_dofs);
 
   DoFTools::make_hanging_node_constraints(dof_handler, affine_constraints);
+
+  // collect all boundary functions and translate to format understood by
+  // deal.II to cover all boundaries at once
+  Functions::ZeroFunction<dim, MultigridNumber>                        zero_function;
+  std::map<types::boundary_id, Function<dim, MultigridNumber> const *> boundary_functions;
   for(auto & it : dirichlet_bc)
   {
-    MappingQGeneric<dim> mapping_dummy(1);
-    VectorTools::interpolate_boundary_values(mapping_dummy,
-                                             dof_handler,
-                                             it.first,
-                                             Functions::ZeroFunction<dim, MultigridNumber>(),
-                                             affine_constraints);
+    boundary_functions[it.first] = &zero_function;
   }
+
+  MappingQGeneric<dim> mapping_dummy(1);
+  VectorTools::interpolate_boundary_values(mapping_dummy,
+                                           dof_handler,
+                                           boundary_functions,
+                                           affine_constraints);
   affine_constraints.close();
 }
 
