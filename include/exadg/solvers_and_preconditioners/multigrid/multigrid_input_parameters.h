@@ -27,6 +27,7 @@
 #include <vector>
 
 // deal.II
+#include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/trilinos_precondition.h>
 
 // ExaDG
@@ -164,20 +165,30 @@ struct AMGData
 {
   AMGData()
   {
-    data.smoother_sweeps = 1;
-    data.n_cycles        = 1;
-    data.smoother_type   = "ILU";
+    trilinos_data.smoother_sweeps = 1;
+    trilinos_data.n_cycles        = 1;
+    trilinos_data.smoother_type   = "ILU";
+
+    boomer_data.n_sweeps_coarse = 1;
+    boomer_data.max_iter        = 1;
+    boomer_data.relaxation_type_down =
+      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+    boomer_data.relaxation_type_up =
+      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+    boomer_data.relaxation_type_coarse =
+      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
   };
 
   void
   print(ConditionalOStream & pcout)
   {
-    print_parameter(pcout, "    Smoother sweeps", data.smoother_sweeps);
-    print_parameter(pcout, "    Number of cycles", data.n_cycles);
-    print_parameter(pcout, "    Smoother type", data.smoother_type);
+    print_parameter(pcout, "    Smoother sweeps", trilinos_data.smoother_sweeps);
+    print_parameter(pcout, "    Number of cycles", trilinos_data.n_cycles);
+    print_parameter(pcout, "    Smoother type", trilinos_data.smoother_type);
   }
 
-  TrilinosWrappers::PreconditionAMG::AdditionalData data;
+  TrilinosWrappers::PreconditionAMG::AdditionalData    trilinos_data;
+  PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
 };
 
 enum class PreconditionerSmoother

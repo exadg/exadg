@@ -64,7 +64,7 @@ public:
     pde_operator.calculate_system_matrix(system_matrix);
 
     // initialize Trilinos' AMG
-    amg.initialize(system_matrix, amg_data.data);
+    amg.initialize(system_matrix, amg_data.trilinos_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -89,7 +89,7 @@ public:
     pde_operator.calculate_system_matrix(system_matrix);
 
     // initialize Trilinos' AMG
-    amg.initialize(system_matrix, amg_data.data);
+    amg.initialize(system_matrix, amg_data.trilinos_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -188,14 +188,7 @@ private:
     // calculate_matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    // initialize the Boomer AMG data structures, translate from Trilinos
-    // settings; right now we must skip most parameters because there does not
-    // appear to be a setting available in deal.II
-    PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
-    boomer_data.symmetric_operator               = amg_data.data.elliptic;
-    boomer_data.strong_threshold                 = 0.25;
-    boomer_data.aggressive_coarsening_num_levels = 2;
-    amg.initialize(system_matrix, boomer_data);
+    amg.initialize(system_matrix, amg_data.boomer_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
