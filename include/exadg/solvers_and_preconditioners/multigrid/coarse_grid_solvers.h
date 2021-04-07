@@ -166,84 +166,89 @@ public:
     if(additional_data.operator_is_singular)
       set_zero_mean_value(r);
 
-    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
-       additional_data.amg_data.amg_type == AMGType::Trilinos)
+    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      // create temporal vectors of type NumberAMG (double)
-      VectorTypeAMG dst_tri;
-      dst_tri.reinit(dst, false);
-      VectorTypeAMG src_tri;
-      src_tri.reinit(r, true);
-      src_tri.copy_locally_owned_data_from(r);
-
-      std::shared_ptr<PreconditionerTrilinosAMG<Operator, NumberAMG>> coarse_operator =
-        std::dynamic_pointer_cast<PreconditionerTrilinosAMG<Operator, NumberAMG>>(
-          preconditioner_amg);
-
-      ReductionControl solver_control(additional_data.solver_data.max_iter,
-                                      additional_data.solver_data.abs_tol,
-                                      additional_data.solver_data.rel_tol);
-
-      if(additional_data.solver_type == KrylovSolverType::CG)
+      if(additional_data.amg_data.amg_type == AMGType::Trilinos)
       {
-        SolverCG<VectorTypeAMG> solver(solver_control);
-        solver.solve(coarse_operator->system_matrix, dst_tri, src_tri, *preconditioner_amg);
+        // create temporal vectors of type NumberAMG (double)
+        VectorTypeAMG dst_tri;
+        dst_tri.reinit(dst, false);
+        VectorTypeAMG src_tri;
+        src_tri.reinit(r, true);
+        src_tri.copy_locally_owned_data_from(r);
+
+        std::shared_ptr<PreconditionerTrilinosAMG<Operator, NumberAMG>> coarse_operator =
+          std::dynamic_pointer_cast<PreconditionerTrilinosAMG<Operator, NumberAMG>>(
+            preconditioner_amg);
+
+        ReductionControl solver_control(additional_data.solver_data.max_iter,
+                                        additional_data.solver_data.abs_tol,
+                                        additional_data.solver_data.rel_tol);
+
+        if(additional_data.solver_type == KrylovSolverType::CG)
+        {
+          SolverCG<VectorTypeAMG> solver(solver_control);
+          solver.solve(coarse_operator->system_matrix, dst_tri, src_tri, *preconditioner_amg);
+        }
+        else if(additional_data.solver_type == KrylovSolverType::GMRES)
+        {
+          typename SolverGMRES<VectorTypeAMG>::AdditionalData gmres_data;
+          gmres_data.max_n_tmp_vectors     = additional_data.solver_data.max_krylov_size;
+          gmres_data.right_preconditioning = true;
+
+          SolverGMRES<VectorTypeAMG> solver(solver_control, gmres_data);
+          solver.solve(coarse_operator->system_matrix, dst_tri, src_tri, *preconditioner_amg);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
+
+        // convert NumberAMG (double) -> MultigridNumber (float)
+        dst.copy_locally_owned_data_from(dst_tri);
       }
-      else if(additional_data.solver_type == KrylovSolverType::GMRES)
+      else if(additional_data.amg_data.amg_type == AMGType::Boomer)
       {
-        typename SolverGMRES<VectorTypeAMG>::AdditionalData gmres_data;
-        gmres_data.max_n_tmp_vectors     = additional_data.solver_data.max_krylov_size;
-        gmres_data.right_preconditioning = true;
+#ifdef DEAL_II_WITH_PETSC
+        apply_petsc_operation(
+          dst,
+          src,
+          [&](PETScWrappers::VectorBase & petsc_dst, PETScWrappers::VectorBase const & petsc_src) {
+            std::shared_ptr<PreconditionerBoomerAMG<Operator, NumberAMG>> coarse_operator =
+              std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
+                preconditioner_amg);
 
-        SolverGMRES<VectorTypeAMG> solver(solver_control, gmres_data);
-        solver.solve(coarse_operator->system_matrix, dst_tri, src_tri, *preconditioner_amg);
+            ReductionControl solver_control(additional_data.solver_data.max_iter,
+                                            additional_data.solver_data.abs_tol,
+                                            additional_data.solver_data.rel_tol);
+
+            if(additional_data.solver_type == KrylovSolverType::CG)
+            {
+              PETScWrappers::SolverCG solver(solver_control);
+              solver.solve(coarse_operator->system_matrix,
+                           petsc_dst,
+                           petsc_src,
+                           coarse_operator->amg);
+            }
+            else if(additional_data.solver_type == KrylovSolverType::GMRES)
+            {
+              PETScWrappers::SolverGMRES solver(solver_control);
+              solver.solve(coarse_operator->system_matrix,
+                           petsc_dst,
+                           petsc_src,
+                           coarse_operator->amg);
+            }
+            else
+            {
+              AssertThrow(false, ExcMessage("Not implemented."));
+            }
+          });
+#endif
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, ExcNotImplemented());
       }
-
-      // convert NumberAMG (double) -> MultigridNumber (float)
-      dst.copy_locally_owned_data_from(dst_tri);
-    }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
-            additional_data.amg_data.amg_type == AMGType::Boomer)
-    {
-#ifdef DEAL_II_WITH_PETSC
-      apply_petsc_operation(
-        dst,
-        src,
-        [&](PETScWrappers::VectorBase & petsc_dst, PETScWrappers::VectorBase const & petsc_src) {
-          std::shared_ptr<PreconditionerBoomerAMG<Operator, NumberAMG>> coarse_operator =
-            std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
-              preconditioner_amg);
-
-          ReductionControl solver_control(additional_data.solver_data.max_iter,
-                                          additional_data.solver_data.abs_tol,
-                                          additional_data.solver_data.rel_tol);
-
-          if(additional_data.solver_type == KrylovSolverType::CG)
-          {
-            PETScWrappers::SolverCG solver(solver_control);
-            solver.solve(coarse_operator->system_matrix,
-                         petsc_dst,
-                         petsc_src,
-                         coarse_operator->amg);
-          }
-          else if(additional_data.solver_type == KrylovSolverType::GMRES)
-          {
-            PETScWrappers::SolverGMRES solver(solver_control);
-            solver.solve(coarse_operator->system_matrix,
-                         petsc_dst,
-                         petsc_src,
-                         coarse_operator->amg);
-          }
-          else
-          {
-            AssertThrow(false, ExcMessage("Not implemented."));
-          }
-        });
-#endif
     }
     else
     {
