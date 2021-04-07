@@ -42,15 +42,14 @@ private:
 public:
   PreconditionerAMG(Operator const & pde_operator, AMGData const & data)
   {
-    if(data.amg_type == AMGType::Boomer)
+    if(data.amg_type == AMGType::BoomerAMG)
     {
       preconditioner_amg =
         std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data);
     }
-    else if(data.amg_type == AMGType::Trilinos)
+    else if(data.amg_type == AMGType::ML)
     {
-      preconditioner_amg =
-        std::make_shared<PreconditionerTrilinosAMG<Operator, double>>(pde_operator, data);
+      preconditioner_amg = std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data);
     }
     else
     {

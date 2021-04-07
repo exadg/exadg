@@ -38,7 +38,7 @@ namespace ExaDG
 using namespace dealii;
 
 template<typename Operator, typename Number>
-class PreconditionerTrilinosAMG : public PreconditionerBase<Number>
+class PreconditionerML : public PreconditionerBase<Number>
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -53,8 +53,7 @@ private:
 #endif
 
 public:
-  PreconditionerTrilinosAMG(Operator const & op, AMGData data = AMGData())
-    : pde_operator(op), amg_data(data)
+  PreconditionerML(Operator const & op, AMGData data = AMGData()) : pde_operator(op), amg_data(data)
   {
 #ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
@@ -64,7 +63,7 @@ public:
     pde_operator.calculate_system_matrix(system_matrix);
 
     // initialize Trilinos' AMG
-    amg.initialize(system_matrix, amg_data.trilinos_data);
+    amg.initialize(system_matrix, amg_data.ml_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -89,7 +88,7 @@ public:
     pde_operator.calculate_system_matrix(system_matrix);
 
     // initialize Trilinos' AMG
-    amg.initialize(system_matrix, amg_data.trilinos_data);
+    amg.initialize(system_matrix, amg_data.ml_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif

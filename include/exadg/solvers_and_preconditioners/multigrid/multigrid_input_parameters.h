@@ -137,8 +137,8 @@ enum_to_string(MultigridSmoother const enum_type);
 
 enum class AMGType
 {
-  Trilinos,
-  Boomer
+  ML,
+  BoomerAMG
 };
 
 std::string
@@ -171,11 +171,11 @@ struct AMGData
 {
   AMGData()
   {
-    amg_type = AMGType::Trilinos;
+    amg_type = AMGType::ML;
 
-    trilinos_data.smoother_sweeps = 1;
-    trilinos_data.n_cycles        = 1;
-    trilinos_data.smoother_type   = "ILU";
+    ml_data.smoother_sweeps = 1;
+    ml_data.n_cycles        = 1;
+    ml_data.smoother_type   = "ILU";
 
     boomer_data.n_sweeps_coarse = 1;
     boomer_data.max_iter        = 1;
@@ -192,13 +192,13 @@ struct AMGData
   {
     print_parameter(pcout, "    AMG type", enum_to_string(amg_type));
 
-    if(amg_type == AMGType::Trilinos)
+    if(amg_type == AMGType::ML)
     {
-      print_parameter(pcout, "    Smoother sweeps", trilinos_data.smoother_sweeps);
-      print_parameter(pcout, "    Number of cycles", trilinos_data.n_cycles);
-      print_parameter(pcout, "    Smoother type", trilinos_data.smoother_type);
+      print_parameter(pcout, "    Smoother sweeps", ml_data.smoother_sweeps);
+      print_parameter(pcout, "    Number of cycles", ml_data.n_cycles);
+      print_parameter(pcout, "    Smoother type", ml_data.smoother_type);
     }
-    else if(amg_type == AMGType::Boomer)
+    else if(amg_type == AMGType::BoomerAMG)
     {
       print_parameter(pcout, "    Smoother sweeps", boomer_data.n_sweeps_coarse);
       print_parameter(pcout, "    Number of cycles", boomer_data.max_iter);
@@ -214,7 +214,7 @@ struct AMGData
   }
 
   AMGType                                              amg_type;
-  TrilinosWrappers::PreconditionAMG::AdditionalData    trilinos_data;
+  TrilinosWrappers::PreconditionAMG::AdditionalData    ml_data;
   PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
 };
 

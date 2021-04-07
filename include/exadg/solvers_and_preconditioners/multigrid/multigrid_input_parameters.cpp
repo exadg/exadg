@@ -150,11 +150,11 @@ enum_to_string(AMGType const enum_type)
 
   switch(enum_type)
   {
-    case AMGType::Trilinos:
-      string_type = "Trilinos";
+    case AMGType::ML:
+      string_type = "ML";
       break;
-    case AMGType::Boomer:
-      string_type = "Boomer";
+    case AMGType::BoomerAMG:
+      string_type = "BoomerAMG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

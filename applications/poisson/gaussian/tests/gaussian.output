@@ -50,7 +50,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -139,7 +139,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -228,7 +228,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -317,7 +317,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -406,7 +406,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -495,7 +495,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -584,7 +584,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -673,7 +673,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -762,7 +762,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -851,7 +851,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -940,7 +940,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -1029,7 +1029,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -1118,7 +1118,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -1207,7 +1207,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU
@@ -1296,7 +1296,7 @@ Solver:
   Absolute solver tolerance:                 1.0000e-12
   Relative solver tolerance:                 1.0000e-06
   Maximum size of Krylov space:              30
-      AMG type:                              Trilinos
+      AMG type:                              ML
       Smoother sweeps:                       1
       Number of cycles:                      1
       Smoother type:                         ILU

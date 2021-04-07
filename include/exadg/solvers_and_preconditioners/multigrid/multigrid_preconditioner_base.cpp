@@ -959,16 +959,16 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
     }
     case MultigridCoarseGridSolver::AMG:
     {
-      if(data.coarse_problem.amg_data.amg_type == AMGType::Trilinos)
+      if(data.coarse_problem.amg_data.amg_type == AMGType::ML)
       {
         coarse_grid_solver.reset(
-          new MGCoarseAMG<Operator>(coarse_operator, false, data.coarse_problem.amg_data));
+          new MGCoarseAMG<Operator>(coarse_operator, data.coarse_problem.amg_data));
         break;
       }
-      else if(data.coarse_problem.amg_data.amg_type == AMGType::Boomer)
+      else if(data.coarse_problem.amg_data.amg_type == AMGType::BoomerAMG)
       {
         coarse_grid_solver.reset(
-          new MGCoarseAMG<Operator>(coarse_operator, true, data.coarse_problem.amg_data));
+          new MGCoarseAMG<Operator>(coarse_operator, data.coarse_problem.amg_data));
         break;
       }
       else

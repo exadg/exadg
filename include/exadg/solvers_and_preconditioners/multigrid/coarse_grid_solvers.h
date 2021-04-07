@@ -111,13 +111,13 @@ public:
       preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
-            additional_data.amg_data.amg_type == AMGType::Trilinos)
+            additional_data.amg_data.amg_type == AMGType::ML)
     {
       preconditioner_amg.reset(
-        new PreconditionerTrilinosAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
+        new PreconditionerML<Operator, NumberAMG>(matrix, additional_data.amg_data));
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
-            additional_data.amg_data.amg_type == AMGType::Boomer)
+            additional_data.amg_data.amg_type == AMGType::BoomerAMG)
     {
       preconditioner_amg.reset(
         new PreconditionerBoomerAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
@@ -168,7 +168,7 @@ public:
 
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      if(additional_data.amg_data.amg_type == AMGType::Trilinos)
+      if(additional_data.amg_data.amg_type == AMGType::ML)
       {
         // create temporal vectors of type NumberAMG (double)
         VectorTypeAMG dst_tri;
@@ -177,9 +177,8 @@ public:
         src_tri.reinit(r, true);
         src_tri.copy_locally_owned_data_from(r);
 
-        std::shared_ptr<PreconditionerTrilinosAMG<Operator, NumberAMG>> coarse_operator =
-          std::dynamic_pointer_cast<PreconditionerTrilinosAMG<Operator, NumberAMG>>(
-            preconditioner_amg);
+        std::shared_ptr<PreconditionerML<Operator, NumberAMG>> coarse_operator =
+          std::dynamic_pointer_cast<PreconditionerML<Operator, NumberAMG>>(preconditioner_amg);
 
         ReductionControl solver_control(additional_data.solver_data.max_iter,
                                         additional_data.solver_data.abs_tol,
@@ -207,7 +206,7 @@ public:
         // convert NumberAMG (double) -> MultigridNumber (float)
         dst.copy_locally_owned_data_from(dst_tri);
       }
-      else if(additional_data.amg_data.amg_type == AMGType::Boomer)
+      else if(additional_data.amg_data.amg_type == AMGType::BoomerAMG)
       {
 #ifdef DEAL_II_WITH_PETSC
         apply_petsc_operation(
@@ -368,12 +367,14 @@ private:
   typedef LinearAlgebra::distributed::Vector<typename Operator::value_type> VectorTypeMultigrid;
 
 public:
-  MGCoarseAMG(Operator const & op, bool const use_boomer_amg, AMGData data = AMGData())
+  MGCoarseAMG(Operator const & op, AMGData data = AMGData())
   {
-    if(use_boomer_amg)
+    if(data.amg_type == AMGType::BoomerAMG)
       amg_preconditioner.reset(new PreconditionerBoomerAMG<Operator, NumberAMG>(op, data));
+    else if(data.amg_type == AMGType::ML)
+      amg_preconditioner.reset(new PreconditionerML<Operator, NumberAMG>(op, data));
     else
-      amg_preconditioner.reset(new PreconditionerTrilinosAMG<Operator, NumberAMG>(op, data));
+      AssertThrow(false, ExcNotImplemented());
   }
 
   void
