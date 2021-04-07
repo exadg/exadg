@@ -110,17 +110,23 @@ public:
     {
       preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
-            additional_data.amg_data.amg_type == AMGType::ML)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      preconditioner_amg.reset(
-        new PreconditionerML<Operator, NumberAMG>(matrix, additional_data.amg_data));
-    }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
-            additional_data.amg_data.amg_type == AMGType::BoomerAMG)
-    {
-      preconditioner_amg.reset(
-        new PreconditionerBoomerAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
+      if(additional_data.amg_data.amg_type == AMGType::ML)
+      {
+        preconditioner_amg.reset(
+          new PreconditionerML<Operator, NumberAMG>(matrix, additional_data.amg_data.ml_data));
+      }
+      else if(additional_data.amg_data.amg_type == AMGType::BoomerAMG)
+      {
+        preconditioner_amg.reset(
+          new PreconditionerBoomerAMG<Operator, NumberAMG>(matrix,
+                                                           additional_data.amg_data.boomer_data));
+      }
+      else
+      {
+        AssertThrow(false, ExcNotImplemented());
+      }
     }
     else
     {
@@ -370,9 +376,10 @@ public:
   MGCoarseAMG(Operator const & op, AMGData data = AMGData())
   {
     if(data.amg_type == AMGType::BoomerAMG)
-      amg_preconditioner.reset(new PreconditionerBoomerAMG<Operator, NumberAMG>(op, data));
+      amg_preconditioner.reset(
+        new PreconditionerBoomerAMG<Operator, NumberAMG>(op, data.boomer_data));
     else if(data.amg_type == AMGType::ML)
-      amg_preconditioner.reset(new PreconditionerML<Operator, NumberAMG>(op, data));
+      amg_preconditioner.reset(new PreconditionerML<Operator, NumberAMG>(op, data.ml_data));
     else
       AssertThrow(false, ExcNotImplemented());
   }

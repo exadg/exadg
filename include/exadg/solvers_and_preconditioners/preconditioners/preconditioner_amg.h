@@ -41,7 +41,8 @@ template<typename Operator, typename Number>
 class PreconditionerML : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>        VectorType;
+  typedef TrilinosWrappers::PreconditionAMG::AdditionalData MLData;
 
 #ifdef DEAL_II_WITH_TRILINOS
 public:
@@ -53,7 +54,8 @@ private:
 #endif
 
 public:
-  PreconditionerML(Operator const & op, AMGData data = AMGData()) : pde_operator(op), amg_data(data)
+  PreconditionerML(Operator const & op, MLData ml_data = MLData())
+    : pde_operator(op), ml_data(ml_data)
   {
 #ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
@@ -63,7 +65,7 @@ public:
     pde_operator.calculate_system_matrix(system_matrix);
 
     // initialize Trilinos' AMG
-    amg.initialize(system_matrix, amg_data.ml_data);
+    amg.initialize(system_matrix, ml_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -88,7 +90,7 @@ public:
     pde_operator.calculate_system_matrix(system_matrix);
 
     // initialize Trilinos' AMG
-    amg.initialize(system_matrix, amg_data.ml_data);
+    amg.initialize(system_matrix, ml_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
@@ -110,7 +112,7 @@ private:
   // reference to matrix-free operator
   Operator const & pde_operator;
 
-  AMGData amg_data;
+  MLData ml_data;
 };
 
 
@@ -121,7 +123,8 @@ template<typename Operator, typename Number>
 class PreconditionerBoomerAMG : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>           VectorType;
+  typedef PETScWrappers::PreconditionBoomerAMG::AdditionalData BoomerData;
 
 public:
 #ifdef DEAL_II_WITH_PETSC
@@ -132,8 +135,8 @@ public:
   PETScWrappers::PreconditionBoomerAMG amg;
 #endif
 
-  PreconditionerBoomerAMG(Operator const & op, AMGData data = AMGData())
-    : pde_operator(op), amg_data(data)
+  PreconditionerBoomerAMG(Operator const & op, BoomerData boomer_data = BoomerData())
+    : pde_operator(op), boomer_data(boomer_data)
   {
 #ifdef DEAL_II_WITH_PETSC
     // initialize system matrix
@@ -187,7 +190,7 @@ private:
     // calculate_matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-    amg.initialize(system_matrix, amg_data.boomer_data);
+    amg.initialize(system_matrix, boomer_data);
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
@@ -196,7 +199,7 @@ private:
   // reference to matrix-free operator
   Operator const & pde_operator;
 
-  AMGData amg_data;
+  BoomerData boomer_data;
 };
 } // namespace ExaDG
 

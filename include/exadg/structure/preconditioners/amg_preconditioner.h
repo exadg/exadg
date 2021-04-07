@@ -45,11 +45,12 @@ public:
     if(data.amg_type == AMGType::BoomerAMG)
     {
       preconditioner_amg =
-        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data);
+        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data.boomer_data);
     }
     else if(data.amg_type == AMGType::ML)
     {
-      preconditioner_amg = std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data);
+      preconditioner_amg =
+        std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data.ml_data);
     }
     else
     {
