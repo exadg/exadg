@@ -179,7 +179,7 @@ public:
     parameters.multigrid_data.type                           = MultigridType::hpMG;
     parameters.multigrid_data.coarse_problem.solver          = MultigridCoarseGridSolver::CG;
     parameters.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::TrilinosAMG;
+      MultigridCoarseGridPreconditioner::AMG;
 
     this->param = parameters;
   }

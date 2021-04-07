@@ -110,12 +110,14 @@ public:
     {
       preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
+            additional_data.amg_data.amg_type == AMGType::Trilinos)
     {
       preconditioner_amg.reset(
         new PreconditionerTrilinosAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
+            additional_data.amg_data.amg_type == AMGType::Boomer)
     {
       preconditioner_amg.reset(
         new PreconditionerBoomerAMG<Operator, NumberAMG>(matrix, additional_data.amg_data));
@@ -126,8 +128,7 @@ public:
         additional_data.preconditioner == MultigridCoarseGridPreconditioner::None ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
           additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi ||
-          additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG ||
-          additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG,
+          additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG,
         ExcMessage("Specified preconditioner for PCG coarse grid solver not implemented."));
     }
   }
@@ -148,8 +149,7 @@ public:
     {
       preconditioner->update();
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG ||
-            additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
       preconditioner_amg->update();
     }
@@ -166,7 +166,8 @@ public:
     if(additional_data.operator_is_singular)
       set_zero_mean_value(r);
 
-    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
+    if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
+       additional_data.amg_data.amg_type == AMGType::Trilinos)
     {
       // create temporal vectors of type NumberAMG (double)
       VectorTypeAMG dst_tri;
@@ -205,7 +206,8 @@ public:
       // convert NumberAMG (double) -> MultigridNumber (float)
       dst.copy_locally_owned_data_from(dst_tri);
     }
-    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG)
+    else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG &&
+            additional_data.amg_data.amg_type == AMGType::Boomer)
     {
 #ifdef DEAL_II_WITH_PETSC
       apply_petsc_operation(

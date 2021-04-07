@@ -465,10 +465,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints
 {
   bool const is_dg = (fe.dofs_per_vertex == 0);
 
-  if(data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG ||
-     data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::BoomerAMG ||
-     data.coarse_problem.solver == MultigridCoarseGridSolver::TrilinosAMG ||
-     data.coarse_problem.solver == MultigridCoarseGridSolver::BoomerAMG || !is_dg ||
+  if(data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+     data.coarse_problem.solver == MultigridCoarseGridSolver::AMG || !is_dg ||
      data.involves_c_transfer())
   {
     AssertThrow(
@@ -900,8 +898,7 @@ MultigridPreconditionerBase<dim, Number>::update_coarse_solver(bool const operat
 
       break;
     }
-    case MultigridCoarseGridSolver::TrilinosAMG:
-    case MultigridCoarseGridSolver::BoomerAMG:
+    case MultigridCoarseGridSolver::AMG:
     {
       std::shared_ptr<MGCoarseAMG<Operator>> coarse_solver =
         std::dynamic_pointer_cast<MGCoarseAMG<Operator>>(coarse_grid_solver);
@@ -960,17 +957,24 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
         new MGCoarseKrylov<Operator>(coarse_operator, additional_data, mpi_comm));
       break;
     }
-    case MultigridCoarseGridSolver::TrilinosAMG:
+    case MultigridCoarseGridSolver::AMG:
     {
-      coarse_grid_solver.reset(
-        new MGCoarseAMG<Operator>(coarse_operator, false, data.coarse_problem.amg_data));
-      return;
-    }
-    case MultigridCoarseGridSolver::BoomerAMG:
-    {
-      coarse_grid_solver.reset(
-        new MGCoarseAMG<Operator>(coarse_operator, true, data.coarse_problem.amg_data));
-      return;
+      if(data.coarse_problem.amg_data.amg_type == AMGType::Trilinos)
+      {
+        coarse_grid_solver.reset(
+          new MGCoarseAMG<Operator>(coarse_operator, false, data.coarse_problem.amg_data));
+        break;
+      }
+      else if(data.coarse_problem.amg_data.amg_type == AMGType::Boomer)
+      {
+        coarse_grid_solver.reset(
+          new MGCoarseAMG<Operator>(coarse_operator, true, data.coarse_problem.amg_data));
+        break;
+      }
+      else
+      {
+        AssertThrow(false, ExcNotImplemented());
+      }
     }
     default:
     {

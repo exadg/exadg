@@ -374,20 +374,19 @@ Operator<dim, Number>::initialize_preconditioner()
                                     &this->periodic_face_pairs);
     }
   }
-  else if(param.preconditioner == Preconditioner::TrilinosAMG ||
-          param.preconditioner == Preconditioner::BoomerAMG)
+  else if(param.preconditioner == Preconditioner::AMG)
   {
-    bool const use_boomer_amg = (param.preconditioner == Preconditioner::BoomerAMG);
-
     if(param.large_deformation)
     {
       typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
-      preconditioner.reset(new AMG(elasticity_operator_nonlinear, use_boomer_amg, AMGData()));
+      preconditioner.reset(
+        new AMG(elasticity_operator_nonlinear, param.multigrid_data.coarse_problem.amg_data));
     }
     else
     {
       typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
-      preconditioner.reset(new AMG(elasticity_operator_linear, use_boomer_amg, AMGData()));
+      preconditioner.reset(
+        new AMG(elasticity_operator_linear, param.multigrid_data.coarse_problem.amg_data));
     }
   }
   else

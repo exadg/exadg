@@ -135,14 +135,21 @@ enum class MultigridSmoother
 std::string
 enum_to_string(MultigridSmoother const enum_type);
 
+enum class AMGType
+{
+  Trilinos,
+  Boomer
+};
+
+std::string
+enum_to_string(AMGType const enum_type);
 
 enum class MultigridCoarseGridSolver
 {
   Chebyshev,
   CG,
   GMRES,
-  TrilinosAMG,
-  BoomerAMG
+  AMG
 };
 
 std::string
@@ -154,8 +161,7 @@ enum class MultigridCoarseGridPreconditioner
   None,
   PointJacobi,
   BlockJacobi,
-  TrilinosAMG,
-  BoomerAMG
+  AMG
 };
 
 std::string
@@ -165,6 +171,8 @@ struct AMGData
 {
   AMGData()
   {
+    amg_type = AMGType::Trilinos;
+
     trilinos_data.smoother_sweeps = 1;
     trilinos_data.n_cycles        = 1;
     trilinos_data.smoother_type   = "ILU";
@@ -182,11 +190,30 @@ struct AMGData
   void
   print(ConditionalOStream & pcout)
   {
-    print_parameter(pcout, "    Smoother sweeps", trilinos_data.smoother_sweeps);
-    print_parameter(pcout, "    Number of cycles", trilinos_data.n_cycles);
-    print_parameter(pcout, "    Smoother type", trilinos_data.smoother_type);
+    print_parameter(pcout, "    AMG type", enum_to_string(amg_type));
+
+    if(amg_type == AMGType::Trilinos)
+    {
+      print_parameter(pcout, "    Smoother sweeps", trilinos_data.smoother_sweeps);
+      print_parameter(pcout, "    Number of cycles", trilinos_data.n_cycles);
+      print_parameter(pcout, "    Smoother type", trilinos_data.smoother_type);
+    }
+    else if(amg_type == AMGType::Boomer)
+    {
+      print_parameter(pcout, "    Smoother sweeps", boomer_data.n_sweeps_coarse);
+      print_parameter(pcout, "    Number of cycles", boomer_data.max_iter);
+      // TODO: add enum_to_string function (in dealii?)
+      print_parameter(pcout, "    Smoother type down", (int)boomer_data.relaxation_type_down);
+      print_parameter(pcout, "    Smoother type up", (int)boomer_data.relaxation_type_up);
+      print_parameter(pcout, "    Smoother type coarse", (int)boomer_data.relaxation_type_coarse);
+    }
+    else
+    {
+      AssertThrow(false, ExcNotImplemented());
+    }
   }
 
+  AMGType                                              amg_type;
   TrilinosWrappers::PreconditionAMG::AdditionalData    trilinos_data;
   PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
 };
@@ -269,9 +296,8 @@ struct CoarseGridData
 
     solver_data.print(pcout);
 
-    // TODO: BoomerAMG data is currently hard-coded
-    if(solver == MultigridCoarseGridSolver::TrilinosAMG ||
-       preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
+    if(solver == MultigridCoarseGridSolver::AMG ||
+       preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
       amg_data.print(pcout);
     }

@@ -144,6 +144,27 @@ enum_to_string(MultigridSmoother const enum_type)
 }
 
 std::string
+enum_to_string(AMGType const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case AMGType::Trilinos:
+      string_type = "Trilinos";
+      break;
+    case AMGType::Boomer:
+      string_type = "Boomer";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
 enum_to_string(MultigridCoarseGridSolver const enum_type)
 {
   std::string string_type;
@@ -159,11 +180,8 @@ enum_to_string(MultigridCoarseGridSolver const enum_type)
     case MultigridCoarseGridSolver::GMRES:
       string_type = "GMRES";
       break;
-    case MultigridCoarseGridSolver::TrilinosAMG:
-      string_type = "TrilinosAMG";
-      break;
-    case MultigridCoarseGridSolver::BoomerAMG:
-      string_type = "BoomerAMG";
+    case MultigridCoarseGridSolver::AMG:
+      string_type = "AMG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
@@ -190,11 +208,8 @@ enum_to_string(MultigridCoarseGridPreconditioner const enum_type)
     case MultigridCoarseGridPreconditioner::BlockJacobi:
       string_type = "BlockJacobi";
       break;
-    case MultigridCoarseGridPreconditioner::TrilinosAMG:
-      string_type = "TrilinosAMG";
-      break;
-    case MultigridCoarseGridPreconditioner::BoomerAMG:
-      string_type = "BoomerAMG";
+    case MultigridCoarseGridPreconditioner::AMG:
+      string_type = "AMG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

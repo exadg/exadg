@@ -178,7 +178,7 @@ public:
     //  param.multigrid_data.smoother_data.relaxation_factor = 0.8;
 
     // MG coarse grid solver
-    param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::TrilinosAMG; // GMRES;
+    param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG; // GMRES;
 
     // output of solver information
     param.solver_info_data.interval_time = (param.end_time - param.start_time) / 10;
