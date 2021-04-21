@@ -40,17 +40,21 @@ private:
   typedef LinearAlgebra::distributed::Vector<NumberAMG>   VectorTypeAMG;
 
 public:
-  PreconditionerAMG(Operator const & pde_operator, bool const use_boomer_amg, AMGData data)
+  PreconditionerAMG(Operator const & pde_operator, AMGData const & data)
   {
-    if(use_boomer_amg)
+    if(data.amg_type == AMGType::BoomerAMG)
     {
       preconditioner_amg =
-        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data);
+        std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data.boomer_data);
+    }
+    else if(data.amg_type == AMGType::ML)
+    {
+      preconditioner_amg =
+        std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data.ml_data);
     }
     else
     {
-      preconditioner_amg =
-        std::make_shared<PreconditionerTrilinosAMG<Operator, double>>(pde_operator, data);
+      AssertThrow(false, ExcNotImplemented());
     }
   }
 

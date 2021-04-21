@@ -127,8 +127,7 @@ enum class Preconditioner
   None,
   PointJacobi,
   Multigrid,
-  TrilinosAMG,
-  BoomerAMG
+  AMG
 };
 
 std::string

@@ -27,6 +27,7 @@
 #include <vector>
 
 // deal.II
+#include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/trilinos_precondition.h>
 
 // ExaDG
@@ -134,14 +135,21 @@ enum class MultigridSmoother
 std::string
 enum_to_string(MultigridSmoother const enum_type);
 
+enum class AMGType
+{
+  ML,
+  BoomerAMG
+};
+
+std::string
+enum_to_string(AMGType const enum_type);
 
 enum class MultigridCoarseGridSolver
 {
   Chebyshev,
   CG,
   GMRES,
-  TrilinosAMG,
-  BoomerAMG
+  AMG
 };
 
 std::string
@@ -153,8 +161,7 @@ enum class MultigridCoarseGridPreconditioner
   None,
   PointJacobi,
   BlockJacobi,
-  TrilinosAMG,
-  BoomerAMG
+  AMG
 };
 
 std::string
@@ -164,20 +171,51 @@ struct AMGData
 {
   AMGData()
   {
-    data.smoother_sweeps = 1;
-    data.n_cycles        = 1;
-    data.smoother_type   = "ILU";
+    amg_type = AMGType::ML;
+
+    ml_data.smoother_sweeps = 1;
+    ml_data.n_cycles        = 1;
+    ml_data.smoother_type   = "ILU";
+
+    boomer_data.n_sweeps_coarse = 1;
+    boomer_data.max_iter        = 1;
+    boomer_data.relaxation_type_down =
+      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+    boomer_data.relaxation_type_up =
+      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+    boomer_data.relaxation_type_coarse =
+      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
   };
 
   void
   print(ConditionalOStream & pcout)
   {
-    print_parameter(pcout, "    Smoother sweeps", data.smoother_sweeps);
-    print_parameter(pcout, "    Number of cycles", data.n_cycles);
-    print_parameter(pcout, "    Smoother type", data.smoother_type);
+    print_parameter(pcout, "    AMG type", enum_to_string(amg_type));
+
+    if(amg_type == AMGType::ML)
+    {
+      print_parameter(pcout, "    Smoother sweeps", ml_data.smoother_sweeps);
+      print_parameter(pcout, "    Number of cycles", ml_data.n_cycles);
+      print_parameter(pcout, "    Smoother type", ml_data.smoother_type);
+    }
+    else if(amg_type == AMGType::BoomerAMG)
+    {
+      print_parameter(pcout, "    Smoother sweeps", boomer_data.n_sweeps_coarse);
+      print_parameter(pcout, "    Number of cycles", boomer_data.max_iter);
+      // TODO: add enum_to_string function (in dealii?)
+      print_parameter(pcout, "    Smoother type down", (int)boomer_data.relaxation_type_down);
+      print_parameter(pcout, "    Smoother type up", (int)boomer_data.relaxation_type_up);
+      print_parameter(pcout, "    Smoother type coarse", (int)boomer_data.relaxation_type_coarse);
+    }
+    else
+    {
+      AssertThrow(false, ExcNotImplemented());
+    }
   }
 
-  TrilinosWrappers::PreconditionAMG::AdditionalData data;
+  AMGType                                              amg_type;
+  TrilinosWrappers::PreconditionAMG::AdditionalData    ml_data;
+  PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
 };
 
 enum class PreconditionerSmoother
@@ -258,9 +296,8 @@ struct CoarseGridData
 
     solver_data.print(pcout);
 
-    // TODO: BoomerAMG data is currently hard-coded
-    if(solver == MultigridCoarseGridSolver::TrilinosAMG ||
-       preconditioner == MultigridCoarseGridPreconditioner::TrilinosAMG)
+    if(solver == MultigridCoarseGridSolver::AMG ||
+       preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
       amg_data.print(pcout);
     }
