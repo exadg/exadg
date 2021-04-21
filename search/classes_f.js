@@ -15,7 +15,7 @@ var searchData=
   ['preconditionerbase_3c_20vectorizedarray_3c_20number_20_3e_20_3e_547',['PreconditionerBase&lt; VectorizedArray&lt; Number &gt; &gt;',['../classExaDG_1_1Elementwise_1_1PreconditionerBase.html',1,'ExaDG::Elementwise']]],
   ['preconditionerboomeramg_548',['PreconditionerBoomerAMG',['../classExaDG_1_1PreconditionerBoomerAMG.html',1,'ExaDG']]],
   ['preconditioneridentity_549',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
-  ['preconditionertrilinosamg_550',['PreconditionerTrilinosAMG',['../classExaDG_1_1PreconditionerTrilinosAMG.html',1,'ExaDG']]],
+  ['preconditionerml_550',['PreconditionerML',['../classExaDG_1_1PreconditionerML.html',1,'ExaDG']]],
   ['pressuredifferencecalculator_551',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
   ['pressuredifferencedata_552',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
   ['projectionoperator_553',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],

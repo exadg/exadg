@@ -15,7 +15,7 @@ var searchData=
   ['preconditionerbase_3c_20vectorizedarray_3c_20number_20_3e_20_3e_242',['PreconditionerBase&lt; VectorizedArray&lt; Number &gt; &gt;',['../classExaDG_1_1Elementwise_1_1PreconditionerBase.html',1,'ExaDG::Elementwise']]],
   ['preconditionerboomeramg_243',['PreconditionerBoomerAMG',['../classExaDG_1_1PreconditionerBoomerAMG.html',1,'ExaDG']]],
   ['preconditioneridentity_244',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
-  ['preconditionertrilinosamg_245',['PreconditionerTrilinosAMG',['../classExaDG_1_1PreconditionerTrilinosAMG.html',1,'ExaDG']]],
+  ['preconditionerml_245',['PreconditionerML',['../classExaDG_1_1PreconditionerML.html',1,'ExaDG']]],
   ['pressuredifferencecalculator_246',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
   ['pressuredifferencedata_247',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
   ['print_5fiterations_248',['print_iterations',['../classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2',1,'ExaDG::MovingMeshBase::print_iterations()'],['../classExaDG_1_1MovingMeshElasticity.html#ac667e526e3df504152504aeefb541331',1,'ExaDG::MovingMeshElasticity::print_iterations()'],['../classExaDG_1_1MovingMeshPoisson.html#afb5b131797f4ed53ef9f9e3f05d92e9b',1,'ExaDG::MovingMeshPoisson::print_iterations()']]],
