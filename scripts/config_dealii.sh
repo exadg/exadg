@@ -32,7 +32,6 @@ rm -rf CMakeFiles/ CMakeCache.txt
 
 cmake \
     -D CMAKE_BUILD_TYPE="DebugRelease" \
-    -D DEAL_II_COMPONENT_EXAMPLES="OFF" \
     -D CMAKE_CXX_FLAGS="-std=c++17 -march=native -Wno-array-bounds -Wno-literal-suffix -pthread" \
     -D DEAL_II_CXX_FLAGS_RELEASE="-O3" \
     -D DEAL_II_CXX_FLAGS_DEBUG="-Og" \
