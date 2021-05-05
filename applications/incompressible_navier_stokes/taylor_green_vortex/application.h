@@ -502,10 +502,11 @@ public:
     pp_data.output_data.degree                    = degree;
 
     // calculate div and mass error
-    pp_data.mass_data.calculate_error         = false;
+    pp_data.mass_data.calculate               = false;
     pp_data.mass_data.start_time              = 0.0;
     pp_data.mass_data.sample_every_time_steps = 1e2;
-    pp_data.mass_data.filename_prefix         = this->output_directory + name;
+    pp_data.mass_data.directory               = this->output_directory;
+    pp_data.mass_data.filename                = name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
     // kinetic energy

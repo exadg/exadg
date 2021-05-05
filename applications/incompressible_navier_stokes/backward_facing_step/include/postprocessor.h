@@ -87,7 +87,7 @@ public:
     }
 
     // evaluation of characteristic quantities along lines
-    if(pp_data_bfs.line_plot_data.statistics_data.calculate_statistics)
+    if(pp_data_bfs.line_plot_data.statistics_data.calculate)
     {
       line_plot_calculator_statistics.reset(
         new LinePlotCalculatorStatisticsHomogeneous<dim, Number>(pde_operator.get_dof_handler_u(),
@@ -121,7 +121,7 @@ public:
     }
 
     // line plot statistics
-    if(pp_data_bfs.line_plot_data.statistics_data.calculate_statistics)
+    if(pp_data_bfs.line_plot_data.statistics_data.calculate)
     {
       line_plot_calculator_statistics->evaluate(velocity, pressure, time, time_step_number);
     }

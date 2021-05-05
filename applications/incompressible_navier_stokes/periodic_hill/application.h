@@ -500,7 +500,7 @@ public:
     my_pp_data.line_plot_data.line_data.lines.push_back(vel_7);
     my_pp_data.line_plot_data.line_data.lines.push_back(vel_8);
 
-    my_pp_data.line_plot_data.statistics_data.calculate_statistics   = calculate_statistics;
+    my_pp_data.line_plot_data.statistics_data.calculate              = calculate_statistics;
     my_pp_data.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     my_pp_data.line_plot_data.statistics_data.sample_end_time        = end_time;
     my_pp_data.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
@@ -508,8 +508,9 @@ public:
       sample_every_timesteps * 100;
 
     // calculation of flow rate (use volume-based computation)
-    my_pp_data.mean_velocity_data.calculate       = true;
-    my_pp_data.mean_velocity_data.filename_prefix = this->output_directory + "flow_rate";
+    my_pp_data.mean_velocity_data.calculate = true;
+    my_pp_data.mean_velocity_data.directory = this->output_directory;
+    my_pp_data.mean_velocity_data.filename  = "flow_rate";
     Tensor<1, dim, double> direction;
     direction[0]                                = 1.0;
     my_pp_data.mean_velocity_data.direction     = direction;

@@ -481,10 +481,11 @@ public:
     pp_data.output_data.write_higher_order   = false;
 
     // calculate div and mass error
-    pp_data.mass_data.calculate_error         = false; // true;
+    pp_data.mass_data.calculate               = false; // true;
     pp_data.mass_data.start_time              = START_TIME;
     pp_data.mass_data.sample_every_time_steps = 1e0;
-    pp_data.mass_data.filename_prefix         = this->output_directory + this->output_name;
+    pp_data.mass_data.directory               = this->output_directory;
+    pp_data.mass_data.filename                = this->output_name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
     MyPostProcessorData<dim> pp_data_turb_ch;

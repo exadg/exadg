@@ -508,7 +508,7 @@ public:
 
     // line plot data: calculate statistics along lines
     pp_data_bfs.line_plot_data.line_data.directory                    = this->output_directory;
-    pp_data_bfs.line_plot_data.statistics_data.calculate_statistics   = true;
+    pp_data_bfs.line_plot_data.statistics_data.calculate              = true;
     pp_data_bfs.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_end_time        = end_time;
     pp_data_bfs.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
