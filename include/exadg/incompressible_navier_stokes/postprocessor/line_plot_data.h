@@ -173,7 +173,7 @@ struct LineHomogeneousAveraging : Line<dim>
 struct StatisticsData
 {
   StatisticsData()
-    : calculate_statistics(false),
+    : calculate(false),
       sample_start_time(0.0),
       sample_end_time(1.0),
       sample_every_timesteps(1),
@@ -184,10 +184,10 @@ struct StatisticsData
   void
   print(ConditionalOStream & pcout)
   {
-    if(calculate_statistics == true)
+    if(calculate)
     {
       pcout << "  Statistics data:" << std::endl;
-      print_parameter(pcout, "Calculate statistics", calculate_statistics);
+      print_parameter(pcout, "Calculate statistics", calculate);
       print_parameter(pcout, "Sample start time", sample_start_time);
       print_parameter(pcout, "Sample end time", sample_end_time);
       print_parameter(pcout, "Sample every timesteps", sample_every_timesteps);
@@ -195,8 +195,8 @@ struct StatisticsData
     }
   }
 
-  // calculate statistics?
-  bool calculate_statistics;
+  // active or not
+  bool calculate;
 
   // start time for sampling
   double sample_start_time;
@@ -276,7 +276,7 @@ struct LinePlotDataStatistics
   {
     line_data.print(pcout);
 
-    if(statistics_data.calculate_statistics == true)
+    if(statistics_data.calculate)
     {
       statistics_data.print(pcout);
     }

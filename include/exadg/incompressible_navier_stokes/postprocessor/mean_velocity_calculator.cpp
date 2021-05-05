@@ -20,6 +20,7 @@
  */
 
 // C/C++
+#include <filesystem>
 #include <fstream>
 
 // ExaDG
@@ -49,6 +50,12 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
     clear_files(true),
     mpi_comm(comm_in)
 {
+  if(data.calculate && data.write_to_file)
+  {
+    // create directory if not already existing
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      std::filesystem::create_directories(data.directory);
+  }
 }
 
 template<int dim, typename Number>
@@ -155,20 +162,19 @@ MeanVelocityCalculator<dim, Number>::write_output(Number const &      value,
   // write output file
   if(data.write_to_file == true && Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    std::ostringstream filename;
-    filename << data.filename_prefix;
+    std::string filename = data.directory + data.filename;
 
     std::ofstream f;
     if(clear_files == true)
     {
-      f.open(filename.str().c_str(), std::ios::trunc);
+      f.open(filename.c_str(), std::ios::trunc);
       f << std::endl << "  Time                " + name << std::endl;
 
       clear_files = false;
     }
     else
     {
-      f.open(filename.str().c_str(), std::ios::app);
+      f.open(filename.c_str(), std::ios::app);
     }
 
     unsigned int precision = 12;

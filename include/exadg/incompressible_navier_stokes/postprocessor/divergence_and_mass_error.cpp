@@ -20,6 +20,7 @@
  */
 
 // C/C++
+#include <filesystem>
 #include <fstream>
 
 // ExaDG
@@ -39,7 +40,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator(
     number_of_samples(0),
     divergence_sample(0.0),
     mass_sample(0.0),
-    matrix_free_data(nullptr),
+    matrix_free(nullptr),
     dof_index(0),
     quad_index(0)
 {
@@ -47,16 +48,22 @@ DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator(
 
 template<int dim, typename Number>
 void
-DivergenceAndMassErrorCalculator<dim, Number>::setup(
-  MatrixFree<dim, Number> const & matrix_free_data_in,
-  unsigned int const              dof_index_in,
-  unsigned int const              quad_index_in,
-  MassConservationData const &    div_and_mass_data_in)
+DivergenceAndMassErrorCalculator<dim, Number>::setup(MatrixFree<dim, Number> const & matrix_free_in,
+                                                     unsigned int const              dof_index_in,
+                                                     unsigned int const              quad_index_in,
+                                                     MassConservationData const &    data_in)
 {
-  matrix_free_data  = &matrix_free_data_in;
-  dof_index         = dof_index_in;
-  quad_index        = quad_index_in;
-  div_and_mass_data = div_and_mass_data_in;
+  matrix_free = &matrix_free_in;
+  dof_index   = dof_index_in;
+  quad_index  = quad_index_in;
+  data        = data_in;
+
+  if(data.calculate)
+  {
+    // create directory if not already existing
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      std::filesystem::create_directories(data.directory);
+  }
 }
 
 template<int dim, typename Number>
@@ -65,7 +72,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::evaluate(VectorType const & veloc
                                                         double const &     time,
                                                         int const &        time_step_number)
 {
-  if(div_and_mass_data.calculate_error == true)
+  if(data.calculate)
   {
     if(time_step_number >= 0) // unsteady problem
       analyze_div_and_mass_error_unsteady(velocity, time, time_step_number);
@@ -77,7 +84,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::evaluate(VectorType const & veloc
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
-  MatrixFree<dim, Number> const & matrix_free_data,
+  MatrixFree<dim, Number> const & matrix_free,
   VectorType const &              velocity,
   Number &                        div_error,
   Number &                        div_error_reference,
@@ -85,12 +92,12 @@ DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
   Number &                        mass_error_reference)
 {
   std::vector<Number> dst(4, 0.0);
-  matrix_free_data.loop(&This::local_compute_div,
-                        &This::local_compute_div_face,
-                        &This::local_compute_div_boundary_face,
-                        this,
-                        dst,
-                        velocity);
+  matrix_free.loop(&This::local_compute_div,
+                   &This::local_compute_div_face,
+                   &This::local_compute_div_boundary_face,
+                   this,
+                   dst,
+                   velocity);
 
   div_error            = Utilities::MPI::sum(dst.at(0), mpi_comm);
   div_error_reference  = Utilities::MPI::sum(dst.at(1), mpi_comm);
@@ -101,12 +108,12 @@ DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
-  MatrixFree<dim, Number> const &               data,
+  MatrixFree<dim, Number> const &               matrix_free,
   std::vector<Number> &                         dst,
   VectorType const &                            source,
   const std::pair<unsigned int, unsigned int> & cell_range)
 {
-  CellIntegratorU integrator(data, dof_index, quad_index);
+  CellIntegratorU integrator(matrix_free, dof_index, quad_index);
 
   Number div = 0.;
   Number ref = 0.;
@@ -128,27 +135,27 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
     }
 
     // sum over entries of VectorizedArray, but only over those that are "active"
-    for(unsigned int v = 0; v < data.n_active_entries_per_cell_batch(cell); ++v)
+    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
     {
       div += div_vec[v];
       ref += ref_vec[v];
     }
   }
 
-  dst.at(0) += div * this->div_and_mass_data.reference_length_scale;
+  dst.at(0) += div * data.reference_length_scale;
   dst.at(1) += ref;
 }
 
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
-  MatrixFree<dim, Number> const &               data,
+  MatrixFree<dim, Number> const &               matrix_free,
   std::vector<Number> &                         dst,
   VectorType const &                            source,
   const std::pair<unsigned int, unsigned int> & face_range)
 {
-  FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
-  FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
+  FaceIntegratorU integrator_m(matrix_free, true, dof_index, quad_index);
+  FaceIntegratorU integrator_p(matrix_free, false, dof_index, quad_index);
 
   Number diff_mass_flux = 0.;
   Number mean_mass_flux = 0.;
@@ -176,7 +183,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
     }
 
     // sum over entries of VectorizedArray, but only over those that are "active"
-    for(unsigned int v = 0; v < data.n_active_entries_per_face_batch(face); ++v)
+    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_face_batch(face); ++v)
     {
       diff_mass_flux += diff_mass_flux_vec[v];
       mean_mass_flux += mean_mass_flux_vec[v];
@@ -204,17 +211,13 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
   double const       time,
   unsigned int const time_step_number)
 {
-  if(time > div_and_mass_data.start_time - 1.e-10)
+  if(time > data.start_time - 1.e-10)
   {
     Number div_error = 1.0, div_error_reference = 1.0, mass_error = 1.0, mass_error_reference = 1.0;
 
     // calculate divergence and mass error
-    do_evaluate(*matrix_free_data,
-                velocity,
-                div_error,
-                div_error_reference,
-                mass_error,
-                mass_error_reference);
+    do_evaluate(
+      *matrix_free, velocity, div_error, div_error_reference, mass_error, mass_error_reference);
 
     Number div_error_normalized  = div_error / div_error_reference;
     Number mass_error_normalized = 1.0;
@@ -226,13 +229,12 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
     // write output file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::ostringstream filename;
-      filename << div_and_mass_data.filename_prefix << ".div_mass_error_timeseries";
+      std::string filename = data.directory + data.filename + ".div_mass_error_timeseries";
 
       std::ofstream f;
       if(clear_files_mass_error == true)
       {
-        f.open(filename.str().c_str(), std::ios::trunc);
+        f.open(filename.c_str(), std::ios::trunc);
         f << "Error incompressibility constraint:" << std::endl
           << std::endl
           << "  (1,|divu|)_Omega/(1,1)_Omega" << std::endl
@@ -247,14 +249,14 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
       }
       else
       {
-        f.open(filename.str().c_str(), std::ios::app);
+        f.open(filename.c_str(), std::ios::app);
       }
 
       f << std::scientific << std::setprecision(7) << std::setw(15) << time << std::setw(15)
         << div_error_normalized << std::setw(15) << mass_error_normalized << std::endl;
     }
 
-    if(time_step_number % div_and_mass_data.sample_every_time_steps == 0)
+    if(time_step_number % data.sample_every_time_steps == 0)
     {
       // calculate average error
       ++number_of_samples;
@@ -264,12 +266,11 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
       // write output file
       if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
-        std::ostringstream filename;
-        filename << div_and_mass_data.filename_prefix << ".div_mass_error_average";
+        std::string filename = data.directory + data.filename + ".div_mass_error_average";
 
         std::ofstream f;
 
-        f.open(filename.str().c_str(), std::ios::trunc);
+        f.open(filename.c_str(), std::ios::trunc);
         f << "Divergence and mass error (averaged over time)" << std::endl;
         f << "Number of samples:   " << number_of_samples << std::endl;
         f << "Mean error incompressibility constraint:   " << divergence_sample / number_of_samples
@@ -291,7 +292,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_steady
 
   // calculate divergence and mass error
   do_evaluate(
-    *matrix_free_data, velocity, div_error, div_error_reference, mass_error, mass_error_reference);
+    *matrix_free, velocity, div_error, div_error_reference, mass_error, mass_error_reference);
 
   Number div_error_normalized  = div_error / div_error_reference;
   Number mass_error_normalized = 1.0;
@@ -303,12 +304,11 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_steady
   // write output file
   if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    std::ostringstream filename;
-    filename << div_and_mass_data.filename_prefix << ".div_mass_error";
+    std::string filename = data.directory + data.filename + ".div_mass_error";
 
     std::ofstream f;
 
-    f.open(filename.str().c_str(), std::ios::trunc);
+    f.open(filename.c_str(), std::ios::trunc);
     f << "Divergence and mass error:" << std::endl;
     f << "Error incompressibility constraint:   " << div_error_normalized << std::endl;
     f << "Error mass flux over interior element faces:  " << mass_error_normalized << std::endl;

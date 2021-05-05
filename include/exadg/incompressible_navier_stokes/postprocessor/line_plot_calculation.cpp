@@ -20,6 +20,7 @@
  */
 
 // C/C++
+#include <filesystem>
 #include <fstream>
 
 // ExaDG
@@ -48,6 +49,13 @@ LinePlotCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_veloc
   dof_handler_pressure = &dof_handler_pressure_in;
   mapping              = &mapping_in;
   data                 = line_plot_data_in;
+
+  if(data.calculate)
+  {
+    // create directory if not already existing
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      std::filesystem::create_directories(data.line_data.directory);
+  }
 }
 
 template<int dim, typename Number>
