@@ -67,7 +67,6 @@ public:
       defect(minlevel, maxlevel),
       solution(minlevel, maxlevel),
       t(minlevel, maxlevel),
-      defect2(minlevel, maxlevel),
       matrix(&matrix, typeid(*this).name()),
       coarse(&coarse, typeid(*this).name()),
       transfer(transfer),
@@ -82,8 +81,6 @@ public:
       matrix[level]->initialize_dof_vector(solution[level]);
       defect[level] = solution[level];
       t[level]      = solution[level];
-      if(n_cycles > 1)
-        defect2[level] = solution[level];
     }
 
     timer_tree.reset(new TimerTree());
@@ -97,7 +94,7 @@ public:
     Timer timer;
 #endif
 
-    for(unsigned int i = minlevel; i <= maxlevel; i++)
+    for(unsigned int i = minlevel; i < maxlevel; i++)
     {
       defect[i] = 0.0;
     }
@@ -116,7 +113,6 @@ public:
   unsigned int
   solve(OtherVectorType & dst, OtherVectorType const & src) const
   {
-    defect[maxlevel] = 0.0;
     defect[maxlevel].copy_locally_owned_data_from(src);
 
     solution[maxlevel].copy_locally_owned_data_from(dst);
@@ -271,11 +267,6 @@ private:
    * Auxiliary vector.
    */
   mutable MGLevelObject<VectorType> t;
-
-  /**
-   * Auxiliary vector if more than 1 cycle is needed
-   */
-  mutable MGLevelObject<VectorType> defect2;
 
   /**
    * The matrix for each level.
