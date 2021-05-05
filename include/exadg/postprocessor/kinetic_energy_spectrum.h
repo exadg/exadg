@@ -46,6 +46,7 @@ struct KineticEnergySpectrumData
       start_time(0.0),
       calculate_every_time_steps(-1),
       calculate_every_time_interval(-1.0),
+      directory("output"),
       filename("energy_spectrum"),
       clear_file(true),
       degree(0),
@@ -70,6 +71,7 @@ struct KineticEnergySpectrumData
         print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
       if(calculate_every_time_interval >= 0.0)
         print_parameter(pcout, "Calculate every time interval", calculate_every_time_interval);
+      print_parameter(pcout, "Directory of output files", directory);
       print_parameter(pcout, "Filename", filename);
       print_parameter(pcout, "Clear file", clear_file);
 
@@ -93,6 +95,7 @@ struct KineticEnergySpectrumData
   double calculate_every_time_interval;
 
   // these parameters are only relevant if do_fftw = true
+  std::string directory;
   std::string filename;
   bool        clear_file;
 

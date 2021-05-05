@@ -31,9 +31,10 @@ using namespace dealii;
 struct LiftAndDragData
 {
   LiftAndDragData()
-    : calculate_lift_and_drag(false),
+    : calculate(false),
       viscosity(1.0),
       reference_value(1.0),
+      directory("output"),
       filename_lift("lift"),
       filename_drag("drag")
   {
@@ -42,7 +43,7 @@ struct LiftAndDragData
   /*
    *  active or not
    */
-  bool calculate_lift_and_drag;
+  bool calculate;
 
   /*
    *  Kinematic viscosity
@@ -63,6 +64,7 @@ struct LiftAndDragData
   /*
    *  filenames
    */
+  std::string directory;
   std::string filename_lift;
   std::string filename_drag;
 };
@@ -90,7 +92,7 @@ public:
 private:
   MPI_Comm const mpi_comm;
 
-  mutable bool clear_files_lift_and_drag;
+  mutable bool clear_files;
 
   SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
   MatrixFree<dim, Number> const *     matrix_free;
@@ -98,7 +100,7 @@ private:
 
   mutable double c_L_min, c_L_max, c_D_min, c_D_max;
 
-  LiftAndDragData lift_and_drag_data;
+  LiftAndDragData data;
 };
 
 } // namespace ExaDG

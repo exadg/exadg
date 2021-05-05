@@ -20,6 +20,7 @@
  */
 
 // C/C++
+#include <filesystem>
 #include <fstream>
 
 // deal.II
@@ -116,6 +117,13 @@ ErrorCalculator<dim, Number>::setup(DoFHandler<dim> const &           dof_handle
   dof_handler = &dof_handler_in;
   mapping     = &mapping_in;
   error_data  = error_data_in;
+
+  if(error_data.analytical_solution_available && error_data.write_errors_to_file)
+  {
+    // create directory if not already existing
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      std::filesystem::create_directories(error_data.folder);
+  }
 }
 
 template<int dim, typename Number>
@@ -126,7 +134,7 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
-  if(error_data.analytical_solution_available == true)
+  if(error_data.analytical_solution_available)
   {
     if(time_step_number >= 0) // unsteady problem
     {

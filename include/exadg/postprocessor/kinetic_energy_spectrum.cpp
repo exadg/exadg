@@ -20,6 +20,7 @@
  */
 
 // C/C++
+#include <filesystem>
 #include <fstream>
 
 // ExaDG
@@ -402,6 +403,10 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
       deal_spectrum_wrapper->init(
         dim, cells, data.degree + 1, evaluation_points, dof_handler->get_triangulation());
     }
+
+    // create directory if not already existing
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      std::filesystem::create_directories(data.directory);
   }
 }
 
@@ -530,7 +535,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
       int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
 
       std::ostringstream filename;
-      filename << data.filename;
+      filename << data.directory + data.filename;
 
       std::ofstream f;
       if(clear_files == true)
