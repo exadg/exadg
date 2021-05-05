@@ -755,14 +755,14 @@ public:
     pp_data_bfs.pp_data = pp_data;
 
     // turbulent channel statistics
-    pp_data_bfs.turb_ch_data.calculate_statistics   = true;
+    pp_data_bfs.turb_ch_data.calculate              = true;
     pp_data_bfs.turb_ch_data.cells_are_stretched    = Geometry::use_grid_stretching_in_y_direction;
     pp_data_bfs.turb_ch_data.sample_start_time      = sample_start_time;
     pp_data_bfs.turb_ch_data.sample_end_time        = end_time;
     pp_data_bfs.turb_ch_data.sample_every_timesteps = sample_every_timesteps;
     pp_data_bfs.turb_ch_data.viscosity              = viscosity;
-    pp_data_bfs.turb_ch_data.filename_prefix =
-      this->output_directory + this->output_name + "_precursor";
+    pp_data_bfs.turb_ch_data.directory              = this->output_directory;
+    pp_data_bfs.turb_ch_data.filename               = this->output_name + "_precursor";
 
     // use turbulent channel data to prescribe inflow velocity for BFS
     pp_data_bfs.inflow_data.write_inflow_data = true;

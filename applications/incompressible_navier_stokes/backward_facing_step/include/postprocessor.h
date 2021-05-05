@@ -70,7 +70,7 @@ public:
     Base::setup(pde_operator);
 
     // turbulent channel statistics for precursor simulation
-    if(pp_data_bfs.turb_ch_data.calculate_statistics)
+    if(pp_data_bfs.turb_ch_data.calculate)
     {
       statistics_turb_ch.reset(new StatisticsManager<dim, Number>(pde_operator.get_dof_handler_u(),
                                                                   pde_operator.get_mapping()));
@@ -109,7 +109,7 @@ public:
 
 
     // turbulent channel statistics
-    if(pp_data_bfs.turb_ch_data.calculate_statistics)
+    if(pp_data_bfs.turb_ch_data.calculate)
     {
       statistics_turb_ch->evaluate(velocity, time, time_step_number);
     }
