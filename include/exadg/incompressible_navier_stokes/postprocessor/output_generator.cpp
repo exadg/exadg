@@ -20,6 +20,7 @@
  */
 
 // C/C++
+#include <filesystem>
 #include <fstream>
 
 // deal.II
@@ -142,6 +143,10 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
 
   if(output_data.write_output == true)
   {
+    // create directory if not already existing
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      std::filesystem::create_directories(output_data.output_folder);
+
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this
     // once at the beginning of the simulation (i.e., in the setup function).
