@@ -106,14 +106,14 @@ $(function() {
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
 <div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="structExaDG_1_1PressureDifferenceData.html">   36</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData</a></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;{</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData</a>() : calculate_pressure_difference(<span class="keyword">false</span>), filename(<span class="stringliteral">&quot;pressure_difference&quot;</span>)</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData</a>() : calculate(<span class="keyword">false</span>), directory(<span class="stringliteral">&quot;output/&quot;</span>), filename(<span class="stringliteral">&quot;pressure_difference&quot;</span>)</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  {</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  }</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">   *  active or not</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">bool</span> calculate_pressure_difference;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keywordtype">bool</span> calculate;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="comment">   *  Points:</span></div>
@@ -123,42 +123,43 @@ $(function() {
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  Point&lt;dim&gt; point_2;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">   *  filenames</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">   *  directory and filename</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  std::string filename;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;};</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classExaDG_1_1PressureDifferenceCalculator.html">   61</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1PressureDifferenceCalculator.html">PressureDifferenceCalculator</a></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;{</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <a class="code" href="classExaDG_1_1PressureDifferenceCalculator.html">PressureDifferenceCalculator</a>(MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  setup(DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;             dof_handler_pressure_in,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                mapping_in,</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        <a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; pressure_difference_data_in);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  evaluate(VectorType <span class="keyword">const</span> &amp; pressure, <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> clear_files_pressure_difference;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  SmartPointer&lt;DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_pressure;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  SmartPointer&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData&lt;dim&gt;</a> pressure_difference_data;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;};</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POSTPROCESSOR_PRESSURE_DIFFERENCE_CALCULATION_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1PressureDifferenceCalculator_html"><div class="ttname"><a href="classExaDG_1_1PressureDifferenceCalculator.html">ExaDG::PressureDifferenceCalculator</a></div><div class="ttdef"><b>Definition:</b> pressure_difference_calculation.h:62</div></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  std::string directory;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  std::string filename;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;};</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classExaDG_1_1PressureDifferenceCalculator.html">   62</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1PressureDifferenceCalculator.html">PressureDifferenceCalculator</a></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;{</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <a class="code" href="classExaDG_1_1PressureDifferenceCalculator.html">PressureDifferenceCalculator</a>(MPI_Comm <span class="keyword">const</span> &amp; comm);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  setup(DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;             dof_handler_pressure_in,</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                mapping_in,</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData&lt;dim&gt;</a> <span class="keyword">const</span> &amp; pressure_difference_data_in);</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  evaluate(VectorType <span class="keyword">const</span> &amp; pressure, <span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> clear_files;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  SmartPointer&lt;DoFHandler&lt;dim&gt; <span class="keyword">const</span>&gt; dof_handler_pressure;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  SmartPointer&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;    mapping;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <a class="code" href="structExaDG_1_1PressureDifferenceData.html">PressureDifferenceData&lt;dim&gt;</a> data;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;};</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POSTPROCESSOR_PRESSURE_DIFFERENCE_CALCULATION_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1PressureDifferenceCalculator_html"><div class="ttname"><a href="classExaDG_1_1PressureDifferenceCalculator.html">ExaDG::PressureDifferenceCalculator</a></div><div class="ttdef"><b>Definition:</b> pressure_difference_calculation.h:63</div></div>
 <div class="ttc" id="astructExaDG_1_1PressureDifferenceData_html"><div class="ttname"><a href="structExaDG_1_1PressureDifferenceData.html">ExaDG::PressureDifferenceData</a></div><div class="ttdef"><b>Definition:</b> pressure_difference_calculation.h:37</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

@@ -244,7 +244,7 @@ $(function() {
 <div class="line"><a name="l00173"></a><span class="lineno"><a class="line" href="structExaDG_1_1IncNS_1_1StatisticsData.html">  173</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structExaDG_1_1IncNS_1_1StatisticsData.html">StatisticsData</a></div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;{</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  <a class="code" href="structExaDG_1_1IncNS_1_1StatisticsData.html">StatisticsData</a>()</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    : calculate_statistics(<span class="keyword">false</span>),</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    : calculate(<span class="keyword">false</span>),</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;      sample_start_time(0.0),</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;      sample_end_time(1.0),</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;      sample_every_timesteps(1),</div>
@@ -255,10 +255,10 @@ $(function() {
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;  print(ConditionalOStream &amp; pcout)</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;  {</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordflow">if</span>(calculate_statistics == <span class="keyword">true</span>)</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordflow">if</span>(calculate)</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    {</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;      pcout &lt;&lt; <span class="stringliteral">&quot;  Statistics data:&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;      print_parameter(pcout, <span class="stringliteral">&quot;Calculate statistics&quot;</span>, calculate_statistics);</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;      print_parameter(pcout, <span class="stringliteral">&quot;Calculate statistics&quot;</span>, calculate);</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;      print_parameter(pcout, <span class="stringliteral">&quot;Sample start time&quot;</span>, sample_start_time);</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;      print_parameter(pcout, <span class="stringliteral">&quot;Sample end time&quot;</span>, sample_end_time);</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;      print_parameter(pcout, <span class="stringliteral">&quot;Sample every timesteps&quot;</span>, sample_every_timesteps);</div>
@@ -266,8 +266,8 @@ $(function() {
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    }</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;  }</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160; </div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  <span class="comment">// calculate statistics?</span></div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;  <span class="keywordtype">bool</span> calculate_statistics;</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;  <span class="comment">// active or not</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;  <span class="keywordtype">bool</span> calculate;</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;  <span class="comment">// start time for sampling</span></div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  <span class="keywordtype">double</span> sample_start_time;</div>
@@ -347,7 +347,7 @@ $(function() {
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  {</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    line_data.print(pcout);</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="keywordflow">if</span>(statistics_data.calculate_statistics == <span class="keyword">true</span>)</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="keywordflow">if</span>(statistics_data.calculate)</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    {</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;      statistics_data.print(pcout);</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    }</div>

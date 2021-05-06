@@ -85,9 +85,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab6a8826129859b9b371932dad7a38711"><td class="memItemLeft" align="right" valign="top"><a id="ab6a8826129859b9b371932dad7a38711"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>StatisticsManager</b> (DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity, Mapping&lt; dim &gt; const &amp;mapping)</td></tr>
 <tr class="separator:ab6a8826129859b9b371932dad7a38711"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abcc7820eecabbaee331e1f50a5d6103e"><td class="memItemLeft" align="right" valign="top"><a id="abcc7820eecabbaee331e1f50a5d6103e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::function&lt; double(double const &amp;)&gt; const &amp;grid_tranform, <a class="el" href="structExaDG_1_1TurbulentChannelData.html">TurbulentChannelData</a> const &amp;turb_channel_data)</td></tr>
-<tr class="separator:abcc7820eecabbaee331e1f50a5d6103e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2da3d843a2bb34737a47f94f90b0b6d"><td class="memItemLeft" align="right" valign="top"><a id="aa2da3d843a2bb34737a47f94f90b0b6d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::function&lt; double(double const &amp;)&gt; const &amp;grid_tranform, <a class="el" href="structExaDG_1_1TurbulentChannelData.html">TurbulentChannelData</a> const &amp;data)</td></tr>
+<tr class="separator:aa2da3d843a2bb34737a47f94f90b0b6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d2278c41d05c5b2776d03abdac1ecf1"><td class="memItemLeft" align="right" valign="top"><a id="a0d2278c41d05c5b2776d03abdac1ecf1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, double const &amp;time, unsigned int const &amp;time_step_number)</td></tr>
 <tr class="separator:a0d2278c41d05c5b2776d03abdac1ecf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -97,9 +97,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorT
 <tr class="memitem:a85d1123eca129e3bc87e00c698c6cb5a"><td class="memItemLeft" align="right" valign="top"><a id="a85d1123eca129e3bc87e00c698c6cb5a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (const std::vector&lt; VectorType &gt; &amp;velocity)</td></tr>
 <tr class="separator:a85d1123eca129e3bc87e00c698c6cb5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae453a56f29cb495c1ffdb42baae46443"><td class="memItemLeft" align="right" valign="top"><a id="ae453a56f29cb495c1ffdb42baae46443"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>write_output</b> (const std::string output_prefix, double const dynamic_viscosity, double const density)</td></tr>
-<tr class="separator:ae453a56f29cb495c1ffdb42baae46443"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56203f2863820a836e91342352434106"><td class="memItemLeft" align="right" valign="top"><a id="a56203f2863820a836e91342352434106"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>write_output</b> (const std::string filename, double const dynamic_viscosity, double const density)</td></tr>
+<tr class="separator:a56203f2863820a836e91342352434106"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e321beefb462bb498037cf4fe22fc4b"><td class="memItemLeft" align="right" valign="top"><a id="a0e321beefb462bb498037cf4fe22fc4b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reset</b> ()</td></tr>
 <tr class="separator:a0e321beefb462bb498037cf4fe22fc4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
