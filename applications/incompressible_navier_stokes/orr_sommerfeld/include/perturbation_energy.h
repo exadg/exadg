@@ -41,7 +41,7 @@ struct PerturbationEnergyData
   PerturbationEnergyData()
     : calculate(false),
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-      directory("output"),
+      directory("output/"),
       filename("orr_sommerfeld"),
       omega_i(0.0),
       h(1.0),

@@ -41,7 +41,7 @@ struct KineticEnergyData
       evaluate_individual_terms(false),
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
       viscosity(1.0),
-      directory("output"),
+      directory("output/"),
       filename("kinetic_energy"),
       clear_file(true)
   {

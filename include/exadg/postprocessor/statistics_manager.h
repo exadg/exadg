@@ -45,7 +45,7 @@ struct TurbulentChannelData
       sample_every_timesteps(1),
       viscosity(1.0),
       density(1.0),
-      directory("output"),
+      directory("output/"),
       filename("channel")
   {
   }

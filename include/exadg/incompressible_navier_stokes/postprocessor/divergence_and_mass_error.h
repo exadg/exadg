@@ -41,7 +41,7 @@ struct MassConservationData
     : calculate(false),
       start_time(std::numeric_limits<double>::max()),
       sample_every_time_steps(std::numeric_limits<unsigned int>::max()),
-      directory("output"),
+      directory("output/"),
       filename("mass"),
       reference_length_scale(1.0)
   {

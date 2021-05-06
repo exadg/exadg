@@ -35,7 +35,7 @@ using namespace dealii;
 template<int dim>
 struct PressureDifferenceData
 {
-  PressureDifferenceData() : calculate(false), directory("output"), filename("pressure_difference")
+  PressureDifferenceData() : calculate(false), directory("output/"), filename("pressure_difference")
   {
   }
 

@@ -46,7 +46,7 @@ struct KineticEnergySpectrumData
       start_time(0.0),
       calculate_every_time_steps(-1),
       calculate_every_time_interval(-1.0),
-      directory("output"),
+      directory("output/"),
       filename("energy_spectrum"),
       clear_file(true),
       degree(0),
