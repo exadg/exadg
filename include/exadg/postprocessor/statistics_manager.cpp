@@ -20,7 +20,6 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // deal.II
@@ -30,6 +29,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/statistics_manager.h>
+#include <exadg/utilities/create_directories.h>
 
 //#define OUTPUT_DEBUG_INFO
 
@@ -285,9 +285,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
 
     AssertThrow(y_glob.size() == n_points_y_glob, ExcInternalError());
 
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.directory);
+    create_directories(data.directory, mpi_comm);
   }
 }
 

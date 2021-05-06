@@ -19,15 +19,13 @@
  *  ______________________________________________________________________
  */
 
-// C/C++
-#include <filesystem>
-
 // deal.II
 #include <deal.II/numerics/data_out.h>
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/postprocessor/write_output.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -123,9 +121,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
 
   if(output_data.write_output == true)
   {
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(output_data.output_folder);
+    create_directories(output_data.output_folder, mpi_comm);
 
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this

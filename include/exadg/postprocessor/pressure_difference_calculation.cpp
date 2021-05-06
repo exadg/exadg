@@ -20,11 +20,11 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // ExaDG
 #include <exadg/postprocessor/pressure_difference_calculation.h>
+#include <exadg/utilities/create_directories.h>
 #include <exadg/vector_tools/point_value.h>
 
 namespace ExaDG
@@ -48,11 +48,7 @@ PressureDifferenceCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_han
   data                 = data_in;
 
   if(data.calculate)
-  {
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.directory);
-  }
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>

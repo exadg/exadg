@@ -19,14 +19,12 @@
  *  ______________________________________________________________________
  */
 
-// C/C++
-#include <filesystem>
-
 // deal.II
 #include <deal.II/fe/fe_values.h>
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -319,9 +317,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
       }
     }
 
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.line_data.directory);
+    create_directories(data.line_data.directory, mpi_comm);
   }
 }
 

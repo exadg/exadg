@@ -20,12 +20,12 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // ExaDG
 #include <exadg/postprocessor/kinetic_energy_spectrum.h>
 #include <exadg/postprocessor/mirror_dof_vector_taylor_green.h>
+#include <exadg/utilities/create_directories.h>
 
 #ifdef USE_FFTW
 // deal.II
@@ -404,9 +404,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
         dim, cells, data.degree + 1, evaluation_points, dof_handler->get_triangulation());
     }
 
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.directory);
+    create_directories(data.directory, mpi_comm);
   }
 }
 

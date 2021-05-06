@@ -19,14 +19,12 @@
  *  ______________________________________________________________________
  */
 
-// C/C++
-#include <filesystem>
-
 // deal.II
 #include <deal.II/grid/grid_tools.h>
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h>
+#include <exadg/utilities/create_directories.h>
 #include <exadg/vector_tools/interpolate_solution.h>
 
 namespace ExaDG
@@ -93,9 +91,7 @@ LinePlotCalculatorStatistics<dim, Number>::setup(
       cells_global_pressure[line_iterator].resize((*line)->n_points);
     }
 
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.line_data.directory);
+    create_directories(data.line_data.directory, mpi_comm);
   }
 }
 

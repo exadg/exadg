@@ -20,7 +20,6 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // deal.II
@@ -28,6 +27,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/error_calculation.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -119,11 +119,7 @@ ErrorCalculator<dim, Number>::setup(DoFHandler<dim> const &           dof_handle
   error_data  = error_data_in;
 
   if(error_data.analytical_solution_available && error_data.write_errors_to_file)
-  {
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(error_data.directory);
-  }
+    create_directories(error_data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>

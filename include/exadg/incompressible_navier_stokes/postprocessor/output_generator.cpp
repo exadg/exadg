@@ -20,7 +20,6 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // deal.II
@@ -30,6 +29,7 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/output_generator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/postprocessor/write_output.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -143,9 +143,7 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
 
   if(output_data.write_output == true)
   {
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(output_data.output_folder);
+    create_directories(output_data.output_folder, mpi_comm);
 
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this

@@ -20,11 +20,11 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -59,11 +59,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::setup(MatrixFree<dim, Number> con
   data        = data_in;
 
   if(data.calculate)
-  {
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.directory);
-  }
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>

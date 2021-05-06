@@ -20,11 +20,11 @@
  */
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -51,11 +51,7 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
     mpi_comm(comm_in)
 {
   if(data.calculate && data.write_to_file)
-  {
-    // create directory if not already existing
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(data.directory);
-  }
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>

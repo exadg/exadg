@@ -23,11 +23,11 @@
 #define SOLVERS_INCOMPRESSIBLE_NAVIER_STOKES_APPLICATIONS_ORR_SOMMERFELD_PERTURBATION_ENERGY_H_
 
 // C/C++
-#include <filesystem>
 #include <fstream>
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/utilities/create_directories.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -111,11 +111,7 @@ public:
     data        = data_in;
 
     if(data.calculate)
-    {
-      // create directory if not already existing
-      if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-        std::filesystem::create_directories(data.directory);
-    }
+      create_directories(data.directory, mpi_comm);
   }
 
   void
