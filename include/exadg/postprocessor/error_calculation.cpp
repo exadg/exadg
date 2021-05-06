@@ -122,7 +122,7 @@ ErrorCalculator<dim, Number>::setup(DoFHandler<dim> const &           dof_handle
   {
     // create directory if not already existing
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-      std::filesystem::create_directories(error_data.folder);
+      std::filesystem::create_directories(error_data.directory);
   }
 }
 
@@ -200,13 +200,12 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
     // write output file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::ostringstream filename;
-      filename << error_data.folder + error_data.name + "_L2";
+      std::string filename = error_data.directory + error_data.name + "_L2";
 
       std::ofstream f;
       if(clear_files_L2 == true)
       {
-        f.open(filename.str().c_str(), std::ios::trunc);
+        f.open(filename.c_str(), std::ios::trunc);
 
         f << "  Time                Error" << std::endl;
 
@@ -214,7 +213,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
       }
       else
       {
-        f.open(filename.str().c_str(), std::ios::app);
+        f.open(filename.c_str(), std::ios::app);
       }
 
       unsigned int precision = 12;
@@ -245,13 +244,12 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
       // write output file
       if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
-        std::ostringstream filename;
-        filename << error_data.folder + error_data.name + "_H1_seminorm";
+        std::string filename = error_data.directory + error_data.name + "_H1_seminorm";
 
         std::ofstream f;
         if(clear_files_H1_seminorm == true)
         {
-          f.open(filename.str().c_str(), std::ios::trunc);
+          f.open(filename.c_str(), std::ios::trunc);
 
           f << "  Time                Error" << std::endl;
 
@@ -259,7 +257,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
         }
         else
         {
-          f.open(filename.str().c_str(), std::ios::app);
+          f.open(filename.c_str(), std::ios::app);
         }
 
         unsigned int precision = 12;
