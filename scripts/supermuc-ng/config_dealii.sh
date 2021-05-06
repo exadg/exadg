@@ -33,7 +33,6 @@ rm -rf CMakeFiles/ CMakeCache.txt
 # issue the build - must usually not be modified
 cmake \
   -D CMAKE_BUILD_TYPE="DebugRelease" \
-  -D DEAL_II_COMPONENT_EXAMPLES="OFF" \
   -D CMAKE_CXX_FLAGS="-std=c++17 -march=skylake-avx512 -Wno-array-bounds -Wno-literal-suffix -pthread" \
   -D DEAL_II_CXX_FLAGS_RELEASE="-O3" \
   -D DEAL_II_CXX_FLAGS_DEBUG="-Og" \
@@ -56,4 +55,5 @@ cmake \
   -D P4EST_DIR="$WORKING_DIRECTORY/sw" \
   -D LAPACK_LIBRARIES="$MKL_LIBDIR/libmkl_gf_lp64.so;$MKL_LIBDIR/libmkl_sequential.so;$MKL_LIBDIR/libmkl_core.so;$MKL_LIBDIR/libmkl_gf_lp64.so;$MKL_LIBDIR/libmkl_sequential.so;$MKL_LIBDIR/libmkl_core.so;$MKL_LIBDIR/libmkl_sequential.so;/lib64/libpthread.so.0;/lib64/libm.so.6;/lib64/libdl.so.2" \
   -D DEAL_II_COMPONENT_DOCUMENTATION="OFF" \
+  -D DEAL_II_COMPONENT_EXAMPLES="OFF" \
   $DEAL
