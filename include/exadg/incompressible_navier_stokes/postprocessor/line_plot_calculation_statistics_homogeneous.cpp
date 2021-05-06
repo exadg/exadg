@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -41,7 +42,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisti
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(mpi_comm_in),
+    mpi_comm(mpi_comm_in),
     number_of_samples(0),
     averaging_direction(2),
     write_final_output(false)
@@ -55,7 +56,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 {
   data = data_in;
 
-  if(data.statistics_data.calculate_statistics == true)
+  if(data.statistics_data.calculate)
   {
     AssertThrow(dim == 3, ExcMessage("Not implemented."));
 
@@ -315,6 +316,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
         }
       }
     }
+
+    create_directories(data.line_data.directory, mpi_comm);
   }
 }
 
@@ -326,7 +329,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::evaluate(
   double const &       time,
   unsigned int const & time_step_number)
 {
-  if(data.statistics_data.calculate_statistics == true)
+  if(data.statistics_data.calculate)
   {
     // EPSILON: small number which is much smaller than the time step size
     double const EPSILON = 1.0e-10;
@@ -533,7 +536,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     }
   }
 
-  Utilities::MPI::sum(length_local, communicator, length_local);
+  Utilities::MPI::sum(length_local, mpi_comm, length_local);
 
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
         line.quantities.begin();
@@ -546,7 +549,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     {
       Utilities::MPI::sum(ArrayView<double const>(&velocity_local[0][0],
                                                   dim * velocity_local.size()),
-                          communicator,
+                          mpi_comm,
                           ArrayView<double>(&velocity_local[0][0], dim * velocity_local.size()));
 
       for(unsigned int p = 0; p < line.n_points; ++p)
@@ -561,7 +564,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     {
       Utilities::MPI::sum(
         ArrayView<double const>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()),
-        communicator,
+        mpi_comm,
         ArrayView<double>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()));
 
       for(unsigned int p = 0; p < line.n_points; ++p)
@@ -577,7 +580,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     }
     else if((*quantity)->type == QuantityType::SkinFriction)
     {
-      Utilities::MPI::sum(wall_shear_local, communicator, wall_shear_local);
+      Utilities::MPI::sum(wall_shear_local, mpi_comm, wall_shear_local);
 
       for(unsigned int p = 0; p < line.n_points; ++p)
       {
@@ -617,8 +620,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_pressure(
       }
 
       // MPI communication
-      Utilities::MPI::sum(length_local, communicator, length_local);
-      Utilities::MPI::sum(pressure_local, communicator, pressure_local);
+      Utilities::MPI::sum(length_local, mpi_comm, length_local);
+      Utilities::MPI::sum(pressure_local, mpi_comm, pressure_local);
 
       // averaging in space (over homogeneous direction)
       for(unsigned int p = 0; p < line.n_points; ++p)
@@ -638,8 +641,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_pressure(
                                        pressure_local);
 
       // MPI communication
-      length_local   = Utilities::MPI::sum(length_local, communicator);
-      pressure_local = Utilities::MPI::sum(pressure_local, communicator);
+      length_local   = Utilities::MPI::sum(length_local, mpi_comm);
+      pressure_local = Utilities::MPI::sum(pressure_local, mpi_comm);
 
       // averaging in space (over homogeneous direction)
       reference_pressure_global[line_iterator] += pressure_local / length_local;
@@ -732,8 +735,7 @@ template<int dim, typename Number>
 void
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
 {
-  if(Utilities::MPI::this_mpi_process(communicator) == 0 &&
-     data.statistics_data.calculate_statistics == true)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0 && data.statistics_data.calculate)
   {
     unsigned int const precision = data.line_data.precision;
 

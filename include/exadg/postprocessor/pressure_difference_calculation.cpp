@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/pressure_difference_calculation.h>
+#include <exadg/utilities/create_directories.h>
 #include <exadg/vector_tools/point_value.h>
 
 namespace ExaDG
@@ -32,20 +33,22 @@ using namespace dealii;
 
 template<int dim, typename Number>
 PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm const & comm)
-  : mpi_comm(comm), clear_files_pressure_difference(true)
+  : mpi_comm(comm), clear_files(true)
 {
 }
 
 template<int dim, typename Number>
 void
-PressureDifferenceCalculator<dim, Number>::setup(
-  DoFHandler<dim> const &             dof_handler_pressure_in,
-  Mapping<dim> const &                mapping_in,
-  PressureDifferenceData<dim> const & pressure_difference_data_in)
+PressureDifferenceCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_pressure_in,
+                                                 Mapping<dim> const &    mapping_in,
+                                                 PressureDifferenceData<dim> const & data_in)
 {
-  dof_handler_pressure     = &dof_handler_pressure_in;
-  mapping                  = &mapping_in;
-  pressure_difference_data = pressure_difference_data_in;
+  dof_handler_pressure = &dof_handler_pressure_in;
+  mapping              = &mapping_in;
+  data                 = data_in;
+
+  if(data.calculate)
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -53,13 +56,13 @@ void
 PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
                                                     double const &     time) const
 {
-  if(pressure_difference_data.calculate_pressure_difference == true)
+  if(data.calculate)
   {
     Number pressure_1 = 0.0, pressure_2 = 0.0;
 
     Point<dim> point_1, point_2;
-    point_1 = pressure_difference_data.point_1;
-    point_2 = pressure_difference_data.point_2;
+    point_1 = data.point_1;
+    point_2 = data.point_2;
 
     evaluate_scalar_quantity_in_point(
       pressure_1, *dof_handler_pressure, *mapping, pressure, point_1, mpi_comm);
@@ -70,12 +73,12 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
 
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::string filename = pressure_difference_data.filename;
+      std::string filename = data.directory + data.filename;
 
       unsigned int precision = 12;
 
       std::ofstream f;
-      if(clear_files_pressure_difference)
+      if(clear_files)
       {
         f.open(filename.c_str(), std::ios::trunc);
 
@@ -85,7 +88,7 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
           << std::endl;
         // clang-format on
 
-        clear_files_pressure_difference = false;
+        clear_files = false;
       }
       else
       {

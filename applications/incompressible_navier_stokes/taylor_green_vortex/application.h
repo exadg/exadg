@@ -502,10 +502,11 @@ public:
     pp_data.output_data.degree                    = degree;
 
     // calculate div and mass error
-    pp_data.mass_data.calculate_error         = false;
+    pp_data.mass_data.calculate               = false;
     pp_data.mass_data.start_time              = 0.0;
     pp_data.mass_data.sample_every_time_steps = 1e2;
-    pp_data.mass_data.filename_prefix         = this->output_directory + name;
+    pp_data.mass_data.directory               = this->output_directory;
+    pp_data.mass_data.filename                = name;
     pp_data.mass_data.reference_length_scale  = 1.0;
 
     // kinetic energy
@@ -513,7 +514,8 @@ public:
     pp_data.kinetic_energy_data.evaluate_individual_terms  = false;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.filename                   = this->output_directory + name;
+    pp_data.kinetic_energy_data.directory                  = this->output_directory;
+    pp_data.kinetic_energy_data.filename                   = name;
     pp_data.kinetic_energy_data.clear_file                 = !read_restart;
 
     // kinetic energy spectrum
@@ -522,11 +524,11 @@ public:
     pp_data.kinetic_energy_spectrum_data.do_fftw                       = do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files       = !do_fftw_during_simulation;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-    pp_data.kinetic_energy_spectrum_data.filename =
-      this->output_directory + name + "_energy_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree                     = degree;
-    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1);
-    pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = exploit_symmetry;
+    pp_data.kinetic_energy_spectrum_data.directory                     = this->output_directory;
+    pp_data.kinetic_energy_spectrum_data.filename                      = name + "_energy_spectrum";
+    pp_data.kinetic_energy_spectrum_data.degree                        = degree;
+    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell    = (degree + 1);
+    pp_data.kinetic_energy_spectrum_data.exploit_symmetry              = exploit_symmetry;
     pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid = this->n_subdivisions_1d_hypercube;
     pp_data.kinetic_energy_spectrum_data.refine_level           = this->refine_level;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;

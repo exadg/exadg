@@ -25,6 +25,7 @@
 // ExaDG
 #include <exadg/postprocessor/kinetic_energy_spectrum.h>
 #include <exadg/postprocessor/mirror_dof_vector_taylor_green.h>
+#include <exadg/utilities/create_directories.h>
 
 #ifdef USE_FFTW
 // deal.II
@@ -402,6 +403,8 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
       deal_spectrum_wrapper->init(
         dim, cells, data.degree + 1, evaluation_points, dof_handler->get_triangulation());
     }
+
+    create_directories(data.directory, mpi_comm);
   }
 }
 
@@ -530,7 +533,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
       int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
 
       std::ostringstream filename;
-      filename << data.filename;
+      filename << data.directory + data.filename;
 
       std::ofstream f;
       if(clear_files == true)

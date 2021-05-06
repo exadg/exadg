@@ -115,7 +115,7 @@ private:
   DoFHandler<dim> const & dof_handler_velocity;
   DoFHandler<dim> const & dof_handler_pressure;
   Mapping<dim> const &    mapping;
-  MPI_Comm                communicator;
+  MPI_Comm                mpi_comm;
 
   LinePlotDataStatistics<dim> data;
 

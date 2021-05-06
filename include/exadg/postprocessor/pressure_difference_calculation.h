@@ -35,14 +35,14 @@ using namespace dealii;
 template<int dim>
 struct PressureDifferenceData
 {
-  PressureDifferenceData() : calculate_pressure_difference(false), filename("pressure_difference")
+  PressureDifferenceData() : calculate(false), directory("output/"), filename("pressure_difference")
   {
   }
 
   /*
    *  active or not
    */
-  bool calculate_pressure_difference;
+  bool calculate;
 
   /*
    *  Points:
@@ -52,8 +52,9 @@ struct PressureDifferenceData
   Point<dim> point_2;
 
   /*
-   *  filenames
+   *  directory and filename
    */
+  std::string directory;
   std::string filename;
 };
 
@@ -76,12 +77,12 @@ public:
 private:
   MPI_Comm const mpi_comm;
 
-  mutable bool clear_files_pressure_difference;
+  mutable bool clear_files;
 
   SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
   SmartPointer<Mapping<dim> const>    mapping;
 
-  PressureDifferenceData<dim> pressure_difference_data;
+  PressureDifferenceData<dim> data;
 };
 
 } // namespace ExaDG

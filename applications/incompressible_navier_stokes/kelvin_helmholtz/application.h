@@ -285,7 +285,8 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = viscosity;
-    pp_data.kinetic_energy_data.filename = this->output_directory + this->output_name;
+    pp_data.kinetic_energy_data.directory                  = this->output_directory;
+    pp_data.kinetic_energy_data.filename                   = this->output_name;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

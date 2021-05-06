@@ -27,6 +27,7 @@
 // ExaDG
 #include <exadg/postprocessor/write_output.h>
 #include <exadg/structure/postprocessor/output_generator.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -83,6 +84,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
 
   if(output_data.write_output == true)
   {
+    create_directories(output_data.output_folder, mpi_comm);
+
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this
     // once at the beginning of the simulation (i.e., in the setup function).

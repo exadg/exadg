@@ -38,10 +38,11 @@ using namespace dealii;
 struct MassConservationData
 {
   MassConservationData()
-    : calculate_error(false),
+    : calculate(false),
       start_time(std::numeric_limits<double>::max()),
       sample_every_time_steps(std::numeric_limits<unsigned int>::max()),
-      filename_prefix("indexa"),
+      directory("output/"),
+      filename("mass"),
       reference_length_scale(1.0)
   {
   }
@@ -49,20 +50,21 @@ struct MassConservationData
   void
   print(ConditionalOStream & pcout)
   {
-    if(calculate_error == true)
+    if(calculate == true)
     {
       pcout << "  Analysis of divergence and mass error:" << std::endl;
-      print_parameter(pcout, "Calculate error", calculate_error);
       print_parameter(pcout, "Start time", start_time);
       print_parameter(pcout, "Sample every timesteps", sample_every_time_steps);
-      print_parameter(pcout, "Filename prefix", filename_prefix);
+      print_parameter(pcout, "Directory", directory);
+      print_parameter(pcout, "Filename", filename);
     }
   }
 
-  bool         calculate_error;
+  bool         calculate;
   double       start_time;
   unsigned int sample_every_time_steps;
-  std::string  filename_prefix;
+  std::string  directory;
+  std::string  filename;
   double       reference_length_scale;
 };
 
@@ -83,10 +85,10 @@ public:
   DivergenceAndMassErrorCalculator(MPI_Comm const & comm);
 
   void
-  setup(MatrixFree<dim, Number> const & matrix_free_data_in,
+  setup(MatrixFree<dim, Number> const & matrix_free_in,
         unsigned int const              dof_index_in,
         unsigned int const              quad_index_in,
-        MassConservationData const &    div_and_mass_data_in);
+        MassConservationData const &    data_in);
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
@@ -105,7 +107,7 @@ private:
    *  Reference value for mass error: (1,|0.5(um + up)*n|)_dOmegaI
    */
   void
-  do_evaluate(MatrixFree<dim, Number> const & matrix_free_data,
+  do_evaluate(MatrixFree<dim, Number> const & matrix_free,
               VectorType const &              velocity,
               Number &                        div_error,
               Number &                        div_error_reference,
@@ -146,9 +148,9 @@ private:
   Number divergence_sample;
   Number mass_sample;
 
-  MatrixFree<dim, Number> const * matrix_free_data;
+  MatrixFree<dim, Number> const * matrix_free;
   unsigned int                    dof_index, quad_index;
-  MassConservationData            div_and_mass_data;
+  MassConservationData            data;
 };
 
 

@@ -562,8 +562,8 @@ public:
     pp_data.output_data.degree               = degree;
 
     // lift and drag
-    pp_data.lift_and_drag_data.calculate_lift_and_drag = true;
-    pp_data.lift_and_drag_data.viscosity               = viscosity;
+    pp_data.lift_and_drag_data.calculate = true;
+    pp_data.lift_and_drag_data.viscosity = viscosity;
 
     double const U = Um * (dim == 2 ? 2. / 3. : 4. / 9.);
     if(dim == 2)
@@ -574,11 +574,12 @@ public:
     // surface for calculation of lift and drag coefficients has boundary_ID = 2
     pp_data.lift_and_drag_data.boundary_IDs.insert(2);
 
-    pp_data.lift_and_drag_data.filename_lift = this->output_directory + name + "_lift";
-    pp_data.lift_and_drag_data.filename_drag = this->output_directory + name + "_drag";
+    pp_data.lift_and_drag_data.directory     = this->output_directory;
+    pp_data.lift_and_drag_data.filename_lift = name + "_lift";
+    pp_data.lift_and_drag_data.filename_drag = name + "_drag";
 
     // pressure difference
-    pp_data.pressure_difference_data.calculate_pressure_difference = true;
+    pp_data.pressure_difference_data.calculate = true;
     if(dim == 2)
     {
       Point<dim> point_1_2D((X_C - D / 2.0), Y_C), point_2_2D((X_C + D / 2.0), Y_C);
@@ -593,8 +594,8 @@ public:
       pp_data.pressure_difference_data.point_2 = point_2_3D;
     }
 
-    pp_data.pressure_difference_data.filename =
-      this->output_directory + name + "_pressure_difference";
+    pp_data.pressure_difference_data.directory = this->output_directory;
+    pp_data.pressure_difference_data.filename  = name + "_pressure_difference";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));

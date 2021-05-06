@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/error_calculation.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -116,6 +117,9 @@ ErrorCalculator<dim, Number>::setup(DoFHandler<dim> const &           dof_handle
   dof_handler = &dof_handler_in;
   mapping     = &mapping_in;
   error_data  = error_data_in;
+
+  if(error_data.analytical_solution_available && error_data.write_errors_to_file)
+    create_directories(error_data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -126,7 +130,7 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
-  if(error_data.analytical_solution_available == true)
+  if(error_data.analytical_solution_available)
   {
     if(time_step_number >= 0) // unsteady problem
     {
@@ -192,13 +196,12 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
     // write output file
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::ostringstream filename;
-      filename << error_data.folder + error_data.name + "_L2";
+      std::string filename = error_data.directory + error_data.name + "_L2";
 
       std::ofstream f;
       if(clear_files_L2 == true)
       {
-        f.open(filename.str().c_str(), std::ios::trunc);
+        f.open(filename.c_str(), std::ios::trunc);
 
         f << "  Time                Error" << std::endl;
 
@@ -206,7 +209,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
       }
       else
       {
-        f.open(filename.str().c_str(), std::ios::app);
+        f.open(filename.c_str(), std::ios::app);
       }
 
       unsigned int precision = 12;
@@ -237,13 +240,12 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
       // write output file
       if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
-        std::ostringstream filename;
-        filename << error_data.folder + error_data.name + "_H1_seminorm";
+        std::string filename = error_data.directory + error_data.name + "_H1_seminorm";
 
         std::ofstream f;
         if(clear_files_H1_seminorm == true)
         {
-          f.open(filename.str().c_str(), std::ios::trunc);
+          f.open(filename.c_str(), std::ios::trunc);
 
           f << "  Time                Error" << std::endl;
 
@@ -251,7 +253,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
         }
         else
         {
-          f.open(filename.str().c_str(), std::ios::app);
+          f.open(filename.c_str(), std::ios::app);
         }
 
         unsigned int precision = 12;

@@ -399,8 +399,9 @@ public:
     // perturbation energy
     pp_data_os.energy_data.calculate                  = true;
     pp_data_os.energy_data.calculate_every_time_steps = 1;
-    pp_data_os.energy_data.filename_prefix            = this->output_directory + this->output_name +
-                                             "_perturbation_energy" + "_k" + std::to_string(degree);
+    pp_data_os.energy_data.directory                  = this->output_directory;
+    pp_data_os.energy_data.filename =
+      this->output_name + "_perturbation_energy" + "_k" + std::to_string(degree);
     pp_data_os.energy_data.U_max   = MAX_VELOCITY;
     pp_data_os.energy_data.h       = H;
     pp_data_os.energy_data.omega_i = OMEGA.imag();

@@ -46,8 +46,8 @@ struct ErrorCalculationData
       error_calc_interval_time(std::numeric_limits<double>::max()),
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
       write_errors_to_file(false),
-      folder("output/"),
-      name("all fields")
+      directory("output/"),
+      name("error")
   {
   }
 
@@ -63,7 +63,8 @@ struct ErrorCalculationData
       print_parameter(pcout, "Error calculation interval time", error_calc_interval_time);
       print_parameter(pcout, "Calculate error every time steps", calculate_every_time_steps);
       print_parameter(pcout, "Write errors to file", write_errors_to_file);
-      print_parameter(pcout, "Output folder", folder);
+      if(write_errors_to_file)
+        print_parameter(pcout, "Directory", directory);
       print_parameter(pcout, "Name", name);
     }
   }
@@ -93,8 +94,8 @@ struct ErrorCalculationData
   // write errors to file?
   bool write_errors_to_file;
 
-  // output folder and name (used as filename and as identifier for screen output)
-  std::string folder;
+  // directory and name (used as filename and as identifier for screen output)
+  std::string directory;
   std::string name;
 };
 

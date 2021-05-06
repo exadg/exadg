@@ -38,7 +38,8 @@ struct MeanVelocityCalculatorData
     : calculate(false),
       write_to_file(false),
       direction(Tensor<1, dim, double>()),
-      filename_prefix("mean_velocity")
+      directory("output/"),
+      filename("mean_velocity")
   {
   }
 
@@ -52,7 +53,10 @@ struct MeanVelocityCalculatorData
       print_parameter(pcout, "Calculate mean velocity/flow rate", calculate);
       print_parameter(pcout, "Write results to file", write_to_file);
       if(write_to_file == true)
-        print_parameter(pcout, "Filename", filename_prefix);
+      {
+        print_parameter(pcout, "Directory", directory);
+        print_parameter(pcout, "Filename", filename);
+      }
     }
   }
 
@@ -71,8 +75,9 @@ struct MeanVelocityCalculatorData
   // This parameter is only relevant for volume-based computation.
   Tensor<1, dim, double> direction;
 
-  // filename
-  std::string filename_prefix;
+  // directory and filename
+  std::string directory;
+  std::string filename;
 };
 
 template<int dim, typename Number>

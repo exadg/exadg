@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
+#include <exadg/utilities/create_directories.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -40,7 +41,8 @@ struct PerturbationEnergyData
   PerturbationEnergyData()
     : calculate(false),
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
-      filename_prefix("orr_sommerfeld"),
+      directory("output/"),
+      filename("orr_sommerfeld"),
       omega_i(0.0),
       h(1.0),
       U_max(1.0)
@@ -55,7 +57,8 @@ struct PerturbationEnergyData
       pcout << "  Calculate perturbation energy:" << std::endl;
       print_parameter(pcout, "Calculate perturbation energy", calculate);
       print_parameter(pcout, "Calculate every time steps", calculate_every_time_steps);
-      print_parameter(pcout, "Filename output", filename_prefix);
+      print_parameter(pcout, "Directory", directory);
+      print_parameter(pcout, "Filename", filename);
       print_parameter(pcout, "Amplification omega_i", omega_i);
       print_parameter(pcout, "Channel height h", h);
       print_parameter(pcout, "Maximum velocity U_max", U_max);
@@ -64,7 +67,8 @@ struct PerturbationEnergyData
 
   bool         calculate;
   unsigned int calculate_every_time_steps;
-  std::string  filename_prefix;
+  std::string  directory;
+  std::string  filename;
   double       omega_i;
   double       h;
   double       U_max;
@@ -89,28 +93,31 @@ public:
       clear_files(true),
       initial_perturbation_energy_has_been_calculated(false),
       initial_perturbation_energy(1.0),
-      matrix_free_data(nullptr),
+      matrix_free(nullptr),
       dof_index(0),
       quad_index(0)
   {
   }
 
   void
-  setup(MatrixFree<dim, Number> const & matrix_free_data_in,
+  setup(MatrixFree<dim, Number> const & matrix_free_in,
         unsigned int const              dof_index_in,
         unsigned int const              quad_index_in,
         PerturbationEnergyData const &  data_in)
   {
-    matrix_free_data = &matrix_free_data_in;
-    dof_index        = dof_index_in;
-    quad_index       = quad_index_in;
-    energy_data      = data_in;
+    matrix_free = &matrix_free_in;
+    dof_index   = dof_index_in;
+    quad_index  = quad_index_in;
+    data        = data_in;
+
+    if(data.calculate)
+      create_directories(data.directory, mpi_comm);
   }
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
-    if(energy_data.calculate == true)
+    if(data.calculate)
     {
       if(time_step_number >= 0) // unsteady problem
       {
@@ -129,11 +136,11 @@ private:
   void
   do_evaluate(VectorType const & velocity, double const time, unsigned int const time_step_number)
   {
-    if((time_step_number - 1) % energy_data.calculate_every_time_steps == 0)
+    if((time_step_number - 1) % data.calculate_every_time_steps == 0)
     {
       Number perturbation_energy = 0.0;
 
-      integrate(*matrix_free_data, velocity, perturbation_energy);
+      integrate(*matrix_free, velocity, perturbation_energy);
 
       if(!initial_perturbation_energy_has_been_calculated)
       {
@@ -146,17 +153,16 @@ private:
       if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
         // clang-format off
-        unsigned int l = matrix_free_data->get_dof_handler(dof_index)
+        unsigned int l = matrix_free->get_dof_handler(dof_index)
                            .get_triangulation().n_global_levels() - 1;
         // clang-format on
 
-        std::ostringstream filename;
-        filename << energy_data.filename_prefix + "_l" + Utilities::int_to_string(l);
+        std::string filename = data.directory + data.filename + "_l" + Utilities::int_to_string(l);
 
         std::ofstream f;
         if(clear_files == true)
         {
-          f.open(filename.str().c_str(), std::ios::trunc);
+          f.open(filename.c_str(), std::ios::trunc);
           f << "Perturbation energy: E = (1,(u-u_base)^2)_Omega" << std::endl
             << "Error:               e = |exp(2*omega_i*t) - E(t)/E(0)|" << std::endl;
 
@@ -166,11 +172,11 @@ private:
         }
         else
         {
-          f.open(filename.str().c_str(), std::ios::app);
+          f.open(filename.c_str(), std::ios::app);
         }
 
         Number const rel   = perturbation_energy / initial_perturbation_energy;
-        Number const error = std::abs(std::exp(2 * energy_data.omega_i * time) - rel);
+        Number const error = std::abs(std::exp(2 * data.omega_i * time) - rel);
 
         unsigned int const precision = 12;
         f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
@@ -186,49 +192,49 @@ private:
    *  Perturbation energy: E = (1,u*u)_Omega
    */
   void
-  integrate(MatrixFree<dim, Number> const & matrix_free_data,
+  integrate(MatrixFree<dim, Number> const & matrix_free,
             VectorType const &              velocity,
             Number &                        energy)
   {
     std::vector<Number> dst(1, 0.0);
-    matrix_free_data.cell_loop(&This::local_compute, this, dst, velocity);
+    matrix_free.cell_loop(&This::local_compute, this, dst, velocity);
 
     // sum over all MPI processes
     energy = Utilities::MPI::sum(dst.at(0), mpi_comm);
   }
 
   void
-  local_compute(MatrixFree<dim, Number> const &               data,
+  local_compute(MatrixFree<dim, Number> const &               matrix_free,
                 std::vector<Number> &                         dst,
                 VectorType const &                            src,
                 std::pair<unsigned int, unsigned int> const & cell_range)
   {
-    CellIntegrator<dim, dim, Number> fe_eval(data, dof_index, quad_index);
+    CellIntegrator<dim, dim, Number> integrator(matrix_free, dof_index, quad_index);
 
     // Loop over all elements
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(src);
-      fe_eval.evaluate(true, false);
+      integrator.reinit(cell);
+      integrator.read_dof_values(src);
+      integrator.evaluate(true, false);
 
       VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        vector velocity = fe_eval.get_value(q);
+        vector velocity = integrator.get_value(q);
 
-        Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
+        Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-        scalar y = q_points[1] / energy_data.h;
+        scalar y = q_points[1] / data.h;
 
         vector velocity_base;
-        velocity_base[0] = energy_data.U_max * (1.0 - y * y);
-        energy_vec += fe_eval.JxW(q) * (velocity - velocity_base) * (velocity - velocity_base);
+        velocity_base[0] = data.U_max * (1.0 - y * y);
+        energy_vec += integrator.JxW(q) * (velocity - velocity_base) * (velocity - velocity_base);
       }
 
       // sum over entries of VectorizedArray, but only over those
       // that are "active"
-      for(unsigned int v = 0; v < data.n_active_entries_per_cell_batch(cell); ++v)
+      for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
       {
         dst.at(0) += energy_vec[v];
       }
@@ -241,9 +247,9 @@ private:
   bool   initial_perturbation_energy_has_been_calculated;
   Number initial_perturbation_energy;
 
-  MatrixFree<dim, Number> const * matrix_free_data;
+  MatrixFree<dim, Number> const * matrix_free;
   unsigned int                    dof_index, quad_index;
-  PerturbationEnergyData          energy_data;
+  PerturbationEnergyData          data;
 };
 
 } // namespace IncNS

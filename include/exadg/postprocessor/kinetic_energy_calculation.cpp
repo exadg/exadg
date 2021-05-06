@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/kinetic_energy_calculation.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -48,6 +49,9 @@ KineticEnergyCalculator<dim, Number>::setup(MatrixFree<dim, Number> const & matr
   data        = kinetic_energy_data_in;
 
   clear_files = data.clear_file;
+
+  if(data.calculate)
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -56,7 +60,7 @@ KineticEnergyCalculator<dim, Number>::evaluate(VectorType const & velocity,
                                                double const &     time,
                                                int const &        time_step_number)
 {
-  if(data.calculate == true)
+  if(data.calculate)
   {
     AssertThrow(time_step_number >= 0,
                 ExcMessage("This postprocessing tool can only be used for unsteady problems."));
@@ -85,7 +89,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
     {
       // clang-format off
       std::ostringstream filename;
-      filename << data.filename;
+      filename << data.directory + data.filename;
 
       std::ofstream f;
       if(clear_files == true)

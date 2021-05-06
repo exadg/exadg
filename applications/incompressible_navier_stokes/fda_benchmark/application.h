@@ -651,7 +651,7 @@ public:
 
     // evaluation of quantities along lines
     pp_data_fda.line_plot_data.line_data.directory                    = this->output_directory;
-    pp_data_fda.line_plot_data.statistics_data.calculate_statistics   = true;
+    pp_data_fda.line_plot_data.statistics_data.calculate              = true;
     pp_data_fda.line_plot_data.statistics_data.sample_start_time      = sample_start_time;
     pp_data_fda.line_plot_data.statistics_data.sample_end_time        = end_time;
     pp_data_fda.line_plot_data.statistics_data.sample_every_timesteps = sample_every_timesteps;
@@ -865,8 +865,9 @@ public:
     pp_data_fda.inflow_data.array             = &inflow_data_storage->velocity_values;
 
     // calculation of flow rate (use volume-based computation)
-    pp_data_fda.mean_velocity_data.calculate       = true;
-    pp_data_fda.mean_velocity_data.filename_prefix = this->output_directory + filename_flowrate;
+    pp_data_fda.mean_velocity_data.calculate = true;
+    pp_data_fda.mean_velocity_data.directory = this->output_directory;
+    pp_data_fda.mean_velocity_data.filename  = filename_flowrate;
     Tensor<1, dim, double> direction;
     direction[2]                                 = 1.0;
     pp_data_fda.mean_velocity_data.direction     = direction;

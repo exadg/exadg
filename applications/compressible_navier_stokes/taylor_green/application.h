@@ -296,15 +296,16 @@ public:
     pp_data.kinetic_energy_data.calculate                  = true;
     pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
     pp_data.kinetic_energy_data.viscosity                  = DYN_VISCOSITY / RHO_0;
-    pp_data.kinetic_energy_data.filename = this->output_directory + this->output_name;
+    pp_data.kinetic_energy_data.directory                  = this->output_directory;
+    pp_data.kinetic_energy_data.filename                   = this->output_name;
 
     // kinetic energy spectrum
     pp_data.kinetic_energy_spectrum_data.calculate                     = true;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps    = -1;
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-    pp_data.kinetic_energy_spectrum_data.filename =
-      this->output_directory + this->output_name + "_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree                     = degree;
+    pp_data.kinetic_energy_spectrum_data.directory                     = this->output_directory;
+    pp_data.kinetic_energy_spectrum_data.filename = this->output_name + "_spectrum";
+    pp_data.kinetic_energy_spectrum_data.degree   = degree;
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1) * 1;
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = false;
 

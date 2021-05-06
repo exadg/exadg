@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h>
+#include <exadg/utilities/create_directories.h>
 #include <exadg/vector_tools/interpolate_solution.h>
 
 namespace ExaDG
@@ -37,12 +38,12 @@ LinePlotCalculatorStatistics<dim, Number>::LinePlotCalculatorStatistics(
   DoFHandler<dim> const & dof_handler_velocity_in,
   DoFHandler<dim> const & dof_handler_pressure_in,
   Mapping<dim> const &    mapping_in,
-  MPI_Comm const &        mpi_comm)
+  MPI_Comm const &        mpi_comm_in)
   : clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(mpi_comm),
+    mpi_comm(mpi_comm_in),
     cell_data_has_been_initialized(false),
     number_of_samples(0),
     write_final_output(false)
@@ -57,7 +58,7 @@ LinePlotCalculatorStatistics<dim, Number>::setup(
   // initialize data
   data = line_plot_data_in;
 
-  if(data.statistics_data.calculate_statistics == true)
+  if(data.statistics_data.calculate == true)
   {
     AssertThrow(data.line_data.lines.size() > 0, ExcMessage("Empty data"));
 
@@ -89,6 +90,8 @@ LinePlotCalculatorStatistics<dim, Number>::setup(
       cells_global_velocity[line_iterator].resize((*line)->n_points);
       cells_global_pressure[line_iterator].resize((*line)->n_points);
     }
+
+    create_directories(data.line_data.directory, mpi_comm);
   }
 }
 
@@ -99,7 +102,7 @@ LinePlotCalculatorStatistics<dim, Number>::evaluate(VectorType const &   velocit
                                                     double const &       time,
                                                     unsigned int const & time_step_number)
 {
-  if(data.statistics_data.calculate_statistics == true)
+  if(data.statistics_data.calculate)
   {
     // EPSILON: small number which is much smaller than the time step size
     double const EPSILON = 1.0e-10;
@@ -384,7 +387,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
 
   // Cells are distributed over processors, therefore we need
   // to sum the contributions of every single processor.
-  Utilities::MPI::sum(counter_vector_local, communicator, counter_vector_local);
+  Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
 
   // Perform MPI communcation as well as averaging for all quantities of the current line.
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
@@ -396,7 +399,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
     {
       Utilities::MPI::sum(
         ArrayView<Number const>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()),
-        communicator,
+        mpi_comm,
         ArrayView<Number>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()));
 
       // Accumulate instantaneous values into global vector.
@@ -471,7 +474,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
 
   // Cells are distributed over processors, therefore we need
   // to sum the contributions of every single processor.
-  Utilities::MPI::sum(counter_vector_local, communicator, counter_vector_local);
+  Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
 
   // Perform MPI communcation as well as averaging for all quantities of the current line.
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
@@ -481,7 +484,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
   {
     if((*quantity)->type == QuantityType::Pressure)
     {
-      Utilities::MPI::sum(pressure_vector_local, communicator, pressure_vector_local);
+      Utilities::MPI::sum(pressure_vector_local, mpi_comm, pressure_vector_local);
 
       // Accumulate instantaneous values into global vector.
       // When writing the output files, we calculate the time-averaged values
@@ -506,8 +509,7 @@ template<int dim, typename Number>
 void
 LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
 {
-  if(Utilities::MPI::this_mpi_process(communicator) == 0 &&
-     data.statistics_data.calculate_statistics == true)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0 && data.statistics_data.calculate == true)
   {
     unsigned int const precision = data.line_data.precision;
 

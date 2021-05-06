@@ -424,14 +424,15 @@ public:
     pp_data_turb_ch.pp_data = pp_data;
 
     // turbulent channel statistics
-    pp_data_turb_ch.turb_ch_data.calculate_statistics   = true;
+    pp_data_turb_ch.turb_ch_data.calculate              = true;
     pp_data_turb_ch.turb_ch_data.cells_are_stretched    = true;
     pp_data_turb_ch.turb_ch_data.sample_start_time      = SAMPLE_START_TIME;
     pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
     pp_data_turb_ch.turb_ch_data.sample_every_timesteps = 10;
     pp_data_turb_ch.turb_ch_data.viscosity              = DYN_VISCOSITY;
     pp_data_turb_ch.turb_ch_data.density                = RHO_0;
-    pp_data_turb_ch.turb_ch_data.filename_prefix = this->output_directory + this->output_name;
+    pp_data_turb_ch.turb_ch_data.directory              = this->output_directory;
+    pp_data_turb_ch.turb_ch_data.filename               = this->output_name;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, mpi_comm));

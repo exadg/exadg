@@ -38,36 +38,38 @@ using namespace dealii;
 struct TurbulentChannelData
 {
   TurbulentChannelData()
-    : calculate_statistics(false),
+    : calculate(false),
       cells_are_stretched(false),
       sample_start_time(0.0),
       sample_end_time(1.0),
       sample_every_timesteps(1),
       viscosity(1.0),
       density(1.0),
-      filename_prefix("indexa")
+      directory("output/"),
+      filename("channel")
   {
   }
 
   void
   print(ConditionalOStream & pcout)
   {
-    if(calculate_statistics == true)
+    if(calculate)
     {
       pcout << "  Turbulent channel statistics:" << std::endl;
-      print_parameter(pcout, "Calculate statistics", calculate_statistics);
+      print_parameter(pcout, "Calculate statistics", calculate);
       print_parameter(pcout, "Cells are stretched", cells_are_stretched);
       print_parameter(pcout, "Sample start time", sample_start_time);
       print_parameter(pcout, "Sample end time", sample_end_time);
       print_parameter(pcout, "Sample every timesteps", sample_every_timesteps);
       print_parameter(pcout, "Dynamic viscosity", viscosity);
       print_parameter(pcout, "Density", density);
-      print_parameter(pcout, "Filename prefix", filename_prefix);
+      print_parameter(pcout, "Directory of output files", directory);
+      print_parameter(pcout, "Filename", filename);
     }
   }
 
   // calculate statistics?
-  bool calculate_statistics;
+  bool calculate;
 
   // are cells stretched, i.e., is a volume manifold applied?
   bool cells_are_stretched;
@@ -87,7 +89,9 @@ struct TurbulentChannelData
   // density
   double density;
 
-  std::string filename_prefix;
+  // directory and filename
+  std::string directory;
+  std::string filename;
 };
 
 template<int dim, typename Number>
@@ -103,7 +107,7 @@ public:
   // triangulation, otherwise the identification of data will fail
   void
   setup(std::function<double(double const &)> const & grid_tranform,
-        TurbulentChannelData const &                  turb_channel_data);
+        TurbulentChannelData const &                  data);
 
   void
   evaluate(VectorType const & velocity, double const & time, unsigned int const & time_step_number);
@@ -115,9 +119,7 @@ public:
   evaluate(const std::vector<VectorType> & velocity);
 
   void
-  write_output(const std::string output_prefix,
-               double const      dynamic_viscosity,
-               double const      density);
+  write_output(const std::string filename, double const dynamic_viscosity, double const density);
 
   void
   reset();
@@ -131,7 +133,7 @@ private:
 
   DoFHandler<dim> const & dof_handler;
   Mapping<dim> const &    mapping;
-  MPI_Comm                communicator;
+  MPI_Comm                mpi_comm;
 
   // vector of y-coordinates at which statistical quantities are computed
   std::vector<double> y_glob;
@@ -150,7 +152,7 @@ private:
 
   bool write_final_output;
 
-  TurbulentChannelData turb_channel_data;
+  TurbulentChannelData data;
 };
 
 } // namespace ExaDG

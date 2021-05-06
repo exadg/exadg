@@ -34,7 +34,7 @@ using namespace dealii;
 template<int dim>
 struct FlowRateCalculatorData
 {
-  FlowRateCalculatorData() : calculate(false), write_to_file(false), filename_prefix("flow_rate")
+  FlowRateCalculatorData() : calculate(false), write_to_file(false), filename("flow_rate")
   {
   }
 
@@ -48,7 +48,10 @@ struct FlowRateCalculatorData
       print_parameter(pcout, "Calculate flow rate", calculate);
       print_parameter(pcout, "Write results to file", write_to_file);
       if(write_to_file == true)
-        print_parameter(pcout, "Filename", filename_prefix);
+      {
+        print_parameter(pcout, "Directory", directory);
+        print_parameter(pcout, "Filename", filename);
+      }
     }
   }
 
@@ -58,8 +61,9 @@ struct FlowRateCalculatorData
   // write results to file?
   bool write_to_file;
 
-  // filename
-  std::string filename_prefix;
+  // directory and filename
+  std::string directory;
+  std::string filename;
 };
 
 

@@ -25,6 +25,7 @@
 // ExaDG
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/postprocessor/lift_and_drag_calculation.h>
+#include <exadg/utilities/create_directories.h>
 
 namespace ExaDG
 {
@@ -102,7 +103,7 @@ void calculate_lift_and_drag_force(Tensor<1, dim, Number> &             Force,
 template<int dim, typename Number>
 LiftAndDragCalculator<dim, Number>::LiftAndDragCalculator(MPI_Comm const & comm)
   : mpi_comm(comm),
-    clear_files_lift_and_drag(true),
+    clear_files(true),
     matrix_free(nullptr),
     dof_index_velocity(0),
     dof_index_pressure(1),
@@ -121,14 +122,17 @@ LiftAndDragCalculator<dim, Number>::setup(DoFHandler<dim> const &         dof_ha
                                           unsigned int const              dof_index_velocity_in,
                                           unsigned int const              dof_index_pressure_in,
                                           unsigned int const              quad_index_in,
-                                          LiftAndDragData const &         lift_and_drag_data_in)
+                                          LiftAndDragData const &         data_in)
 {
   dof_handler_velocity = &dof_handler_velocity_in;
   matrix_free          = &matrix_free_in;
   dof_index_velocity   = dof_index_velocity_in;
   dof_index_pressure   = dof_index_pressure_in;
   quad_index           = quad_index_in;
-  lift_and_drag_data   = lift_and_drag_data_in;
+  data                 = data_in;
+
+  if(data.calculate)
+    create_directories(data.directory, mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -137,7 +141,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
                                              VectorType const & pressure,
                                              Number const &     time) const
 {
-  if(lift_and_drag_data.calculate_lift_and_drag == true)
+  if(data.calculate)
   {
     Tensor<1, dim, Number> Force;
 
@@ -146,14 +150,14 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
                                                dof_index_velocity,
                                                quad_index,
                                                dof_index_pressure,
-                                               lift_and_drag_data.boundary_IDs,
+                                               data.boundary_IDs,
                                                velocity,
                                                pressure,
-                                               lift_and_drag_data.viscosity,
+                                               data.viscosity,
                                                mpi_comm);
 
     // compute lift and drag coefficients (c = (F/rho)/(1/2 U² A)
-    double const reference_value = lift_and_drag_data.reference_value;
+    double const reference_value = data.reference_value;
     Force /= reference_value;
 
     double const drag = Force[0], lift = Force[1];
@@ -165,13 +169,13 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename_drag, filename_lift;
-      filename_drag = lift_and_drag_data.filename_drag;
-      filename_lift = lift_and_drag_data.filename_lift;
+      filename_drag = data.directory + data.filename_drag;
+      filename_lift = data.directory + data.filename_lift;
 
       unsigned int precision = 12;
 
       std::ofstream f_drag, f_lift;
-      if(clear_files_lift_and_drag)
+      if(clear_files)
       {
         f_drag.open(filename_drag.c_str(), std::ios::trunc);
         f_lift.open(filename_lift.c_str(), std::ios::trunc);
@@ -190,7 +194,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
                << std::endl;
         // clang-format on
 
-        clear_files_lift_and_drag = false;
+        clear_files = false;
       }
       else
       {

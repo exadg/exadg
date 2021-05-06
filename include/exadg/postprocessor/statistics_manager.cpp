@@ -29,6 +29,7 @@
 
 // ExaDG
 #include <exadg/postprocessor/statistics_manager.h>
+#include <exadg/utilities/create_directories.h>
 
 //#define OUTPUT_DEBUG_INFO
 
@@ -42,10 +43,10 @@ StatisticsManager<dim, Number>::StatisticsManager(DoFHandler<dim> const & dof_ha
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
-    communicator(dof_handler_velocity.get_communicator()),
+    mpi_comm(dof_handler_velocity.get_communicator()),
     number_of_samples(0),
     write_final_output(true),
-    turb_channel_data(TurbulentChannelData())
+    data(TurbulentChannelData())
 {
 }
 
@@ -53,11 +54,11 @@ StatisticsManager<dim, Number>::StatisticsManager(DoFHandler<dim> const & dof_ha
 template<int dim, typename Number>
 void
 StatisticsManager<dim, Number>::setup(const std::function<double(double const &)> & grid_transform,
-                                      TurbulentChannelData const & turb_channel_data_in)
+                                      TurbulentChannelData const &                  data_in)
 {
-  turb_channel_data = turb_channel_data_in;
+  data = data_in;
 
-  if(turb_channel_data.calculate_statistics == true)
+  if(data.calculate)
   {
     // note: this code only works on structured meshes where the faces in
     // y-direction are faces 2 and 3
@@ -121,7 +122,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
     y_glob.reserve(n_points_y_glob);
 
     // loop over all cells in y-direction
-    if(turb_channel_data.cells_are_stretched == true)
+    if(data.cells_are_stretched == true)
     {
       for(unsigned int cell = 0; cell < n_cells_y_dir; cell++)
       {
@@ -241,7 +242,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
         }
       }
 
-      Utilities::MPI::max(y_processor, communicator, y_glob);
+      Utilities::MPI::max(y_processor, mpi_comm, y_glob);
 
 #ifdef OUTPUT_DEBUG_INFO
       // print final vector
@@ -255,7 +256,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
                   << "y_glob[" << i << "] = " << y_glob[i] << std::endl;
 #endif
     }
-    else // turb_channel_data.cells_are_stretched == false
+    else // data.cells_are_stretched == false
     {
       // use equidistant distribution of points within each cell
       for(unsigned int cell = 0; cell < n_cells_y_dir; cell++)
@@ -283,6 +284,8 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
     }
 
     AssertThrow(y_glob.size() == n_points_y_glob, ExcInternalError());
+
+    create_directories(data.directory, mpi_comm);
   }
 }
 
@@ -292,32 +295,30 @@ StatisticsManager<dim, Number>::evaluate(VectorType const &   velocity,
                                          double const &       time,
                                          unsigned int const & time_step_number)
 {
-  if(turb_channel_data.calculate_statistics == true)
+  if(data.calculate)
   {
+    std::string filename = data.directory + data.filename;
+
     // EPSILON: small number which is much smaller than the time step size
     double const EPSILON = 1.0e-10;
-    if((time > turb_channel_data.sample_start_time - EPSILON) &&
-       (time < turb_channel_data.sample_end_time + EPSILON) &&
-       (time_step_number % turb_channel_data.sample_every_timesteps == 0))
+    if((time > data.sample_start_time - EPSILON) && (time < data.sample_end_time + EPSILON) &&
+       (time_step_number % data.sample_every_timesteps == 0))
     {
       // evaluate statistics
       this->evaluate(velocity);
 
       // write intermediate output
-      if(time_step_number % (turb_channel_data.sample_every_timesteps * 100) == 0)
+      if(time_step_number % (data.sample_every_timesteps * 100) == 0)
       {
-        this->write_output(turb_channel_data.filename_prefix,
-                           turb_channel_data.viscosity,
-                           turb_channel_data.density);
+        this->write_output(filename, data.viscosity, data.density);
       }
     }
 
     // write final output
-    if((time > turb_channel_data.sample_end_time - EPSILON) && write_final_output)
+    if((time > data.sample_end_time - EPSILON) && write_final_output)
     {
-      this->write_output(turb_channel_data.filename_prefix,
-                         turb_channel_data.viscosity,
-                         turb_channel_data.density);
+      this->write_output(filename, data.viscosity, data.density);
+
       write_final_output = false;
     }
   }
@@ -347,11 +348,11 @@ StatisticsManager<dim, Number>::evaluate(std::vector<VectorType> const & velocit
 
 template<int dim, typename Number>
 void
-StatisticsManager<dim, Number>::write_output(const std::string output_prefix,
+StatisticsManager<dim, Number>::write_output(const std::string filename,
                                              double const      dynamic_viscosity,
                                              double const      density)
 {
-  if(Utilities::MPI::this_mpi_process(communicator) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // tau_w = mu * d<u>/dy = mu * (<u>(y2)-<u>(y1))/(y2-y1), where mu = rho * nu
     double tau_w = dynamic_viscosity * ((vel_glob[0].at(1) - vel_glob[0].at(0)) /
@@ -361,7 +362,7 @@ StatisticsManager<dim, Number>::write_output(const std::string output_prefix,
     double Re_tau = sqrt(tau_w / density) / (dynamic_viscosity / density);
 
     std::ofstream f;
-    f.open((output_prefix + ".flow_statistics").c_str(), std::ios::trunc);
+    f.open((filename + ".flow_statistics").c_str(), std::ios::trunc);
 
     // clang-format off
     f << std::scientific << std::setprecision(7)
@@ -606,13 +607,13 @@ StatisticsManager<dim, Number>::do_evaluate(const std::vector<VectorType const *
   // the processor-local data in xxx_loc since we want
   // to average/integrate over the global x-z-plane.
   for(unsigned int i = 0; i < dim; i++)
-    Utilities::MPI::sum(vel_loc[i], communicator, vel_loc[i]);
+    Utilities::MPI::sum(vel_loc[i], mpi_comm, vel_loc[i]);
 
   for(unsigned int i = 0; i < dim; i++)
-    Utilities::MPI::sum(velsq_loc[i], communicator, velsq_loc[i]);
+    Utilities::MPI::sum(velsq_loc[i], mpi_comm, velsq_loc[i]);
 
-  Utilities::MPI::sum(veluv_loc, communicator, veluv_loc);
-  Utilities::MPI::sum(area_loc, communicator, area_loc);
+  Utilities::MPI::sum(veluv_loc, mpi_comm, veluv_loc);
+  Utilities::MPI::sum(area_loc, mpi_comm, area_loc);
 
   // Add values averaged over global x-z-planes
   // (=MPI::sum(xxx_loc)/MPI::sum(area_loc)) to xxx_glob vectors.
