@@ -385,13 +385,13 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.directory            = this->output_directory + "vtu/";
-    pp_data.output_data.filename             = this->output_name + "_k" + std::to_string(degree);
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
-    pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_output     = this->write_output;
+    pp_data.output_data.directory        = this->output_directory + "vtu/";
+    pp_data.output_data.filename         = this->output_name + "_k" + std::to_string(degree);
+    pp_data.output_data.start_time       = start_time;
+    pp_data.output_data.interval_time    = (end_time - start_time) / 20;
+    pp_data.output_data.write_divergence = true;
+    pp_data.output_data.degree           = degree;
 
     MyPostProcessorData<dim> pp_data_os;
     pp_data_os.pp_data = pp_data;

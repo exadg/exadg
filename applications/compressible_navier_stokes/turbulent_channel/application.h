@@ -410,15 +410,15 @@ public:
     pp_data.output_data.directory    = this->output_directory + "vtu/";
     pp_data.output_data.filename     = this->output_name;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-    pp_data.output_data.write_pressure       = true;
-    pp_data.output_data.write_velocity       = true;
-    pp_data.output_data.write_temperature    = true;
-    pp_data.output_data.write_vorticity      = false;
-    pp_data.output_data.write_divergence     = false;
-    pp_data.output_data.output_start_time    = START_TIME;
-    pp_data.output_data.output_interval_time = 1.0;
-    pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_pressure     = true;
+    pp_data.output_data.write_velocity     = true;
+    pp_data.output_data.write_temperature  = true;
+    pp_data.output_data.write_vorticity    = false;
+    pp_data.output_data.write_divergence   = false;
+    pp_data.output_data.start_time         = START_TIME;
+    pp_data.output_data.interval_time      = 1.0;
+    pp_data.output_data.degree             = degree;
+    pp_data.output_data.write_higher_order = false;
 
     MyPostProcessorData<dim> pp_data_turb_ch;
     pp_data_turb_ch.pp_data = pp_data;

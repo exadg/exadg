@@ -137,7 +137,7 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
 
-      // In the first time step, the current time might be larger than output_start_time. In that
+      // In the first time step, the current time might be larger than start_time. In that
       // case, we first have to reset the counter in order to avoid that output is written every
       // time step.
       if(reset_counter)

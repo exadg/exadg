@@ -136,17 +136,16 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
 
-      // The current time might be larger than output_start_time. In that case, we first have to
+      // The current time might be larger than start_time. In that case, we first have to
       // reset the counter in order to avoid that output is written every time step.
       if(reset_counter)
       {
         output_counter +=
-          int((time - output_data.output_start_time + EPSILON) / output_data.output_interval_time);
+          int((time - output_data.start_time + EPSILON) / output_data.interval_time);
         reset_counter = false;
       }
 
-      if(time > (output_data.output_start_time + output_counter * output_data.output_interval_time -
-                 EPSILON))
+      if(time > (output_data.start_time + output_counter * output_data.interval_time - EPSILON))
       {
         pcout << std::endl
               << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)

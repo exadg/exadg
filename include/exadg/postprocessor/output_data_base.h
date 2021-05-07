@@ -35,8 +35,8 @@ struct OutputDataBase
       start_counter(0),
       directory("output/"),
       filename("name"),
-      output_start_time(std::numeric_limits<double>::max()),
-      output_interval_time(std::numeric_limits<double>::max()),
+      start_time(std::numeric_limits<double>::max()),
+      interval_time(std::numeric_limits<double>::max()),
       write_surface_mesh(false),
       write_boundary_IDs(false),
       write_grid(false),
@@ -60,8 +60,8 @@ struct OutputDataBase
 
       if(unsteady == true)
       {
-        print_parameter(pcout, "Output start time", output_start_time);
-        print_parameter(pcout, "Output interval time", output_interval_time);
+        print_parameter(pcout, "Output start time", start_time);
+        print_parameter(pcout, "Output interval time", interval_time);
       }
 
       print_parameter(pcout, "Write surface mesh", write_surface_mesh);
@@ -86,10 +86,10 @@ struct OutputDataBase
   std::string filename;
 
   // before then no output will be written
-  double output_start_time;
+  double start_time;
 
   // specifies the time interval in which output is written
-  double output_interval_time;
+  double interval_time;
 
   // this variable decides whether the surface mesh is written separately
   bool write_surface_mesh;

@@ -405,14 +405,14 @@ public:
     IncNS::PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.directory            = this->output_directory + "vtu/";
-    pp_data.output_data.filename             = this->output_name + "_fluid";
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = output_interval_time;
-    pp_data.output_data.write_processor_id   = true;
-    pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = true;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.filename           = this->output_name + "_fluid";
+    pp_data.output_data.start_time         = start_time;
+    pp_data.output_data.interval_time      = output_interval_time;
+    pp_data.output_data.write_processor_id = true;
+    pp_data.output_data.degree             = degree;
+    pp_data.output_data.write_higher_order = true;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
     pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
@@ -454,11 +454,11 @@ public:
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output = this->write_output;
     pp_data.output_data.directory    = this->output_directory + "vtu/";
-    pp_data.output_data.filename = this->output_name + "_scalar_" + std::to_string(scalar_index);
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = output_interval_time;
-    pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = true;
+    pp_data.output_data.filename   = this->output_name + "_scalar_" + std::to_string(scalar_index);
+    pp_data.output_data.start_time = start_time;
+    pp_data.output_data.interval_time      = output_interval_time;
+    pp_data.output_data.degree             = degree;
+    pp_data.output_data.write_higher_order = true;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));

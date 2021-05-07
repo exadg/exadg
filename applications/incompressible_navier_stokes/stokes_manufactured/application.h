@@ -338,13 +338,13 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.directory            = this->output_directory + "vtu/";
-    pp_data.output_data.filename             = this->output_name;
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time); // /10;
-    pp_data.output_data.write_divergence     = false;
-    pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_output     = this->write_output;
+    pp_data.output_data.directory        = this->output_directory + "vtu/";
+    pp_data.output_data.filename         = this->output_name;
+    pp_data.output_data.start_time       = start_time;
+    pp_data.output_data.interval_time    = (end_time - start_time); // /10;
+    pp_data.output_data.write_divergence = false;
+    pp_data.output_data.degree           = degree;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;

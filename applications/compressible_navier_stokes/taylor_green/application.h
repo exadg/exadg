@@ -283,14 +283,14 @@ public:
     pp_data.output_data.directory    = this->output_directory + "vtu/";
     pp_data.output_data.filename     = this->output_name;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-    pp_data.output_data.write_pressure       = true;
-    pp_data.output_data.write_velocity       = true;
-    pp_data.output_data.write_temperature    = true;
-    pp_data.output_data.write_vorticity      = true;
-    pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
-    pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_pressure    = true;
+    pp_data.output_data.write_velocity    = true;
+    pp_data.output_data.write_temperature = true;
+    pp_data.output_data.write_vorticity   = true;
+    pp_data.output_data.write_divergence  = true;
+    pp_data.output_data.start_time        = start_time;
+    pp_data.output_data.interval_time     = (end_time - start_time) / 20;
+    pp_data.output_data.degree            = degree;
 
     // kinetic energy
     pp_data.kinetic_energy_data.calculate                  = true;

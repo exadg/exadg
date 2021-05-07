@@ -636,8 +636,8 @@ public:
     pp_data.output_data.write_output                         = this->write_output;
     pp_data.output_data.directory                            = this->output_directory + "vtu/";
     pp_data.output_data.filename                             = this->output_name + "_nozzle";
-    pp_data.output_data.output_start_time                    = output_start_time_nozzle;
-    pp_data.output_data.output_interval_time                 = output_interval_time;
+    pp_data.output_data.start_time                           = output_start_time_nozzle;
+    pp_data.output_data.interval_time                        = output_interval_time;
     pp_data.output_data.write_divergence                     = true;
     pp_data.output_data.write_processor_id                   = true;
     pp_data.output_data.mean_velocity.calculate              = true;
@@ -838,8 +838,8 @@ public:
     pp_data.output_data.write_output                         = this->write_output;
     pp_data.output_data.directory                            = this->output_directory + "vtu/";
     pp_data.output_data.filename                             = this->output_name + "_precursor";
-    pp_data.output_data.output_start_time                    = output_start_time_precursor;
-    pp_data.output_data.output_interval_time                 = output_interval_time;
+    pp_data.output_data.start_time                           = output_start_time_precursor;
+    pp_data.output_data.interval_time                        = output_interval_time;
     pp_data.output_data.write_divergence                     = true;
     pp_data.output_data.write_processor_id                   = true;
     pp_data.output_data.mean_velocity.calculate              = true;
