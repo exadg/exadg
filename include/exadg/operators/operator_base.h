@@ -642,8 +642,9 @@ private:
   /*
    * for CG
    */
-  std::vector<unsigned int>                      constrained_indices;
-  mutable std::vector<std::pair<Number, Number>> constrained_values;
+  std::vector<unsigned int>   constrained_indices;
+  mutable std::vector<Number> constrained_values_src;
+  mutable std::vector<Number> constrained_values_dst;
 };
 } // namespace ExaDG
 
