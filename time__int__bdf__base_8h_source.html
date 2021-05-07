@@ -292,85 +292,79 @@ $(function() {
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;  prepare_vectors_for_next_timestep() = 0;</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160; </div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="comment">   * Solve the current time step.</span></div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="comment">   * Solve for a steady-state solution using pseudo-time-stepping.</span></div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;  solve_timestep() = 0;</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;  solve_steady_problem();</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160; </div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">   * Solve for a steady-state solution using pseudo-time-stepping.</span></div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="comment">   * Postprocessing of solution.</span></div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  solve_steady_problem();</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  postprocessing_steady_problem() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160; </div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="comment">   * Postprocessing of solution.</span></div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="comment">   * Restart: read solution vectors (has to be implemented in derived classes).</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;  postprocessing_steady_problem() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;  do_read_restart(std::ifstream &amp; in);</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="comment">   * Restart: read solution vectors (has to be implemented in derived classes).</span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;  do_read_restart(std::ifstream &amp; in);</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;  read_restart_preamble(boost::archive::binary_iarchive &amp; ia);</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160; </div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;  read_restart_vectors(boost::archive::binary_iarchive &amp; ia) = 0;</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160; </div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;  read_restart_preamble(boost::archive::binary_iarchive &amp; ia);</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160; </div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;  read_restart_vectors(boost::archive::binary_iarchive &amp; ia) = 0;</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="comment">   * Write solution vectors to files so that the simulation can be restart from an intermediate</span></div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="comment">   * state.</span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  <span class="comment">/*</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="comment">   * Write solution vectors to files so that the simulation can be restart from an intermediate</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="comment">   * state.</span></div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="comment">   */</span></div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;  write_restart_preamble(boost::archive::binary_oarchive &amp; oa) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;  write_restart_vectors(boost::archive::binary_oarchive &amp; oa) <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;  write_restart_preamble(boost::archive::binary_oarchive &amp; oa) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160; </div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;  write_restart_vectors(boost::archive::binary_oarchive &amp; oa) <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  <span class="comment">/*</span></div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="comment">   * Recalculate the time step size after each time step in case of adaptive time stepping.</span></div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="comment">   */</span></div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">double</span></div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;  recalculate_time_step_size() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160; </div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="comment">   * Recalculate the time step size after each time step in case of adaptive time stepping.</span></div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="comment">   * Initializes the solution for OIF sub-stepping at time t_{n-i}.</span></div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">double</span></div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  recalculate_time_step_size() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  initialize_solution_oif_substepping(VectorType &amp;, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i);</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160; </div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="comment">   * Initializes the solution for OIF sub-stepping at time t_{n-i}.</span></div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="comment">   * Adds result of OIF sub-stepping for outer loop index i to sum_alphai_ui.</span></div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  initialize_solution_oif_substepping(VectorType &amp;, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  update_sum_alphai_ui_oif_substepping(VectorType &amp;, VectorType <span class="keyword">const</span> &amp;, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i);</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160; </div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="comment">   * Adds result of OIF sub-stepping for outer loop index i to sum_alphai_ui.</span></div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="comment">   * Perform one time step for OIF sub-stepping and update the solution vectors (switch pointers).</span></div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  update_sum_alphai_ui_oif_substepping(VectorType &amp;, VectorType <span class="keyword">const</span> &amp;, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i);</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160; </div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="comment">   * Perform one time step for OIF sub-stepping and update the solution vectors (switch pointers).</span></div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  do_timestep_oif_substepping(VectorType &amp;,</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;                              VectorType &amp;,</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                              <span class="keywordtype">double</span> <span class="keyword">const</span> start_time,</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                              <span class="keywordtype">double</span> <span class="keyword">const</span> time_step_size);</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160; </div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="comment">   * returns whether solver info has to be written in the current time step.</span></div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  print_solver_info() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;};</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160; </div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  do_timestep_oif_substepping(VectorType &amp;,</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                              VectorType &amp;,</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                              <span class="keywordtype">double</span> <span class="keyword">const</span> start_time,</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                              <span class="keywordtype">double</span> <span class="keyword">const</span> time_step_size);</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160; </div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  <span class="comment">/*</span></div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="comment">   * returns whether solver info has to be written in the current time step.</span></div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="comment">   */</span></div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  print_solver_info() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;};</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160; </div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1BDFTimeIntegratorConstants_html"><div class="ttname"><a href="classExaDG_1_1BDFTimeIntegratorConstants.html">ExaDG::BDFTimeIntegratorConstants</a></div><div class="ttdef"><b>Definition:</b> bdf_time_integration.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1ExtrapolationConstants_html"><div class="ttname"><a href="classExaDG_1_1ExtrapolationConstants.html">ExaDG::ExtrapolationConstants</a></div><div class="ttdef"><b>Definition:</b> extrapolation_scheme.h:36</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimeIntBDFBase_html"><div class="ttname"><a href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase</a></div><div class="ttdef"><b>Definition:</b> time_int_bdf_base.h:39</div></div>
