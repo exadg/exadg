@@ -548,18 +548,18 @@ public:
       this->output_name + "_l" + std::to_string(this->refine_level) + "_k" + std::to_string(degree);
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = name;
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 20;
-    pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.write_higher_order   = false;
-    pp_data.output_data.write_processor_id   = true;
-    pp_data.output_data.write_surface_mesh   = true;
-    pp_data.output_data.write_boundary_IDs   = true;
-    pp_data.output_data.write_grid           = true;
-    pp_data.output_data.degree               = degree;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.filename           = name;
+    pp_data.output_data.start_time         = start_time;
+    pp_data.output_data.interval_time      = (end_time - start_time) / 20;
+    pp_data.output_data.write_divergence   = true;
+    pp_data.output_data.write_higher_order = false;
+    pp_data.output_data.write_processor_id = true;
+    pp_data.output_data.write_surface_mesh = true;
+    pp_data.output_data.write_boundary_IDs = true;
+    pp_data.output_data.write_grid         = true;
+    pp_data.output_data.degree             = degree;
 
     // lift and drag
     pp_data.lift_and_drag_data.calculate = true;

@@ -491,17 +491,17 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name;
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 60;
-    pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.write_q_criterion    = true;
-    pp_data.output_data.write_boundary_IDs   = true;
-    pp_data.output_data.write_processor_id   = true;
-    pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.start_time         = start_time;
+    pp_data.output_data.interval_time      = (end_time - start_time) / 60;
+    pp_data.output_data.write_divergence   = true;
+    pp_data.output_data.write_q_criterion  = true;
+    pp_data.output_data.write_boundary_IDs = true;
+    pp_data.output_data.write_processor_id = true;
+    pp_data.output_data.degree             = degree;
+    pp_data.output_data.write_higher_order = false;
 
     PostProcessorDataBFS<dim> pp_data_bfs;
     pp_data_bfs.pp_data = pp_data;
@@ -739,17 +739,17 @@ public:
 
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name + "_precursor";
-    pp_data.output_data.output_start_time    = start_time;
-    pp_data.output_data.output_interval_time = (end_time - start_time) / 60;
-    pp_data.output_data.write_divergence     = true;
-    pp_data.output_data.write_q_criterion    = true;
-    pp_data.output_data.write_boundary_IDs   = true;
-    pp_data.output_data.write_processor_id   = true;
-    pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.filename           = this->output_name + "_precursor";
+    pp_data.output_data.start_time         = start_time;
+    pp_data.output_data.interval_time      = (end_time - start_time) / 60;
+    pp_data.output_data.write_divergence   = true;
+    pp_data.output_data.write_q_criterion  = true;
+    pp_data.output_data.write_boundary_IDs = true;
+    pp_data.output_data.write_processor_id = true;
+    pp_data.output_data.degree             = degree;
+    pp_data.output_data.write_higher_order = false;
 
     PostProcessorDataBFS<dim> pp_data_bfs;
     pp_data_bfs.pp_data = pp_data;

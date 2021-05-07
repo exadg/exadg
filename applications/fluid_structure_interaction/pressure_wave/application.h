@@ -416,12 +416,12 @@ public:
 
     // write output for visualization of results
     pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
-    pp_data.output_data.output_name               = this->output_name + "_fluid";
+    pp_data.output_data.directory                 = this->output_directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs        = true;
     pp_data.output_data.write_surface_mesh        = true;
-    pp_data.output_data.output_start_time         = 0.0;
-    pp_data.output_data.output_interval_time      = OUTPUT_INTERVAL_TIME;
+    pp_data.output_data.start_time                = 0.0;
+    pp_data.output_data.interval_time             = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_divergence          = true;
     pp_data.output_data.write_velocity_magnitude  = true;
@@ -743,13 +743,13 @@ public:
     using namespace Structure;
 
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name + "_structure";
-    pp_data.output_data.output_start_time    = 0.0;
-    pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-    pp_data.output_data.write_higher_order   = true;
-    pp_data.output_data.degree               = std::max(2, (int)degree);
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.filename           = this->output_name + "_structure";
+    pp_data.output_data.start_time         = 0.0;
+    pp_data.output_data.interval_time      = OUTPUT_INTERVAL_TIME;
+    pp_data.output_data.write_higher_order = true;
+    pp_data.output_data.degree             = std::max(2, (int)degree);
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
       new PostProcessor<dim, Number>(pp_data, mpi_comm));

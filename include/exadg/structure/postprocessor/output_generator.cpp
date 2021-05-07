@@ -60,7 +60,7 @@ write_output(OutputDataBase const &  output_data,
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(
-    output_data.output_folder, output_data.output_name, output_counter, mpi_comm, 4);
+    output_data.directory, output_data.filename, output_counter, mpi_comm, 4);
 }
 
 template<int dim, typename Number>
@@ -80,11 +80,11 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
   output_data = output_data_in;
 
   // reset output counter
-  output_counter = output_data.output_counter_start;
+  output_counter = output_data.start_counter;
 
   if(output_data.write_output == true)
   {
-    create_directories(output_data.output_folder, mpi_comm);
+    create_directories(output_data.directory, mpi_comm);
 
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this
@@ -92,8 +92,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
     if(output_data.write_boundary_IDs)
     {
       write_boundary_IDs(dof_handler->get_triangulation(),
-                         output_data.output_folder,
-                         output_data.output_name,
+                         output_data.directory,
+                         output_data.filename,
                          mpi_comm);
     }
 
@@ -103,8 +103,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
       write_surface_mesh(dof_handler->get_triangulation(),
                          *mapping,
                          output_data.degree,
-                         output_data.output_folder,
-                         output_data.output_name,
+                         output_data.directory,
+                         output_data.filename,
                          0,
                          mpi_comm);
     }
@@ -115,7 +115,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
       GridOut grid_out;
 
       grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
-                                               output_data.output_folder + output_data.output_name +
+                                               output_data.directory + output_data.filename +
                                                  "_processor_id");
     }
   }
@@ -136,17 +136,16 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
       // small number which is much smaller than the time step size
       double const EPSILON = 1.0e-10;
 
-      // The current time might be larger than output_start_time. In that case, we first have to
+      // The current time might be larger than start_time. In that case, we first have to
       // reset the counter in order to avoid that output is written every time step.
       if(reset_counter)
       {
         output_counter +=
-          int((time - output_data.output_start_time + EPSILON) / output_data.output_interval_time);
+          int((time - output_data.start_time + EPSILON) / output_data.interval_time);
         reset_counter = false;
       }
 
-      if(time > (output_data.output_start_time + output_counter * output_data.output_interval_time -
-                 EPSILON))
+      if(time > (output_data.start_time + output_counter * output_data.interval_time - EPSILON))
       {
         pcout << std::endl
               << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)

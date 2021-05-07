@@ -366,10 +366,10 @@ public:
 
     // write output for visualization of results
     pp_data.output_data.write_output              = this->write_output;
-    pp_data.output_data.output_folder             = this->output_directory + "vtu/";
-    pp_data.output_data.output_name               = this->output_name;
-    pp_data.output_data.output_start_time         = start_time;
-    pp_data.output_data.output_interval_time      = flow_through_time / 10.0;
+    pp_data.output_data.directory                 = this->output_directory + "vtu/";
+    pp_data.output_data.filename                  = this->output_name;
+    pp_data.output_data.start_time                = start_time;
+    pp_data.output_data.interval_time             = flow_through_time / 10.0;
     pp_data.output_data.write_velocity_magnitude  = true;
     pp_data.output_data.write_vorticity           = true;
     pp_data.output_data.write_vorticity_magnitude = true;

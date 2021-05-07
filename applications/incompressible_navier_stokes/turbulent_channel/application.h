@@ -472,13 +472,13 @@ public:
     PostProcessorData<dim> pp_data;
 
     // write output for visualization of results
-    pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name;
-    pp_data.output_data.output_start_time    = START_TIME;
-    pp_data.output_data.output_interval_time = 1.0 * CHARACTERISTIC_TIME;
-    pp_data.output_data.degree               = degree;
-    pp_data.output_data.write_higher_order   = false;
+    pp_data.output_data.write_output       = this->write_output;
+    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.filename           = this->output_name;
+    pp_data.output_data.start_time         = START_TIME;
+    pp_data.output_data.interval_time      = 1.0 * CHARACTERISTIC_TIME;
+    pp_data.output_data.degree             = degree;
+    pp_data.output_data.write_higher_order = false;
 
     // calculate div and mass error
     pp_data.mass_data.calculate               = false; // true;

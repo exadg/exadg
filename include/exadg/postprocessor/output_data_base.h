@@ -32,11 +32,11 @@ struct OutputDataBase
 {
   OutputDataBase()
     : write_output(false),
-      output_counter_start(0),
-      output_folder("output"),
-      output_name("name"),
-      output_start_time(std::numeric_limits<double>::max()),
-      output_interval_time(std::numeric_limits<double>::max()),
+      start_counter(0),
+      directory("output/"),
+      filename("name"),
+      start_time(std::numeric_limits<double>::max()),
+      interval_time(std::numeric_limits<double>::max()),
       write_surface_mesh(false),
       write_boundary_IDs(false),
       write_grid(false),
@@ -54,14 +54,14 @@ struct OutputDataBase
 
     if(write_output == true)
     {
-      print_parameter(pcout, "Output counter start", output_counter_start);
-      print_parameter(pcout, "Output folder", output_folder);
-      print_parameter(pcout, "Name of output files", output_name);
+      print_parameter(pcout, "Output counter start", start_counter);
+      print_parameter(pcout, "Output directory", directory);
+      print_parameter(pcout, "Name of output files", filename);
 
       if(unsteady == true)
       {
-        print_parameter(pcout, "Output start time", output_start_time);
-        print_parameter(pcout, "Output interval time", output_interval_time);
+        print_parameter(pcout, "Output start time", start_time);
+        print_parameter(pcout, "Output interval time", interval_time);
       }
 
       print_parameter(pcout, "Write surface mesh", write_surface_mesh);
@@ -77,19 +77,19 @@ struct OutputDataBase
   // set write_output = true in order to write files for visualization
   bool write_output;
 
-  unsigned int output_counter_start;
+  unsigned int start_counter;
 
-  // output_folder
-  std::string output_folder;
+  // output directory
+  std::string directory;
 
   // name of generated output files
-  std::string output_name;
+  std::string filename;
 
   // before then no output will be written
-  double output_start_time;
+  double start_time;
 
   // specifies the time interval in which output is written
-  double output_interval_time;
+  double interval_time;
 
   // this variable decides whether the surface mesh is written separately
   bool write_surface_mesh;
