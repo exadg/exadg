@@ -221,12 +221,6 @@ private:
   prepare_vectors_for_next_timestep() = 0;
 
   /*
-   * Solve the current time step.
-   */
-  virtual void
-  solve_timestep() = 0;
-
-  /*
    * Solve for a steady-state solution using pseudo-time-stepping.
    */
   virtual void

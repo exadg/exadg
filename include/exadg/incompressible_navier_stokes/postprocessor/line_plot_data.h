@@ -221,7 +221,7 @@ struct LinePlotData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream &)
   {
     // TODO: add output for basic line plot data
   }
