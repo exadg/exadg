@@ -108,7 +108,7 @@ public:
   void
   step(VectorType & dst, VectorType const & src) const
   {
-    IterationNumberControl control(data.number_of_iterations, 1.e-20, 1.e-10);
+    IterationNumberControl control(data.number_of_iterations, 1.e-20);
 
     typename SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.right_preconditioning = true;
