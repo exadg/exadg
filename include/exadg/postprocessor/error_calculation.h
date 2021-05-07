@@ -47,7 +47,7 @@ struct ErrorCalculationData
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
       write_errors_to_file(false),
       directory("output/"),
-      name("error")
+      name("all fields")
   {
   }
 
