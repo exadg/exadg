@@ -492,8 +492,8 @@ public:
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
     pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name;
+    pp_data.output_data.directory            = this->output_directory + "vtu/";
+    pp_data.output_data.filename             = this->output_name;
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence     = true;
@@ -740,8 +740,8 @@ public:
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
     pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name + "_precursor";
+    pp_data.output_data.directory            = this->output_directory + "vtu/";
+    pp_data.output_data.filename             = this->output_name + "_precursor";
     pp_data.output_data.output_start_time    = start_time;
     pp_data.output_data.output_interval_time = (end_time - start_time) / 60;
     pp_data.output_data.write_divergence     = true;

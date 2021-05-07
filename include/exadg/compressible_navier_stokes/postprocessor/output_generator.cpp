@@ -43,7 +43,7 @@ write_output(OutputData const &                              output_data,
              unsigned int const                              output_counter,
              MPI_Comm const &                                mpi_comm)
 {
-  std::string folder = output_data.output_folder, file = output_data.output_name;
+  std::string folder = output_data.directory, file = output_data.filename;
 
   DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = output_data.write_higher_order;
@@ -121,7 +121,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
 
   if(output_data.write_output == true)
   {
-    create_directories(output_data.output_folder, mpi_comm);
+    create_directories(output_data.directory, mpi_comm);
 
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this
@@ -129,8 +129,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
     if(output_data.write_boundary_IDs)
     {
       write_boundary_IDs(dof_handler->get_triangulation(),
-                         output_data.output_folder,
-                         output_data.output_name,
+                         output_data.directory,
+                         output_data.filename,
                          mpi_comm);
     }
 
@@ -140,8 +140,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
       write_surface_mesh(dof_handler->get_triangulation(),
                          *mapping,
                          output_data.degree,
-                         output_data.output_folder,
-                         output_data.output_name,
+                         output_data.directory,
+                         output_data.filename,
                          output_counter,
                          mpi_comm);
     }
@@ -153,7 +153,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
       GridOut grid_out;
 
       grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
-                                               output_data.output_folder + output_data.output_name +
+                                               output_data.directory + output_data.filename +
                                                  "_processor_id");
     }
   }

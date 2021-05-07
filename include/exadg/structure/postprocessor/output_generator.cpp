@@ -60,7 +60,7 @@ write_output(OutputDataBase const &  output_data,
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(
-    output_data.output_folder, output_data.output_name, output_counter, mpi_comm, 4);
+    output_data.directory, output_data.filename, output_counter, mpi_comm, 4);
 }
 
 template<int dim, typename Number>
@@ -84,7 +84,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
 
   if(output_data.write_output == true)
   {
-    create_directories(output_data.output_folder, mpi_comm);
+    create_directories(output_data.directory, mpi_comm);
 
     // Visualize boundary IDs:
     // since boundary IDs typically do not change during the simulation, we only do this
@@ -92,8 +92,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
     if(output_data.write_boundary_IDs)
     {
       write_boundary_IDs(dof_handler->get_triangulation(),
-                         output_data.output_folder,
-                         output_data.output_name,
+                         output_data.directory,
+                         output_data.filename,
                          mpi_comm);
     }
 
@@ -103,8 +103,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
       write_surface_mesh(dof_handler->get_triangulation(),
                          *mapping,
                          output_data.degree,
-                         output_data.output_folder,
-                         output_data.output_name,
+                         output_data.directory,
+                         output_data.filename,
                          0,
                          mpi_comm);
     }
@@ -115,7 +115,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
       GridOut grid_out;
 
       grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
-                                               output_data.output_folder + output_data.output_name +
+                                               output_data.directory + output_data.filename +
                                                  "_processor_id");
     }
   }

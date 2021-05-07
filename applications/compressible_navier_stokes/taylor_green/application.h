@@ -279,9 +279,9 @@ public:
   construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
   {
     PostProcessorData<dim> pp_data;
-    pp_data.output_data.write_output  = this->write_output;
-    pp_data.output_data.output_folder = this->output_directory + "vtu/";
-    pp_data.output_data.output_name   = this->output_name;
+    pp_data.output_data.write_output = this->write_output;
+    pp_data.output_data.directory    = this->output_directory + "vtu/";
+    pp_data.output_data.filename     = this->output_name;
     pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
     pp_data.output_data.write_pressure       = true;
     pp_data.output_data.write_velocity       = true;

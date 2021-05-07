@@ -33,8 +33,8 @@ struct OutputDataBase
   OutputDataBase()
     : write_output(false),
       output_counter_start(0),
-      output_folder("output"),
-      output_name("name"),
+      directory("output/"),
+      filename("name"),
       output_start_time(std::numeric_limits<double>::max()),
       output_interval_time(std::numeric_limits<double>::max()),
       write_surface_mesh(false),
@@ -55,8 +55,8 @@ struct OutputDataBase
     if(write_output == true)
     {
       print_parameter(pcout, "Output counter start", output_counter_start);
-      print_parameter(pcout, "Output folder", output_folder);
-      print_parameter(pcout, "Name of output files", output_name);
+      print_parameter(pcout, "Output directory", directory);
+      print_parameter(pcout, "Name of output files", filename);
 
       if(unsteady == true)
       {
@@ -79,11 +79,11 @@ struct OutputDataBase
 
   unsigned int output_counter_start;
 
-  // output_folder
-  std::string output_folder;
+  // output directory
+  std::string directory;
 
   // name of generated output files
-  std::string output_name;
+  std::string filename;
 
   // before then no output will be written
   double output_start_time;

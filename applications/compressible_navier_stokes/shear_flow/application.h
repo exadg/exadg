@@ -236,8 +236,8 @@ public:
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name;
+    pp_data.output_data.directory            = this->output_directory + "vtu/";
+    pp_data.output_data.filename             = this->output_name;
     pp_data.output_data.write_pressure       = true;
     pp_data.output_data.write_velocity       = true;
     pp_data.output_data.write_temperature    = true;

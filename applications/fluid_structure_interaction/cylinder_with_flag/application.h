@@ -555,8 +555,8 @@ public:
 
     // write output for visualization of results
     pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name + "_fluid";
+    pp_data.output_data.directory            = this->output_directory + "vtu/";
+    pp_data.output_data.filename             = this->output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs   = true;
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.output_start_time    = 0.0;
@@ -1030,8 +1030,8 @@ public:
 
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output         = this->write_output;
-    pp_data.output_data.output_folder        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name          = this->output_name + "_structure";
+    pp_data.output_data.directory            = this->output_directory + "vtu/";
+    pp_data.output_data.filename             = this->output_name + "_structure";
     pp_data.output_data.write_processor_id   = true;
     pp_data.output_data.output_start_time    = 0.0;
     pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;

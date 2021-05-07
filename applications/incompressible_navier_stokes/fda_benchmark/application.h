@@ -245,7 +245,7 @@ public:
   // postprocessing
 
   // output folder
-  std::string const output_folder = "output/fda/Re3500/";
+  std::string const directory = "output/fda/Re3500/";
 
   // flow-rate
   std::string const filename_flowrate = "precursor_mean_velocity";
@@ -634,8 +634,8 @@ public:
     // write output for visualization of results
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.output_folder                        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name                          = this->output_name + "_nozzle";
+    pp_data.output_data.directory                            = this->output_directory + "vtu/";
+    pp_data.output_data.filename                             = this->output_name + "_nozzle";
     pp_data.output_data.output_start_time                    = output_start_time_nozzle;
     pp_data.output_data.output_interval_time                 = output_interval_time;
     pp_data.output_data.write_divergence                     = true;
@@ -836,8 +836,8 @@ public:
     PostProcessorData<dim> pp_data;
     // write output for visualization of results
     pp_data.output_data.write_output                         = this->write_output;
-    pp_data.output_data.output_folder                        = this->output_directory + "vtu/";
-    pp_data.output_data.output_name                          = this->output_name + "_precursor";
+    pp_data.output_data.directory                            = this->output_directory + "vtu/";
+    pp_data.output_data.filename                             = this->output_name + "_precursor";
     pp_data.output_data.output_start_time                    = output_start_time_precursor;
     pp_data.output_data.output_interval_time                 = output_interval_time;
     pp_data.output_data.write_divergence                     = true;
