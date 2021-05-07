@@ -80,7 +80,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
   output_data = output_data_in;
 
   // reset output counter
-  output_counter = output_data.output_counter_start;
+  output_counter = output_data.start_counter;
 
   if(output_data.write_output == true)
   {

@@ -32,7 +32,7 @@ struct OutputDataBase
 {
   OutputDataBase()
     : write_output(false),
-      output_counter_start(0),
+      start_counter(0),
       directory("output/"),
       filename("name"),
       output_start_time(std::numeric_limits<double>::max()),
@@ -54,7 +54,7 @@ struct OutputDataBase
 
     if(write_output == true)
     {
-      print_parameter(pcout, "Output counter start", output_counter_start);
+      print_parameter(pcout, "Output counter start", start_counter);
       print_parameter(pcout, "Output directory", directory);
       print_parameter(pcout, "Name of output files", filename);
 
@@ -77,7 +77,7 @@ struct OutputDataBase
   // set write_output = true in order to write files for visualization
   bool write_output;
 
-  unsigned int output_counter_start;
+  unsigned int start_counter;
 
   // output directory
   std::string directory;

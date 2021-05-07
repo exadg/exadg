@@ -137,7 +137,7 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
   output_data            = output_data_in;
 
   // reset output counter
-  output_counter = output_data.output_counter_start;
+  output_counter = output_data.start_counter;
 
   initialize_additional_fields();
 
