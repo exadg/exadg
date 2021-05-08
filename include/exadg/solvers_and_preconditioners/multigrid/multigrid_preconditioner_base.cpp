@@ -336,14 +336,18 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
     parallel::distributed::Triangulation<dim, spacedim> temp_tria(
       fine_triangulation->get_communicator(), fine_triangulation->get_mesh_smoothing());
 
+    MPI_Comm mpi_comm = fine_triangulation_in.get_communicator();
     temp_tria.copy_triangulation(*fine_triangulation);
+    temp_tria.coarsen_global();
 
-    // create coarse meshes
-    for(unsigned int l = (fine_triangulation->n_global_levels() - 1); l > 0; --l)
+    unsigned int min_level = fine_triangulation->n_global_levels() - 1;
+
+    // as long as we have enough cells per process, we can perform regular
+    // coarsening with all MPI processes
+    for(; min_level > 0 &&
+          temp_tria.n_global_active_cells() / Utilities::MPI::n_mpi_processes(mpi_comm) > 100;
+        --min_level)
     {
-      // coarsen mesh
-      temp_tria.coarsen_global();
-
       // create empty (fully distributed) triangulation
       auto new_tria = std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(
         fine_triangulation->get_communicator());
@@ -361,9 +365,151 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
       new_tria->create_triangulation(construction_data);
 
       // save mesh
+      coarse_grid_triangulations[min_level - 1] = new_tria;
+      temp_tria.coarsen_global();
+    }
+
+    // find out about the number of MPI processes in shared memory regions,
+    // which will later be used to construct a coarser triangulation only on a
+    // single process per MPI rank
+    unsigned int const group_size = [&]() {
+      int rank;
+      MPI_Comm_rank(mpi_comm, &rank);
+
+      MPI_Comm comm_shared;
+      MPI_Comm_split_type(mpi_comm, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &comm_shared);
+
+      int size_shared;
+      MPI_Comm_size(comm_shared, &size_shared);
+      MPI_Comm_free(&comm_shared);
+
+      // determine maximum, since some shared memory communicators
+      // might not be filed completely
+      return Utilities::MPI::max(size_shared, mpi_comm);
+    }();
+
+    const unsigned int my_rank    = Utilities::MPI::this_mpi_process(mpi_comm);
+    const unsigned int group_root = (my_rank / group_size) * group_size;
+
+    // create coarse grid on root processes
+    Triangulation<dim, spacedim> tria_serial;
+    if(my_rank == group_root)
+    {
+      auto [points, cell_data, sub_cell_data] = GridTools::get_coarse_mesh_description(temp_tria);
+
+      std::vector<std::pair<unsigned int, CellData<dim>>> cell_data_temp;
+
+      unsigned int counter = 0;
+
+      for(const auto & cell : temp_tria.cell_iterators_on_level(0))
+        cell_data_temp.emplace_back(cell->id().get_coarse_cell_id(), cell_data[counter++]);
+
+      std::sort(cell_data_temp.begin(), cell_data_temp.end(), [](const auto & a, const auto & b) {
+        return a.first < b.first;
+      });
+
+      cell_data.clear();
+
+      for(const auto & i : cell_data_temp)
+        cell_data.emplace_back(i.second);
+
+      tria_serial.create_triangulation(points, cell_data, sub_cell_data);
+    }
+
+    // execute refinement on root process
+    if(temp_tria.n_global_levels() > 1)
+    {
+      // collect refinement flags
+      std::vector<std::vector<std::vector<CellId>>> refinement_flags(min_level);
+      {
+        for(unsigned int l = 0; l < min_level; ++l)
+        {
+          std::vector<CellId> local_refinement_flags;
+
+          for(const auto & cell : temp_tria.cell_iterators_on_level(l))
+            if(cell->has_children())
+              local_refinement_flags.push_back(cell->id());
+
+          refinement_flags[l] = Utilities::MPI::gather(mpi_comm, local_refinement_flags, 0);
+        }
+
+        MPI_Comm comm_root;
+        MPI_Comm_split(mpi_comm, my_rank == group_root, my_rank, &comm_root);
+
+        if(my_rank == group_root)
+          refinement_flags = Utilities::MPI::broadcast(comm_root, refinement_flags);
+
+        MPI_Comm_free(&comm_root);
+      }
+
+      // ... actually perform refinement
+      if(my_rank == group_root)
+      {
+        for(unsigned int l = 0; l < refinement_flags.size(); ++l)
+        {
+          unsigned int counter = 0;
+          for(const auto & flags : refinement_flags[l])
+          {
+            for(const auto & cell_id : flags)
+            {
+              tria_serial.create_cell_iterator(cell_id)->set_refine_flag();
+              counter++;
+            }
+          }
+
+          if(counter > 0)
+            tria_serial.execute_coarsening_and_refinement();
+        }
+      }
+    }
+
+    // continue as above but do not work on p:d:T but on the serial
+    // triangulation
+    unsigned int n_partitions_before = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+    for(unsigned int l = min_level; l > 0; --l)
+    {
+      // create empty (fully distributed) triangulation
+      auto new_tria =
+        std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(mpi_comm);
+
+      for(auto const i : fine_triangulation->get_manifold_ids())
+        if(i != numbers::flat_manifold_id)
+          new_tria->set_manifold(i, fine_triangulation->get_manifold(i));
+
+      unsigned int const n_partitions =
+        std::max(n_partitions_before / 8,
+                 std::max<unsigned int>(1U, tria_serial.n_active_cells() / 500));
+      n_partitions_before = n_partitions;
+
+      // extract relevant information from distributed triangulation
+      auto const construction_data =
+        TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
+                                                                                             dim>(
+          [&](auto & tria) { tria.copy_triangulation(tria_serial); },
+          [&](auto & tria, auto const &, const auto) {
+#ifdef DEAL_II_WITH_METIS
+            GridTools::partition_triangulation(n_partitions, tria);
+#else
+            GridTools::partition_triangulation_zorder(n_partitions, tria);
+#endif
+          },
+          temp_tria.get_communicator(),
+          group_size);
+
+      // actually create triangulation
+      new_tria->create_triangulation(construction_data);
+
+      // save mesh
       coarse_grid_triangulations[l - 1] = new_tria;
+
+      if(my_rank == group_root)
+        tria_serial.coarsen_global();
     }
   }
+
+  for(unsigned int i = 0; i < coarse_grid_triangulations.size(); ++i)
+    AssertThrow(i + 1 == coarse_grid_triangulations[i]->n_global_levels(),
+                ExcDimensionMismatch(i + 1, coarse_grid_triangulations[i]->n_global_levels()));
 
   return coarse_grid_triangulations;
 }
