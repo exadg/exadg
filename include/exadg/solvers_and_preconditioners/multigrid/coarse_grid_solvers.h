@@ -247,7 +247,10 @@ public:
             {
               AssertThrow(false, ExcMessage("Not implemented."));
             }
-          });
+          },
+          std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
+            preconditioner_amg)
+            ->system_matrix.get_mpi_communicator());
 #endif
       }
       else

@@ -146,6 +146,16 @@ public:
     calculate_preconditioner();
   }
 
+  ~PreconditionerBoomerAMG()
+  {
+#ifdef DEAL_II_WITH_PETSC
+    PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+    AssertThrow(ierr == 0, ExcPETScError(ierr));
+    ierr = VecDestroy(&petsc_vector_src);
+    AssertThrow(ierr == 0, ExcPETScError(ierr));
+#endif
+  }
+
 #ifdef DEAL_II_WITH_PETSC
   PETScWrappers::MPI::SparseMatrix const &
   get_system_matrix()
@@ -159,7 +169,8 @@ public:
   {
 #ifdef DEAL_II_WITH_PETSC
     // clear content of matrix since the next calculate_system_matrix-commands add their result
-    system_matrix = 0.0;
+    if(system_matrix.m() > 0)
+      system_matrix = 0.0;
 #endif
 
     calculate_preconditioner();
@@ -169,12 +180,15 @@ public:
   vmult(VectorType & dst, VectorType const & src) const override
   {
 #ifdef DEAL_II_WITH_PETSC
-    apply_petsc_operation(dst,
-                          src,
-                          [&](PETScWrappers::VectorBase &       petsc_dst,
-                              PETScWrappers::VectorBase const & petsc_src) {
-                            amg.vmult(petsc_dst, petsc_src);
-                          });
+    if(system_matrix.m() > 0)
+      apply_petsc_operation(dst,
+                            src,
+                            [&](PETScWrappers::VectorBase &       petsc_dst,
+                                PETScWrappers::VectorBase const & petsc_src) {
+                              amg.vmult(petsc_dst, petsc_src);
+                            },
+                            petsc_vector_dst,
+                            petsc_vector_src);
 #else
     (void)dst;
     (void)src;
@@ -188,9 +202,24 @@ private:
   {
 #ifdef DEAL_II_WITH_PETSC
     // calculate_matrix
-    pde_operator.calculate_system_matrix(system_matrix);
+    if(system_matrix.m() > 0)
+    {
+      pde_operator.calculate_system_matrix(system_matrix);
 
-    amg.initialize(system_matrix, boomer_data);
+      amg.initialize(system_matrix, boomer_data);
+
+      // get vector partitioner
+      LinearAlgebra::distributed::Vector<typename Operator::value_type> vector;
+      pde_operator.initialize_dof_vector(vector);
+      VecCreateMPI(system_matrix.get_mpi_communicator(),
+                   vector.get_partitioner()->local_size(),
+                   PETSC_DETERMINE,
+                   &petsc_vector_dst);
+      VecCreateMPI(system_matrix.get_mpi_communicator(),
+                   vector.get_partitioner()->local_size(),
+                   PETSC_DETERMINE,
+                   &petsc_vector_src);
+    }
 #else
     AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
@@ -200,6 +229,12 @@ private:
   Operator const & pde_operator;
 
   BoomerData boomer_data;
+
+#ifdef DEAL_II_WITH_PETSC
+  // PETSc vector objects to avoid re-allocation in every vmult() operation
+  mutable Vec petsc_vector_src;
+  mutable Vec petsc_vector_dst;
+#endif
 };
 } // namespace ExaDG
 
