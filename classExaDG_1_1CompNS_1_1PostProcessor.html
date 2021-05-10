@@ -100,12 +100,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6c3f82312e54c42bfdff14e1ac68f99b"><td class="memItemLeft" align="right" valign="top"><a id="a6c3f82312e54c42bfdff14e1ac68f99b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1CompNS_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;postprocessor_data, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a6c3f82312e54c42bfdff14e1ac68f99b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42af5797a670a9b881fc8ee010ebed5a"><td class="memItemLeft" align="right" valign="top"><a id="a42af5797a670a9b881fc8ee010ebed5a"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator)</td></tr>
-<tr class="separator:a42af5797a670a9b881fc8ee010ebed5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af805bd0ee9850dd84d88e2b2eca066fb"><td class="memItemLeft" align="right" valign="top"><a id="af805bd0ee9850dd84d88e2b2eca066fb"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time, int const time_step_number)</td></tr>
-<tr class="separator:af805bd0ee9850dd84d88e2b2eca066fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a803778a5d25cb728e12b008c962948f4"><td class="memItemLeft" align="right" valign="top"><a id="a803778a5d25cb728e12b008c962948f4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator) override</td></tr>
+<tr class="separator:a803778a5d25cb728e12b008c962948f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f69322fd4fac0d2d7417510e8b05264"><td class="memItemLeft" align="right" valign="top"><a id="a2f69322fd4fac0d2d7417510e8b05264"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;solution, double const time, int const time_step_number) override</td></tr>
+<tr class="separator:a2f69322fd4fac0d2d7417510e8b05264"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>

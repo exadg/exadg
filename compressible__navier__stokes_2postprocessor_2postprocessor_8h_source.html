@@ -135,47 +135,49 @@ $(function() {
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classExaDG_1_1CompNS_1_1PostProcessor.html">PostProcessor</a>();</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  setup(<a class="code" href="classExaDG_1_1CompNS_1_1Operator.html">Operator&lt;dim, Number&gt;</a> <span class="keyword">const</span> &amp; pde_operator);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  setup(<a class="code" href="classExaDG_1_1CompNS_1_1Operator.html">Operator&lt;dim, Number&gt;</a> <span class="keyword">const</span> &amp; pde_operator) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  do_postprocessing(VectorType <span class="keyword">const</span> &amp; solution, <span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">int</span> <span class="keyword">const</span> time_step_number);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="comment">// DoF vectors for derived quantities: (p, u, T)</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  VectorType pressure;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  VectorType velocity;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  VectorType temperature;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  VectorType vorticity;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  VectorType divergence;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  std::vector&lt;SolutionField&lt;dim, Number&gt;&gt; additional_fields;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  do_postprocessing(VectorType <span class="keyword">const</span> &amp; solution,</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                    <span class="keywordtype">double</span> <span class="keyword">const</span>       time,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                    <span class="keywordtype">int</span> <span class="keyword">const</span>          time_step_number) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="comment">// DoF vectors for derived quantities: (p, u, T)</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  VectorType pressure;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  VectorType velocity;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  VectorType temperature;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  VectorType vorticity;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  VectorType divergence;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  initialize_additional_vectors();</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  calculate_additional_vectors(VectorType <span class="keyword">const</span> &amp; solution);</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  std::vector&lt;SolutionField&lt;dim, Number&gt;&gt; additional_fields;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  initialize_additional_vectors();</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  calculate_additional_vectors(VectorType <span class="keyword">const</span> &amp; solution);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <a class="code" href="structExaDG_1_1CompNS_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> pp_data;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  SmartPointer&lt;Operator&lt;dim, Number&gt; <span class="keyword">const</span>&gt; navier_stokes_operator;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  <a class="code" href="structExaDG_1_1CompNS_1_1PostProcessorData.html">PostProcessorData&lt;dim&gt;</a> pp_data;</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <a class="code" href="classExaDG_1_1CompNS_1_1OutputGenerator.html">OutputGenerator&lt;dim, Number&gt;</a>                 output_generator;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <a class="code" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a>                 error_calculator;</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <a class="code" href="classExaDG_1_1LiftAndDragCalculator.html">LiftAndDragCalculator&lt;dim, Number&gt;</a>           lift_and_drag_calculator;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <a class="code" href="classExaDG_1_1PressureDifferenceCalculator.html">PressureDifferenceCalculator&lt;dim, Number&gt;</a>    pressure_difference_calculator;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <a class="code" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator&lt;dim, Number&gt;</a>         kinetic_energy_calculator;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <a class="code" href="classExaDG_1_1KineticEnergySpectrumCalculator.html">KineticEnergySpectrumCalculator&lt;dim, Number&gt;</a> kinetic_energy_spectrum_calculator;</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;};</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; </div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;} <span class="comment">// namespace CompNS</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160; </div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  SmartPointer&lt;Operator&lt;dim, Number&gt; <span class="keyword">const</span>&gt; navier_stokes_operator;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  <a class="code" href="classExaDG_1_1CompNS_1_1OutputGenerator.html">OutputGenerator&lt;dim, Number&gt;</a>                 output_generator;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <a class="code" href="classExaDG_1_1ErrorCalculator.html">ErrorCalculator&lt;dim, Number&gt;</a>                 error_calculator;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <a class="code" href="classExaDG_1_1LiftAndDragCalculator.html">LiftAndDragCalculator&lt;dim, Number&gt;</a>           lift_and_drag_calculator;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <a class="code" href="classExaDG_1_1PressureDifferenceCalculator.html">PressureDifferenceCalculator&lt;dim, Number&gt;</a>    pressure_difference_calculator;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <a class="code" href="classExaDG_1_1KineticEnergyCalculator.html">KineticEnergyCalculator&lt;dim, Number&gt;</a>         kinetic_energy_calculator;</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <a class="code" href="classExaDG_1_1KineticEnergySpectrumCalculator.html">KineticEnergySpectrumCalculator&lt;dim, Number&gt;</a> kinetic_energy_spectrum_calculator;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;};</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;} <span class="comment">// namespace CompNS</span></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a></div><div class="ttdef"><b>Definition:</b> operator.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1OutputGenerator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1OutputGenerator.html">ExaDG::CompNS::OutputGenerator</a></div><div class="ttdef"><b>Definition:</b> output_generator.h:85</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1PostProcessorBase_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1PostProcessorBase.html">ExaDG::CompNS::PostProcessorBase</a></div><div class="ttdef"><b>Definition:</b> postprocessor_base.h:57</div></div>

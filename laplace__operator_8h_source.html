@@ -324,36 +324,36 @@ $(function() {
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;  <span class="comment">// continuous FE: This function sets the constrained Dirichlet boundary values.</span></div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  set_constrained_values(VectorType &amp; solution, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  set_constrained_values(VectorType &amp; solution, <span class="keywordtype">double</span> <span class="keyword">const</span> time) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  reinit_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  reinit_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160; </div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  reinit_boundary_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  reinit_boundary_face(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> face) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;  reinit_face_cell_based(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>       cell,</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>       face,</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                         types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                         types::boundary_id <span class="keyword">const</span> boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160; </div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;  do_cell_integral(IntegratorCell &amp; integrator) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;  do_face_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160; </div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;  do_face_int_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  do_face_ext_integral(IntegratorFace &amp; integrator_m, IntegratorFace &amp; integrator_p) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160; </div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  do_boundary_integral(IntegratorFace &amp;           integrator_m,</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                       OperatorType <span class="keyword">const</span> &amp;       operator_type,</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                       types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                       types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160; </div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  cell_loop_empty(MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp; matrix_free,</div>
@@ -384,7 +384,7 @@ $(function() {
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  <span class="comment">// continuous FE: calculates Neumann boundary integral</span></div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  do_boundary_integral_continuous(IntegratorFace &amp;           integrator_m,</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                                  types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;                                  types::boundary_id <span class="keyword">const</span> &amp; boundary_id) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <a class="code" href="structExaDG_1_1Poisson_1_1LaplaceOperatorData.html">LaplaceOperatorData&lt;rank, dim&gt;</a> operator_data;</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>

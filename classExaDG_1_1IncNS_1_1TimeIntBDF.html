@@ -137,9 +137,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_
 <tr class="memitem:ad20d9cdcbf8985b0ece2b99f60368178"><td class="memItemLeft" align="right" valign="top"><a id="ad20d9cdcbf8985b0ece2b99f60368178"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>print_iterations</b> () const =0</td></tr>
 <tr class="separator:ad20d9cdcbf8985b0ece2b99f60368178"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12e6fa8dd5e0a4c1bd34190b534a8bdf"><td class="memItemLeft" align="right" valign="top"><a id="a12e6fa8dd5e0a4c1bd34190b534a8bdf"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>print_solver_info</b> () const</td></tr>
-<tr class="separator:a12e6fa8dd5e0a4c1bd34190b534a8bdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c3a162c891dea5d6e1366495cb4dc93"><td class="memItemLeft" align="right" valign="top"><a id="a7c3a162c891dea5d6e1366495cb4dc93"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>print_solver_info</b> () const final</td></tr>
+<tr class="separator:a7c3a162c891dea5d6e1366495cb4dc93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:ad8ccdb151245c02e2c0c0c54aecbde40 inherit pub_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top"><a id="ad8ccdb151245c02e2c0c0c54aecbde40"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntBDFBase</b> (double const start_time_, double const end_time_, unsigned int const max_number_of_time_steps_, unsigned const order_, bool const start_with_low_order_, bool const adaptive_time_stepping_, <a class="el" href="structExaDG_1_1RestartData.html">RestartData</a> const &amp;restart_data_, MPI_Comm const &amp;mpi_comm_, bool const is_test_)</td></tr>
@@ -209,23 +209,23 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree<
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
 <tr class="memitem:a470ac057aa986e4bc9fc4384a038ddde"><td class="memItemLeft" align="right" valign="top"><a id="a470ac057aa986e4bc9fc4384a038ddde"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>allocate_vectors</b> () override</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>allocate_vectors</b> () override</td></tr>
 <tr class="separator:a470ac057aa986e4bc9fc4384a038ddde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf703ee90776c2b026ced6a78ce5a099"><td class="memItemLeft" align="right" valign="top"><a id="abf703ee90776c2b026ced6a78ce5a099"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_derived</b> () override</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_derived</b> () override</td></tr>
 <tr class="separator:abf703ee90776c2b026ced6a78ce5a099"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad452a326d5eee0ddb911e02d5bdf6798"><td class="memItemLeft" align="right" valign="top"><a id="ad452a326d5eee0ddb911e02d5bdf6798"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>read_restart_vectors</b> (boost::archive::binary_iarchive &amp;ia) override</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_restart_vectors</b> (boost::archive::binary_iarchive &amp;ia) override</td></tr>
 <tr class="separator:ad452a326d5eee0ddb911e02d5bdf6798"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1fa762d0e2e93af99ae4f094680ec84"><td class="memItemLeft" align="right" valign="top"><a id="ad1fa762d0e2e93af99ae4f094680ec84"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>write_restart_vectors</b> (boost::archive::binary_oarchive &amp;oa) const override</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>write_restart_vectors</b> (boost::archive::binary_oarchive &amp;oa) const override</td></tr>
 <tr class="separator:ad1fa762d0e2e93af99ae4f094680ec84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa102fe0c6032b6673862e19099584c81"><td class="memItemLeft" align="right" valign="top"><a id="aa102fe0c6032b6673862e19099584c81"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_vectors_for_next_timestep</b> () override</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_vectors_for_next_timestep</b> () override</td></tr>
 <tr class="separator:aa102fe0c6032b6673862e19099584c81"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae88661fa68932562f7ce4950ed4df7db"><td class="memItemLeft" align="right" valign="top"><a id="ae88661fa68932562f7ce4950ed4df7db"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_sum_alphai_ui_oif_substepping</b> (VectorType &amp;sum_alphai_ui, double const cfl, double const cfl_oif)</td></tr>
-<tr class="separator:ae88661fa68932562f7ce4950ed4df7db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16c3a5c5514990c8c9848a93da2cf6a6"><td class="memItemLeft" align="right" valign="top"><a id="a16c3a5c5514990c8c9848a93da2cf6a6"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_sum_alphai_ui_oif_substepping</b> (VectorType &amp;sum_alphai_ui, double const cfl, double const cfl_oif) final</td></tr>
+<tr class="separator:a16c3a5c5514990c8c9848a93da2cf6a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a686381ea179d75beed3fb21d519b4d54"><td class="memItemLeft" align="right" valign="top"><a id="a686381ea179d75beed3fb21d519b4d54"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>move_mesh</b> (double const time) const</td></tr>
 <tr class="separator:a686381ea179d75beed3fb21d519b4d54"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -234,7 +234,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>move_mesh_and_update_
 <tr class="separator:a6b9b30018d9c65ed5d2c8b0850f18055"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classExaDG_1_1TimeIntBDFBase"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classExaDG_1_1TimeIntBDFBase')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBDFBase.html">ExaDG::TimeIntBDFBase&lt; Number &gt;</a></td></tr>
 <tr class="memitem:a0ca507db283b6bb8887ff8f27d8dcfe3 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top"><a id="a0ca507db283b6bb8887ff8f27d8dcfe3"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_pre_solve</b> (bool const print_header) override</td></tr>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_pre_solve</b> (bool const print_header) override</td></tr>
 <tr class="separator:a0ca507db283b6bb8887ff8f27d8dcfe3 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea3cb0c3aa1fbd321c6b019554b8af23 inherit pro_methods_classExaDG_1_1TimeIntBDFBase"><td class="memItemLeft" align="right" valign="top"><a id="aea3cb0c3aa1fbd321c6b019554b8af23"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_post_solve</b> () override</td></tr>

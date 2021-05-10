@@ -135,7 +135,7 @@ $(function() {
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                  <span class="keywordtype">bool</span> <span class="keyword">const</span>                                   is_test_);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  setup(<span class="keywordtype">bool</span> <span class="keyword">const</span> do_restart) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  setup(<span class="keywordtype">bool</span> <span class="keyword">const</span> do_restart) <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  print_iterations() <span class="keyword">const</span>;</div>
@@ -163,22 +163,22 @@ $(function() {
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  solve_timestep() <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  solve_timestep() <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  prepare_vectors_for_next_timestep() <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  prepare_vectors_for_next_timestep() <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  do_read_restart(std::ifstream &amp; in) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  do_read_restart(std::ifstream &amp; in) <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  postprocessing() <span class="keyword">const override</span>;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  postprocessing() <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;  <span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  print_solver_info() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  print_solver_info() <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160; </div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  std::shared_ptr&lt;Interface::Operator&lt;Number&gt;&gt; pde_operator;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>

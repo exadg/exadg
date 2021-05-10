@@ -179,7 +179,7 @@ $(function() {
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">   * Do one time step including different updates before and after the actual solution of the</span></div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;<span class="comment">   * current time step.</span></div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  do_timestep_pre_solve(<span class="keywordtype">bool</span> <span class="keyword">const</span> print_header) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  <span class="keywordtype">void</span></div>
@@ -307,7 +307,7 @@ $(function() {
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="comment">   * Restart: read solution vectors (has to be implemented in derived classes).</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;  do_read_restart(std::ifstream &amp; in);</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;  do_read_restart(std::ifstream &amp; in) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;  read_restart_preamble(boost::archive::binary_iarchive &amp; ia);</div>
@@ -320,7 +320,7 @@ $(function() {
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="comment">   * state.</span></div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="comment">   */</span></div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;  do_write_restart(std::string <span class="keyword">const</span> &amp; filename) <span class="keyword">const override</span>;</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;  write_restart_preamble(boost::archive::binary_oarchive &amp; oa) <span class="keyword">const</span>;</div>

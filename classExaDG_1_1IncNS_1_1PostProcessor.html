@@ -102,12 +102,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5671cf38dcd7bc7714e6c0d220bc93a3"><td class="memItemLeft" align="right" valign="top"><a id="a5671cf38dcd7bc7714e6c0d220bc93a3"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1IncNS_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;postprocessor_data, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a5671cf38dcd7bc7714e6c0d220bc93a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2083928df54455266b2e8222d6a8946b"><td class="memItemLeft" align="right" valign="top"><a id="a2083928df54455266b2e8222d6a8946b"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">Operator</a> const &amp;pde_operator)</td></tr>
-<tr class="separator:a2083928df54455266b2e8222d6a8946b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74e8f958900ad968687d355540b21a12"><td class="memItemLeft" align="right" valign="top"><a id="a74e8f958900ad968687d355540b21a12"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time=0.0, int const time_step_number=-1)</td></tr>
-<tr class="separator:a74e8f958900ad968687d355540b21a12"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59ad63979c1955cb84a99805a1eb4805"><td class="memItemLeft" align="right" valign="top"><a id="a59ad63979c1955cb84a99805a1eb4805"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">Operator</a> const &amp;pde_operator) override</td></tr>
+<tr class="separator:a59ad63979c1955cb84a99805a1eb4805"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfc9ffd48ad26a5424341fbf651381b3"><td class="memItemLeft" align="right" valign="top"><a id="acfc9ffd48ad26a5424341fbf651381b3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>do_postprocessing</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const time=0.0, int const time_step_number=-1) override</td></tr>
+<tr class="separator:acfc9ffd48ad26a5424341fbf651381b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>

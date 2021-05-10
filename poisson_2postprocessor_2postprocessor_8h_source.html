@@ -133,10 +133,10 @@ $(function() {
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  setup(DoFHandler&lt;dim, dim&gt; <span class="keyword">const</span> &amp; dof_handler, Mapping&lt;dim&gt; <span class="keyword">const</span> &amp; mapping) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  do_postprocessing(VectorType <span class="keyword">const</span> &amp; solution,</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                    <span class="keywordtype">double</span> <span class="keyword">const</span>       time             = 0.0,</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                    <span class="keywordtype">int</span> <span class="keyword">const</span>          time_step_number = -1);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                    <span class="keywordtype">int</span> <span class="keyword">const</span>          time_step_number = -1) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  MPI_Comm <span class="keyword">const</span> mpi_comm;</div>

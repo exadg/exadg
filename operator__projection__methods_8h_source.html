@@ -140,12 +140,12 @@ $(function() {
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="comment">   * Calls setup() function of base class and additionally initializes the pressure Poisson operator</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">   * needed for projection-type methods.</span></div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  setup(std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     matrix_free,</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        std::shared_ptr&lt;<a class="code" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData&lt;dim, Number&gt;</a>&gt; matrix_free_data,</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        std::string <span class="keyword">const</span> &amp;                          dof_index_temperature = <span class="stringliteral">&quot;&quot;</span>);</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        std::string <span class="keyword">const</span> &amp;                          dof_index_temperature = <span class="stringliteral">&quot;&quot;</span>) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  update_after_mesh_movement() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="comment">/*</span></div>
