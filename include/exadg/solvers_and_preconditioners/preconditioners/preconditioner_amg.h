@@ -168,7 +168,10 @@ public:
   update() override
   {
 #ifdef DEAL_II_WITH_PETSC
-    // clear content of matrix since the next calculate_system_matrix-commands add their result
+    // clear content of matrix since the next calculate_system_matrix-commands
+    // add their result; since we might run this on a sub-communicator, we
+    // skip the processes that do not participate in the matrix and have size
+    // zero
     if(system_matrix.m() > 0)
       system_matrix = 0.0;
 #endif
@@ -183,12 +186,12 @@ public:
     if(system_matrix.m() > 0)
       apply_petsc_operation(dst,
                             src,
+                            petsc_vector_dst,
+                            petsc_vector_src,
                             [&](PETScWrappers::VectorBase &       petsc_dst,
                                 PETScWrappers::VectorBase const & petsc_src) {
                               amg.vmult(petsc_dst, petsc_src);
-                            },
-                            petsc_vector_dst,
-                            petsc_vector_src);
+                            });
 #else
     (void)dst;
     (void)src;
@@ -201,7 +204,7 @@ private:
   calculate_preconditioner()
   {
 #ifdef DEAL_II_WITH_PETSC
-    // calculate_matrix
+    // calculate_matrix in case the current MPI rank participates in the PETSc communicator
     if(system_matrix.m() > 0)
     {
       pde_operator.calculate_system_matrix(system_matrix);

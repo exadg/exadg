@@ -31,20 +31,21 @@ using namespace dealii;
 /*
  *  This function wraps the copy of a PETSc object (sparse matrix,
  *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector, taking
- *  pre-allocated PETSc vector objects for the temporary operations
+ *  pre-allocated PETSc vector objects (with struct name `Vec) for the
+ *  temporary operations
  */
 #ifdef DEAL_II_WITH_PETSC
 template<typename VectorType>
 void
 apply_petsc_operation(VectorType &                                           dst,
                       VectorType const &                                     src,
-                      std::function<void(PETScWrappers::VectorBase &,
-                                         PETScWrappers::VectorBase const &)> petsc_operation,
                       Vec &                                                  petsc_vector_dst,
-                      Vec &                                                  petsc_vector_src)
+                      Vec &                                                  petsc_vector_src,
+                      std::function<void(PETScWrappers::VectorBase &,
+                                         PETScWrappers::VectorBase const &)> petsc_operation)
 {
   {
-    // copy to petsc internal vector type because there is currently no such
+    // copy to PETSc internal vector type because there is currently no such
     // function in deal.II (and the transition via ReadWriteVector is too
     // slow/poorly tested)
     PetscInt       begin, end;
@@ -103,9 +104,9 @@ template<typename VectorType>
 void
 apply_petsc_operation(VectorType &                                           dst,
                       VectorType const &                                     src,
+                      MPI_Comm const &                                       petsc_mpi_communicator,
                       std::function<void(PETScWrappers::VectorBase &,
-                                         PETScWrappers::VectorBase const &)> petsc_operation,
-                      MPI_Comm const &                                       petsc_mpi_communicator)
+                                         PETScWrappers::VectorBase const &)> petsc_operation)
 {
   Vec vector_dst, vector_src;
   VecCreateMPI(petsc_mpi_communicator,
@@ -117,7 +118,7 @@ apply_petsc_operation(VectorType &                                           dst
                PETSC_DETERMINE,
                &vector_src);
 
-  apply_petsc_operation(dst, src, petsc_operation, vector_dst, vector_src);
+  apply_petsc_operation(dst, src, vector_dst, vector_src, petsc_operation);
 
   PetscErrorCode ierr = VecDestroy(&vector_dst);
   AssertThrow(ierr == 0, ExcPETScError(ierr));
