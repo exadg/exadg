@@ -69,12 +69,12 @@ public:
    * Calls setup() function of base class and additionally initializes the pressure Poisson operator
    * needed for projection-type methods.
    */
-  virtual void
+  void
   setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
         std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-        std::string const &                          dof_index_temperature = "");
+        std::string const &                          dof_index_temperature = "") override;
 
-  virtual void
+  void
   update_after_mesh_movement() override;
 
   /*

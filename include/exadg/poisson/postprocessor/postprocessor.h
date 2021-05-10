@@ -62,10 +62,10 @@ public:
   void
   setup(DoFHandler<dim, dim> const & dof_handler, Mapping<dim> const & mapping) override;
 
-  virtual void
+  void
   do_postprocessing(VectorType const & solution,
                     double const       time             = 0.0,
-                    int const          time_step_number = -1);
+                    int const          time_step_number = -1) override;
 
 protected:
   MPI_Comm const mpi_comm;

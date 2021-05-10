@@ -70,14 +70,14 @@ public:
 
   virtual ~PostProcessor();
 
-  virtual void
-  setup(Operator const & pde_operator);
+  void
+  setup(Operator const & pde_operator) override;
 
-  virtual void
+  void
   do_postprocessing(VectorType const & velocity,
                     VectorType const & pressure,
                     double const       time             = 0.0,
-                    int const          time_step_number = -1);
+                    int const          time_step_number = -1) override;
 
 protected:
   MPI_Comm const mpi_comm;

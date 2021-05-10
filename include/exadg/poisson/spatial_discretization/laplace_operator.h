@@ -253,36 +253,36 @@ public:
 
   // continuous FE: This function sets the constrained Dirichlet boundary values.
   void
-  set_constrained_values(VectorType & solution, double const time) const override;
+  set_constrained_values(VectorType & solution, double const time) const final;
 
 private:
   void
-  reinit_face(unsigned int const face) const;
+  reinit_face(unsigned int const face) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const;
+  reinit_boundary_face(unsigned int const face) const final;
 
   void
   reinit_face_cell_based(unsigned int const       cell,
                          unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+                         types::boundary_id const boundary_id) const final;
 
   void
-  do_cell_integral(IntegratorCell & integrator) const;
+  do_cell_integral(IntegratorCell & integrator) const final;
 
   void
-  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
-  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
-  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
   do_boundary_integral(IntegratorFace &           integrator_m,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+                       types::boundary_id const & boundary_id) const final;
 
   void
   cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
@@ -313,7 +313,7 @@ private:
   // continuous FE: calculates Neumann boundary integral
   void
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  types::boundary_id const & boundary_id) const;
+                                  types::boundary_id const & boundary_id) const final;
 
   LaplaceOperatorData<rank, dim> operator_data;
 

@@ -108,7 +108,7 @@ protected:
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
-  virtual void
+  void
   do_timestep_pre_solve(bool const print_header) override;
 
   void
@@ -236,7 +236,7 @@ private:
    * Restart: read solution vectors (has to be implemented in derived classes).
    */
   void
-  do_read_restart(std::ifstream & in);
+  do_read_restart(std::ifstream & in) override;
 
   void
   read_restart_preamble(boost::archive::binary_iarchive & ia);
@@ -249,7 +249,7 @@ private:
    * state.
    */
   void
-  do_write_restart(std::string const & filename) const;
+  do_write_restart(std::string const & filename) const override;
 
   void
   write_restart_preamble(boost::archive::binary_oarchive & oa) const;

@@ -64,11 +64,13 @@ public:
 
   virtual ~PostProcessor();
 
-  virtual void
-  setup(Operator<dim, Number> const & pde_operator);
+  void
+  setup(Operator<dim, Number> const & pde_operator) override;
 
-  virtual void
-  do_postprocessing(VectorType const & solution, double const time, int const time_step_number);
+  void
+  do_postprocessing(VectorType const & solution,
+                    double const       time,
+                    int const          time_step_number) override;
 
 protected:
   // DoF vectors for derived quantities: (p, u, T)

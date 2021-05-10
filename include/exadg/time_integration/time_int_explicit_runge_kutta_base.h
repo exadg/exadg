@@ -67,10 +67,10 @@ protected:
 
 private:
   void
-  do_timestep_pre_solve(bool const print_header);
+  do_timestep_pre_solve(bool const print_header) override;
 
   void
-  do_timestep_post_solve();
+  do_timestep_post_solve() override;
 
   void
   prepare_vectors_for_next_timestep();

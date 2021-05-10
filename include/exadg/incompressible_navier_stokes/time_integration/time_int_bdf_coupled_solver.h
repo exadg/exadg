@@ -64,32 +64,32 @@ public:
   postprocessing_stability_analysis();
 
   void
-  print_iterations() const;
+  print_iterations() const final;
 
   VectorType const &
-  get_velocity_np() const;
+  get_velocity_np() const final;
 
   VectorType const &
-  get_pressure_np() const;
+  get_pressure_np() const final;
 
 private:
   void
-  setup_derived() override;
+  setup_derived() final;
 
   void
-  allocate_vectors() override;
+  allocate_vectors() final;
 
   void
-  initialize_current_solution();
+  initialize_current_solution() final;
 
   void
-  initialize_former_solutions();
+  initialize_former_solutions() final;
 
   void
-  solve_timestep() override;
+  solve_timestep() final;
 
   void
-  solve_steady_problem();
+  solve_steady_problem() final;
 
   double
   evaluate_residual();
@@ -98,22 +98,22 @@ private:
   penalty_step();
 
   void
-  prepare_vectors_for_next_timestep() override;
+  prepare_vectors_for_next_timestep() final;
 
   VectorType const &
-  get_velocity() const;
+  get_velocity() const final;
 
   VectorType const &
-  get_velocity(unsigned int i /* t_{n-i} */) const;
+  get_velocity(unsigned int i /* t_{n-i} */) const final;
 
   VectorType const &
-  get_pressure(unsigned int i /* t_{n-i} */) const;
+  get_pressure(unsigned int i /* t_{n-i} */) const final;
 
   void
-  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */);
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */) final;
 
   void
-  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) final;
 
   std::shared_ptr<Operator> pde_operator;
 
