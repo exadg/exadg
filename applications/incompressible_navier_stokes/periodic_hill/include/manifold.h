@@ -94,7 +94,7 @@ public:
   }
 
   Point<dim>
-  push_forward(Point<dim> const & xi) const
+  push_forward(Point<dim> const & xi) const override
   {
     Point<dim> x = xi;
 
@@ -108,7 +108,7 @@ public:
   }
 
   Point<dim>
-  pull_back(Point<dim> const & x) const
+  pull_back(Point<dim> const & x) const override
   {
     Point<dim> xi = x;
 

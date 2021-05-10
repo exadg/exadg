@@ -104,7 +104,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(Point<dim> const & xi) const
+  push_forward(Point<dim> const & xi) const override
   {
     Point<dim> x;
 
@@ -262,7 +262,7 @@ public:
    *  push_forward operation and Newton's method
    */
   Point<dim>
-  pull_back(Point<dim> const & x) const
+  pull_back(Point<dim> const & x) const override
   {
     Point<dim>     xi;
     Tensor<1, dim> residual = push_forward(xi) - x;
@@ -412,7 +412,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(Point<dim> const & xi) const
+  push_forward(Point<dim> const & xi) const override
   {
     Point<dim> x;
 
@@ -573,7 +573,7 @@ public:
    *  push_forward operation and Newton's method
    */
   Point<dim>
-  pull_back(Point<dim> const & x) const
+  pull_back(Point<dim> const & x) const override
   {
     Point<dim>     xi;
     Tensor<1, dim> residual = push_forward(xi) - x;
@@ -683,7 +683,7 @@ public:
   }
 
   Point<spacedim>
-  push_forward(Point<spacedim> const & ref_point) const
+  push_forward(Point<spacedim> const & ref_point) const override
   {
     double const radius = ref_point[0];
     double const theta  = ref_point[1];
@@ -707,7 +707,7 @@ public:
   }
 
   Point<spacedim>
-  pull_back(Point<spacedim> const & space_point) const
+  pull_back(Point<spacedim> const & space_point) const override
   {
     Tensor<1, spacedim> vector;
     vector[0] = space_point[0] - center[0];

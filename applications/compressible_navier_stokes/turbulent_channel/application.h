@@ -118,7 +118,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(Point<dim> const & xi) const
+  push_forward(Point<dim> const & xi) const override
   {
     Point<dim> x;
 
@@ -136,7 +136,7 @@ public:
    *  to point xi in reference coordinates [0,1]^d
    */
   Point<dim>
-  pull_back(Point<dim> const & x) const
+  pull_back(Point<dim> const & x) const override
   {
     Point<dim> xi;
 
