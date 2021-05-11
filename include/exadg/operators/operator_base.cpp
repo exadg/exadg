@@ -81,7 +81,8 @@ OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & 
     constrained_indices.clear();
     for(auto i : this->matrix_free->get_constrained_dofs(this->data.dof_index))
       constrained_indices.push_back(i);
-    constrained_values.resize(constrained_indices.size());
+    constrained_values_src.resize(constrained_indices.size());
+    constrained_values_dst.resize(constrained_indices.size());
   }
 
   // set multigrid level
@@ -250,8 +251,36 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply(VectorType & dst, VectorType const & src) const
 {
-  dst = 0;
-  apply_add(dst, src);
+  if(is_dg)
+  {
+    if(evaluate_face_integrals())
+      matrix_free->loop(&This::cell_loop,
+                        &This::face_loop,
+                        &This::boundary_face_loop_hom_operator,
+                        this,
+                        dst,
+                        src,
+                        true);
+    else
+      matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
+  }
+  else
+  {
+    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+    {
+      constrained_values_src[i] = src.local_element(constrained_indices[i]);
+      const_cast<VectorType &>(src).local_element(constrained_indices[i]) = 0.;
+    }
+
+    matrix_free->cell_loop(&This::cell_loop, this, dst, src, true);
+
+    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+    {
+      const_cast<VectorType &>(src).local_element(constrained_indices[i]) =
+        constrained_values_src[i];
+      dst.local_element(constrained_indices[i]) = constrained_values_src[i];
+    }
+  }
 }
 
 template<int dim, typename Number, int n_components>
@@ -270,8 +299,9 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
   {
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
-      constrained_values[i] = std::pair<Number, Number>(src.local_element(constrained_indices[i]),
-                                                        dst.local_element(constrained_indices[i]));
+      constrained_values_dst[i] =
+        src.local_element(constrained_indices[i]) + dst.local_element(constrained_indices[i]);
+      constrained_values_src[i] = src.local_element(constrained_indices[i]);
 
       const_cast<VectorType &>(src).local_element(constrained_indices[i]) = 0.;
     }
@@ -281,9 +311,8 @@ OperatorBase<dim, Number, n_components>::apply_add(VectorType & dst, VectorType 
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
       const_cast<VectorType &>(src).local_element(constrained_indices[i]) =
-        constrained_values[i].first;
-      dst.local_element(constrained_indices[i]) =
-        constrained_values[i].second + constrained_values[i].first;
+        constrained_values_src[i];
+      dst.local_element(constrained_indices[i]) = constrained_values_dst[i];
     }
   }
 }
