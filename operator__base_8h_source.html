@@ -713,12 +713,13 @@ $(function() {
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;<span class="comment">   * for CG</span></div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;  std::vector&lt;unsigned int&gt;                      constrained_indices;</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;  <span class="keyword">mutable</span> std::vector&lt;std::pair&lt;Number, Number&gt;&gt; constrained_values;</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;};</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160; </div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;  std::vector&lt;unsigned int&gt;   constrained_indices;</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;  <span class="keyword">mutable</span> std::vector&lt;Number&gt; constrained_values_src;</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;  <span class="keyword">mutable</span> std::vector&lt;Number&gt; constrained_values_dst;</div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;};</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160; </div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1IterativeSolver_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">ExaDG::Elementwise::IterativeSolver</a></div><div class="ttdef"><b>Definition:</b> wrapper_elementwise_solvers.h:61</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1OperatorBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1OperatorBase.html">ExaDG::Elementwise::OperatorBase</a></div><div class="ttdef"><b>Definition:</b> elementwise_operator.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1PreconditionerBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">ExaDG::Elementwise::PreconditionerBase</a></div><div class="ttdef"><b>Definition:</b> elementwise_preconditioners.h:43</div></div>
