@@ -235,8 +235,8 @@ private:
 
 #ifdef DEAL_II_WITH_PETSC
   // PETSc vector objects to avoid re-allocation in every vmult() operation
-  mutable Vec petsc_vector_src;
-  mutable Vec petsc_vector_dst;
+  mutable VectorTypePETSc petsc_vector_src;
+  mutable VectorTypePETSc petsc_vector_dst;
 #endif
 };
 } // namespace ExaDG
