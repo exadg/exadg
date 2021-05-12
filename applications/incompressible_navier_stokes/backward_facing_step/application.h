@@ -371,7 +371,7 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     do_set_input_parameters(param);
   }
@@ -387,7 +387,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     Geometry::create_grid(triangulation, n_refine_space, periodic_faces);
 
@@ -399,7 +399,7 @@ public:
                         PeriodicFaces &                     periodic_faces,
                         unsigned int const                  n_refine_space,
                         std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree)
+                        unsigned int const                  mapping_degree) final
   {
     Geometry::create_grid_precursor(triangulation,
                                     n_refine_space + additional_refinements_precursor,
@@ -409,8 +409,9 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-                          std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+  set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -443,7 +444,7 @@ public:
   void
   set_boundary_conditions_precursor(
     std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -458,7 +459,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(centerline_velocity,
@@ -472,7 +473,7 @@ public:
   }
 
   void
-  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(centerline_velocity,
@@ -485,7 +486,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -733,7 +734,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 

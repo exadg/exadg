@@ -119,7 +119,7 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm) override
+  add_parameters(ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -179,7 +179,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_input_parameters(InputParameters & param) override
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.problem_type = ProblemType::Unsteady;
@@ -352,7 +352,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) override
+              unsigned int const                  mapping_degree) final
   {
     this->refine_level = n_refine_space;
 
@@ -428,7 +428,7 @@ public:
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function() override
+  set_mesh_movement_function() final
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 
@@ -451,7 +451,7 @@ public:
   void
   set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) override
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     if(exploit_symmetry)
     {
@@ -471,7 +471,7 @@ public:
 
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) override
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>(V_0, L));
     field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>(V_0, L, p_0));
@@ -480,7 +480,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) override
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
 

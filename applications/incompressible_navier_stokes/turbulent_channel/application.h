@@ -112,7 +112,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(Point<dim> const & xi) const override
+  push_forward(Point<dim> const & xi) const final
   {
     Point<dim> x;
 
@@ -130,7 +130,7 @@ public:
    *  to point xi in reference coordinates [0,1]^d
    */
   Point<dim>
-  pull_back(Point<dim> const & x) const override
+  pull_back(Point<dim> const & x) const final
   {
     Point<dim> xi;
 
@@ -144,7 +144,7 @@ public:
   }
 
   std::unique_ptr<Manifold<dim>>
-  clone() const override
+  clone() const final
   {
     return std::make_unique<ManifoldTurbulentChannel<dim>>(dimensions);
   }
@@ -255,7 +255,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;
@@ -397,7 +397,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;
@@ -444,8 +444,9 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-                          std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+  set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -456,7 +457,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -467,7 +468,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
 

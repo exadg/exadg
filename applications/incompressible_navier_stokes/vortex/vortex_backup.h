@@ -655,7 +655,7 @@ public:
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function() override
+  set_mesh_movement_function() final
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 
@@ -675,7 +675,7 @@ public:
   }
 
   void
-  set_input_parameters_poisson(Poisson::InputParameters & param) override
+  set_input_parameters_poisson(Poisson::InputParameters & param) final
   {
     using namespace Poisson;
 
@@ -707,7 +707,7 @@ public:
   }
 
   void set_boundary_conditions_poisson(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) override
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -717,8 +717,7 @@ public:
   }
 
   void
-  set_field_functions_poisson(
-    std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) override
+  set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));

@@ -94,7 +94,7 @@ public:
   }
 
   Point<dim>
-  push_forward(Point<dim> const & xi) const override
+  push_forward(Point<dim> const & xi) const final
   {
     Point<dim> x = xi;
 
@@ -108,7 +108,7 @@ public:
   }
 
   Point<dim>
-  pull_back(Point<dim> const & x) const override
+  pull_back(Point<dim> const & x) const final
   {
     Point<dim> xi = x;
 
@@ -122,7 +122,7 @@ public:
   }
 
   std::unique_ptr<Manifold<dim>>
-  clone() const override
+  clone() const final
   {
     return std::make_unique<PeriodicHillManifold<dim>>(H, LENGTH, HEIGHT, GRID_STRETCH_FAC);
   }
