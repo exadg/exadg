@@ -307,9 +307,104 @@ MultigridPreconditionerBase<dim, Number>::check_levels(std::vector<MGLevelInfo> 
 }
 
 /**
+ * Helper function for creating a geometric coarsening sequence: Replicate a
+ * parallel::distributed::Triangulation completely in a serial
+ * triangulation. This can potentially be very memory-consuming, so the
+ * triangulation is only filled on the first rank of a compute node, i.e.,
+ * those MPI ranks where `rank % n_processes_per_node` is zero.
+ */
+template<int dim, int spacedim>
+void
+replicate_distributed_triangulation_on_node(
+  parallel::distributed::Triangulation<dim, spacedim> const & distributed_tria,
+  MPI_Comm const &                                            mpi_comm,
+  unsigned int const                                          n_processes_per_node,
+  dealii::Triangulation<dim, spacedim> &                      serial_tria)
+{
+  unsigned int const my_rank                  = Utilities::MPI::this_mpi_process(mpi_comm);
+  bool const         is_first_process_on_node = (my_rank % n_processes_per_node) == 0;
+
+  // copy level 0 of distributed triangulation
+  if(is_first_process_on_node)
+  {
+    auto [points, cell_data, sub_cell_data] =
+      GridTools::get_coarse_mesh_description(distributed_tria);
+
+    std::vector<std::pair<unsigned int, CellData<dim>>> cell_data_sorted;
+
+    unsigned int counter = 0;
+
+    for(const auto & cell : distributed_tria.cell_iterators_on_level(0))
+      cell_data_sorted.emplace_back(cell->id().get_coarse_cell_id(), cell_data[counter++]);
+
+    std::sort(cell_data_sorted.begin(), cell_data_sorted.end(), [](const auto & a, const auto & b) {
+      return a.first < b.first;
+    });
+
+    cell_data.clear();
+
+    for(const auto & i : cell_data_sorted)
+      cell_data.emplace_back(i.second);
+
+    serial_tria.create_triangulation(points, cell_data, sub_cell_data);
+  }
+
+  // execute refinement on first process of node if there is refinement left
+  if(distributed_tria.n_global_levels() > 1)
+  {
+    // collect refinement flags from distributed triangulation first on rank 0
+    std::vector<std::vector<std::vector<CellId>>> refinement_flags(
+      distributed_tria.n_global_levels());
+    {
+      for(unsigned int l = 0; l < distributed_tria.n_global_levels(); ++l)
+      {
+        std::vector<CellId> local_refinement_flags;
+
+        for(const auto & cell : distributed_tria.cell_iterators_on_level(l))
+          if(cell->has_children())
+            local_refinement_flags.push_back(cell->id());
+
+        refinement_flags[l] = Utilities::MPI::gather(mpi_comm, local_refinement_flags, 0);
+      }
+
+      // create new communicator that only involves the first MPI process of
+      // each node, to be able to broadcast the refinement flags of rank 0
+      // to each compute node
+      MPI_Comm comm_node;
+      MPI_Comm_split(mpi_comm, is_first_process_on_node, my_rank, &comm_node);
+
+      if(is_first_process_on_node)
+        refinement_flags = Utilities::MPI::broadcast(comm_node, refinement_flags);
+
+      MPI_Comm_free(&comm_node);
+    }
+
+    // perform refinement from refine flags
+    if(is_first_process_on_node)
+    {
+      for(unsigned int l = 0; l < refinement_flags.size(); ++l)
+      {
+        unsigned int counter = 0;
+        for(const auto & flags : refinement_flags[l])
+        {
+          for(const auto & cell_id : flags)
+          {
+            serial_tria.create_cell_iterator(cell_id)->set_refine_flag();
+            counter++;
+          }
+        }
+
+        if(counter > 0)
+          serial_tria.execute_coarsening_and_refinement();
+      }
+    }
+  }
+}
+
+/**
  * Similar to dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence
  * with the difference that the (coarse-grid) p:d:T is converted to a p:f:T
- * right aways.
+ * right away.
  */
 template<int dim, int spacedim>
 std::vector<std::shared_ptr<Triangulation<dim, spacedim> const>>
@@ -332,47 +427,60 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
 
     Assert(fine_triangulation, ExcNotImplemented());
 
-    // clone distributed triangulation for coarsening
-    parallel::distributed::Triangulation<dim, spacedim> temp_tria(
+    // clone distributed triangulation and start coarsening
+    parallel::distributed::Triangulation<dim, spacedim> tria_copy(
       fine_triangulation->get_communicator(), fine_triangulation->get_mesh_smoothing());
 
-    MPI_Comm mpi_comm = fine_triangulation_in.get_communicator();
-    temp_tria.copy_triangulation(*fine_triangulation);
-    temp_tria.coarsen_global();
+    tria_copy.copy_triangulation(*fine_triangulation);
+    tria_copy.coarsen_global();
 
-    unsigned int min_level = fine_triangulation->n_global_levels() - 1;
+    MPI_Comm mpi_comm = fine_triangulation->get_communicator();
 
     // as long as we have enough cells per process, we can perform regular
-    // coarsening with all MPI processes
-    for(; min_level > 0 &&
-          temp_tria.n_global_active_cells() / Utilities::MPI::n_mpi_processes(mpi_comm) > 100;
-        --min_level)
+    // coarsening with all MPI processes TODO: The number of 400 cells per MPI
+    // process (or 50 if the next refinement were done in 3D) was found to be a
+    // good tradeoff between communication cost and workload size of linear
+    // polynomials, resulting in small run times in preliminary studies. This
+    // could be generalized by a parameter to set in the application files.
+    unsigned int n_cells_per_process = 400;
+    for(unsigned int level = fine_triangulation->n_global_levels() - 1;
+        level > 0 && tria_copy.n_global_active_cells() / Utilities::MPI::n_mpi_processes(mpi_comm) >
+                       n_cells_per_process;
+        --level)
     {
-      // create empty (fully distributed) triangulation
-      auto new_tria = std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(
-        fine_triangulation->get_communicator());
+      // extract relevant information from distributed triangulation
+      auto const construction_data =
+        TriangulationDescription::Utilities::create_description_from_triangulation(tria_copy,
+                                                                                   mpi_comm);
+
+      // create fully distributed triangulation
+      auto level_tria =
+        std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(mpi_comm);
 
       for(auto const i : fine_triangulation->get_manifold_ids())
         if(i != numbers::flat_manifold_id)
-          new_tria->set_manifold(i, fine_triangulation->get_manifold(i));
+          level_tria->set_manifold(i, fine_triangulation->get_manifold(i));
 
-      // extract relevant information from distributed triangulation
-      auto const construction_data =
-        TriangulationDescription::Utilities::create_description_from_triangulation(
-          temp_tria, fine_triangulation->get_communicator());
+      level_tria->create_triangulation(construction_data);
 
-      // actually create triangulation
-      new_tria->create_triangulation(construction_data);
+      coarse_grid_triangulations[level - 1] = level_tria;
 
-      // save mesh
-      coarse_grid_triangulations[min_level - 1] = new_tria;
-      temp_tria.coarsen_global();
+      if(level > 1)
+        tria_copy.coarsen_global();
     }
 
-    // find out about the number of MPI processes in shared memory regions,
-    // which will later be used to construct a coarser triangulation only on a
-    // single process per MPI rank
-    unsigned int const group_size = [&]() {
+    // TODO: The following code is a brute-force attempt to create a new
+    // partitioning of the mesh to be fed to a
+    // parallel::fullydistributed::Triangulation with fewer MPI processes. The
+    // main idea is to replicate the complete triangulation obtained in the
+    // previous loop on specific MPI processes and partition it from there
+    // again.
+    //
+    // Step 1: Since the full triangulation with refinements can in general be
+    // many GB of size, we only want to fit a single copy on each node. We
+    // identify the nodes by letting MPI count the number of MPI processes in
+    // a shared memory region.
+    unsigned int const n_processes_per_node = [&]() {
       int rank;
       MPI_Comm_rank(mpi_comm, &rank);
 
@@ -383,109 +491,38 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
       MPI_Comm_size(comm_shared, &size_shared);
       MPI_Comm_free(&comm_shared);
 
-      // determine maximum, since some shared memory communicators
-      // might not be filed completely
-      return Utilities::MPI::max(size_shared, mpi_comm);
+      AssertThrow(size_shared == Utilities::MPI::max(size_shared, mpi_comm),
+                  ExcMessage("The mesh coarsening with shared memory only works if all nodes "
+                             "are populated with the same number of MPI ranks!"));
+      return size_shared;
     }();
 
-    const unsigned int my_rank    = Utilities::MPI::this_mpi_process(mpi_comm);
-    const unsigned int group_root = (my_rank / group_size) * group_size;
 
-    // create coarse grid on root processes
-    Triangulation<dim, spacedim> tria_serial;
-    if(my_rank == group_root)
+    // Step 2: Create coarse grid on the first MPI process of each node
+    Triangulation<dim, spacedim> serial_tria;
+    replicate_distributed_triangulation_on_node(tria_copy,
+                                                mpi_comm,
+                                                n_processes_per_node,
+                                                serial_tria);
+
+    // Step 3: Continue as above but with the serial triangulation that gets
+    // distributed
+    unsigned int n_partitions = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+    for(unsigned int level = tria_copy.n_global_levels(); level > 0; --level)
     {
-      auto [points, cell_data, sub_cell_data] = GridTools::get_coarse_mesh_description(temp_tria);
-
-      std::vector<std::pair<unsigned int, CellData<dim>>> cell_data_temp;
-
-      unsigned int counter = 0;
-
-      for(const auto & cell : temp_tria.cell_iterators_on_level(0))
-        cell_data_temp.emplace_back(cell->id().get_coarse_cell_id(), cell_data[counter++]);
-
-      std::sort(cell_data_temp.begin(), cell_data_temp.end(), [](const auto & a, const auto & b) {
-        return a.first < b.first;
-      });
-
-      cell_data.clear();
-
-      for(const auto & i : cell_data_temp)
-        cell_data.emplace_back(i.second);
-
-      tria_serial.create_triangulation(points, cell_data, sub_cell_data);
-    }
-
-    // execute refinement on root process
-    if(temp_tria.n_global_levels() > 1)
-    {
-      // collect refinement flags
-      std::vector<std::vector<std::vector<CellId>>> refinement_flags(min_level);
-      {
-        for(unsigned int l = 0; l < min_level; ++l)
-        {
-          std::vector<CellId> local_refinement_flags;
-
-          for(const auto & cell : temp_tria.cell_iterators_on_level(l))
-            if(cell->has_children())
-              local_refinement_flags.push_back(cell->id());
-
-          refinement_flags[l] = Utilities::MPI::gather(mpi_comm, local_refinement_flags, 0);
-        }
-
-        MPI_Comm comm_root;
-        MPI_Comm_split(mpi_comm, my_rank == group_root, my_rank, &comm_root);
-
-        if(my_rank == group_root)
-          refinement_flags = Utilities::MPI::broadcast(comm_root, refinement_flags);
-
-        MPI_Comm_free(&comm_root);
-      }
-
-      // ... actually perform refinement
-      if(my_rank == group_root)
-      {
-        for(unsigned int l = 0; l < refinement_flags.size(); ++l)
-        {
-          unsigned int counter = 0;
-          for(const auto & flags : refinement_flags[l])
-          {
-            for(const auto & cell_id : flags)
-            {
-              tria_serial.create_cell_iterator(cell_id)->set_refine_flag();
-              counter++;
-            }
-          }
-
-          if(counter > 0)
-            tria_serial.execute_coarsening_and_refinement();
-        }
-      }
-    }
-
-    // continue as above but do not work on p:d:T but on the serial
-    // triangulation
-    unsigned int n_partitions_before = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-    for(unsigned int l = min_level; l > 0; --l)
-    {
-      // create empty (fully distributed) triangulation
-      auto new_tria =
-        std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(mpi_comm);
-
-      for(auto const i : fine_triangulation->get_manifold_ids())
-        if(i != numbers::flat_manifold_id)
-          new_tria->set_manifold(i, fine_triangulation->get_manifold(i));
-
-      unsigned int const n_partitions =
-        std::max(n_partitions_before / 8,
-                 std::max<unsigned int>(1U, tria_serial.n_active_cells() / 500));
-      n_partitions_before = n_partitions;
+      // reduce the number of MPI ranks per coarsening step by at most a
+      // factor of 8, in order to avoid too much transfer out of a single MPI
+      // process during the MG level transfer.
+      n_partitions = std::min(
+        n_partitions,
+        std::max(n_partitions / 8,
+                 std::max<unsigned int>(1U, serial_tria.n_active_cells() / n_cells_per_process)));
 
       // extract relevant information from distributed triangulation
       auto const construction_data =
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
                                                                                              dim>(
-          [&](auto & tria) { tria.copy_triangulation(tria_serial); },
+          [&](auto & tria) { tria.copy_triangulation(serial_tria); },
           [&](auto & tria, auto const &, const auto) {
 #ifdef DEAL_II_WITH_METIS
             GridTools::partition_triangulation(n_partitions, tria);
@@ -493,17 +530,24 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
             GridTools::partition_triangulation_zorder(n_partitions, tria);
 #endif
           },
-          temp_tria.get_communicator(),
-          group_size);
+          mpi_comm,
+          n_processes_per_node);
 
-      // actually create triangulation
-      new_tria->create_triangulation(construction_data);
+      // create fully distributed triangulation
+      auto level_tria =
+        std::make_shared<parallel::fullydistributed::Triangulation<dim, spacedim>>(mpi_comm);
+
+      for(auto const i : fine_triangulation->get_manifold_ids())
+        if(i != numbers::flat_manifold_id)
+          level_tria->set_manifold(i, fine_triangulation->get_manifold(i));
+      level_tria->create_triangulation(construction_data);
 
       // save mesh
-      coarse_grid_triangulations[l - 1] = new_tria;
+      coarse_grid_triangulations[level - 1] = level_tria;
 
-      if(my_rank == group_root)
-        tria_serial.coarsen_global();
+      // coarsen mesh
+      if(Utilities::MPI::this_mpi_process(mpi_comm) % n_processes_per_node == 0 && level > 1)
+        serial_tria.coarsen_global();
     }
   }
 
