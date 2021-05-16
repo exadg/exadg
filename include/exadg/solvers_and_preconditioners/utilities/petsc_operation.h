@@ -37,8 +37,8 @@ typedef Vec VectorTypePETSc;
 /*
  *  This function wraps the copy of a PETSc object (sparse matrix,
  *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector, taking
- *  pre-allocated PETSc vector objects (with struct name `Vec) for the
- *  temporary operations
+ *  pre-allocated PETSc vector objects (with struct name `Vec`, aka
+ *  VectorTypePETSc) for the temporary operations
  */
 template<typename VectorType>
 void
