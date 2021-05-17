@@ -334,33 +334,35 @@ replicate_distributed_triangulation_on_node(
 
     unsigned int counter = 0;
 
-    for(const auto & cell : distributed_tria.cell_iterators_on_level(0))
+    for(auto const & cell : distributed_tria.cell_iterators_on_level(0))
       cell_data_sorted.emplace_back(cell->id().get_coarse_cell_id(), cell_data[counter++]);
 
-    std::sort(cell_data_sorted.begin(), cell_data_sorted.end(), [](const auto & a, const auto & b) {
+    std::sort(cell_data_sorted.begin(), cell_data_sorted.end(), [](auto const & a, auto const & b) {
       return a.first < b.first;
     });
 
     cell_data.clear();
 
-    for(const auto & i : cell_data_sorted)
+    for(auto const & i : cell_data_sorted)
       cell_data.emplace_back(i.second);
 
     serial_tria.create_triangulation(points, cell_data, sub_cell_data);
   }
 
   // execute refinement on first process of node if there is refinement left
-  if(distributed_tria.n_global_levels() > 1)
+  unsigned int const n_levels = distributed_tria.n_global_levels();
+  if(n_levels > 1)
   {
-    // collect refinement flags from distributed triangulation first on rank 0
+    // collect refinement flags from the complete distributed triangulation on
+    // global rank 0 by an MPI_Gather step
     std::vector<std::vector<std::vector<CellId>>> refinement_flags(
-      distributed_tria.n_global_levels());
+      n_levels - 1);
     {
-      for(unsigned int l = 0; l < distributed_tria.n_global_levels(); ++l)
+      for(unsigned int l = 0; l < n_levels - 1; ++l)
       {
         std::vector<CellId> local_refinement_flags;
 
-        for(const auto & cell : distributed_tria.cell_iterators_on_level(l))
+        for(auto const & cell : distributed_tria.cell_iterators_on_level(l))
           if(cell->has_children())
             local_refinement_flags.push_back(cell->id());
 
@@ -368,8 +370,8 @@ replicate_distributed_triangulation_on_node(
       }
 
       // create new communicator that only involves the first MPI process of
-      // each node, to be able to broadcast the refinement flags of rank 0
-      // to each compute node
+      // each node, to be able to broadcast the refinement flags of global
+      // rank 0 to the first MPI rank on each compute node
       MPI_Comm comm_node;
       MPI_Comm_split(mpi_comm, is_first_process_on_node, my_rank, &comm_node);
 
@@ -382,12 +384,12 @@ replicate_distributed_triangulation_on_node(
     // perform refinement from refine flags
     if(is_first_process_on_node)
     {
-      for(unsigned int l = 0; l < refinement_flags.size(); ++l)
+      for(unsigned int l = 0; l < n_levels - 1; ++l)
       {
         unsigned int counter = 0;
-        for(const auto & flags : refinement_flags[l])
+        for(auto const & refinement_per_process : refinement_flags[l])
         {
-          for(const auto & cell_id : flags)
+          for(auto const & cell_id : refinement_per_process)
           {
             serial_tria.create_cell_iterator(cell_id)->set_refine_flag();
             counter++;
@@ -507,7 +509,7 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
 
     // Step 3: Continue as above but with the serial triangulation that gets
     // distributed
-    unsigned int n_partitions = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+    unsigned int n_partitions = Utilities::MPI::n_mpi_processes(mpi_comm);
     for(unsigned int level = tria_copy.n_global_levels(); level > 0; --level)
     {
       // reduce the number of MPI ranks per coarsening step by at most a
@@ -523,7 +525,7 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
                                                                                              dim>(
           [&](auto & tria) { tria.copy_triangulation(serial_tria); },
-          [&](auto & tria, auto const &, const auto) {
+          [&](auto & tria, auto const &, auto const) {
 #ifdef DEAL_II_WITH_METIS
             GridTools::partition_triangulation(n_partitions, tria);
 #else
@@ -553,7 +555,10 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
 
   for(unsigned int i = 0; i < coarse_grid_triangulations.size(); ++i)
     AssertThrow(i + 1 == coarse_grid_triangulations[i]->n_global_levels(),
-                ExcDimensionMismatch(i + 1, coarse_grid_triangulations[i]->n_global_levels()));
+                ExcMessage("While creating coarser grids, expected a triangulation with " +
+                           std::to_string(i + 1) + " levels, but obtained " +
+                           std::to_string(coarse_grid_triangulations[i]->n_global_levels()) +
+                           " levels."));
 
   return coarse_grid_triangulations;
 }
