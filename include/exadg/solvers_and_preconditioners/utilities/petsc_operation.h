@@ -28,38 +28,37 @@ namespace ExaDG
 {
 using namespace dealii;
 
+#ifdef DEAL_II_WITH_PETSC
+/*
+ * A typedef to make use of PETSc data structure clearer
+ */
+typedef Vec VectorTypePETSc;
+
 /*
  *  This function wraps the copy of a PETSc object (sparse matrix,
- *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector.
+ *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector, taking
+ *  pre-allocated PETSc vector objects (with struct name `Vec`, aka
+ *  VectorTypePETSc) for the temporary operations
  */
-#ifdef DEAL_II_WITH_PETSC
 template<typename VectorType>
 void
 apply_petsc_operation(VectorType &                                           dst,
                       VectorType const &                                     src,
+                      VectorTypePETSc &                                      petsc_vector_dst,
+                      VectorTypePETSc &                                      petsc_vector_src,
                       std::function<void(PETScWrappers::VectorBase &,
                                          PETScWrappers::VectorBase const &)> petsc_operation)
 {
-  // copy to petsc internal vector type because there is currently no such
-  // function in deal.II (and the transition via ReadWriteVector is too
-  // slow/poorly tested)
-  Vec vector_dst, vector_src;
-  VecCreateMPI(dst.get_mpi_communicator(),
-               dst.get_partitioner()->local_size(),
-               PETSC_DETERMINE,
-               &vector_dst);
-  VecCreateMPI(src.get_mpi_communicator(),
-               src.get_partitioner()->local_size(),
-               PETSC_DETERMINE,
-               &vector_src);
-
   {
+    // copy to PETSc internal vector type because there is currently no such
+    // function in deal.II (and the transition via ReadWriteVector is too
+    // slow/poorly tested)
     PetscInt       begin, end;
-    PetscErrorCode ierr = VecGetOwnershipRange(vector_src, &begin, &end);
+    PetscErrorCode ierr = VecGetOwnershipRange(petsc_vector_src, &begin, &end);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
 
     PetscScalar * ptr;
-    ierr = VecGetArray(vector_src, &ptr);
+    ierr = VecGetArray(petsc_vector_src, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
 
     const PetscInt local_size = src.get_partitioner()->local_size();
@@ -69,23 +68,23 @@ apply_petsc_operation(VectorType &                                           dst
       ptr[i] = src.local_element(i);
     }
 
-    ierr = VecRestoreArray(vector_src, &ptr);
+    ierr = VecRestoreArray(petsc_vector_src, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
   }
 
-  // wrap `Vec` into VectorBase (without copying data)
-  PETScWrappers::VectorBase petsc_dst(vector_dst);
-  PETScWrappers::VectorBase petsc_src(vector_src);
+  // wrap `Vec` (aka VectorTypePETSc) into VectorBase (without copying data)
+  PETScWrappers::VectorBase petsc_dst(petsc_vector_dst);
+  PETScWrappers::VectorBase petsc_src(petsc_vector_src);
 
   petsc_operation(petsc_dst, petsc_src);
 
   {
     PetscInt       begin, end;
-    PetscErrorCode ierr = VecGetOwnershipRange(vector_dst, &begin, &end);
+    PetscErrorCode ierr = VecGetOwnershipRange(petsc_vector_dst, &begin, &end);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
 
     PetscScalar * ptr;
-    ierr = VecGetArray(vector_dst, &ptr);
+    ierr = VecGetArray(petsc_vector_dst, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
 
     const PetscInt local_size = dst.get_partitioner()->local_size();
@@ -96,13 +95,39 @@ apply_petsc_operation(VectorType &                                           dst
       dst.local_element(i) = ptr[i];
     }
 
-    ierr = VecRestoreArray(vector_dst, &ptr);
+    ierr = VecRestoreArray(petsc_vector_dst, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
   }
+}
 
-  PetscErrorCode ierr = VecDestroy(&vector_dst);
+/*
+ *  This function wraps the copy of a PETSc object (sparse matrix,
+ *  preconditioner) with a dealii::LinearAlgebra::distributed::Vector,
+ *  allocating a PETSc vectors and then calling the other function
+ */
+template<typename VectorType>
+void
+apply_petsc_operation(VectorType &                                           dst,
+                      VectorType const &                                     src,
+                      MPI_Comm const &                                       petsc_mpi_communicator,
+                      std::function<void(PETScWrappers::VectorBase &,
+                                         PETScWrappers::VectorBase const &)> petsc_operation)
+{
+  VectorTypePETSc petsc_vector_dst, petsc_vector_src;
+  VecCreateMPI(petsc_mpi_communicator,
+               dst.get_partitioner()->local_size(),
+               PETSC_DETERMINE,
+               &petsc_vector_dst);
+  VecCreateMPI(petsc_mpi_communicator,
+               src.get_partitioner()->local_size(),
+               PETSC_DETERMINE,
+               &petsc_vector_src);
+
+  apply_petsc_operation(dst, src, petsc_vector_dst, petsc_vector_src, petsc_operation);
+
+  PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
   AssertThrow(ierr == 0, ExcPETScError(ierr));
-  ierr = VecDestroy(&vector_src);
+  ierr = VecDestroy(&petsc_vector_src);
   AssertThrow(ierr == 0, ExcPETScError(ierr));
 }
 #endif

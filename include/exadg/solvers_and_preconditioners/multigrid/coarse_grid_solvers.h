@@ -218,6 +218,9 @@ public:
         apply_petsc_operation(
           dst,
           src,
+          std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(
+            preconditioner_amg)
+            ->system_matrix.get_mpi_communicator(),
           [&](PETScWrappers::VectorBase & petsc_dst, PETScWrappers::VectorBase const & petsc_src) {
             std::shared_ptr<PreconditionerBoomerAMG<Operator, NumberAMG>> coarse_operator =
               std::dynamic_pointer_cast<PreconditionerBoomerAMG<Operator, NumberAMG>>(

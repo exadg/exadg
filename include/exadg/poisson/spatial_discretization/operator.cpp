@@ -483,6 +483,7 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 {
   apply_petsc_operation(dst,
                         src,
+                        system_matrix.get_mpi_communicator(),
                         [&](PETScWrappers::VectorBase &       petsc_dst,
                             PETScWrappers::VectorBase const & petsc_src) {
                           system_matrix.vmult(petsc_dst, petsc_src);
