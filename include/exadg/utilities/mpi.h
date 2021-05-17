@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef DYNAMIC_CONVERGENCE_TABLE
-#define DYNAMIC_CONVERGENCE_TABLE
+#ifndef INCLUDE_UTILITIES_MPI_H_
+#define INCLUDE_UTILITIES_MPI_H_
 
 namespace ExaDG
 {
@@ -44,8 +44,8 @@ identify_first_process_on_node(MPI_Comm const & mpi_comm)
   MPI_Comm_free(&comm_shared);
 
   AssertThrow(size_shared == Utilities::MPI::max(size_shared, mpi_comm),
-              ExcMessage("The mesh coarsening with shared memory only works if all nodes "
-                         "are populated with the same number of MPI ranks!"));
+              ExcMessage("The identification of MPI process groups in terms of compute nodes only "
+                         "works if all nodes are populated with the same number of MPI ranks!"));
   return {rank % size_shared == 0, size_shared};
 }
 
