@@ -355,8 +355,7 @@ replicate_distributed_triangulation_on_node(
   {
     // collect refinement flags from the complete distributed triangulation on
     // global rank 0 by an MPI_Gather step
-    std::vector<std::vector<std::vector<CellId>>> refinement_flags(
-      n_levels - 1);
+    std::vector<std::vector<std::vector<CellId>>> refinement_flags(n_levels - 1);
     {
       for(unsigned int l = 0; l < n_levels - 1; ++l)
       {
