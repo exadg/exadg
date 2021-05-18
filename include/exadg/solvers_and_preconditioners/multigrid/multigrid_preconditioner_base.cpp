@@ -444,9 +444,10 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
     // polynomials, resulting in small run times in preliminary studies. This
     // could be generalized by a parameter to set in the application files.
     unsigned int n_cells_per_process = 400;
-    for(unsigned int level = fine_triangulation->n_global_levels() - 1;
-        level > 0 && tria_copy.n_global_active_cells() / Utilities::MPI::n_mpi_processes(mpi_comm) >
-                       n_cells_per_process;
+    for(int level = fine_triangulation->n_global_levels() - 2;
+        level >= 0 &&
+        tria_copy.n_global_active_cells() / Utilities::MPI::n_mpi_processes(mpi_comm) >
+          n_cells_per_process;
         --level)
     {
       // extract relevant information from distributed triangulation
@@ -464,9 +465,9 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
 
       level_tria->create_triangulation(construction_data);
 
-      coarse_grid_triangulations[level - 1] = level_tria;
+      coarse_grid_triangulations[level] = level_tria;
 
-      if(level > 1)
+      if(level > 0)
         tria_copy.coarsen_global();
     }
 
@@ -487,7 +488,7 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
     // Continue as above but with the serial triangulation that gets
     // distributed
     unsigned int n_partitions = Utilities::MPI::n_mpi_processes(mpi_comm);
-    for(unsigned int level = tria_copy.n_global_levels(); level > 0; --level)
+    for(int level = tria_copy.n_global_levels() - 1; level >= 0; --level)
     {
       // reduce the number of MPI ranks per coarsening step by at most a
       // factor of 8, in order to avoid too much transfer out of a single MPI
@@ -522,10 +523,10 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
       level_tria->create_triangulation(construction_data);
 
       // save mesh
-      coarse_grid_triangulations[level - 1] = level_tria;
+      coarse_grid_triangulations[level] = level_tria;
 
       // coarsen mesh
-      if(is_first_process_on_node && level > 1)
+      if(is_first_process_on_node && level > 0)
         serial_tria.coarsen_global();
     }
   }
