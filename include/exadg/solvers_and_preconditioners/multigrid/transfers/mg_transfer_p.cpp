@@ -565,7 +565,10 @@ MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
   // clang-format on
 
   if(!this->is_dg) // only if CG
+  {
     dst.compress(VectorOperation::add);
+    src.zero_out_ghost_values();
+  }
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -643,7 +646,10 @@ MGTransferP<dim, Number, VectorType, components>::prolongate(unsigned int const 
   // clang-format on
 
   if(!this->is_dg) // only if CG
+  {
     dst.compress(VectorOperation::add);
+    src.zero_out_ghost_values();
+  }
 }
 
 
