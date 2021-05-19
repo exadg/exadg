@@ -109,18 +109,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af7ae9f1d980983273b16762f2d1d14a2"><td class="memItemLeft" align="right" valign="top"><a id="af7ae9f1d980983273b16762f2d1d14a2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (<a class="el" href="structExaDG_1_1MultigridData.html">MultigridData</a> const &amp;data, Triangulation&lt; dim &gt; const *tria, FiniteElement&lt; dim &gt; const &amp;fe, std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, bool const operator_is_singular=false, Map const *dirichlet_bc=nullptr, PeriodicFacePairs *periodic_face_pairs=nullptr)</td></tr>
 <tr class="separator:af7ae9f1d980983273b16762f2d1d14a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a01f4c839b9f400f94ea99d1686eba171"><td class="memItemLeft" align="right" valign="top"><a id="a01f4c839b9f400f94ea99d1686eba171"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:a01f4c839b9f400f94ea99d1686eba171"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bd50b4f951ec49185fb40fd617cebe8"><td class="memItemLeft" align="right" valign="top"><a id="a1bd50b4f951ec49185fb40fd617cebe8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType &amp;dst, VectorType const &amp;src) const override</td></tr>
+<tr class="separator:a1bd50b4f951ec49185fb40fd617cebe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f4d4058d90bf76730a722c4c7be220e"><td class="memItemLeft" align="right" valign="top"><a id="a0f4d4058d90bf76730a722c4c7be220e"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a0f4d4058d90bf76730a722c4c7be220e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7f925bd456812ee747e79e2aa2d79bd1"><td class="memItemLeft" align="right" valign="top"><a id="a7f925bd456812ee747e79e2aa2d79bd1"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_smoother_on_fine_level</b> (VectorTypeMG &amp;dst, VectorTypeMG const &amp;src) const</td></tr>
 <tr class="separator:a7f925bd456812ee747e79e2aa2d79bd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9de2dc9a4ebed3c5f4fd169b4e726c9"><td class="memItemLeft" align="right" valign="top"><a id="ad9de2dc9a4ebed3c5f4fd169b4e726c9"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> ()</td></tr>
-<tr class="separator:ad9de2dc9a4ebed3c5f4fd169b4e726c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac51be41c15ef2a0072c4ba49db8085cf"><td class="memItemLeft" align="right" valign="top"><a id="ac51be41c15ef2a0072c4ba49db8085cf"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update</b> () override</td></tr>
+<tr class="separator:ac51be41c15ef2a0072c4ba49db8085cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d1219a73b0c59ba60be7b3fe039aaf3"><td class="memItemLeft" align="right" valign="top"><a id="a5d1219a73b0c59ba60be7b3fe039aaf3"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1TimerTree.html">TimerTree</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_timings</b> () const override</td></tr>
 <tr class="separator:a5d1219a73b0c59ba60be7b3fe039aaf3"><td class="memSeparator" colspan="2">&#160;</td></tr>

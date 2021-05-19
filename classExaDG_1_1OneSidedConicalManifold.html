@@ -87,9 +87,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aef69f22659bbe5688185e5e2f24207b7"><td class="memItemLeft" align="right" valign="top"><a id="aef69f22659bbe5688185e5e2f24207b7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (Point&lt; 2 &gt; const &amp;x_1, Point&lt; 2 &gt; const &amp;x_2)</td></tr>
 <tr class="separator:aef69f22659bbe5688185e5e2f24207b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09ba43cd1e780e4927cef4cc6a0f5628"><td class="memItemLeft" align="right" valign="top"><a id="a09ba43cd1e780e4927cef4cc6a0f5628"></a>
-Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>push_forward</b> (Point&lt; dim &gt; const &amp;xi) const</td></tr>
-<tr class="separator:a09ba43cd1e780e4927cef4cc6a0f5628"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff83ecb3ec4d49bda707fcec2085f9bd"><td class="memItemLeft" align="right" valign="top"><a id="aff83ecb3ec4d49bda707fcec2085f9bd"></a>
+Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>push_forward</b> (Point&lt; dim &gt; const &amp;xi) const override</td></tr>
+<tr class="separator:aff83ecb3ec4d49bda707fcec2085f9bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae610e3e04102158355ec1dbde0afb2f8"><td class="memItemLeft" align="right" valign="top"><a id="ae610e3e04102158355ec1dbde0afb2f8"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_vertex_id</b> (unsigned int vertex_id_1d) const</td></tr>
 <tr class="separator:ae610e3e04102158355ec1dbde0afb2f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -105,9 +105,9 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_index_oth
 <tr class="memitem:a4e61154bb4fe7bb48ada54cc19cfc232"><td class="memItemLeft" align="right" valign="top"><a id="a4e61154bb4fe7bb48ada54cc19cfc232"></a>
 Tensor&lt; 2, dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_inverse_jacobian</b> (Point&lt; dim &gt; const &amp;xi) const</td></tr>
 <tr class="separator:a4e61154bb4fe7bb48ada54cc19cfc232"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9a2bd676f7a8e98badb2200f80e18c5"><td class="memItemLeft" align="right" valign="top"><a id="ab9a2bd676f7a8e98badb2200f80e18c5"></a>
-Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pull_back</b> (Point&lt; dim &gt; const &amp;x) const</td></tr>
-<tr class="separator:ab9a2bd676f7a8e98badb2200f80e18c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4483a6a6ae37557e6f90685bb8fa98b0"><td class="memItemLeft" align="right" valign="top"><a id="a4483a6a6ae37557e6f90685bb8fa98b0"></a>
+Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pull_back</b> (Point&lt; dim &gt; const &amp;x) const override</td></tr>
+<tr class="separator:a4483a6a6ae37557e6f90685bb8fa98b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a528c0613bda706edd33419c64bc09cba"><td class="memItemLeft" align="right" valign="top"><a id="a528c0613bda706edd33419c64bc09cba"></a>
 std::unique_ptr&lt; Manifold&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>clone</b> () const override</td></tr>
 <tr class="separator:a528c0613bda706edd33419c64bc09cba"><td class="memSeparator" colspan="2">&#160;</td></tr>
