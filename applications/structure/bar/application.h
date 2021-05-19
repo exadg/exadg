@@ -211,7 +211,7 @@ public:
   double const density = 0.001;
 
   void
-  set_input_parameters(InputParameters & parameters)
+  set_input_parameters(InputParameters & parameters) final
   {
     parameters.problem_type         = ProblemType::Steady;
     parameters.body_force           = use_volume_force;

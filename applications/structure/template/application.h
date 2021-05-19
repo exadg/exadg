@@ -55,7 +55,7 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & parameters)
+  set_input_parameters(InputParameters & parameters) final
   {
     (void)parameters;
   }

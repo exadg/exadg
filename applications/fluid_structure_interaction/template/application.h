@@ -63,7 +63,7 @@ public:
   }
 
   void
-  set_input_parameters_fluid(IncNS::InputParameters & param)
+  set_input_parameters_fluid(IncNS::InputParameters & param) final
   {
     (void)param;
 
@@ -72,7 +72,7 @@ public:
   }
 
   void
-  set_input_parameters_ale(Poisson::InputParameters & param)
+  set_input_parameters_ale(Poisson::InputParameters & param) final
   {
     (void)param;
 
@@ -143,7 +143,7 @@ public:
   }
 
   void
-  set_input_parameters_ale(Structure::InputParameters & parameters)
+  set_input_parameters_ale(Structure::InputParameters & parameters) final
   {
     (void)parameters;
   }
@@ -184,7 +184,7 @@ public:
 
   // Structure
   void
-  set_input_parameters_structure(Structure::InputParameters & parameters)
+  set_input_parameters_structure(Structure::InputParameters & parameters) final
   {
     (void)parameters;
   }

@@ -165,7 +165,7 @@ public:
   unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
 
   void
-  set_input_parameters(InputParameters & parameters)
+  set_input_parameters(InputParameters & parameters) final
   {
     parameters.problem_type      = ProblemType::QuasiStatic;
     parameters.body_force        = false;
