@@ -20,6 +20,8 @@
  */
 
 #include <exadg/fluid_structure_interaction/driver.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
+#include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -406,61 +408,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_mapping = fluid_moving_mapping;
 
     // initialize fluid_operator
-    if(this->fluid_param.temporal_discretization ==
-       IncNS::TemporalDiscretization::BDFCoupledSolution)
-    {
-      fluid_operator_coupled.reset(
-        new IncNS::OperatorCoupled<dim, Number>(*fluid_triangulation,
-                                                fluid_mapping,
-                                                degree_fluid,
-                                                fluid_periodic_faces,
-                                                fluid_boundary_descriptor_velocity,
-                                                fluid_boundary_descriptor_pressure,
-                                                fluid_field_functions,
-                                                fluid_param,
-                                                "fluid",
-                                                mpi_comm));
-
-      fluid_operator = fluid_operator_coupled;
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      fluid_operator_dual_splitting.reset(
-        new IncNS::OperatorDualSplitting<dim, Number>(*fluid_triangulation,
-                                                      fluid_mapping,
-                                                      degree_fluid,
-                                                      fluid_periodic_faces,
-                                                      fluid_boundary_descriptor_velocity,
-                                                      fluid_boundary_descriptor_pressure,
-                                                      fluid_field_functions,
-                                                      fluid_param,
-                                                      "fluid",
-                                                      mpi_comm));
-
-      fluid_operator = fluid_operator_dual_splitting;
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFPressureCorrection)
-    {
-      fluid_operator_pressure_correction.reset(
-        new IncNS::OperatorPressureCorrection<dim, Number>(*fluid_triangulation,
-                                                           fluid_mapping,
-                                                           degree_fluid,
-                                                           fluid_periodic_faces,
-                                                           fluid_boundary_descriptor_velocity,
-                                                           fluid_boundary_descriptor_pressure,
-                                                           fluid_field_functions,
-                                                           fluid_param,
-                                                           "fluid",
-                                                           mpi_comm));
-
-      fluid_operator = fluid_operator_pressure_correction;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    fluid_operator = IncNS::create_operator<dim, Number>(*fluid_triangulation,
+                                                         fluid_mapping,
+                                                         degree_fluid,
+                                                         fluid_periodic_faces,
+                                                         fluid_boundary_descriptor_velocity,
+                                                         fluid_boundary_descriptor_pressure,
+                                                         fluid_field_functions,
+                                                         fluid_param,
+                                                         "fluid",
+                                                         mpi_comm);
 
     // initialize matrix_free
     fluid_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
@@ -627,49 +584,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
-    // initialize fluid_operator
-    if(this->fluid_param.temporal_discretization ==
-       IncNS::TemporalDiscretization::BDFCoupledSolution)
-    {
-      fluid_time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(fluid_operator_coupled,
-                                                                            fluid_param,
-                                                                            0 /* refine_time */,
-                                                                            mpi_comm,
-                                                                            is_test,
-                                                                            fluid_postprocessor,
-                                                                            fluid_moving_mapping,
-                                                                            fluid_matrix_free));
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      fluid_time_integrator.reset(
-        new IncNS::TimeIntBDFDualSplitting<dim, Number>(fluid_operator_dual_splitting,
-                                                        fluid_param,
-                                                        0 /* refine_time */,
-                                                        mpi_comm,
-                                                        is_test,
-                                                        fluid_postprocessor,
-                                                        fluid_moving_mapping,
-                                                        fluid_matrix_free));
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFPressureCorrection)
-    {
-      fluid_time_integrator.reset(
-        new IncNS::TimeIntBDFPressureCorrection<dim, Number>(fluid_operator_pressure_correction,
-                                                             fluid_param,
-                                                             0 /* refine_time */,
-                                                             mpi_comm,
-                                                             is_test,
-                                                             fluid_postprocessor,
-                                                             fluid_moving_mapping,
-                                                             fluid_matrix_free));
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    // initialize fluid_time_integrator
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(fluid_operator,
+                                                                       fluid_param,
+                                                                       0 /* refine_time */,
+                                                                       mpi_comm,
+                                                                       is_test,
+                                                                       fluid_postprocessor,
+                                                                       fluid_moving_mapping,
+                                                                       fluid_matrix_free);
 
     fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
@@ -692,6 +615,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                   structure_param,
                                                   mpi_comm,
                                                   is_test));
+
     structure_time_integrator->setup(structure_param.restarted_simulation);
 
     structure_operator->setup_solver();
