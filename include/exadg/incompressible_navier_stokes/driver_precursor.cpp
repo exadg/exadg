@@ -20,6 +20,8 @@
  */
 
 #include <exadg/incompressible_navier_stokes/driver_precursor.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
+#include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -208,11 +210,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                 param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
-  // initialize operator_base_pre (precursor domain)
-  if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    operator_coupled_pre.reset(
-      new IncNS::OperatorCoupled<dim, Number>(*triangulation_pre,
+  // initialize pde_operator_pre (precursor domain)
+  pde_operator = create_operator<dim, Number>(*triangulation_pre,
                                               mapping_pre,
                                               degree,
                                               periodic_faces_pre,
@@ -221,99 +220,20 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                               field_functions_pre,
                                               param_pre,
                                               "fluid",
-                                              mpi_comm));
-
-    operator_base_pre = operator_coupled_pre;
-  }
-  else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    operator_dual_splitting_pre.reset(
-      new IncNS::OperatorDualSplitting<dim, Number>(*triangulation_pre,
-                                                    mapping_pre,
-                                                    degree,
-                                                    periodic_faces_pre,
-                                                    boundary_descriptor_velocity_pre,
-                                                    boundary_descriptor_pressure_pre,
-                                                    field_functions_pre,
-                                                    param_pre,
-                                                    "fluid",
-                                                    mpi_comm));
-
-    operator_base_pre = operator_dual_splitting_pre;
-  }
-  else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    operator_pressure_correction_pre.reset(
-      new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation_pre,
-                                                         mapping_pre,
-                                                         degree,
-                                                         periodic_faces_pre,
-                                                         boundary_descriptor_velocity_pre,
-                                                         boundary_descriptor_pressure_pre,
-                                                         field_functions_pre,
-                                                         param_pre,
-                                                         "fluid",
-                                                         mpi_comm));
-
-    operator_base_pre = operator_pressure_correction_pre;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+                                              mpi_comm);
 
   // initialize operator_base (actual domain)
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    operator_coupled.reset(new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                                   mapping,
-                                                                   degree,
-                                                                   periodic_faces,
-                                                                   boundary_descriptor_velocity,
-                                                                   boundary_descriptor_pressure,
-                                                                   field_functions,
-                                                                   param,
-                                                                   "fluid",
-                                                                   mpi_comm));
+  pde_operator = create_operator<dim, Number>(*triangulation,
+                                              mapping,
+                                              degree,
+                                              periodic_faces,
+                                              boundary_descriptor_velocity,
+                                              boundary_descriptor_pressure,
+                                              field_functions,
+                                              param,
+                                              "fluid",
+                                              mpi_comm);
 
-    operator_base = operator_coupled;
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    operator_dual_splitting.reset(
-      new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                    mapping,
-                                                    degree,
-                                                    periodic_faces,
-                                                    boundary_descriptor_velocity,
-                                                    boundary_descriptor_pressure,
-                                                    field_functions,
-                                                    param,
-                                                    "fluid",
-                                                    mpi_comm));
-
-    operator_base = operator_dual_splitting;
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    operator_pressure_correction.reset(
-      new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                         mapping,
-                                                         degree,
-                                                         periodic_faces,
-                                                         boundary_descriptor_velocity,
-                                                         boundary_descriptor_pressure,
-                                                         field_functions,
-                                                         param,
-                                                         "fluid",
-                                                         mpi_comm));
-
-    operator_base = operator_pressure_correction;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
 
   // initialize matrix_free precursor
   matrix_free_data_pre.reset(new MatrixFreeData<dim, Number>());
@@ -325,7 +245,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_pre);
     Categorization::do_cell_based_loops(*tria, matrix_free_data_pre->data);
   }
-  operator_base_pre->fill_matrix_free_data(*matrix_free_data_pre);
+  pde_operator_pre->fill_matrix_free_data(*matrix_free_data_pre);
   matrix_free_pre.reset(new MatrixFree<dim, Number>());
   matrix_free_pre->reinit(*mapping_pre,
                           matrix_free_data_pre->get_dof_handler_vector(),
@@ -343,7 +263,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
     Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
   }
-  operator_base->fill_matrix_free_data(*matrix_free_data);
+  pde_operator->fill_matrix_free_data(*matrix_free_data);
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
@@ -352,69 +272,24 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                       matrix_free_data->data);
 
 
-  // setup Navier-Stokes operator_base
-  operator_base_pre->setup(matrix_free_pre, matrix_free_data_pre);
-  operator_base->setup(matrix_free, matrix_free_data);
+  // setup Navier-Stokes operator
+  pde_operator_pre->setup(matrix_free_pre, matrix_free_data_pre);
+  pde_operator->setup(matrix_free, matrix_free_data);
 
   // setup postprocessor
   postprocessor_pre = application->construct_postprocessor_precursor(degree, mpi_comm);
-  postprocessor_pre->setup(*operator_base_pre);
+  postprocessor_pre->setup(*pde_operator_pre);
 
   postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  postprocessor->setup(*operator_base);
+  postprocessor->setup(*pde_operator);
 
 
   // Setup time integrator
+  time_integrator_pre = create_time_integrator<dim, Number>(
+    pde_operator_pre, param_pre, 0 /* refine_time */, mpi_comm, is_test, postprocessor_pre);
 
-  if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_pre.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(
-      operator_coupled_pre, param_pre, 0 /* refine_time */, mpi_comm, is_test, postprocessor_pre));
-  }
-  else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_pre.reset(
-      new IncNS::TimeIntBDFDualSplitting<dim, Number>(operator_dual_splitting_pre,
-                                                      param_pre,
-                                                      0 /* refine_time */,
-                                                      mpi_comm,
-                                                      is_test,
-                                                      postprocessor_pre));
-  }
-  else if(this->param_pre.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pre.reset(
-      new IncNS::TimeIntBDFPressureCorrection<dim, Number>(operator_pressure_correction_pre,
-                                                           param_pre,
-                                                           0 /* refine_time */,
-                                                           mpi_comm,
-                                                           is_test,
-                                                           postprocessor_pre));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(
-      operator_coupled, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator.reset(new IncNS::TimeIntBDFDualSplitting<dim, Number>(
-      operator_dual_splitting, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator.reset(new IncNS::TimeIntBDFPressureCorrection<dim, Number>(
-      operator_pressure_correction, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  time_integrator = create_time_integrator<dim, Number>(
+    pde_operator, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor);
 
 
   // For the two-domain solver the parameter start_with_low_order has to be true.
@@ -434,11 +309,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   // setup solvers
 
-  operator_base_pre->setup_solvers(time_integrator_pre->get_scaling_factor_time_derivative_term(),
-                                   time_integrator_pre->get_velocity());
+  pde_operator_pre->setup_solvers(time_integrator_pre->get_scaling_factor_time_derivative_term(),
+                                  time_integrator_pre->get_velocity());
 
-  operator_base->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
-                               time_integrator->get_velocity());
+  pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
+                              time_integrator->get_velocity());
 
   timer_tree.insert({"Incompressible flow", "Setup"}, timer.wall_time());
 }

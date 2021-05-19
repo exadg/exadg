@@ -111,15 +111,8 @@ private:
   /*
    * Spatial discretization
    */
-  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base_pre;
-  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled_pre;
-  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting_pre;
-  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction_pre;
-
-  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base;
-  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled;
-  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting;
-  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator_pre;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
 
   /*
    * Postprocessor
