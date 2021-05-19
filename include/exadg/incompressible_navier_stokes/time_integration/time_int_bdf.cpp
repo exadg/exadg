@@ -434,7 +434,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, refine_steps_time));
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2.0, refine_steps_time));
     print_parameter(this->pcout, "Time step size", time_step);
   }
   else

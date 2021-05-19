@@ -77,7 +77,7 @@ fill_resolutions_vector(
   int    refine_level = 0;
   double n_cells      = 1.0;
 
-  while(n_cells <= std::pow(2, dim) * n_cells_max)
+  while(n_cells <= std::pow(2.0, dim) * n_cells_max)
   {
     // We want to increase the problem size approximately by a factor of two, which is
     // realized by using a coarse grid with {3,4}^dim elements in 2D and {3,4,5}^dim elements
@@ -87,7 +87,7 @@ fill_resolutions_vector(
     if(refine_level >= 2)
     {
       n_subdivisions_1d = 3;
-      n_cells           = std::pow(n_subdivisions_1d, dim) * std::pow(2., (refine_level - 2) * dim);
+      n_cells = Utilities::pow(n_subdivisions_1d, dim) * std::pow(2.0, (refine_level - 2) * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -107,7 +107,7 @@ fill_resolutions_vector(
     // coarse grid with only a single cell, and refine_level uniform refinements
     {
       n_subdivisions_1d = 1;
-      n_cells           = std::pow(2., refine_level * dim);
+      n_cells           = std::pow(2.0, refine_level * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -128,7 +128,7 @@ fill_resolutions_vector(
     if(dim == 3 && refine_level >= 2)
     {
       n_subdivisions_1d = 5;
-      n_cells           = std::pow(n_subdivisions_1d, dim) * std::pow(2., (refine_level - 2) * dim);
+      n_cells = Utilities::pow(n_subdivisions_1d, dim) * std::pow(2.0, (refine_level - 2) * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -147,7 +147,7 @@ fill_resolutions_vector(
 
     // perform one global refinement
     ++refine_level;
-    n_cells = std::pow(2., refine_level * dim);
+    n_cells = std::pow(2.0, refine_level * dim);
   }
 
   if(run_type == RunType::FixedProblemSize)

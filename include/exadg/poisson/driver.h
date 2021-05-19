@@ -99,9 +99,9 @@ get_dofs_per_element(std::string const & input_file,
   unsigned int dofs_per_element = 1;
 
   if(spatial_discretization == "CG")
-    dofs_per_element = std::pow(degree, dim);
+    dofs_per_element = Utilities::pow(degree, dim);
   else if(spatial_discretization == "DG")
-    dofs_per_element = std::pow(degree + 1, dim);
+    dofs_per_element = Utilities::pow(degree + 1, dim);
   else
     AssertThrow(false, ExcMessage("Not implemented."));
 

@@ -132,12 +132,12 @@ get_dofs_per_element(std::string const & input_file,
   OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
-  unsigned int const velocity_dofs_per_element = dim * std::pow(degree + 1, dim);
+  unsigned int const velocity_dofs_per_element = dim * Utilities::pow(degree + 1, dim);
   unsigned int       pressure_dofs_per_element = 1;
   if(pressure_degree == "MixedOrder")
-    pressure_dofs_per_element = std::pow(degree, dim);
+    pressure_dofs_per_element = Utilities::pow(degree, dim);
   else if(pressure_degree == "EqualOrder")
-    pressure_dofs_per_element = std::pow(degree + 1, dim);
+    pressure_dofs_per_element = Utilities::pow(degree + 1, dim);
   else
     AssertThrow(false, ExcMessage("Not implemented."));
 

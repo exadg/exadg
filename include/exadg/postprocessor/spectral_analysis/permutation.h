@@ -124,13 +124,13 @@ public:
     bsize = FFT.bsize;
 
     // data structures for determining the communication partners...
-    int                 has_length = (end - start) * pow(points, dim);
+    int                 has_length = (end - start) * dealii::Utilities::pow(points, dim);
     unsigned long int * has        = new unsigned long int[has_length];
     int *               has_procs  = new int[has_length];
     send_buffer                    = new double[has_length * dim];
     send_index                     = new int[has_length];
 
-    int                 want_length = (end_ - start_) * pow(n * points, dim - 1);
+    int                 want_length = (end_ - start_) * dealii::Utilities::pow(n * points, dim - 1);
     unsigned long int * want        = new unsigned long int[want_length];
     int *               want_procs  = new int[want_length];
     recv_buffer                     = new double[want_length * dim];
@@ -207,7 +207,7 @@ public:
       for(int jj = 0; jj < pow(n * points, dim - 1); jj++, counter++)
       {
         // ... determine dof
-        unsigned long int temp = ii * pow(n * points, dim - 1) + jj;
+        unsigned long int temp = ii * dealii::Utilities::pow(n * points, dim - 1) + jj;
         want[counter]          = temp;
         // ... determine owning process
         int t = dim == 3 ? (temp % pn) / points + ((temp % (pn * pn)) / pn) / points * n +

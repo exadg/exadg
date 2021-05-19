@@ -138,17 +138,17 @@ public:
     std::vector<types::global_dof_index> indices_has, indices_want;
 
     for(auto const & I : local_cells)
-      for(types::global_dof_index i = 0; i < pow_(points_dst, dim); i++)
+      for(types::global_dof_index i = 0; i < dealii::Utilities::pow(points_dst, dim); i++)
         for(types::global_dof_index d = 0; d < dim; d++)
         {
           types::global_dof_index index =
             (I / (n_cells_1D * n_cells_1D) * points_dst + i / (points_dst * points_dst)) *
-              pow_(n_cells_1D * points_dst, 2) +
+              dealii::Utilities::pow(n_cells_1D * points_dst, 2) +
             (((I / n_cells_1D) % n_cells_1D) * points_dst + ((i / points_dst) % points_dst)) *
-              pow_(n_cells_1D * points_dst, 1) +
+              dealii::Utilities::pow(n_cells_1D * points_dst, 1) +
             (I % (n_cells_1D)*points_dst + i % (points_dst));
 
-          indices_has.push_back(d * pow_(points_dst * n_cells_1D, dim) + index);
+          indices_has.push_back(d * dealii::Utilities::pow(points_dst * n_cells_1D, dim) + index);
         }
 
     types::global_dof_index N  = s.cells * s.points_dst;
@@ -161,9 +161,10 @@ public:
         for(types::global_dof_index j = 0; j < N; j++)
           for(types::global_dof_index i = 0; i < Nx; i++, c++)
             if(i < N)
-              indices_want.push_back(d * pow_(points_dst * n_cells_1D, dim) +
-                                     (k + start) * pow_(points_dst * n_cells_1D, 2) +
-                                     j * pow_(points_dst * n_cells_1D, 1) + i);
+              indices_want.push_back(d * dealii::Utilities::pow(points_dst * n_cells_1D, dim) +
+                                     (k + start) *
+                                       dealii::Utilities::pow(points_dst * n_cells_1D, 2) +
+                                     j * dealii::Utilities::pow(points_dst * n_cells_1D, 1) + i);
             else
               indices_want.push_back(numbers::invalid_dof_index); // x-padding
 
@@ -204,12 +205,16 @@ public:
 
       // ... permute
       timer.start("Permutation");
-      ArrayView<double> dst(
-        fftw.u_real,
-        s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
+      ArrayView<double>       dst(fftw.u_real,
+                            s.dim *
+                              dealii::Utilities::pow(static_cast<types::global_dof_index>(
+                                                       s.cells * s.points_dst),
+                                                     s.dim) *
+                              2);
       ArrayView<double const> src_(
         ipol.dst,
-        s.dim * pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim));
+        s.dim * dealii::Utilities::pow(static_cast<types::global_dof_index>(s.cells * s.points_dst),
+                                       s.dim));
       nonconti->export_to_ghosted_array(src_, dst);
 
       timer.append("Permutation");
@@ -250,31 +255,20 @@ public:
   }
 
 private:
-  types::global_dof_index
-  pow_(const types::global_dof_index base, const types::global_dof_index exp)
-  {
-    types::global_dof_index result = 1.0;
-
-    for(types::global_dof_index i = 0; i < exp; i++)
-      result *= base;
-
-    return result;
-  };
-
   template<int dim>
-  double
+  std::size_t
   norm_point_to_lex(Point<dim> const & c, unsigned int const & n_cells_1D)
   {
     // convert normalized point [0, 1] to lex
     if(dim == 2)
-      return std::floor(c[0]) + n_cells_1D * std::floor(c[1]);
+      return static_cast<std::size_t>(std::floor(c[0]) + n_cells_1D * std::floor(c[1]));
     else if(dim == 3)
-      return std::floor(c[0]) + n_cells_1D * std::floor(c[1]) +
-             n_cells_1D * n_cells_1D * std::floor(c[2]);
+      return static_cast<std::size_t>(std::floor(c[0]) + n_cells_1D * std::floor(c[1]) +
+                                      n_cells_1D * n_cells_1D * std::floor(c[2]));
     else
       Assert(false, ExcMessage("not implemented"));
 
-    return 0.0;
+    return 0;
   }
 
   MPI_Comm const & comm;
@@ -391,7 +385,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
       dof_handler_full->distribute_dofs(*fe_full);
 
       int cells = tria_full->n_global_active_cells();
-      cells     = round(pow(cells, 1.0 / dim));
+      cells     = static_cast<int>(std::round(std::pow(cells, 1.0 / dim)));
       deal_spectrum_wrapper->init(dim, cells, data.degree + 1, evaluation_points, *tria_full);
     }
     else
@@ -399,7 +393,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
       int local_cells = matrix_free_data_in.n_physical_cells();
       int cells       = local_cells;
       MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, mpi_comm);
-      cells = round(pow(cells, 1.0 / dim));
+      cells = static_cast<int>(std::round(std::pow(cells, 1.0 / dim)));
       deal_spectrum_wrapper->init(
         dim, cells, data.degree + 1, evaluation_points, dof_handler->get_triangulation());
     }
@@ -422,7 +416,8 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
       {
         if(data.exploit_symmetry)
         {
-          unsigned int n_cells_1d = data.n_cells_1d_coarse_grid * std::pow(2, data.refine_level);
+          unsigned int n_cells_1d =
+            data.n_cells_1d_coarse_grid * Utilities::pow(2, data.refine_level);
 
           velocity_full.reset(new VectorType());
           initialize_dof_vector(*velocity_full, *dof_handler_full);
@@ -559,9 +554,9 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
       for(int i = 0; i < len; i++)
       {
         f << std::scientific << std::setprecision(0)
-          << std::setw(2 + ceil(std::max(3.0, log(len) / log(10)))) << i << std::scientific
-          << std::setprecision(precision) << std::setw(precision + 8) << kappa[i] << "   " << E[i]
-          << std::endl;
+          << std::setw(2 + static_cast<unsigned int>(std::ceil(std::max(3.0, log(len) / log(10)))))
+          << i << std::scientific << std::setprecision(precision) << std::setw(precision + 8)
+          << kappa[i] << "   " << E[i] << std::endl;
       }
     }
   }

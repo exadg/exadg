@@ -98,7 +98,7 @@ StatisticsManager<dim, Number>::setup(const std::function<double(double const &)
     AssertThrow(n_points_y_per_cell >= 2,
                 ExcMessage("Number of points in y-direction per cell is invalid."));
 
-    n_cells_y_dir *= std::pow(2, dof_handler.get_triangulation().n_global_levels() - 1);
+    n_cells_y_dir *= Utilities::pow(2, dof_handler.get_triangulation().n_global_levels() - 1);
 
     unsigned int const n_points_y_glob = n_cells_y_dir * (n_points_y_per_cell - 1) + 1;
 

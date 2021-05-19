@@ -122,9 +122,9 @@ public:
     points_target = s.points_dst;
 
     // number of gauss lobatto points per cell and ...
-    dofs_source = pow(points_source, DIM);
+    dofs_source = dealii::Utilities::pow(points_source, DIM);
     // ...number of equidistant points per cell
-    dofs_target = pow(points_target, DIM);
+    dofs_target = dealii::Utilities::pow(points_target, DIM);
 
     // allocate memory for source (only needed if values are read by IO)...
     src = new double[cells * dofs_source * DIM];

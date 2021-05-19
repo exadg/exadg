@@ -272,7 +272,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
          &lwork,
          dwork.data(),
          &info);
-  lwork = work[0].real();
+  lwork = static_cast<int>(work[0].real());
   work.resize(lwork);
 
   pcout << "Size of work array: " << lwork << std::endl;
