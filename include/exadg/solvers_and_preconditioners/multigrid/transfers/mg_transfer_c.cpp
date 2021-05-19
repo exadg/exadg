@@ -143,6 +143,7 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
     fe_eval_dg.distribute_local_to_global(vec_dg);
   }
   dst.copy_locally_owned_data_from(vec_dg);
+  src.zero_out_ghost_values();
 }
 
 template<int dim, typename Number, typename VectorType, int components>
