@@ -428,7 +428,7 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     do_set_input_parameters(param);
   }
@@ -444,7 +444,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
                                                        n_refine_space,
@@ -458,7 +458,7 @@ public:
                         PeriodicFaces &                     periodic_faces,
                         unsigned int const                  n_refine_space,
                         std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree)
+                        unsigned int const                  mapping_degree) final
   {
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
@@ -551,8 +551,9 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-                          std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+  set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS
@@ -588,7 +589,7 @@ public:
   void
   set_boundary_conditions_precursor(
     std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS
@@ -606,7 +607,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(max_velocity));
@@ -616,7 +617,7 @@ public:
   }
 
   void
-  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(max_velocity));
@@ -627,7 +628,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -829,7 +830,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 

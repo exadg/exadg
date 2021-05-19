@@ -208,7 +208,7 @@ public:
   double       end_time   = 2.0 * t0;
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;
@@ -330,7 +330,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     std::vector<unsigned int> repetitions({1, 1});
     Point<dim>                point1(0.0, -H), point2(L, H);
@@ -358,8 +358,9 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-                          std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+  set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -370,7 +371,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(
       new AnalyticalSolutionVelocity<dim>(H, MAX_VELOCITY, ALPHA, EPSILON, FE, OMEGA, EIG_VEC));
@@ -380,7 +381,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
 

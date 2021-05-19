@@ -163,7 +163,7 @@ public:
   }
 
   void
-  set_input_parameters_fluid(IncNS::InputParameters & param)
+  set_input_parameters_fluid(IncNS::InputParameters & param) final
   {
     using namespace IncNS;
 
@@ -411,7 +411,7 @@ public:
                     PeriodicFaces &                     periodic_faces,
                     unsigned int const                  n_refine_space,
                     std::shared_ptr<Mapping<dim>> &     mapping,
-                    unsigned int const                  mapping_degree)
+                    unsigned int const                  mapping_degree) final
   {
     (void)periodic_faces;
 
@@ -507,7 +507,7 @@ public:
   void
   set_boundary_conditions_fluid(
     std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
@@ -540,7 +540,7 @@ public:
   }
 
   void
-  set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions)
+  set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -549,7 +549,7 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -571,7 +571,7 @@ public:
   }
 
   void
-  set_input_parameters_ale(Poisson::InputParameters & param)
+  set_input_parameters_ale(Poisson::InputParameters & param) final
   {
     using namespace Poisson;
 
@@ -596,7 +596,7 @@ public:
   }
 
   void set_boundary_conditions_ale(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
@@ -618,14 +618,14 @@ public:
 
 
   void
-  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   void
-  set_input_parameters_ale(Structure::InputParameters & parameters)
+  set_input_parameters_ale(Structure::InputParameters & parameters) final
   {
     using namespace Structure;
 
@@ -656,7 +656,7 @@ public:
 
   void
   set_boundary_conditions_ale(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
@@ -687,7 +687,7 @@ public:
   }
 
   void
-  set_material_ale(Structure::MaterialDescriptor & material_descriptor)
+  set_material_ale(Structure::MaterialDescriptor & material_descriptor) final
   {
     using namespace Structure;
 
@@ -705,7 +705,7 @@ public:
   }
 
   void
-  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) final
   {
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
@@ -714,7 +714,7 @@ public:
 
   // Structure
   void
-  set_input_parameters_structure(Structure::InputParameters & parameters)
+  set_input_parameters_structure(Structure::InputParameters & parameters) final
   {
     using namespace Structure;
 
@@ -893,7 +893,7 @@ public:
                         PeriodicFaces &                     periodic_faces,
                         unsigned int const                  n_refine_space,
                         std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree)
+                        unsigned int const                  mapping_degree) final
   {
     (void)periodic_faces;
 
@@ -982,7 +982,7 @@ public:
 
   void
   set_boundary_conditions_structure(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor)
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
@@ -1001,7 +1001,8 @@ public:
   }
 
   void
-  set_field_functions_structure(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions)
+  set_field_functions_structure(
+    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) final
   {
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 
@@ -1010,7 +1011,7 @@ public:
   }
 
   void
-  set_material_structure(Structure::MaterialDescriptor & material_descriptor)
+  set_material_structure(Structure::MaterialDescriptor & material_descriptor) final
   {
     using namespace Structure;
 
@@ -1024,7 +1025,7 @@ public:
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     using namespace Structure;
 

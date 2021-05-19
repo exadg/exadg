@@ -134,7 +134,7 @@ public:
   double const output_interval_time = (end_time - start_time) / 200.0;
 
   void
-  set_input_parameters(IncNS::InputParameters & param)
+  set_input_parameters(IncNS::InputParameters & param) final
   {
     using namespace IncNS;
 
@@ -268,7 +268,8 @@ public:
   }
 
   void
-  set_input_parameters_scalar(ConvDiff::InputParameters & param, unsigned int const scalar_index)
+  set_input_parameters_scalar(ConvDiff::InputParameters & param,
+                              unsigned int const          scalar_index) final
   {
     (void)scalar_index;
 
@@ -339,7 +340,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     (void)periodic_faces;
 
@@ -371,7 +372,7 @@ public:
   void
   set_boundary_conditions(
     std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -387,7 +388,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -397,7 +398,7 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -420,7 +421,7 @@ public:
   void
   set_boundary_conditions_scalar(
     std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
-    unsigned int                                       scalar_index = 0)
+    unsigned int                                       scalar_index = 0) final
   {
     (void)scalar_index; // only one scalar quantity considered
 
@@ -433,7 +434,7 @@ public:
 
   void
   set_field_functions_scalar(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions,
-                             unsigned int                                   scalar_index = 0)
+                             unsigned int                                   scalar_index = 0) final
   {
     (void)scalar_index; // only one scalar quantity considered
 
@@ -445,7 +446,7 @@ public:
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
   construct_postprocessor_scalar(unsigned int const degree,
                                  MPI_Comm const &   mpi_comm,
-                                 unsigned int const scalar_index)
+                                 unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output = this->write_output;

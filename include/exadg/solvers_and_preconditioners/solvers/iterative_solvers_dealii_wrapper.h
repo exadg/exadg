@@ -117,7 +117,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
     Timer timer;
 
@@ -225,7 +225,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
     Timer timer;
 
@@ -326,7 +326,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
     Timer timer;
 

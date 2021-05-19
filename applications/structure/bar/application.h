@@ -211,7 +211,7 @@ public:
   double const density = 0.001;
 
   void
-  set_input_parameters(InputParameters & parameters)
+  set_input_parameters(InputParameters & parameters) final
   {
     parameters.problem_type         = ProblemType::Steady;
     parameters.body_force           = use_volume_force;
@@ -256,7 +256,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     (void)periodic_faces;
 
@@ -303,7 +303,7 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
@@ -339,7 +339,7 @@ public:
   }
 
   void
-  set_material(MaterialDescriptor & material_descriptor)
+  set_material(MaterialDescriptor & material_descriptor) final
   {
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
@@ -351,7 +351,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     if(use_volume_force)
       field_functions->right_hand_side.reset(new VolumeForce<dim>(this->volume_force));
@@ -363,7 +363,7 @@ public:
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->write_output;

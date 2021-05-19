@@ -118,7 +118,7 @@ public:
    *  point x in physical coordinates
    */
   Point<dim>
-  push_forward(Point<dim> const & xi) const
+  push_forward(Point<dim> const & xi) const final
   {
     Point<dim> x;
 
@@ -136,7 +136,7 @@ public:
    *  to point xi in reference coordinates [0,1]^d
    */
   Point<dim>
-  pull_back(Point<dim> const & x) const
+  pull_back(Point<dim> const & x) const final
   {
     Point<dim> xi;
 
@@ -150,7 +150,7 @@ public:
   }
 
   std::unique_ptr<Manifold<dim>>
-  clone() const override
+  clone() const final
   {
     return std::make_unique<ManifoldTurbulentChannel<dim>>(dimensions);
   }
@@ -270,7 +270,7 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.equation_type   = EquationType::NavierStokes;
@@ -319,7 +319,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;
@@ -392,7 +392,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution.reset(new InitialSolution<dim>());
     field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
@@ -403,7 +403,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output = this->write_output;

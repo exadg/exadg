@@ -62,7 +62,7 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -77,7 +77,7 @@ public:
   MeshType    mesh_type        = MeshType::Cartesian;
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;
@@ -176,7 +176,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     double const left = -1.0, right = 1.0;
     double const deformation = 0.1;
@@ -216,7 +216,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(dim));
@@ -225,7 +225,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     (void)degree;
 

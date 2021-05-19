@@ -106,7 +106,7 @@ public:
    * This function applies the multigrid preconditioner dst = P^{-1} src.
    */
   void
-  vmult(VectorType & dst, VectorType const & src) const;
+  vmult(VectorType & dst, VectorType const & src) const override;
 
   /*
    * Use multigrid as a solver.
@@ -125,8 +125,8 @@ public:
    * Update of multigrid preconditioner including operators, smoothers, etc. (e.g. for problems
    * with time-dependent coefficients).
    */
-  virtual void
-  update();
+  void
+  update() override;
 
   std::shared_ptr<TimerTree>
   get_timings() const override;

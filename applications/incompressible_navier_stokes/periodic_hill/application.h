@@ -120,7 +120,7 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -177,7 +177,7 @@ public:
   unsigned int points_per_line        = 20;
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.problem_type = ProblemType::Unsteady;
@@ -268,7 +268,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     Point<dim> p_1;
     p_1[0] = 0.;
@@ -335,8 +335,9 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-                          std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+  set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     // set boundary conditions
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
@@ -350,7 +351,7 @@ public:
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(bulk_velocity, H, height));
@@ -360,7 +361,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
 

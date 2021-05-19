@@ -154,7 +154,7 @@ public:
   double const end_time   = 1.0;
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(InputParameters & param) final
   {
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;
@@ -270,7 +270,7 @@ public:
               PeriodicFaces &                     periodic_faces,
               unsigned int const                  n_refine_space,
               std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+              unsigned int const                  mapping_degree) final
   {
     (void)periodic_faces;
 
@@ -293,8 +293,9 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-                          std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure)
+  set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -312,7 +313,7 @@ public:
 
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
   {
     std::shared_ptr<Function<dim>> initial_solution_velocity;
     std::shared_ptr<Function<dim>> initial_solution_pressure;
@@ -335,7 +336,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     PostProcessorData<dim> pp_data;
 
