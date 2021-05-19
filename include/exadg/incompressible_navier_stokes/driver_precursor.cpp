@@ -352,26 +352,25 @@ template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::print_performance_results(double const total_time) const
 {
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
+  pcout << std::endl
+        << "_________________________________________________________________________________"
+        << std::endl
+        << std::endl;
 
   // Iterations
-  this->pcout << std::endl
-              << "Average number of iterations for incompressible Navier-Stokes solver:"
-              << std::endl;
+  pcout << std::endl
+        << "Average number of iterations for incompressible Navier-Stokes solver:" << std::endl;
 
-  this->pcout << std::endl << "Precursor:" << std::endl;
+  pcout << std::endl << "Precursor:" << std::endl;
 
   time_integrator_pre->print_iterations();
 
-  this->pcout << std::endl << "Main:" << std::endl;
+  pcout << std::endl << "Main:" << std::endl;
 
   time_integrator->print_iterations();
 
   // Wall times
-  this->pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
+  pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
 
   timer_tree.insert({"Incompressible flow"}, total_time);
 
@@ -395,9 +394,9 @@ DriverPrecursor<dim, Number>::print_performance_results(double const total_time)
 
   print_costs(pcout, total_time_avg, N_mpi_processes);
 
-  this->pcout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
+  pcout << "_________________________________________________________________________________"
+        << std::endl
+        << std::endl;
 }
 
 template class DriverPrecursor<2, float>;
