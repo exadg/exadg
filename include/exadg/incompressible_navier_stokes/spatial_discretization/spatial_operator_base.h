@@ -26,6 +26,9 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/mapping_q.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
 
 // ExaDG
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h>
@@ -60,6 +63,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 class SpatialOperatorBase;
+
 /*
  * Operator-integration-factor (OIF) sub-stepping.
  */
@@ -124,7 +128,8 @@ template<int dim, typename Number>
 class SpatialOperatorBase : public dealii::Subscriptor
 {
 protected:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef SpatialOperatorBase<dim, Number> This;
 
@@ -269,6 +274,9 @@ public:
 
   void
   initialize_vector_pressure(VectorType & src) const;
+
+  void
+  initialize_block_vector_velocity_pressure(BlockVectorType & src) const;
 
   /*
    * Prescribe initial conditions using a specified analytical/initial solution function.

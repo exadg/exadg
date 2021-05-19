@@ -787,6 +787,20 @@ SpatialOperatorBase<dim, Number>::initialize_vector_pressure(VectorType & src) c
 
 template<int dim, typename Number>
 void
+SpatialOperatorBase<dim, Number>::initialize_block_vector_velocity_pressure(
+  BlockVectorType & src) const
+{
+  // velocity (1st block) + pressure (2nd block)
+  src.reinit(2);
+
+  matrix_free->initialize_dof_vector(src.block(0), get_dof_index_velocity());
+  matrix_free->initialize_dof_vector(src.block(1), get_dof_index_pressure());
+
+  src.collect_sizes();
+}
+
+template<int dim, typename Number>
+void
 SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
                                                                VectorType & pressure,
                                                                double const time) const

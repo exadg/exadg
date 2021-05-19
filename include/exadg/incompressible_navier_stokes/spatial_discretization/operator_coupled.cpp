@@ -172,19 +172,6 @@ OperatorCoupled<dim, Number>::update_continuity_penalty_operator(VectorType cons
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::initialize_block_vector_velocity_pressure(BlockVectorType & src) const
-{
-  // velocity(1st block) + pressure(2nd block)
-  src.reinit(2);
-
-  this->get_matrix_free().initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
-  this->get_matrix_free().initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
-
-  src.collect_sizes();
-}
-
-template<int dim, typename Number>
-void
 OperatorCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling_factor)
 {
   scaling_factor_continuity = scaling_factor;

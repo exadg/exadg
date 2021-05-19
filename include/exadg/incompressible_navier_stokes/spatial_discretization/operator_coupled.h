@@ -191,7 +191,7 @@ private:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef typename Base::BlockVectorType BlockVectorType;
 
 public:
   /*
@@ -236,13 +236,6 @@ public:
    */
   void
   update_continuity_penalty_operator(VectorType const & velocity);
-
-
-  /*
-   * Initialization of vectors.
-   */
-  void
-  initialize_block_vector_velocity_pressure(BlockVectorType & src) const;
 
   /*
    * Setters and getters.
