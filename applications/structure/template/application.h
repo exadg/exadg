@@ -81,7 +81,7 @@ public:
   }
 
   void
-  set_material(MaterialDescriptor & material_descriptor)
+  set_material(MaterialDescriptor & material_descriptor) final
   {
     (void)material_descriptor;
   }

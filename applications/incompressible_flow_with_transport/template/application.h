@@ -63,7 +63,7 @@ public:
   }
 
   void
-  set_input_parameters(IncNS::InputParameters & param)
+  set_input_parameters(IncNS::InputParameters & param) final
   {
     (void)param;
 
@@ -74,7 +74,8 @@ public:
   }
 
   void
-  set_input_parameters_scalar(ConvDiff::InputParameters & param, unsigned int const scalar_index)
+  set_input_parameters_scalar(ConvDiff::InputParameters & param,
+                              unsigned int const          scalar_index) final
   {
     (void)param;
     (void)scalar_index;
@@ -142,7 +143,7 @@ public:
   void
   set_boundary_conditions_scalar(
     std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
-    unsigned int const                                 scalar_index = 0)
+    unsigned int const                                 scalar_index = 0) final
   {
     (void)scalar_index;
 
@@ -155,7 +156,7 @@ public:
 
   void
   set_field_functions_scalar(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions,
-                             unsigned int const                             scalar_index = 0)
+                             unsigned int const                             scalar_index = 0) final
   {
     (void)scalar_index;
 
@@ -167,7 +168,7 @@ public:
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
   construct_postprocessor_scalar(unsigned int const degree,
                                  MPI_Comm const &   mpi_comm,
-                                 unsigned int const scalar_index)
+                                 unsigned int const scalar_index) final
   {
     (void)degree;
     (void)scalar_index;

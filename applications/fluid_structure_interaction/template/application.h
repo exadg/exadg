@@ -156,7 +156,7 @@ public:
   }
 
   void
-  set_material_ale(Structure::MaterialDescriptor & material_descriptor)
+  set_material_ale(Structure::MaterialDescriptor & material_descriptor) final
   {
     (void)material_descriptor;
   }
@@ -211,7 +211,7 @@ public:
   }
 
   void
-  set_material_structure(Structure::MaterialDescriptor & material_descriptor)
+  set_material_structure(Structure::MaterialDescriptor & material_descriptor) final
   {
     (void)material_descriptor;
   }

@@ -293,7 +293,7 @@ public:
   }
 
   void
-  set_material(MaterialDescriptor & material_descriptor)
+  set_material(MaterialDescriptor & material_descriptor) final
   {
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
