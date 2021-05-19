@@ -47,7 +47,6 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
 {
   std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator;
 
-  // initialize pde_operator
   if(parameters.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     std::shared_ptr<OperatorCoupled<dim, Number>> operator_coupled =
