@@ -348,7 +348,7 @@ public:
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
+  set_mesh_movement_function() final
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 
