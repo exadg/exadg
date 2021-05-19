@@ -19,6 +19,7 @@
  *  ______________________________________________________________________
  */
 
+#include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
 #include <exadg/incompressible_flow_with_transport/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -342,34 +343,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // initialize time integrator
-    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
-    {
-      scalar_time_integrator[i].reset(new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i],
-                                                                          scalar_param[i],
-                                                                          0 /* refine_time */,
-                                                                          mpi_comm,
-                                                                          is_test,
-                                                                          scalar_postprocessor[i]));
-    }
-    else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
-    {
-      scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<dim, Number>(conv_diff_operator[i],
-                                                                            scalar_param[i],
-                                                                            0 /* refine_time */,
-                                                                            mpi_comm,
-                                                                            is_test,
-                                                                            scalar_postprocessor[i],
-                                                                            moving_mapping,
-                                                                            matrix_free));
-    }
-    else
-    {
-      AssertThrow(scalar_param[i].temporal_discretization ==
-                      ConvDiff::TemporalDiscretization::ExplRK ||
-                    scalar_param[i].temporal_discretization ==
-                      ConvDiff::TemporalDiscretization::BDF,
-                  ExcMessage("Specified time integration scheme is not implemented!"));
-    }
+    scalar_time_integrator[i] =
+      ConvDiff::create_time_integrator<dim, Number>(conv_diff_operator[i],
+                                                    scalar_param[i],
+                                                    0 /* refine_time */,
+                                                    mpi_comm,
+                                                    is_test,
+                                                    scalar_postprocessor[i],
+                                                    moving_mapping,
+                                                    matrix_free);
 
     if(scalar_param[i].restarted_simulation == false)
     {

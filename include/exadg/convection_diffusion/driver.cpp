@@ -26,6 +26,7 @@
 
 // ExaDG
 #include <exadg/convection_diffusion/driver.h>
+#include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/throughput_parameters.h>
 
@@ -116,15 +117,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                     mapping,
-                                                     degree,
-                                                     periodic_faces,
-                                                     boundary_descriptor,
-                                                     field_functions,
-                                                     param,
-                                                     "scalar",
-                                                     mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(*triangulation,
+                                               mapping,
+                                               degree,
+                                               periodic_faces,
+                                               boundary_descriptor,
+                                               field_functions,
+                                               param,
+                                               "scalar",
+                                               mpi_comm));
 
   // initialize matrix_free
   matrix_free_data.reset(new MatrixFreeData<dim, Number>());
@@ -136,7 +137,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
     Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
   }
-  conv_diff_operator->fill_matrix_free_data(*matrix_free_data);
+  pde_operator->fill_matrix_free_data(*matrix_free_data);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,
@@ -146,46 +147,33 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                       matrix_free_data->data);
 
   // setup convection-diffusion operator
-  conv_diff_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup(matrix_free, matrix_free_data);
 
   if(!is_throughput_study)
   {
     // initialize postprocessor
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(*conv_diff_operator, *mapping);
+    postprocessor->setup(*pde_operator, *mapping);
 
     // initialize time integrator or driver for steady problems
     if(param.problem_type == ProblemType::Unsteady)
     {
-      if(param.temporal_discretization == TemporalDiscretization::ExplRK)
-      {
-        time_integrator.reset(new TimeIntExplRK<Number>(
-          conv_diff_operator, param, refine_time, mpi_comm, is_test, postprocessor));
-      }
-      else if(param.temporal_discretization == TemporalDiscretization::BDF)
-      {
-        time_integrator.reset(new TimeIntBDF<dim, Number>(conv_diff_operator,
-                                                          param,
-                                                          refine_time,
-                                                          mpi_comm,
-                                                          is_test,
-                                                          postprocessor,
-                                                          moving_mapping,
-                                                          matrix_free));
-      }
-      else
-      {
-        AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
-                      param.temporal_discretization == TemporalDiscretization::BDF,
-                    ExcMessage("Specified time integration scheme is not implemented!"));
-      }
+      time_integrator = create_time_integrator<dim, Number>(pde_operator,
+                                                            param,
+                                                            refine_time,
+                                                            mpi_comm,
+                                                            is_test,
+                                                            postprocessor,
+                                                            moving_mapping,
+                                                            matrix_free);
 
       time_integrator->setup(param.restarted_simulation);
     }
     else if(param.problem_type == ProblemType::Steady)
     {
-      driver_steady.reset(new DriverSteadyProblems<Number>(
-        conv_diff_operator, param, mpi_comm, is_test, postprocessor));
+      driver_steady = std::make_shared<DriverSteadyProblems<Number>>(
+        pde_operator, param, mpi_comm, is_test, postprocessor);
+
       driver_steady->setup();
     }
     else
@@ -207,13 +195,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
         if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
         {
-          conv_diff_operator->initialize_dof_vector_velocity(velocity);
-          conv_diff_operator->interpolate_velocity(velocity, time_integrator->get_time());
+          pde_operator->initialize_dof_vector_velocity(velocity);
+          pde_operator->interpolate_velocity(velocity, time_integrator->get_time());
           velocity_ptr = &velocity;
         }
 
-        conv_diff_operator->setup_solver(
-          time_integrator_bdf->get_scaling_factor_time_derivative_term(), velocity_ptr);
+        pde_operator->setup_solver(time_integrator_bdf->get_scaling_factor_time_derivative_term(),
+                                   velocity_ptr);
       }
       else
       {
@@ -225,12 +213,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
-        conv_diff_operator->initialize_dof_vector_velocity(velocity);
-        conv_diff_operator->interpolate_velocity(velocity, 0.0 /* time */);
+        pde_operator->initialize_dof_vector_velocity(velocity);
+        pde_operator->interpolate_velocity(velocity, 0.0 /* time */);
         velocity_ptr = &velocity;
       }
 
-      conv_diff_operator->setup_solver(1.0 /* scaling_factor_time_derivative_term */, velocity_ptr);
+      pde_operator->setup_solver(1.0 /* scaling_factor_time_derivative_term */, velocity_ptr);
     }
     else
     {
@@ -248,7 +236,7 @@ Driver<dim, Number>::ale_update() const
   // move the mesh and update dependent data structures
   moving_mapping->update(time_integrator->get_next_time(), false);
   matrix_free->update_mapping(*mapping);
-  conv_diff_operator->update_after_mesh_movement();
+  pde_operator->update_after_mesh_movement();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
     std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
   time_int_bdf->ale_update();
@@ -344,7 +332,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs            = conv_diff_operator->get_number_of_dofs();
+  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
   unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
@@ -384,36 +372,36 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   LinearAlgebra::distributed::Vector<Number> dst, src;
 
-  conv_diff_operator->initialize_dof_vector(src);
+  pde_operator->initialize_dof_vector(src);
   src = 1.0;
-  conv_diff_operator->initialize_dof_vector(dst);
+  pde_operator->initialize_dof_vector(dst);
 
   LinearAlgebra::distributed::Vector<Number> velocity;
   if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      conv_diff_operator->initialize_dof_vector_velocity(velocity);
+      pde_operator->initialize_dof_vector_velocity(velocity);
       velocity = 1.0;
     }
   }
 
   if(operator_type == OperatorType::ConvectiveOperator)
-    conv_diff_operator->update_convective_term(1.0 /* time */, &velocity);
+    pde_operator->update_convective_term(1.0 /* time */, &velocity);
   else if(operator_type == OperatorType::MassConvectionDiffusionOperator)
-    conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
-                                                  1.0 /* scaling_factor_mass */,
-                                                  &velocity);
+    pde_operator->update_conv_diff_operator(1.0 /* time */,
+                                            1.0 /* scaling_factor_mass */,
+                                            &velocity);
 
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::MassOperator)
-      conv_diff_operator->apply_mass_operator(dst, src);
+      pde_operator->apply_mass_operator(dst, src);
     else if(operator_type == OperatorType::ConvectiveOperator)
-      conv_diff_operator->apply_convective_term(dst, src);
+      pde_operator->apply_convective_term(dst, src);
     else if(operator_type == OperatorType::DiffusiveOperator)
-      conv_diff_operator->apply_diffusive_term(dst, src);
+      pde_operator->apply_diffusive_term(dst, src);
     else if(operator_type == OperatorType::MassConvectionDiffusionOperator)
-      conv_diff_operator->apply_conv_diff_operator(dst, src);
+      pde_operator->apply_conv_diff_operator(dst, src);
   };
 
   // do the measurements
@@ -421,7 +409,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     operator_evaluation, degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
 
   // calculate throughput
-  types::global_dof_index const dofs = conv_diff_operator->get_number_of_dofs();
+  types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
 
   double const throughput = (double)dofs / wall_time;
 
@@ -440,7 +428,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
   return std::tuple<unsigned int, types::global_dof_index, double>(
-    conv_diff_operator->get_polynomial_degree(), dofs, throughput);
+    pde_operator->get_polynomial_degree(), dofs, throughput);
 }
 
 template class Driver<2, float>;

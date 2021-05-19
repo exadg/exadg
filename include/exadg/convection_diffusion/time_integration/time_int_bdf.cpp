@@ -40,7 +40,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
   InputParameters const &                         param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
-  bool const                                      print_wall_times_in,
+  bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
   std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
@@ -52,7 +52,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
                            param_in.adaptive_time_stepping,
                            param_in.restart_data,
                            mpi_comm_in,
-                           print_wall_times_in),
+                           is_test_in),
     pde_operator(operator_in),
     param(param_in),
     refine_steps_time(refine_steps_time_in),
