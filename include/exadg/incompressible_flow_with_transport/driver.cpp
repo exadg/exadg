@@ -20,6 +20,8 @@
  */
 
 #include <exadg/incompressible_flow_with_transport/driver.h>
+#include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
+#include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -176,80 +178,33 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
 
-  // initialize fluid_operator_base
+  // initialize fluid_operator
   if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
   {
-    if(this->fluid_param.temporal_discretization ==
-       IncNS::TemporalDiscretization::BDFCoupledSolution)
-    {
-      fluid_operator_coupled.reset(
-        new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                                mapping,
-                                                degree,
-                                                periodic_faces,
-                                                fluid_boundary_descriptor_velocity,
-                                                fluid_boundary_descriptor_pressure,
-                                                fluid_field_functions,
-                                                fluid_param,
-                                                "fluid",
-                                                mpi_comm));
-
-      fluid_operator_base = fluid_operator_coupled;
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      fluid_operator_dual_splitting.reset(
-        new IncNS::OperatorDualSplitting<dim, Number>(*triangulation,
-                                                      mapping,
-                                                      degree,
-                                                      periodic_faces,
-                                                      fluid_boundary_descriptor_velocity,
-                                                      fluid_boundary_descriptor_pressure,
-                                                      fluid_field_functions,
-                                                      fluid_param,
-                                                      "fluid",
-                                                      mpi_comm));
-
-      fluid_operator_base = fluid_operator_dual_splitting;
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFPressureCorrection)
-    {
-      fluid_operator_pressure_correction.reset(
-        new IncNS::OperatorPressureCorrection<dim, Number>(*triangulation,
-                                                           mapping,
-                                                           degree,
-                                                           periodic_faces,
-                                                           fluid_boundary_descriptor_velocity,
-                                                           fluid_boundary_descriptor_pressure,
-                                                           fluid_field_functions,
-                                                           fluid_param,
-                                                           "fluid",
-                                                           mpi_comm));
-
-      fluid_operator_base = fluid_operator_pressure_correction;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    fluid_operator = IncNS::create_operator<dim, Number>(*triangulation,
+                                                         mapping,
+                                                         degree,
+                                                         periodic_faces,
+                                                         fluid_boundary_descriptor_velocity,
+                                                         fluid_boundary_descriptor_pressure,
+                                                         fluid_field_functions,
+                                                         fluid_param,
+                                                         "fluid",
+                                                         mpi_comm);
   }
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
-    fluid_operator_coupled.reset(
-      new IncNS::OperatorCoupled<dim, Number>(*triangulation,
-                                              mapping,
-                                              degree,
-                                              periodic_faces,
-                                              fluid_boundary_descriptor_velocity,
-                                              fluid_boundary_descriptor_pressure,
-                                              fluid_field_functions,
-                                              fluid_param,
-                                              "fluid",
-                                              mpi_comm));
-
-    fluid_operator_base = fluid_operator_coupled;
+    fluid_operator =
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*triangulation,
+                                                            mapping,
+                                                            degree,
+                                                            periodic_faces,
+                                                            fluid_boundary_descriptor_velocity,
+                                                            fluid_boundary_descriptor_pressure,
+                                                            fluid_field_functions,
+                                                            fluid_param,
+                                                            "fluid",
+                                                            mpi_comm);
   }
   else
   {
@@ -280,7 +235,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
     Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
   }
-  fluid_operator_base->fill_matrix_free_data(*matrix_free_data);
+  fluid_operator->fill_matrix_free_data(*matrix_free_data);
   for(unsigned int i = 0; i < n_scalars; ++i)
     conv_diff_operator[i]->fill_matrix_free_data(*matrix_free_data);
 
@@ -312,13 +267,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     // assume that the first scalar field with index 0 is the active scalar that
     // couples to the incompressible Navier-Stokes equations
-    fluid_operator_base->setup(matrix_free,
-                               matrix_free_data,
-                               conv_diff_operator[0]->get_dof_name());
+    fluid_operator->setup(matrix_free, matrix_free_data, conv_diff_operator[0]->get_dof_name());
   }
   else
   {
-    fluid_operator_base->setup(matrix_free, matrix_free_data);
+    fluid_operator->setup(matrix_free, matrix_free_data);
   }
 
   // setup convection-diffusion operator
@@ -326,12 +279,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     conv_diff_operator[i]->setup(matrix_free,
                                  matrix_free_data,
-                                 fluid_operator_base->get_dof_name_velocity());
+                                 fluid_operator->get_dof_name_velocity());
   }
 
   // setup postprocessor
   fluid_postprocessor = application->construct_postprocessor(degree, mpi_comm);
-  fluid_postprocessor->setup(*fluid_operator_base);
+  fluid_postprocessor->setup(*fluid_operator);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
@@ -344,52 +297,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // depends on quantities such as the time_step_size or gamma0!!!)
   if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
   {
-    if(this->fluid_param.temporal_discretization ==
-       IncNS::TemporalDiscretization::BDFCoupledSolution)
-    {
-      fluid_time_integrator.reset(new IncNS::TimeIntBDFCoupled<dim, Number>(fluid_operator_coupled,
-                                                                            fluid_param,
-                                                                            0 /* refine_time */,
-                                                                            mpi_comm,
-                                                                            is_test,
-                                                                            fluid_postprocessor,
-                                                                            moving_mapping,
-                                                                            matrix_free));
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      fluid_time_integrator.reset(
-        new IncNS::TimeIntBDFDualSplitting<dim, Number>(fluid_operator_dual_splitting,
-                                                        fluid_param,
-                                                        0 /* refine_time */,
-                                                        mpi_comm,
-                                                        is_test,
-                                                        fluid_postprocessor,
-                                                        moving_mapping,
-                                                        matrix_free));
-    }
-    else if(this->fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFPressureCorrection)
-    {
-      fluid_time_integrator.reset(
-        new IncNS::TimeIntBDFPressureCorrection<dim, Number>(fluid_operator_pressure_correction,
-                                                             fluid_param,
-                                                             0 /* refine_time */,
-                                                             mpi_comm,
-                                                             is_test,
-                                                             fluid_postprocessor,
-                                                             moving_mapping,
-                                                             matrix_free));
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(fluid_operator,
+                                                                       fluid_param,
+                                                                       0 /* refine_time */,
+                                                                       mpi_comm,
+                                                                       is_test,
+                                                                       fluid_postprocessor,
+                                                                       moving_mapping,
+                                                                       matrix_free);
   }
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
-    // initialize driver for steady state problem that depends on fluid_operator_base
+    std::shared_ptr<IncNS::OperatorCoupled<dim, Number>> fluid_operator_coupled =
+      std::dynamic_pointer_cast<IncNS::OperatorCoupled<dim, Number>>(fluid_operator);
+
+    // initialize driver for steady state problem that depends on fluid_operator
     fluid_driver_steady.reset(new DriverSteady(
       fluid_operator_coupled, fluid_param, mpi_comm, is_test, fluid_postprocessor));
   }
@@ -403,15 +325,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
     // setup solvers once time integrator has been initialized
-    fluid_operator_base->setup_solvers(
-      fluid_time_integrator->get_scaling_factor_time_derivative_term(),
-      fluid_time_integrator->get_velocity());
+    fluid_operator->setup_solvers(fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+                                  fluid_time_integrator->get_velocity());
   }
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
     fluid_driver_steady->setup();
 
-    fluid_operator_base->setup_solvers(1.0 /* dummy */, fluid_driver_steady->get_velocity());
+    fluid_operator->setup_solvers(1.0 /* dummy */, fluid_driver_steady->get_velocity());
   }
   else
   {
@@ -498,7 +419,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
         scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
 
       LinearAlgebra::distributed::Vector<Number> vector;
-      fluid_operator_base->initialize_vector_velocity(vector);
+      fluid_operator->initialize_vector_velocity(vector);
       LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
 
       conv_diff_operator[i]->setup_solver(scaling_factor, velocity);
@@ -642,7 +563,7 @@ Driver<dim, Number>::communicate_scalar_to_fluid() const
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    fluid_operator_base->set_temperature(temperature);
+    fluid_operator->set_temperature(temperature);
   }
 }
 
@@ -712,7 +633,7 @@ Driver<dim, Number>::ale_update() const
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  fluid_operator_base->update_after_mesh_movement();
+  fluid_operator->update_after_mesh_movement();
   for(unsigned int i = 0; i < n_scalars; ++i)
     conv_diff_operator[i]->update_after_mesh_movement();
   timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
@@ -898,7 +819,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index DoFs = this->fluid_operator_base->get_number_of_dofs();
+  types::global_dof_index DoFs = this->fluid_operator->get_number_of_dofs();
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
