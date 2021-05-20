@@ -27,7 +27,7 @@
 #include <deal.II/fe/mapping_q.h>
 
 // ExaDG
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver.h>

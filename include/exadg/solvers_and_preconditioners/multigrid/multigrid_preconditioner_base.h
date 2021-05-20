@@ -28,7 +28,7 @@
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
 // ExaDG
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/multigrid_operator_base.h>
 #include <exadg/solvers_and_preconditioners/multigrid/levels_hybrid_multigrid.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>

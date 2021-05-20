@@ -19,8 +19,8 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_
-#define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_
+#ifndef INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
+#define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
 
 // deal.II
 #include <deal.II/distributed/tria.h>
@@ -208,4 +208,4 @@ private:
 };
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_ */
+#endif /* INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_ */

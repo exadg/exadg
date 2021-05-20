@@ -32,7 +32,7 @@
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h>
 #include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_general_infos.h>
 
 namespace ExaDG

@@ -70,7 +70,7 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     AssertThrow(moving_mesh != nullptr,
                 ExcMessage("Shared pointer moving_mesh is not correctly initialized."));
     AssertThrow(matrix_free != nullptr,
-                ExcMessage("Shared pointer matrix_free_wrapper is not correctly initialized."));
+                ExcMessage("Shared pointer matrix_free_data is not correctly initialized."));
   }
 }
 
