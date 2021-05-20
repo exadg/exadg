@@ -138,17 +138,17 @@ public:
     std::vector<types::global_dof_index> indices_has, indices_want;
 
     for(auto const & I : local_cells)
-      for(types::global_dof_index i = 0; i < dealii::Utilities::pow(points_dst, dim); i++)
+      for(types::global_dof_index i = 0; i < Utilities::pow(points_dst, dim); i++)
         for(types::global_dof_index d = 0; d < dim; d++)
         {
           types::global_dof_index index =
             (I / (n_cells_1D * n_cells_1D) * points_dst + i / (points_dst * points_dst)) *
-              dealii::Utilities::pow(n_cells_1D * points_dst, 2) +
+              Utilities::pow(n_cells_1D * points_dst, 2) +
             (((I / n_cells_1D) % n_cells_1D) * points_dst + ((i / points_dst) % points_dst)) *
-              dealii::Utilities::pow(n_cells_1D * points_dst, 1) +
+              Utilities::pow(n_cells_1D * points_dst, 1) +
             (I % (n_cells_1D)*points_dst + i % (points_dst));
 
-          indices_has.push_back(d * dealii::Utilities::pow(points_dst * n_cells_1D, dim) + index);
+          indices_has.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + index);
         }
 
     types::global_dof_index N  = s.cells * s.points_dst;
@@ -161,10 +161,9 @@ public:
         for(types::global_dof_index j = 0; j < N; j++)
           for(types::global_dof_index i = 0; i < Nx; i++, c++)
             if(i < N)
-              indices_want.push_back(d * dealii::Utilities::pow(points_dst * n_cells_1D, dim) +
-                                     (k + start) *
-                                       dealii::Utilities::pow(points_dst * n_cells_1D, 2) +
-                                     j * dealii::Utilities::pow(points_dst * n_cells_1D, 1) + i);
+              indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) +
+                                     (k + start) * Utilities::pow(points_dst * n_cells_1D, 2) +
+                                     j * Utilities::pow(points_dst * n_cells_1D, 1) + i);
             else
               indices_want.push_back(numbers::invalid_dof_index); // x-padding
 
@@ -205,16 +204,10 @@ public:
 
       // ... permute
       timer.start("Permutation");
-      ArrayView<double>       dst(fftw.u_real,
-                            s.dim *
-                              dealii::Utilities::pow(static_cast<types::global_dof_index>(
-                                                       s.cells * s.points_dst),
-                                                     s.dim) *
-                              2);
-      ArrayView<double const> src_(
-        ipol.dst,
-        s.dim * dealii::Utilities::pow(static_cast<types::global_dof_index>(s.cells * s.points_dst),
-                                       s.dim));
+      types::global_dof_index const size =
+        Utilities::pow(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * s.dim;
+      ArrayView<double>       dst(fftw.u_real, size * 2);
+      ArrayView<double const> src_(ipol.dst, size);
       nonconti->export_to_ghosted_array(src_, dst);
 
       timer.append("Permutation");
