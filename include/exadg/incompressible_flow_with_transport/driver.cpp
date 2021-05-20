@@ -227,18 +227,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize matrix_free
-  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(fluid_param.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
-  }
-  fluid_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free_data.reset(
+    new MatrixFreeData<dim, Number>(triangulation, fluid_param.use_cell_based_face_loops));
+  matrix_free_data->append(fluid_operator);
   for(unsigned int i = 0; i < n_scalars; ++i)
-    conv_diff_operator[i]->fill_matrix_free_data(*matrix_free_data);
+    matrix_free_data->append(conv_diff_operator[i]);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,

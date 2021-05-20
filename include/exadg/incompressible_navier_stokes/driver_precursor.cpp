@@ -236,16 +236,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
 
   // initialize matrix_free precursor
-  matrix_free_data_pre.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data_pre->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(param_pre.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_pre);
-    Categorization::do_cell_based_loops(*tria, matrix_free_data_pre->data);
-  }
-  pde_operator_pre->fill_matrix_free_data(*matrix_free_data_pre);
+  matrix_free_data_pre.reset(
+    new MatrixFreeData<dim, Number>(triangulation_pre, param_pre.use_cell_based_face_loops));
+  matrix_free_data_pre->append(pde_operator_pre);
+
   matrix_free_pre.reset(new MatrixFree<dim, Number>());
   matrix_free_pre->reinit(*mapping_pre,
                           matrix_free_data_pre->get_dof_handler_vector(),
@@ -254,16 +248,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                           matrix_free_data_pre->data);
 
   // initialize matrix_free
-  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(param.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
-  }
-  pde_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free_data.reset(
+    new MatrixFreeData<dim, Number>(triangulation, param.use_cell_based_face_loops));
+  matrix_free_data->append(pde_operator);
+
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),

@@ -115,27 +115,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize Poisson operator
-  poisson_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                   mapping,
-                                                   degree,
-                                                   periodic_faces,
-                                                   boundary_descriptor,
-                                                   field_functions,
-                                                   param,
-                                                   "Poisson",
-                                                   mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(*triangulation,
+                                               mapping,
+                                               degree,
+                                               periodic_faces,
+                                               boundary_descriptor,
+                                               field_functions,
+                                               param,
+                                               "Poisson",
+                                               mpi_comm));
 
   // initialize matrix_free
-  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(param.enable_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
-  }
-  poisson_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free_data.reset(
+    new MatrixFreeData<dim, Number>(triangulation, param.enable_cell_based_face_loops));
+  matrix_free_data->append(pde_operator);
+
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
@@ -143,19 +137,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                       matrix_free_data->get_quadrature_vector(),
                       matrix_free_data->data);
 
-  poisson_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup(matrix_free, matrix_free_data);
 
   // setup solver
   if(not(is_throughput_study))
   {
-    poisson_operator->setup_solver();
+    pde_operator->setup_solver();
   }
 
   // initialize postprocessor
   if(not(is_throughput_study))
   {
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(poisson_operator->get_dof_handler(), *mapping);
+    postprocessor->setup(pde_operator->get_dof_handler(), *mapping);
   }
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());
@@ -170,9 +164,9 @@ Driver<dim, Number>::solve()
   timer.restart();
   LinearAlgebra::distributed::Vector<Number> rhs;
   LinearAlgebra::distributed::Vector<Number> sol;
-  poisson_operator->initialize_dof_vector(rhs);
-  poisson_operator->initialize_dof_vector(sol);
-  poisson_operator->prescribe_initial_conditions(sol);
+  pde_operator->initialize_dof_vector(rhs);
+  pde_operator->initialize_dof_vector(sol);
+  pde_operator->prescribe_initial_conditions(sol);
   timer_tree.insert({"Poisson", "Vector init"}, timer.wall_time());
 
   // postprocessing of results
@@ -182,12 +176,12 @@ Driver<dim, Number>::solve()
 
   // calculate right-hand side
   timer.restart();
-  poisson_operator->rhs(rhs);
+  pde_operator->rhs(rhs);
   timer_tree.insert({"Poisson", "Right-hand side"}, timer.wall_time());
 
   // solve linear system of equations
   timer.restart();
-  iterations = poisson_operator->solve(sol, rhs, 0.0 /* time */);
+  iterations = pde_operator->solve(sol, rhs, 0.0 /* time */);
   solve_time += timer.wall_time();
 
   // postprocessing of results
@@ -200,9 +194,9 @@ template<int dim, typename Number>
 SolverResult
 Driver<dim, Number>::print_performance_results(double const total_time) const
 {
-  double const n_10 = poisson_operator->get_n10();
+  double const n_10 = pde_operator->get_n10();
 
-  types::global_dof_index const DoFs = poisson_operator->get_number_of_dofs();
+  types::global_dof_index const DoFs = pde_operator->get_number_of_dofs();
 
   unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
@@ -223,13 +217,13 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
                 << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
                 << std::endl
                 << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
-                << poisson_operator->get_average_convergence_rate() << std::endl;
+                << pde_operator->get_average_convergence_rate() << std::endl;
 
     // wall times
     timer_tree.insert({"Poisson"}, total_time);
 
     // insert sub-tree for Krylov solver
-    timer_tree.insert({"Poisson"}, poisson_operator->get_timings());
+    timer_tree.insert({"Poisson"}, pde_operator->get_timings());
 
     pcout << std::endl << "Timings for level 1:" << std::endl;
     timer_tree.print_level(pcout, 1);
@@ -254,7 +248,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     this->pcout << print_horizontal_line() << std::endl << std::endl;
   }
 
-  return SolverResult(poisson_operator->get_degree(), DoFs, n_10, tau_10);
+  return SolverResult(pde_operator->get_degree(), DoFs, n_10, tau_10);
 }
 
 template<int dim, typename Number>
@@ -272,8 +266,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   string_to_enum(operator_type, operator_type_string);
 
   LinearAlgebra::distributed::Vector<Number> dst, src;
-  poisson_operator->initialize_dof_vector(src);
-  poisson_operator->initialize_dof_vector(dst);
+  pde_operator->initialize_dof_vector(src);
+  pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
 #ifdef DEAL_II_WITH_TRILINOS
@@ -288,8 +282,8 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   if(operator_type == OperatorType::MatrixBased)
   {
 #ifdef DEAL_II_WITH_TRILINOS
-    poisson_operator->init_system_matrix(system_matrix);
-    poisson_operator->calculate_system_matrix(system_matrix);
+    pde_operator->init_system_matrix(system_matrix);
+    pde_operator->calculate_system_matrix(system_matrix);
 #else
     AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));
 #endif
@@ -298,12 +292,12 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::MatrixFree)
     {
-      poisson_operator->vmult(dst, src);
+      pde_operator->vmult(dst, src);
     }
     else if(operator_type == OperatorType::MatrixBased)
     {
 #ifdef DEAL_II_WITH_TRILINOS
-      poisson_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
+      pde_operator->vmult_matrix_based(dst_trilinos, system_matrix, src_trilinos);
 #else
       AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS."));
 #endif
@@ -315,7 +309,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     operator_evaluation, degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
 
   // calculate throughput
-  types::global_dof_index const dofs = poisson_operator->get_number_of_dofs();
+  types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
 
   double const throughput = (double)dofs / wall_time;
 
@@ -333,7 +327,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(poisson_operator->get_degree(),
+  return std::tuple<unsigned int, types::global_dof_index, double>(pde_operator->get_degree(),
                                                                    dofs,
                                                                    throughput);
 }
