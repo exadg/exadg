@@ -71,13 +71,13 @@ fill_resolutions_vector(
 {
   unsigned int l = 0, n_subdivisions_1d = 1;
 
-  double n_cells_min = (double)n_dofs_min / dofs_per_element;
-  double n_cells_max = (double)n_dofs_max / dofs_per_element;
+  types::global_dof_index n_cells_min = n_dofs_min / dofs_per_element;
+  types::global_dof_index n_cells_max = (n_dofs_max + dofs_per_element - 1) / dofs_per_element;
 
-  int    refine_level = 0;
-  double n_cells      = 1.0;
+  int                     refine_level = 0;
+  types::global_dof_index n_cells      = 1;
 
-  while(n_cells <= std::pow(2.0, dim) * n_cells_max)
+  while(n_cells <= Utilities::pow(2ULL, dim) * n_cells_max)
   {
     // We want to increase the problem size approximately by a factor of two, which is
     // realized by using a coarse grid with {3,4}^dim elements in 2D and {3,4,5}^dim elements
@@ -87,7 +87,8 @@ fill_resolutions_vector(
     if(refine_level >= 2)
     {
       n_subdivisions_1d = 3;
-      n_cells = Utilities::pow(n_subdivisions_1d, dim) * std::pow(2.0, (refine_level - 2) * dim);
+      n_cells =
+        Utilities::pow(n_subdivisions_1d, dim) * Utilities::pow(2ULL, (refine_level - 2) * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -107,7 +108,7 @@ fill_resolutions_vector(
     // coarse grid with only a single cell, and refine_level uniform refinements
     {
       n_subdivisions_1d = 1;
-      n_cells           = std::pow(2.0, refine_level * dim);
+      n_cells           = Utilities::pow(2ULL, refine_level * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -128,7 +129,8 @@ fill_resolutions_vector(
     if(dim == 3 && refine_level >= 2)
     {
       n_subdivisions_1d = 5;
-      n_cells = Utilities::pow(n_subdivisions_1d, dim) * std::pow(2.0, (refine_level - 2) * dim);
+      n_cells =
+        Utilities::pow(n_subdivisions_1d, dim) * Utilities::pow(2ULL, (refine_level - 2) * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -147,7 +149,7 @@ fill_resolutions_vector(
 
     // perform one global refinement
     ++refine_level;
-    n_cells = std::pow(2.0, refine_level * dim);
+    n_cells = Utilities::pow(2ULL, refine_level * dim);
   }
 
   if(run_type == RunType::FixedProblemSize)
