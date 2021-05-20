@@ -44,6 +44,7 @@ public:
    */
   MatrixFreeData()
   {
+    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
   }
 
   /**
@@ -52,13 +53,11 @@ public:
   MatrixFreeData(std::shared_ptr<Triangulation<dim> const> const triangulation,
                  bool const                                      use_cell_based_face_loops)
   {
-    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
+    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
 
     if(use_cell_based_face_loops)
     {
-      auto tria =
-        std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-      Categorization::do_cell_based_loops(*tria, data);
+      Categorization::do_cell_based_loops(*triangulation, data);
     }
   }
 

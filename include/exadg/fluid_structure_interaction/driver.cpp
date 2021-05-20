@@ -182,8 +182,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                   mpi_comm));
 
     // initialize matrix_free
-    structure_matrix_free_data.reset(
-      new MatrixFreeData<dim, Number>(structure_triangulation, false));
+    structure_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
     structure_matrix_free_data->append(structure_operator);
 
     structure_matrix_free.reset(new MatrixFree<dim, Number>());
@@ -351,7 +350,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>(fluid_triangulation, false));
+      ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
       ale_matrix_free_data->append(ale_elasticity_operator);
     }
     else
