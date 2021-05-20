@@ -71,8 +71,8 @@ fill_resolutions_vector(
 {
   unsigned int l = 0, n_subdivisions_1d = 1;
 
-  types::global_dof_index n_cells_min = n_dofs_min / dofs_per_element;
-  types::global_dof_index n_cells_max = (n_dofs_max + dofs_per_element - 1) / dofs_per_element;
+  types::global_dof_index n_cells_min = (n_dofs_min + dofs_per_element - 1) / dofs_per_element;
+  types::global_dof_index n_cells_max = n_dofs_max / dofs_per_element;
 
   int                     refine_level = 0;
   types::global_dof_index n_cells      = 1;
