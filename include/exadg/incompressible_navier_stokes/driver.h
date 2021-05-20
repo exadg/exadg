@@ -263,10 +263,7 @@ private:
   /*
    * Spatial discretization
    */
-  std::shared_ptr<SpatialOperatorBase<dim, Number>>        operator_base;
-  std::shared_ptr<OperatorCoupled<dim, Number>>            operator_coupled;
-  std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting;
-  std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction;
+  std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
 
   /*
    * Postprocessor
@@ -283,9 +280,7 @@ private:
   std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator;
 
   // steady solver
-  typedef DriverSteadyProblems<dim, Number> DriverSteady;
-
-  std::shared_ptr<DriverSteady> driver_steady;
+  std::shared_ptr<DriverSteadyProblems<dim, Number>> driver_steady;
 
   /*
    * Computation time (wall clock time).

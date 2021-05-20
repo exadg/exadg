@@ -380,11 +380,7 @@ private:
   std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
 
   // spatial discretization
-  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>>   fluid_operator;
-  std::shared_ptr<IncNS::OperatorCoupled<dim, Number>>       fluid_operator_coupled;
-  std::shared_ptr<IncNS::OperatorDualSplitting<dim, Number>> fluid_operator_dual_splitting;
-  std::shared_ptr<IncNS::OperatorPressureCorrection<dim, Number>>
-    fluid_operator_pressure_correction;
+  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
 
   // temporal discretization
   std::shared_ptr<IncNS::TimeIntBDF<dim, Number>> fluid_time_integrator;

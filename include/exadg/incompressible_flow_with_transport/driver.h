@@ -132,11 +132,7 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
-  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>>   fluid_operator_base;
-  std::shared_ptr<IncNS::OperatorCoupled<dim, Number>>       fluid_operator_coupled;
-  std::shared_ptr<IncNS::OperatorDualSplitting<dim, Number>> fluid_operator_dual_splitting;
-  std::shared_ptr<IncNS::OperatorPressureCorrection<dim, Number>>
-    fluid_operator_pressure_correction;
+  std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
 
   typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
 
