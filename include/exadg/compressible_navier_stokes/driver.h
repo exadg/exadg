@@ -98,7 +98,7 @@ get_dofs_per_element(std::string const & input_file,
 {
   (void)input_file;
 
-  unsigned int const dofs_per_element = (dim + 2) * std::pow(degree + 1, dim);
+  unsigned int const dofs_per_element = (dim + 2) * Utilities::pow(degree + 1, dim);
 
   return dofs_per_element;
 }

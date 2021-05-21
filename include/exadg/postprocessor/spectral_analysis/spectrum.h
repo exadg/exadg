@@ -127,7 +127,7 @@ public:
         _indices_proc_rows[c] = i;
 
     // ... clean up
-    delete global_elements;
+    delete[] global_elements;
 
     // modify global size for input array
     n[dim - 1] = N;
@@ -307,7 +307,7 @@ public:
           // determine wavenumber...
           double r = sqrt(pow(MIN(i, N - i), 2.0) + pow(MIN(j, N - j), 2.0));
           // ... use for binning
-          int p = round(r);
+          int p = static_cast<int>(std::round(r));
           // ... update energy
           e[p] += u_comp2(MIN(i, N - i), j)[0] * u_comp2(MIN(i, N - i), j)[0] +
                   u_comp2(MIN(i, N - i), j)[1] * u_comp2(MIN(i, N - i), j)[1] +
@@ -332,7 +332,7 @@ public:
             double r =
               sqrt(pow(MIN(i, N - i), 2.0) + pow(MIN(j, N - j), 2.0) + pow(MIN(k_, N - k_), 2.0));
             // ... use for binning
-            int p = round(r);
+            int p = static_cast<int>(std::round(r));
             // ... update energy
             e[p] += u_comp3(MIN(i, N - i), j, k_)[0] * u_comp3(MIN(i, N - i), j, k_)[0] +
                     u_comp3(MIN(i, N - i), j, k_)[1] * u_comp3(MIN(i, N - i), j, k_)[1] +
@@ -394,8 +394,8 @@ public:
   {
     int start     = local_start;
     int end       = local_end;
-    int delta     = 2 * (N / 2 + 1) * pow(N, dim - 2);
-    int delta_all = 2 * (N / 2 + 1) * pow(N, dim - 1) * sizeof(double);
+    int delta     = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 2);
+    int delta_all = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 1) * sizeof(double);
 
     //
     int        dofs = (end - start) * delta;
@@ -436,8 +436,8 @@ public:
   {
     int start     = local_start;
     int end       = local_end;
-    int delta     = 2 * (N / 2 + 1) * pow(N, dim - 2);
-    int delta_all = 2 * (N / 2 + 1) * pow(N, dim - 1) * sizeof(double);
+    int delta     = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 2);
+    int delta_all = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 1) * sizeof(double);
 
     //
     int        dofs = (end - start) * delta;

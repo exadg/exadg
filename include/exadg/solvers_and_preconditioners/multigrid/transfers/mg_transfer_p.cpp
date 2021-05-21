@@ -347,7 +347,7 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
 
   this->quad_index                 = numbers::invalid_unsigned_int;
   unsigned int const n_q_points_1d = degree_1 + 1;
-  unsigned int const n_q_points    = std::pow(n_q_points_1d, dim);
+  unsigned int const n_q_points    = Utilities::pow(n_q_points_1d, dim);
 
   for(unsigned int quad_index = 0; quad_index < matrixfree_1->get_mapping_info().cell_data.size();
       quad_index++)

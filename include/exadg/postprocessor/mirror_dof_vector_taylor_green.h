@@ -70,13 +70,13 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
     map_lex_to_cell_full;
 
   {
-    auto norm_point_to_lex = [&](auto const c) {
+    auto norm_point_to_lex = [&](Point<dim> const c) {
       // convert normalized point [0, 1] to lex
       if(dim == 2)
-        return std::floor(c[0]) + n_cells_1d * std::floor(c[1]);
+        return static_cast<std::size_t>(std::floor(c[0]) + n_cells_1d * std::floor(c[1]));
       else
-        return std::floor(c[0]) + n_cells_1d * std::floor(c[1]) +
-               n_cells_1d * n_cells_1d * std::floor(c[2]);
+        return static_cast<std::size_t>(std::floor(c[0]) + n_cells_1d * std::floor(c[1]) +
+                                        n_cells_1d * n_cells_1d * std::floor(c[2]));
     };
 
     // ... has (symm)

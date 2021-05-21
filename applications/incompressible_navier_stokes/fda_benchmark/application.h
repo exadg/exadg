@@ -193,7 +193,7 @@ public:
       // clang-format on
       prm.parse_input(input_file, "", true, true);
 
-      n_points = 20 * (degree + 1) * std::pow(2.0, refine_space);
+      n_points = 20 * (degree + 1) * Utilities::pow(2, refine_space);
     }
 
     inflow_data_storage.reset(new InflowDataStorage<dim>(n_points,

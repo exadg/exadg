@@ -103,7 +103,7 @@ public:
                                                    1,
                                                    -dealii::numbers::PI,
                                                    dealii::numbers::PI);
-      triangulation.refine_global(round(log(n) / log(2)));
+      triangulation.refine_global(static_cast<unsigned int>(std::round(std::log(n) / std::log(2))));
       init(triangulation);
     }
     else if(s.dim == 3)
@@ -113,7 +113,7 @@ public:
                                                    1,
                                                    -dealii::numbers::PI,
                                                    dealii::numbers::PI);
-      triangulation.refine_global(round(log(n) / log(2)));
+      triangulation.refine_global(static_cast<unsigned int>(std::round(std::log(n) / std::log(2))));
       init(triangulation);
     }
   }
@@ -137,8 +137,9 @@ public:
     int n = s.cells;
 
     {
-      unsigned int const n_active_cells    = triangulation.n_global_active_cells();
-      unsigned int const n_active_cells_1d = std::pow(n_active_cells, 1.0 / s.dim) + 0.49;
+      unsigned int const n_active_cells = triangulation.n_global_active_cells();
+      unsigned int const n_active_cells_1d =
+        static_cast<unsigned int>(std::pow(n_active_cells, 1.0 / s.dim) + 0.49);
 
       std::vector<int> temp_indices;
 
@@ -148,7 +149,7 @@ public:
           continue;
 
         double x = 1000, y = 1000, z = 1000;
-        for(int v = 0; v < int(std::pow(2, s.dim)); v++)
+        for(int v = 0; v < dealii::Utilities::pow(2, s.dim); v++)
         {
           auto vertex = cell->vertex(v);
           x           = std::min(x, vertex[0]);
@@ -206,9 +207,8 @@ public:
         int temp_counter = counter;
         for(int d = 0; d < s.dim; d++)
         {
-          int r = temp_counter % n;
+          Y[d] = temp_counter % n;
           temp_counter /= n;
-          Y[d] = r + 0.5;
         }
 
         // ... save position

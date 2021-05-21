@@ -1263,7 +1263,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_coarse_g
   // solver tolerance
   double const eps = solver_data.rel_tol;
 
-  smoother_data.degree = std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma);
+  smoother_data.degree = static_cast<unsigned int>(
+    std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma));
   smoother_data.eig_cg_n_iterations = 0;
 
   std::shared_ptr<Chebyshev> smoother = std::dynamic_pointer_cast<Chebyshev>(smoothers[0]);
