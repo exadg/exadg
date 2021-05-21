@@ -33,7 +33,6 @@
 #  include <deal.II/base/mpi_noncontiguous_partitioner.h>
 
 // ExaDG
-#  include <exadg/postprocessor/spectral_analysis/bijection.h>
 #  include <exadg/postprocessor/spectral_analysis/interpolation.h>
 #  include <exadg/postprocessor/spectral_analysis/permutation.h>
 #  include <exadg/postprocessor/spectral_analysis/setup.h>
