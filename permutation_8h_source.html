@@ -165,13 +165,13 @@ $(function() {
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    bsize = FFT.bsize;</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="comment">// data structures for determining the communication partners...</span></div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordtype">int</span>                 has_length = (end - start) * pow(points, dim);</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordtype">int</span>                 has_length = (end - start) * dealii::Utilities::pow(points, dim);</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> * has        = <span class="keyword">new</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span>[has_length];</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">int</span> *               has_procs  = <span class="keyword">new</span> <span class="keywordtype">int</span>[has_length];</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    send_buffer                    = <span class="keyword">new</span> <span class="keywordtype">double</span>[has_length * dim];</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    send_index                     = <span class="keyword">new</span> <span class="keywordtype">int</span>[has_length];</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keywordtype">int</span>                 want_length = (end_ - start_) * pow(n * points, dim - 1);</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keywordtype">int</span>                 want_length = (end_ - start_) * dealii::Utilities::pow(n * points, dim - 1);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> * want        = <span class="keyword">new</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span>[want_length];</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordtype">int</span> *               want_procs  = <span class="keyword">new</span> <span class="keywordtype">int</span>[want_length];</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    recv_buffer                     = <span class="keyword">new</span> <span class="keywordtype">double</span>[want_length * dim];</div>
@@ -248,7 +248,7 @@ $(function() {
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> jj = 0; jj &lt; pow(n * points, dim - 1); jj++, counter++)</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;      {</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <span class="comment">// ... determine dof</span></div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> temp = ii * pow(n * points, dim - 1) + jj;</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> temp = ii * dealii::Utilities::pow(n * points, dim - 1) + jj;</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        want[counter]          = temp;</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        <span class="comment">// ... determine owning process</span></div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        <span class="keywordtype">int</span> t = dim == 3 ? (temp % pn) / points + ((temp % (pn * pn)) / pn) / points * n +</div>

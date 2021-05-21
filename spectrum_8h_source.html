@@ -176,7 +176,7 @@ $(function() {
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        _indices_proc_rows[c] = i;</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="comment">// ... clean up</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keyword">delete</span> global_elements;</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keyword">delete</span>[] global_elements;</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="comment">// modify global size for input array</span></div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    n[dim - 1] = N;</div>
@@ -347,7 +347,7 @@ $(function() {
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;          <span class="comment">// determine wavenumber...</span></div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;          <span class="keywordtype">double</span> r = sqrt(pow(MIN(i, N - i), 2.0) + pow(MIN(j, N - j), 2.0));</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;          <span class="comment">// ... use for binning</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;          <span class="keywordtype">int</span> p = round(r);</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;          <span class="keywordtype">int</span> p = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(std::round(r));</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;          <span class="comment">// ... update energy</span></div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;          e[p] += u_comp2(MIN(i, N - i), j)[0] * u_comp2(MIN(i, N - i), j)[0] +</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                  u_comp2(MIN(i, N - i), j)[1] * u_comp2(MIN(i, N - i), j)[1] +</div>
@@ -372,7 +372,7 @@ $(function() {
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;            <span class="keywordtype">double</span> r =</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;              sqrt(pow(MIN(i, N - i), 2.0) + pow(MIN(j, N - j), 2.0) + pow(MIN(k_, N - k_), 2.0));</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;            <span class="comment">// ... use for binning</span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;            <span class="keywordtype">int</span> p = round(r);</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;            <span class="keywordtype">int</span> p = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(std::round(r));</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            <span class="comment">// ... update energy</span></div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;            e[p] += u_comp3(MIN(i, N - i), j, k_)[0] * u_comp3(MIN(i, N - i), j, k_)[0] +</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;                    u_comp3(MIN(i, N - i), j, k_)[1] * u_comp3(MIN(i, N - i), j, k_)[1] +</div>
@@ -422,8 +422,8 @@ $(function() {
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;  {</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keywordtype">int</span> start     = local_start;</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <span class="keywordtype">int</span> end       = local_end;</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="keywordtype">int</span> delta     = 2 * (N / 2 + 1) * pow(N, dim - 2);</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keywordtype">int</span> delta_all = 2 * (N / 2 + 1) * pow(N, dim - 1) * <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="keywordtype">int</span> delta     = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 2);</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keywordtype">int</span> delta_all = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 1) * <span class="keyword">sizeof</span>(double);</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160; </div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    <span class="comment">//</span></div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    <span class="keywordtype">int</span>        dofs = (end - start) * delta;</div>
@@ -459,8 +459,8 @@ $(function() {
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;  {</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;    <span class="keywordtype">int</span> start     = local_start;</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    <span class="keywordtype">int</span> end       = local_end;</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;    <span class="keywordtype">int</span> delta     = 2 * (N / 2 + 1) * pow(N, dim - 2);</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    <span class="keywordtype">int</span> delta_all = 2 * (N / 2 + 1) * pow(N, dim - 1) * <span class="keyword">sizeof</span>(double);</div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;    <span class="keywordtype">int</span> delta     = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 2);</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    <span class="keywordtype">int</span> delta_all = 2 * (N / 2 + 1) * dealii::Utilities::pow(N, dim - 1) * <span class="keyword">sizeof</span>(double);</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160; </div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    <span class="comment">//</span></div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    <span class="keywordtype">int</span>        dofs = (end - start) * delta;</div>

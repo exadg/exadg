@@ -141,13 +141,13 @@ $(function() {
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    map_lex_to_cell_full;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  {</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">auto</span> norm_point_to_lex = [&amp;](<span class="keyword">auto</span> <span class="keyword">const</span> c) {</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">auto</span> norm_point_to_lex = [&amp;](Point&lt;dim&gt; <span class="keyword">const</span> c) {</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;      <span class="comment">// convert normalized point [0, 1] to lex</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;      <span class="keywordflow">if</span>(dim == 2)</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <span class="keywordflow">return</span> std::floor(c[0]) + n_cells_1d * std::floor(c[1]);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>std::size_t<span class="keyword">&gt;</span>(std::floor(c[0]) + n_cells_1d * std::floor(c[1]));</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;      <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> std::floor(c[0]) + n_cells_1d * std::floor(c[1]) +</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;               n_cells_1d * n_cells_1d * std::floor(c[2]);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>std::size_t<span class="keyword">&gt;</span>(std::floor(c[0]) + n_cells_1d * std::floor(c[1]) +</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                                        n_cells_1d * n_cells_1d * std::floor(c[2]));</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    };</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="comment">// ... has (symm)</span></div>
