@@ -35,6 +35,9 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/matrix_free/evaluation_kernels.h>
 
+// ExaDG
+#include <exadg/postprocessor/spectral_analysis/setup.h>
+
 using namespace dealii;
 
 namespace dealspectrum
