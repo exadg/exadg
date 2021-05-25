@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['calculate_5fenergy_5fspectrum_624',['calculate_energy_spectrum',['../classdealspectrum_1_1SpectralAnalysis.html#a192f1677ecc3281dfe9f19628d06b14f',1,'dealspectrum::SpectralAnalysis']]],
-  ['copy_5fto_5fmg_625',['copy_to_mg',['../classExaDG_1_1MGTransferH.html#ac6a65b8add700d0d07d4d101ee0a655d',1,'ExaDG::MGTransferH']]]
+  ['dealspectrumtimer_618',['DealSpectrumTimer',['../classdealspectrum_1_1DealSpectrumTimer.html#a24dd975c3bb6abc4544899ca144c8847',1,'dealspectrum::DealSpectrumTimer']]],
+  ['deserialize_619',['deserialize',['../classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a',1,'dealspectrum::Interpolator::deserialize(char const *filename)'],['../classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a',1,'dealspectrum::Interpolator::deserialize(char const *filename, double *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a4f6dd67f9c9aa0df92244eeb1c78169c',1,'dealspectrum::SpectralAnalysis::deserialize()']]]
 ];

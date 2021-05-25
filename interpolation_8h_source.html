@@ -106,290 +106,293 @@ $(function() {
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;deal.II/fe/fe_values.h&gt;</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#include &lt;deal.II/matrix_free/evaluation_kernels.h&gt;</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">namespace </span>dealspectrum</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;{</div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html">   46</a></span>&#160;<span class="keyword">class </span><a class="code" href="classdealspectrum_1_1Interpolator.html">Interpolator</a></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;{</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  MPI_Comm <span class="keyword">const</span> &amp; comm;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="comment">// reference to DEAL.SPECTRUM setup</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <a class="code" href="classdealspectrum_1_1Setup.html">Setup</a> &amp; s;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="comment">// is initialized?</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">bool</span> initialized;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="comment">// source vector (values to be interpolated)</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">double</span> * src = NULL;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="comment">// destination vector (interpolated values)</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">double</span> * dst = NULL;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="comment">// shape function (gauss lobatto to equidistant)</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  AlignedVector&lt;double&gt; shape_values;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="comment">// number of cells in each direction</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">int</span> cells;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="comment">// dimensions</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keywordtype">int</span> DIM;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="comment">// process local cell range on sfc</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="keywordtype">int</span> start;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">int</span> end;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="comment">// points in each direction in cell &amp; points per cell for source...</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> points_source;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">int</span>          dofs_source;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="comment">// ... and for target</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> points_target;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">int</span>          dofs_target;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">   78</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">Interpolator</a>(MPI_Comm <span class="keyword">const</span> &amp; comm, <a class="code" href="classdealspectrum_1_1Setup.html">Setup</a> &amp; s) : comm(comm), s(s), initialized(false)</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  {</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  }</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classdealspectrum_1_1Interpolator.html">Interpolator</a>()</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  {</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="comment">// not initialized -&gt; nothing to clean up</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordflow">if</span>(!initialized)</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;      <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">delete</span>[] src;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keyword">delete</span>[] dst;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  }</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> MAPPING&gt;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  init(MAPPING &amp; MAP)</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  {</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordtype">int</span> start, end;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    MAP.getLocalRange(start, end);</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    init(start, end);</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  }</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="comment">// ExaDG</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;exadg/postprocessor/spectral_analysis/setup.h&gt;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">using namespace </span>dealii;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">namespace </span>dealspectrum</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;{</div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html">   49</a></span>&#160;<span class="keyword">class </span><a class="code" href="classdealspectrum_1_1Interpolator.html">Interpolator</a></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;{</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  MPI_Comm <span class="keyword">const</span> &amp; comm;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="comment">// reference to DEAL.SPECTRUM setup</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <a class="code" href="classdealspectrum_1_1Setup.html">Setup</a> &amp; s;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="comment">// is initialized?</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keywordtype">bool</span> initialized;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="comment">// source vector (values to be interpolated)</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">double</span> * src = NULL;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="comment">// destination vector (interpolated values)</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordtype">double</span> * dst = NULL;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="comment">// shape function (gauss lobatto to equidistant)</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  AlignedVector&lt;double&gt; shape_values;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="comment">// number of cells in each direction</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keywordtype">int</span> cells;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <span class="comment">// dimensions</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">int</span> DIM;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <span class="comment">// process local cell range on sfc</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">int</span> start;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">int</span> end;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="comment">// points in each direction in cell &amp; points per cell for source...</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> points_source;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">int</span>          dofs_source;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="comment">// ... and for target</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> points_target;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keywordtype">int</span>          dofs_target;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
+<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">   81</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">Interpolator</a>(MPI_Comm <span class="keyword">const</span> &amp; comm, <a class="code" href="classdealspectrum_1_1Setup.html">Setup</a> &amp; s) : comm(comm), s(s), initialized(false)</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  {</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;  }</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  <span class="keyword">virtual</span> ~<a class="code" href="classdealspectrum_1_1Interpolator.html">Interpolator</a>()</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  {</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="comment">// not initialized -&gt; nothing to clean up</span></div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keywordflow">if</span>(!initialized)</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;      <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160; </div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keyword">delete</span>[] src;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keyword">delete</span>[] dst;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  }</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> MAPPING&gt;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  init(MAPPING &amp; MAP)</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;  {</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keywordtype">int</span> start, end;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    MAP.getLocalRange(start, end);</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  init(<span class="keywordtype">int</span> start, <span class="keywordtype">int</span> end)</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  {</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="comment">// check if already initialized</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordflow">if</span>(this-&gt;initialized)</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;      <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    this-&gt;initialized = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="comment">// get cell range...</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    this-&gt;start = start;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    this-&gt;end   = end;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="comment">// ...number of local cells</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    cells = end - start;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="comment">// get dimensions</span></div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    DIM = s.dim;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    init(start, end);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;  }</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  init(<span class="keywordtype">int</span> start, <span class="keywordtype">int</span> end)</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;  {</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="comment">// check if already initialized</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="keywordflow">if</span>(this-&gt;initialized)</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;      <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    this-&gt;initialized = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="comment">// get cell range...</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    this-&gt;start = start;</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    this-&gt;end   = end;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="comment">// ...number of local cells</span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    cells = end - start;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="comment">// number of Gauss-Lobatto points:</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    points_source = s.points_src;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="comment">// ... of equidistant points:</span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    points_target = s.points_dst;</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="comment">// number of gauss lobatto points per cell and ...</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    dofs_source = dealii::Utilities::pow(points_source, DIM);</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <span class="comment">// ...number of equidistant points per cell</span></div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    dofs_target = dealii::Utilities::pow(points_target, DIM);</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="comment">// allocate memory for source (only needed if values are read by IO)...</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    src = <span class="keyword">new</span> <span class="keywordtype">double</span>[cells * dofs_source * DIM];</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="comment">// ... and target</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    dst = <span class="keyword">new</span> <span class="keywordtype">double</span>[cells * dofs_target * DIM];</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160; </div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="comment">// fill shape values</span></div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    fill_shape_values(shape_values);</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;  }</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160; </div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;  std::vector&lt;dealii::Point&lt;1&gt;&gt;</div>
-<div class="line"><a name="l00145"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">  145</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">get_equidistant_inner</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_points)</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;  {</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    std::vector&lt;dealii::Point&lt;1&gt;&gt; points(n_points);</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; n_points; i++)</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;      points[i][0] = (i + 0.5) / n_points;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="comment">// get dimensions</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    DIM = s.dim;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160; </div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="comment">// number of Gauss-Lobatto points:</span></div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    points_source = s.points_src;</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="comment">// ... of equidistant points:</span></div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    points_target = s.points_dst;</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160; </div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="comment">// number of gauss lobatto points per cell and ...</span></div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    dofs_source = dealii::Utilities::pow(points_source, DIM);</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="comment">// ...number of equidistant points per cell</span></div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    dofs_target = dealii::Utilities::pow(points_target, DIM);</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="comment">// allocate memory for source (only needed if values are read by IO)...</span></div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    src = <span class="keyword">new</span> <span class="keywordtype">double</span>[cells * dofs_source * DIM];</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="comment">// ... and target</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    dst = <span class="keyword">new</span> <span class="keywordtype">double</span>[cells * dofs_target * DIM];</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160; </div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="comment">// fill shape values</span></div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    fill_shape_values(shape_values);</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;  }</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  std::vector&lt;dealii::Point&lt;1&gt;&gt;</div>
+<div class="line"><a name="l00148"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">  148</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">get_equidistant_inner</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_points)</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  {</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    std::vector&lt;dealii::Point&lt;1&gt;&gt; points(n_points);</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordflow">return</span> points;</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  }</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; n_points; i++)</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;      points[i][0] = (i + 0.5) / n_points;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160; </div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00161"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">  161</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">fill_shape_values</a>(AlignedVector&lt;double&gt; &amp; shape_values)</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  {</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="comment">// determine coefficients with deal.II functions</span></div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    FE_DGQ&lt;1&gt;          fe(points_source - 1);</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    FullMatrix&lt;double&gt; matrix(points_target, points_source);</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    FE_DGQArbitraryNodes&lt;1&gt;(Quadrature&lt;1&gt;(get_equidistant_inner(points_target)))</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;      .get_interpolation_matrix(fe, matrix);</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160; </div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="comment">// ... and convert to linearized format</span></div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    shape_values.resize(points_source * points_target);</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; points_source; ++i)</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; points_target; ++q)</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        shape_values[i * points_target + q] = matrix(q, i);</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  }</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00181"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a71c409b52995d93824f34b757300afee">  181</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a71c409b52995d93824f34b757300afee">interpolate</a>()</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  {</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> * src = this-&gt;src;</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    interpolate(src);</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;  }</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160; </div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00195"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">  195</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">interpolate</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> *&amp; src)</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;  {</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="comment">// allocate dst- and src-vector</span></div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    AlignedVector&lt;double&gt; temp1(MAX(dofs_source, dofs_target));</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    AlignedVector&lt;double&gt; temp2(MAX(dofs_source, dofs_target));</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160; </div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="comment">// get start point of arrays</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> * src_ = src;</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    <span class="keywordtype">double</span> *       dst_ = dst;</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="comment">// loop over all cells</span></div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> c = 0; c &lt; cells; c++)</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    {</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;      <span class="comment">// loop over all velocity directions</span></div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; DIM; d++)</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;      {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <span class="comment">// perform interpolation</span></div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        <span class="keywordflow">if</span>(DIM == 2)</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        {</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;          <span class="comment">// ... 2D</span></div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;          dealii::internal::</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;            EvaluatorTensorProduct&lt;dealii::internal::evaluate_general, 2, 0, 0, double&gt;</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;              eval_val(shape_values, shape_values, shape_values, points_source, points_target);</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;          eval_val.template values&lt;0, true, false&gt;(src_, temp2.begin());</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;          eval_val.template values&lt;1, true, false&gt;(temp2.begin(), temp1.begin());</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;        }</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        {</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;          <span class="comment">// ... 3D</span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;          dealii::internal::</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;            EvaluatorTensorProduct&lt;dealii::internal::evaluate_general, 3, 0, 0, double&gt;</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;              eval_val(shape_values, shape_values, shape_values, points_source, points_target);</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;          eval_val.template values&lt;0, true, false&gt;(src_, temp1.begin());</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;          eval_val.template values&lt;1, true, false&gt;(temp1.begin(), temp2.begin());</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;          eval_val.template values&lt;2, true, false&gt;(temp2.begin(), temp1.begin());</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        }</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        <span class="comment">// write interpolated data permuted into destination vector</span></div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; dofs_target; i++)</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;          dst_[i * DIM + d] = temp1[i];</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="comment">// go to next dimension</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        src_ += dofs_source;</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;      }</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;      <span class="comment">// go to next cell</span></div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;      dst_ += dofs_target * DIM;</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    }</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;  }</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00247"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381">  247</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381">interpolate_simple</a>()</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;  {</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    interpolate_simple(src);</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;  }</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00261"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">  261</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">interpolate_simple</a>(<span class="keywordtype">double</span> *&amp; src)</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;  {</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keywordtype">double</span> * src_ = src;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keywordtype">double</span> * dst_ = dst;</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160; </div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="comment">// loop over all cells</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> c = 0; c &lt; cells; c++)</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    {</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;      <span class="comment">// loop over all velocity directions</span></div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; DIM; d++)</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;      {</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;        <span class="comment">// write data permuted into destination vector</span></div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; dofs_target; i++)</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;          dst_[i * DIM + d] = src_[i];</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        <span class="comment">// go to next dimension</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        src_ += dofs_source;</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;      }</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;      <span class="comment">// go to next cell</span></div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;      dst_ += dofs_target * DIM;</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    }</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  }</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160; </div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00289"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">  289</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">deserialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename)</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;  {</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    deserialize(filename, src);</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;  }</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00301"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">  301</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">deserialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename, <span class="keywordtype">double</span> *&amp; src)</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;  {</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    io(0, filename, src);</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  }</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00312"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847">  312</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847">serialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename)</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  {</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> * src = this-&gt;src;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    serialize(filename, src);</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  }</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00325"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">  325</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">serialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename, <span class="keywordtype">double</span> <span class="keyword">const</span> *&amp; src)</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  {</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    io(1, filename, src);</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;  }</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> VEC&gt;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">  339</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">io</a>(<span class="keywordtype">int</span> type, <span class="keywordtype">char</span> <span class="keyword">const</span> * filename, VEC &amp; src)</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  {</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    <span class="comment">// dofs to read/write per field</span></div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> dofs = cells * dofs_source;</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;    <span class="comment">// local displacement in file (in bytes)</span></div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;    MPI_Offset disp =</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;      8 * <span class="keyword">sizeof</span>(int) + <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(start) * dofs_source * <span class="keyword">sizeof</span>(double) * DIM;</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160; </div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    <span class="comment">// create view</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    MPI_Datatype stype;</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    MPI_Type_contiguous(dofs, MPI_DOUBLE, &amp;stype);</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    MPI_Type_commit(&amp;stype);</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    <span class="comment">// ooen file ...</span></div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    MPI_File fh;</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    <span class="keywordflow">if</span>(type == 0)</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;      MPI_File_open(comm, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &amp;fh);</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;      MPI_File_open(comm, filename, MPI_MODE_WRONLY, MPI_INFO_NULL, &amp;fh);</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    <span class="comment">// ... set view</span></div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    MPI_File_set_view(fh, disp, MPI_DOUBLE, MPI_DOUBLE, <span class="stringliteral">&quot;native&quot;</span>, MPI_INFO_NULL);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">return</span> points;</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  }</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160; </div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00164"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">  164</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">fill_shape_values</a>(AlignedVector&lt;double&gt; &amp; shape_values)</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  {</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="comment">// determine coefficients with deal.II functions</span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    FE_DGQ&lt;1&gt;          fe(points_source - 1);</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    FullMatrix&lt;double&gt; matrix(points_target, points_source);</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    FE_DGQArbitraryNodes&lt;1&gt;(Quadrature&lt;1&gt;(get_equidistant_inner(points_target)))</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;      .get_interpolation_matrix(fe, matrix);</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="comment">// ... and convert to linearized format</span></div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    shape_values.resize(points_source * points_target);</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; points_source; ++i)</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> q = 0; q &lt; points_target; ++q)</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        shape_values[i * points_target + q] = matrix(q, i);</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  }</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00184"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a71c409b52995d93824f34b757300afee">  184</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a71c409b52995d93824f34b757300afee">interpolate</a>()</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;  {</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> * src = this-&gt;src;</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    interpolate(src);</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;  }</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; </div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00198"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">  198</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">interpolate</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> *&amp; src)</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;  {</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <span class="comment">// allocate dst- and src-vector</span></div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    AlignedVector&lt;double&gt; temp1(MAX(dofs_source, dofs_target));</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    AlignedVector&lt;double&gt; temp2(MAX(dofs_source, dofs_target));</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160; </div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="comment">// get start point of arrays</span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> * src_ = src;</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    <span class="keywordtype">double</span> *       dst_ = dst;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="comment">// loop over all cells</span></div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> c = 0; c &lt; cells; c++)</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    {</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;      <span class="comment">// loop over all velocity directions</span></div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; DIM; d++)</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;      {</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        <span class="comment">// perform interpolation</span></div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        <span class="keywordflow">if</span>(DIM == 2)</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;        {</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;          <span class="comment">// ... 2D</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;          dealii::internal::</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;            EvaluatorTensorProduct&lt;dealii::internal::evaluate_general, 2, 0, 0, double&gt;</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;              eval_val(shape_values, shape_values, shape_values, points_source, points_target);</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;          eval_val.template values&lt;0, true, false&gt;(src_, temp2.begin());</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;          eval_val.template values&lt;1, true, false&gt;(temp2.begin(), temp1.begin());</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;        }</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        {</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;          <span class="comment">// ... 3D</span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;          dealii::internal::</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            EvaluatorTensorProduct&lt;dealii::internal::evaluate_general, 3, 0, 0, double&gt;</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;              eval_val(shape_values, shape_values, shape_values, points_source, points_target);</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;          eval_val.template values&lt;0, true, false&gt;(src_, temp1.begin());</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;          eval_val.template values&lt;1, true, false&gt;(temp1.begin(), temp2.begin());</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;          eval_val.template values&lt;2, true, false&gt;(temp2.begin(), temp1.begin());</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        }</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="comment">// write interpolated data permuted into destination vector</span></div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; dofs_target; i++)</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;          dst_[i * DIM + d] = temp1[i];</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <span class="comment">// go to next dimension</span></div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        src_ += dofs_source;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;      }</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;      <span class="comment">// go to next cell</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;      dst_ += dofs_target * DIM;</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    }</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;  }</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160; </div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00250"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381">  250</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381">interpolate_simple</a>()</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;  {</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    interpolate_simple(src);</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;  }</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160; </div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00264"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">  264</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">interpolate_simple</a>(<span class="keywordtype">double</span> *&amp; src)</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;  {</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordtype">double</span> * src_ = src;</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordtype">double</span> * dst_ = dst;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160; </div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <span class="comment">// loop over all cells</span></div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> c = 0; c &lt; cells; c++)</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    {</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;      <span class="comment">// loop over all velocity directions</span></div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;      <span class="keywordflow">for</span>(<span class="keywordtype">int</span> d = 0; d &lt; DIM; d++)</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;      {</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        <span class="comment">// write data permuted into destination vector</span></div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; dofs_target; i++)</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;          dst_[i * DIM + d] = src_[i];</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        <span class="comment">// go to next dimension</span></div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        src_ += dofs_source;</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;      }</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;      <span class="comment">// go to next cell</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;      dst_ += dofs_target * DIM;</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;    }</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  }</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160; </div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00292"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">  292</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">deserialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename)</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  {</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    deserialize(filename, src);</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;  }</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160; </div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00304"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">  304</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">deserialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename, <span class="keywordtype">double</span> *&amp; src)</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  {</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    io(0, filename, src);</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  }</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160; </div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00315"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847">  315</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847">serialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename)</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  {</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> * src = this-&gt;src;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    serialize(filename, src);</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  }</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160; </div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">  328</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">serialize</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> * filename, <span class="keywordtype">double</span> <span class="keyword">const</span> *&amp; src)</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;  {</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    io(1, filename, src);</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;  }</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160; </div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> VEC&gt;</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;  <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00342"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">  342</a></span>&#160;  <a class="code" href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">io</a>(<span class="keywordtype">int</span> type, <span class="keywordtype">char</span> <span class="keyword">const</span> * filename, VEC &amp; src)</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  {</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;    <span class="comment">// dofs to read/write per field</span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> dofs = cells * dofs_source;</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    <span class="comment">// local displacement in file (in bytes)</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    MPI_Offset disp =</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;      8 * <span class="keyword">sizeof</span>(int) + <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(start) * dofs_source * <span class="keyword">sizeof</span>(double) * DIM;</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160; </div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    <span class="comment">// create view</span></div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    MPI_Datatype stype;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    MPI_Type_contiguous(dofs, MPI_DOUBLE, &amp;stype);</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    MPI_Type_commit(&amp;stype);</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    <span class="comment">// ooen file ...</span></div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    MPI_File fh;</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    <span class="keywordflow">if</span>(type == 0)</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;      MPI_File_open(comm, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &amp;fh);</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;      MPI_File_open(comm, filename, MPI_MODE_WRONLY, MPI_INFO_NULL, &amp;fh);</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    <span class="keywordflow">if</span>(type == 0)</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;      <span class="comment">// ... read file</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;      MPI_File_read_all(fh, (<span class="keywordtype">void</span> *)src, dofs * DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;      <span class="comment">// ... write file</span></div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;      MPI_File_write_all(fh, src, dofs * DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="comment">// ... close file</span></div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    MPI_File_close(&amp;fh);</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    <span class="comment">// ... set view</span></div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    MPI_File_set_view(fh, disp, MPI_DOUBLE, MPI_DOUBLE, <span class="stringliteral">&quot;native&quot;</span>, MPI_INFO_NULL);</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    <span class="keywordflow">if</span>(type == 0)</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;      <span class="comment">// ... read file</span></div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;      MPI_File_read_all(fh, (<span class="keywordtype">void</span> *)src, dofs * DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;      <span class="comment">// ... write file</span></div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;      MPI_File_write_all(fh, src, dofs * DIM, MPI_DOUBLE, MPI_STATUSES_IGNORE);</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160; </div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="comment">// clean up</span></div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    MPI_Type_free(&amp;stype);</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  }</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;};</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160; </div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;} <span class="comment">// namespace dealspectrum</span></div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html">dealspectrum::Interpolator</a></div><div class="ttdef"><b>Definition:</b> interpolation.h:47</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a2026a54ef9aae5c50e0d262afcaf44f6"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">dealspectrum::Interpolator::get_equidistant_inner</a></div><div class="ttdeci">std::vector&lt; dealii::Point&lt; 1 &gt; &gt; get_equidistant_inner(unsigned int const n_points)</div><div class="ttdef"><b>Definition:</b> interpolation.h:145</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a240edeb61f6724893fa89d70de13ddcd"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">dealspectrum::Interpolator::interpolate</a></div><div class="ttdeci">void interpolate(double const *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:195</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a27c9aa70e6d86b0063e6b1686acdede1"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">dealspectrum::Interpolator::fill_shape_values</a></div><div class="ttdeci">void fill_shape_values(AlignedVector&lt; double &gt; &amp;shape_values)</div><div class="ttdef"><b>Definition:</b> interpolation.h:161</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a29da807cd1fe3ae6775e3e303b61896a"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">dealspectrum::Interpolator::deserialize</a></div><div class="ttdeci">void deserialize(char const *filename, double *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:301</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a67b56e08cbd7dbfdd57fe1325cab6f3d"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">dealspectrum::Interpolator::Interpolator</a></div><div class="ttdeci">Interpolator(MPI_Comm const &amp;comm, Setup &amp;s)</div><div class="ttdef"><b>Definition:</b> interpolation.h:78</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a6b09f98b6b45095290fa3ea8269f0c16"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">dealspectrum::Interpolator::serialize</a></div><div class="ttdeci">void serialize(char const *filename, double const *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:325</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a71c409b52995d93824f34b757300afee"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a71c409b52995d93824f34b757300afee">dealspectrum::Interpolator::interpolate</a></div><div class="ttdeci">void interpolate()</div><div class="ttdef"><b>Definition:</b> interpolation.h:181</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a8283a193758ed7bc6fd68fd2f3cd9847"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847">dealspectrum::Interpolator::serialize</a></div><div class="ttdeci">void serialize(char const *filename)</div><div class="ttdef"><b>Definition:</b> interpolation.h:312</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a94b7b341d1a9f088d256287137c77381"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381">dealspectrum::Interpolator::interpolate_simple</a></div><div class="ttdeci">void interpolate_simple()</div><div class="ttdef"><b>Definition:</b> interpolation.h:247</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_abf5f310c4036f825328ad8dd924f775a"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">dealspectrum::Interpolator::deserialize</a></div><div class="ttdeci">void deserialize(char const *filename)</div><div class="ttdef"><b>Definition:</b> interpolation.h:289</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_aeed0b7a32c90e41dca49a50c826668d5"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">dealspectrum::Interpolator::interpolate_simple</a></div><div class="ttdeci">void interpolate_simple(double *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:261</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_af628c6a95bdf35330f9eea3e10c221e7"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">dealspectrum::Interpolator::io</a></div><div class="ttdeci">void io(int type, char const *filename, VEC &amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:339</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Setup_html"><div class="ttname"><a href="classdealspectrum_1_1Setup.html">dealspectrum::Setup</a></div><div class="ttdef"><b>Definition:</b> setup.h:46</div></div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="comment">// ... close file</span></div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    MPI_File_close(&amp;fh);</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160; </div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    <span class="comment">// clean up</span></div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    MPI_Type_free(&amp;stype);</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  }</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;};</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160; </div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;} <span class="comment">// namespace dealspectrum</span></div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html">dealspectrum::Interpolator</a></div><div class="ttdef"><b>Definition:</b> interpolation.h:50</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a2026a54ef9aae5c50e0d262afcaf44f6"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">dealspectrum::Interpolator::get_equidistant_inner</a></div><div class="ttdeci">std::vector&lt; dealii::Point&lt; 1 &gt; &gt; get_equidistant_inner(unsigned int const n_points)</div><div class="ttdef"><b>Definition:</b> interpolation.h:148</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a240edeb61f6724893fa89d70de13ddcd"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">dealspectrum::Interpolator::interpolate</a></div><div class="ttdeci">void interpolate(double const *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:198</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a27c9aa70e6d86b0063e6b1686acdede1"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">dealspectrum::Interpolator::fill_shape_values</a></div><div class="ttdeci">void fill_shape_values(AlignedVector&lt; double &gt; &amp;shape_values)</div><div class="ttdef"><b>Definition:</b> interpolation.h:164</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a29da807cd1fe3ae6775e3e303b61896a"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">dealspectrum::Interpolator::deserialize</a></div><div class="ttdeci">void deserialize(char const *filename, double *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:304</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a67b56e08cbd7dbfdd57fe1325cab6f3d"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">dealspectrum::Interpolator::Interpolator</a></div><div class="ttdeci">Interpolator(MPI_Comm const &amp;comm, Setup &amp;s)</div><div class="ttdef"><b>Definition:</b> interpolation.h:81</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a6b09f98b6b45095290fa3ea8269f0c16"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">dealspectrum::Interpolator::serialize</a></div><div class="ttdeci">void serialize(char const *filename, double const *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:328</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a71c409b52995d93824f34b757300afee"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a71c409b52995d93824f34b757300afee">dealspectrum::Interpolator::interpolate</a></div><div class="ttdeci">void interpolate()</div><div class="ttdef"><b>Definition:</b> interpolation.h:184</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a8283a193758ed7bc6fd68fd2f3cd9847"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847">dealspectrum::Interpolator::serialize</a></div><div class="ttdeci">void serialize(char const *filename)</div><div class="ttdef"><b>Definition:</b> interpolation.h:315</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a94b7b341d1a9f088d256287137c77381"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a94b7b341d1a9f088d256287137c77381">dealspectrum::Interpolator::interpolate_simple</a></div><div class="ttdeci">void interpolate_simple()</div><div class="ttdef"><b>Definition:</b> interpolation.h:250</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_abf5f310c4036f825328ad8dd924f775a"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">dealspectrum::Interpolator::deserialize</a></div><div class="ttdeci">void deserialize(char const *filename)</div><div class="ttdef"><b>Definition:</b> interpolation.h:292</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_aeed0b7a32c90e41dca49a50c826668d5"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">dealspectrum::Interpolator::interpolate_simple</a></div><div class="ttdeci">void interpolate_simple(double *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:264</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_af628c6a95bdf35330f9eea3e10c221e7"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">dealspectrum::Interpolator::io</a></div><div class="ttdeci">void io(int type, char const *filename, VEC &amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:342</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Setup_html"><div class="ttname"><a href="classdealspectrum_1_1Setup.html">dealspectrum::Setup</a></div><div class="ttdef"><b>Definition:</b> setup.h:56</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

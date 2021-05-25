@@ -1,6 +1,8 @@
 var searchData=
 [
-  ['permutator_654',['Permutator',['../classdealspectrum_1_1Permutator.html#a09ac0bcb0a25a7e89afadcb1850b3233',1,'dealspectrum::Permutator']]],
-  ['print_5fiterations_655',['print_iterations',['../classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2',1,'ExaDG::MovingMeshBase::print_iterations()'],['../classExaDG_1_1MovingMeshElasticity.html#ac667e526e3df504152504aeefb541331',1,'ExaDG::MovingMeshElasticity::print_iterations()'],['../classExaDG_1_1MovingMeshPoisson.html#afb5b131797f4ed53ef9f9e3f05d92e9b',1,'ExaDG::MovingMeshPoisson::print_iterations()']]],
-  ['printtimings_656',['printTimings',['../classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52',1,'dealspectrum::DealSpectrumTimer']]]
+  ['serialize_646',['serialize',['../classdealspectrum_1_1Interpolator.html#a8283a193758ed7bc6fd68fd2f3cd9847',1,'dealspectrum::Interpolator::serialize(char const *filename)'],['../classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16',1,'dealspectrum::Interpolator::serialize(char const *filename, double const *&amp;src)'],['../classdealspectrum_1_1SpectralAnalysis.html#a5823986be9b1e140e8a408cdcdd5b59c',1,'dealspectrum::SpectralAnalysis::serialize()']]],
+  ['setup_647',['Setup',['../classdealspectrum_1_1Setup.html#ae48fcc6968bba36f4300ec7e88009717',1,'dealspectrum::Setup']]],
+  ['spectralanalysis_648',['SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a34a974fb314f0807d96902741be6e156',1,'dealspectrum::SpectralAnalysis']]],
+  ['start_649',['start',['../classdealspectrum_1_1DealSpectrumTimer.html#a140b943f9881e4a1d917941f896cb472',1,'dealspectrum::DealSpectrumTimer']]],
+  ['stop_650',['stop',['../classdealspectrum_1_1DealSpectrumTimer.html#ac7f6fa0118b49c8c58f1b8357cc2a371',1,'dealspectrum::DealSpectrumTimer']]]
 ];
