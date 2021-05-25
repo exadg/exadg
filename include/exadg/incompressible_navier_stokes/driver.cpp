@@ -99,7 +99,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
-      moving_mapping.reset(new MovingMeshFunction<dim, Number>(
+      moving_mesh.reset(new MovingMeshFunction<dim, Number>(
         static_mapping, mapping_degree, *triangulation, mesh_motion, param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
@@ -156,14 +156,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mapping.reset(new MovingMeshPoisson<dim, Number>(static_mapping, poisson_operator));
+      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(static_mapping, poisson_operator));
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    mapping = moving_mapping;
+    mapping = moving_mesh->get_mapping();
   }
   else // static mesh
   {
@@ -253,7 +253,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                             mpi_comm,
                                                             is_test,
                                                             postprocessor,
-                                                            moving_mapping,
+                                                            moving_mesh,
                                                             matrix_free);
     }
     else if(param.solver_type == SolverType::Steady)
@@ -303,7 +303,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(time_integrator->get_next_time(), false);
+  moving_mesh->update(time_integrator->get_next_time(), false);
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

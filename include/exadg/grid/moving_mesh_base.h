@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/grid/mapping_dof_vector.h>
+#include <exadg/grid/moving_mesh_interface.h>
 
 namespace ExaDG
 {
@@ -33,7 +34,7 @@ using namespace dealii;
  * Base class for moving mesh problems based on MappingFiniteElement.
  */
 template<int dim, typename Number>
-class MovingMeshBase : public MappingDoFVector<dim, Number>
+class MovingMeshBase : public MovingMeshInterface<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -44,41 +45,38 @@ public:
   MovingMeshBase(std::shared_ptr<Mapping<dim> const> mapping_undeformed,
                  unsigned int const                  mapping_degree_q_cache,
                  Triangulation<dim> const &          triangulation)
-    : MappingDoFVector<dim, Number>(mapping_degree_q_cache), mapping_undeformed(mapping_undeformed)
+    : mapping_undeformed(mapping_undeformed)
   {
     // Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,
     // hence, no displacements are added to the reference configuration described by
     // mapping_undeformed.
     DoFHandler<dim> dof_handler(triangulation);
     VectorType      displacement_vector;
-    this->initialize_mapping_q_cache(mapping_undeformed, displacement_vector, dof_handler);
+    moving_mapping = std::make_shared<MappingDoFVector<dim, Number>>(mapping_degree_q_cache);
+    moving_mapping->initialize_mapping_q_cache(mapping_undeformed,
+                                               displacement_vector,
+                                               dof_handler);
   }
 
-  /**
-   * Destructor.
-   */
-  virtual ~MovingMeshBase()
+  void
+  fill_grid_coordinates_vector(VectorType &            grid_coordinates,
+                               DoFHandler<dim> const & dof_handler) const final
   {
+    moving_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
   }
 
-  /**
-   * Updates the mapping, i.e., moves the mesh.
-   */
-  virtual void
-  update(double const time, bool const print_solver_info) = 0;
-
-  /**
-   * Print the number of iterations for PDE type mesh motion problems.
-   */
-  virtual void
-  print_iterations() const
+  std::shared_ptr<Mapping<dim>>
+  get_mapping() final
   {
-    AssertThrow(false, ExcMessage("Has to be overwritten by derived classes."));
+    return moving_mapping;
   }
 
 protected:
   // mapping describing undeformed reference state
   std::shared_ptr<Mapping<dim> const> mapping_undeformed;
+
+  // time-dependent mapping describing deformed state
+  std::shared_ptr<MappingDoFVector<dim, Number>> moving_mapping;
 };
 
 } // namespace ExaDG

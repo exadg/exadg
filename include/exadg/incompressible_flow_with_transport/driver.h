@@ -110,7 +110,7 @@ private:
   std::shared_ptr<Mapping<dim>> static_mapping;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshFunction<dim, Number>> moving_mapping;
+  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
 
   // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> mapping;

@@ -142,10 +142,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    moving_mapping.reset(new MovingMeshFunction<dim, Number>(
+    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
       static_mapping, degree, *triangulation, mesh_motion, fluid_param.start_time));
 
-    mapping = moving_mapping;
+    mapping = moving_mesh->get_mapping();
   }
   else // static mesh
   {
@@ -304,7 +304,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                        mpi_comm,
                                                                        is_test,
                                                                        fluid_postprocessor,
-                                                                       moving_mapping,
+                                                                       moving_mesh,
                                                                        matrix_free);
   }
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
@@ -350,7 +350,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                     mpi_comm,
                                                     is_test,
                                                     scalar_postprocessor[i],
-                                                    moving_mapping,
+                                                    moving_mesh,
                                                     matrix_free);
 
     if(scalar_param[i].restarted_simulation == false)
@@ -607,7 +607,7 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mapping->update(fluid_time_integrator->get_next_time(), false);
+  moving_mesh->update(fluid_time_integrator->get_next_time(), false);
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();

@@ -35,14 +35,14 @@ namespace ConvDiff
  */
 template<int dim, typename Number>
 std::shared_ptr<TimeIntBase>
-create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_operator,
-                       InputParameters const &                         parameters,
-                       unsigned int const                              refine_steps_time,
-                       MPI_Comm const &                                mpi_comm,
-                       bool const                                      is_test,
-                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor,
-                       std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh,
-                       std::shared_ptr<MatrixFree<dim, Number>>        matrix_free)
+create_time_integrator(std::shared_ptr<Operator<dim, Number>>            pde_operator,
+                       InputParameters const &                           parameters,
+                       unsigned int const                                refine_steps_time,
+                       MPI_Comm const &                                  mpi_comm,
+                       bool const                                        is_test,
+                       std::shared_ptr<PostProcessorInterface<Number>>   postprocessor,
+                       std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh,
+                       std::shared_ptr<MatrixFree<dim, Number>>          matrix_free)
 {
   std::shared_ptr<TimeIntBase> time_integrator;
 

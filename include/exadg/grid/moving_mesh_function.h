@@ -81,10 +81,10 @@ public:
     FE_Nothing<dim> dummy_fe;
     FEValues<dim>   fe_values(*this->mapping_undeformed,
                             dummy_fe,
-                            QGaussLobatto<dim>(this->get_degree() + 1),
+                            QGaussLobatto<dim>(this->moving_mapping->get_degree() + 1),
                             update_quadrature_points);
 
-    MappingQCache<dim>::initialize(
+    this->moving_mapping->initialize(
       triangulation,
       [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
         fe_values.reinit(cell);
@@ -94,8 +94,8 @@ public:
         for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
         {
           // need to adjust for hierarchic numbering of MappingQCache
-          Point<dim> const point =
-            fe_values.quadrature_point(this->hierarchic_to_lexicographic_numbering[i]);
+          Point<dim> const point = fe_values.quadrature_point(
+            this->moving_mapping->hierarchic_to_lexicographic_numbering[i]);
           Point<dim> displacement;
           for(unsigned int d = 0; d < dim; ++d)
             displacement[d] = displacement_function->value(point, d);

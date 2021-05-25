@@ -42,7 +42,7 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
                        MPI_Comm const &                                  mpi_comm,
                        bool const                                        is_test,
                        std::shared_ptr<PostProcessorInterface<Number>>   postprocessor,
-                       std::shared_ptr<MovingMeshBase<dim, Number>>      moving_mesh = nullptr,
+                       std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh = nullptr,
                        std::shared_ptr<MatrixFree<dim, Number>>          matrix_free = nullptr)
 {
   std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator;

@@ -45,14 +45,15 @@ private:
   typedef OperatorDualSplitting<dim, Number> Operator;
 
 public:
-  TimeIntBDFDualSplitting(std::shared_ptr<Operator>                       pde_operator_in,
-                          InputParameters const &                         param_in,
-                          unsigned int const                              refine_steps_time_in,
-                          MPI_Comm const &                                mpi_comm_in,
-                          bool const                                      is_test_in,
-                          std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
-                          std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
-                          std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
+  TimeIntBDFDualSplitting(
+    std::shared_ptr<Operator>                         pde_operator_in,
+    InputParameters const &                           param_in,
+    unsigned int const                                refine_steps_time_in,
+    MPI_Comm const &                                  mpi_comm_in,
+    bool const                                        is_test_in,
+    std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
+    std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh_in = nullptr,
+    std::shared_ptr<MatrixFree<dim, Number>>          matrix_free_in = nullptr);
 
   virtual ~TimeIntBDFDualSplitting()
   {

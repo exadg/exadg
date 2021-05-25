@@ -363,7 +363,7 @@ private:
   std::shared_ptr<Mapping<dim>> fluid_static_mapping;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mapping;
+  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
 
   // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> fluid_mapping;
