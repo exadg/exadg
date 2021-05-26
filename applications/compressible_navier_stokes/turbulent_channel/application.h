@@ -329,11 +329,9 @@ public:
 
     // manifold
     unsigned int manifold_id = 1;
-    for(typename Triangulation<dim>::cell_iterator cell = grid->triangulation->begin();
-        cell != grid->triangulation->end();
-        ++cell)
+    for(auto cell : *grid->triangulation)
     {
-      cell->set_all_manifold_ids(manifold_id);
+      cell.set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction

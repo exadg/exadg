@@ -429,20 +429,17 @@ public:
     double const left = -1.0, right = 0.5;
     GridGenerator::hyper_cube(*grid->triangulation, left, right);
 
-    typename Triangulation<dim>::cell_iterator cell = grid->triangulation->begin(),
-                                               endc = grid->triangulation->end();
-    for(; cell != endc; ++cell)
+    for(auto cell : *grid->triangulation)
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
-        if(std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12)
+        if(std::fabs(cell.face(face)->center()(1) - left) < 1e-12)
         {
-          cell->face(face_number)->set_boundary_id(0 + 10);
+          cell.face(face)->set_boundary_id(0 + 10);
         }
-        else if(std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)
+        else if(std::fabs(cell.face(face)->center()(1) - right) < 1e-12)
         {
-          cell->face(face_number)->set_boundary_id(1 + 10);
+          cell.face(face)->set_boundary_id(1 + 10);
         }
       }
     }
