@@ -115,8 +115,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -220,13 +218,11 @@ public:
     param.use_combined_operator = true;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
     double const pi   = numbers::PI;
     double const left = -pi * L, right = pi * L;
     double const deformation = 0.1;
@@ -245,16 +241,18 @@ public:
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    create_periodic_box(triangulation,
-                        n_refine_space,
-                        periodic_faces,
+    create_periodic_box(grid->triangulation,
+                        data.n_refine_global,
+                        grid->periodic_faces,
                         this->n_subdivisions_1d_hypercube,
                         left,
                         right,
                         curvilinear_mesh,
                         deformation);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    grid->triangulation->refine_global(data.n_refine_global);
+
+    return grid;
   }
 
   void set_boundary_conditions(

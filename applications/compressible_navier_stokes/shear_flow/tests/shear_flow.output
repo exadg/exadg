@@ -59,8 +59,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           4
+  Mapping degree:                            6
 
 Construct compressible Navier-Stokes DG operator ...
 
