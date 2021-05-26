@@ -76,6 +76,11 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a31ec14ac4105a57596590fbac09046e7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structExaDG_1_1MatrixFreeData.html#a31ec14ac4105a57596590fbac09046e7">MatrixFreeData</a> ()</td></tr>
+<tr class="separator:a31ec14ac4105a57596590fbac09046e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15b02474ce4649e175295fa32d583336"><td class="memTemplParams" colspan="2">template&lt;typename Operator &gt; </td></tr>
+<tr class="memitem:a15b02474ce4649e175295fa32d583336"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structExaDG_1_1MatrixFreeData.html#a15b02474ce4649e175295fa32d583336">append</a> (std::shared_ptr&lt; Operator &gt; pde_operator)</td></tr>
+<tr class="separator:a15b02474ce4649e175295fa32d583336"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63fcdbbb8e9c89d915efc3a601c00f72"><td class="memItemLeft" align="right" valign="top"><a id="a63fcdbbb8e9c89d915efc3a601c00f72"></a>
 std::vector&lt; DoFHandler&lt; dim &gt; const * &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_vector</b> ()</td></tr>
 <tr class="separator:a63fcdbbb8e9c89d915efc3a601c00f72"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,8 +121,69 @@ Public Attributes</h2></td></tr>
 MatrixFree&lt; dim, Number &gt;::AdditionalData&#160;</td><td class="memItemRight" valign="bottom"><b>data</b></td></tr>
 <tr class="separator:a46fe1b918648842294c3f32c65113bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a31ec14ac4105a57596590fbac09046e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31ec14ac4105a57596590fbac09046e7">&#9670;&nbsp;</a></span>MatrixFreeData()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a>&lt; dim, Number &gt;::<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a> </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Default constructor. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a15b02474ce4649e175295fa32d583336"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a15b02474ce4649e175295fa32d583336">&#9670;&nbsp;</a></span>append()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<div class="memtemplate">
+template&lt;typename Operator &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a>&lt; dim, Number &gt;::append </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; Operator &gt;&#160;</td>
+          <td class="paramname"><em>pde_operator</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Append <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a> by the needs of (another) pde_operator provided as argument to this function. </p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/exadg/matrix_free/<a class="el" href="matrix__free__wrapper_8h_source.html">matrix_free_wrapper.h</a></li>
+<li>include/exadg/matrix_free/<a class="el" href="matrix__free__data_8h_source.html">matrix_free_data.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

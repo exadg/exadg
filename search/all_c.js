@@ -12,7 +12,7 @@ var searchData=
   ['materialdata_161',['MaterialData',['../structExaDG_1_1Structure_1_1MaterialData.html',1,'ExaDG::Structure']]],
   ['materialhandler_162',['MaterialHandler',['../classExaDG_1_1Structure_1_1MaterialHandler.html',1,'ExaDG::Structure']]],
   ['matrix_163',['Matrix',['../classExaDG_1_1FSI_1_1Matrix.html',1,'ExaDG::FSI']]],
-  ['matrixfreedata_164',['MatrixFreeData',['../structExaDG_1_1MatrixFreeData.html',1,'ExaDG']]],
+  ['matrixfreedata_164',['MatrixFreeData',['../structExaDG_1_1MatrixFreeData.html',1,'ExaDG::MatrixFreeData&lt; dim, Number &gt;'],['../structExaDG_1_1MatrixFreeData.html#a31ec14ac4105a57596590fbac09046e7',1,'ExaDG::MatrixFreeData::MatrixFreeData()']]],
   ['meanscalarcalculator_165',['MeanScalarCalculator',['../classExaDG_1_1MeanScalarCalculator.html',1,'ExaDG']]],
   ['meanvelocitycalculator_166',['MeanVelocityCalculator',['../classExaDG_1_1IncNS_1_1MeanVelocityCalculator.html',1,'ExaDG::IncNS']]],
   ['meanvelocitycalculatordata_167',['MeanVelocityCalculatorData',['../structExaDG_1_1IncNS_1_1MeanVelocityCalculatorData.html',1,'ExaDG::IncNS']]],
