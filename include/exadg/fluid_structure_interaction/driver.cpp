@@ -341,10 +341,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
 
     // initialize matrix_free_data
+    ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-
       if(ale_poisson_param.enable_cell_based_face_loops)
         Categorization::do_cell_based_loops(*fluid_triangulation, ale_matrix_free_data->data);
 
@@ -352,7 +352,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       ale_matrix_free_data->append(ale_elasticity_operator);
     }
     else
