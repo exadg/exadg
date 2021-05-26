@@ -135,11 +135,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                      mpi_comm));
 
       // initialize matrix_free
-      poisson_matrix_free_data.reset(
-        new MatrixFreeData<dim, Number>(triangulation, poisson_param.enable_cell_based_face_loops));
+      poisson_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       poisson_matrix_free_data->append(poisson_operator);
 
       poisson_matrix_free.reset(new MatrixFree<dim, Number>());
+      if(poisson_param.enable_cell_based_face_loops)
+        Categorization::do_cell_based_loops(*triangulation, poisson_matrix_free_data->data);
       poisson_matrix_free->reinit(*static_mapping,
                                   poisson_matrix_free_data->get_dof_handler_vector(),
                                   poisson_matrix_free_data->get_constraint_vector(),
@@ -208,11 +209,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize matrix_free
-  matrix_free_data.reset(
-    new MatrixFreeData<dim, Number>(triangulation, param.use_cell_based_face_loops));
+  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
+  if(param.use_cell_based_face_loops)
+    Categorization::do_cell_based_loops(*triangulation, matrix_free_data->data);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),

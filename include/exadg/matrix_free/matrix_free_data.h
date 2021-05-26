@@ -39,26 +39,11 @@ struct MatrixFreeData
 {
 public:
   /**
-   * Default constructor. Does not care about categorization of cells in case of cell based face
-   * loops.
+   * Default constructor.
    */
   MatrixFreeData()
   {
     data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
-  }
-
-  /**
-   * Cnstructor that cares about categorization of cells in case of cell based face loops.
-   */
-  MatrixFreeData(std::shared_ptr<Triangulation<dim> const> const triangulation,
-                 bool const                                      use_cell_based_face_loops)
-  {
-    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
-
-    if(use_cell_based_face_loops)
-    {
-      Categorization::do_cell_based_loops(*triangulation, data);
-    }
   }
 
   /**

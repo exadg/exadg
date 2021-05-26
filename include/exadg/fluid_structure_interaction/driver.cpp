@@ -343,14 +343,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // initialize matrix_free_data
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      ale_matrix_free_data.reset(
-        new MatrixFreeData<dim, Number>(fluid_triangulation,
-                                        ale_poisson_param.enable_cell_based_face_loops));
+      ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+
+      if(ale_poisson_param.enable_cell_based_face_loops)
+        Categorization::do_cell_based_loops(*fluid_triangulation, ale_matrix_free_data->data);
+
       ale_matrix_free_data->append(ale_poisson_operator);
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+      ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       ale_matrix_free_data->append(ale_elasticity_operator);
     }
     else
@@ -413,11 +415,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                          mpi_comm);
 
     // initialize matrix_free
-    fluid_matrix_free_data.reset(
-      new MatrixFreeData<dim, Number>(fluid_triangulation, fluid_param.use_cell_based_face_loops));
+    fluid_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     fluid_matrix_free_data->append(fluid_operator);
 
     fluid_matrix_free.reset(new MatrixFree<dim, Number>());
+    if(fluid_param.use_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*fluid_triangulation, fluid_matrix_free_data->data);
     fluid_matrix_free->reinit(*fluid_mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
                               fluid_matrix_free_data->get_constraint_vector(),
