@@ -76,8 +76,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -191,8 +192,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -306,8 +308,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -421,8 +424,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -536,8 +540,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -651,8 +656,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -766,8 +772,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -881,8 +888,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
@@ -996,8 +1004,9 @@ Linear solver:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            1
 
 Construct elasticity operator ...
 
