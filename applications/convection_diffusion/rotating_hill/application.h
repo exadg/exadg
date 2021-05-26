@@ -79,8 +79,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -181,20 +179,18 @@ public:
     param.store_analytical_velocity_in_dof_vector = false;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    GridGenerator::hyper_cube(*triangulation, left, right);
-    triangulation->refine_global(n_refine_space);
+    GridGenerator::hyper_cube(*grid->triangulation, left, right);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    grid->triangulation->refine_global(data.n_refine_global);
+
+    return grid;
   }
+
 
   void
   set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final

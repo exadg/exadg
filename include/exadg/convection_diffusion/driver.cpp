@@ -71,33 +71,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
 
-  // triangulation and mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(
-    triangulation, periodic_faces, refine_space, static_mapping, mapping_degree);
-  print_grid_data(pcout, refine_space, *triangulation);
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor, *grid->triangulation, grid->periodic_faces);
 
   // field functions
   field_functions.reset(new FieldFunctions<dim>());
@@ -107,20 +93,20 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      static_mapping, degree, *triangulation, mesh_motion, param.start_time));
+      grid->mapping, degree, *grid->triangulation, mesh_motion, param.start_time));
 
     mapping = moving_mesh->get_mapping();
   }
   else // static mapping
   {
-    mapping = static_mapping;
+    mapping = grid->mapping;
   }
 
   // initialize convection-diffusion operator
-  pde_operator.reset(new Operator<dim, Number>(*triangulation,
+  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
                                                mapping,
                                                degree,
-                                               periodic_faces,
+                                               grid->periodic_faces,
                                                boundary_descriptor,
                                                field_functions,
                                                param,
