@@ -32,7 +32,7 @@
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mapping_dof_vector.h>
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_general_infos.h>
 
 namespace ExaDG
@@ -164,7 +164,7 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
-  std::shared_ptr<Operator<dim, Number>> comp_navier_stokes_operator;
+  std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 

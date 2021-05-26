@@ -19,13 +19,15 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_
-#define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_
+#ifndef INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
+#define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
 
 // deal.II
+#include <deal.II/distributed/tria.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
+#include <exadg/matrix_free/categorization.h>
 #include <exadg/operators/mapping_flags.h>
 
 namespace ExaDG
@@ -36,6 +38,25 @@ template<int dim, typename Number>
 struct MatrixFreeData
 {
 public:
+  /**
+   * Default constructor.
+   */
+  MatrixFreeData()
+  {
+    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
+  }
+
+  /**
+   * Append MatrixFreeData by the needs of (another) pde_operator provided as argument to this
+   * function.
+   */
+  template<typename Operator>
+  void
+  append(std::shared_ptr<Operator> pde_operator)
+  {
+    pde_operator->fill_matrix_free_data(*this);
+  }
+
   std::vector<DoFHandler<dim> const *> &
   get_dof_handler_vector()
   {
@@ -172,4 +193,4 @@ private:
 };
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_MATRIX_FREE_WRAPPER_H_ */
+#endif /* INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_ */

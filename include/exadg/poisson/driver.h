@@ -31,7 +31,7 @@
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mapping_dof_vector.h>
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/poisson/user_interface/application_base.h>
 #include <exadg/utilities/print_functions.h>
@@ -163,7 +163,7 @@ private:
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
 
-  std::shared_ptr<Operator<dim, Number>> poisson_operator;
+  std::shared_ptr<Operator<dim, Number>> pde_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 

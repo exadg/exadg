@@ -116,10 +116,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                mpi_comm));
 
   // initialize matrix_free
-  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  pde_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+  matrix_free_data->append(pde_operator);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,

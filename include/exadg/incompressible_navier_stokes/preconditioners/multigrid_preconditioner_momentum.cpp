@@ -111,8 +111,6 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
   unsigned int const                     h_level)
 {
   matrix_free_data.data.mg_level = h_level;
-  matrix_free_data.data.tasks_parallel_scheme =
-    MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
   if(data.unsteady_problem)
     matrix_free_data.append_mapping_flags(MassKernel<dim, Number>::get_mapping_flags());

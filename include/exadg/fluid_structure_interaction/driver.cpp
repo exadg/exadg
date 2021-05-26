@@ -183,9 +183,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize matrix_free
     structure_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-    structure_matrix_free_data->data.tasks_parallel_scheme =
-      MatrixFree<dim, Number>::AdditionalData::partition_partition;
-    structure_operator->fill_matrix_free_data(*structure_matrix_free_data);
+    structure_matrix_free_data->append(structure_operator);
 
     structure_matrix_free.reset(new MatrixFree<dim, Number>());
     structure_matrix_free->reinit(*structure_mapping,
@@ -342,30 +340,26 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    // initialize matrix_free
-    ale_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-    ale_matrix_free_data->data.tasks_parallel_scheme =
-      MatrixFree<dim, Number>::AdditionalData::partition_partition;
+    // initialize matrix_free_data
+    ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
 
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       if(ale_poisson_param.enable_cell_based_face_loops)
-      {
-        auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
-          fluid_triangulation);
-        Categorization::do_cell_based_loops(*tria, ale_matrix_free_data->data);
-      }
-      ale_poisson_operator->fill_matrix_free_data(*ale_matrix_free_data);
+        Categorization::do_cell_based_loops(*fluid_triangulation, ale_matrix_free_data->data);
+
+      ale_matrix_free_data->append(ale_poisson_operator);
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      ale_elasticity_operator->fill_matrix_free_data(*ale_matrix_free_data);
+      ale_matrix_free_data->append(ale_elasticity_operator);
     }
     else
     {
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
+    // initialize matrix_free
     ale_matrix_free.reset(new MatrixFree<dim, Number>());
     ale_matrix_free->reinit(*fluid_static_mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
@@ -420,18 +414,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                          mpi_comm);
 
     // initialize matrix_free
-    fluid_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-    fluid_matrix_free_data->data.tasks_parallel_scheme =
-      MatrixFree<dim, Number>::AdditionalData::partition_partition;
-    if(fluid_param.use_cell_based_face_loops)
-    {
-      auto tria = std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(
-        fluid_triangulation);
-      Categorization::do_cell_based_loops(*tria, fluid_matrix_free_data->data);
-    }
-    fluid_operator->fill_matrix_free_data(*fluid_matrix_free_data);
+    fluid_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+    fluid_matrix_free_data->append(fluid_operator);
 
     fluid_matrix_free.reset(new MatrixFree<dim, Number>());
+    if(fluid_param.use_cell_based_face_loops)
+      Categorization::do_cell_based_loops(*fluid_triangulation, fluid_matrix_free_data->data);
     fluid_matrix_free->reinit(*fluid_mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
                               fluid_matrix_free_data->get_constraint_vector(),

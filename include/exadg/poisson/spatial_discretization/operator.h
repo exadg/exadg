@@ -28,7 +28,7 @@
 // ExaDG
 
 // matrix-free
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 
 // operators
 #include <exadg/operators/rhs_operator.h>

@@ -111,23 +111,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                              mapping,
-                                                              degree,
-                                                              boundary_descriptor_density,
-                                                              boundary_descriptor_velocity,
-                                                              boundary_descriptor_pressure,
-                                                              boundary_descriptor_energy,
-                                                              field_functions,
-                                                              param,
-                                                              "fluid",
-                                                              mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(*triangulation,
+                                               mapping,
+                                               degree,
+                                               boundary_descriptor_density,
+                                               boundary_descriptor_velocity,
+                                               boundary_descriptor_pressure,
+                                               boundary_descriptor_energy,
+                                               field_functions,
+                                               param,
+                                               "fluid",
+                                               mpi_comm));
 
   // initialize matrix_free
   matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  comp_navier_stokes_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free_data->append(pde_operator);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   matrix_free->reinit(*mapping,
@@ -137,17 +135,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                       matrix_free_data->data);
 
   // setup compressible Navier-Stokes operator
-  comp_navier_stokes_operator->setup(matrix_free, matrix_free_data);
+  pde_operator->setup(matrix_free, matrix_free_data);
 
   // initialize postprocessor
   if(!is_throughput_study)
   {
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(*comp_navier_stokes_operator);
+    postprocessor->setup(*pde_operator);
 
     // initialize time integrator
     time_integrator.reset(new TimeIntExplRK<Number>(
-      comp_navier_stokes_operator, param, refine_time, mpi_comm, is_test, postprocessor));
+      pde_operator, param, refine_time, mpi_comm, is_test, postprocessor));
     time_integrator->setup(param.restarted_simulation);
   }
 
@@ -184,7 +182,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs            = comp_navier_stokes_operator->get_number_of_dofs();
+  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
   unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
   unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
 
@@ -219,26 +217,26 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   VectorType dst, src;
 
   // initialize vectors
-  comp_navier_stokes_operator->initialize_dof_vector(src);
-  comp_navier_stokes_operator->initialize_dof_vector(dst);
+  pde_operator->initialize_dof_vector(src);
+  pde_operator->initialize_dof_vector(dst);
   src = 1.0;
   dst = 1.0;
 
   const std::function<void(void)> operator_evaluation = [&](void) {
     if(operator_type == OperatorType::ConvectiveTerm)
-      comp_navier_stokes_operator->evaluate_convective(dst, src, 0.0);
+      pde_operator->evaluate_convective(dst, src, 0.0);
     else if(operator_type == OperatorType::ViscousTerm)
-      comp_navier_stokes_operator->evaluate_viscous(dst, src, 0.0);
+      pde_operator->evaluate_viscous(dst, src, 0.0);
     else if(operator_type == OperatorType::ViscousAndConvectiveTerms)
-      comp_navier_stokes_operator->evaluate_convective_and_viscous(dst, src, 0.0);
+      pde_operator->evaluate_convective_and_viscous(dst, src, 0.0);
     else if(operator_type == OperatorType::InverseMassOperator)
-      comp_navier_stokes_operator->apply_inverse_mass(dst, src);
+      pde_operator->apply_inverse_mass(dst, src);
     else if(operator_type == OperatorType::InverseMassOperatorDstDst)
-      comp_navier_stokes_operator->apply_inverse_mass(dst, dst);
+      pde_operator->apply_inverse_mass(dst, dst);
     else if(operator_type == OperatorType::VectorUpdate)
       dst.sadd(2.0, 1.0, src);
     else if(operator_type == OperatorType::EvaluateOperatorExplicit)
-      comp_navier_stokes_operator->evaluate(dst, src, 0.0);
+      pde_operator->evaluate(dst, src, 0.0);
     else
       AssertThrow(false, ExcMessage("Specified operator type not implemented"));
   };
@@ -248,7 +246,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     operator_evaluation, degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
 
   // calculate throughput
-  types::global_dof_index const dofs = comp_navier_stokes_operator->get_number_of_dofs();
+  types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
 
   double const throughput = (double)dofs / wall_time;
 
@@ -267,7 +265,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
   return std::tuple<unsigned int, types::global_dof_index, double>(
-    comp_navier_stokes_operator->get_polynomial_degree(), dofs, throughput);
+    pde_operator->get_polynomial_degree(), dofs, throughput);
 }
 
 template class Driver<2, float>;

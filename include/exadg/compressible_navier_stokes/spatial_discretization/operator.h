@@ -35,7 +35,7 @@
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
-#include <exadg/matrix_free/matrix_free_wrapper.h>
+#include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 
 namespace ExaDG

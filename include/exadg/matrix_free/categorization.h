@@ -37,7 +37,7 @@ using namespace dealii;
  */
 template<int dim, typename AdditionalData>
 void
-do_cell_based_loops(const Triangulation<dim> & tria,
+do_cell_based_loops(Triangulation<dim> const & tria,
                     AdditionalData &           data,
                     unsigned int const         level = numbers::invalid_unsigned_int)
 {

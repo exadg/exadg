@@ -128,18 +128,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                mpi_comm));
 
   // initialize matrix_free
-  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
-  matrix_free_data->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  if(param.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, matrix_free_data->data);
-  }
-  pde_operator->fill_matrix_free_data(*matrix_free_data);
+  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+  matrix_free_data->append(pde_operator);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
+  if(param.use_cell_based_face_loops)
+    Categorization::do_cell_based_loops(*triangulation, matrix_free_data->data);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
