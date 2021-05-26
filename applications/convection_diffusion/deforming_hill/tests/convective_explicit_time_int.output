@@ -54,8 +54,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           16
+  Mapping degree:                            1
 
 Construct convection-diffusion operator ...
 
