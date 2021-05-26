@@ -69,27 +69,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
 
-  // triangulation and mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
-  print_grid_data(pcout, refine_space, *triangulation);
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
@@ -104,10 +91,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // setup spatial operator
-  pde_operator.reset(new Operator<dim, Number>(*triangulation,
-                                               mapping,
+  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
+                                               grid->mapping,
                                                degree,
-                                               periodic_faces,
+                                               grid->periodic_faces,
                                                boundary_descriptor,
                                                field_functions,
                                                material_descriptor,
@@ -120,7 +107,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free_data->append(pde_operator);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(*mapping,
+  matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
