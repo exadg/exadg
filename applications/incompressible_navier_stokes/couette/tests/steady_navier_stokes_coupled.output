@@ -122,8 +122,9 @@ Linear solver:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            2
 
 Construct incompressible Navier-Stokes operator ...
 
@@ -160,10 +161,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.74871e-13
+  Absolute error (L2-norm): 7.81266e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.09042e-11
+  Absolute error (L2-norm): 2.11294e-11
 
 
 
@@ -288,8 +289,9 @@ Linear solver:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            3
 
 Construct incompressible Navier-Stokes operator ...
 
@@ -326,10 +328,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 8.93060e-13
+  Absolute error (L2-norm): 5.46529e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.71147e-11
+  Absolute error (L2-norm): 1.03890e-11
 
 
 
@@ -454,8 +456,9 @@ Linear solver:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            4
 
 Construct incompressible Navier-Stokes operator ...
 
@@ -492,10 +495,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.42529e-14
+  Absolute error (L2-norm): 2.98389e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 9.59828e-13
+  Absolute error (L2-norm): 8.22650e-13
 
 
 
@@ -620,8 +623,9 @@ Linear solver:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     1
+  Max. number of refinements:                1
   Number of cells:                           8
+  Mapping degree:                            5
 
 Construct incompressible Navier-Stokes operator ...
 
@@ -658,7 +662,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 9.37557e-12
+  Absolute error (L2-norm): 9.34871e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.32389e-10
+  Absolute error (L2-norm): 2.32619e-10

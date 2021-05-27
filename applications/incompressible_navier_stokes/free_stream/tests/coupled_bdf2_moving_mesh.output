@@ -140,8 +140,9 @@ Linear solver:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           16
+  Mapping degree:                            3
 
 Construct incompressible Navier-Stokes operator ...
 
@@ -196,61 +197,61 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 
 Calculate error for velocity at time t = 1.0004e+00:
-  Relative error (L2-norm): 9.03070e-16
+  Relative error (L2-norm): 3.65222e-15
 
 Calculate error for pressure at time t = 1.0004e+00:
-  Relative error (L2-norm): 1.24490e-13
+  Relative error (L2-norm): 5.38441e-13
 
 Calculate error for velocity at time t = 2.0019e+00:
-  Relative error (L2-norm): 1.77036e-15
+  Relative error (L2-norm): 2.38912e-15
 
 Calculate error for pressure at time t = 2.0019e+00:
-  Relative error (L2-norm): 1.10191e-13
+  Relative error (L2-norm): 2.56655e-13
 
 Calculate error for velocity at time t = 3.0033e+00:
-  Relative error (L2-norm): 8.92961e-16
+  Relative error (L2-norm): 1.95513e-15
 
 Calculate error for pressure at time t = 3.0033e+00:
-  Relative error (L2-norm): 7.50280e-14
+  Relative error (L2-norm): 9.29507e-14
 
 Calculate error for velocity at time t = 4.0048e+00:
-  Relative error (L2-norm): 2.69872e-15
+  Relative error (L2-norm): 2.47510e-15
 
 Calculate error for pressure at time t = 4.0048e+00:
-  Relative error (L2-norm): 3.43763e-13
+  Relative error (L2-norm): 4.58763e-13
 
 Calculate error for velocity at time t = 5.0007e+00:
-  Relative error (L2-norm): 9.54290e-16
+  Relative error (L2-norm): 9.78441e-16
 
 Calculate error for pressure at time t = 5.0007e+00:
-  Relative error (L2-norm): 3.85309e-13
+  Relative error (L2-norm): 1.73388e-13
 
 Calculate error for velocity at time t = 6.0021e+00:
-  Relative error (L2-norm): 1.67219e-15
+  Relative error (L2-norm): 3.72967e-15
 
 Calculate error for pressure at time t = 6.0021e+00:
-  Relative error (L2-norm): 3.43982e-13
+  Relative error (L2-norm): 6.67161e-13
 
 Calculate error for velocity at time t = 7.0036e+00:
-  Relative error (L2-norm): 1.08278e-15
+  Relative error (L2-norm): 1.20146e-15
 
 Calculate error for pressure at time t = 7.0036e+00:
-  Relative error (L2-norm): 7.61722e-13
+  Relative error (L2-norm): 4.74842e-14
 
 Calculate error for velocity at time t = 8.0051e+00:
-  Relative error (L2-norm): 9.68446e-16
+  Relative error (L2-norm): 2.01180e-15
 
 Calculate error for pressure at time t = 8.0051e+00:
-  Relative error (L2-norm): 1.08110e-12
+  Relative error (L2-norm): 4.69524e-13
 
 Calculate error for velocity at time t = 9.0009e+00:
-  Relative error (L2-norm): 1.36696e-15
+  Relative error (L2-norm): 2.45807e-15
 
 Calculate error for pressure at time t = 9.0009e+00:
-  Relative error (L2-norm): 4.87471e-14
+  Relative error (L2-norm): 2.55316e-13
 
 Calculate error for velocity at time t = 1.0002e+01:
-  Relative error (L2-norm): 2.98430e-15
+  Relative error (L2-norm): 1.93105e-15
 
 Calculate error for pressure at time t = 1.0002e+01:
-  Relative error (L2-norm): 3.11829e-13
+  Relative error (L2-norm): 2.20083e-13

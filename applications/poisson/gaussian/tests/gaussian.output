@@ -60,8 +60,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            1
 
 Construct Poisson operator ...
 
@@ -149,8 +150,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            2
 
 Construct Poisson operator ...
 
@@ -238,8 +240,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -327,8 +330,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            4
 
 Construct Poisson operator ...
 
@@ -416,8 +420,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            5
 
 Construct Poisson operator ...
 
@@ -505,8 +510,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            6
 
 Construct Poisson operator ...
 
@@ -594,8 +600,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            7
 
 Construct Poisson operator ...
 
@@ -683,8 +690,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            8
 
 Construct Poisson operator ...
 
@@ -772,8 +780,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            9
 
 Construct Poisson operator ...
 
@@ -861,8 +870,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            10
 
 Construct Poisson operator ...
 
@@ -950,8 +960,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            11
 
 Construct Poisson operator ...
 
@@ -1039,8 +1050,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            12
 
 Construct Poisson operator ...
 
@@ -1128,8 +1140,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            13
 
 Construct Poisson operator ...
 
@@ -1154,7 +1167,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.24997e-11
+  Relative error (L2-norm): 4.24996e-11
 
 
 
@@ -1217,8 +1230,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            14
 
 Construct Poisson operator ...
 
@@ -1243,7 +1257,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.47319e-12
+  Relative error (L2-norm): 2.47323e-12
 
 
 
@@ -1306,8 +1320,9 @@ Numerical parameters:
 
 Generating grid for 2-dimensional problem:
 
-  Number of refinements:                     3
+  Max. number of refinements:                3
   Number of cells:                           64
+  Mapping degree:                            15
 
 Construct Poisson operator ...
 
@@ -1332,4 +1347,4 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.28170e-12
+  Relative error (L2-norm): 2.28171e-12

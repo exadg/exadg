@@ -60,8 +60,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -149,8 +150,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -238,8 +240,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -327,8 +330,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -416,8 +420,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -505,8 +510,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
@@ -594,8 +600,9 @@ Numerical parameters:
 
 Generating grid for 3-dimensional problem:
 
-  Number of refinements:                     2
+  Max. number of refinements:                2
   Number of cells:                           512
+  Mapping degree:                            3
 
 Construct Poisson operator ...
 
