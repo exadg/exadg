@@ -96,8 +96,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -272,20 +270,16 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void
-  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
-                    PeriodicFaces &                     periodic_faces,
-                    unsigned int const                  n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &     mapping,
-                    unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), R_INNER);
-    GridGenerator::extrude_triangulation(tria_2d, N_CELLS_AXIAL / 4 + 1, L, *triangulation);
+    GridGenerator::extrude_triangulation(tria_2d, N_CELLS_AXIAL / 4 + 1, L, *grid->triangulation);
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -311,13 +305,13 @@ public:
     /*
      *  MANIFOLDS
      */
-    triangulation->set_all_manifold_ids(0);
+    grid->triangulation->set_all_manifold_ids(0);
 
     // first fill vectors of manifold_ids and face_ids
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -346,20 +340,20 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : triangulation->active_cell_iterators())
+      for(auto cell : grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], Point<dim>())));
-          triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    triangulation->refine_global(n_refine_space + 2);
+    grid->triangulation->refine_global(data.n_refine_global + 2);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void
@@ -619,23 +613,19 @@ public:
     parameters.update_preconditioner_every_newton_iterations = 10;
   }
 
-  void
-  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     Triangulation<2> tria_2d;
     GridGenerator::hyper_shell(tria_2d, Point<2>(), R_INNER, R_OUTER, N_CELLS_AXIAL, true);
     GridTools::rotate(numbers::PI / 4, tria_2d);
 
     // extrude in z-direction
-    GridGenerator::extrude_triangulation(tria_2d, N_CELLS_AXIAL + 1, L, *triangulation);
+    GridGenerator::extrude_triangulation(tria_2d, N_CELLS_AXIAL + 1, L, *grid->triangulation);
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -678,11 +668,11 @@ public:
     static std::shared_ptr<Manifold<dim>> cylinder_manifold;
     cylinder_manifold = std::shared_ptr<Manifold<dim>>(
       static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(Point<dim>())));
-    triangulation->set_manifold(MANIFOLD_ID_CYLINDER, *cylinder_manifold);
+    grid->triangulation->set_manifold(MANIFOLD_ID_CYLINDER, *cylinder_manifold);
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

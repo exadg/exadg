@@ -152,8 +152,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -406,18 +404,14 @@ public:
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  void
-  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
-                    PeriodicFaces &                     periodic_faces,
-                    unsigned int const                  n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &     mapping,
-                    unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    create_triangulation_fluid(*triangulation);
+    create_triangulation_fluid(*grid->triangulation);
 
-    triangulation->set_all_manifold_ids(0);
+    grid->triangulation->set_all_manifold_ids(0);
 
     // vectors of manifold_ids and face_ids
     unsigned int const        manifold_id_start = 10;
@@ -428,7 +422,7 @@ public:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -488,20 +482,20 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : triangulation->active_cell_iterators())
+      for(auto cell : grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void
@@ -888,18 +882,14 @@ public:
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  void
-  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    create_triangulation_structure(*triangulation);
+    create_triangulation_structure(*grid->triangulation);
 
-    triangulation->set_all_manifold_ids(0);
+    grid->triangulation->set_all_manifold_ids(0);
 
     // vectors of manifold_ids and face_ids
     unsigned int const        manifold_id_start = 10;
@@ -910,7 +900,7 @@ public:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -964,20 +954,20 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : triangulation->active_cell_iterators())
+      for(auto cell : grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

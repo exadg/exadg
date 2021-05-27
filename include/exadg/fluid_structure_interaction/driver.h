@@ -317,15 +317,8 @@ private:
   // input parameters
   Structure::InputParameters structure_param;
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> structure_triangulation;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> structure_mapping;
-
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    structure_periodic_faces;
+  // grid
+  std::shared_ptr<Grid<dim>> structure_grid;
 
   // material descriptor
   std::shared_ptr<Structure::MaterialDescriptor> structure_material_descriptor;
@@ -354,13 +347,8 @@ private:
 
   /****************************************** FLUID *******************************************/
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> fluid_triangulation;
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    fluid_periodic_faces;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> fluid_static_mapping;
+  // grid
+  std::shared_ptr<Grid<dim>> fluid_grid;
 
   // moving mapping (ALE)
   std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;

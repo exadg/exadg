@@ -30,6 +30,7 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -89,12 +90,8 @@ public:
   virtual void
   set_input_parameters_fluid(IncNS::InputParameters & parameters) = 0;
 
-  virtual void
-  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
-                    PeriodicFaces &                     periodic_faces,
-                    unsigned int const                  n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &     mapping,
-                    unsigned int const                  mapping_degree) = 0;
+  virtual std::shared_ptr<Grid<dim>>
+  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   // currently required for test cases with analytical mesh movement
   virtual std::shared_ptr<Function<dim>>
@@ -147,12 +144,8 @@ public:
   virtual void
   set_input_parameters_structure(Structure::InputParameters & parameters) = 0;
 
-  virtual void
-  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) = 0;
+  virtual std::shared_ptr<Grid<dim>>
+  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void
   set_boundary_conditions_structure(
