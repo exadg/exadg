@@ -116,22 +116,6 @@ print_matrixfree_info(ConditionalOStream const & pcout)
   // clang-format on
 }
 
-// TODO remove this function later once ExaDG::Grid is used everywhere
-// print grid info
-template<int dim>
-inline void
-print_grid_data(ConditionalOStream const & pcout,
-                unsigned int const         n_refine_space,
-                Triangulation<dim> const & triangulation)
-{
-  pcout << std::endl
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "Number of refinements", n_refine_space);
-  print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
-}
-
 template<int dim>
 inline void
 print_grid_info(ConditionalOStream const & pcout, Grid<dim> const & grid)
