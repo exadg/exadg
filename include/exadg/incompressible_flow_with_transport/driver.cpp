@@ -100,11 +100,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                   ExcMessage(
                     "Parameter triangulation_type is different for fluid field and scalar field"));
     }
-
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
   else if(fluid_param.triangulation_type == TriangulationType::FullyDistributed)
   {
@@ -114,19 +109,20 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                   ExcMessage(
                     "Parameter triangulation_type is different for fluid field and scalar field"));
     }
-
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  // triangulation and mapping
-  unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, degree);
-  application->create_grid(
-    triangulation, periodic_faces, refine_space, static_mapping, mapping_degree);
-  print_grid_data(pcout, refine_space, *triangulation);
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = fluid_param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(fluid_param.mapping, degree);
+
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   if(fluid_param.ale_formulation) // moving mesh
   {
@@ -143,13 +139,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
     moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-      static_mapping, degree, *triangulation, mesh_motion, fluid_param.start_time));
+      grid->mapping, degree, *grid->triangulation, mesh_motion, fluid_param.start_time));
 
     mapping = moving_mesh->get_mapping();
   }
   else // static mesh
   {
-    mapping = static_mapping;
+    mapping = grid->mapping;
   }
 
   // boundary conditions
@@ -158,8 +154,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application->set_boundary_conditions(fluid_boundary_descriptor_velocity,
                                        fluid_boundary_descriptor_pressure);
-  verify_boundary_conditions(*fluid_boundary_descriptor_velocity, *triangulation, periodic_faces);
-  verify_boundary_conditions(*fluid_boundary_descriptor_pressure, *triangulation, periodic_faces);
+  verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
+                             *grid->triangulation,
+                             grid->periodic_faces);
+  verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
+                             *grid->triangulation,
+                             grid->periodic_faces);
 
   // field functions
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
@@ -171,7 +171,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<dim>());
 
     application->set_boundary_conditions_scalar(scalar_boundary_descriptor[i], i);
-    verify_boundary_conditions(*scalar_boundary_descriptor[i], *triangulation, periodic_faces);
+    verify_boundary_conditions(*scalar_boundary_descriptor[i],
+                               *grid->triangulation,
+                               grid->periodic_faces);
 
     // field functions
     scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());
@@ -182,10 +184,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize fluid_operator
   if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator = IncNS::create_operator<dim, Number>(*triangulation,
+    fluid_operator = IncNS::create_operator<dim, Number>(*grid->triangulation,
                                                          mapping,
                                                          degree,
-                                                         periodic_faces,
+                                                         grid->periodic_faces,
                                                          fluid_boundary_descriptor_velocity,
                                                          fluid_boundary_descriptor_pressure,
                                                          fluid_field_functions,
@@ -196,10 +198,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
     fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*triangulation,
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*grid->triangulation,
                                                             mapping,
                                                             degree,
-                                                            periodic_faces,
+                                                            grid->periodic_faces,
                                                             fluid_boundary_descriptor_velocity,
                                                             fluid_boundary_descriptor_pressure,
                                                             fluid_field_functions,
@@ -215,10 +217,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(*triangulation,
+    conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(*grid->triangulation,
                                                                     mapping,
                                                                     degree,
-                                                                    periodic_faces,
+                                                                    grid->periodic_faces,
                                                                     scalar_boundary_descriptor[i],
                                                                     scalar_field_functions[i],
                                                                     scalar_param[i],
@@ -234,8 +236,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(fluid_param.use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*triangulation, matrix_free_data->data);
-  matrix_free->reinit(*mapping,
+    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+  matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -253,7 +255,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(false)
   {
     QGauss<dim> quadrature(degree + 1);
-    double      AR = GridTools::compute_maximum_aspect_ratio(*mapping, *triangulation, quadrature);
+    double AR = GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 

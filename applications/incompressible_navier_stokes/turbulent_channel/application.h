@@ -237,8 +237,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -392,55 +390,52 @@ public:
     param.multigrid_data_pressure_block.type = MultigridType::cphMG;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
     Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;
     dimensions[1] = DIMENSIONS_X2;
     if(dim == 3)
       dimensions[2] = DIMENSIONS_X3;
 
-    GridGenerator::hyper_rectangle(*triangulation,
+    GridGenerator::hyper_rectangle(*grid->triangulation,
                                    Point<dim>(-dimensions / 2.0),
                                    Point<dim>(dimensions / 2.0));
 
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-    triangulation->set_manifold(manifold_id, manifold);
+    grid->triangulation->set_manifold(manifold_id, manifold);
 
     // periodicity in x--direction
-    triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
-    triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
+    grid->triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
+    grid->triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
     // periodicity in z-direction
     if(dim == 3)
     {
-      triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
-      triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
+      grid->triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
+      grid->triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, grid->periodic_faces);
     if(dim == 3)
-      GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, periodic_faces);
+      GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, grid->periodic_faces);
 
-    triangulation->add_periodicity(periodic_faces);
+    grid->triangulation->add_periodicity(grid->periodic_faces);
 
-    // perform global refinements
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

@@ -119,8 +119,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -177,20 +175,16 @@ public:
     param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     double const length = 1.0;
     double const left = -length, right = length;
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
     unsigned int n_cells_1d = std::max((unsigned int)2, this->n_subdivisions_1d_hypercube);
-    GridGenerator::subdivided_hyper_cube(*triangulation, n_cells_1d, left, right);
+    GridGenerator::subdivided_hyper_cube(*grid->triangulation, n_cells_1d, left, right);
 
     if(mesh_type == MeshType::Cartesian)
     {
@@ -201,23 +195,21 @@ public:
       double const              deformation = 0.15;
       unsigned int const        frequency   = 2;
       DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      triangulation->set_all_manifold_ids(1);
-      triangulation->set_manifold(1, manifold);
+      grid->triangulation->set_all_manifold_ids(1);
+      grid->triangulation->set_manifold(1, manifold);
 
-      std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+      std::vector<bool> vertex_touched(grid->triangulation->n_vertices(), false);
 
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-          cell != triangulation->end();
-          ++cell)
+      for(auto cell : *grid->triangulation)
       {
         for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
         {
-          if(vertex_touched[cell->vertex_index(v)] == false)
+          if(vertex_touched[cell.vertex_index(v)] == false)
           {
-            Point<dim> & vertex                   = cell->vertex(v);
-            Point<dim>   new_point                = manifold.push_forward(vertex);
-            vertex                                = new_point;
-            vertex_touched[cell->vertex_index(v)] = true;
+            Point<dim> & vertex                  = cell.vertex(v);
+            Point<dim>   new_point               = manifold.push_forward(vertex);
+            vertex                               = new_point;
+            vertex_touched[cell.vertex_index(v)] = true;
           }
         }
       }
@@ -229,24 +221,21 @@ public:
 
     if(USE_NEUMANN_BOUNDARY)
     {
-      typename Triangulation<dim>::cell_iterator cell = triangulation->begin(),
-                                                 endc = triangulation->end();
-      for(; cell != endc; ++cell)
+      for(auto cell : *grid->triangulation)
       {
-        for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-            ++face_number)
+        for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
         {
-          if(std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12)
+          if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
           {
-            cell->face(face_number)->set_boundary_id(1);
+            cell.face(f)->set_boundary_id(1);
           }
         }
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
 

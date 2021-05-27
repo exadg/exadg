@@ -22,10 +22,18 @@
 #ifndef INCLUDE_EXADG_GRID_GRID_H_
 #define INCLUDE_EXADG_GRID_GRID_H_
 
+// deal.II
+#include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_tools.h>
+
+// ExaDG
 #include <exadg/grid/enum_types.h>
 
 namespace ExaDG
 {
+using namespace dealii;
+
 struct GridData
 {
   GridData()

@@ -161,8 +161,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -439,47 +437,43 @@ public:
     do_set_input_parameters(param, true);
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
-                                                       n_refine_space,
-                                                       periodic_faces);
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
+                                                       data.n_refine_global,
+                                                       grid->periodic_faces);
+
+    return grid;
   }
 
-  void
-  create_grid_precursor(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) final
   {
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
     GridGenerator::extrude_triangulation(tria_2d,
                                          FDANozzle::N_CELLS_AXIAL_PRECURSOR + 1,
                                          FDANozzle::LENGTH_PRECURSOR,
-                                         *triangulation);
+                                         *grid->triangulation);
     Tensor<1, dim> offset = Tensor<1, dim>();
     offset[2]             = FDANozzle::Z1_PRECURSOR;
-    GridTools::shift(offset, *triangulation);
+    GridTools::shift(offset, *grid->triangulation);
 
     /*
      *  MANIFOLDS
      */
-    triangulation->set_all_manifold_ids(0);
+    grid->triangulation->set_all_manifold_ids(0);
 
     // first fill vectors of manifold_ids and face_ids
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -507,13 +501,13 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : triangulation->active_cell_iterators())
+      for(auto cell : grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], Point<dim>())));
-          triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
@@ -521,33 +515,32 @@ public:
     /*
      *  BOUNDARY ID's
      */
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
         // left boundary
-        if((std::fabs(cell->face(face_number)->center()[2] - FDANozzle::Z1_PRECURSOR) < 1e-12))
+        if((std::fabs(cell->face(face)->center()[2] - FDANozzle::Z1_PRECURSOR) < 1e-12))
         {
-          cell->face(face_number)->set_boundary_id(0 + 10);
+          cell->face(face)->set_boundary_id(0 + 10);
         }
 
         // right boundary
-        if((std::fabs(cell->face(face_number)->center()[2] - FDANozzle::Z2_PRECURSOR) < 1e-12))
+        if((std::fabs(cell->face(face)->center()[2] - FDANozzle::Z2_PRECURSOR) < 1e-12))
         {
-          cell->face(face_number)->set_boundary_id(1 + 10);
+          cell->face(face)->set_boundary_id(1 + 10);
         }
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 2, periodic_faces);
-    triangulation->add_periodicity(periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 2, grid->periodic_faces);
+    grid->triangulation->add_periodicity(grid->periodic_faces);
 
     // perform global refinements
-    triangulation->refine_global(n_refine_space + additional_refinements_precursor);
+    grid->triangulation->refine_global(data.n_refine_global + additional_refinements_precursor);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

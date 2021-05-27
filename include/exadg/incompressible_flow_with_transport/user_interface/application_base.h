@@ -22,14 +22,13 @@
 #ifndef INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
 #define INCLUDE_EXADG_INCOMPRESSIBLE_FLOW_WITH_TRANSPORT_USER_INTERFACE_APPLICATION_BASE_H_
 
-// IncNS
-#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
-
-// ConvDiff
+// ExaDG
 #include <exadg/convection_diffusion/postprocessor/postprocessor.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/grid/grid.h>
+#include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -44,8 +43,6 @@ template<int dim, typename Number>
 class ApplicationBase : public IncNS::ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   virtual void
   add_parameters(ParameterHandler & prm)
   {

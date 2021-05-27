@@ -71,32 +71,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
 
-  // triangulation and mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
-  print_grid_data(pcout, refine_space, *triangulation);
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<0, dim>());
   application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor, *grid->triangulation, grid->periodic_faces);
 
   // field functions
   field_functions.reset(new FieldFunctions<dim>());
@@ -106,19 +93,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(false)
   {
     // this variant is only for comparison
-    double AR = calculate_aspect_ratio_vertex_distance(*triangulation, mpi_comm);
+    double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
     pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*mapping, *triangulation, quadrature);
+    AR = GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   // initialize Poisson operator
-  pde_operator.reset(new Operator<dim, Number>(*triangulation,
-                                               mapping,
+  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
+                                               grid->mapping,
                                                degree,
-                                               periodic_faces,
+                                               grid->periodic_faces,
                                                boundary_descriptor,
                                                field_functions,
                                                param,
@@ -131,8 +118,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(param.enable_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*triangulation, matrix_free_data->data);
-  matrix_free->reinit(*mapping,
+    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+  matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -150,7 +137,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(not(is_throughput_study))
   {
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(pde_operator->get_dof_handler(), *mapping);
+    postprocessor->setup(pde_operator->get_dof_handler(), *grid->mapping);
   }
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());

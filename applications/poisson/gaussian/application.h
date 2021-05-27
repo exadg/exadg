@@ -181,8 +181,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -242,18 +240,14 @@ public:
     param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     double const length = 1.0;
     double const left = -length, right = length;
-    GridGenerator::subdivided_hyper_cube(*triangulation,
+    GridGenerator::subdivided_hyper_cube(*grid->triangulation,
                                          this->n_subdivisions_1d_hypercube,
                                          left,
                                          right);
@@ -267,23 +261,21 @@ public:
       double const              deformation = 0.1;
       unsigned int const        frequency   = 2;
       DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      triangulation->set_all_manifold_ids(1);
-      triangulation->set_manifold(1, manifold);
+      grid->triangulation->set_all_manifold_ids(1);
+      grid->triangulation->set_manifold(1, manifold);
 
-      std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+      std::vector<bool> vertex_touched(grid->triangulation->n_vertices(), false);
 
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-          cell != triangulation->end();
-          ++cell)
+      for(auto cell : *grid->triangulation)
       {
         for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
         {
-          if(vertex_touched[cell->vertex_index(v)] == false)
+          if(vertex_touched[cell.vertex_index(v)] == false)
           {
-            Point<dim> & vertex                   = cell->vertex(v);
-            Point<dim>   new_point                = manifold.push_forward(vertex);
-            vertex                                = new_point;
-            vertex_touched[cell->vertex_index(v)] = true;
+            Point<dim> & vertex                  = cell.vertex(v);
+            Point<dim>   new_point               = manifold.push_forward(vertex);
+            vertex                               = new_point;
+            vertex_touched[cell.vertex_index(v)] = true;
           }
         }
       }
@@ -293,9 +285,9 @@ public:
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

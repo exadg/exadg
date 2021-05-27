@@ -95,8 +95,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -263,13 +261,11 @@ public:
     param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
     Point<dim> p_1;
     p_1[0] = 0.;
     p_1[1] = H;
@@ -285,53 +281,53 @@ public:
     // use 2 cells in x-direction on coarsest grid and 1 cell in y- and z-directions
     std::vector<unsigned int> refinements(dim, 1);
     refinements[0] = 2;
-    GridGenerator::subdivided_hyper_rectangle(*triangulation, refinements, p_1, p_2);
+    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, refinements, p_1, p_2);
 
     // create hill by shifting y-coordinates of middle vertices by -H in y-direction
-    triangulation->last()->vertex(0)[1] = 0.;
+    grid->triangulation->last()->vertex(0)[1] = 0.;
     if(dim == 3)
-      triangulation->last()->vertex(4)[1] = 0.;
+      grid->triangulation->last()->vertex(4)[1] = 0.;
 
     // periodicity in x-direction (add 10 to avoid conflicts with dirichlet boundary, which is 0)
     // make use of the fact that the mesh has only two elements
 
     // left element
-    triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
+    grid->triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
     // right element
-    triangulation->last()->face(1)->set_all_boundary_ids(1 + 10);
+    grid->triangulation->last()->face(1)->set_all_boundary_ids(1 + 10);
 
     // periodicity in z-direction
     if(dim == 3)
     {
       // left element
-      triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
-      triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
+      grid->triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
+      grid->triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
       // right element
-      triangulation->last()->face(4)->set_all_boundary_ids(4 + 10);
-      triangulation->last()->face(5)->set_all_boundary_ids(5 + 10);
+      grid->triangulation->last()->face(4)->set_all_boundary_ids(4 + 10);
+      grid->triangulation->last()->face(5)->set_all_boundary_ids(5 + 10);
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, grid->periodic_faces);
     if(dim == 3)
     {
-      GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, periodic_faces);
-      GridTools::collect_periodic_faces(*tria, 4 + 10, 5 + 10, 2, periodic_faces);
+      GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, grid->periodic_faces);
+      GridTools::collect_periodic_faces(*tria, 4 + 10, 5 + 10, 2, grid->periodic_faces);
     }
 
-    triangulation->add_periodicity(periodic_faces);
+    grid->triangulation->add_periodicity(grid->periodic_faces);
 
     unsigned int const manifold_id = 111;
-    triangulation->begin()->set_all_manifold_ids(manifold_id);
-    triangulation->last()->set_all_manifold_ids(manifold_id);
+    grid->triangulation->begin()->set_all_manifold_ids(manifold_id);
+    grid->triangulation->last()->set_all_manifold_ids(manifold_id);
 
     static const PeriodicHillManifold<dim> manifold =
       PeriodicHillManifold<dim>(H, length, height, grid_stretch_factor);
-    triangulation->set_manifold(manifold_id, manifold);
+    grid->triangulation->set_manifold(manifold_id, manifold);
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void
