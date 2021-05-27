@@ -93,16 +93,6 @@ public:
   virtual std::shared_ptr<Grid<dim>>
   create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
-  // currently required for test cases with analytical mesh movement
-  virtual std::shared_ptr<Function<dim>>
-  set_mesh_movement_function_fluid()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
-  }
-
   virtual void
   set_boundary_conditions_fluid(
     std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -114,9 +104,9 @@ public:
   virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
   construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
-  // Moving mesh
+  // ALE
 
-  // Poisson type mesh smoothing
+  // Poisson type mesh motion
   virtual void
   set_input_parameters_ale(Poisson::InputParameters & parameters) = 0;
 
@@ -126,7 +116,7 @@ public:
   virtual void
   set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;
 
-  // elasticity type mesh smoothing
+  // elasticity type mesh motion
   virtual void
   set_input_parameters_ale(Structure::InputParameters & parameters) = 0;
 
