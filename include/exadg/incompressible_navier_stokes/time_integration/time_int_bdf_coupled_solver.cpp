@@ -467,7 +467,7 @@ TimeIntBDFCoupled<dim, Number>::postprocessing_stability_analysis()
 
   std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
 
-  unsigned int const size = solution[0].block(0).local_size();
+  unsigned int const size = solution[0].block(0).locally_owned_size();
 
   LAPACKFullMatrix<Number> propagation_matrix(size, size);
 

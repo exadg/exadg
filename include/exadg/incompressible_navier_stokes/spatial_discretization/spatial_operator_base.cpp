@@ -975,7 +975,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       current = Utilities::MPI::sum(current, mpi_comm);
 
       VectorType vec_temp(pressure);
-      for(unsigned int i = 0; i < vec_temp.local_size(); ++i)
+      for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
         vec_temp.local_element(i) = 1.;
 
       pressure.add(exact - current, vec_temp);
@@ -1007,7 +1007,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       double const current = pressure.mean_value();
 
       VectorType vec_temp(pressure);
-      for(unsigned int i = 0; i < vec_temp.local_size(); ++i)
+      for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
         vec_temp.local_element(i) = 1.;
 
       pressure.add(exact - current, vec_temp);

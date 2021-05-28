@@ -62,7 +62,7 @@ verify_calculation_of_diagonal(Operator &                                       
    *  Set dof-value i to 1.0, calculate matrix-vector
    *  product and store row i of the result in diagonal_check.
    */
-  for(unsigned int i = 0; i < diagonal.local_size(); ++i)
+  for(unsigned int i = 0; i < diagonal.locally_owned_size(); ++i)
   {
     src.local_element(i) = 1.0;
 

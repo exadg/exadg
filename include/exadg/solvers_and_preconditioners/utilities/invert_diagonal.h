@@ -37,7 +37,7 @@ template<typename Number>
 void
 invert_diagonal(LinearAlgebra::distributed::Vector<Number> & diagonal)
 {
-  for(unsigned int i = 0; i < diagonal.local_size(); ++i)
+  for(unsigned int i = 0; i < diagonal.locally_owned_size(); ++i)
   {
     if(std::abs(diagonal.local_element(i)) > 1.0e-10)
       diagonal.local_element(i) = 1.0 / diagonal.local_element(i);

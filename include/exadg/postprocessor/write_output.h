@@ -45,7 +45,7 @@ write_surface_mesh(Triangulation<dim> const & triangulation,
                    MPI_Comm const &           mpi_comm)
 {
   // write surface mesh only
-  DataOutFaces<dim, DoFHandler<dim>> data_out_surface(true /*surface only*/);
+  DataOutFaces<dim> data_out_surface(true /*surface only*/);
   data_out_surface.attach_triangulation(triangulation);
   data_out_surface.build_patches(mapping, n_subdivisions);
   data_out_surface.write_vtu_with_pvtu_record(folder, file + "_surface", counter, mpi_comm, 4);

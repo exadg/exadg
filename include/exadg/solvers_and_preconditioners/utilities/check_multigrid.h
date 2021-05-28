@@ -77,7 +77,7 @@ public:
     underlying_operator.initialize_dof_vector(initial_solution);
     VectorType solution_after_mg_cylce(initial_solution), tmp(initial_solution);
 
-    for(unsigned int i = 0; i < initial_solution.local_size(); ++i)
+    for(unsigned int i = 0; i < initial_solution.locally_owned_size(); ++i)
       initial_solution.local_element(i) = (double)rand() / RAND_MAX;
 
     underlying_operator.vmult(tmp, initial_solution);
