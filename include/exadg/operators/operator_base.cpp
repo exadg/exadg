@@ -795,6 +795,12 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
     for(const auto & cell : dof_handler.active_cell_iterators())
       if(cell->is_locally_owned())
         ++n_locally_owned_cells;
+
+    // In case some of the MPI ranks do not have cells, we create a
+    // sub-communicator to exclude all those processes from the PETSc
+    // communication and hence speed up those operations. Note that we have to
+    // free the communicator again, which happens in the preconditioner_amg.h
+    // file which owns the matrix passed to the present function.
     MPI_Comm petsc_communicator;
     if(Utilities::MPI::min(n_locally_owned_cells, dof_handler.get_communicator()) == 0)
       MPI_Comm_split(dof_handler.get_communicator(),
