@@ -788,7 +788,27 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
                                              owned_dofs,
                                              dof_handler.get_communicator(),
                                              relevant_dofs);
-  system_matrix.reinit(owned_dofs, owned_dofs, dsp, dof_handler.get_communicator());
+#ifdef DEAL_II_WITH_PETSC
+  if(std::is_same<SparseMatrix, PETScWrappers::MPI::SparseMatrix>::value)
+  {
+    unsigned int n_locally_owned_cells = 0;
+    for(const auto & cell : dof_handler.active_cell_iterators())
+      if(cell->is_locally_owned())
+        ++n_locally_owned_cells;
+    MPI_Comm petsc_communicator;
+    if(Utilities::MPI::min(n_locally_owned_cells, dof_handler.get_communicator()) == 0)
+      MPI_Comm_split(dof_handler.get_communicator(),
+                     n_locally_owned_cells > 0,
+                     Utilities::MPI::this_mpi_process(dof_handler.get_communicator()),
+                     &petsc_communicator);
+    else
+      petsc_communicator = dof_handler.get_communicator();
+    if(n_locally_owned_cells > 0)
+      system_matrix.reinit(owned_dofs, owned_dofs, dsp, petsc_communicator);
+  }
+  else
+#endif
+    system_matrix.reinit(owned_dofs, owned_dofs, dsp, dof_handler.get_communicator());
 }
 
 template<int dim, typename Number, int n_components>

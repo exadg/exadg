@@ -149,10 +149,27 @@ public:
   ~PreconditionerBoomerAMG()
   {
 #ifdef DEAL_II_WITH_PETSC
-    PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
-    ierr = VecDestroy(&petsc_vector_src);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
+    bool const has_subcommunicator =
+      Utilities::MPI::min(system_matrix.m(),
+                          pde_operator.get_matrix_free().get_dof_handler().get_communicator()) == 0;
+    if(system_matrix.m() > 0)
+    {
+      PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+      AssertThrow(ierr == 0, ExcPETScError(ierr));
+      ierr = VecDestroy(&petsc_vector_src);
+      AssertThrow(ierr == 0, ExcPETScError(ierr));
+
+      // free matrix in case we constructed a sub-communicator
+      // TODO: this is currently brittle because we build the communicator in
+      // operator_base.cpp and free it here
+      if(has_subcommunicator)
+      {
+        MPI_Comm petsc_comm = system_matrix.get_mpi_communicator();
+        amg.clear();
+        system_matrix.clear();
+        MPI_Comm_free(&petsc_comm);
+      }
+    }
 #endif
   }
 
