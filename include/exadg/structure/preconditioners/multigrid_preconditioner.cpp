@@ -43,7 +43,7 @@ MultigridPreconditioner<dim, Number>::initialize(
   ElasticityOperatorBase<dim, Number> const & pde_operator,
   bool const                                  nonlinear_operator,
   Map const *                                 dirichlet_bc,
-  PeriodicFacePairs *                         periodic_face_pairs)
+  PeriodicFacePairs const *                   periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 

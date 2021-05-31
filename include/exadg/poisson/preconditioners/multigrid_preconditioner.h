@@ -61,8 +61,8 @@ public:
 
   void
   initialize(MultigridData const &                  mg_data,
-             const Triangulation<dim> *             tria,
-             const FiniteElement<dim> &             fe,
+             Triangulation<dim> const *             tria,
+             FiniteElement<dim> const &             fe,
              std::shared_ptr<Mapping<dim> const>    mapping,
              LaplaceOperatorData<rank, dim> const & data_in,
              bool const                             mesh_is_moving,

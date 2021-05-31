@@ -151,10 +151,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->set_field_functions_structure(structure_field_functions);
 
     // setup spatial operator
-    structure_operator.reset(new Structure::Operator<dim, Number>(*structure_grid->triangulation,
-                                                                  structure_grid->mapping,
+    structure_operator.reset(new Structure::Operator<dim, Number>(structure_grid,
                                                                   degree_structure,
-                                                                  structure_grid->periodic_faces,
                                                                   structure_boundary_descriptor,
                                                                   structure_field_functions,
                                                                   structure_material_descriptor,
@@ -278,10 +276,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       // setup spatial operator
       ale_elasticity_operator.reset(
-        new Structure::Operator<dim, Number>(*fluid_grid->triangulation,
-                                             fluid_grid->mapping,
+        new Structure::Operator<dim, Number>(fluid_grid,
                                              fluid_grid_data.mapping_degree,
-                                             fluid_grid->periodic_faces,
                                              ale_elasticity_boundary_descriptor,
                                              ale_elasticity_field_functions,
                                              ale_elasticity_material_descriptor,
