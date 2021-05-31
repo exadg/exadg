@@ -148,9 +148,9 @@ $(function() {
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;      print_solver_info_linear(pcout, n_iter, timer.wall_time());</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    }</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    this-&gt;initialize_mapping_q_cache(this-&gt;mapping_undeformed,</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                                     displacement,</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                                     poisson-&gt;get_dof_handler());</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    this-&gt;moving_mapping-&gt;initialize_mapping_q_cache(this-&gt;mapping_undeformed,</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                                                     displacement,</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                                                     poisson-&gt;get_dof_handler());</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;  }</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <span class="keywordtype">void</span></div>
@@ -182,7 +182,7 @@ $(function() {
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160; </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_MOVING_MESH_POISSON_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:38</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshPoisson_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshPoisson.html">ExaDG::MovingMeshPoisson</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_poisson.h:42</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshPoisson_html_ae2a426f06e82d87f2380e9ae0a086523"><div class="ttname"><a href="classExaDG_1_1MovingMeshPoisson.html#ae2a426f06e82d87f2380e9ae0a086523">ExaDG::MovingMeshPoisson::MovingMeshPoisson</a></div><div class="ttdeci">MovingMeshPoisson(std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, std::shared_ptr&lt; Poisson::Operator&lt; dim, Number, dim &gt;&gt; poisson_operator)</div><div class="ttdef"><b>Definition:</b> moving_mesh_poisson.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshPoisson_html_af5a644357d69f0be104a61ec172d05de"><div class="ttname"><a href="classExaDG_1_1MovingMeshPoisson.html#af5a644357d69f0be104a61ec172d05de">ExaDG::MovingMeshPoisson::update</a></div><div class="ttdeci">void update(double const time, bool const print_solver_info) override</div><div class="ttdef"><b>Definition:</b> moving_mesh_poisson.h:68</div></div>

@@ -170,9 +170,9 @@ $(function() {
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;      }</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    }</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160; </div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    this-&gt;initialize_mapping_q_cache(this-&gt;mapping_undeformed,</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                                     displacement,</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                                     pde_operator-&gt;get_dof_handler());</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    this-&gt;moving_mapping-&gt;initialize_mapping_q_cache(this-&gt;mapping_undeformed,</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;                                                     displacement,</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;                                                     pde_operator-&gt;get_dof_handler());</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;  }</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="keywordtype">void</span></div>
@@ -229,7 +229,7 @@ $(function() {
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_MOVING_MESH_ELASTICITY_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:38</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshElasticity_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshElasticity.html">ExaDG::MovingMeshElasticity</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_elasticity.h:42</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshElasticity_html_a19d93a6068a0705c9144383b436722ee"><div class="ttname"><a href="classExaDG_1_1MovingMeshElasticity.html#a19d93a6068a0705c9144383b436722ee">ExaDG::MovingMeshElasticity::MovingMeshElasticity</a></div><div class="ttdeci">MovingMeshElasticity(std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; mapping_undeformed, std::shared_ptr&lt; Structure::Operator&lt; dim, Number &gt;&gt; structure_operator, Structure::InputParameters const &amp;structure_parameters)</div><div class="ttdef"><b>Definition:</b> moving_mesh_elasticity.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1MovingMeshElasticity_html_ac667e526e3df504152504aeefb541331"><div class="ttname"><a href="classExaDG_1_1MovingMeshElasticity.html#ac667e526e3df504152504aeefb541331">ExaDG::MovingMeshElasticity::print_iterations</a></div><div class="ttdeci">void print_iterations() const override</div><div class="ttdef"><b>Definition:</b> moving_mesh_elasticity.h:120</div></div>

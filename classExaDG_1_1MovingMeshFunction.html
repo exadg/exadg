@@ -81,8 +81,8 @@ Inheritance diagram for ExaDG::MovingMeshFunction&lt; dim, Number &gt;:</div>
  <div class="center">
   <img src="classExaDG_1_1MovingMeshFunction.png" usemap="#ExaDG::MovingMeshFunction_3C_20dim_2C_20Number_20_3E_map" alt=""/>
   <map id="ExaDG::MovingMeshFunction_3C_20dim_2C_20Number_20_3E_map" name="ExaDG::MovingMeshFunction_3C_20dim_2C_20Number_20_3E_map">
-<area href="classExaDG_1_1MovingMeshBase.html" alt="ExaDG::MovingMeshBase&lt; dim, Number &gt;" shape="rect" coords="0,112,275,136"/>
-<area href="classExaDG_1_1MappingDoFVector.html" alt="ExaDG::MappingDoFVector&lt; dim, Number &gt;" shape="rect" coords="0,56,275,80"/>
+<area href="classExaDG_1_1MovingMeshBase.html" alt="ExaDG::MovingMeshBase&lt; dim, Number &gt;" shape="rect" coords="0,56,276,80"/>
+<area href="classExaDG_1_1MovingMeshInterface.html" alt="ExaDG::MovingMeshInterface&lt; dim, Number &gt;" shape="rect" coords="0,0,276,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
@@ -95,10 +95,10 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 <tr class="memitem:aed6f3d946c8708a2c6e3dcfc8d2e5a92 inherit pub_types_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top"><a id="aed6f3d946c8708a2c6e3dcfc8d2e5a92"></a>
 typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
 <tr class="separator:aed6f3d946c8708a2c6e3dcfc8d2e5a92 inherit pub_types_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_types_classExaDG_1_1MappingDoFVector"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1MappingDoFVector')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a></td></tr>
-<tr class="memitem:ae84a469d761ba1ba7a6382dc9279c727 inherit pub_types_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top"><a id="ae84a469d761ba1ba7a6382dc9279c727"></a>
+<tr class="inherit_header pub_types_classExaDG_1_1MovingMeshInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1MovingMeshInterface')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1MovingMeshInterface.html">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a></td></tr>
+<tr class="memitem:a44f0a557f077a5e00b17c810c32c679e inherit pub_types_classExaDG_1_1MovingMeshInterface"><td class="memItemLeft" align="right" valign="top"><a id="a44f0a557f077a5e00b17c810c32c679e"></a>
 typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:ae84a469d761ba1ba7a6382dc9279c727 inherit pub_types_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a44f0a557f077a5e00b17c810c32c679e inherit pub_types_classExaDG_1_1MovingMeshInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -106,40 +106,28 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a0c7fcce0d5f97806a0e800bf42c262f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34ba46c509524e9768104460b5be7942"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshFunction.html#a34ba46c509524e9768104460b5be7942">update</a> (double const time, bool const print_solver_info) override</td></tr>
 <tr class="separator:a34ba46c509524e9768104460b5be7942"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52cc6f9f03b2dbc4d64ad3f1a3e30905"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshFunction.html#a52cc6f9f03b2dbc4d64ad3f1a3e30905">initialize</a> (Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Function&lt; dim &gt;&gt; displacement_function)</td></tr>
-<tr class="separator:a52cc6f9f03b2dbc4d64ad3f1a3e30905"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1MovingMeshBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MovingMeshBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ad82efb4e43882160c3140e98311c0f94 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#ad82efb4e43882160c3140e98311c0f94">MovingMeshBase</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation)</td></tr>
 <tr class="separator:ad82efb4e43882160c3140e98311c0f94 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab4a1e1650172be7a312f6906b82608e6 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#ab4a1e1650172be7a312f6906b82608e6">~MovingMeshBase</a> ()</td></tr>
-<tr class="separator:ab4a1e1650172be7a312f6906b82608e6 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca5a3f4daa44773897c958986cefb4d2 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#aca5a3f4daa44773897c958986cefb4d2">print_iterations</a> () const</td></tr>
-<tr class="separator:aca5a3f4daa44773897c958986cefb4d2 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classExaDG_1_1MappingDoFVector"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MappingDoFVector')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a></td></tr>
-<tr class="memitem:a02610a355efa9e0350be9647356e570b inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a02610a355efa9e0350be9647356e570b">MappingDoFVector</a> (unsigned int const mapping_degree_q_cache)</td></tr>
-<tr class="separator:a02610a355efa9e0350be9647356e570b inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70fc04b5bbe83adc68c35f1289a7a196 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196">~MappingDoFVector</a> ()</td></tr>
-<tr class="separator:a70fc04b5bbe83adc68c35f1289a7a196 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a594a2ba3cd6e94fbad6efb4495fda168 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a594a2ba3cd6e94fbad6efb4495fda168">fill_grid_coordinates_vector</a> (VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
-<tr class="separator:a594a2ba3cd6e94fbad6efb4495fda168 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80dfdd91047e3ac044ebee0a66d830db inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#a80dfdd91047e3ac044ebee0a66d830db">fill_grid_coordinates_vector</a> (Mapping&lt; dim &gt; const &amp;mapping, VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const</td></tr>
-<tr class="separator:a80dfdd91047e3ac044ebee0a66d830db inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5978bd4269b084ec5eacb2bce677d08 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MappingDoFVector.html#af5978bd4269b084ec5eacb2bce677d08">initialize_mapping_q_cache</a> (std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, VectorType const &amp;displacement_vector, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
-<tr class="separator:af5978bd4269b084ec5eacb2bce677d08 inherit pub_methods_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8641a7d57ea20589913ee32d41c6d58 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#af8641a7d57ea20589913ee32d41c6d58">fill_grid_coordinates_vector</a> (VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const final</td></tr>
+<tr class="separator:af8641a7d57ea20589913ee32d41c6d58 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71a963fc5f95622a612ba0aa6be3c152 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Mapping&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshBase.html#a71a963fc5f95622a612ba0aa6be3c152">get_mapping</a> () final</td></tr>
+<tr class="separator:a71a963fc5f95622a612ba0aa6be3c152 inherit pub_methods_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classExaDG_1_1MovingMeshInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MovingMeshInterface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MovingMeshInterface.html">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a></td></tr>
+<tr class="memitem:a748e2cc78db0cbb471a688bc673114ec inherit pub_methods_classExaDG_1_1MovingMeshInterface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec">~MovingMeshInterface</a> ()</td></tr>
+<tr class="separator:a748e2cc78db0cbb471a688bc673114ec inherit pub_methods_classExaDG_1_1MovingMeshInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8b3a19770ba7ec0efab19ae8290b839 inherit pub_methods_classExaDG_1_1MovingMeshInterface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MovingMeshInterface.html#ae8b3a19770ba7ec0efab19ae8290b839">print_iterations</a> () const</td></tr>
+<tr class="separator:ae8b3a19770ba7ec0efab19ae8290b839 inherit pub_methods_classExaDG_1_1MovingMeshInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_attribs_classExaDG_1_1MappingDoFVector"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classExaDG_1_1MappingDoFVector')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="classExaDG_1_1MappingDoFVector.html">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a></td></tr>
-<tr class="memitem:a8fff04146c8fa4d657e56b7a094790be inherit pub_attribs_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top"><a id="a8fff04146c8fa4d657e56b7a094790be"></a>
-std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>hierarchic_to_lexicographic_numbering</b></td></tr>
-<tr class="separator:a8fff04146c8fa4d657e56b7a094790be inherit pub_attribs_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a89293a011e79bc2ca0d529b55b5b66d0 inherit pub_attribs_classExaDG_1_1MappingDoFVector"><td class="memItemLeft" align="right" valign="top"><a id="a89293a011e79bc2ca0d529b55b5b66d0"></a>
-std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>lexicographic_to_hierarchic_numbering</b></td></tr>
-<tr class="separator:a89293a011e79bc2ca0d529b55b5b66d0 inherit pub_attribs_classExaDG_1_1MappingDoFVector"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classExaDG_1_1MovingMeshBase"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classExaDG_1_1MovingMeshBase')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase&lt; dim, Number &gt;</a></td></tr>
 <tr class="memitem:ae59cb55ed40acf7c819eb01c8b418294 inherit pro_attribs_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top"><a id="ae59cb55ed40acf7c819eb01c8b418294"></a>
 std::shared_ptr&lt; Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mapping_undeformed</b></td></tr>
 <tr class="separator:ae59cb55ed40acf7c819eb01c8b418294 inherit pro_attribs_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa16dd645ba35fc5b74df5fd44e4664ca inherit pro_attribs_classExaDG_1_1MovingMeshBase"><td class="memItemLeft" align="right" valign="top"><a id="aa16dd645ba35fc5b74df5fd44e4664ca"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MappingDoFVector.html">MappingDoFVector</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>moving_mapping</b></td></tr>
+<tr class="separator:aa16dd645ba35fc5b74df5fd44e4664ca inherit pro_attribs_classExaDG_1_1MovingMeshBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;int dim, typename Number&gt;<br />
@@ -205,45 +193,6 @@ template&lt;int dim, typename Number &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a52cc6f9f03b2dbc4d64ad3f1a3e30905"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52cc6f9f03b2dbc4d64ad3f1a3e30905">&#9670;&nbsp;</a></span>initialize()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classExaDG_1_1MovingMeshFunction.html">ExaDG::MovingMeshFunction</a>&lt; dim, Number &gt;::initialize </td>
-          <td>(</td>
-          <td class="paramtype">Triangulation&lt; dim &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>triangulation</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::shared_ptr&lt; Function&lt; dim &gt;&gt;&#160;</td>
-          <td class="paramname"><em>displacement_function</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Initializes the MappingQCache object by providing a Function&lt;dim&gt; that describes the displacement of the mesh compared to an undeformed reference configuration described by the static mapping of this class. </p>
-
-</div>
-</div>
 <a id="a34ba46c509524e9768104460b5be7942"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a34ba46c509524e9768104460b5be7942">&#9670;&nbsp;</a></span>update()</h2>
 
@@ -281,7 +230,7 @@ template&lt;int dim, typename Number &gt; </div>
 </div><div class="memdoc">
 <p>Updates the mesh coordinates using a Function&lt;dim&gt; object evaluated at a given time. </p>
 
-<p>Implements <a class="el" href="classExaDG_1_1MovingMeshBase.html#a3ce22c74a136392363df0fed5edafb70">ExaDG::MovingMeshBase&lt; dim, Number &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MovingMeshInterface.html#a1c8554e5acbd890fcfe2a2b8715f19b8">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a>.</p>
 
 </div>
 </div>

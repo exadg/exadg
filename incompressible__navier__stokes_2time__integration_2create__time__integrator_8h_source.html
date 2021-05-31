@@ -110,7 +110,7 @@ $(function() {
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                       MPI_Comm <span class="keyword">const</span> &amp;                                  mpi_comm,</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                       <span class="keywordtype">bool</span> <span class="keyword">const</span>                                        is_test,</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;                       std::shared_ptr&lt;PostProcessorInterface&lt;Number&gt;&gt;   postprocessor,</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                       std::shared_ptr&lt;MovingMeshBase&lt;dim, Number&gt;&gt;      moving_mesh = <span class="keyword">nullptr</span>,</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                       std::shared_ptr&lt;MovingMeshInterface&lt;dim, Number&gt;&gt; moving_mesh = <span class="keyword">nullptr</span>,</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                       std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;          matrix_free = <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;{</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  std::shared_ptr&lt;TimeIntBDF&lt;dim, Number&gt;&gt; time_integrator;</div>
