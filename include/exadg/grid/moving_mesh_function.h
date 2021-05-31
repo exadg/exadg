@@ -66,6 +66,7 @@ public:
     this->initialize(triangulation, mesh_movement_function);
   }
 
+private:
   /**
    * Initializes the MappingQCache object by providing a Function<dim> that describes the
    * displacement of the mesh compared to an undeformed reference configuration described by the
@@ -107,7 +108,6 @@ public:
       });
   }
 
-private:
   std::shared_ptr<Function<dim>> mesh_movement_function;
 
   Triangulation<dim> const & triangulation;
