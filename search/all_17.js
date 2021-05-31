@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['_7emappingdofvector_320',['~MappingDoFVector',['../classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196',1,'ExaDG::MappingDoFVector']]],
-  ['_7emovingmeshinterface_321',['~MovingMeshInterface',['../classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec',1,'ExaDG::MovingMeshInterface']]],
-  ['_7epermutator_322',['~Permutator',['../classdealspectrum_1_1Permutator.html#a916c5f88e9231db447a5e7022a9cfb2a',1,'dealspectrum::Permutator']]],
-  ['_7espectralanalysis_323',['~SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a061796e80030ee2628a40e0f5504d215',1,'dealspectrum::SpectralAnalysis']]]
+  ['_7emappingdofvector_325',['~MappingDoFVector',['../classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196',1,'ExaDG::MappingDoFVector']]],
+  ['_7emovingmeshinterface_326',['~MovingMeshInterface',['../classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec',1,'ExaDG::MovingMeshInterface']]],
+  ['_7epermutator_327',['~Permutator',['../classdealspectrum_1_1Permutator.html#a916c5f88e9231db447a5e7022a9cfb2a',1,'dealspectrum::Permutator']]],
+  ['_7espectralanalysis_328',['~SpectralAnalysis',['../classdealspectrum_1_1SpectralAnalysis.html#a061796e80030ee2628a40e0f5504d215',1,'dealspectrum::SpectralAnalysis']]]
 ];

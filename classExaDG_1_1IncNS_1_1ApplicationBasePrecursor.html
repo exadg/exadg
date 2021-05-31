@@ -66,7 +66,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classExaDG_1_1IncNS_1_1ApplicationBasePrecursor-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -83,16 +82,6 @@ Inheritance diagram for ExaDG::IncNS::ApplicationBasePrecursor&lt; dim, Number &
   </map>
 </div></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:ae2df6e1698224b224e0ff0b46733520c"><td class="memItemLeft" align="right" valign="top"><a id="ae2df6e1698224b224e0ff0b46733520c"></a>
-typedef <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ApplicationBase</a>&lt; dim, Number &gt;::PeriodicFaces&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
-<tr class="separator:ae2df6e1698224b224e0ff0b46733520c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_types_classExaDG_1_1IncNS_1_1ApplicationBase"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1IncNS_1_1ApplicationBase')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1IncNS_1_1ApplicationBase.html">ExaDG::IncNS::ApplicationBase&lt; dim, Number &gt;</a></td></tr>
-<tr class="memitem:a372cc60683e9d456463c81f5d984489d inherit pub_types_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="a372cc60683e9d456463c81f5d984489d"></a>
-typedef std::vector&lt; GridTools::PeriodicFacePair&lt; typename Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
-<tr class="separator:a372cc60683e9d456463c81f5d984489d inherit pub_types_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a657a44819ab18e70fc1b4dc69461e20f"><td class="memItemLeft" align="right" valign="top"><a id="a657a44819ab18e70fc1b4dc69461e20f"></a>
@@ -101,9 +90,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aec4f22c643b1fdfd223013a24c04bf6c"><td class="memItemLeft" align="right" valign="top"><a id="aec4f22c643b1fdfd223013a24c04bf6c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters_precursor</b> (<a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:aec4f22c643b1fdfd223013a24c04bf6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae267c5ac899c0408502c6c2161a464c8"><td class="memItemLeft" align="right" valign="top"><a id="ae267c5ac899c0408502c6c2161a464c8"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_precursor</b> (std::shared_ptr&lt; Triangulation&lt; dim &gt;&gt; triangulation, PeriodicFaces &amp;periodic_faces, unsigned int const n_refine_space, std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; &amp;mapping, unsigned int const mapping_degree)=0</td></tr>
-<tr class="separator:ae267c5ac899c0408502c6c2161a464c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a071e4971a12315998b1a109b63a08fa6"><td class="memItemLeft" align="right" valign="top"><a id="a071e4971a12315998b1a109b63a08fa6"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_precursor</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
+<tr class="separator:a071e4971a12315998b1a109b63a08fa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c000288b33350ca697fc70d09fed742"><td class="memItemLeft" align="right" valign="top"><a id="a5c000288b33350ca697fc70d09fed742"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions_precursor</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">BoundaryDescriptorU</a>&lt; dim &gt;&gt; boundary_descriptor_velocity, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">BoundaryDescriptorP</a>&lt; dim &gt;&gt; boundary_descriptor_pressure)=0</td></tr>
 <tr class="separator:a5c000288b33350ca697fc70d09fed742"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,9 +112,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter
 <tr class="memitem:a1a12da02141de32836605a40e61ec7c8 inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="a1a12da02141de32836605a40e61ec7c8"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters</b> (<a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:a1a12da02141de32836605a40e61ec7c8 inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae52656468dbc0dd858d721abf045ad6c inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="ae52656468dbc0dd858d721abf045ad6c"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid</b> (std::shared_ptr&lt; Triangulation&lt; dim &gt;&gt; triangulation, PeriodicFaces &amp;periodic_faces, unsigned int const n_refine_space, std::shared_ptr&lt; Mapping&lt; dim &gt;&gt; &amp;mapping, unsigned int const mapping_degree)=0</td></tr>
-<tr class="separator:ae52656468dbc0dd858d721abf045ad6c inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8454ab03f188639323e659c8992b994e inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="a8454ab03f188639323e659c8992b994e"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
+<tr class="separator:a8454ab03f188639323e659c8992b994e inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fa91300d3e17cd87235c1491911b25c inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memItemLeft" align="right" valign="top"><a id="a2fa91300d3e17cd87235c1491911b25c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">BoundaryDescriptorU</a>&lt; dim &gt;&gt; boundary_descriptor_velocity, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">BoundaryDescriptorP</a>&lt; dim &gt;&gt; boundary_descriptor_pressure)=0</td></tr>
 <tr class="separator:a2fa91300d3e17cd87235c1491911b25c inherit pub_methods_classExaDG_1_1IncNS_1_1ApplicationBase"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -218,47 +218,40 @@ $(function() {
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;  <span class="comment">// application</span></div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;  std::shared_ptr&lt;ApplicationBase&lt;dim, Number&gt;&gt; application;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="comment">// triangulation</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; triangulation;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;  <span class="comment">// grid</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; grid;</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160; </div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="comment">// static mapping</span></div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; static_mapping;</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;  <span class="comment">// moving mapping (ALE)</span></div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  std::shared_ptr&lt;MovingMeshBase&lt;dim, Number&gt;&gt; moving_mesh;</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="comment">// moving mapping (ALE)</span></div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  std::shared_ptr&lt;MovingMeshBase&lt;dim, Number&gt;&gt; moving_mesh;</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  <span class="comment">// mapping (static or moving)</span></div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; mapping;</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160; </div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;  <span class="comment">// mapping (static or moving)</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; mapping;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  <span class="comment">// periodic boundaries</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;  std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    periodic_faces;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160; </div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;  <a class="code" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> param;</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160; </div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;     field_functions;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; boundary_descriptor;</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;  <a class="code" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> param;</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160; </div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;     field_functions;</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; boundary_descriptor;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; matrix_free_data;</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     matrix_free;</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160; </div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;  std::shared_ptr&lt;Operator&lt;dim, Number&gt;&gt; pde_operator;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160; </div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;  std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt; postprocessor;</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; matrix_free_data;</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     matrix_free;</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  std::shared_ptr&lt;Operator&lt;dim, Number&gt;&gt; pde_operator;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt; postprocessor;</div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160; </div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  std::shared_ptr&lt;TimeIntBase&gt; time_integrator;</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  std::shared_ptr&lt;DriverSteadyProblems&lt;Number&gt;&gt; driver_steady;</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  std::shared_ptr&lt;TimeIntBase&gt; time_integrator;</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160; </div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;  std::shared_ptr&lt;DriverSteadyProblems&lt;Number&gt;&gt; driver_steady;</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160; </div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  <span class="comment">// Computation time (wall clock time)</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;  <span class="keyword">mutable</span> <a class="code" href="classExaDG_1_1TimerTree.html">TimerTree</a> timer_tree;</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;};</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;} <span class="comment">// namespace ConvDiff</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160; </div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;  <span class="comment">// Computation time (wall clock time)</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;  <span class="keyword">mutable</span> <a class="code" href="classExaDG_1_1TimerTree.html">TimerTree</a> timer_tree;</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;};</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;} <span class="comment">// namespace ConvDiff</span></div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_CONVECTION_DIFFUSION_DRIVER_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ExaDG::ConvDiff::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:43</div></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_CONVECTION_DIFFUSION_DRIVER_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1ApplicationBase.html">ExaDG::ConvDiff::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:44</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Driver_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Driver.html">ExaDG::ConvDiff::Driver</a></div><div class="ttdef"><b>Definition:</b> driver.h:111</div></div>
 <div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1InputParameters.html">ExaDG::ConvDiff::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1TimerTree_html"><div class="ttname"><a href="classExaDG_1_1TimerTree.html">ExaDG::TimerTree</a></div><div class="ttdef"><b>Definition:</b> timer_tree.h:32</div></div>

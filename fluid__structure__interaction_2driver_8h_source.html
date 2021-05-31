@@ -388,136 +388,124 @@ $(function() {
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  <span class="comment">// input parameters</span></div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> structure_param;</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="comment">// triangulation</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; structure_triangulation;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="comment">// grid</span></div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; structure_grid;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160; </div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="comment">// mapping</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; structure_mapping;</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="comment">// material descriptor</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;  std::shared_ptr&lt;Structure::MaterialDescriptor&gt; structure_material_descriptor;</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160; </div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  <span class="comment">// periodic boundaries</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;  std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    structure_periodic_faces;</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;  <span class="comment">// material descriptor</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;  std::shared_ptr&lt;Structure::MaterialDescriptor&gt; structure_material_descriptor;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160; </div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  <span class="comment">// boundary conditions</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  std::shared_ptr&lt;Structure::BoundaryDescriptor&lt;dim&gt;&gt; structure_boundary_descriptor;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  <span class="comment">// boundary conditions</span></div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;  std::shared_ptr&lt;Structure::BoundaryDescriptor&lt;dim&gt;&gt; structure_boundary_descriptor;</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160; </div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;  <span class="comment">// field functions</span></div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;  std::shared_ptr&lt;Structure::FieldFunctions&lt;dim&gt;&gt; structure_field_functions;</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;  <span class="comment">// matrix-free</span></div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; structure_matrix_free_data;</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     structure_matrix_free;</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="comment">// field functions</span></div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  std::shared_ptr&lt;Structure::FieldFunctions&lt;dim&gt;&gt; structure_field_functions;</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="comment">// spatial discretization</span></div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  std::shared_ptr&lt;Structure::Operator&lt;dim, Number&gt;&gt; structure_operator;</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160; </div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;  <span class="comment">// matrix-free</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; structure_matrix_free_data;</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     structure_matrix_free;</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160; </div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  <span class="comment">// spatial discretization</span></div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;  std::shared_ptr&lt;Structure::Operator&lt;dim, Number&gt;&gt; structure_operator;</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160; </div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  <span class="comment">// temporal discretization</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;  std::shared_ptr&lt;Structure::TimeIntGenAlpha&lt;dim, Number&gt;&gt; structure_time_integrator;</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160; </div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  <span class="comment">// postprocessor</span></div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  std::shared_ptr&lt;Structure::PostProcessor&lt;dim, Number&gt;&gt; structure_postprocessor;</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;<span class="comment">  /**************************************** STRUCTURE *****************************************/</span></div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160; </div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160; </div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;<span class="comment">  /****************************************** FLUID *******************************************/</span></div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="comment">// triangulation</span></div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; fluid_triangulation;</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    fluid_periodic_faces;</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;  <span class="comment">// temporal discretization</span></div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  std::shared_ptr&lt;Structure::TimeIntGenAlpha&lt;dim, Number&gt;&gt; structure_time_integrator;</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  <span class="comment">// postprocessor</span></div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  std::shared_ptr&lt;Structure::PostProcessor&lt;dim, Number&gt;&gt; structure_postprocessor;</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160; </div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;<span class="comment">  /**************************************** STRUCTURE *****************************************/</span></div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160; </div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160; </div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="comment">  /****************************************** FLUID *******************************************/</span></div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160; </div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  <span class="comment">// grid</span></div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; fluid_grid;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="comment">// moving mapping (ALE)</span></div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  std::shared_ptr&lt;MovingMeshBase&lt;dim, Number&gt;&gt; fluid_moving_mesh;</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160; </div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="comment">// mapping (static or moving)</span></div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; fluid_mapping;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="comment">// parameters</span></div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  <a class="code" href="classExaDG_1_1IncNS_1_1InputParameters.html">IncNS::InputParameters</a> fluid_param;</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;  <span class="comment">// mapping</span></div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; fluid_static_mapping;</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;  <span class="comment">// moving mapping (ALE)</span></div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  std::shared_ptr&lt;MovingMeshBase&lt;dim, Number&gt;&gt; fluid_moving_mesh;</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160; </div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  <span class="comment">// mapping (static or moving)</span></div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; fluid_mapping;</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160; </div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  <span class="comment">// parameters</span></div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;  <a class="code" href="classExaDG_1_1IncNS_1_1InputParameters.html">IncNS::InputParameters</a> fluid_param;</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160; </div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  std::shared_ptr&lt;IncNS::FieldFunctions&lt;dim&gt;&gt;      fluid_field_functions;</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  std::shared_ptr&lt;IncNS::BoundaryDescriptorU&lt;dim&gt;&gt; fluid_boundary_descriptor_velocity;</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  std::shared_ptr&lt;IncNS::BoundaryDescriptorP&lt;dim&gt;&gt; fluid_boundary_descriptor_pressure;</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160; </div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;  <span class="comment">// matrix-free</span></div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; fluid_matrix_free_data;</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     fluid_matrix_free;</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;  std::shared_ptr&lt;IncNS::FieldFunctions&lt;dim&gt;&gt;      fluid_field_functions;</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;  std::shared_ptr&lt;IncNS::BoundaryDescriptorU&lt;dim&gt;&gt; fluid_boundary_descriptor_velocity;</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;  std::shared_ptr&lt;IncNS::BoundaryDescriptorP&lt;dim&gt;&gt; fluid_boundary_descriptor_pressure;</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160; </div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="comment">// matrix-free</span></div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; fluid_matrix_free_data;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     fluid_matrix_free;</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160; </div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  <span class="comment">// spatial discretization</span></div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  std::shared_ptr&lt;IncNS::SpatialOperatorBase&lt;dim, Number&gt;&gt; fluid_operator;</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160; </div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  <span class="comment">// temporal discretization</span></div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;  std::shared_ptr&lt;IncNS::TimeIntBDF&lt;dim, Number&gt;&gt; fluid_time_integrator;</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160; </div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;  <span class="comment">// Postprocessor</span></div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;  std::shared_ptr&lt;IncNS::PostProcessorBase&lt;dim, Number&gt;&gt; fluid_postprocessor;</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;<span class="comment">  /****************************************** FLUID *******************************************/</span></div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160; </div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;  <span class="comment">// spatial discretization</span></div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  std::shared_ptr&lt;IncNS::SpatialOperatorBase&lt;dim, Number&gt;&gt; fluid_operator;</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160; </div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  <span class="comment">// temporal discretization</span></div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  std::shared_ptr&lt;IncNS::TimeIntBDF&lt;dim, Number&gt;&gt; fluid_time_integrator;</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;<span class="comment">  /************************************ ALE - MOVING MESH *************************************/</span></div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160; </div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;  <span class="comment">// use a PDE solver for moving mesh problem</span></div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; ale_matrix_free_data;</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     ale_matrix_free;</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  <span class="comment">// Postprocessor</span></div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;  std::shared_ptr&lt;IncNS::PostProcessorBase&lt;dim, Number&gt;&gt; fluid_postprocessor;</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  <span class="comment">// Poisson-type mesh smoothing</span></div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;  <a class="code" href="classExaDG_1_1Poisson_1_1InputParameters.html">Poisson::InputParameters</a> ale_poisson_param;</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160; </div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;<span class="comment">  /****************************************** FLUID *******************************************/</span></div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160; </div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  std::shared_ptr&lt;Poisson::FieldFunctions&lt;dim&gt;&gt;        ale_poisson_field_functions;</div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;  std::shared_ptr&lt;Poisson::BoundaryDescriptor&lt;1, dim&gt;&gt; ale_poisson_boundary_descriptor;</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;<span class="comment">  /************************************ ALE - MOVING MESH *************************************/</span></div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;  std::shared_ptr&lt;Poisson::Operator&lt;dim, Number, dim&gt;&gt; ale_poisson_operator;</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160; </div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;  <span class="comment">// use a PDE solver for moving mesh problem</span></div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;  std::shared_ptr&lt;MatrixFreeData&lt;dim, Number&gt;&gt; ale_matrix_free_data;</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;  std::shared_ptr&lt;MatrixFree&lt;dim, Number&gt;&gt;     ale_matrix_free;</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160; </div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;  <span class="comment">// Poisson-type mesh smoothing</span></div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;  <a class="code" href="classExaDG_1_1Poisson_1_1InputParameters.html">Poisson::InputParameters</a> ale_poisson_param;</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;  <span class="comment">// elasticity-type mesh smoothing</span></div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;  <a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> ale_elasticity_param;</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;  std::shared_ptr&lt;Structure::FieldFunctions&lt;dim&gt;&gt;     ale_elasticity_field_functions;</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;  std::shared_ptr&lt;Structure::BoundaryDescriptor&lt;dim&gt;&gt; ale_elasticity_boundary_descriptor;</div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;  std::shared_ptr&lt;Structure::MaterialDescriptor&gt;      ale_elasticity_material_descriptor;</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160; </div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  std::shared_ptr&lt;Poisson::FieldFunctions&lt;dim&gt;&gt;        ale_poisson_field_functions;</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;  std::shared_ptr&lt;Poisson::BoundaryDescriptor&lt;1, dim&gt;&gt; ale_poisson_boundary_descriptor;</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160; </div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;  std::shared_ptr&lt;Poisson::Operator&lt;dim, Number, dim&gt;&gt; ale_poisson_operator;</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  std::shared_ptr&lt;Structure::Operator&lt;dim, Number&gt;&gt; ale_elasticity_operator;</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;<span class="comment">  /************************************ ALE - MOVING MESH *************************************/</span></div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160; </div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160; </div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;  <span class="comment">// elasticity-type mesh smoothing</span></div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;  <a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> ale_elasticity_param;</div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160; </div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;  std::shared_ptr&lt;Structure::FieldFunctions&lt;dim&gt;&gt;     ale_elasticity_field_functions;</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;  std::shared_ptr&lt;Structure::BoundaryDescriptor&lt;dim&gt;&gt; ale_elasticity_boundary_descriptor;</div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;  std::shared_ptr&lt;Structure::MaterialDescriptor&gt;      ale_elasticity_material_descriptor;</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160; </div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;  std::shared_ptr&lt;Structure::Operator&lt;dim, Number&gt;&gt; ale_elasticity_operator;</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160; </div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="comment">  /************************************ ALE - MOVING MESH *************************************/</span></div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160; </div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160; </div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;<span class="comment">  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/</span></div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160; </div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;  std::shared_ptr&lt;InterfaceCoupling&lt;dim, dim, Number&gt;&gt; structure_to_fluid;</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;  std::shared_ptr&lt;InterfaceCoupling&lt;dim, dim, Number&gt;&gt; structure_to_ale;</div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;  std::shared_ptr&lt;InterfaceCoupling&lt;dim, dim, Number&gt;&gt; fluid_to_structure;</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160; </div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;<span class="comment">  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/</span></div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160; </div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;<span class="comment">   *  Fixed-point iteration.</span></div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;  <a class="code" href="structExaDG_1_1FSI_1_1PartitionedData.html">PartitionedData</a> fsi_data;</div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160; </div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;  <span class="comment">// required for quasi-Newton methods</span></div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;  <span class="keyword">mutable</span> std::vector&lt;std::shared_ptr&lt;std::vector&lt;VectorType&gt;&gt;&gt; D_history, R_history, Z_history;</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;<span class="comment">  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/</span></div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160; </div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;  std::shared_ptr&lt;InterfaceCoupling&lt;dim, dim, Number&gt;&gt; structure_to_fluid;</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;  std::shared_ptr&lt;InterfaceCoupling&lt;dim, dim, Number&gt;&gt; structure_to_ale;</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;  std::shared_ptr&lt;InterfaceCoupling&lt;dim, dim, Number&gt;&gt; fluid_to_structure;</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160; </div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;<span class="comment">  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/</span></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160; </div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;  <span class="comment">/*</span></div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="comment">   *  Fixed-point iteration.</span></div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;<span class="comment">   */</span></div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;  <a class="code" href="structExaDG_1_1FSI_1_1PartitionedData.html">PartitionedData</a> fsi_data;</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160; </div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;  <span class="comment">// required for quasi-Newton methods</span></div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;  <span class="keyword">mutable</span> std::vector&lt;std::shared_ptr&lt;std::vector&lt;VectorType&gt;&gt;&gt; D_history, R_history, Z_history;</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160; </div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;  <span class="comment">/*</span></div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;<span class="comment">   * Computation time (wall clock time).</span></div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;<span class="comment">   */</span></div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;  <span class="keyword">mutable</span> <a class="code" href="classExaDG_1_1TimerTree.html">TimerTree</a> timer_tree;</div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160; </div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;  <span class="keyword">mutable</span> std::pair&lt;unsigned int, unsigned long long&gt; partitioned_iterations;</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;};</div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160; </div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;} <span class="comment">// namespace FSI</span></div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160; </div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160; </div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;  <span class="comment">/*</span></div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;<span class="comment">   * Computation time (wall clock time).</span></div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;  <span class="keyword">mutable</span> <a class="code" href="classExaDG_1_1TimerTree.html">TimerTree</a> timer_tree;</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160; </div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;  <span class="keyword">mutable</span> std::pair&lt;unsigned int, unsigned long long&gt; partitioned_iterations;</div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;};</div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160; </div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;} <span class="comment">// namespace FSI</span></div>
-<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160; </div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160; </div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1FSI_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1ApplicationBase.html">ExaDG::FSI::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:62</div></div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_DRIVER_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1FSI_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1ApplicationBase.html">ExaDG::FSI::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:63</div></div>
 <div class="ttc" id="aclassExaDG_1_1FSI_1_1Driver_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1Driver.html">ExaDG::FSI::Driver</a></div><div class="ttdef"><b>Definition:</b> driver.h:241</div></div>
 <div class="ttc" id="aclassExaDG_1_1FSI_1_1Matrix_html"><div class="ttname"><a href="classExaDG_1_1FSI_1_1Matrix.html">ExaDG::FSI::Matrix</a></div><div class="ttdef"><b>Definition:</b> driver.h:65</div></div>
 <div class="ttc" id="aclassExaDG_1_1IncNS_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1IncNS_1_1InputParameters.html">ExaDG::IncNS::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:46</div></div>
