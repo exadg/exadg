@@ -154,12 +154,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application->set_boundary_conditions(fluid_boundary_descriptor_velocity,
                                        fluid_boundary_descriptor_pressure);
-  verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
-                             *grid->triangulation,
-                             grid->periodic_faces);
-  verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
-                             *grid->triangulation,
-                             grid->periodic_faces);
+  verify_boundary_conditions(*fluid_boundary_descriptor_velocity, *grid);
+  verify_boundary_conditions(*fluid_boundary_descriptor_pressure, *grid);
 
   // field functions
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
@@ -171,9 +167,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<dim>());
 
     application->set_boundary_conditions_scalar(scalar_boundary_descriptor[i], i);
-    verify_boundary_conditions(*scalar_boundary_descriptor[i],
-                               *grid->triangulation,
-                               grid->periodic_faces);
+    verify_boundary_conditions(*scalar_boundary_descriptor[i], *grid);
 
     // field functions
     scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());

@@ -99,9 +99,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
       application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
-      verify_boundary_conditions(*poisson_boundary_descriptor,
-                                 *grid->triangulation,
-                                 grid->periodic_faces);
+      verify_boundary_conditions(*poisson_boundary_descriptor, *grid);
 
       poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
       application->set_field_functions_poisson(poisson_field_functions);
@@ -160,12 +158,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity,
-                             *grid->triangulation,
-                             grid->periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure,
-                             *grid->triangulation,
-                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity, *grid);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *grid);
 
   // field functions
   field_functions.reset(new FieldFunctions<dim>());

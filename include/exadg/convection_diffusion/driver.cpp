@@ -83,7 +83,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *grid->triangulation, grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor, *grid);
 
   // field functions
   field_functions.reset(new FieldFunctions<dim>());

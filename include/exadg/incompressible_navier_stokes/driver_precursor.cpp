@@ -151,23 +151,15 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   application->set_boundary_conditions_precursor(boundary_descriptor_velocity_pre,
                                                  boundary_descriptor_pressure_pre);
-  verify_boundary_conditions(*boundary_descriptor_velocity_pre,
-                             *grid_pre->triangulation,
-                             grid_pre->periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure_pre,
-                             *grid_pre->triangulation,
-                             grid_pre->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity_pre, *grid_pre);
+  verify_boundary_conditions(*boundary_descriptor_pressure_pre, *grid_pre);
 
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity,
-                             *grid->triangulation,
-                             grid->periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure,
-                             *grid->triangulation,
-                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity, *grid);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *grid);
 
   field_functions_pre.reset(new FieldFunctions<dim>());
   field_functions.reset(new FieldFunctions<dim>());
