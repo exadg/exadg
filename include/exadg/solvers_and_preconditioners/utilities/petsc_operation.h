@@ -61,7 +61,7 @@ apply_petsc_operation(VectorType &                                           dst
     ierr = VecGetArray(petsc_vector_src, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
 
-    const PetscInt local_size = src.get_partitioner()->local_size();
+    const PetscInt local_size = src.get_partitioner()->locally_owned_size();
     AssertDimension(local_size, static_cast<unsigned int>(end - begin));
     for(PetscInt i = 0; i < local_size; ++i)
     {
@@ -87,7 +87,7 @@ apply_petsc_operation(VectorType &                                           dst
     ierr = VecGetArray(petsc_vector_dst, &ptr);
     AssertThrow(ierr == 0, ExcPETScError(ierr));
 
-    const PetscInt local_size = dst.get_partitioner()->local_size();
+    const PetscInt local_size = dst.get_partitioner()->locally_owned_size();
     AssertDimension(local_size, static_cast<unsigned int>(end - begin));
 
     for(PetscInt i = 0; i < local_size; ++i)
@@ -115,11 +115,11 @@ apply_petsc_operation(VectorType &                                           dst
 {
   VectorTypePETSc petsc_vector_dst, petsc_vector_src;
   VecCreateMPI(petsc_mpi_communicator,
-               dst.get_partitioner()->local_size(),
+               dst.get_partitioner()->locally_owned_size(),
                PETSC_DETERMINE,
                &petsc_vector_dst);
   VecCreateMPI(petsc_mpi_communicator,
-               src.get_partitioner()->local_size(),
+               src.get_partitioner()->locally_owned_size(),
                PETSC_DETERMINE,
                &petsc_vector_src);
 

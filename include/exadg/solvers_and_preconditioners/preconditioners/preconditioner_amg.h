@@ -215,11 +215,11 @@ private:
       LinearAlgebra::distributed::Vector<typename Operator::value_type> vector;
       pde_operator.initialize_dof_vector(vector);
       VecCreateMPI(system_matrix.get_mpi_communicator(),
-                   vector.get_partitioner()->local_size(),
+                   vector.get_partitioner()->locally_owned_size(),
                    PETSC_DETERMINE,
                    &petsc_vector_dst);
       VecCreateMPI(system_matrix.get_mpi_communicator(),
-                   vector.get_partitioner()->local_size(),
+                   vector.get_partitioner()->locally_owned_size(),
                    PETSC_DETERMINE,
                    &petsc_vector_src);
     }

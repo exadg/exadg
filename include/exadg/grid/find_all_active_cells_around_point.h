@@ -40,19 +40,16 @@ find_all_active_cells_around_point(Mapping<dim> const &                         
 
   std::vector<Pair> adjacent_cells;
 
-  try
-  {
-    Pair first_cell =
-      GridTools::find_active_cell_around_point(cache, point, cell_hint, marked_vertices, tolerance);
+  Pair first_cell =
+    GridTools::find_active_cell_around_point(cache, point, cell_hint, marked_vertices, tolerance);
 
+  if(first_cell.first != tria.end())
+  {
     // update cell_hint to have a good hint when the function is called next time
     cell_hint = first_cell.first;
 
     adjacent_cells =
       GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance, first_cell);
-  }
-  catch(...)
-  {
   }
 
   return adjacent_cells;

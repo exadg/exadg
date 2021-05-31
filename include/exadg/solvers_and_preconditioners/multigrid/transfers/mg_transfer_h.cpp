@@ -113,7 +113,7 @@ MGTransferH<dim, Number>::interpolate(unsigned int const level_in,
         dst(dof_indices[i]) = dof_values_coarse[i];
     }
 
-  dst.zero_out_ghosts();
+  dst.zero_out_ghost_values();
 }
 
 template<int dim, typename Number>

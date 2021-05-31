@@ -67,7 +67,7 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const
   {
-    dst.zero_out_ghosts();
+    dst.zero_out_ghost_values();
 
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
   }
