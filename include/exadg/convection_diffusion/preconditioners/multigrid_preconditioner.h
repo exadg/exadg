@@ -92,7 +92,7 @@ private:
 
   void
   initialize_dof_handler_and_constraints(bool const                 operator_is_singular,
-                                         PeriodicFacePairs *        periodic_face_pairs,
+                                         PeriodicFacePairs const *  periodic_face_pairs,
                                          FiniteElement<dim> const & fe,
                                          Triangulation<dim> const * tria,
                                          Map const *                dirichlet_bc) override;

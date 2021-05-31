@@ -113,10 +113,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                              "as for actual application problem."));
 
       // initialize Poisson operator
-      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*grid->triangulation,
-                                                                     grid->mapping,
+      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(grid,
                                                                      grid_data.mapping_degree,
-                                                                     grid->periodic_faces,
                                                                      poisson_boundary_descriptor,
                                                                      poisson_field_functions,
                                                                      poisson_param,

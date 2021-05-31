@@ -44,7 +44,7 @@ MultigridPreconditioner<dim, Number, n_components>::initialize(
   LaplaceOperatorData<rank, dim> const & data_in,
   bool const                             mesh_is_moving,
   Map const *                            dirichlet_bc,
-  PeriodicFacePairs *                    periodic_face_pairs)
+  PeriodicFacePairs const *              periodic_face_pairs)
 {
   data = data_in;
 

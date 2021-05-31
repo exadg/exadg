@@ -102,15 +102,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize Poisson operator
-  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
-                                               grid->mapping,
-                                               degree,
-                                               grid->periodic_faces,
-                                               boundary_descriptor,
-                                               field_functions,
-                                               param,
-                                               "Poisson",
-                                               mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(
+    grid, degree, boundary_descriptor, field_functions, param, "Poisson", mpi_comm));
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();

@@ -67,7 +67,7 @@ public:
              LaplaceOperatorData<rank, dim> const & data_in,
              bool const                             mesh_is_moving,
              Map const *                            dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                    periodic_face_pairs = nullptr);
+             PeriodicFacePairs const *              periodic_face_pairs = nullptr);
 
   void
   update() override;

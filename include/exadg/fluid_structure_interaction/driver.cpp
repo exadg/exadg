@@ -245,10 +245,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       // initialize Poisson operator
       ale_poisson_operator.reset(
-        new Poisson::Operator<dim, Number, dim>(*fluid_grid->triangulation,
-                                                fluid_grid->mapping,
+        new Poisson::Operator<dim, Number, dim>(fluid_grid,
                                                 fluid_grid_data.mapping_degree,
-                                                fluid_grid->periodic_faces,
                                                 ale_poisson_boundary_descriptor,
                                                 ale_poisson_field_functions,
                                                 ale_poisson_param,
