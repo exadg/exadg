@@ -37,6 +37,44 @@ namespace ExaDG
 {
 using namespace dealii;
 
+template<typename Operator>
+std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)>
+create_subcommunicator(Operator const & op)
+{
+  unsigned int n_locally_owned_cells = 0;
+  auto const & dof_handler           = op.get_matrix_free().get_dof_handler();
+  for(const auto & cell : dof_handler.active_cell_iterators())
+    if(cell->is_locally_owned())
+      ++n_locally_owned_cells;
+
+  // In case some of the MPI ranks do not have cells, we create a
+  // sub-communicator to exclude all those processes from the PETSc
+  // communication and hence speed up those operations. Note that we have to
+  // free the communicator again, which happens in the preconditioner_amg.h
+  // file which owns the matrix passed to the present function.
+  if(Utilities::MPI::min(n_locally_owned_cells, dof_handler.get_communicator()) == 0)
+  {
+    std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> subcommunicator(new MPI_Comm,
+                                                                    [](MPI_Comm * comm) {
+                                                                      MPI_Comm_free(comm);
+                                                                      delete comm;
+                                                                    });
+    MPI_Comm_split(dof_handler.get_communicator(),
+                   n_locally_owned_cells > 0,
+                   Utilities::MPI::this_mpi_process(dof_handler.get_communicator()),
+                   subcommunicator.get());
+    return subcommunicator;
+  }
+  else
+  {
+    std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> communicator(new MPI_Comm, [](MPI_Comm * comm) {
+      delete comm;
+    });
+    *communicator = dof_handler.get_communicator();
+    return communicator;
+  }
+}
+
 template<typename Operator, typename Number>
 class PreconditionerML : public PreconditionerBase<Number>
 {
@@ -59,7 +97,8 @@ public:
   {
 #ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
-    pde_operator.init_system_matrix(system_matrix);
+    pde_operator.init_system_matrix(system_matrix,
+                                    op.get_matrix_free().get_dof_handler().get_communicator());
 
     // calculate_matrix
     pde_operator.calculate_system_matrix(system_matrix);
@@ -126,6 +165,10 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number>           VectorType;
   typedef PETScWrappers::PreconditionBoomerAMG::AdditionalData BoomerData;
 
+  // subcommunicator; declared before the matrix to ensure that it gets
+  // deleted after the matrix and preconditioner depending on it
+  std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> subcommunicator;
+
 public:
 #ifdef DEAL_II_WITH_PETSC
   // distributed sparse system matrix
@@ -136,11 +179,11 @@ public:
 #endif
 
   PreconditionerBoomerAMG(Operator const & op, BoomerData boomer_data = BoomerData())
-    : pde_operator(op), boomer_data(boomer_data)
+    : subcommunicator(create_subcommunicator(op)), pde_operator(op), boomer_data(boomer_data)
   {
 #ifdef DEAL_II_WITH_PETSC
     // initialize system matrix
-    pde_operator.init_system_matrix(system_matrix);
+    pde_operator.init_system_matrix(system_matrix, *subcommunicator);
 #endif
 
     calculate_preconditioner();
@@ -149,26 +192,12 @@ public:
   ~PreconditionerBoomerAMG()
   {
 #ifdef DEAL_II_WITH_PETSC
-    bool const has_subcommunicator =
-      Utilities::MPI::min(system_matrix.m(),
-                          pde_operator.get_matrix_free().get_dof_handler().get_communicator()) == 0;
     if(system_matrix.m() > 0)
     {
       PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
       AssertThrow(ierr == 0, ExcPETScError(ierr));
       ierr = VecDestroy(&petsc_vector_src);
       AssertThrow(ierr == 0, ExcPETScError(ierr));
-
-      // free matrix in case we constructed a sub-communicator
-      // TODO: this is currently brittle because we build the communicator in
-      // operator_base.cpp and free it here
-      if(has_subcommunicator)
-      {
-        MPI_Comm petsc_comm = system_matrix.get_mpi_communicator();
-        amg.clear();
-        system_matrix.clear();
-        MPI_Comm_free(&petsc_comm);
-      }
     }
 #endif
   }
@@ -185,7 +214,7 @@ public:
   update() override
   {
 #ifdef DEAL_II_WITH_PETSC
-    // clear content of matrix since the next calculate_system_matrix-commands
+    // clear content of matrix since the next calculate_system_matrix calls
     // add their result; since we might run this on a sub-communicator, we
     // skip the processes that do not participate in the matrix and have size
     // zero

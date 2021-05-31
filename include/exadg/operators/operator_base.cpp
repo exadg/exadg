@@ -723,9 +723,10 @@ make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix) const
+  TrilinosWrappers::SparseMatrix & system_matrix,
+  MPI_Comm const &                 mpi_comm) const
 {
-  internal_init_system_matrix(system_matrix);
+  internal_init_system_matrix(system_matrix, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -741,9 +742,10 @@ OperatorBase<dim, Number, n_components>::calculate_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  PETScWrappers::MPI::SparseMatrix & system_matrix,
+  MPI_Comm const &                   mpi_comm) const
 {
-  internal_init_system_matrix(system_matrix);
+  internal_init_system_matrix(system_matrix, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -759,12 +761,24 @@ template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
 OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
-  SparseMatrix & system_matrix) const
+  SparseMatrix &   system_matrix,
+  MPI_Comm const & mpi_comm) const
 {
   DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
 
   IndexSet const & owned_dofs =
     is_mg ? dof_handler.locally_owned_mg_dofs(this->level) : dof_handler.locally_owned_dofs();
+
+  // check for a valid subcommunicator - the second check is needed on those
+  // MPI ranks which will not participate in the actual communication, i.e.,
+  // which are left out
+  AssertThrow(Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm) == owned_dofs.size() ||
+                owned_dofs.n_elements() == 0,
+              ExcMessage("The given communicator mpi_comm in init_system_matrix does not span "
+                         "all MPI processes needed to cover the index space of all dofs: " +
+                         std::to_string(Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm)) +
+                         " vs " + std::to_string(owned_dofs.size())));
+
   IndexSet relevant_dofs;
   if(is_mg)
     DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
@@ -784,37 +798,12 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
-  SparsityTools::distribute_sparsity_pattern(dsp,
-                                             owned_dofs,
-                                             dof_handler.get_communicator(),
-                                             relevant_dofs);
-#ifdef DEAL_II_WITH_PETSC
-  if(std::is_same<SparseMatrix, PETScWrappers::MPI::SparseMatrix>::value)
+  // only work on this aspect if we are part of the communicator with the dofs
+  if(Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm) == owned_dofs.size())
   {
-    unsigned int n_locally_owned_cells = 0;
-    for(const auto & cell : dof_handler.active_cell_iterators())
-      if(cell->is_locally_owned())
-        ++n_locally_owned_cells;
-
-    // In case some of the MPI ranks do not have cells, we create a
-    // sub-communicator to exclude all those processes from the PETSc
-    // communication and hence speed up those operations. Note that we have to
-    // free the communicator again, which happens in the preconditioner_amg.h
-    // file which owns the matrix passed to the present function.
-    MPI_Comm petsc_communicator;
-    if(Utilities::MPI::min(n_locally_owned_cells, dof_handler.get_communicator()) == 0)
-      MPI_Comm_split(dof_handler.get_communicator(),
-                     n_locally_owned_cells > 0,
-                     Utilities::MPI::this_mpi_process(dof_handler.get_communicator()),
-                     &petsc_communicator);
-    else
-      petsc_communicator = dof_handler.get_communicator();
-    if(n_locally_owned_cells > 0)
-      system_matrix.reinit(owned_dofs, owned_dofs, dsp, petsc_communicator);
+    SparsityTools::distribute_sparsity_pattern(dsp, owned_dofs, mpi_comm, relevant_dofs);
+    system_matrix.reinit(owned_dofs, owned_dofs, dsp, mpi_comm);
   }
-  else
-#endif
-    system_matrix.reinit(owned_dofs, owned_dofs, dsp, dof_handler.get_communicator());
 }
 
 template<int dim, typename Number, int n_components>

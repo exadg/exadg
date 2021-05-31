@@ -132,7 +132,8 @@ public:
 
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix,
+                     MPI_Comm const &                 mpi_comm) const;
 
   void
   calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
@@ -145,7 +146,8 @@ public:
 
 #ifdef DEAL_II_WITH_PETSC
   void
-  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
+  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix,
+                     MPI_Comm const &                   mpi_comm) const;
 
   void
   calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
