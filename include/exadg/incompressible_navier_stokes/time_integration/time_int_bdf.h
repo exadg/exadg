@@ -34,7 +34,7 @@ namespace ExaDG
 {
 // forward declarations
 template<int dim, typename Number>
-class MovingMeshBase;
+class MovingMeshInterface;
 
 namespace IncNS
 {
@@ -61,14 +61,14 @@ public:
 
   typedef SpatialOperatorBase<dim, Number> OperatorBase;
 
-  TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
-             InputParameters const &                         param_in,
-             unsigned int const                              refine_steps_time_in,
-             MPI_Comm const &                                mpi_comm_in,
-             bool const                                      is_test_in,
-             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
-             std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in = nullptr,
-             std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in = nullptr);
+  TimeIntBDF(std::shared_ptr<OperatorBase>                     operator_in,
+             InputParameters const &                           param_in,
+             unsigned int const                                refine_steps_time_in,
+             MPI_Comm const &                                  mpi_comm_in,
+             bool const                                        is_test_in,
+             std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
+             std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh_in = nullptr,
+             std::shared_ptr<MatrixFree<dim, Number>>          matrix_free_in = nullptr);
 
   virtual ~TimeIntBDF()
   {
@@ -213,8 +213,8 @@ private:
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
 
-  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh;
+  std::shared_ptr<MatrixFree<dim, Number>>          matrix_free;
 };
 
 } // namespace IncNS

@@ -385,21 +385,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // mapping for fluid problem (moving mesh)
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      fluid_moving_mapping.reset(
+      fluid_moving_mesh.reset(
         new MovingMeshPoisson<dim, Number>(fluid_static_mapping, ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_moving_mapping.reset(new MovingMeshElasticity<dim, Number>(fluid_static_mapping,
-                                                                       ale_elasticity_operator,
-                                                                       ale_elasticity_param));
+      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(fluid_static_mapping,
+                                                                    ale_elasticity_operator,
+                                                                    ale_elasticity_param));
     }
     else
     {
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    fluid_mapping = fluid_moving_mapping;
+    fluid_mapping = fluid_moving_mesh->get_mapping();
 
     // initialize fluid_operator
     fluid_operator = IncNS::create_operator<dim, Number>(*fluid_triangulation,
@@ -579,7 +579,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                        mpi_comm,
                                                                        is_test,
                                                                        fluid_postprocessor,
-                                                                       fluid_moving_mapping,
+                                                                       fluid_moving_mesh,
                                                                        fluid_matrix_free);
 
     fluid_time_integrator->setup(fluid_param.restarted_simulation);
@@ -645,8 +645,8 @@ Driver<dim, Number>::solve_ale() const
 
   sub_timer.restart();
   bool const print_solver_info = fluid_time_integrator->print_solver_info();
-  fluid_moving_mapping->update(fluid_time_integrator->get_next_time(),
-                               print_solver_info and not(is_test));
+  fluid_moving_mesh->update(fluid_time_integrator->get_next_time(),
+                            print_solver_info and not(is_test));
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
@@ -1164,7 +1164,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   fluid_time_integrator->print_iterations();
 
   pcout << std::endl << "ALE:" << std::endl;
-  fluid_moving_mapping->print_iterations();
+  fluid_moving_mesh->print_iterations();
 
   pcout << std::endl << "Structure:" << std::endl;
   structure_time_integrator->print_iterations();

@@ -19,7 +19,7 @@
  *  ______________________________________________________________________
  */
 
-#include <exadg/grid/moving_mesh_base.h>
+#include <exadg/grid/moving_mesh_interface.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/spatial_operator_base.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf.h>
@@ -35,14 +35,14 @@ using namespace dealii;
 
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
-  std::shared_ptr<OperatorBase>                   operator_in,
-  InputParameters const &                         param_in,
-  unsigned int const                              refine_steps_time_in,
-  MPI_Comm const &                                mpi_comm_in,
-  bool const                                      is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
-  std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
-  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free_in)
+  std::shared_ptr<OperatorBase>                     operator_in,
+  InputParameters const &                           param_in,
+  unsigned int const                                refine_steps_time_in,
+  MPI_Comm const &                                  mpi_comm_in,
+  bool const                                        is_test_in,
+  std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
+  std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh_in,
+  std::shared_ptr<MatrixFree<dim, Number>>          matrix_free_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -607,7 +607,7 @@ void
 TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
 {
   moving_mesh->update(time, false);
-  matrix_free->update_mapping(*moving_mesh);
+  matrix_free->update_mapping(*moving_mesh->get_mapping());
   operator_base->update_after_mesh_movement();
 }
 

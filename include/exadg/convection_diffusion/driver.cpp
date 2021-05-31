@@ -106,10 +106,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
-    moving_mapping.reset(new MovingMeshFunction<dim, Number>(
+    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
       static_mapping, degree, *triangulation, mesh_motion, param.start_time));
 
-    mapping = moving_mapping;
+    mapping = moving_mesh->get_mapping();
   }
   else // static mapping
   {
@@ -158,7 +158,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                             mpi_comm,
                                                             is_test,
                                                             postprocessor,
-                                                            moving_mapping,
+                                                            moving_mesh,
                                                             matrix_free);
 
       time_integrator->setup(param.restarted_simulation);
@@ -228,7 +228,7 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  moving_mapping->update(time_integrator->get_next_time(), false);
+  moving_mesh->update(time_integrator->get_next_time(), false);
   matrix_free->update_mapping(*mapping);
   pde_operator->update_after_mesh_movement();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
