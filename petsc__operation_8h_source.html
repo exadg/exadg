@@ -132,7 +132,7 @@ $(function() {
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    ierr = VecGetArray(petsc_vector_src, &amp;ptr);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    AssertThrow(ierr == 0, ExcPETScError(ierr));</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keyword">const</span> PetscInt local_size = src.get_partitioner()-&gt;local_size();</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keyword">const</span> PetscInt local_size = src.get_partitioner()-&gt;locally_owned_size();</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    AssertDimension(local_size, <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(end - begin));</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordflow">for</span>(PetscInt i = 0; i &lt; local_size; ++i)</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    {</div>
@@ -158,7 +158,7 @@ $(function() {
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    ierr = VecGetArray(petsc_vector_dst, &amp;ptr);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    AssertThrow(ierr == 0, ExcPETScError(ierr));</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">const</span> PetscInt local_size = dst.get_partitioner()-&gt;local_size();</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">const</span> PetscInt local_size = dst.get_partitioner()-&gt;locally_owned_size();</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    AssertDimension(local_size, <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span><span class="keyword">&gt;</span>(end - begin));</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; </div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">for</span>(PetscInt i = 0; i &lt; local_size; ++i)</div>
@@ -186,11 +186,11 @@ $(function() {
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;{</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  VectorTypePETSc petsc_vector_dst, petsc_vector_src;</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;  VecCreateMPI(petsc_mpi_communicator,</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;               dst.get_partitioner()-&gt;local_size(),</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;               dst.get_partitioner()-&gt;locally_owned_size(),</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;               PETSC_DETERMINE,</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;               &amp;petsc_vector_dst);</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;  VecCreateMPI(petsc_mpi_communicator,</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;               src.get_partitioner()-&gt;local_size(),</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;               src.get_partitioner()-&gt;locally_owned_size(),</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;               PETSC_DETERMINE,</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;               &amp;petsc_vector_src);</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>

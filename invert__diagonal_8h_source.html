@@ -108,7 +108,7 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">void</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;invert_diagonal(LinearAlgebra::distributed::Vector&lt;Number&gt; &amp; diagonal)</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;{</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; diagonal.local_size(); ++i)</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; diagonal.locally_owned_size(); ++i)</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  {</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordflow">if</span>(std::abs(diagonal.local_element(i)) &gt; 1.0e-10)</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;      diagonal.local_element(i) = 1.0 / diagonal.local_element(i);</div>
