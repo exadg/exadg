@@ -121,8 +121,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -413,18 +411,14 @@ public:
     GridGenerator::merge_triangulations(tria_vec_ptr, tria, 1.e-10);
   }
 
-  void
-  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
-                    PeriodicFaces &                     periodic_faces,
-                    unsigned int const                  n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &     mapping,
-                    unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    create_triangulation(*triangulation);
+    create_triangulation(*grid->triangulation);
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -464,9 +458,9 @@ public:
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void
@@ -748,14 +742,10 @@ public:
     parameters.update_preconditioner_every_newton_iterations = 10;
   }
 
-  void
-  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     Point<dim> p1, p2;
 
@@ -772,9 +762,9 @@ public:
     repetitions[1] = N_CELLS_STRUCTURE_Y;
     repetitions[2] = N_CELLS_STRUCTURE_Z;
 
-    GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, p1, p2);
+    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -796,9 +786,9 @@ public:
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

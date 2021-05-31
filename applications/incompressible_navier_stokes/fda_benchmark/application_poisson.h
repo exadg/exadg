@@ -34,8 +34,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -74,18 +72,16 @@ public:
     param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree)
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    FDANozzle::create_grid_and_set_boundary_ids_nozzle(triangulation,
-                                                       n_refine_space,
-                                                       periodic_faces);
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
+                                                       data.n_refine_global,
+                                                       grid->periodic_faces);
+
+    return grid;
   }
 
   void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)

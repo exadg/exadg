@@ -78,19 +78,13 @@ private:
   std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application;
 
   /*
-   * Mesh
+   * Grid
    */
+  std::shared_ptr<Grid<dim>> grid_pre, grid;
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> triangulation_pre, triangulation;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> mapping_pre, mapping;
-
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces_pre, periodic_faces;
-
+  /*
+   * Field functions and boundary descriptor
+   */
   std::shared_ptr<FieldFunctions<dim>>      field_functions_pre, field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity_pre,
     boundary_descriptor_velocity;

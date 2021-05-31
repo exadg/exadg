@@ -145,15 +145,7 @@ private:
 
   InputParameters param;
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> triangulation;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> mapping;
-
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
+  std::shared_ptr<Grid<dim>> grid;
 
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;

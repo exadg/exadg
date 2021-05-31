@@ -124,8 +124,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -181,16 +179,14 @@ public:
     param.use_combined_operator = false;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
     std::vector<unsigned int> repetitions({2, 1});
     Point<dim>                point1(0.0, 0.0), point2(L, H);
-    GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, point1, point2);
+    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
 
     // indicator
     // fixed wall = 0
@@ -206,39 +202,36 @@ public:
      *   |__________________________________|
      *             indicator = 0
      */
-    typename Triangulation<dim>::cell_iterator cell = triangulation->begin(),
-                                               endc = triangulation->end();
-    for(; cell != endc; ++cell)
+    for(auto cell : *grid->triangulation)
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
-        if(std::fabs(cell->face(face_number)->center()(1) - point2[1]) < 1e-12)
+        if(std::fabs(cell.face(face)->center()(1) - point2[1]) < 1e-12)
         {
-          cell->face(face_number)->set_boundary_id(1);
+          cell.face(face)->set_boundary_id(1);
         }
-        else if(std::fabs(cell->face(face_number)->center()(1) - 0.0) < 1e-12)
+        else if(std::fabs(cell.face(face)->center()(1) - 0.0) < 1e-12)
         {
-          cell->face(face_number)->set_boundary_id(0);
+          cell.face(face)->set_boundary_id(0);
         }
-        else if(std::fabs(cell->face(face_number)->center()(0) - 0.0) < 1e-12)
+        else if(std::fabs(cell.face(face)->center()(0) - 0.0) < 1e-12)
         {
-          cell->face(face_number)->set_boundary_id(0 + 10);
+          cell.face(face)->set_boundary_id(0 + 10);
         }
-        else if(std::fabs(cell->face(face_number)->center()(0) - point2[0]) < 1e-12)
+        else if(std::fabs(cell.face(face)->center()(0) - point2[0]) < 1e-12)
         {
-          cell->face(face_number)->set_boundary_id(1 + 10);
+          cell.face(face)->set_boundary_id(1 + 10);
         }
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, periodic_faces);
-    triangulation->add_periodicity(periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, grid->periodic_faces);
+    grid->triangulation->add_periodicity(grid->periodic_faces);
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

@@ -128,50 +128,23 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   AssertThrow(param_pre.ale_formulation == false, ExcMessage("not implemented."));
   AssertThrow(param.ale_formulation == false, ExcMessage("not implemented."));
 
-  // triangulation
-  if(param_pre.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation_pre.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param_pre.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation_pre.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  // grid_pre
+  GridData grid_data_pre;
+  grid_data_pre.triangulation_type = param_pre.triangulation_type;
+  grid_data_pre.n_refine_global    = refine_space;
+  grid_data_pre.mapping_degree     = get_mapping_degree(param_pre.mapping, degree);
 
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  grid_pre = application->create_grid(grid_data_pre, mpi_comm);
+  print_grid_info(pcout, *grid_pre);
 
-  // triangulation and mapping
-  unsigned int const mapping_degree_pre = get_mapping_degree(param_pre.mapping, degree);
-  unsigned int const mapping_degree     = get_mapping_degree(param.mapping, degree);
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
 
-  // create grid
-  application->create_grid_precursor(
-    triangulation_pre, periodic_faces_pre, refine_space, mapping_pre, mapping_degree_pre);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
-
-  print_grid_data(pcout, refine_space, *triangulation_pre);
-  print_grid_data(pcout, refine_space, *triangulation);
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   boundary_descriptor_velocity_pre.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure_pre.reset(new BoundaryDescriptorP<dim>());
@@ -179,18 +152,22 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   application->set_boundary_conditions_precursor(boundary_descriptor_velocity_pre,
                                                  boundary_descriptor_pressure_pre);
   verify_boundary_conditions(*boundary_descriptor_velocity_pre,
-                             *triangulation_pre,
-                             periodic_faces_pre);
+                             *grid_pre->triangulation,
+                             grid_pre->periodic_faces);
   verify_boundary_conditions(*boundary_descriptor_pressure_pre,
-                             *triangulation_pre,
-                             periodic_faces_pre);
+                             *grid_pre->triangulation,
+                             grid_pre->periodic_faces);
 
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity,
+                             *grid->triangulation,
+                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure,
+                             *grid->triangulation,
+                             grid->periodic_faces);
 
   field_functions_pre.reset(new FieldFunctions<dim>());
   field_functions.reset(new FieldFunctions<dim>());
@@ -211,10 +188,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize pde_operator_pre (precursor domain)
-  pde_operator = create_operator<dim, Number>(*triangulation_pre,
-                                              mapping_pre,
+  pde_operator = create_operator<dim, Number>(*grid_pre->triangulation,
+                                              grid_pre->mapping,
                                               degree,
-                                              periodic_faces_pre,
+                                              grid_pre->periodic_faces,
                                               boundary_descriptor_velocity_pre,
                                               boundary_descriptor_pressure_pre,
                                               field_functions_pre,
@@ -223,10 +200,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                               mpi_comm);
 
   // initialize operator_base (actual domain)
-  pde_operator = create_operator<dim, Number>(*triangulation,
-                                              mapping,
+  pde_operator = create_operator<dim, Number>(*grid->triangulation,
+                                              grid->mapping,
                                               degree,
-                                              periodic_faces,
+                                              grid->periodic_faces,
                                               boundary_descriptor_velocity,
                                               boundary_descriptor_pressure,
                                               field_functions,
@@ -241,8 +218,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   matrix_free_pre.reset(new MatrixFree<dim, Number>());
   if(param_pre.use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*triangulation_pre, matrix_free_data_pre->data);
-  matrix_free_pre->reinit(*mapping_pre,
+    Categorization::do_cell_based_loops(*grid_pre->triangulation, matrix_free_data_pre->data);
+  matrix_free_pre->reinit(*grid_pre->mapping,
                           matrix_free_data_pre->get_dof_handler_vector(),
                           matrix_free_data_pre->get_constraint_vector(),
                           matrix_free_data_pre->get_quadrature_vector(),
@@ -254,8 +231,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(param.use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*triangulation, matrix_free_data->data);
-  matrix_free->reinit(*mapping,
+    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
+  matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

@@ -51,8 +51,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -71,19 +69,16 @@ public:
   }
 
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    // to avoid warnings (unused variable) use ...
-    (void)triangulation;
-    (void)n_refine_space;
-    (void)periodic_faces;
-    (void)mapping;
-    (void)mapping_degree;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
+    // create triangulation
+
+    grid->triangulation->refine_global(data.n_refine_global);
+
+    return grid;
   }
 
 

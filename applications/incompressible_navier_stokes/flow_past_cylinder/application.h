@@ -170,8 +170,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -464,23 +462,24 @@ public:
   }
 
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    this->refine_level = n_refine_space;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
+    this->refine_level = data.n_refine_global;
 
     if(auto tria_fully_dist =
-         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*grid->triangulation))
     {
       auto const construction_data =
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
                                                                                              dim>(
           [&](dealii::Triangulation<dim, dim> & tria) mutable {
-            create_cylinder_grid<dim>(tria, n_refine_space, periodic_faces, cylinder_type_string);
+            create_cylinder_grid<dim>(tria,
+                                      data.n_refine_global,
+                                      grid->periodic_faces,
+                                      cylinder_type_string);
           },
           [](dealii::Triangulation<dim, dim> & tria,
              const MPI_Comm                    comm,
@@ -495,16 +494,20 @@ public:
           1 /* group size */);
       tria_fully_dist->create_triangulation(construction_data);
     }
-    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+    else if(auto tria =
+              dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*grid->triangulation))
     {
-      create_cylinder_grid<dim>(*tria, n_refine_space, periodic_faces, cylinder_type_string);
+      create_cylinder_grid<dim>(*tria,
+                                data.n_refine_global,
+                                grid->periodic_faces,
+                                cylinder_type_string);
     }
     else
     {
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

@@ -118,8 +118,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -175,35 +173,28 @@ public:
     param.use_combined_operator = false;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     std::vector<unsigned int> repetitions({2, 1});
     Point<dim>                point1(0.0, -H / 2.), point2(L, H / 2.);
-    GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, point1, point2);
+    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
 
     // set boundary indicator
-    typename Triangulation<dim>::cell_iterator cell = triangulation->begin(),
-                                               endc = triangulation->end();
-    for(; cell != endc; ++cell)
+    for(auto cell : *grid->triangulation)
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
-        if((std::fabs(cell->face(face_number)->center()(0) - L) < 1e-12))
-          cell->face(face_number)->set_boundary_id(1);
+        if((std::fabs(cell.face(face)->center()(0) - L) < 1e-12))
+          cell.face(face)->set_boundary_id(1);
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

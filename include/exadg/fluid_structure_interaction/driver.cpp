@@ -127,39 +127,22 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
     structure_param.print(pcout, "List of input parameters for structure:");
 
-    // triangulation
-    if(structure_param.triangulation_type == TriangulationType::Distributed)
-    {
-      structure_triangulation.reset(new parallel::distributed::Triangulation<dim>(
-        mpi_comm,
-        dealii::Triangulation<dim>::none,
-        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-    }
-    else if(structure_param.triangulation_type == TriangulationType::FullyDistributed)
-    {
-      structure_triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-    }
-
-    // triangulation and mapping
-    unsigned int const mapping_degree_structure =
+    // grid
+    GridData structure_grid_data;
+    structure_grid_data.triangulation_type = structure_param.triangulation_type;
+    structure_grid_data.n_refine_global    = refine_space_structure;
+    structure_grid_data.mapping_degree =
       get_mapping_degree(structure_param.mapping, degree_structure);
-    application->create_grid_structure(structure_triangulation,
-                                       structure_periodic_faces,
-                                       refine_space_structure,
-                                       structure_mapping,
-                                       mapping_degree_structure);
-    print_grid_data(pcout, refine_space_structure, *structure_triangulation);
+
+    structure_grid = application->create_grid_structure(structure_grid_data, mpi_comm);
+    print_grid_info(pcout, *structure_grid);
 
     // boundary conditions
     structure_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
     application->set_boundary_conditions_structure(structure_boundary_descriptor);
     verify_boundary_conditions(*structure_boundary_descriptor,
-                               *structure_triangulation,
-                               structure_periodic_faces);
+                               *structure_grid->triangulation,
+                               structure_grid->periodic_faces);
 
     // material_descriptor
     structure_material_descriptor.reset(new Structure::MaterialDescriptor);
@@ -170,10 +153,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->set_field_functions_structure(structure_field_functions);
 
     // setup spatial operator
-    structure_operator.reset(new Structure::Operator<dim, Number>(*structure_triangulation,
-                                                                  structure_mapping,
+    structure_operator.reset(new Structure::Operator<dim, Number>(*structure_grid->triangulation,
+                                                                  structure_grid->mapping,
                                                                   degree_structure,
-                                                                  structure_periodic_faces,
+                                                                  structure_grid->periodic_faces,
                                                                   structure_boundary_descriptor,
                                                                   structure_field_functions,
                                                                   structure_material_descriptor,
@@ -186,7 +169,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     structure_matrix_free_data->append(structure_operator);
 
     structure_matrix_free.reset(new MatrixFree<dim, Number>());
-    structure_matrix_free->reinit(*structure_mapping,
+    structure_matrix_free->reinit(*structure_grid->mapping,
                                   structure_matrix_free_data->get_dof_handler_vector(),
                                   structure_matrix_free_data->get_constraint_vector(),
                                   structure_matrix_free_data->get_quadrature_vector(),
@@ -197,7 +180,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // initialize postprocessor
     structure_postprocessor =
       application->construct_postprocessor_structure(degree_structure, mpi_comm);
-    structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_mapping);
+    structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_grid->mapping);
 
     timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
@@ -222,31 +205,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     AssertThrow(fluid_param.ale_formulation == true,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
-    // triangulation
-    if(fluid_param.triangulation_type == TriangulationType::Distributed)
-    {
-      fluid_triangulation.reset(new parallel::distributed::Triangulation<dim>(
-        mpi_comm,
-        dealii::Triangulation<dim>::none,
-        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-    }
-    else if(fluid_param.triangulation_type == TriangulationType::FullyDistributed)
-    {
-      fluid_triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-    }
+    // grid
+    GridData fluid_grid_data;
+    fluid_grid_data.triangulation_type = fluid_param.triangulation_type;
+    fluid_grid_data.n_refine_global    = refine_space_fluid;
+    fluid_grid_data.mapping_degree     = get_mapping_degree(fluid_param.mapping, degree_fluid);
 
-    // triangulation and mapping
-    unsigned int const mapping_degree_fluid = get_mapping_degree(fluid_param.mapping, degree_fluid);
-    application->create_grid_fluid(fluid_triangulation,
-                                   fluid_periodic_faces,
-                                   refine_space_fluid,
-                                   fluid_static_mapping,
-                                   mapping_degree_fluid);
-    print_grid_data(pcout, refine_space_fluid, *fluid_triangulation);
+    fluid_grid = application->create_grid_fluid(fluid_grid_data, mpi_comm);
+    print_grid_info(pcout, *fluid_grid);
 
     // field functions and boundary conditions
 
@@ -256,11 +222,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->set_boundary_conditions_fluid(fluid_boundary_descriptor_velocity,
                                                fluid_boundary_descriptor_pressure);
     verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
-                               *fluid_triangulation,
-                               fluid_periodic_faces);
+                               *fluid_grid->triangulation,
+                               fluid_grid->periodic_faces);
     verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
-                               *fluid_triangulation,
-                               fluid_periodic_faces);
+                               *fluid_grid->triangulation,
+                               fluid_grid->periodic_faces);
 
     fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
     application->set_field_functions_fluid(fluid_field_functions);
@@ -279,18 +245,18 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
       application->set_boundary_conditions_ale(ale_poisson_boundary_descriptor);
       verify_boundary_conditions(*ale_poisson_boundary_descriptor,
-                                 *fluid_triangulation,
-                                 fluid_periodic_faces);
+                                 *fluid_grid->triangulation,
+                                 fluid_grid->periodic_faces);
 
       ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
       application->set_field_functions_ale(ale_poisson_field_functions);
 
       // initialize Poisson operator
       ale_poisson_operator.reset(
-        new Poisson::Operator<dim, Number, dim>(*fluid_triangulation,
-                                                fluid_static_mapping,
-                                                mapping_degree_fluid,
-                                                fluid_periodic_faces,
+        new Poisson::Operator<dim, Number, dim>(*fluid_grid->triangulation,
+                                                fluid_grid->mapping,
+                                                fluid_grid_data.mapping_degree,
+                                                fluid_grid->periodic_faces,
                                                 ale_poisson_boundary_descriptor,
                                                 ale_poisson_field_functions,
                                                 ale_poisson_param,
@@ -311,8 +277,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_elasticity_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
       application->set_boundary_conditions_ale(ale_elasticity_boundary_descriptor);
       verify_boundary_conditions(*ale_elasticity_boundary_descriptor,
-                                 *fluid_triangulation,
-                                 fluid_periodic_faces);
+                                 *fluid_grid->triangulation,
+                                 fluid_grid->periodic_faces);
 
       // material_descriptor
       ale_elasticity_material_descriptor.reset(new Structure::MaterialDescriptor);
@@ -324,10 +290,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       // setup spatial operator
       ale_elasticity_operator.reset(
-        new Structure::Operator<dim, Number>(*fluid_triangulation,
-                                             fluid_static_mapping,
-                                             mapping_degree_fluid,
-                                             fluid_periodic_faces,
+        new Structure::Operator<dim, Number>(*fluid_grid->triangulation,
+                                             fluid_grid->mapping,
+                                             fluid_grid_data.mapping_degree,
+                                             fluid_grid->periodic_faces,
                                              ale_elasticity_boundary_descriptor,
                                              ale_elasticity_field_functions,
                                              ale_elasticity_material_descriptor,
@@ -346,7 +312,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       if(ale_poisson_param.enable_cell_based_face_loops)
-        Categorization::do_cell_based_loops(*fluid_triangulation, ale_matrix_free_data->data);
+        Categorization::do_cell_based_loops(*fluid_grid->triangulation, ale_matrix_free_data->data);
 
       ale_matrix_free_data->append(ale_poisson_operator);
     }
@@ -361,7 +327,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize matrix_free
     ale_matrix_free.reset(new MatrixFree<dim, Number>());
-    ale_matrix_free->reinit(*fluid_static_mapping,
+    ale_matrix_free->reinit(*fluid_grid->mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
                             ale_matrix_free_data->get_constraint_vector(),
                             ale_matrix_free_data->get_quadrature_vector(),
@@ -386,11 +352,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       fluid_moving_mesh.reset(
-        new MovingMeshPoisson<dim, Number>(fluid_static_mapping, ale_poisson_operator));
+        new MovingMeshPoisson<dim, Number>(fluid_grid->mapping, ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(fluid_static_mapping,
+      fluid_moving_mesh.reset(new MovingMeshElasticity<dim, Number>(fluid_grid->mapping,
                                                                     ale_elasticity_operator,
                                                                     ale_elasticity_param));
     }
@@ -402,10 +368,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_mapping = fluid_moving_mesh->get_mapping();
 
     // initialize fluid_operator
-    fluid_operator = IncNS::create_operator<dim, Number>(*fluid_triangulation,
+    fluid_operator = IncNS::create_operator<dim, Number>(*fluid_grid->triangulation,
                                                          fluid_mapping,
                                                          degree_fluid,
-                                                         fluid_periodic_faces,
+                                                         fluid_grid->periodic_faces,
                                                          fluid_boundary_descriptor_velocity,
                                                          fluid_boundary_descriptor_pressure,
                                                          fluid_field_functions,
@@ -419,7 +385,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     fluid_matrix_free.reset(new MatrixFree<dim, Number>());
     if(fluid_param.use_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*fluid_triangulation, fluid_matrix_free_data->data);
+      Categorization::do_cell_based_loops(*fluid_grid->triangulation, fluid_matrix_free_data->data);
     fluid_matrix_free->reinit(*fluid_mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
                               fluid_matrix_free_data->get_constraint_vector(),
@@ -465,9 +431,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               ale_poisson_operator->get_dof_index(),
                               quad_indices,
                               ale_poisson_boundary_descriptor->dirichlet_mortar_bc,
-                              structure_triangulation,
+                              structure_grid->triangulation,
                               structure_operator->get_dof_handler(),
-                              *structure_mapping,
+                              *structure_grid->mapping,
                               displacement_structure,
                               fsi_data.geometric_tolerance);
     }
@@ -483,9 +449,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               ale_elasticity_operator->get_dof_index(),
                               quad_indices,
                               ale_elasticity_boundary_descriptor->dirichlet_mortar_bc,
-                              structure_triangulation,
+                              structure_grid->triangulation,
                               structure_operator->get_dof_handler(),
-                              *structure_mapping,
+                              *structure_grid->mapping,
                               displacement_structure,
                               fsi_data.geometric_tolerance);
     }
@@ -518,9 +484,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               fluid_operator->get_dof_index_velocity(),
                               quad_indices,
                               fluid_boundary_descriptor_velocity->dirichlet_mortar_bc,
-                              structure_triangulation,
+                              structure_grid->triangulation,
                               structure_operator->get_dof_handler(),
-                              *structure_mapping,
+                              *structure_grid->mapping,
                               velocity_structure,
                               fsi_data.geometric_tolerance);
 
@@ -546,7 +512,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                               structure_operator->get_dof_index(),
                               quad_indices,
                               structure_boundary_descriptor->neumann_mortar_bc,
-                              fluid_triangulation,
+                              fluid_grid->triangulation,
                               fluid_operator->get_dof_handler_u(),
                               *fluid_mapping,
                               stress_fluid,

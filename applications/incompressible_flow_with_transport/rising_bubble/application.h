@@ -71,8 +71,6 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : FTI::ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -323,34 +321,30 @@ public:
     param.use_overintegration   = true;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     if(dim == 2)
     {
       double const left = 0.0, right = L;
-      GridGenerator::hyper_cube(*triangulation, left, right);
+      GridGenerator::hyper_cube(*grid->triangulation, left, right);
     }
     else if(dim == 3)
     {
       std::vector<unsigned int> repetitions({1, 1, 1});
       Point<dim>                point1(0.0, 0.0, 0.0), point2(L, 1.5 * L, L);
-      GridGenerator::subdivided_hyper_rectangle(*triangulation, repetitions, point1, point2);
+      GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

@@ -103,21 +103,14 @@ private:
    * Mesh
    */
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> triangulation;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> static_mapping;
+  // grid
+  std::shared_ptr<Grid<dim>> grid;
 
   // moving mapping (ALE)
   std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
 
   // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> mapping;
-
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
 
   bool use_adaptive_time_stepping;
 

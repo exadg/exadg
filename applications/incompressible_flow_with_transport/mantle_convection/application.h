@@ -95,8 +95,6 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : FTI::ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -335,20 +333,16 @@ public:
     param.use_overintegration   = true;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
-    GridGenerator::hyper_shell(*triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
+    GridGenerator::hyper_shell(*grid->triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
 
     Point<dim> center = dim == 2 ? Point<dim>(0., 0.) : Point<dim>(0., 0., 0.);
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -364,9 +358,9 @@ public:
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void

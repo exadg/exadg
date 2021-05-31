@@ -70,27 +70,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
 
-  // triangulation and mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(triangulation, periodic_faces, refine_space, mapping, mapping_degree);
-  print_grid_data(pcout, refine_space, *triangulation);
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
@@ -102,17 +89,25 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                        boundary_descriptor_pressure,
                                        boundary_descriptor_energy);
 
-  verify_boundary_conditions(*boundary_descriptor_density, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_energy, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_density,
+                             *grid->triangulation,
+                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity,
+                             *grid->triangulation,
+                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure,
+                             *grid->triangulation,
+                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_energy,
+                             *grid->triangulation,
+                             grid->periodic_faces);
 
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 
   // initialize compressible Navier-Stokes operator
-  pde_operator.reset(new Operator<dim, Number>(*triangulation,
-                                               mapping,
+  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
+                                               grid->mapping,
                                                degree,
                                                boundary_descriptor_density,
                                                boundary_descriptor_velocity,
@@ -128,7 +123,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free_data->append(pde_operator);
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(*mapping,
+  matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

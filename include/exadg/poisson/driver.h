@@ -145,15 +145,8 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> triangulation;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> mapping;
-
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
+  // grid
+  std::shared_ptr<Grid<dim>> grid;
 
   InputParameters param;
 

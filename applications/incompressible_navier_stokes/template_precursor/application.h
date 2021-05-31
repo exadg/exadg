@@ -32,8 +32,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -54,33 +52,31 @@ public:
     (void)param;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)triangulation;
-    (void)periodic_faces;
-    (void)n_refine_space;
-    (void)mapping;
-    (void)mapping_degree;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
+    // create triangulation
+
+    grid->triangulation->refine_global(data.n_refine_global);
+
+    return grid;
   }
 
-  void
-  create_grid_precursor(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) final
+
+  std::shared_ptr<Grid<dim>>
+  create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)triangulation;
-    (void)periodic_faces;
-    (void)n_refine_space;
-    (void)mapping;
-    (void)mapping_degree;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
+    // create triangulation
+
+    grid->triangulation->refine_global(data.n_refine_global);
+
+    return grid;
   }
+
 
   void
   set_boundary_conditions(

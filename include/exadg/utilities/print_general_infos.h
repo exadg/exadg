@@ -29,6 +29,7 @@
 #include <deal.II/distributed/tria_base.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -115,19 +116,21 @@ print_matrixfree_info(ConditionalOStream const & pcout)
   // clang-format on
 }
 
-// print grid info
 template<int dim>
 inline void
-print_grid_data(ConditionalOStream const & pcout,
-                unsigned int const         n_refine_space,
-                Triangulation<dim> const & triangulation)
+print_grid_info(ConditionalOStream const & pcout, Grid<dim> const & grid)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "Number of refinements", n_refine_space);
-  print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
+  print_parameter(pcout, "Max. number of refinements", grid.triangulation->n_global_levels() - 1);
+  print_parameter(pcout, "Number of cells", grid.triangulation->n_global_active_cells());
+
+  std::shared_ptr<MappingQGeneric<dim>> mapping_q_generic =
+    std::dynamic_pointer_cast<MappingQGeneric<dim>>(grid.mapping);
+  if(mapping_q_generic.get() != 0)
+    print_parameter(pcout, "Mapping degree", mapping_q_generic->get_degree());
 }
 } // namespace ExaDG
 

@@ -32,8 +32,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -215,31 +213,27 @@ public:
     param.solver_data_pressure_block          = SolverData(1e4, 1.e-12, 1.e-6, 100);
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     double const left = 0.0, right = L;
-    GridGenerator::hyper_cube(*triangulation, left, right);
-    triangulation->refine_global(n_refine_space);
+    GridGenerator::hyper_cube(*grid->triangulation, left, right);
 
     // set boundary indicator
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-          ++face_number)
+      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
-        if((std::fabs(cell->face(face_number)->center()(1) - L) < 1e-12))
-          cell->face(face_number)->set_boundary_id(1);
+        if((std::fabs(cell->face(face)->center()(1) - L) < 1e-12))
+          cell->face(face)->set_boundary_id(1);
       }
     }
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    grid->triangulation->refine_global(data.n_refine_global);
+
+    return grid;
   }
 
   void

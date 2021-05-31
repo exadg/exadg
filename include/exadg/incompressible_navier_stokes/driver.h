@@ -213,11 +213,8 @@ private:
    * Mesh
    */
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> triangulation;
-
-  // static mapping
-  std::shared_ptr<Mapping<dim>> static_mapping;
+  // grid
+  std::shared_ptr<Grid<dim>> grid;
 
   // moving mapping (ALE)
   std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
@@ -225,18 +222,11 @@ private:
   // mapping (static or moving)
   std::shared_ptr<Mapping<dim>> mapping;
 
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
-
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;
 
   std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
   std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
-
-  // static mesh for Poisson problem
-  std::shared_ptr<Mapping<dim>> poisson_mapping;
 
   std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;

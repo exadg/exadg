@@ -27,6 +27,7 @@
 #include <deal.II/grid/grid_generator.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
@@ -44,10 +45,6 @@ template<int dim, typename Number>
 class ApplicationBase
 {
 public:
-  typedef
-    typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      PeriodicFaces;
-
   virtual void
   add_parameters(ParameterHandler & prm)
   {
@@ -72,13 +69,8 @@ public:
   virtual void
   set_input_parameters(InputParameters & parameters) = 0;
 
-  virtual void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) = 0;
-
+  virtual std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void
   set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) = 0;

@@ -70,28 +70,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   param.check_input_parameters(pcout);
   param.print(pcout, "List of input parameters:");
 
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
 
-  // triangulation and mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, degree);
-  application->create_grid(
-    triangulation, periodic_faces, refine_space, static_mapping, mapping_degree);
-  print_grid_data(pcout, refine_space, *triangulation);
+  grid = application->create_grid(grid_data, mpi_comm);
+  print_grid_info(pcout, *grid);
 
   if(param.ale_formulation) // moving mesh
   {
@@ -99,8 +85,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
-      moving_mesh.reset(new MovingMeshFunction<dim, Number>(
-        static_mapping, mapping_degree, *triangulation, mesh_motion, param.start_time));
+      moving_mesh.reset(new MovingMeshFunction<dim, Number>(grid->mapping,
+                                                            grid_data.mapping_degree,
+                                                            *grid->triangulation,
+                                                            mesh_motion,
+                                                            param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -110,7 +99,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
       application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
-      verify_boundary_conditions(*poisson_boundary_descriptor, *triangulation, periodic_faces);
+      verify_boundary_conditions(*poisson_boundary_descriptor,
+                                 *grid->triangulation,
+                                 grid->periodic_faces);
 
       poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
       application->set_field_functions_poisson(poisson_field_functions);
@@ -124,10 +115,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                              "as for actual application problem."));
 
       // initialize Poisson operator
-      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*triangulation,
-                                                                     mapping,
-                                                                     mapping_degree,
-                                                                     periodic_faces,
+      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*grid->triangulation,
+                                                                     grid->mapping,
+                                                                     grid_data.mapping_degree,
+                                                                     grid->periodic_faces,
                                                                      poisson_boundary_descriptor,
                                                                      poisson_field_functions,
                                                                      poisson_param,
@@ -140,8 +131,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       poisson_matrix_free.reset(new MatrixFree<dim, Number>());
       if(poisson_param.enable_cell_based_face_loops)
-        Categorization::do_cell_based_loops(*triangulation, poisson_matrix_free_data->data);
-      poisson_matrix_free->reinit(*static_mapping,
+        Categorization::do_cell_based_loops(*grid->triangulation, poisson_matrix_free_data->data);
+      poisson_matrix_free->reinit(*grid->mapping,
                                   poisson_matrix_free_data->get_dof_handler_vector(),
                                   poisson_matrix_free_data->get_constraint_vector(),
                                   poisson_matrix_free_data->get_quadrature_vector(),
@@ -150,7 +141,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(static_mapping, poisson_operator));
+      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(grid->mapping, poisson_operator));
     }
     else
     {
@@ -161,7 +152,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
   else // static mesh
   {
-    mapping = static_mapping;
+    mapping = grid->mapping;
   }
 
   // boundary conditions
@@ -169,8 +160,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity,
+                             *grid->triangulation,
+                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure,
+                             *grid->triangulation,
+                             grid->periodic_faces);
 
   // field functions
   field_functions.reset(new FieldFunctions<dim>());
@@ -178,10 +173,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   if(param.solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(*triangulation,
+    pde_operator = create_operator<dim, Number>(*grid->triangulation,
                                                 mapping,
                                                 degree,
-                                                periodic_faces,
+                                                grid->periodic_faces,
                                                 boundary_descriptor_velocity,
                                                 boundary_descriptor_pressure,
                                                 field_functions,
@@ -192,10 +187,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(param.solver_type == SolverType::Steady)
   {
     pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*triangulation,
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*grid->triangulation,
                                                             mapping,
                                                             degree,
-                                                            periodic_faces,
+                                                            grid->periodic_faces,
                                                             boundary_descriptor_velocity,
                                                             boundary_descriptor_pressure,
                                                             field_functions,
@@ -214,7 +209,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(param.use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*triangulation, matrix_free_data->data);
+    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),

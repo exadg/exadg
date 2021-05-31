@@ -130,15 +130,8 @@ private:
   // user input parameters
   InputParameters param;
 
-  // triangulation
-  std::shared_ptr<Triangulation<dim>> triangulation;
-
-  // mapping
-  std::shared_ptr<Mapping<dim>> mapping;
-
-  // periodic boundaries
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
+  // grid
+  std::shared_ptr<Grid<dim>> grid;
 
   // material descriptor
   std::shared_ptr<MaterialDescriptor> material_descriptor;

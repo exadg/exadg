@@ -102,8 +102,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -347,14 +345,12 @@ public:
     param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    this->refine_level = n_refine_space;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+
+    this->refine_level = data.n_refine_global;
 
     double const deformation = 0.5;
 
@@ -380,9 +376,9 @@ public:
 
     if(exploit_symmetry == false) // periodic box
     {
-      create_periodic_box(triangulation,
-                          n_refine_space,
-                          periodic_faces,
+      create_periodic_box(grid->triangulation,
+                          data.n_refine_global,
+                          grid->periodic_faces,
                           this->n_subdivisions_1d_hypercube,
                           left,
                           right,
@@ -391,7 +387,7 @@ public:
     }
     else // symmetric box
     {
-      GridGenerator::subdivided_hyper_cube(*triangulation,
+      GridGenerator::subdivided_hyper_cube(*grid->triangulation,
                                            this->n_subdivisions_1d_hypercube,
                                            0.0,
                                            right);
@@ -400,12 +396,12 @@ public:
       {
         unsigned int const               frequency = 2;
         static DeformedCubeManifold<dim> manifold(0.0, right, deformation, frequency);
-        triangulation->set_all_manifold_ids(1);
-        triangulation->set_manifold(1, manifold);
+        grid->triangulation->set_all_manifold_ids(1);
+        grid->triangulation->set_manifold(1, manifold);
 
-        std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+        std::vector<bool> vertex_touched(grid->triangulation->n_vertices(), false);
 
-        for(auto cell : triangulation->active_cell_iterators())
+        for(auto cell : grid->triangulation->active_cell_iterators())
         {
           for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
           {
@@ -421,10 +417,10 @@ public:
       }
 
       // perform global refinements
-      triangulation->refine_global(n_refine_space);
+      grid->triangulation->refine_global(data.n_refine_global);
     }
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   std::shared_ptr<Function<dim>>

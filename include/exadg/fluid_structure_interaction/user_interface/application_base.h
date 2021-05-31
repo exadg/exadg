@@ -30,6 +30,7 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 
 // Fluid
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
@@ -89,22 +90,8 @@ public:
   virtual void
   set_input_parameters_fluid(IncNS::InputParameters & parameters) = 0;
 
-  virtual void
-  create_grid_fluid(std::shared_ptr<Triangulation<dim>> triangulation,
-                    PeriodicFaces &                     periodic_faces,
-                    unsigned int const                  n_refine_space,
-                    std::shared_ptr<Mapping<dim>> &     mapping,
-                    unsigned int const                  mapping_degree) = 0;
-
-  // currently required for test cases with analytical mesh movement
-  virtual std::shared_ptr<Function<dim>>
-  set_mesh_movement_function_fluid()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
-
-    return mesh_motion;
-  }
+  virtual std::shared_ptr<Grid<dim>>
+  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void
   set_boundary_conditions_fluid(
@@ -117,9 +104,9 @@ public:
   virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
   construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
-  // Moving mesh
+  // ALE
 
-  // Poisson type mesh smoothing
+  // Poisson type mesh motion
   virtual void
   set_input_parameters_ale(Poisson::InputParameters & parameters) = 0;
 
@@ -129,7 +116,7 @@ public:
   virtual void
   set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;
 
-  // elasticity type mesh smoothing
+  // elasticity type mesh motion
   virtual void
   set_input_parameters_ale(Structure::InputParameters & parameters) = 0;
 
@@ -147,12 +134,8 @@ public:
   virtual void
   set_input_parameters_structure(Structure::InputParameters & parameters) = 0;
 
-  virtual void
-  create_grid_structure(std::shared_ptr<Triangulation<dim>> triangulation,
-                        PeriodicFaces &                     periodic_faces,
-                        unsigned int const                  n_refine_space,
-                        std::shared_ptr<Mapping<dim>> &     mapping,
-                        unsigned int const                  mapping_degree) = 0;
+  virtual std::shared_ptr<Grid<dim>>
+  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void
   set_boundary_conditions_structure(

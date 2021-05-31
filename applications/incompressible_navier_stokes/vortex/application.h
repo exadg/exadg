@@ -264,8 +264,6 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  typedef typename ApplicationBase<dim, Number>::PeriodicFaces PeriodicFaces;
-
   Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
   {
     // parse application-specific parameters
@@ -476,14 +474,10 @@ public:
     param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   }
 
-  void
-  create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-              PeriodicFaces &                     periodic_faces,
-              unsigned int const                  n_refine_space,
-              std::shared_ptr<Mapping<dim>> &     mapping,
-              unsigned int const                  mapping_degree) final
+  std::shared_ptr<Grid<dim>>
+  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    (void)periodic_faces;
+    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
 
     if(ALE)
     {
@@ -494,7 +488,7 @@ public:
     if(mesh_type == MeshType::UniformCartesian)
     {
       // Uniform Cartesian grid
-      GridGenerator::subdivided_hyper_cube(*triangulation, 2, left, right);
+      GridGenerator::subdivided_hyper_cube(*grid->triangulation, 2, left, right);
     }
     else if(mesh_type == MeshType::ComplexSurfaceManifold)
     {
@@ -510,10 +504,10 @@ public:
         GridTools::rotate(numbers::PI / 4, tria1);
       }
       GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-      GridGenerator::merge_triangulations(tria1, tria2, *triangulation);
+      GridGenerator::merge_triangulations(tria1, tria2, *grid->triangulation);
 
-      triangulation->set_all_manifold_ids(0);
-      for(auto cell : triangulation->active_cell_iterators())
+      grid->triangulation->set_all_manifold_ids(0);
+      for(auto cell : grid->triangulation->active_cell_iterators())
       {
         for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
         {
@@ -530,10 +524,10 @@ public:
         }
       }
       static const SphericalManifold<dim> spherical_manifold;
-      triangulation->set_manifold(1, spherical_manifold);
+      grid->triangulation->set_manifold(1, spherical_manifold);
 
       // refine globally due to boundary conditions for vortex problem
-      triangulation->refine_global(1);
+      grid->triangulation->refine_global(1);
     }
     else if(mesh_type == MeshType::ComplexVolumeManifold)
     {
@@ -551,16 +545,16 @@ public:
         GridTools::rotate(numbers::PI / 4, tria1);
       }
       GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-      GridGenerator::merge_triangulations(tria1, tria2, *triangulation);
+      GridGenerator::merge_triangulations(tria1, tria2, *grid->triangulation);
 
       // manifolds
-      triangulation->set_all_manifold_ids(0);
+      grid->triangulation->set_all_manifold_ids(0);
 
       // first fill vectors of manifold_ids and face_ids
       std::vector<unsigned int> manifold_ids;
       std::vector<unsigned int> face_ids;
 
-      for(auto cell : triangulation->active_cell_iterators())
+      for(auto cell : grid->triangulation->active_cell_iterators())
       {
         for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
         {
@@ -586,32 +580,32 @@ public:
 
       for(unsigned int i = 0; i < manifold_ids.size(); ++i)
       {
-        for(auto cell : triangulation->active_cell_iterators())
+        for(auto cell : grid->triangulation->active_cell_iterators())
         {
           if(cell->manifold_id() == manifold_ids[i])
           {
             manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
               new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-            triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+            grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
           }
         }
       }
 
       // refine globally due to boundary conditions for vortex problem
-      triangulation->refine_global(1);
+      grid->triangulation->refine_global(1);
     }
     else if(mesh_type == MeshType::Curvilinear)
     {
-      GridGenerator::subdivided_hyper_cube(*triangulation, 2, left, right);
+      GridGenerator::subdivided_hyper_cube(*grid->triangulation, 2, left, right);
 
-      triangulation->set_all_manifold_ids(1);
+      grid->triangulation->set_all_manifold_ids(1);
       double const                     deformation = 0.1;
       unsigned int const               frequency   = 2;
       static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      triangulation->set_manifold(1, manifold);
+      grid->triangulation->set_manifold(1, manifold);
     }
 
-    for(auto cell : triangulation->active_cell_iterators())
+    for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -629,9 +623,9 @@ public:
       }
     }
 
-    triangulation->refine_global(n_refine_space);
+    grid->triangulation->refine_global(data.n_refine_global);
 
-    mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+    return grid;
   }
 
   void
