@@ -25,7 +25,6 @@
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 // ExaDG
@@ -35,6 +34,7 @@
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 
@@ -51,8 +51,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Operator(Triangulation<dim> const &                     triangulation_in,
-           std::shared_ptr<Mapping<dim> const>            mapping_in,
+  Operator(std::shared_ptr<Grid<dim> const>               grid_in,
            unsigned int const                             degree_in,
            std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
            std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
@@ -188,9 +187,9 @@ private:
   get_quad_index_l2_projections() const;
 
   /*
-   * Mapping
+   * Grid
    */
-  std::shared_ptr<Mapping<dim> const> mapping;
+  std::shared_ptr<Grid<dim> const> grid;
 
   /*
    * polynomial degree
