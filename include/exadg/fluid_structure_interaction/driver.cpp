@@ -140,9 +140,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // boundary conditions
     structure_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
     application->set_boundary_conditions_structure(structure_boundary_descriptor);
-    verify_boundary_conditions(*structure_boundary_descriptor,
-                               *structure_grid->triangulation,
-                               structure_grid->periodic_faces);
+    verify_boundary_conditions(*structure_boundary_descriptor, *structure_grid);
 
     // material_descriptor
     structure_material_descriptor.reset(new Structure::MaterialDescriptor);
@@ -221,12 +219,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
     application->set_boundary_conditions_fluid(fluid_boundary_descriptor_velocity,
                                                fluid_boundary_descriptor_pressure);
-    verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
-                               *fluid_grid->triangulation,
-                               fluid_grid->periodic_faces);
-    verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
-                               *fluid_grid->triangulation,
-                               fluid_grid->periodic_faces);
+    verify_boundary_conditions(*fluid_boundary_descriptor_velocity, *fluid_grid);
+    verify_boundary_conditions(*fluid_boundary_descriptor_pressure, *fluid_grid);
 
     fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
     application->set_field_functions_fluid(fluid_field_functions);
@@ -244,9 +238,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
       application->set_boundary_conditions_ale(ale_poisson_boundary_descriptor);
-      verify_boundary_conditions(*ale_poisson_boundary_descriptor,
-                                 *fluid_grid->triangulation,
-                                 fluid_grid->periodic_faces);
+      verify_boundary_conditions(*ale_poisson_boundary_descriptor, *fluid_grid);
 
       ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
       application->set_field_functions_ale(ale_poisson_field_functions);
@@ -276,9 +268,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // boundary conditions
       ale_elasticity_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
       application->set_boundary_conditions_ale(ale_elasticity_boundary_descriptor);
-      verify_boundary_conditions(*ale_elasticity_boundary_descriptor,
-                                 *fluid_grid->triangulation,
-                                 fluid_grid->periodic_faces);
+      verify_boundary_conditions(*ale_elasticity_boundary_descriptor, *fluid_grid);
 
       // material_descriptor
       ale_elasticity_material_descriptor.reset(new Structure::MaterialDescriptor);

@@ -89,18 +89,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                        boundary_descriptor_pressure,
                                        boundary_descriptor_energy);
 
-  verify_boundary_conditions(*boundary_descriptor_density,
-                             *grid->triangulation,
-                             grid->periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_velocity,
-                             *grid->triangulation,
-                             grid->periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure,
-                             *grid->triangulation,
-                             grid->periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_energy,
-                             *grid->triangulation,
-                             grid->periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_density, *grid);
+  verify_boundary_conditions(*boundary_descriptor_velocity, *grid);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *grid);
+  verify_boundary_conditions(*boundary_descriptor_energy, *grid);
 
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);

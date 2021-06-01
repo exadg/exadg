@@ -25,6 +25,7 @@
 #endif
 
 // ExaDG
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/structure/driver.h>
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/throughput_parameters.h>
@@ -81,6 +82,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // boundary conditions
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   application->set_boundary_conditions(boundary_descriptor);
+  verify_boundary_conditions(*boundary_descriptor, *grid);
 
   // material_descriptor
   material_descriptor.reset(new MaterialDescriptor);
