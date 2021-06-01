@@ -420,10 +420,10 @@ public:
     param.use_combined_operator = false;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     // hypercube volume is [left,right]^dim
     double const left = -1.0, right = 0.5;

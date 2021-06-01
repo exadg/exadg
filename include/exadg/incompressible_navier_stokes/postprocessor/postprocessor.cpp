@@ -58,15 +58,15 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
   output_generator.setup(pde_operator,
                          pde_operator.get_dof_handler_u(),
                          pde_operator.get_dof_handler_p(),
-                         pde_operator.get_mapping(),
+                         *pde_operator.get_mapping(),
                          pp_data.output_data);
 
   error_calculator_u.setup(pde_operator.get_dof_handler_u(),
-                           pde_operator.get_mapping(),
+                           *pde_operator.get_mapping(),
                            pp_data.error_data_u);
 
   error_calculator_p.setup(pde_operator.get_dof_handler_p(),
-                           pde_operator.get_mapping(),
+                           *pde_operator.get_mapping(),
                            pp_data.error_data_p);
 
   lift_and_drag_calculator.setup(pde_operator.get_dof_handler_u(),
@@ -77,7 +77,7 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
                                  pp_data.lift_and_drag_data);
 
   pressure_difference_calculator.setup(pde_operator.get_dof_handler_p(),
-                                       pde_operator.get_mapping(),
+                                       *pde_operator.get_mapping(),
                                        pp_data.pressure_difference_data);
 
   div_and_mass_error_calculator.setup(pde_operator.get_matrix_free(),
@@ -97,7 +97,7 @@ PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 
   line_plot_calculator.setup(pde_operator.get_dof_handler_u(),
                              pde_operator.get_dof_handler_p(),
-                             pde_operator.get_mapping(),
+                             *pde_operator.get_mapping(),
                              pp_data.line_plot_data);
 }
 

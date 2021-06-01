@@ -37,28 +37,22 @@ namespace IncNS
  */
 template<int dim, typename Number>
 std::shared_ptr<SpatialOperatorBase<dim, Number>>
-create_operator(
-  Triangulation<dim> const &          triangulation,
-  std::shared_ptr<Mapping<dim> const> mapping,
-  unsigned int const                  degree_velocity,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_faces,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-  InputParameters const &                         parameters,
-  std::string const &                             field,
-  MPI_Comm const &                                mpi_comm)
+create_operator(std::shared_ptr<Grid<dim, Number> const>        grid,
+                unsigned int const                              degree_velocity,
+                std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+                std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+                std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+                InputParameters const &                         parameters,
+                std::string const &                             field,
+                MPI_Comm const &                                mpi_comm)
 {
   std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator;
 
   // initialize pde_operator
   if(parameters.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    pde_operator = std::make_shared<OperatorCoupled<dim, Number>>(triangulation,
-                                                                  mapping,
+    pde_operator = std::make_shared<OperatorCoupled<dim, Number>>(grid,
                                                                   degree_velocity,
-                                                                  periodic_faces,
                                                                   boundary_descriptor_velocity,
                                                                   boundary_descriptor_pressure,
                                                                   field_functions,
@@ -69,10 +63,8 @@ create_operator(
   else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     pde_operator =
-      std::make_shared<OperatorDualSplitting<dim, Number>>(triangulation,
-                                                           mapping,
+      std::make_shared<OperatorDualSplitting<dim, Number>>(grid,
                                                            degree_velocity,
-                                                           periodic_faces,
                                                            boundary_descriptor_velocity,
                                                            boundary_descriptor_pressure,
                                                            field_functions,
@@ -83,10 +75,8 @@ create_operator(
   else if(parameters.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     pde_operator =
-      std::make_shared<OperatorPressureCorrection<dim, Number>>(triangulation,
-                                                                mapping,
+      std::make_shared<OperatorPressureCorrection<dim, Number>>(grid,
                                                                 degree_velocity,
-                                                                periodic_faces,
                                                                 boundary_descriptor_velocity,
                                                                 boundary_descriptor_pressure,
                                                                 field_functions,

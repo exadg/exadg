@@ -145,7 +145,7 @@ private:
 
   InputParameters param;
 
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;

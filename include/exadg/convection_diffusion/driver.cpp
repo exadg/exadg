@@ -92,26 +92,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(param.ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
+    grid_motion.reset(new MovingMeshFunction<dim, Number>(
       grid->mapping, degree, *grid->triangulation, mesh_motion, param.start_time));
 
-    mapping = moving_mesh->get_mapping();
-  }
-  else // static mapping
-  {
-    mapping = grid->mapping;
+    grid->attach_grid_motion(grid_motion);
   }
 
   // initialize convection-diffusion operator
-  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
-                                               mapping,
-                                               degree,
-                                               grid->periodic_faces,
-                                               boundary_descriptor,
-                                               field_functions,
-                                               param,
-                                               "scalar",
-                                               mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(
+    grid, degree, boundary_descriptor, field_functions, param, "scalar", mpi_comm));
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -120,7 +109,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*mapping,
+  matrix_free->reinit(*grid->get_dynamic_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -133,7 +122,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     // initialize postprocessor
     postprocessor = application->construct_postprocessor(degree, mpi_comm);
-    postprocessor->setup(*pde_operator, *mapping);
+    postprocessor->setup(*pde_operator, *grid->get_dynamic_mapping());
 
     // initialize time integrator or driver for steady problems
     if(param.problem_type == ProblemType::Unsteady)
@@ -144,7 +133,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                             mpi_comm,
                                                             is_test,
                                                             postprocessor,
-                                                            moving_mesh,
+                                                            grid_motion,
                                                             matrix_free);
 
       time_integrator->setup(param.restarted_simulation);
@@ -214,8 +203,8 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  moving_mesh->update(time_integrator->get_next_time(), false);
-  matrix_free->update_mapping(*mapping);
+  grid_motion->update(time_integrator->get_next_time(), false);
+  matrix_free->update_mapping(*grid->get_dynamic_mapping());
   pde_operator->update_after_mesh_movement();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
     std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);

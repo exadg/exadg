@@ -77,7 +77,7 @@ public:
   virtual void
   set_input_parameters(InputParameters & parameters) = 0;
 
-  virtual std::shared_ptr<Grid<dim>>
+  virtual std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void
@@ -164,7 +164,7 @@ public:
   virtual void
   set_input_parameters_precursor(InputParameters & parameters) = 0;
 
-  virtual std::shared_ptr<Grid<dim>>
+  virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void

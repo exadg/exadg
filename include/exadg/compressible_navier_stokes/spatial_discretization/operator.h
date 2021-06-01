@@ -51,7 +51,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Operator(std::shared_ptr<Grid<dim> const>               grid_in,
+  Operator(std::shared_ptr<Grid<dim, Number> const>       grid_in,
            unsigned int const                             degree_in,
            std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
            std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
@@ -189,7 +189,7 @@ private:
   /*
    * Grid
    */
-  std::shared_ptr<Grid<dim> const> grid;
+  std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
    * polynomial degree

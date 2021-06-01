@@ -197,18 +197,14 @@ public:
   /*
    * Constructor.
    */
-  OperatorCoupled(
-    Triangulation<dim> const &          triangulation_in,
-    std::shared_ptr<Mapping<dim> const> mapping_in,
-    unsigned int const                  degree_u_in,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-    InputParameters const &                         parameters_in,
-    std::string const &                             field_in,
-    MPI_Comm const &                                mpi_comm_in);
+  OperatorCoupled(std::shared_ptr<Grid<dim, Number> const>        grid,
+                  unsigned int const                              degree_u,
+                  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+                  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+                  std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+                  InputParameters const &                         parameters,
+                  std::string const &                             field,
+                  MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.

@@ -54,7 +54,7 @@ private:
 #endif
 
 public:
-  Operator(std::shared_ptr<Grid<dim> const>                     grid,
+  Operator(std::shared_ptr<Grid<dim, Number> const>             grid,
            unsigned int const                                   degree,
            std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim>> const           field_functions,
@@ -164,7 +164,7 @@ private:
   /*
    * Grid
    */
-  std::shared_ptr<Grid<dim> const> grid;
+  std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
    * Polynomial degree

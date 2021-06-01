@@ -45,7 +45,7 @@ MultigridPreconditionerProjection<dim, Number>::initialize(
   PDEOperator const &                 pde_operator,
   bool const                          mesh_is_moving,
   Map const *                         dirichlet_bc,
-  PeriodicFacePairs *                 periodic_face_pairs)
+  PeriodicFacePairs const *           periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 

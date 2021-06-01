@@ -261,10 +261,10 @@ public:
     param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     Point<dim> p_1;
     p_1[0] = 0.;

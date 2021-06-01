@@ -144,11 +144,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    mapping = moving_mesh->get_mapping();
-  }
-  else // static mesh
-  {
-    mapping = grid->mapping;
+    grid->attach_grid_motion(moving_mesh);
   }
 
   // boundary conditions
@@ -165,10 +161,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   if(param.solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(*grid->triangulation,
-                                                mapping,
+    pde_operator = create_operator<dim, Number>(grid,
                                                 degree,
-                                                grid->periodic_faces,
                                                 boundary_descriptor_velocity,
                                                 boundary_descriptor_pressure,
                                                 field_functions,
@@ -179,10 +173,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(param.solver_type == SolverType::Steady)
   {
     pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*grid->triangulation,
-                                                            mapping,
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
                                                             degree,
-                                                            grid->periodic_faces,
                                                             boundary_descriptor_velocity,
                                                             boundary_descriptor_pressure,
                                                             field_functions,
@@ -202,7 +194,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*mapping,
+  matrix_free->reinit(*grid->get_dynamic_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -282,7 +274,7 @@ Driver<dim, Number>::ale_update() const
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  matrix_free->update_mapping(*mapping);
+  matrix_free->update_mapping(*grid->get_dynamic_mapping());
   timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

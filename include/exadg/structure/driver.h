@@ -131,7 +131,7 @@ private:
   InputParameters param;
 
   // grid
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   // material descriptor
   std::shared_ptr<MaterialDescriptor> material_descriptor;

@@ -146,7 +146,7 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   // grid
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   InputParameters param;
 

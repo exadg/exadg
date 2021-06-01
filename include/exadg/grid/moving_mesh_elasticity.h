@@ -46,7 +46,7 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshElasticity(std::shared_ptr<Mapping<dim>>                     mapping_undeformed,
+  MovingMeshElasticity(std::shared_ptr<Mapping<dim> const>               mapping_undeformed,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
     : MovingMeshBase<dim, Number>(mapping_undeformed,

@@ -380,20 +380,20 @@ public:
     do_set_input_parameters(param, true);
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     Geometry::create_grid(grid->triangulation, data.n_refine_global, grid->periodic_faces);
 
     return grid;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     Geometry::create_grid_precursor(grid->triangulation,
                                     data.n_refine_global + additional_refinements_precursor,

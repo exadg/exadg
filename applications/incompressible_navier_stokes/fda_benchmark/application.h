@@ -437,10 +437,10 @@ public:
     do_set_input_parameters(param, true);
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
                                                        data.n_refine_global,
@@ -449,10 +449,10 @@ public:
     return grid;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);

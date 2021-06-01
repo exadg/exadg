@@ -404,10 +404,10 @@ public:
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     create_triangulation_fluid(*grid->triangulation);
 
@@ -882,10 +882,10 @@ public:
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     create_triangulation_structure(*grid->triangulation);
 

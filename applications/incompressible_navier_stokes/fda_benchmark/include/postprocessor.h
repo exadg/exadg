@@ -83,7 +83,7 @@ public:
       // inflow data
       inflow_data_calculator.reset(
         new InflowDataCalculator<dim, Number>(pp_data_fda.inflow_data, mpi_comm));
-      inflow_data_calculator->setup(pde_operator.get_dof_handler_u(), pde_operator.get_mapping());
+      inflow_data_calculator->setup(pde_operator.get_dof_handler_u(), *pde_operator.get_mapping());
 
       // calculation of mean velocity
       mean_velocity_calculator.reset(
@@ -100,7 +100,7 @@ public:
       line_plot_calculator_statistics.reset(
         new LinePlotCalculatorStatistics<dim, Number>(pde_operator.get_dof_handler_u(),
                                                       pde_operator.get_dof_handler_p(),
-                                                      pde_operator.get_mapping(),
+                                                      *pde_operator.get_mapping(),
                                                       this->mpi_comm));
 
       line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);

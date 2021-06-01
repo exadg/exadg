@@ -32,21 +32,16 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
-  Triangulation<dim> const &          triangulation_in,
-  std::shared_ptr<Mapping<dim> const> mapping_in,
-  unsigned int const                  degree_u_in,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs_in,
+  std::shared_ptr<Grid<dim, Number> const>        grid_in,
+  unsigned int const                              degree_u_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
   std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
-  : Base(triangulation_in,
-         mapping_in,
+  : Base(grid_in,
          degree_u_in,
-         periodic_face_pairs_in,
          boundary_descriptor_velocity_in,
          boundary_descriptor_pressure_in,
          field_functions_in,
@@ -187,11 +182,11 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
                                   dof_handler.get_fe(),
-                                  this->mapping,
+                                  this->get_mapping(),
                                   laplace_operator.get_data(),
                                   this->param.ale_formulation,
                                   &laplace_operator.get_data().bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
+                                  &this->grid->periodic_faces);
   }
   else
   {

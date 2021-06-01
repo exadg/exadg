@@ -73,8 +73,8 @@ public:
   /**
    * Return a shared pointer to dealii::Mapping<dim>.
    */
-  virtual std::shared_ptr<Mapping<dim>>
-  get_mapping() = 0;
+  virtual std::shared_ptr<Mapping<dim> const>
+  get_mapping() const = 0;
 };
 
 } // namespace ExaDG

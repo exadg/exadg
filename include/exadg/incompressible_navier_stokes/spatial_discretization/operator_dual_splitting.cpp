@@ -33,21 +33,16 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorDualSplitting<dim, Number>::OperatorDualSplitting(
-  Triangulation<dim> const &          triangulation_in,
-  std::shared_ptr<Mapping<dim> const> mapping_in,
-  unsigned int const                  degree_u_in,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs_in,
+  std::shared_ptr<Grid<dim, Number> const>        grid_in,
+  unsigned int const                              degree_u_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
   std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
-  : ProjectionBase(triangulation_in,
-                   mapping_in,
+  : ProjectionBase(grid_in,
                    degree_u_in,
-                   periodic_face_pairs_in,
                    boundary_descriptor_velocity_in,
                    boundary_descriptor_pressure_in,
                    field_functions_in,
@@ -116,23 +111,23 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
-    typedef MultigridPreconditioner<dim, Number> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    helmholtz_preconditioner.reset(new MULTIGRID(this->mpi_comm));
+    helmholtz_preconditioner.reset(new Multigrid(this->mpi_comm));
 
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(helmholtz_preconditioner);
 
     auto & dof_handler = this->get_dof_handler_u();
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
                                   &dof_handler.get_triangulation(),
                                   dof_handler.get_fe(),
-                                  this->mapping,
+                                  this->get_mapping(),
                                   this->momentum_operator,
                                   MultigridOperatorType::ReactionDiffusion,
                                   this->param.ale_formulation,
                                   &this->momentum_operator.get_data().bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
+                                  &this->grid->periodic_faces);
   }
   else
   {

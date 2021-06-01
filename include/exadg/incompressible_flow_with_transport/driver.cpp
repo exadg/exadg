@@ -138,14 +138,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    moving_mesh.reset(new MovingMeshFunction<dim, Number>(
+    grid_motion.reset(new MovingMeshFunction<dim, Number>(
       grid->mapping, degree, *grid->triangulation, mesh_motion, fluid_param.start_time));
 
-    mapping = moving_mesh->get_mapping();
-  }
-  else // static mesh
-  {
-    mapping = grid->mapping;
+    grid->attach_grid_motion(grid_motion);
   }
 
   // boundary conditions
@@ -178,10 +174,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize fluid_operator
   if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator = IncNS::create_operator<dim, Number>(*grid->triangulation,
-                                                         mapping,
+    fluid_operator = IncNS::create_operator<dim, Number>(grid,
                                                          degree,
-                                                         grid->periodic_faces,
                                                          fluid_boundary_descriptor_velocity,
                                                          fluid_boundary_descriptor_pressure,
                                                          fluid_field_functions,
@@ -192,10 +186,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
     fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*grid->triangulation,
-                                                            mapping,
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
                                                             degree,
-                                                            grid->periodic_faces,
                                                             fluid_boundary_descriptor_velocity,
                                                             fluid_boundary_descriptor_pressure,
                                                             fluid_field_functions,
@@ -211,10 +203,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(*grid->triangulation,
-                                                                    mapping,
+    conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(grid,
                                                                     degree,
-                                                                    grid->periodic_faces,
                                                                     scalar_boundary_descriptor[i],
                                                                     scalar_field_functions[i],
                                                                     scalar_param[i],
@@ -249,7 +239,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(false)
   {
     QGauss<dim> quadrature(degree + 1);
-    double AR = GridTools::compute_maximum_aspect_ratio(*mapping, *grid->triangulation, quadrature);
+    double      AR = GridTools::compute_maximum_aspect_ratio(*grid->get_dynamic_mapping(),
+                                                        *grid->triangulation,
+                                                        quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
@@ -280,7 +272,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_postprocessor[i] = application->construct_postprocessor_scalar(degree, mpi_comm, i);
-    scalar_postprocessor[i]->setup(*conv_diff_operator[i], *mapping);
+    scalar_postprocessor[i]->setup(*conv_diff_operator[i], *grid->get_dynamic_mapping());
   }
 
   // setup time integrator before calling setup_solvers
@@ -294,7 +286,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                                        mpi_comm,
                                                                        is_test,
                                                                        fluid_postprocessor,
-                                                                       moving_mesh,
+                                                                       grid_motion,
                                                                        matrix_free);
   }
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
@@ -340,7 +332,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                     mpi_comm,
                                                     is_test,
                                                     scalar_postprocessor[i],
-                                                    moving_mesh,
+                                                    grid_motion,
                                                     matrix_free);
 
     if(scalar_param[i].restarted_simulation == false)
@@ -597,11 +589,11 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mesh->update(fluid_time_integrator->get_next_time(), false);
+  grid_motion->update(fluid_time_integrator->get_next_time(), false);
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  matrix_free->update_mapping(*mapping);
+  matrix_free->update_mapping(*grid->get_dynamic_mapping());
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

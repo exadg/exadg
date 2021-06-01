@@ -25,12 +25,12 @@
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 
 // ExaDG
+#include <exadg/grid/grid.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>
@@ -148,18 +148,14 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(
-    Triangulation<dim> const &          triangulation,
-    std::shared_ptr<Mapping<dim> const> mapping,
-    unsigned int const                  degree_u,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs,
-    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-    std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-    InputParameters const &                         parameters,
-    std::string const &                             field,
-    MPI_Comm const &                                mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim, Number> const>        grid,
+                      unsigned int const                              degree_u,
+                      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+                      std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+                      std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+                      InputParameters const &                         parameters,
+                      std::string const &                             field,
+                      MPI_Comm const &                                mpi_comm);
 
   /*
    * Destructor.
@@ -226,7 +222,7 @@ public:
   unsigned int
   get_degree_p() const;
 
-  Mapping<dim> const &
+  std::shared_ptr<Mapping<dim> const>
   get_mapping() const;
 
   FESystem<dim> const &
@@ -480,22 +476,14 @@ protected:
   unsteady_problem_has_to_be_solved() const;
 
   /*
-   * Triangulation
+   * Grid
    */
-  Triangulation<dim> const & triangulation;
-
-  /*
-   * Mapping
-   */
-  std::shared_ptr<Mapping<dim> const> mapping;
+  std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
    * Polynomial degree of velocity shape functions.
    */
   unsigned int const degree_u;
-
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
 
   /*
    * User interface: Boundary conditions and field functions.

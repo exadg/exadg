@@ -29,6 +29,7 @@
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/moving_mesh_interface.h>
 
 namespace ExaDG
 {
@@ -51,7 +52,7 @@ struct GridData
   // std::string grid_file;
 };
 
-template<int dim>
+template<int dim, typename Number>
 class Grid
 {
 public:
@@ -86,6 +87,39 @@ public:
   }
 
   /**
+   * Attach a pointer for moving grid functionality.
+   */
+  void
+  attach_grid_motion(std::shared_ptr<MovingMeshInterface<dim, Number>> grid_motion_in)
+  {
+    grid_motion = grid_motion_in;
+  }
+
+  /**
+   * Return pointer to static mapping.
+   */
+  std::shared_ptr<Mapping<dim> const>
+  get_static_mapping() const
+  {
+    AssertThrow(mapping.get() != 0, ExcMessage("Grid::mapping is uninitialized."));
+
+    return mapping;
+  }
+
+  /**
+   * Return pointer to dynamic mapping (and redirect to static mapping if dynamic mapping is not
+   * initialized).
+   */
+  std::shared_ptr<Mapping<dim> const>
+  get_dynamic_mapping() const
+  {
+    if(grid_motion.get() != 0)
+      return grid_motion->get_mapping();
+    else
+      return mapping;
+  }
+
+  /**
    * dealii::Triangulation.
    */
   std::shared_ptr<Triangulation<dim>> triangulation;
@@ -96,9 +130,14 @@ public:
   PeriodicFaces periodic_faces;
 
   /**
-   * dealii::Mapping.
+   * dealii::Mapping. Describes reference configuration.
    */
   std::shared_ptr<Mapping<dim>> mapping;
+
+  /**
+   * Computes and describes dynamic grid motion.
+   */
+  std::shared_ptr<MovingMeshInterface<dim, Number>> grid_motion;
 };
 
 } // namespace ExaDG

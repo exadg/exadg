@@ -100,17 +100,12 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   /*
-   * Mesh
+   * Grid
    */
-
-  // grid
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
-
-  // mapping (static or moving)
-  std::shared_ptr<Mapping<dim>> mapping;
+  std::shared_ptr<MovingMeshBase<dim, Number>> grid_motion;
 
   bool use_adaptive_time_stepping;
 

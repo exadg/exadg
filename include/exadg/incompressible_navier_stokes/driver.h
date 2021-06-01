@@ -210,17 +210,12 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   /*
-   * Mesh
+   * Grid
    */
-
-  // grid
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   // moving mapping (ALE)
   std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
-
-  // mapping (static or moving)
-  std::shared_ptr<Mapping<dim>> mapping;
 
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;

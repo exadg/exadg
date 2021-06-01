@@ -65,8 +65,8 @@ public:
     moving_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
   }
 
-  std::shared_ptr<Mapping<dim>>
-  get_mapping() final
+  std::shared_ptr<Mapping<dim> const>
+  get_mapping() const final
   {
     return moving_mapping;
   }
