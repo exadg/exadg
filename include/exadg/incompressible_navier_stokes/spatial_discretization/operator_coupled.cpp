@@ -830,7 +830,7 @@ OperatorCoupled<dim, Number>::update_block_preconditioner()
     {
       if(this->param.exact_inversion_of_laplace_operator == true)
       {
-        laplace_operator->update_after_mesh_movement();
+        laplace_operator->update_penalty_parameter();
       }
 
       multigrid_preconditioner_schur_complement->update();

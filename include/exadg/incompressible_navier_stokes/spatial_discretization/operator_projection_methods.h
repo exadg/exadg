@@ -72,7 +72,7 @@ public:
         std::string const &                          dof_index_temperature = "") override;
 
   void
-  update_after_mesh_movement() override;
+  update_after_grid_motion() override;
 
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the

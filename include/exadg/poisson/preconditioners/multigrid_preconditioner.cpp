@@ -167,7 +167,7 @@ MultigridPreconditioner<dim, Number, n_components>::update_operators_after_mesh_
 {
   for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
   {
-    get_operator(level)->update_after_mesh_movement();
+    get_operator(level)->update_penalty_parameter();
   }
 }
 

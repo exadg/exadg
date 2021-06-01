@@ -24,7 +24,6 @@
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
 #include <exadg/time_integration/explicit_runge_kutta.h>
@@ -32,10 +31,6 @@
 
 namespace ExaDG
 {
-// forward declarations
-template<int dim, typename Number>
-class MovingMeshInterface;
-
 namespace IncNS
 {
 using namespace dealii;
@@ -61,14 +56,12 @@ public:
 
   typedef SpatialOperatorBase<dim, Number> OperatorBase;
 
-  TimeIntBDF(std::shared_ptr<OperatorBase>                     operator_in,
-             InputParameters const &                           param_in,
-             unsigned int const                                refine_steps_time_in,
-             MPI_Comm const &                                  mpi_comm_in,
-             bool const                                        is_test_in,
-             std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
-             std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh_in = nullptr,
-             std::shared_ptr<MatrixFree<dim, Number>>          matrix_free_in = nullptr);
+  TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
+             InputParameters const &                         param_in,
+             unsigned int const                              refine_steps_time_in,
+             MPI_Comm const &                                mpi_comm_in,
+             bool const                                      is_test_in,
+             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   virtual ~TimeIntBDF()
   {
@@ -127,12 +120,6 @@ protected:
   calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
                                           double const cfl,
                                           double const cfl_oif) final;
-
-  void
-  move_mesh(double const time) const;
-
-  void
-  move_mesh_and_update_dependent_data_structures(double const time) const;
 
   InputParameters const & param;
 
@@ -212,9 +199,6 @@ private:
   VectorType              grid_velocity;
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
-
-  std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh;
-  std::shared_ptr<MatrixFree<dim, Number>>          matrix_free;
 };
 
 } // namespace IncNS

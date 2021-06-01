@@ -214,14 +214,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // depends on quantities such as the time_step_size or gamma0!!!)
     if(param.solver_type == SolverType::Unsteady)
     {
-      time_integrator = create_time_integrator<dim, Number>(pde_operator,
-                                                            param,
-                                                            refine_time,
-                                                            mpi_comm,
-                                                            is_test,
-                                                            postprocessor,
-                                                            moving_mesh,
-                                                            matrix_free);
+      time_integrator = create_time_integrator<dim, Number>(
+        pde_operator, param, refine_time, mpi_comm, is_test, postprocessor);
     }
     else if(param.solver_type == SolverType::Steady)
     {
@@ -278,7 +272,7 @@ Driver<dim, Number>::ale_update() const
   timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  pde_operator->update_after_mesh_movement();
+  pde_operator->update_after_grid_motion();
   timer_tree.insert({"Incompressible flow", "ALE", "Update operator"}, sub_timer.wall_time());
 
   sub_timer.restart();

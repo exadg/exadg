@@ -1320,7 +1320,31 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_after_mesh_movement()
+SpatialOperatorBase<dim, Number>::move_grid(double const & time) const
+{
+  grid->grid_motion->update(time, false);
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::move_grid_and_update_dependent_data_structures(
+  double const & time)
+{
+  grid->grid_motion->update(time, false);
+  matrix_free->update_mapping(*get_mapping());
+  update_after_grid_motion();
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
+{
+  grid->grid_motion->fill_grid_coordinates_vector(vector, get_dof_handler_u());
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
   if(this->param.use_turbulence_model)
   {

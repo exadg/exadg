@@ -243,7 +243,7 @@ public:
                               unsigned int const              dof_index);
 
   void
-  update_after_mesh_movement();
+  update_penalty_parameter();
 
   // Some more functionality on top of what is provided by the base class.
   // This function evaluates the inhomogeneous boundary face integrals in DG where the

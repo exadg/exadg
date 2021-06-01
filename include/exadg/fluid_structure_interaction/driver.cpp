@@ -520,14 +520,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // initialize fluid_time_integrator
-    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(fluid_operator,
-                                                                       fluid_param,
-                                                                       0 /* refine_time */,
-                                                                       mpi_comm,
-                                                                       is_test,
-                                                                       fluid_postprocessor,
-                                                                       fluid_grid_motion,
-                                                                       fluid_matrix_free);
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
+      fluid_operator, fluid_param, 0 /* refine_time */, mpi_comm, is_test, fluid_postprocessor);
 
     fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
@@ -601,7 +595,7 @@ Driver<dim, Number>::solve_ale() const
   timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  fluid_operator->update_after_mesh_movement();
+  fluid_operator->update_after_grid_motion();
   timer_tree.insert({"FSI", "ALE", "Update operator"}, sub_timer.wall_time());
 
   sub_timer.restart();

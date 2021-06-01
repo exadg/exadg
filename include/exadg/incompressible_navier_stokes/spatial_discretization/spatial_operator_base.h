@@ -458,10 +458,33 @@ public:
   double
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
-  // Arbitrary Lagrangian-Eulerian (ALE) formulation
-  virtual void
-  update_after_mesh_movement();
+  /*
+   * Moves the grid for ALE-type problems.
+   */
+  void
+  move_grid(double const & time) const;
 
+  /*
+   * Moves the grid and updates dependent data structures for ALE-type problems.
+   */
+  void
+  move_grid_and_update_dependent_data_structures(double const & time);
+
+  /*
+   * Fills a dof-vector with grid coordinates for ALE-type problems.
+   */
+  void
+  fill_grid_coordinates_vector(VectorType & vector) const;
+
+  /*
+   * Updates operators after grid has been moved.
+   */
+  virtual void
+  update_after_grid_motion();
+
+  /*
+   * Sets the grid velocity.
+   */
   void
   set_grid_velocity(VectorType velocity);
 
