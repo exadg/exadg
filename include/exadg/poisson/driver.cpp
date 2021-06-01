@@ -270,7 +270,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   if(operator_type == OperatorType::MatrixBased)
   {
 #ifdef DEAL_II_WITH_TRILINOS
-    pde_operator->init_system_matrix(system_matrix);
+    pde_operator->init_system_matrix(system_matrix, mpi_comm);
     pde_operator->calculate_system_matrix(system_matrix);
 #else
     AssertThrow(false, ExcMessage("Activate DEAL_II_WITH_TRILINOS for matrix-based computations."));

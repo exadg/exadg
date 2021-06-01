@@ -433,9 +433,10 @@ Operator<dim, Number, n_components>::get_degree() const
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::init_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix) const
+  TrilinosWrappers::SparseMatrix & system_matrix,
+  MPI_Comm const &                 mpi_comm) const
 {
-  laplace_operator.init_system_matrix(system_matrix);
+  laplace_operator.init_system_matrix(system_matrix, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -461,9 +462,10 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::init_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  PETScWrappers::MPI::SparseMatrix & system_matrix,
+  MPI_Comm const &                   mpi_comm) const
 {
-  laplace_operator.init_system_matrix(system_matrix);
+  laplace_operator.init_system_matrix(system_matrix, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>

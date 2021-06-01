@@ -37,6 +37,48 @@ namespace ExaDG
 {
 using namespace dealii;
 
+template<int dim, int spacedim>
+std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)>
+create_subcommunicator(DoFHandler<dim, spacedim> const & dof_handler)
+{
+  unsigned int n_locally_owned_cells = 0;
+  for(const auto & cell : dof_handler.active_cell_iterators())
+    if(cell->is_locally_owned())
+      ++n_locally_owned_cells;
+
+  MPI_Comm const mpi_comm = dof_handler.get_communicator();
+
+  // In case some of the MPI ranks do not have cells, we create a
+  // sub-communicator to exclude all those processes from the MPI
+  // communication in the matrix-based operation sand hence speed up those
+  // operations. Note that we have to free the communicator again, which is
+  // done by a custom deleter of the unique pointer that is run when it goes
+  // out of scope.
+  if(Utilities::MPI::min(n_locally_owned_cells, mpi_comm) == 0)
+  {
+    std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> subcommunicator(new MPI_Comm,
+                                                                    [](MPI_Comm * comm) {
+                                                                      MPI_Comm_free(comm);
+                                                                      delete comm;
+                                                                    });
+    MPI_Comm_split(mpi_comm,
+                   n_locally_owned_cells > 0,
+                   Utilities::MPI::this_mpi_process(mpi_comm),
+                   subcommunicator.get());
+
+    return subcommunicator;
+  }
+  else
+  {
+    std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> communicator(new MPI_Comm, [](MPI_Comm * comm) {
+      delete comm;
+    });
+    *communicator = mpi_comm;
+
+    return communicator;
+  }
+}
+
 template<typename Operator, typename Number>
 class PreconditionerML : public PreconditionerBase<Number>
 {
@@ -59,7 +101,8 @@ public:
   {
 #ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
-    pde_operator.init_system_matrix(system_matrix);
+    pde_operator.init_system_matrix(system_matrix,
+                                    op.get_matrix_free().get_dof_handler().get_communicator());
 
     // calculate_matrix
     pde_operator.calculate_system_matrix(system_matrix);
@@ -126,6 +169,10 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number>           VectorType;
   typedef PETScWrappers::PreconditionBoomerAMG::AdditionalData BoomerData;
 
+  // subcommunicator; declared before the matrix to ensure that it gets
+  // deleted after the matrix and preconditioner depending on it
+  std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> subcommunicator;
+
 public:
 #ifdef DEAL_II_WITH_PETSC
   // distributed sparse system matrix
@@ -136,11 +183,14 @@ public:
 #endif
 
   PreconditionerBoomerAMG(Operator const & op, BoomerData boomer_data = BoomerData())
-    : pde_operator(op), boomer_data(boomer_data)
+    : subcommunicator(
+        create_subcommunicator(op.get_matrix_free().get_dof_handler(op.get_dof_index()))),
+      pde_operator(op),
+      boomer_data(boomer_data)
   {
 #ifdef DEAL_II_WITH_PETSC
     // initialize system matrix
-    pde_operator.init_system_matrix(system_matrix);
+    pde_operator.init_system_matrix(system_matrix, *subcommunicator);
 #endif
 
     calculate_preconditioner();
@@ -149,10 +199,13 @@ public:
   ~PreconditionerBoomerAMG()
   {
 #ifdef DEAL_II_WITH_PETSC
-    PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
-    ierr = VecDestroy(&petsc_vector_src);
-    AssertThrow(ierr == 0, ExcPETScError(ierr));
+    if(system_matrix.m() > 0)
+    {
+      PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
+      AssertThrow(ierr == 0, ExcPETScError(ierr));
+      ierr = VecDestroy(&petsc_vector_src);
+      AssertThrow(ierr == 0, ExcPETScError(ierr));
+    }
 #endif
   }
 
@@ -168,7 +221,7 @@ public:
   update() override
   {
 #ifdef DEAL_II_WITH_PETSC
-    // clear content of matrix since the next calculate_system_matrix-commands
+    // clear content of matrix since the next calculate_system_matrix calls
     // add their result; since we might run this on a sub-communicator, we
     // skip the processes that do not participate in the matrix and have size
     // zero

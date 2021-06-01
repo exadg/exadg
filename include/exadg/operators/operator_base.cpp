@@ -723,9 +723,10 @@ make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix) const
+  TrilinosWrappers::SparseMatrix & system_matrix,
+  MPI_Comm const &                 mpi_comm) const
 {
-  internal_init_system_matrix(system_matrix);
+  internal_init_system_matrix(system_matrix, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -741,9 +742,10 @@ OperatorBase<dim, Number, n_components>::calculate_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  PETScWrappers::MPI::SparseMatrix & system_matrix,
+  MPI_Comm const &                   mpi_comm) const
 {
-  internal_init_system_matrix(system_matrix);
+  internal_init_system_matrix(system_matrix, mpi_comm);
 }
 
 template<int dim, typename Number, int n_components>
@@ -759,12 +761,27 @@ template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
 OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
-  SparseMatrix & system_matrix) const
+  SparseMatrix &   system_matrix,
+  MPI_Comm const & mpi_comm) const
 {
   DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
 
   IndexSet const & owned_dofs =
     is_mg ? dof_handler.locally_owned_mg_dofs(this->level) : dof_handler.locally_owned_dofs();
+
+  // check for a valid subcommunicator by asserting that the sum of the dofs
+  // owned by all participating processes is equal to the sum of global dofs -
+  // the second check is needed on the MPI processes not participating in the
+  // actual communication, i.e., which are left out from sub-communication
+  types::global_dof_index const sum_of_locally_owned_dofs =
+    Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm);
+  bool const my_rank_is_part_of_subcommunicator = sum_of_locally_owned_dofs == owned_dofs.size();
+  AssertThrow(my_rank_is_part_of_subcommunicator || owned_dofs.n_elements() == 0,
+              ExcMessage("The given communicator mpi_comm in init_system_matrix does not span "
+                         "all MPI processes needed to cover the index space of all dofs: " +
+                         std::to_string(sum_of_locally_owned_dofs) + " vs " +
+                         std::to_string(owned_dofs.size())));
+
   IndexSet relevant_dofs;
   if(is_mg)
     DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
@@ -784,11 +801,11 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
-  SparsityTools::distribute_sparsity_pattern(dsp,
-                                             owned_dofs,
-                                             dof_handler.get_communicator(),
-                                             relevant_dofs);
-  system_matrix.reinit(owned_dofs, owned_dofs, dsp, dof_handler.get_communicator());
+  if(my_rank_is_part_of_subcommunicator)
+  {
+    SparsityTools::distribute_sparsity_pattern(dsp, owned_dofs, mpi_comm, relevant_dofs);
+    system_matrix.reinit(owned_dofs, owned_dofs, dsp, mpi_comm);
+  }
 }
 
 template<int dim, typename Number, int n_components>
