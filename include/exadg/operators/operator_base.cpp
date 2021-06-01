@@ -769,15 +769,17 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   IndexSet const & owned_dofs =
     is_mg ? dof_handler.locally_owned_mg_dofs(this->level) : dof_handler.locally_owned_dofs();
 
-  // check for a valid subcommunicator - the second check is needed on those
-  // MPI ranks which will not participate in the actual communication, i.e.,
-  // which are left out
-  AssertThrow(Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm) == owned_dofs.size() ||
-                owned_dofs.n_elements() == 0,
+  // check for a valid subcommunicator by asserting that the sum of the dofs
+  // owned by all participating processes is equal to the sum of global dofs -
+  // the second check is needed on the MPI processes not participating in the
+  // actual communication, i.e., which are left out from sub-communication
+  types::global_dof_index const sum_of_locally_owned_dofs =
+    Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm);
+  AssertThrow(sum_of_locally_owned_dofs == owned_dofs.size() || owned_dofs.n_elements() == 0,
               ExcMessage("The given communicator mpi_comm in init_system_matrix does not span "
                          "all MPI processes needed to cover the index space of all dofs: " +
-                         std::to_string(Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm)) +
-                         " vs " + std::to_string(owned_dofs.size())));
+                         std::to_string(sum_of_locally_owned_dofs) + " vs " +
+                         std::to_string(owned_dofs.size())));
 
   IndexSet relevant_dofs;
   if(is_mg)
@@ -799,7 +801,7 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
   // only work on this aspect if we are part of the communicator with the dofs
-  if(Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm) == owned_dofs.size())
+  if(sum_of_locally_owned_dofs == owned_dofs.size())
   {
     SparsityTools::distribute_sparsity_pattern(dsp, owned_dofs, mpi_comm, relevant_dofs);
     system_matrix.reinit(owned_dofs, owned_dofs, dsp, mpi_comm);
