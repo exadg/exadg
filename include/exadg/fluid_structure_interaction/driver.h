@@ -33,9 +33,9 @@
 #include <exadg/utilities/timer_tree.h>
 
 // grid
+#include <exadg/grid/grid_motion_elasticity.h>
+#include <exadg/grid/grid_motion_poisson.h>
 #include <exadg/grid/mapping_degree.h>
-#include <exadg/grid/moving_mesh_elasticity.h>
-#include <exadg/grid/moving_mesh_poisson.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 
 // IncNS
@@ -351,7 +351,7 @@ private:
   std::shared_ptr<Grid<dim, Number>> fluid_grid;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_grid_motion;
+  std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
 
   // parameters
   IncNS::InputParameters fluid_param;

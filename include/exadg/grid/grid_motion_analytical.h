@@ -19,10 +19,10 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_MOVING_MESH_H_
-#define INCLUDE_MOVING_MESH_H_
+#ifndef INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_
+#define INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_
 
-#include <exadg/grid/moving_mesh_base.h>
+#include <exadg/grid/grid_motion_base.h>
 
 namespace ExaDG
 {
@@ -33,7 +33,7 @@ using namespace dealii;
  * Function<dim> object.
  */
 template<int dim, typename Number>
-class MovingMeshFunction : public MovingMeshBase<dim, Number>
+class GridMotionAnalytical : public GridMotionBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -41,12 +41,12 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshFunction(std::shared_ptr<Mapping<dim> const>  mapping_undeformed,
-                     unsigned int const                   mapping_degree_q_cache,
-                     Triangulation<dim> const &           triangulation,
-                     std::shared_ptr<Function<dim>> const mesh_movement_function,
-                     double const                         start_time)
-    : MovingMeshBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
+  GridMotionAnalytical(std::shared_ptr<Mapping<dim> const>  mapping_undeformed,
+                       unsigned int const                   mapping_degree_q_cache,
+                       Triangulation<dim> const &           triangulation,
+                       std::shared_ptr<Function<dim>> const mesh_movement_function,
+                       double const                         start_time)
+    : GridMotionBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
   {
@@ -54,7 +54,7 @@ public:
   }
 
   /**
-   * Updates the mesh coordinates using a Function<dim> object evaluated at a given time.
+   * Updates the grid coordinates using a Function<dim> object evaluated at a given time.
    */
   void
   update(double const time, bool const print_solver_info) override
@@ -69,7 +69,7 @@ public:
 private:
   /**
    * Initializes the MappingQCache object by providing a Function<dim> that describes the
-   * displacement of the mesh compared to an undeformed reference configuration described by the
+   * displacement of the grid compared to an undeformed reference configuration described by the
    * static mapping of this class.
    */
   void
@@ -115,4 +115,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /*INCLUDE_MOVING_MESH_H_*/
+#endif /*INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_*/

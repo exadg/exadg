@@ -138,7 +138,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    grid_motion.reset(new MovingMeshFunction<dim, Number>(
+    grid_motion.reset(new GridMotionAnalytical<dim, Number>(
       grid->mapping, degree, *grid->triangulation, mesh_motion, fluid_param.start_time));
 
     grid->attach_grid_motion(grid_motion);

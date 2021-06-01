@@ -19,14 +19,14 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MOVING_MESH_ELASTICITY_H_
-#define INCLUDE_EXADG_GRID_MOVING_MESH_ELASTICITY_H_
+#ifndef INCLUDE_EXADG_GRID_GRID_MOTION_ELASTICITY_H_
+#define INCLUDE_EXADG_GRID_GRID_MOTION_ELASTICITY_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
 
 // ExaDG
-#include <exadg/grid/moving_mesh_base.h>
+#include <exadg/grid/grid_motion_base.h>
 #include <exadg/structure/spatial_discretization/operator.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -35,10 +35,10 @@ namespace ExaDG
 using namespace dealii;
 
 /**
- * Class for moving mesh problems based on a pseudo-solid mesh motion technique.
+ * Class for moving grid problems based on a pseudo-solid grid motion technique.
  */
 template<int dim, typename Number>
-class MovingMeshElasticity : public MovingMeshBase<dim, Number>
+class GridMotionElasticity : public GridMotionBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -46,10 +46,10 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshElasticity(std::shared_ptr<Mapping<dim> const>               mapping_undeformed,
+  GridMotionElasticity(std::shared_ptr<Mapping<dim> const>               mapping_undeformed,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::InputParameters const &                structure_parameters)
-    : MovingMeshBase<dim, Number>(mapping_undeformed,
+    : GridMotionBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
                                   structure_operator->get_dof_handler().get_triangulation()),
@@ -64,7 +64,7 @@ public:
   }
 
   /**
-   * Updates the mapping, i.e., moves the mesh by solving a pseudo-solid problem.
+   * Updates the mapping, i.e., moves the grid by solving a pseudo-solid problem.
    */
   void
   update(double const time, bool const print_solver_info) override
@@ -169,4 +169,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MOVING_MESH_ELASTICITY_H_ */
+#endif /* INCLUDE_EXADG_GRID_GRID_MOTION_ELASTICITY_H_ */

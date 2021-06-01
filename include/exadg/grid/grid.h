@@ -29,7 +29,7 @@
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
-#include <exadg/grid/moving_mesh_interface.h>
+#include <exadg/grid/grid_motion_interface.h>
 
 namespace ExaDG
 {
@@ -90,7 +90,7 @@ public:
    * Attach a pointer for moving grid functionality.
    */
   void
-  attach_grid_motion(std::shared_ptr<MovingMeshInterface<dim, Number>> grid_motion_in)
+  attach_grid_motion(std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in)
   {
     grid_motion = grid_motion_in;
   }
@@ -137,7 +137,7 @@ public:
   /**
    * Computes and describes dynamic grid motion.
    */
-  std::shared_ptr<MovingMeshInterface<dim, Number>> grid_motion;
+  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion;
 };
 
 } // namespace ExaDG

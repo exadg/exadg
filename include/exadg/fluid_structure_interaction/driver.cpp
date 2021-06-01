@@ -336,11 +336,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       fluid_grid_motion.reset(
-        new MovingMeshPoisson<dim, Number>(fluid_grid->get_static_mapping(), ale_poisson_operator));
+        new GridMotionPoisson<dim, Number>(fluid_grid->get_static_mapping(), ale_poisson_operator));
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_grid_motion.reset(new MovingMeshElasticity<dim, Number>(
+      fluid_grid_motion.reset(new GridMotionElasticity<dim, Number>(
         fluid_grid->get_static_mapping(), ale_elasticity_operator, ale_elasticity_param));
     }
     else

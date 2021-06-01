@@ -129,7 +129,7 @@ MomentumOperator<dim, Number>::set_solution_linearization(VectorType const & vel
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::update_after_mesh_movement()
+MomentumOperator<dim, Number>::update_after_grid_motion()
 {
   if(operator_data.viscous_problem)
     viscous_kernel->calculate_penalty_parameter(this->get_matrix_free(),

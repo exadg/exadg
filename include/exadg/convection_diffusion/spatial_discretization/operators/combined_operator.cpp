@@ -116,7 +116,7 @@ CombinedOperator<dim, Number>::get_data() const
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::update_after_mesh_movement()
+CombinedOperator<dim, Number>::update_after_grid_motion()
 {
   if(operator_data.diffusive_problem)
     diffusive_kernel->calculate_penalty_parameter(*this->matrix_free, operator_data.dof_index);

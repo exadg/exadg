@@ -24,18 +24,18 @@
 #include <deal.II/fe/mapping.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#ifndef INCLUDE_EXADG_GRID_MOVING_MESH_INTERFACE_H_
-#  define INCLUDE_EXADG_GRID_MOVING_MESH_INTERFACE_H_
+#ifndef INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_
+#  define INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_
 
 namespace ExaDG
 {
 using namespace dealii;
 
 /**
- * Pure-virtual interface class for moving mesh functionality.
+ * Pure-virtual interface class for moving grid functionality.
  */
 template<int dim, typename Number>
-class MovingMeshInterface
+class GridMotionInterface
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -43,18 +43,18 @@ public:
   /**
    * Destructor.
    */
-  virtual ~MovingMeshInterface()
+  virtual ~GridMotionInterface()
   {
   }
 
   /**
-   * Updates the mapping, i.e., moves the mesh.
+   * Updates the mapping, i.e., moves the grid.
    */
   virtual void
   update(double const time, bool const print_solver_info) = 0;
 
   /**
-   * Print the number of iterations for PDE type mesh motion problems.
+   * Print the number of iterations for PDE type grid motion problems.
    */
   virtual void
   print_iterations() const
@@ -80,4 +80,4 @@ public:
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_GRID_MOVING_MESH_INTERFACE_H_ */
+#endif /* INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_ */

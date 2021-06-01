@@ -91,7 +91,7 @@ public:
    * Update of operator (required, e.g., for multigrid).
    */
   void
-  update_after_mesh_movement();
+  update_after_grid_motion();
 
   void
   set_velocity_copy(VectorType const & velocity) const;
