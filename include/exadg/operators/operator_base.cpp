@@ -775,7 +775,8 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   // actual communication, i.e., which are left out from sub-communication
   types::global_dof_index const sum_of_locally_owned_dofs =
     Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm);
-  AssertThrow(sum_of_locally_owned_dofs == owned_dofs.size() || owned_dofs.n_elements() == 0,
+  bool const my_rank_is_part_of_subcommunicator = sum_of_locally_owned_dofs == owned_dofs.size();
+  AssertThrow(my_rank_is_part_of_subcommunicator || owned_dofs.n_elements() == 0,
               ExcMessage("The given communicator mpi_comm in init_system_matrix does not span "
                          "all MPI processes needed to cover the index space of all dofs: " +
                          std::to_string(sum_of_locally_owned_dofs) + " vs " +
@@ -800,8 +801,7 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
-  // only work on this aspect if we are part of the communicator with the dofs
-  if(sum_of_locally_owned_dofs == owned_dofs.size())
+  if(my_rank_is_part_of_subcommunicator)
   {
     SparsityTools::distribute_sparsity_pattern(dsp, owned_dofs, mpi_comm, relevant_dofs);
     system_matrix.reinit(owned_dofs, owned_dofs, dsp, mpi_comm);
