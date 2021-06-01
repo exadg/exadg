@@ -207,6 +207,30 @@ public:
                             VectorType const * velocity = nullptr);
 
   /*
+   * Moves the grid for ALE-type problems.
+   */
+  void
+  move_grid(double const & time) const;
+
+  /*
+   * Moves the grid and updates dependent data structures for ALE-type problems.
+   */
+  void
+  move_grid_and_update_dependent_data_structures(double const & time);
+
+  /*
+   * Fills a dof-vector with grid coordinates for ALE-type problems.
+   */
+  void
+  fill_grid_coordinates_vector(VectorType & vector) const;
+
+  /*
+   * Updates operators after grid has been moved.
+   */
+  void
+  update_after_grid_motion();
+
+  /*
    * This function solves the linear system of equations in case of implicit time integration or
    * steady-state problems (potentially involving the mass, convective, and diffusive
    * operators).
@@ -264,9 +288,6 @@ public:
 
   std::string
   get_dof_name() const;
-
-  void
-  update_after_mesh_movement();
 
   unsigned int
   get_dof_index() const;

@@ -331,9 +331,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                     0 /* refine_time */,
                                                     mpi_comm,
                                                     is_test,
-                                                    scalar_postprocessor[i],
-                                                    grid_motion,
-                                                    matrix_free);
+                                                    scalar_postprocessor[i]);
 
     if(scalar_param[i].restarted_simulation == false)
     {
@@ -599,7 +597,7 @@ Driver<dim, Number>::ale_update() const
   sub_timer.restart();
   fluid_operator->update_after_mesh_movement();
   for(unsigned int i = 0; i < n_scalars; ++i)
-    conv_diff_operator[i]->update_after_mesh_movement();
+    conv_diff_operator[i]->update_after_grid_motion();
   timer_tree.insert({"Flow + transport", "ALE", "Update all operators"}, sub_timer.wall_time());
 
   sub_timer.restart();

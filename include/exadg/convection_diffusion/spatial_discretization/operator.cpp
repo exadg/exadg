@@ -823,6 +823,37 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
   }
 }
 
+/*
+ * Moves the grid for ALE-type problems.
+ */
+template<int dim, typename Number>
+void
+Operator<dim, Number>::move_grid(double const & time) const
+{
+  grid->grid_motion->update(time, false);
+}
+
+/*
+ * Moves the grid and updates dependent data structures for ALE-type problems.
+ */
+template<int dim, typename Number>
+void
+Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time)
+{
+  grid->grid_motion->update(time, false);
+  matrix_free->update_mapping(*grid->get_dynamic_mapping());
+  update_after_grid_motion();
+}
+
+/*
+ * Fills a dof-vector with grid coordinates for ALE-type problems.
+ */
+template<int dim, typename Number>
+void
+Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
+{
+  grid->grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
+}
 
 template<int dim, typename Number>
 unsigned int
@@ -925,7 +956,7 @@ Operator<dim, Number>::get_number_of_dofs() const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::update_after_mesh_movement()
+Operator<dim, Number>::update_after_grid_motion()
 {
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements

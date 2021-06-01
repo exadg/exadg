@@ -23,7 +23,6 @@
 #include <exadg/convection_diffusion/spatial_discretization/operator.h>
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/user_interface/input_parameters.h>
-#include <exadg/grid/moving_mesh_interface.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
@@ -36,14 +35,12 @@ using namespace dealii;
 
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
-  std::shared_ptr<Operator<dim, Number>>            operator_in,
-  InputParameters const &                           param_in,
-  unsigned int const                                refine_steps_time_in,
-  MPI_Comm const &                                  mpi_comm_in,
-  bool const                                        is_test_in,
-  std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
-  std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh_in,
-  std::shared_ptr<MatrixFree<dim, Number>>          matrix_free_in)
+  std::shared_ptr<Operator<dim, Number>>          operator_in,
+  InputParameters const &                         param_in,
+  unsigned int const                              refine_steps_time_in,
+  MPI_Comm const &                                mpi_comm_in,
+  bool const                                      is_test_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -62,17 +59,8 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     iterations({0, 0}),
     cfl_oif(param.cfl_oif / std::pow(2.0, refine_steps_time_in)),
     postprocessor(postprocessor_in),
-    vec_grid_coordinates(param_in.order_time_integrator),
-    moving_mesh(moving_mesh_in),
-    matrix_free(matrix_free_in)
+    vec_grid_coordinates(param_in.order_time_integrator)
 {
-  if(param.ale_formulation)
-  {
-    AssertThrow(moving_mesh != nullptr,
-                ExcMessage("Shared pointer moving_mesh is not correctly initialized."));
-    AssertThrow(matrix_free != nullptr,
-                ExcMessage("Shared pointer matrix_free_data is not correctly initialized."));
-  }
 }
 
 template<int dim, typename Number>
@@ -85,18 +73,16 @@ TimeIntBDF<dim, Number>::setup_derived()
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
 
-    moving_mesh->update(this->get_time(), false);
-    moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[0],
-                                              pde_operator->get_dof_handler_velocity());
+    pde_operator->move_grid(this->get_time());
+    pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[0]);
 
     if(this->start_with_low_order == false)
     {
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        moving_mesh->update(this->get_previous_time(i), false);
-        moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[i],
-                                                  pde_operator->get_dof_handler_velocity());
+        pde_operator->move_grid(this->get_previous_time(i));
+        pde_operator->fill_grid_coordinates_vector(vec_grid_coordinates[i]);
       }
     }
   }
@@ -231,7 +217,7 @@ void
 TimeIntBDF<dim, Number>::initialize_current_solution()
 {
   if(this->param.ale_formulation)
-    this->move_mesh(this->get_time());
+    pde_operator->move_grid(this->get_time());
 
   pde_operator->prescribe_initial_conditions(solution[0], this->get_time());
 }
@@ -244,7 +230,7 @@ TimeIntBDF<dim, Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
     if(this->param.ale_formulation)
-      this->move_mesh(this->get_previous_time(i));
+      pde_operator->move_grid(this->get_previous_time(i));
 
     pde_operator->prescribe_initial_conditions(solution[i], this->get_previous_time(i));
   }
@@ -461,8 +447,7 @@ void
 TimeIntBDF<dim, Number>::ale_update()
 {
   // and compute grid coordinates at the end of the current time step t_{n+1}
-  moving_mesh->fill_grid_coordinates_vector(grid_coordinates_np,
-                                            pde_operator->get_dof_handler_velocity());
+  pde_operator->fill_grid_coordinates_vector(grid_coordinates_np);
 
   // and update grid velocity using BDF time derivative
   compute_bdf_time_derivative(grid_velocity,
@@ -470,22 +455,6 @@ TimeIntBDF<dim, Number>::ale_update()
                               vec_grid_coordinates,
                               this->bdf,
                               this->get_time_step_size());
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::move_mesh(double const time) const
-{
-  moving_mesh->update(time, false);
-}
-
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
-{
-  moving_mesh->update(time, false);
-  matrix_free->update_mapping(*moving_mesh->get_mapping());
-  pde_operator->update_after_mesh_movement();
 }
 
 template<int dim, typename Number>
@@ -760,7 +729,7 @@ TimeIntBDF<dim, Number>::postprocessing() const
   // errors at start_time
   if(this->param.ale_formulation && this->get_time_step_number() == 1)
   {
-    move_mesh_and_update_dependent_data_structures(this->get_time());
+    pde_operator->move_grid_and_update_dependent_data_structures(this->get_time());
   }
 
   postprocessor->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());

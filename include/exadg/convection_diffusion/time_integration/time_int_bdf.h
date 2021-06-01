@@ -24,7 +24,6 @@
 
 // deal.II
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
 #include <exadg/time_integration/explicit_runge_kutta.h>
@@ -33,10 +32,6 @@
 namespace ExaDG
 {
 using namespace dealii;
-
-// forward declarations
-template<int dim, typename Number>
-class MovingMeshInterface;
 
 namespace ConvDiff
 {
@@ -61,14 +56,12 @@ class TimeIntBDF : public TimeIntBDFBase<Number>
 public:
   typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
 
-  TimeIntBDF(std::shared_ptr<Operator<dim, Number>>            operator_in,
-             InputParameters const &                           param_in,
-             unsigned int const                                refine_steps_time_in,
-             MPI_Comm const &                                  mpi_comm_in,
-             bool const                                        is_in,
-             std::shared_ptr<PostProcessorInterface<Number>>   postprocessor_in,
-             std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh_in = nullptr,
-             std::shared_ptr<MatrixFree<dim, Number>>          matrix_free_in = nullptr);
+  TimeIntBDF(std::shared_ptr<Operator<dim, Number>>          operator_in,
+             InputParameters const &                         param_in,
+             unsigned int const                              refine_steps_time_in,
+             MPI_Comm const &                                mpi_comm_in,
+             bool const                                      is_test_in,
+             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
@@ -104,12 +97,6 @@ private:
 
   void
   prepare_vectors_for_next_timestep();
-
-  void
-  move_mesh(double const time) const;
-
-  void
-  move_mesh_and_update_dependent_data_structures(double const time) const;
 
   void
   solve_timestep();
@@ -189,9 +176,6 @@ private:
   VectorType              grid_velocity;
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
-
-  std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh;
-  std::shared_ptr<MatrixFree<dim, Number>>          matrix_free;
 };
 
 } // namespace ConvDiff

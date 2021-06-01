@@ -127,14 +127,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // initialize time integrator or driver for steady problems
     if(param.problem_type == ProblemType::Unsteady)
     {
-      time_integrator = create_time_integrator<dim, Number>(pde_operator,
-                                                            param,
-                                                            refine_time,
-                                                            mpi_comm,
-                                                            is_test,
-                                                            postprocessor,
-                                                            grid_motion,
-                                                            matrix_free);
+      time_integrator = create_time_integrator<dim, Number>(
+        pde_operator, param, refine_time, mpi_comm, is_test, postprocessor);
 
       time_integrator->setup(param.restarted_simulation);
     }
@@ -205,7 +199,7 @@ Driver<dim, Number>::ale_update() const
   // move the mesh and update dependent data structures
   grid_motion->update(time_integrator->get_next_time(), false);
   matrix_free->update_mapping(*grid->get_dynamic_mapping());
-  pde_operator->update_after_mesh_movement();
+  pde_operator->update_after_grid_motion();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
     std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
   time_int_bdf->ale_update();

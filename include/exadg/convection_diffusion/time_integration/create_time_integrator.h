@@ -35,35 +35,24 @@ namespace ConvDiff
  */
 template<int dim, typename Number>
 std::shared_ptr<TimeIntBase>
-create_time_integrator(std::shared_ptr<Operator<dim, Number>>            pde_operator,
-                       InputParameters const &                           parameters,
-                       unsigned int const                                refine_steps_time,
-                       MPI_Comm const &                                  mpi_comm,
-                       bool const                                        is_test,
-                       std::shared_ptr<PostProcessorInterface<Number>>   postprocessor,
-                       std::shared_ptr<MovingMeshInterface<dim, Number>> moving_mesh,
-                       std::shared_ptr<MatrixFree<dim, Number>>          matrix_free)
+create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_operator,
+                       InputParameters const &                         parameters,
+                       unsigned int const                              refine_steps_time,
+                       MPI_Comm const &                                mpi_comm,
+                       bool const                                      is_test,
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor)
 {
   std::shared_ptr<TimeIntBase> time_integrator;
 
   if(parameters.temporal_discretization == TemporalDiscretization::ExplRK)
   {
-    AssertThrow(moving_mesh == nullptr,
-                ExcMessage("ALE functionality is not implemented for ExplRK time integration."));
-
     time_integrator = std::make_shared<TimeIntExplRK<Number>>(
       pde_operator, parameters, refine_steps_time, mpi_comm, is_test, postprocessor);
   }
   else if(parameters.temporal_discretization == TemporalDiscretization::BDF)
   {
-    time_integrator = std::make_shared<TimeIntBDF<dim, Number>>(pde_operator,
-                                                                parameters,
-                                                                refine_steps_time,
-                                                                mpi_comm,
-                                                                is_test,
-                                                                postprocessor,
-                                                                moving_mesh,
-                                                                matrix_free);
+    time_integrator = std::make_shared<TimeIntBDF<dim, Number>>(
+      pde_operator, parameters, refine_steps_time, mpi_comm, is_test, postprocessor);
   }
   else
   {
