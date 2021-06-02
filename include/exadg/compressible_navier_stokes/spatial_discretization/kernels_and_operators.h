@@ -661,7 +661,7 @@ public:
     // calculate rho_P
     scalar rho_P = calculate_exterior_value<dim, Number, 0>(rho_M,
                                                             boundary_type_density,
-                                                            data.bc->energy,
+                                                            data.bc->density,
                                                             boundary_id,
                                                             density.quadrature_point(q),
                                                             this->eval_time);
