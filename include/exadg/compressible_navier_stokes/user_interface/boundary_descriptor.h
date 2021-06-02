@@ -119,10 +119,10 @@ inline void
 verify_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
                            Grid<dim, Number> const &                      grid)
 {
-  ExaDG::verify_boundary_conditions(*(boundary_descriptor->density), grid);
-  ExaDG::verify_boundary_conditions(*(boundary_descriptor->velocity), grid);
-  ExaDG::verify_boundary_conditions(*(boundary_descriptor->pressure), grid);
-  ExaDG::verify_boundary_conditions(*(boundary_descriptor->energy), grid);
+  ExaDG::verify_boundary_conditions(boundary_descriptor->density, grid);
+  ExaDG::verify_boundary_conditions(boundary_descriptor->velocity, grid);
+  ExaDG::verify_boundary_conditions(boundary_descriptor->pressure, grid);
+  ExaDG::verify_boundary_conditions(boundary_descriptor->energy, grid);
 }
 
 } // namespace CompNS
