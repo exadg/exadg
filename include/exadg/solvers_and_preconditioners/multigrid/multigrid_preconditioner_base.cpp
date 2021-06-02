@@ -70,9 +70,9 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
 
   bool const is_dg = fe.dofs_per_vertex == 0;
 
-  this->initialize_levels(tria, fe.degree, is_dg);
-
   this->initialize_coarse_grid_triangulations(tria);
+
+  this->initialize_levels(tria, fe.degree, is_dg);
 
   this->initialize_mapping();
 
@@ -144,7 +144,9 @@ MultigridPreconditionerBase<dim, Number>::initialize_levels(Triangulation<dim> c
   }
   else // h-MG is involved working on all mesh levels
   {
-    for(unsigned int h = 0; h < tria->n_global_levels(); h++)
+    unsigned int const n_h_levels =
+      (data.use_global_coarsening ? coarse_grid_triangulations.size() : tria->n_global_levels());
+    for(unsigned int h = 0; h < n_h_levels; h++)
       h_levels.push_back(h);
   }
 
