@@ -30,6 +30,7 @@ using namespace dealii;
 
 // ExaDG
 #include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 
 namespace ExaDG
 {
@@ -46,7 +47,7 @@ enum class BoundaryType
 };
 
 template<int dim>
-struct BoundaryDescriptor
+struct BoundaryDescriptorStd
 {
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
@@ -86,7 +87,7 @@ struct BoundaryDescriptor
 };
 
 template<int dim>
-struct BoundaryDescriptorEnergy : public BoundaryDescriptor<dim>
+struct BoundaryDescriptorEnergy : public BoundaryDescriptorStd<dim>
 {
   std::map<types::boundary_id, EnergyBoundaryVariable> boundary_variable;
 
@@ -103,6 +104,34 @@ struct BoundaryDescriptorEnergy : public BoundaryDescriptor<dim>
     return boundary_variable;
   }
 };
+
+template<int dim>
+struct BoundaryDescriptor
+{
+  BoundaryDescriptor()
+  {
+    density  = std::make_shared<BoundaryDescriptorStd<dim>>();
+    velocity = std::make_shared<BoundaryDescriptorStd<dim>>();
+    pressure = std::make_shared<BoundaryDescriptorStd<dim>>();
+    energy   = std::make_shared<BoundaryDescriptorEnergy<dim>>();
+  }
+
+  std::shared_ptr<BoundaryDescriptorStd<dim>>    density;
+  std::shared_ptr<BoundaryDescriptorStd<dim>>    velocity;
+  std::shared_ptr<BoundaryDescriptorStd<dim>>    pressure;
+  std::shared_ptr<BoundaryDescriptorEnergy<dim>> energy;
+};
+
+template<int dim, typename Number>
+inline void
+verify_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                           Grid<dim, Number> const &                      grid)
+{
+  ExaDG::verify_boundary_conditions(*(boundary_descriptor->density), grid);
+  ExaDG::verify_boundary_conditions(*(boundary_descriptor->velocity), grid);
+  ExaDG::verify_boundary_conditions(*(boundary_descriptor->pressure), grid);
+  ExaDG::verify_boundary_conditions(*(boundary_descriptor->energy), grid);
+}
 
 } // namespace CompNS
 } // namespace ExaDG

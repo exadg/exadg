@@ -37,10 +37,7 @@ template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
   unsigned int const                             degree_in,
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
-  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
   InputParameters const &                        param_in,
   std::string const &                            field_in,
@@ -48,10 +45,7 @@ Operator<dim, Number>::Operator(
   : dealii::Subscriptor(),
     grid(grid_in),
     degree(degree_in),
-    boundary_descriptor_density(boundary_descriptor_density_in),
-    boundary_descriptor_velocity(boundary_descriptor_velocity_in),
-    boundary_descriptor_pressure(boundary_descriptor_pressure_in),
-    boundary_descriptor_energy(boundary_descriptor_energy_in),
+    boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
@@ -482,10 +476,7 @@ Operator<dim, Number>::setup_operators()
   ConvectiveOperatorData<dim> convective_operator_data;
   convective_operator_data.dof_index             = get_dof_index_all();
   convective_operator_data.quad_index            = get_quad_index_overintegration_conv();
-  convective_operator_data.bc_rho                = boundary_descriptor_density;
-  convective_operator_data.bc_u                  = boundary_descriptor_velocity;
-  convective_operator_data.bc_p                  = boundary_descriptor_pressure;
-  convective_operator_data.bc_E                  = boundary_descriptor_energy;
+  convective_operator_data.bc                    = boundary_descriptor;
   convective_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
   convective_operator_data.specific_gas_constant = param.specific_gas_constant;
   convective_operator.initialize(*matrix_free, convective_operator_data);
@@ -500,9 +491,7 @@ Operator<dim, Number>::setup_operators()
   viscous_operator_data.thermal_conductivity  = param.thermal_conductivity;
   viscous_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
   viscous_operator_data.specific_gas_constant = param.specific_gas_constant;
-  viscous_operator_data.bc_rho                = boundary_descriptor_density;
-  viscous_operator_data.bc_u                  = boundary_descriptor_velocity;
-  viscous_operator_data.bc_E                  = boundary_descriptor_energy;
+  viscous_operator_data.bc                    = boundary_descriptor;
   viscous_operator.initialize(*matrix_free, viscous_operator_data);
 
   if(param.use_combined_operator == true)
@@ -514,10 +503,7 @@ Operator<dim, Number>::setup_operators()
     CombinedOperatorData<dim> combined_operator_data;
     combined_operator_data.dof_index  = get_dof_index_all();
     combined_operator_data.quad_index = get_quad_index_overintegration_vis();
-    combined_operator_data.bc_rho     = boundary_descriptor_density;
-    combined_operator_data.bc_u       = boundary_descriptor_velocity;
-    combined_operator_data.bc_p       = boundary_descriptor_pressure;
-    combined_operator_data.bc_E       = boundary_descriptor_energy;
+    combined_operator_data.bc         = boundary_descriptor;
 
     combined_operator.initialize(*matrix_free,
                                  combined_operator_data,

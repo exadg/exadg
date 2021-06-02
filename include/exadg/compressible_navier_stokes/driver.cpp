@@ -79,35 +79,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   grid = application->create_grid(grid_data, mpi_comm);
   print_grid_info(pcout, *grid);
 
-  boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
-  boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
-  boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
-
-  application->set_boundary_conditions(boundary_descriptor_density,
-                                       boundary_descriptor_velocity,
-                                       boundary_descriptor_pressure,
-                                       boundary_descriptor_energy);
-
-  verify_boundary_conditions(*boundary_descriptor_density, *grid);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *grid);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *grid);
-  verify_boundary_conditions(*boundary_descriptor_energy, *grid);
+  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+  application->set_boundary_conditions(boundary_descriptor);
+  CompNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
 
   field_functions.reset(new FieldFunctions<dim>());
   application->set_field_functions(field_functions);
 
   // initialize compressible Navier-Stokes operator
-  pde_operator.reset(new Operator<dim, Number>(grid,
-                                               degree,
-                                               boundary_descriptor_density,
-                                               boundary_descriptor_velocity,
-                                               boundary_descriptor_pressure,
-                                               boundary_descriptor_energy,
-                                               field_functions,
-                                               param,
-                                               "fluid",
-                                               mpi_comm));
+  pde_operator.reset(new Operator<dim, Number>(
+    grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm));
 
   // initialize matrix_free
   matrix_free_data.reset(new MatrixFreeData<dim, Number>());

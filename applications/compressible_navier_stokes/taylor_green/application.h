@@ -255,11 +255,7 @@ public:
     return grid;
   }
 
-  void set_boundary_conditions(
-    std::shared_ptr<BoundaryDescriptor<dim>> /*boundary_descriptor_density*/,
-    std::shared_ptr<BoundaryDescriptor<dim>> /*boundary_descriptor_velocity*/,
-    std::shared_ptr<BoundaryDescriptor<dim>> /*boundary_descriptor_pressure*/,
-    std::shared_ptr<BoundaryDescriptorEnergy<dim>> /*boundary_descriptor_energy*/)
+  void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> /*boundary_descriptor*/)
   {
     // test case with periodic BC -> boundary descriptors remain empty
   }
