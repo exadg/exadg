@@ -459,13 +459,13 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
 
-    boundary_descriptor->density->dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
-    boundary_descriptor->velocity->dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
-    boundary_descriptor->pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->energy->dirichlet_bc.insert(
+    boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
+    boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
+    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->energy.dirichlet_bc.insert(
       pair(0, new Functions::ConstantFunction<dim>(E_0, 1)));
     // set energy boundary variable
-    boundary_descriptor->energy->boundary_variable.insert(
+    boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Energy));
   }
 

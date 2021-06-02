@@ -89,13 +89,13 @@ public:
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
 
     // these lines show exemplarily how the boundary descriptors are filled
-    boundary_descriptor->density->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    boundary_descriptor->density.dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->velocity.dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->energy->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->energy.dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
     // set energy boundary variable
-    boundary_descriptor->energy->boundary_variable.insert(
+    boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Energy));
   }
 

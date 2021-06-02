@@ -108,18 +108,10 @@ struct BoundaryDescriptorEnergy : public BoundaryDescriptorStd<dim>
 template<int dim>
 struct BoundaryDescriptor
 {
-  BoundaryDescriptor()
-  {
-    density  = std::make_shared<BoundaryDescriptorStd<dim>>();
-    velocity = std::make_shared<BoundaryDescriptorStd<dim>>();
-    pressure = std::make_shared<BoundaryDescriptorStd<dim>>();
-    energy   = std::make_shared<BoundaryDescriptorEnergy<dim>>();
-  }
-
-  std::shared_ptr<BoundaryDescriptorStd<dim>>    density;
-  std::shared_ptr<BoundaryDescriptorStd<dim>>    velocity;
-  std::shared_ptr<BoundaryDescriptorStd<dim>>    pressure;
-  std::shared_ptr<BoundaryDescriptorEnergy<dim>> energy;
+  BoundaryDescriptorStd<dim>    density;
+  BoundaryDescriptorStd<dim>    velocity;
+  BoundaryDescriptorStd<dim>    pressure;
+  BoundaryDescriptorEnergy<dim> energy;
 };
 
 template<int dim, typename Number>

@@ -241,29 +241,29 @@ public:
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
 
     // density
-    boundary_descriptor->density->dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
-    boundary_descriptor->density->dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
-    //  boundary_descriptor->density->neumann_bc.insert(pair(0,new
+    boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
+    boundary_descriptor->density.dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
+    //  boundary_descriptor->density.neumann_bc.insert(pair(0,new
     //  Functions::ZeroFunction<dim>(1)));
-    //  boundary_descriptor->density->neumann_bc.insert(pair(1,new
+    //  boundary_descriptor->density.neumann_bc.insert(pair(1,new
     //  Functions::ZeroFunction<dim>(1)));
 
     // velocity
-    boundary_descriptor->velocity->dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
-    boundary_descriptor->velocity->dirichlet_bc.insert(pair(1, new VelocityBC<dim>()));
+    boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
+    boundary_descriptor->velocity.dirichlet_bc.insert(pair(1, new VelocityBC<dim>()));
 
     // pressure
-    boundary_descriptor->pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->pressure.neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
-    boundary_descriptor->energy->boundary_variable.insert(
+    boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Temperature));
-    boundary_descriptor->energy->boundary_variable.insert(
+    boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(1, EnergyBoundaryVariable::Temperature));
 
-    boundary_descriptor->energy->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->energy->dirichlet_bc.insert(
+    boundary_descriptor->energy.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->energy.dirichlet_bc.insert(
       pair(1, new Functions::ConstantFunction<dim>(T_0, 1)));
   }
 

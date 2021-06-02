@@ -154,7 +154,7 @@ inline DEAL_II_ALWAYS_INLINE //
   Tensor<rank, dim, VectorizedArray<Number>>
   calculate_exterior_value(Tensor<rank, dim, VectorizedArray<Number>> const & value_m,
                            BoundaryType const                                 boundary_type,
-                           std::shared_ptr<BoundaryDescriptorStd<dim> const>  boundary_descriptor,
+                           BoundaryDescriptorStd<dim> const &                 boundary_descriptor,
                            types::boundary_id const &                         boundary_id,
                            Point<dim, VectorizedArray<Number>> const &        q_point,
                            Number const &                                     time)
@@ -163,7 +163,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryType::Dirichlet)
   {
-    auto bc = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+    auto bc = boundary_descriptor.dirichlet_bc.find(boundary_id)->second;
     auto g  = FunctionEvaluator<rank, dim, Number>::value(bc, q_point, time);
 
     value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
@@ -187,13 +187,12 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number, int rank>
 inline DEAL_II_ALWAYS_INLINE //
   Tensor<rank, dim, VectorizedArray<Number>>
-  calculate_exterior_normal_grad(
-    Tensor<rank, dim, VectorizedArray<Number>> const & grad_M_normal,
-    BoundaryType const &                               boundary_type,
-    std::shared_ptr<BoundaryDescriptorStd<dim> const>  boundary_descriptor,
-    types::boundary_id const &                         boundary_id,
-    Point<dim, VectorizedArray<Number>> const &        q_point,
-    Number const &                                     time)
+  calculate_exterior_normal_grad(Tensor<rank, dim, VectorizedArray<Number>> const & grad_M_normal,
+                                 BoundaryType const &                               boundary_type,
+                                 BoundaryDescriptorStd<dim> const &          boundary_descriptor,
+                                 types::boundary_id const &                  boundary_id,
+                                 Point<dim, VectorizedArray<Number>> const & q_point,
+                                 Number const &                              time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> grad_P_normal;
 
@@ -204,7 +203,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryType::Neumann)
   {
-    auto bc = boundary_descriptor->neumann_bc.find(boundary_id)->second;
+    auto bc = boundary_descriptor.neumann_bc.find(boundary_id)->second;
     auto h  = FunctionEvaluator<rank, dim, Number>::value(bc, q_point, time);
 
     grad_P_normal = -grad_M_normal + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
@@ -864,13 +863,12 @@ private:
 
       types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
-      BoundaryType boundary_type_density  = data.bc->density->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_velocity = data.bc->velocity->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_pressure = data.bc->pressure->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_energy   = data.bc->energy->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_density  = data.bc->density.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = data.bc->velocity.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_pressure = data.bc->pressure.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = data.bc->energy.get_boundary_type(boundary_id);
 
-      EnergyBoundaryVariable boundary_variable =
-        data.bc->energy->get_boundary_variable(boundary_id);
+      EnergyBoundaryVariable boundary_variable = data.bc->energy.get_boundary_variable(boundary_id);
 
       for(unsigned int q = 0; q < density.n_q_points; ++q)
       {
@@ -1552,12 +1550,11 @@ private:
 
       types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
-      BoundaryType boundary_type_density  = data.bc->density->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_velocity = data.bc->velocity->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_energy   = data.bc->energy->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_density  = data.bc->density.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = data.bc->velocity.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = data.bc->energy.get_boundary_type(boundary_id);
 
-      EnergyBoundaryVariable boundary_variable =
-        data.bc->energy->get_boundary_variable(boundary_id);
+      EnergyBoundaryVariable boundary_variable = data.bc->energy.get_boundary_variable(boundary_id);
 
       for(unsigned int q = 0; q < density.n_q_points; ++q)
       {
@@ -1846,13 +1843,12 @@ private:
 
       types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
-      BoundaryType boundary_type_density  = data.bc->density->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_velocity = data.bc->velocity->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_pressure = data.bc->pressure->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_energy   = data.bc->energy->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_density  = data.bc->density.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = data.bc->velocity.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_pressure = data.bc->pressure.get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = data.bc->energy.get_boundary_type(boundary_id);
 
-      EnergyBoundaryVariable boundary_variable =
-        data.bc->energy->get_boundary_variable(boundary_id);
+      EnergyBoundaryVariable boundary_variable = data.bc->energy.get_boundary_variable(boundary_id);
 
       for(unsigned int q = 0; q < density.n_q_points; ++q)
       {

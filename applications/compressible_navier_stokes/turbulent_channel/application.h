@@ -369,15 +369,15 @@ public:
 
     // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in
     // equations). Hence the specified function is irrelevant (i.e., it is not used).
-    boundary_descriptor->density->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    boundary_descriptor->density.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->velocity.dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
-    boundary_descriptor->energy->boundary_variable.insert(
+    boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Temperature));
-    boundary_descriptor->energy->dirichlet_bc.insert(
+    boundary_descriptor->energy.dirichlet_bc.insert(
       pair(0, new Functions::ConstantFunction<dim>(T_0, 1)));
   }
 
