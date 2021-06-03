@@ -22,24 +22,16 @@
 #ifndef INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
 #define INCLUDE_LAPLACE_DG_LAPLACE_OPERATION_H_
 
-// deal.II
-#include <deal.II/fe/mapping_q.h>
-
 // ExaDG
-
-// matrix-free
+#include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
-
-// operators
 #include <exadg/operators/rhs_operator.h>
 #include <exadg/poisson/spatial_discretization/laplace_operator.h>
-#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
-
-// user interface
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
 #include <exadg/poisson/user_interface/input_parameters.h>
+#include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG
 {
@@ -61,14 +53,9 @@ private:
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 #endif
 
-  typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    PeriodicFaces;
-
 public:
-  Operator(Triangulation<dim> const &                           triangulation,
-           std::shared_ptr<Mapping<dim> const>                  mapping,
+  Operator(std::shared_ptr<Grid<dim, Number> const>             grid,
            unsigned int const                                   degree,
-           PeriodicFaces const                                  periodic_face_pairs,
            std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim>> const           field_functions,
            InputParameters const &                              param,
@@ -175,20 +162,14 @@ private:
   setup_operators();
 
   /*
-   * Mapping
+   * Grid
    */
-  std::shared_ptr<Mapping<dim> const> mapping;
+  std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
    * Polynomial degree
    */
   unsigned int const degree;
-
-  /*
-   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
-   */
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
 
   /*
    * User interface: Boundary conditions and field functions.

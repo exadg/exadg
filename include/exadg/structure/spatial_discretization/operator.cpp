@@ -39,10 +39,8 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  Triangulation<dim> &                           triangulation_in,
-  std::shared_ptr<Mapping<dim> const>            mapping_in,
+  std::shared_ptr<Grid<dim, Number> const>       grid_in,
   unsigned int const &                           degree_in,
-  PeriodicFaces const &                          periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
   std::shared_ptr<MaterialDescriptor> const      material_descriptor_in,
@@ -50,8 +48,7 @@ Operator<dim, Number>::Operator(
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
-    mapping(mapping_in),
-    periodic_face_pairs(periodic_face_pairs_in),
+    grid(grid_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     material_descriptor(material_descriptor_in),
@@ -59,7 +56,7 @@ Operator<dim, Number>::Operator(
     field(field_in),
     degree(degree_in),
     fe(FE_Q<dim>(degree_in), dim),
-    dof_handler(triangulation_in),
+    dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -350,11 +347,11 @@ Operator<dim, Number>::initialize_preconditioner()
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
-                                    mapping,
+                                    grid->mapping,
                                     elasticity_operator_nonlinear,
                                     true,
                                     &elasticity_operator_nonlinear.get_data().bc->dirichlet_bc,
-                                    &this->periodic_face_pairs);
+                                    &grid->periodic_faces);
     }
     else
     {
@@ -367,11 +364,11 @@ Operator<dim, Number>::initialize_preconditioner()
       mg_preconditioner->initialize(param.multigrid_data,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
-                                    mapping,
+                                    grid->mapping,
                                     elasticity_operator_linear,
                                     false,
                                     &elasticity_operator_linear.get_data().bc->dirichlet_bc,
-                                    &this->periodic_face_pairs);
+                                    &grid->periodic_faces);
     }
   }
   else if(param.preconditioner == Preconditioner::AMG)
@@ -733,7 +730,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 Operator<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  return *grid->mapping;
 }
 
 template<int dim, typename Number>

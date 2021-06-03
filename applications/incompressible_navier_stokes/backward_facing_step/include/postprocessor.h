@@ -73,7 +73,7 @@ public:
     if(pp_data_bfs.turb_ch_data.calculate)
     {
       statistics_turb_ch.reset(new StatisticsManager<dim, Number>(pde_operator.get_dof_handler_u(),
-                                                                  pde_operator.get_mapping()));
+                                                                  *pde_operator.get_mapping()));
 
       statistics_turb_ch->setup(&Geometry::grid_transform_turb_channel, pp_data_bfs.turb_ch_data);
     }
@@ -83,7 +83,7 @@ public:
     {
       inflow_data_calculator.reset(
         new InflowDataCalculator<dim, Number>(pp_data_bfs.inflow_data, this->mpi_comm));
-      inflow_data_calculator->setup(pde_operator.get_dof_handler_u(), pde_operator.get_mapping());
+      inflow_data_calculator->setup(pde_operator.get_dof_handler_u(), *pde_operator.get_mapping());
     }
 
     // evaluation of characteristic quantities along lines
@@ -92,7 +92,7 @@ public:
       line_plot_calculator_statistics.reset(
         new LinePlotCalculatorStatisticsHomogeneous<dim, Number>(pde_operator.get_dof_handler_u(),
                                                                  pde_operator.get_dof_handler_p(),
-                                                                 pde_operator.get_mapping(),
+                                                                 *pde_operator.get_mapping(),
                                                                  this->mpi_comm));
 
       line_plot_calculator_statistics->setup(pp_data_bfs.line_plot_data);

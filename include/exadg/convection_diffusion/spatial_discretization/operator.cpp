@@ -41,25 +41,22 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  Triangulation<dim> const &                     triangulation_in,
-  std::shared_ptr<Mapping<dim> const>            mapping_in,
+  std::shared_ptr<Grid<dim, Number> const>       grid_in,
   unsigned int const                             degree_in,
-  PeriodicFaces const                            periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
   InputParameters const &                        param_in,
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
-    mapping(mapping_in),
+    grid(grid_in),
     degree(degree_in),
-    periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
     fe(degree_in),
-    dof_handler(triangulation_in),
+    dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -68,7 +65,7 @@ Operator<dim, Number>::Operator(
   if(needs_own_dof_handler_velocity())
   {
     fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
-    dof_handler_velocity.reset(new DoFHandler<dim>(triangulation_in));
+    dof_handler_velocity.reset(new DoFHandler<dim>(*grid->triangulation));
   }
 
   distribute_dofs();
@@ -476,12 +473,12 @@ Operator<dim, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
                                   dof_handler.get_fe(),
-                                  mapping,
+                                  grid->get_dynamic_mapping(),
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
                                   &data.bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
+                                  &grid->periodic_faces);
   }
   else
   {
@@ -826,6 +823,40 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
   }
 }
 
+template<int dim, typename Number>
+void
+Operator<dim, Number>::move_grid(double const & time) const
+{
+  grid->grid_motion->update(time, false);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time)
+{
+  grid->grid_motion->update(time, false);
+  matrix_free->update_mapping(*grid->get_dynamic_mapping());
+  update_after_grid_motion();
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
+{
+  grid->grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::update_after_grid_motion()
+{
+  // update SIPG penalty parameter of diffusive operator which depends on the deformation
+  // of elements
+  if(param.diffusive_problem())
+  {
+    diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
+  }
+}
 
 template<int dim, typename Number>
 unsigned int
@@ -924,18 +955,6 @@ types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::update_after_mesh_movement()
-{
-  // update SIPG penalty parameter of diffusive operator which depends on the deformation
-  // of elements
-  if(param.diffusive_problem())
-  {
-    diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
-  }
 }
 
 template<int dim, typename Number>

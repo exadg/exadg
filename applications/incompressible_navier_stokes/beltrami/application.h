@@ -247,10 +247,10 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion; // CahouetChabard;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     double const left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(*grid->triangulation, left, right);

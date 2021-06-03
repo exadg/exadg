@@ -58,9 +58,9 @@ MultigridPreconditionerBase<dim, Number>::initialize(MultigridData const &      
                                                      Triangulation<dim> const *          tria,
                                                      FiniteElement<dim> const &          fe,
                                                      std::shared_ptr<Mapping<dim> const> mapping,
-                                                     bool const          operator_is_singular,
-                                                     Map const *         dirichlet_bc,
-                                                     PeriodicFacePairs * periodic_face_pairs)
+                                                     bool const                operator_is_singular,
+                                                     Map const *               dirichlet_bc,
+                                                     PeriodicFacePairs const * periodic_face_pairs)
 {
   this->data = data;
 
@@ -631,7 +631,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                 operator_is_singular,
-  PeriodicFacePairs *        periodic_face_pairs_in,
+  PeriodicFacePairs const *  periodic_face_pairs_in,
   FiniteElement<dim> const & fe,
   Triangulation<dim> const * tria,
   Map const *                dirichlet_bc_in)
@@ -673,7 +673,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constraints(
   bool                                                                 is_singular,
-  PeriodicFacePairs &                                                  periodic_face_pairs,
+  PeriodicFacePairs const &                                            periodic_face_pairs,
   FiniteElement<dim> const &                                           fe,
   Triangulation<dim> const *                                           tria,
   Map const &                                                          dirichlet_bc,

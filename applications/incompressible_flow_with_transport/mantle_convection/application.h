@@ -333,10 +333,10 @@ public:
     param.use_overintegration   = true;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     GridGenerator::hyper_shell(*grid->triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
 

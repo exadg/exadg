@@ -48,11 +48,8 @@ public:
    * Constructor.
    */
   OperatorProjectionMethods(
-    Triangulation<dim> const &          triangulation,
-    std::shared_ptr<Mapping<dim> const> mapping,
-    unsigned int const                  degree_u,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs,
+    std::shared_ptr<Grid<dim, Number> const>        grid,
+    unsigned int const                              degree_u,
     std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
     std::shared_ptr<FieldFunctions<dim>> const      field_functions,
@@ -75,7 +72,7 @@ public:
         std::string const &                          dof_index_temperature = "") override;
 
   void
-  update_after_mesh_movement() override;
+  update_after_grid_motion() override;
 
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the

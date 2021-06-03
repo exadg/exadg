@@ -85,11 +85,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
-      moving_mesh.reset(new MovingMeshFunction<dim, Number>(grid->mapping,
-                                                            grid_data.mapping_degree,
-                                                            *grid->triangulation,
-                                                            mesh_motion,
-                                                            param.start_time));
+      grid_motion.reset(new GridMotionAnalytical<dim, Number>(grid->mapping,
+                                                              grid_data.mapping_degree,
+                                                              *grid->triangulation,
+                                                              mesh_motion,
+                                                              param.start_time));
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -113,10 +113,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                              "as for actual application problem."));
 
       // initialize Poisson operator
-      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(*grid->triangulation,
-                                                                     grid->mapping,
+      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(grid,
                                                                      grid_data.mapping_degree,
-                                                                     grid->periodic_faces,
                                                                      poisson_boundary_descriptor,
                                                                      poisson_field_functions,
                                                                      poisson_param,
@@ -139,18 +137,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      moving_mesh.reset(new MovingMeshPoisson<dim, Number>(grid->mapping, poisson_operator));
+      grid_motion.reset(new GridMotionPoisson<dim, Number>(grid->mapping, poisson_operator));
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    mapping = moving_mesh->get_mapping();
-  }
-  else // static mesh
-  {
-    mapping = grid->mapping;
+    grid->attach_grid_motion(grid_motion);
   }
 
   // boundary conditions
@@ -167,10 +161,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   if(param.solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(*grid->triangulation,
-                                                mapping,
+    pde_operator = create_operator<dim, Number>(grid,
                                                 degree,
-                                                grid->periodic_faces,
                                                 boundary_descriptor_velocity,
                                                 boundary_descriptor_pressure,
                                                 field_functions,
@@ -181,10 +173,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   else if(param.solver_type == SolverType::Steady)
   {
     pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(*grid->triangulation,
-                                                            mapping,
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
                                                             degree,
-                                                            grid->periodic_faces,
                                                             boundary_descriptor_velocity,
                                                             boundary_descriptor_pressure,
                                                             field_functions,
@@ -204,7 +194,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free.reset(new MatrixFree<dim, Number>());
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*mapping,
+  matrix_free->reinit(*grid->get_dynamic_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -224,14 +214,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // depends on quantities such as the time_step_size or gamma0!!!)
     if(param.solver_type == SolverType::Unsteady)
     {
-      time_integrator = create_time_integrator<dim, Number>(pde_operator,
-                                                            param,
-                                                            refine_time,
-                                                            mpi_comm,
-                                                            is_test,
-                                                            postprocessor,
-                                                            moving_mesh,
-                                                            matrix_free);
+      time_integrator = create_time_integrator<dim, Number>(
+        pde_operator, param, refine_time, mpi_comm, is_test, postprocessor);
     }
     else if(param.solver_type == SolverType::Steady)
     {
@@ -280,15 +264,15 @@ Driver<dim, Number>::ale_update() const
   Timer sub_timer;
 
   sub_timer.restart();
-  moving_mesh->update(time_integrator->get_next_time(), false);
+  grid_motion->update(time_integrator->get_next_time(), false);
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  matrix_free->update_mapping(*mapping);
+  matrix_free->update_mapping(*grid->get_dynamic_mapping());
   timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  pde_operator->update_after_mesh_movement();
+  pde_operator->update_after_grid_motion();
   timer_tree.insert({"Incompressible flow", "ALE", "Update operator"}, sub_timer.wall_time());
 
   sub_timer.restart();

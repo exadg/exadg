@@ -19,14 +19,14 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MOVING_MESH_POISSON_H_
-#define INCLUDE_EXADG_GRID_MOVING_MESH_POISSON_H_
+#ifndef INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_
+#define INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
 
 // ExaDG
-#include <exadg/grid/moving_mesh_base.h>
+#include <exadg/grid/grid_motion_base.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 #include <exadg/utilities/print_solver_results.h>
 
@@ -35,10 +35,10 @@ namespace ExaDG
 using namespace dealii;
 
 /**
- * Class for moving mesh problems based on a Poisson-type mesh motion technique.
+ * Class for moving grid problems based on a Poisson-type grid motion technique.
  */
 template<int dim, typename Number>
-class MovingMeshPoisson : public MovingMeshBase<dim, Number>
+class GridMotionPoisson : public GridMotionBase<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -46,9 +46,9 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshPoisson(std::shared_ptr<Mapping<dim> const>                  mapping_undeformed,
+  GridMotionPoisson(std::shared_ptr<Mapping<dim> const>                  mapping_undeformed,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
-    : MovingMeshBase<dim, Number>(mapping_undeformed,
+    : GridMotionBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from Poisson operator
                                   poisson_operator->get_dof_handler().get_fe().degree,
                                   poisson_operator->get_dof_handler().get_triangulation()),
@@ -122,4 +122,4 @@ private:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MOVING_MESH_POISSON_H_ */
+#endif /* INCLUDE_EXADG_GRID_GRID_MOTION_POISSON_H_ */

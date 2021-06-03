@@ -24,9 +24,9 @@
 
 // deal.II
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/mapping_q.h>
 
 // ExaDG
+#include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
@@ -169,17 +169,12 @@ private:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    PeriodicFaces;
-
 public:
   /*
    * Constructor.
    */
-  Operator(Triangulation<dim> &                           triangulation_in,
-           std::shared_ptr<Mapping<dim> const>            mapping_in,
+  Operator(std::shared_ptr<Grid<dim, Number> const>       grid_in,
            unsigned int const &                           degree_in,
-           PeriodicFaces const &                          periodic_face_pairs_in,
            std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
            std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
            std::shared_ptr<MaterialDescriptor> const      material_descriptor_in,
@@ -354,14 +349,9 @@ private:
   initialize_solver();
 
   /*
-   * Mapping
+   * Grid
    */
-  std::shared_ptr<Mapping<dim> const> mapping;
-
-  /*
-   * Periodic boundaries.
-   */
-  PeriodicFaces periodic_face_pairs;
+  std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
    * User interface.

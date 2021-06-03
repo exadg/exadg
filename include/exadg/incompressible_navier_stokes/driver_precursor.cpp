@@ -180,10 +180,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize pde_operator_pre (precursor domain)
-  pde_operator = create_operator<dim, Number>(*grid_pre->triangulation,
-                                              grid_pre->mapping,
+  pde_operator = create_operator<dim, Number>(grid_pre,
                                               degree,
-                                              grid_pre->periodic_faces,
                                               boundary_descriptor_velocity_pre,
                                               boundary_descriptor_pressure_pre,
                                               field_functions_pre,
@@ -192,10 +190,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
                                               mpi_comm);
 
   // initialize operator_base (actual domain)
-  pde_operator = create_operator<dim, Number>(*grid->triangulation,
-                                              grid->mapping,
+  pde_operator = create_operator<dim, Number>(grid,
                                               degree,
-                                              grid->periodic_faces,
                                               boundary_descriptor_velocity,
                                               boundary_descriptor_pressure,
                                               field_functions,

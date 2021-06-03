@@ -23,9 +23,9 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_H_
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/grid/grid_motion_analytical.h>
+#include <exadg/grid/grid_motion_poisson.h>
 #include <exadg/grid/mapping_degree.h>
-#include <exadg/grid/moving_mesh_function.h>
-#include <exadg/grid/moving_mesh_poisson.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
@@ -210,17 +210,12 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   /*
-   * Mesh
+   * Grid
    */
-
-  // grid
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
-
-  // mapping (static or moving)
-  std::shared_ptr<Mapping<dim>> mapping;
+  std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;

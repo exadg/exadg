@@ -213,7 +213,7 @@ public:
 
     // perform setup of turbulent channel related things
     statistics_turb_ch.reset(new StatisticsManager<dim, Number>(pde_operator.get_dof_handler_u(),
-                                                                pde_operator.get_mapping()));
+                                                                *pde_operator.get_mapping()));
 
     statistics_turb_ch->setup(&grid_transform_y, turb_ch_data);
   }
@@ -390,10 +390,10 @@ public:
     param.multigrid_data_pressure_block.type = MultigridType::cphMG;
   }
 
-  std::shared_ptr<Grid<dim>>
+  std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
   {
-    std::shared_ptr<Grid<dim>> grid = std::make_shared<Grid<dim>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
 
     Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;

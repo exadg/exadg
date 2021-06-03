@@ -38,11 +38,8 @@ using namespace dealii;
 
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  Triangulation<dim> const &          triangulation_in,
-  std::shared_ptr<Mapping<dim> const> mapping_in,
-  unsigned int const                  degree_u_in,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs_in,
+  std::shared_ptr<Grid<dim, Number> const>        grid_in,
+  unsigned int const                              degree_u_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
@@ -50,10 +47,8 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   std::string const &                             field_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
-    triangulation(triangulation_in),
-    mapping(mapping_in),
+    grid(grid_in),
     degree_u(degree_u_in),
-    periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor_velocity(boundary_descriptor_velocity_in),
     boundary_descriptor_pressure(boundary_descriptor_pressure_in),
     field_functions(field_functions_in),
@@ -64,9 +59,9 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
     fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u_in), dim)),
     fe_p(parameters_in.get_degree_p(degree_u_in)),
     fe_u_scalar(degree_u_in),
-    dof_handler_u(triangulation_in),
-    dof_handler_p(triangulation_in),
-    dof_handler_u_scalar(triangulation_in),
+    dof_handler_u(*grid_in->triangulation),
+    dof_handler_p(*grid_in->triangulation),
+    dof_handler_u_scalar(*grid_in->triangulation),
     pressure_level_is_undefined(false),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
@@ -88,7 +83,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   // Erroneously, the boundary descriptor might contain too many boundary IDs which
   // do not even exist in the triangulation. Here, we make sure that each entry of
   // the boundary descriptor has indeed a counterpart in the triangulation.
-  std::vector<types::boundary_id> boundary_ids = triangulation.get_boundary_ids();
+  std::vector<types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
   for(auto it = boundary_descriptor_pressure->dirichlet_bc.begin();
       it != boundary_descriptor_pressure->dirichlet_bc.end();
       ++it)
@@ -516,7 +511,7 @@ SpatialOperatorBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = get_dof_index_velocity();
   model_data.quad_index          = get_quad_index_velocity_linear();
   model_data.degree              = degree_u;
-  turbulence_model.initialize(*matrix_free, *mapping, viscous_kernel, model_data);
+  turbulence_model.initialize(*matrix_free, *get_mapping(), viscous_kernel, model_data);
 }
 
 template<int dim, typename Number>
@@ -680,10 +675,10 @@ SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linearized() const
 }
 
 template<int dim, typename Number>
-Mapping<dim> const &
+std::shared_ptr<Mapping<dim> const>
 SpatialOperatorBase<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  return grid->get_dynamic_mapping();
 }
 
 template<int dim, typename Number>
@@ -816,12 +811,12 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
   velocity_double = velocity;
   pressure_double = pressure;
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(*get_mapping(),
                            dof_handler_u,
                            *(field_functions->initial_solution_velocity),
                            velocity_double);
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(*get_mapping(),
                            dof_handler_p,
                            *(field_functions->initial_solution_pressure),
                            pressure_double);
@@ -920,7 +915,7 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
                                                                double const time_step_size) const
 {
   calculate_cfl<dim, Number>(cfl,
-                             triangulation,
+                             *grid->triangulation,
                              *matrix_free,
                              get_dof_index_velocity(),
                              get_quad_index_velocity_linear(),
@@ -998,7 +993,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       vec_double = pressure; // initialize
 
       field_functions->analytical_solution_pressure->set_time(time);
-      VectorTools::interpolate(*mapping,
+      VectorTools::interpolate(*get_mapping(),
                                dof_handler_p,
                                *(field_functions->analytical_solution_pressure),
                                vec_double);
@@ -1136,17 +1131,14 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   std::shared_ptr<MultigridPoisson> mg_preconditioner =
     std::dynamic_pointer_cast<MultigridPoisson>(preconditioner);
 
-  // explicit copy needed since function is called on const
-  auto periodic_face_pairs = this->periodic_face_pairs;
-
   mg_preconditioner->initialize(mg_data,
                                 &dof_handler_u_scalar.get_triangulation(),
                                 dof_handler_u_scalar.get_fe(),
-                                mapping,
+                                grid->get_dynamic_mapping(),
                                 laplace_operator.get_data(),
                                 this->param.ale_formulation,
                                 &laplace_operator.get_data().bc->dirichlet_bc,
-                                &periodic_face_pairs);
+                                &grid->periodic_faces);
 
   // setup solver
   Krylov::SolverDataCG solver_data;
@@ -1328,12 +1320,36 @@ SpatialOperatorBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-SpatialOperatorBase<dim, Number>::update_after_mesh_movement()
+SpatialOperatorBase<dim, Number>::move_grid(double const & time) const
+{
+  grid->grid_motion->update(time, false);
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::move_grid_and_update_dependent_data_structures(
+  double const & time)
+{
+  grid->grid_motion->update(time, false);
+  matrix_free->update_mapping(*get_mapping());
+  update_after_grid_motion();
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
+{
+  grid->grid_motion->fill_grid_coordinates_vector(vector, get_dof_handler_u());
+}
+
+template<int dim, typename Number>
+void
+SpatialOperatorBase<dim, Number>::update_after_grid_motion()
 {
   if(this->param.use_turbulence_model)
   {
     // the mesh (and hence the filter width) changes in case of ALE formulation
-    turbulence_model.calculate_filter_width(*mapping);
+    turbulence_model.calculate_filter_width(*get_mapping());
   }
 
   if(this->param.viscous_problem())
@@ -1444,22 +1460,22 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {
-      typedef MultigridPreconditionerProjection<dim, Number> MULTIGRID;
+      typedef MultigridPreconditionerProjection<dim, Number> Multigrid;
 
-      preconditioner_projection.reset(new MULTIGRID(this->mpi_comm));
+      preconditioner_projection.reset(new Multigrid(this->mpi_comm));
 
-      std::shared_ptr<MULTIGRID> mg_preconditioner =
-        std::dynamic_pointer_cast<MULTIGRID>(preconditioner_projection);
+      std::shared_ptr<Multigrid> mg_preconditioner =
+        std::dynamic_pointer_cast<Multigrid>(preconditioner_projection);
 
       auto const & dof_handler = this->get_dof_handler_u();
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     &dof_handler.get_triangulation(),
                                     dof_handler.get_fe(),
-                                    this->mapping,
+                                    this->get_mapping(),
                                     *this->projection_operator,
                                     this->param.ale_formulation,
                                     &this->projection_operator->get_data().bc->dirichlet_bc,
-                                    &this->periodic_face_pairs);
+                                    &grid->periodic_faces);
     }
     else
     {

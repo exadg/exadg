@@ -117,6 +117,18 @@ public:
   // needed for time step calculation
   virtual unsigned int
   get_polynomial_degree() const = 0;
+
+  // needed for ALE-type problems
+  virtual void
+  move_grid(double const & time) const = 0;
+
+  // needed for ALE-type problems
+  virtual void
+  move_grid_and_update_dependent_data_structures(double const & time) = 0;
+
+  // needed for ALE-type problems
+  virtual void
+  fill_grid_coordinates_vector(VectorType & vector) const = 0;
 };
 } // namespace Interface
 

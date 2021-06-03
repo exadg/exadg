@@ -98,8 +98,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // initialize compressible Navier-Stokes operator
-  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
-                                               grid->mapping,
+  pde_operator.reset(new Operator<dim, Number>(grid,
                                                degree,
                                                boundary_descriptor_density,
                                                boundary_descriptor_velocity,

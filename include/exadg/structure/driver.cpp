@@ -93,10 +93,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // setup spatial operator
-  pde_operator.reset(new Operator<dim, Number>(*grid->triangulation,
-                                               grid->mapping,
+  pde_operator.reset(new Operator<dim, Number>(grid,
                                                degree,
-                                               grid->periodic_faces,
                                                boundary_descriptor,
                                                field_functions,
                                                material_descriptor,

@@ -27,8 +27,8 @@
 
 // utilities
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
+#include <exadg/grid/grid_motion_analytical.h>
 #include <exadg/grid/mapping_degree.h>
-#include <exadg/grid/moving_mesh_function.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
@@ -100,17 +100,12 @@ private:
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
   /*
-   * Mesh
+   * Grid
    */
-
-  // grid
-  std::shared_ptr<Grid<dim>> grid;
+  std::shared_ptr<Grid<dim, Number>> grid;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> moving_mesh;
-
-  // mapping (static or moving)
-  std::shared_ptr<Mapping<dim>> mapping;
+  std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 
   bool use_adaptive_time_stepping;
 

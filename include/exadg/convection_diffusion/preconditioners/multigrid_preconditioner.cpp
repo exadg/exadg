@@ -52,7 +52,7 @@ MultigridPreconditioner<dim, Number>::initialize(MultigridData const &          
                                                  MultigridOperatorType const & mg_operator_type,
                                                  bool const                    mesh_is_moving,
                                                  Map const *                   dirichlet_bc,
-                                                 PeriodicFacePairs *           periodic_face_pairs)
+                                                 PeriodicFacePairs const *     periodic_face_pairs)
 {
   this->pde_operator     = &pde_operator;
   this->mg_operator_type = mg_operator_type;
@@ -200,7 +200,7 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   bool const                 operator_is_singular,
-  PeriodicFacePairs *        periodic_face_pairs,
+  PeriodicFacePairs const *  periodic_face_pairs,
   FiniteElement<dim> const & fe,
   Triangulation<dim> const * tria,
   Map const *                dirichlet_bc)
@@ -300,7 +300,7 @@ MultigridPreconditioner<dim, Number>::update_operators_after_mesh_movement()
 {
   for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
   {
-    this->get_operator(level)->update_after_mesh_movement();
+    this->get_operator(level)->update_after_grid_motion();
   }
 }
 

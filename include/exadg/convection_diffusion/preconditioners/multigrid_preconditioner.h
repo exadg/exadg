@@ -73,7 +73,7 @@ public:
              MultigridOperatorType const &       mg_operator_type,
              bool const                          mesh_is_moving,
              Map const *                         dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                 periodic_face_pairs = nullptr);
+             PeriodicFacePairs const *           periodic_face_pairs = nullptr);
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -92,7 +92,7 @@ private:
 
   void
   initialize_dof_handler_and_constraints(bool const                 operator_is_singular,
-                                         PeriodicFacePairs *        periodic_face_pairs,
+                                         PeriodicFacePairs const *  periodic_face_pairs,
                                          FiniteElement<dim> const & fe,
                                          Triangulation<dim> const * tria,
                                          Map const *                dirichlet_bc) override;

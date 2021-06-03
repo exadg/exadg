@@ -66,7 +66,7 @@ public:
              PDEOperator const &                 pde_operator,
              bool const                          mesh_is_moving,
              Map const *                         dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                 periodic_face_pairs = nullptr);
+             PeriodicFacePairs const *           periodic_face_pairs = nullptr);
 
   /*
    * This function updates the multigrid preconditioner.

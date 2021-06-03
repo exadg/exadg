@@ -46,24 +46,21 @@ using namespace dealii;
 
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
-  Triangulation<dim> const &                           triangulation_in,
-  std::shared_ptr<Mapping<dim> const>                  mapping_in,
+  std::shared_ptr<Grid<dim, Number> const>             grid_in,
   unsigned int const                                   degree_in,
-  PeriodicFaces const                                  periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const           field_functions_in,
   InputParameters const &                              param_in,
   std::string const &                                  field_in,
   MPI_Comm const &                                     mpi_comm_in)
   : dealii::Subscriptor(),
-    mapping(mapping_in),
+    grid(grid_in),
     degree(degree_in),
-    periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    dof_handler(triangulation_in),
+    dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
@@ -260,11 +257,11 @@ Operator<dim, Number, n_components>::setup_solver()
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
                                   dof_handler.get_fe(),
-                                  mapping,
+                                  grid->mapping,
                                   laplace_operator.get_data(),
                                   false /* moving_mesh */,
                                   &laplace_operator.get_data().bc->dirichlet_bc,
-                                  &periodic_face_pairs);
+                                  &grid->periodic_faces);
   }
   else
   {

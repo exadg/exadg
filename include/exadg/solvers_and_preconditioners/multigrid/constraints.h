@@ -80,7 +80,8 @@ void
 add_periodicity_constraints(
   DoFHandler<dim> const & dof_handler,
   unsigned int const      level,
-  std::vector<typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+  std::vector<
+    typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const &
                               periodic_face_pairs_level0,
   AffineConstraints<Number> & affine_constraints_own)
 {
@@ -115,7 +116,7 @@ add_constraints(
   DoFHandler<dim> const &     dof_handler,
   AffineConstraints<Number> & affine_constraints_own,
   MGConstrainedDoFs const &   mg_constrained_dofs,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const &
                      periodic_face_pairs,
   unsigned int const level)
 {

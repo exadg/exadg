@@ -59,7 +59,7 @@ LaplaceOperator<dim, Number, n_components>::calculate_penalty_parameter(
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::update_after_mesh_movement()
+LaplaceOperator<dim, Number, n_components>::update_penalty_parameter()
 {
   calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
 }

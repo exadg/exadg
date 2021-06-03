@@ -19,22 +19,22 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_GRID_MOVING_MESH_BASE_H_
-#define INCLUDE_EXADG_GRID_MOVING_MESH_BASE_H_
+#ifndef INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_
+#define INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_
 
 // ExaDG
+#include <exadg/grid/grid_motion_interface.h>
 #include <exadg/grid/mapping_dof_vector.h>
-#include <exadg/grid/moving_mesh_interface.h>
 
 namespace ExaDG
 {
 using namespace dealii;
 
 /**
- * Base class for moving mesh problems based on MappingFiniteElement.
+ * Base class for moving grid problems.
  */
 template<int dim, typename Number>
-class MovingMeshBase : public MovingMeshInterface<dim, Number>
+class GridMotionBase : public GridMotionInterface<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -42,7 +42,7 @@ public:
   /**
    * Constructor.
    */
-  MovingMeshBase(std::shared_ptr<Mapping<dim> const> mapping_undeformed,
+  GridMotionBase(std::shared_ptr<Mapping<dim> const> mapping_undeformed,
                  unsigned int const                  mapping_degree_q_cache,
                  Triangulation<dim> const &          triangulation)
     : mapping_undeformed(mapping_undeformed)
@@ -65,8 +65,8 @@ public:
     moving_mapping->fill_grid_coordinates_vector(grid_coordinates, dof_handler);
   }
 
-  std::shared_ptr<Mapping<dim>>
-  get_mapping() final
+  std::shared_ptr<Mapping<dim> const>
+  get_mapping() const final
   {
     return moving_mapping;
   }
@@ -81,4 +81,4 @@ protected:
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_EXADG_GRID_MOVING_MESH_BASE_H_ */
+#endif /* INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_ */

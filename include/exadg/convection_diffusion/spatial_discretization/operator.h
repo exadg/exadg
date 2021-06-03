@@ -25,7 +25,6 @@
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
-#include <deal.II/fe/mapping_q.h>
 
 // ExaDG
 #include <exadg/convection_diffusion/spatial_discretization/interface.h>
@@ -33,6 +32,7 @@
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
 #include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
@@ -51,17 +51,12 @@ class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    PeriodicFaces;
-
 public:
   /*
    * Constructor.
    */
-  Operator(Triangulation<dim> const &                     triangulation,
-           std::shared_ptr<Mapping<dim> const>            mapping,
+  Operator(std::shared_ptr<Grid<dim, Number> const>       grid,
            unsigned int const                             degree,
-           PeriodicFaces const                            periodic_face_pairs,
            std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim>> const     field_functions,
            InputParameters const &                        param,
@@ -212,6 +207,30 @@ public:
                             VectorType const * velocity = nullptr);
 
   /*
+   * Moves the grid for ALE-type problems.
+   */
+  void
+  move_grid(double const & time) const;
+
+  /*
+   * Moves the grid and updates dependent data structures for ALE-type problems.
+   */
+  void
+  move_grid_and_update_dependent_data_structures(double const & time);
+
+  /*
+   * Fills a dof-vector with grid coordinates for ALE-type problems.
+   */
+  void
+  fill_grid_coordinates_vector(VectorType & vector) const;
+
+  /*
+   * Updates operators after grid has been moved.
+   */
+  void
+  update_after_grid_motion();
+
+  /*
    * This function solves the linear system of equations in case of implicit time integration or
    * steady-state problems (potentially involving the mass, convective, and diffusive
    * operators).
@@ -270,9 +289,6 @@ public:
   std::string
   get_dof_name() const;
 
-  void
-  update_after_mesh_movement();
-
   unsigned int
   get_dof_index() const;
 
@@ -320,20 +336,14 @@ private:
   initialize_solver();
 
   /*
-   * Mapping
+   * Grid
    */
-  std::shared_ptr<Mapping<dim> const> mapping;
+  std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
    * Polynomial degree of shape function
    */
   unsigned int const degree;
-
-  /*
-   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
-   */
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
 
   /*
    * User interface: Boundary conditions and field functions.

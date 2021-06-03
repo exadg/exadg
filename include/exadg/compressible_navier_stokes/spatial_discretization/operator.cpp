@@ -35,8 +35,7 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  Triangulation<dim> const &                     triangulation_in,
-  std::shared_ptr<Mapping<dim> const>            mapping_in,
+  std::shared_ptr<Grid<dim, Number> const>       grid_in,
   unsigned int const                             degree_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
@@ -47,7 +46,7 @@ Operator<dim, Number>::Operator(
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
-    mapping(mapping_in),
+    grid(grid_in),
     degree(degree_in),
     boundary_descriptor_density(boundary_descriptor_density_in),
     boundary_descriptor_velocity(boundary_descriptor_velocity_in),
@@ -61,9 +60,9 @@ Operator<dim, Number>::Operator(
     fe_scalar(degree_in),
     n_q_points_conv(degree_in + 1),
     n_q_points_visc(degree_in + 1),
-    dof_handler(triangulation_in),
-    dof_handler_vector(triangulation_in),
-    dof_handler_scalar(triangulation_in),
+    dof_handler(*grid_in->triangulation),
+    dof_handler_vector(*grid_in->triangulation),
+    dof_handler_scalar(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     wall_time_operator_evaluation(0.0)
@@ -184,7 +183,7 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double con
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(*grid->mapping,
                            dof_handler,
                            *(this->field_functions->initial_solution),
                            src_double);
@@ -291,7 +290,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 Operator<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  return *grid->mapping;
 }
 
 template<int dim, typename Number>

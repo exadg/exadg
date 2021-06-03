@@ -33,9 +33,9 @@
 #include <exadg/utilities/timer_tree.h>
 
 // grid
+#include <exadg/grid/grid_motion_elasticity.h>
+#include <exadg/grid/grid_motion_poisson.h>
 #include <exadg/grid/mapping_degree.h>
-#include <exadg/grid/moving_mesh_elasticity.h>
-#include <exadg/grid/moving_mesh_poisson.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 
 // IncNS
@@ -318,7 +318,7 @@ private:
   Structure::InputParameters structure_param;
 
   // grid
-  std::shared_ptr<Grid<dim>> structure_grid;
+  std::shared_ptr<Grid<dim, Number>> structure_grid;
 
   // material descriptor
   std::shared_ptr<Structure::MaterialDescriptor> structure_material_descriptor;
@@ -348,13 +348,10 @@ private:
   /****************************************** FLUID *******************************************/
 
   // grid
-  std::shared_ptr<Grid<dim>> fluid_grid;
+  std::shared_ptr<Grid<dim, Number>> fluid_grid;
 
   // moving mapping (ALE)
-  std::shared_ptr<MovingMeshBase<dim, Number>> fluid_moving_mesh;
-
-  // mapping (static or moving)
-  std::shared_ptr<Mapping<dim>> fluid_mapping;
+  std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
 
   // parameters
   IncNS::InputParameters fluid_param;

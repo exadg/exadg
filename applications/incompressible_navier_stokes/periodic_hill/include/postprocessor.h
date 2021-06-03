@@ -81,7 +81,7 @@ public:
     line_plot_calculator_statistics.reset(
       new LinePlotCalculatorStatisticsHomogeneous<dim, Number>(pde_operator.get_dof_handler_u(),
                                                                pde_operator.get_dof_handler_p(),
-                                                               pde_operator.get_mapping(),
+                                                               *pde_operator.get_mapping(),
                                                                this->mpi_comm));
 
     line_plot_calculator_statistics->setup(my_pp_data.line_plot_data);

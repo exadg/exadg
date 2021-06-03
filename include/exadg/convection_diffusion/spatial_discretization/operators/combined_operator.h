@@ -89,7 +89,7 @@ public:
   get_data() const;
 
   void
-  update_after_mesh_movement();
+  update_after_grid_motion();
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;

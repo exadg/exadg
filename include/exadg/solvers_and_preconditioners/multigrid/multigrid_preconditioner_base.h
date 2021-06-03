@@ -100,7 +100,7 @@ public:
              std::shared_ptr<Mapping<dim> const> mapping,
              bool const                          operator_is_singular = false,
              Map const *                         dirichlet_bc         = nullptr,
-             PeriodicFacePairs *                 periodic_face_pairs  = nullptr);
+             PeriodicFacePairs const *           periodic_face_pairs  = nullptr);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -173,7 +173,7 @@ protected:
    */
   virtual void
   initialize_dof_handler_and_constraints(bool                       is_singular,
-                                         PeriodicFacePairs *        periodic_face_pairs,
+                                         PeriodicFacePairs const *  periodic_face_pairs,
                                          FiniteElement<dim> const & fe,
                                          Triangulation<dim> const * tria,
                                          Map const *                dirichlet_bc);
@@ -181,7 +181,7 @@ protected:
   void
   do_initialize_dof_handler_and_constraints(
     bool                                                                 is_singular,
-    PeriodicFacePairs &                                                  periodic_face_pairs,
+    PeriodicFacePairs const &                                            periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     Triangulation<dim> const *                                           tria,
     Map const &                                                          dirichlet_bc,

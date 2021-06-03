@@ -80,7 +80,7 @@ private:
   /*
    * Grid
    */
-  std::shared_ptr<Grid<dim>> grid_pre, grid;
+  std::shared_ptr<Grid<dim, Number>> grid_pre, grid;
 
   /*
    * Field functions and boundary descriptor
