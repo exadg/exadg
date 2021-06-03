@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/grid/moving_mesh_interface.h Source File</title>
+<title>ExaDG: include/exadg/grid/grid_motion_interface.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -66,7 +66,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">moving_mesh_interface.h</div>  </div>
+<div class="title">grid_motion_interface.h</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*  ______________________________________________________________________</span></div>
@@ -95,50 +95,50 @@ $(function() {
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;deal.II/fe/mapping.h&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;deal.II/lac/la_parallel_vector.h&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#ifndef INCLUDE_EXADG_GRID_MOVING_MESH_INTERFACE_H_</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#  define INCLUDE_EXADG_GRID_MOVING_MESH_INTERFACE_H_</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#ifndef INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#  define INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;{</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">using namespace </span>dealii;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshInterface.html">   38</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1MovingMeshInterface.html">MovingMeshInterface</a></div>
+<div class="line"><a name="l00038"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionInterface.html">   38</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;{</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec">   46</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec">~MovingMeshInterface</a>()</div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563">   46</a></span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563">~GridMotionInterface</a>()</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  }</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshInterface.html#a1c8554e5acbd890fcfe2a2b8715f19b8">   54</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshInterface.html#a1c8554e5acbd890fcfe2a2b8715f19b8">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info) = 0;</div>
+<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">   54</a></span>&#160;  <a class="code" href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info) = 0;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshInterface.html#ae8b3a19770ba7ec0efab19ae8290b839">   60</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshInterface.html#ae8b3a19770ba7ec0efab19ae8290b839">print_iterations</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca">   60</a></span>&#160;  <a class="code" href="classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca">print_iterations</a>()<span class="keyword"> const</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keyword">  </span>{</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    AssertThrow(<span class="keyword">false</span>, ExcMessage(<span class="stringliteral">&quot;Has to be overwritten by derived classes.&quot;</span>));</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  }</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshInterface.html#a53cb1cd9c776249a30c5826aa2a7dbe7">   70</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshInterface.html#a53cb1cd9c776249a30c5826aa2a7dbe7">fill_grid_coordinates_vector</a>(VectorType &amp;            grid_coordinates,</div>
+<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionInterface.html#a7cc16813d51017af4aa04dee51c6fe36">   70</a></span>&#160;  <a class="code" href="classExaDG_1_1GridMotionInterface.html#a7cc16813d51017af4aa04dee51c6fe36">fill_grid_coordinates_vector</a>(VectorType &amp;            grid_coordinates,</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                               DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp; dof_handler) <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Mapping&lt;dim&gt;&gt;</div>
-<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshInterface.html#a3379dd362fcd5295fa2b8dd368e32f1b">   77</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshInterface.html#a3379dd362fcd5295fa2b8dd368e32f1b">get_mapping</a>() = 0;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionInterface.html#a2a57fee23d223b3176cc64206dc23936">   77</a></span>&#160;  <a class="code" href="classExaDG_1_1GridMotionInterface.html#a2a57fee23d223b3176cc64206dc23936">get_mapping</a>() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;};</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_MOVING_MESH_INTERFACE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshInterface_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshInterface.html">ExaDG::MovingMeshInterface</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_interface.h:39</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshInterface_html_a1c8554e5acbd890fcfe2a2b8715f19b8"><div class="ttname"><a href="classExaDG_1_1MovingMeshInterface.html#a1c8554e5acbd890fcfe2a2b8715f19b8">ExaDG::MovingMeshInterface::update</a></div><div class="ttdeci">virtual void update(double const time, bool const print_solver_info)=0</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshInterface_html_a3379dd362fcd5295fa2b8dd368e32f1b"><div class="ttname"><a href="classExaDG_1_1MovingMeshInterface.html#a3379dd362fcd5295fa2b8dd368e32f1b">ExaDG::MovingMeshInterface::get_mapping</a></div><div class="ttdeci">virtual std::shared_ptr&lt; Mapping&lt; dim &gt; &gt; get_mapping()=0</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshInterface_html_a53cb1cd9c776249a30c5826aa2a7dbe7"><div class="ttname"><a href="classExaDG_1_1MovingMeshInterface.html#a53cb1cd9c776249a30c5826aa2a7dbe7">ExaDG::MovingMeshInterface::fill_grid_coordinates_vector</a></div><div class="ttdeci">virtual void fill_grid_coordinates_vector(VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const =0</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshInterface_html_a748e2cc78db0cbb471a688bc673114ec"><div class="ttname"><a href="classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec">ExaDG::MovingMeshInterface::~MovingMeshInterface</a></div><div class="ttdeci">virtual ~MovingMeshInterface()</div><div class="ttdef"><b>Definition:</b> moving_mesh_interface.h:46</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshInterface_html_ae8b3a19770ba7ec0efab19ae8290b839"><div class="ttname"><a href="classExaDG_1_1MovingMeshInterface.html#ae8b3a19770ba7ec0efab19ae8290b839">ExaDG::MovingMeshInterface::print_iterations</a></div><div class="ttdeci">virtual void print_iterations() const</div><div class="ttdef"><b>Definition:</b> moving_mesh_interface.h:60</div></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_MOTION_INTERFACE_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html">ExaDG::GridMotionInterface</a></div><div class="ttdef"><b>Definition:</b> grid_motion_interface.h:39</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html_a2a57fee23d223b3176cc64206dc23936"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html#a2a57fee23d223b3176cc64206dc23936">ExaDG::GridMotionInterface::get_mapping</a></div><div class="ttdeci">virtual std::shared_ptr&lt; Mapping&lt; dim &gt; const  &gt; get_mapping() const =0</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html_a7bbc3a866cee232808762fced6f967ca"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca">ExaDG::GridMotionInterface::print_iterations</a></div><div class="ttdeci">virtual void print_iterations() const</div><div class="ttdef"><b>Definition:</b> grid_motion_interface.h:60</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html_a7cc16813d51017af4aa04dee51c6fe36"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html#a7cc16813d51017af4aa04dee51c6fe36">ExaDG::GridMotionInterface::fill_grid_coordinates_vector</a></div><div class="ttdeci">virtual void fill_grid_coordinates_vector(VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const =0</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html_aad4132e7fd4f7897015b6ae6a9e7d9a7"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">ExaDG::GridMotionInterface::update</a></div><div class="ttdeci">virtual void update(double const time, bool const print_solver_info)=0</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html_ad5df404201def98d5cab4058456c9563"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563">ExaDG::GridMotionInterface::~GridMotionInterface</a></div><div class="ttdeci">virtual ~GridMotionInterface()</div><div class="ttdef"><b>Definition:</b> grid_motion_interface.h:46</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

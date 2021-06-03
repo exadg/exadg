@@ -74,6 +74,9 @@ $(function() {
 : <a class="el" href="classdealspectrum_1_1DealSpectrumTimer.html#a955a9687b62bfce50d5c1ffb2cb1ddf1">dealspectrum::DealSpectrumTimer</a>
 , <a class="el" href="structExaDG_1_1MatrixFreeData.html#a15b02474ce4649e175295fa32d583336">ExaDG::MatrixFreeData&lt; dim, Number &gt;</a>
 </li>
+<li>attach_grid_motion()
+: <a class="el" href="classExaDG_1_1Grid.html#a830c7d8039c8226ec9b2f9336187844c">ExaDG::Grid&lt; dim, Number &gt;</a>
+</li>
 </ul>
 
 
@@ -107,9 +110,9 @@ $(function() {
 
 <h3><a id="index_f"></a>- f -</h3><ul>
 <li>fill_grid_coordinates_vector()
-: <a class="el" href="classExaDG_1_1MappingDoFVector.html#a594a2ba3cd6e94fbad6efb4495fda168">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshBase.html#af8641a7d57ea20589913ee32d41c6d58">ExaDG::MovingMeshBase&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshInterface.html#a53cb1cd9c776249a30c5826aa2a7dbe7">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a>
+: <a class="el" href="classExaDG_1_1GridMotionBase.html#a65d4b023564631c13df1efdff75b7217">ExaDG::GridMotionBase&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionInterface.html#a7cc16813d51017af4aa04dee51c6fe36">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1MappingDoFVector.html#a594a2ba3cd6e94fbad6efb4495fda168">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a>
 </li>
 <li>fill_shape_values()
 : <a class="el" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">dealspectrum::Interpolator</a>
@@ -118,12 +121,15 @@ $(function() {
 
 
 <h3><a id="index_g"></a>- g -</h3><ul>
+<li>get_dynamic_mapping()
+: <a class="el" href="classExaDG_1_1Grid.html#ace4a4a1d7ac534cf45356d32a2e6035d">ExaDG::Grid&lt; dim, Number &gt;</a>
+</li>
 <li>get_equidistant_inner()
 : <a class="el" href="classdealspectrum_1_1Interpolator.html#a2026a54ef9aae5c50e0d262afcaf44f6">dealspectrum::Interpolator</a>
 </li>
 <li>get_mapping()
-: <a class="el" href="classExaDG_1_1MovingMeshBase.html#a71a963fc5f95622a612ba0aa6be3c152">ExaDG::MovingMeshBase&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshInterface.html#a3379dd362fcd5295fa2b8dd368e32f1b">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a>
+: <a class="el" href="classExaDG_1_1GridMotionBase.html#ae6b642d1ea46f3c05688e6236c6312c5">ExaDG::GridMotionBase&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionInterface.html#a2a57fee23d223b3176cc64206dc23936">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>
 </li>
 <li>get_remote_quadrature_points()
 : <a class="el" href="classExaDG_1_1InterfaceCommunicator.html#a88d3e3dfc343b1414a8389deb1d3c9c0">ExaDG::InterfaceCommunicator&lt; dim, spacedim &gt;</a>
@@ -131,11 +137,29 @@ $(function() {
 <li>get_results()
 : <a class="el" href="classdealspectrum_1_1SpectralAnalysis.html#a83c895003af56a97b5004e8a429527d3">dealspectrum::SpectralAnalysis</a>
 </li>
+<li>get_static_mapping()
+: <a class="el" href="classExaDG_1_1Grid.html#aff2401477e023acc22d4f0ada2d814ff">ExaDG::Grid&lt; dim, Number &gt;</a>
+</li>
 <li>getLocalRange()
 : <a class="el" href="classdealspectrum_1_1SpectralAnalysis.html#ad521541cf55622d07d58e83ddb360ed7">dealspectrum::SpectralAnalysis</a>
 </li>
 <li>Grid()
-: <a class="el" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">ExaDG::Grid&lt; dim &gt;</a>
+: <a class="el" href="classExaDG_1_1Grid.html#a297f77ffd33774085f95d9c98e4f9add">ExaDG::Grid&lt; dim, Number &gt;</a>
+</li>
+<li>grid_motion
+: <a class="el" href="classExaDG_1_1Grid.html#a9d0aa94893e9a8b595c6a9a6005d17ba">ExaDG::Grid&lt; dim, Number &gt;</a>
+</li>
+<li>GridMotionAnalytical()
+: <a class="el" href="classExaDG_1_1GridMotionAnalytical.html#a88650548b38a142848087d114a3d7ad3">ExaDG::GridMotionAnalytical&lt; dim, Number &gt;</a>
+</li>
+<li>GridMotionBase()
+: <a class="el" href="classExaDG_1_1GridMotionBase.html#aa8fde42c8063336691faaceece56386d">ExaDG::GridMotionBase&lt; dim, Number &gt;</a>
+</li>
+<li>GridMotionElasticity()
+: <a class="el" href="classExaDG_1_1GridMotionElasticity.html#a1d94c1a7a9ab6227072669127afd6903">ExaDG::GridMotionElasticity&lt; dim, Number &gt;</a>
+</li>
+<li>GridMotionPoisson()
+: <a class="el" href="classExaDG_1_1GridMotionPoisson.html#a90f6539d7f19f941417998ccdbc4c402">ExaDG::GridMotionPoisson&lt; dim, Number &gt;</a>
 </li>
 </ul>
 
@@ -175,7 +199,7 @@ $(function() {
 
 <h3><a id="index_m"></a>- m -</h3><ul>
 <li>mapping
-: <a class="el" href="classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466">ExaDG::Grid&lt; dim &gt;</a>
+: <a class="el" href="classExaDG_1_1Grid.html#ab87de829d3c339786505e4408d69afbf">ExaDG::Grid&lt; dim, Number &gt;</a>
 </li>
 <li>MappingDoFVector()
 : <a class="el" href="classExaDG_1_1MappingDoFVector.html#a02610a355efa9e0350be9647356e570b">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a>
@@ -183,32 +207,20 @@ $(function() {
 <li>MatrixFreeData()
 : <a class="el" href="structExaDG_1_1MatrixFreeData.html#a31ec14ac4105a57596590fbac09046e7">ExaDG::MatrixFreeData&lt; dim, Number &gt;</a>
 </li>
-<li>MovingMeshBase()
-: <a class="el" href="classExaDG_1_1MovingMeshBase.html#ad82efb4e43882160c3140e98311c0f94">ExaDG::MovingMeshBase&lt; dim, Number &gt;</a>
-</li>
-<li>MovingMeshElasticity()
-: <a class="el" href="classExaDG_1_1MovingMeshElasticity.html#a19d93a6068a0705c9144383b436722ee">ExaDG::MovingMeshElasticity&lt; dim, Number &gt;</a>
-</li>
-<li>MovingMeshFunction()
-: <a class="el" href="classExaDG_1_1MovingMeshFunction.html#a0c7fcce0d5f97806a0e800bf42c262f4">ExaDG::MovingMeshFunction&lt; dim, Number &gt;</a>
-</li>
-<li>MovingMeshPoisson()
-: <a class="el" href="classExaDG_1_1MovingMeshPoisson.html#ae2a426f06e82d87f2380e9ae0a086523">ExaDG::MovingMeshPoisson&lt; dim, Number &gt;</a>
-</li>
 </ul>
 
 
 <h3><a id="index_p"></a>- p -</h3><ul>
 <li>periodic_faces
-: <a class="el" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">ExaDG::Grid&lt; dim &gt;</a>
+: <a class="el" href="classExaDG_1_1Grid.html#a984073b91b0706dd93e164693c7c3900">ExaDG::Grid&lt; dim, Number &gt;</a>
 </li>
 <li>Permutator()
 : <a class="el" href="classdealspectrum_1_1Permutator.html#a09ac0bcb0a25a7e89afadcb1850b3233">dealspectrum::Permutator</a>
 </li>
 <li>print_iterations()
-: <a class="el" href="classExaDG_1_1MovingMeshElasticity.html#ac667e526e3df504152504aeefb541331">ExaDG::MovingMeshElasticity&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshInterface.html#ae8b3a19770ba7ec0efab19ae8290b839">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshPoisson.html#afb5b131797f4ed53ef9f9e3f05d92e9b">ExaDG::MovingMeshPoisson&lt; dim, Number &gt;</a>
+: <a class="el" href="classExaDG_1_1GridMotionElasticity.html#afacd3193eece5fd85d68ddc3853eb602">ExaDG::GridMotionElasticity&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionPoisson.html#ad2f9ee28df7619af9d82160f52b4edad">ExaDG::GridMotionPoisson&lt; dim, Number &gt;</a>
 </li>
 <li>printTimings()
 : <a class="el" href="classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52">dealspectrum::DealSpectrumTimer</a>
@@ -245,17 +257,17 @@ $(function() {
 
 <h3><a id="index_t"></a>- t -</h3><ul>
 <li>triangulation
-: <a class="el" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">ExaDG::Grid&lt; dim &gt;</a>
+: <a class="el" href="classExaDG_1_1Grid.html#ace2b0f53b10a4f5f86c18d707ba6241a">ExaDG::Grid&lt; dim, Number &gt;</a>
 </li>
 </ul>
 
 
 <h3><a id="index_u"></a>- u -</h3><ul>
 <li>update()
-: <a class="el" href="classExaDG_1_1MovingMeshElasticity.html#ae837ec6197e0ceb99136717d86f19cf8">ExaDG::MovingMeshElasticity&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshFunction.html#a34ba46c509524e9768104460b5be7942">ExaDG::MovingMeshFunction&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshInterface.html#a1c8554e5acbd890fcfe2a2b8715f19b8">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a>
-, <a class="el" href="classExaDG_1_1MovingMeshPoisson.html#af5a644357d69f0be104a61ec172d05de">ExaDG::MovingMeshPoisson&lt; dim, Number &gt;</a>
+: <a class="el" href="classExaDG_1_1GridMotionAnalytical.html#ae44a5fcef5d178c2e9aca97b1720f50b">ExaDG::GridMotionAnalytical&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionElasticity.html#a907ae6666decbdcaf5e26ab25fa38fcb">ExaDG::GridMotionElasticity&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionInterface.html#aad4132e7fd4f7897015b6ae6a9e7d9a7">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>
+, <a class="el" href="classExaDG_1_1GridMotionPoisson.html#a9d0c457bb394d7aa920831a8f3ffd091">ExaDG::GridMotionPoisson&lt; dim, Number &gt;</a>
 </li>
 </ul>
 
@@ -268,11 +280,11 @@ $(function() {
 
 
 <h3><a id="index__7E"></a>- ~ -</h3><ul>
+<li>~GridMotionInterface()
+: <a class="el" href="classExaDG_1_1GridMotionInterface.html#ad5df404201def98d5cab4058456c9563">ExaDG::GridMotionInterface&lt; dim, Number &gt;</a>
+</li>
 <li>~MappingDoFVector()
 : <a class="el" href="classExaDG_1_1MappingDoFVector.html#a70fc04b5bbe83adc68c35f1289a7a196">ExaDG::MappingDoFVector&lt; dim, Number &gt;</a>
-</li>
-<li>~MovingMeshInterface()
-: <a class="el" href="classExaDG_1_1MovingMeshInterface.html#a748e2cc78db0cbb471a688bc673114ec">ExaDG::MovingMeshInterface&lt; dim, Number &gt;</a>
 </li>
 <li>~Permutator()
 : <a class="el" href="classdealspectrum_1_1Permutator.html#a916c5f88e9231db447a5e7022a9cfb2a">dealspectrum::Permutator</a>

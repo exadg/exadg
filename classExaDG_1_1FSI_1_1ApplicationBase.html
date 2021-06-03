@@ -92,9 +92,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter
 <tr class="memitem:ae427d7cc9f2426fd93e6ca2682e13497"><td class="memItemLeft" align="right" valign="top"><a id="ae427d7cc9f2426fd93e6ca2682e13497"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters_fluid</b> (<a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">IncNS::InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:ae427d7cc9f2426fd93e6ca2682e13497"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7feb3a3ab13d40b752f5b461aaaf28fb"><td class="memItemLeft" align="right" valign="top"><a id="a7feb3a3ab13d40b752f5b461aaaf28fb"></a>
-virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_fluid</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
-<tr class="separator:a7feb3a3ab13d40b752f5b461aaaf28fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a908058005d79cefc5b369d733d284f66"><td class="memItemLeft" align="right" valign="top"><a id="a908058005d79cefc5b369d733d284f66"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_fluid</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
+<tr class="separator:a908058005d79cefc5b369d733d284f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0cba81ff2f4f8585afdf3614e7cdea2f"><td class="memItemLeft" align="right" valign="top"><a id="a0cba81ff2f4f8585afdf3614e7cdea2f"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions_fluid</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">IncNS::BoundaryDescriptorU</a>&lt; dim &gt;&gt; boundary_descriptor_velocity, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">IncNS::BoundaryDescriptorP</a>&lt; dim &gt;&gt; boundary_descriptor_pressure)=0</td></tr>
 <tr class="separator:a0cba81ff2f4f8585afdf3614e7cdea2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -128,9 +128,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_field_fun
 <tr class="memitem:a43cd2d4c6e85d9df6ef5d0514dffa10f"><td class="memItemLeft" align="right" valign="top"><a id="a43cd2d4c6e85d9df6ef5d0514dffa10f"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters_structure</b> (<a class="el" href="classExaDG_1_1Structure_1_1InputParameters.html">Structure::InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:a43cd2d4c6e85d9df6ef5d0514dffa10f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8f6d75b25883c35457f9540969bf315f"><td class="memItemLeft" align="right" valign="top"><a id="a8f6d75b25883c35457f9540969bf315f"></a>
-virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_structure</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
-<tr class="separator:a8f6d75b25883c35457f9540969bf315f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cac2e4636c438aa43bfd837eea32705"><td class="memItemLeft" align="right" valign="top"><a id="a9cac2e4636c438aa43bfd837eea32705"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_structure</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
+<tr class="separator:a9cac2e4636c438aa43bfd837eea32705"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6336845811eb4b7a1ff56dfb5c2e59d5"><td class="memItemLeft" align="right" valign="top"><a id="a6336845811eb4b7a1ff56dfb5c2e59d5"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions_structure</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">Structure::BoundaryDescriptor</a>&lt; dim &gt;&gt; boundary_descriptor)=0</td></tr>
 <tr class="separator:a6336845811eb4b7a1ff56dfb5c2e59d5"><td class="memSeparator" colspan="2">&#160;</td></tr>

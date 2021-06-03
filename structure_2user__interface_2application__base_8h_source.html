@@ -140,7 +140,7 @@ $(function() {
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  set_input_parameters(<a class="code" href="classExaDG_1_1Structure_1_1InputParameters.html">InputParameters</a> &amp; parameters) = 0;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Grid&lt;dim&gt;&gt;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Grid&lt;dim, Number&gt;&gt;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  create_grid(<a class="code" href="structExaDG_1_1GridData.html">GridData</a> <span class="keyword">const</span> &amp; data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm) = 0;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
@@ -177,7 +177,7 @@ $(function() {
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ApplicationBase.html">ExaDG::Structure::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:46</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1InputParameters.html">ExaDG::Structure::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:46</div></div>
-<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid.h:38</div></div>
+<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1Structure_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">ExaDG::Structure::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:50</div></div>
 <div class="ttc" id="astructExaDG_1_1Structure_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1FieldFunctions.html">ExaDG::Structure::FieldFunctions</a></div><div class="ttdef"><b>Definition:</b> field_functions.h:34</div></div>
 </div><!-- fragment --></div><!-- contents -->

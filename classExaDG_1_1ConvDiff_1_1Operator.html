@@ -84,9 +84,9 @@ Inheritance diagram for ExaDG::ConvDiff::Operator&lt; dim, Number &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a51c32a1668225d421b6bf6907778386c"><td class="memItemLeft" align="right" valign="top"><a id="a51c32a1668225d421b6bf6907778386c"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, unsigned int const degree, PeriodicFaces const periodic_face_pairs, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt;&gt; const boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt;&gt; const field_functions, <a class="el" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a51c32a1668225d421b6bf6907778386c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a301611637b0452e8cd917320f76a516d"><td class="memItemLeft" align="right" valign="top"><a id="a301611637b0452e8cd917320f76a516d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Operator</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; const &gt; grid, unsigned int const degree, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt;&gt; const boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1ConvDiff_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt;&gt; const field_functions, <a class="el" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a> const &amp;param, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a301611637b0452e8cd917320f76a516d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memItemLeft" align="right" valign="top"><a id="a65c5bc919e153a4313bd4e5ff2b7c628"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a65c5bc919e153a4313bd4e5ff2b7c628"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -144,6 +144,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_conv_diff_opera
 <tr class="memitem:ab0a9edc71a3572c652cae04d08e622a5"><td class="memItemLeft" align="right" valign="top"><a id="ab0a9edc71a3572c652cae04d08e622a5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>update_conv_diff_operator</b> (double const evaluation_time, double const scaling_factor, VectorType const *velocity=nullptr)</td></tr>
 <tr class="separator:ab0a9edc71a3572c652cae04d08e622a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e6d075ff94187456bddde5463097067"><td class="memItemLeft" align="right" valign="top"><a id="a2e6d075ff94187456bddde5463097067"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid</b> (double const &amp;time) const</td></tr>
+<tr class="separator:a2e6d075ff94187456bddde5463097067"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab28a7e7aefa26352d69306c058498fb1"><td class="memItemLeft" align="right" valign="top"><a id="ab28a7e7aefa26352d69306c058498fb1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid_and_update_dependent_data_structures</b> (double const &amp;time)</td></tr>
+<tr class="separator:ab28a7e7aefa26352d69306c058498fb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b8125529dc08b7e518a58011546c26a"><td class="memItemLeft" align="right" valign="top"><a id="a5b8125529dc08b7e518a58011546c26a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_grid_coordinates_vector</b> (VectorType &amp;vector) const</td></tr>
+<tr class="separator:a5b8125529dc08b7e518a58011546c26a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a06387448756d20efc44fc54020c304"><td class="memItemLeft" align="right" valign="top"><a id="a7a06387448756d20efc44fc54020c304"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> ()</td></tr>
+<tr class="separator:a7a06387448756d20efc44fc54020c304"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36b45c34465061c3ddd44ee95831450e"><td class="memItemLeft" align="right" valign="top"><a id="a36b45c34465061c3ddd44ee95831450e"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr)</td></tr>
 <tr class="separator:a36b45c34465061c3ddd44ee95831450e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -177,9 +189,6 @@ types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>ge
 <tr class="memitem:aa2d8c784fe58bf361f2582f02429f57f"><td class="memItemLeft" align="right" valign="top"><a id="aa2d8c784fe58bf361f2582f02429f57f"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_name</b> () const</td></tr>
 <tr class="separator:aa2d8c784fe58bf361f2582f02429f57f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f27042f65c54ae559d893526fce44c4"><td class="memItemLeft" align="right" valign="top"><a id="a6f27042f65c54ae559d893526fce44c4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_mesh_movement</b> ()</td></tr>
-<tr class="separator:a6f27042f65c54ae559d893526fce44c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b60c95a89c850069c2ac78e17ff4900"><td class="memItemLeft" align="right" valign="top"><a id="a3b60c95a89c850069c2ac78e17ff4900"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:a3b60c95a89c850069c2ac78e17ff4900"><td class="memSeparator" colspan="2">&#160;</td></tr>

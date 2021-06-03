@@ -87,9 +87,9 @@ Inheritance diagram for ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;:<
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5756cd42b72574189780686dc118575c"><td class="memItemLeft" align="right" valign="top"><a id="a5756cd42b72574189780686dc118575c"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialOperatorBase</b> (Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping, unsigned int const degree_u, std::vector&lt; GridTools::PeriodicFacePair&lt; typename Triangulation&lt; dim &gt;::cell_iterator &gt;&gt; const periodic_face_pairs, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">BoundaryDescriptorU</a>&lt; dim &gt;&gt; const boundary_descriptor_velocity, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">BoundaryDescriptorP</a>&lt; dim &gt;&gt; const boundary_descriptor_pressure, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt;&gt; const field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">InputParameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a5756cd42b72574189780686dc118575c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a714cb50e995f59936214156774872948"><td class="memItemLeft" align="right" valign="top"><a id="a714cb50e995f59936214156774872948"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialOperatorBase</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; const &gt; grid, unsigned int const degree_u, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">BoundaryDescriptorU</a>&lt; dim &gt;&gt; const boundary_descriptor_velocity, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">BoundaryDescriptorP</a>&lt; dim &gt;&gt; const boundary_descriptor_pressure, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt;&gt; const field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">InputParameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a714cb50e995f59936214156774872948"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48632e10b788b5204a3c2a194e0b96e3"><td class="memItemLeft" align="right" valign="top"><a id="a48632e10b788b5204a3c2a194e0b96e3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a48632e10b788b5204a3c2a194e0b96e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -135,9 +135,9 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_inde
 <tr class="memitem:a8a7f6781a785959dddedaba4867f3ffa"><td class="memItemLeft" align="right" valign="top"><a id="a8a7f6781a785959dddedaba4867f3ffa"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_degree_p</b> () const</td></tr>
 <tr class="separator:a8a7f6781a785959dddedaba4867f3ffa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac09516ebc34a281f45500ca0c5f8d490"><td class="memItemLeft" align="right" valign="top"><a id="ac09516ebc34a281f45500ca0c5f8d490"></a>
-Mapping&lt; dim &gt; const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
-<tr class="separator:ac09516ebc34a281f45500ca0c5f8d490"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13c025bcb00b68a682096a610bb891c4"><td class="memItemLeft" align="right" valign="top"><a id="a13c025bcb00b68a682096a610bb891c4"></a>
+std::shared_ptr&lt; Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+<tr class="separator:a13c025bcb00b68a682096a610bb891c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac783783b8e956decb04a9276c261a1e2"><td class="memItemLeft" align="right" valign="top"><a id="ac783783b8e956decb04a9276c261a1e2"></a>
 FESystem&lt; dim &gt; const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_u</b> () const</td></tr>
 <tr class="separator:ac783783b8e956decb04a9276c261a1e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -282,9 +282,18 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_dissipati
 <tr class="memitem:a4c5a09c2884a48b02e66bdbf130fff0f"><td class="memItemLeft" align="right" valign="top"><a id="a4c5a09c2884a48b02e66bdbf130fff0f"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_dissipation_continuity_term</b> (VectorType const &amp;velocity) const</td></tr>
 <tr class="separator:a4c5a09c2884a48b02e66bdbf130fff0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac15ace0ae471a367ac30f001b95afde6"><td class="memItemLeft" align="right" valign="top"><a id="ac15ace0ae471a367ac30f001b95afde6"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_mesh_movement</b> ()</td></tr>
-<tr class="separator:ac15ace0ae471a367ac30f001b95afde6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6c42eb85a712c992aea250108fff541"><td class="memItemLeft" align="right" valign="top"><a id="aa6c42eb85a712c992aea250108fff541"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid</b> (double const &amp;time) const</td></tr>
+<tr class="separator:aa6c42eb85a712c992aea250108fff541"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affb3026068140b3f8338811e15c10d29"><td class="memItemLeft" align="right" valign="top"><a id="affb3026068140b3f8338811e15c10d29"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>move_grid_and_update_dependent_data_structures</b> (double const &amp;time)</td></tr>
+<tr class="separator:affb3026068140b3f8338811e15c10d29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d7ffbde87c7a8f40aa5f45c112c4010"><td class="memItemLeft" align="right" valign="top"><a id="a0d7ffbde87c7a8f40aa5f45c112c4010"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_grid_coordinates_vector</b> (VectorType &amp;vector) const</td></tr>
+<tr class="separator:a0d7ffbde87c7a8f40aa5f45c112c4010"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14e730249b281e939ec2f9fb8a25fdc4"><td class="memItemLeft" align="right" valign="top"><a id="a14e730249b281e939ec2f9fb8a25fdc4"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_motion</b> ()</td></tr>
+<tr class="separator:a14e730249b281e939ec2f9fb8a25fdc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adb05054e90227c8170a87922341a37e1"><td class="memItemLeft" align="right" valign="top"><a id="adb05054e90227c8170a87922341a37e1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_grid_velocity</b> (VectorType velocity)</td></tr>
 <tr class="separator:adb05054e90227c8170a87922341a37e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -345,18 +354,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>unsteady_problem_has_
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a813b5ea82435067b650f025ba514d274"><td class="memItemLeft" align="right" valign="top"><a id="a813b5ea82435067b650f025ba514d274"></a>
-Triangulation&lt; dim &gt; const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>triangulation</b></td></tr>
-<tr class="separator:a813b5ea82435067b650f025ba514d274"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf67c519399816ed439ffd0730b32c02"><td class="memItemLeft" align="right" valign="top"><a id="aaf67c519399816ed439ffd0730b32c02"></a>
-std::shared_ptr&lt; Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mapping</b></td></tr>
-<tr class="separator:aaf67c519399816ed439ffd0730b32c02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a469823276a20678e43b5f8ee9a723987"><td class="memItemLeft" align="right" valign="top"><a id="a469823276a20678e43b5f8ee9a723987"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
+<tr class="separator:a469823276a20678e43b5f8ee9a723987"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5174a0d43cc1fbbede41a21b30517eb6"><td class="memItemLeft" align="right" valign="top"><a id="a5174a0d43cc1fbbede41a21b30517eb6"></a>
 unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>degree_u</b></td></tr>
 <tr class="separator:a5174a0d43cc1fbbede41a21b30517eb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2fa408b088d0c5591fce51f72765fae"><td class="memItemLeft" align="right" valign="top"><a id="ad2fa408b088d0c5591fce51f72765fae"></a>
-std::vector&lt; GridTools::PeriodicFacePair&lt; typename Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>periodic_face_pairs</b></td></tr>
-<tr class="separator:ad2fa408b088d0c5591fce51f72765fae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a491eb4f84120a3857646cb03aeb86946"><td class="memItemLeft" align="right" valign="top"><a id="a491eb4f84120a3857646cb03aeb86946"></a>
 std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">BoundaryDescriptorU</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>boundary_descriptor_velocity</b></td></tr>
 <tr class="separator:a491eb4f84120a3857646cb03aeb86946"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -146,7 +146,7 @@ $(function() {
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  set_input_parameters(<a class="code" href="classExaDG_1_1Poisson_1_1InputParameters.html">InputParameters</a> &amp; parameters) = 0;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Grid&lt;dim&gt;&gt;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Grid&lt;dim, Number&gt;&gt;</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  create_grid(<a class="code" href="structExaDG_1_1GridData.html">GridData</a> <span class="keyword">const</span> &amp; data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm) = 0;</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
@@ -181,7 +181,7 @@ $(function() {
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1ApplicationBase.html">ExaDG::Poisson::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:48</div></div>
 <div class="ttc" id="aclassExaDG_1_1Poisson_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1Poisson_1_1InputParameters.html">ExaDG::Poisson::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:38</div></div>
-<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid.h:38</div></div>
+<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1Poisson_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">ExaDG::Poisson::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:48</div></div>
 <div class="ttc" id="astructExaDG_1_1Poisson_1_1FieldFunctions_html"><div class="ttname"><a href="structExaDG_1_1Poisson_1_1FieldFunctions.html">ExaDG::Poisson::FieldFunctions</a></div><div class="ttdef"><b>Definition:</b> field_functions.h:32</div></div>
 </div><!-- fragment --></div><!-- contents -->

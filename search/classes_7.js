@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['hypercuberesolutionparameters_408',['HypercubeResolutionParameters',['../structExaDG_1_1HypercubeResolutionParameters.html',1,'ExaDG']]]
+  ['hypercuberesolutionparameters_417',['HypercubeResolutionParameters',['../structExaDG_1_1HypercubeResolutionParameters.html',1,'ExaDG']]]
 ];

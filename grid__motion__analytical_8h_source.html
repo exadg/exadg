@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/grid/moving_mesh_function.h Source File</title>
+<title>ExaDG: include/exadg/grid/grid_motion_analytical.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -66,7 +66,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">moving_mesh_function.h</div>  </div>
+<div class="title">grid_motion_analytical.h</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/*  ______________________________________________________________________</span></div>
@@ -90,27 +90,27 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> *  ______________________________________________________________________</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#ifndef INCLUDE_MOVING_MESH_H_</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#define INCLUDE_MOVING_MESH_H_</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#ifndef INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#define INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;exadg/grid/moving_mesh_base.h&gt;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;exadg/grid/grid_motion_base.h&gt;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;{</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">using namespace </span>dealii;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshFunction.html">   36</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1MovingMeshFunction.html">MovingMeshFunction</a> : <span class="keyword">public</span> <a class="code" href="classExaDG_1_1MovingMeshBase.html">MovingMeshBase</a>&lt;dim, Number&gt;</div>
+<div class="line"><a name="l00036"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionAnalytical.html">   36</a></span>&#160;<span class="keyword">class </span><a class="code" href="classExaDG_1_1GridMotionAnalytical.html">GridMotionAnalytical</a> : <span class="keyword">public</span> <a class="code" href="classExaDG_1_1GridMotionBase.html">GridMotionBase</a>&lt;dim, Number&gt;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;{</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshFunction.html#a0c7fcce0d5f97806a0e800bf42c262f4">   44</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshFunction.html#a0c7fcce0d5f97806a0e800bf42c262f4">MovingMeshFunction</a>(std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;  mapping_undeformed,</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                     <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                   mapping_degree_q_cache,</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                     Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;           triangulation,</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                     std::shared_ptr&lt;Function&lt;dim&gt;&gt; <span class="keyword">const</span> mesh_movement_function,</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                     <span class="keywordtype">double</span> <span class="keyword">const</span>                         start_time)</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    : <a class="code" href="classExaDG_1_1MovingMeshBase.html">MovingMeshBase</a>&lt;dim, Number&gt;(mapping_undeformed, mapping_degree_q_cache, triangulation),</div>
+<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionAnalytical.html#a88650548b38a142848087d114a3d7ad3">   44</a></span>&#160;  <a class="code" href="classExaDG_1_1GridMotionAnalytical.html#a88650548b38a142848087d114a3d7ad3">GridMotionAnalytical</a>(std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;  mapping_undeformed,</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;                       <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                   mapping_degree_q_cache,</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                       Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;           triangulation,</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                       std::shared_ptr&lt;Function&lt;dim&gt;&gt; <span class="keyword">const</span> mesh_movement_function,</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                       <span class="keywordtype">double</span> <span class="keyword">const</span>                         start_time)</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    : <a class="code" href="classExaDG_1_1GridMotionBase.html">GridMotionBase</a>&lt;dim, Number&gt;(mapping_undeformed, mapping_degree_q_cache, triangulation),</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;      mesh_movement_function(mesh_movement_function),</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;      triangulation(triangulation)</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  {</div>
@@ -118,7 +118,7 @@ $(function() {
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  }</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1MovingMeshFunction.html#a34ba46c509524e9768104460b5be7942">   60</a></span>&#160;  <a class="code" href="classExaDG_1_1MovingMeshFunction.html#a34ba46c509524e9768104460b5be7942">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info)<span class="keyword"> override</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionAnalytical.html#ae44a5fcef5d178c2e9aca97b1720f50b">   60</a></span>&#160;  <a class="code" href="classExaDG_1_1GridMotionAnalytical.html#ae44a5fcef5d178c2e9aca97b1720f50b">update</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> <span class="keyword">const</span> print_solver_info)<span class="keyword"> override</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keyword">  </span>{</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    (void)print_solver_info;</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
@@ -171,11 +171,11 @@ $(function() {
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160; </div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/*INCLUDE_MOVING_MESH_H_*/</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshBase_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshBase.html">ExaDG::MovingMeshBase</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_base.h:38</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshFunction_html"><div class="ttname"><a href="classExaDG_1_1MovingMeshFunction.html">ExaDG::MovingMeshFunction</a></div><div class="ttdef"><b>Definition:</b> moving_mesh_function.h:37</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshFunction_html_a0c7fcce0d5f97806a0e800bf42c262f4"><div class="ttname"><a href="classExaDG_1_1MovingMeshFunction.html#a0c7fcce0d5f97806a0e800bf42c262f4">ExaDG::MovingMeshFunction::MovingMeshFunction</a></div><div class="ttdeci">MovingMeshFunction(std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Function&lt; dim &gt;&gt; const mesh_movement_function, double const start_time)</div><div class="ttdef"><b>Definition:</b> moving_mesh_function.h:44</div></div>
-<div class="ttc" id="aclassExaDG_1_1MovingMeshFunction_html_a34ba46c509524e9768104460b5be7942"><div class="ttname"><a href="classExaDG_1_1MovingMeshFunction.html#a34ba46c509524e9768104460b5be7942">ExaDG::MovingMeshFunction::update</a></div><div class="ttdeci">void update(double const time, bool const print_solver_info) override</div><div class="ttdef"><b>Definition:</b> moving_mesh_function.h:60</div></div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/*INCLUDE_GRID_GRID_MOTION_ANALYTICAL_H_*/</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionAnalytical_html"><div class="ttname"><a href="classExaDG_1_1GridMotionAnalytical.html">ExaDG::GridMotionAnalytical</a></div><div class="ttdef"><b>Definition:</b> grid_motion_analytical.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionAnalytical_html_a88650548b38a142848087d114a3d7ad3"><div class="ttname"><a href="classExaDG_1_1GridMotionAnalytical.html#a88650548b38a142848087d114a3d7ad3">ExaDG::GridMotionAnalytical::GridMotionAnalytical</a></div><div class="ttdeci">GridMotionAnalytical(std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation, std::shared_ptr&lt; Function&lt; dim &gt;&gt; const mesh_movement_function, double const start_time)</div><div class="ttdef"><b>Definition:</b> grid_motion_analytical.h:44</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionAnalytical_html_ae44a5fcef5d178c2e9aca97b1720f50b"><div class="ttname"><a href="classExaDG_1_1GridMotionAnalytical.html#ae44a5fcef5d178c2e9aca97b1720f50b">ExaDG::GridMotionAnalytical::update</a></div><div class="ttdeci">void update(double const time, bool const print_solver_info) override</div><div class="ttdef"><b>Definition:</b> grid_motion_analytical.h:60</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html">ExaDG::GridMotionBase</a></div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:38</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

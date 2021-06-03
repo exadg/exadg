@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: ExaDG::Grid&lt; dim &gt; Class Template Reference</title>
+<title>ExaDG: ExaDG::Grid&lt; dim, Number &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -71,44 +71,52 @@ $(function() {
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="classExaDG_1_1Grid-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ExaDG::Grid&lt; dim &gt; Class Template Reference</div>  </div>
+<div class="title">ExaDG::Grid&lt; dim, Number &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a23b4b47aacc9a709d4185b7f3c86196d"><td class="memItemLeft" align="right" valign="top"><a id="a23b4b47aacc9a709d4185b7f3c86196d"></a>
+<tr class="memitem:ad68b4c2b9c2e60002217fedb2d6c697c"><td class="memItemLeft" align="right" valign="top"><a id="ad68b4c2b9c2e60002217fedb2d6c697c"></a>
 typedef std::vector&lt; GridTools::PeriodicFacePair&lt; typename Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
-<tr class="separator:a23b4b47aacc9a709d4185b7f3c86196d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:ad68b4c2b9c2e60002217fedb2d6c697c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab5cc5b9f96815723cc3605265ee069cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">Grid</a> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:ab5cc5b9f96815723cc3605265ee069cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a297f77ffd33774085f95d9c98e4f9add"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a297f77ffd33774085f95d9c98e4f9add">Grid</a> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a297f77ffd33774085f95d9c98e4f9add"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a830c7d8039c8226ec9b2f9336187844c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a830c7d8039c8226ec9b2f9336187844c">attach_grid_motion</a> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt;&gt; grid_motion_in)</td></tr>
+<tr class="separator:a830c7d8039c8226ec9b2f9336187844c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff2401477e023acc22d4f0ada2d814ff"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#aff2401477e023acc22d4f0ada2d814ff">get_static_mapping</a> () const</td></tr>
+<tr class="separator:aff2401477e023acc22d4f0ada2d814ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace4a4a1d7ac534cf45356d32a2e6035d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Mapping&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ace4a4a1d7ac534cf45356d32a2e6035d">get_dynamic_mapping</a> () const</td></tr>
+<tr class="separator:ace4a4a1d7ac534cf45356d32a2e6035d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:af6bd184b8b220be575915fc17a9f040d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Triangulation&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">triangulation</a></td></tr>
-<tr class="separator:af6bd184b8b220be575915fc17a9f040d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7150098ee6126c7c3b8e4645b3ab59a1"><td class="memItemLeft" align="right" valign="top">PeriodicFaces&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">periodic_faces</a></td></tr>
-<tr class="separator:a7150098ee6126c7c3b8e4645b3ab59a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeef7db68d2345518e4e596ecf7414466"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Mapping&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466">mapping</a></td></tr>
-<tr class="separator:aeef7db68d2345518e4e596ecf7414466"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace2b0f53b10a4f5f86c18d707ba6241a"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Triangulation&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ace2b0f53b10a4f5f86c18d707ba6241a">triangulation</a></td></tr>
+<tr class="separator:ace2b0f53b10a4f5f86c18d707ba6241a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a984073b91b0706dd93e164693c7c3900"><td class="memItemLeft" align="right" valign="top">PeriodicFaces&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a984073b91b0706dd93e164693c7c3900">periodic_faces</a></td></tr>
+<tr class="separator:a984073b91b0706dd93e164693c7c3900"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab87de829d3c339786505e4408d69afbf"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Mapping&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#ab87de829d3c339786505e4408d69afbf">mapping</a></td></tr>
+<tr class="separator:ab87de829d3c339786505e4408d69afbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d0aa94893e9a8b595c6a9a6005d17ba"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Grid.html#a9d0aa94893e9a8b595c6a9a6005d17ba">grid_motion</a></td></tr>
+<tr class="separator:a9d0aa94893e9a8b595c6a9a6005d17ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ab5cc5b9f96815723cc3605265ee069cb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab5cc5b9f96815723cc3605265ee069cb">&#9670;&nbsp;</a></span>Grid()</h2>
+<a id="a297f77ffd33774085f95d9c98e4f9add"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a297f77ffd33774085f95d9c98e4f9add">&#9670;&nbsp;</a></span>Grid()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim&gt; </div>
+template&lt;int dim, typename Number &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::<a class="el" href="classExaDG_1_1Grid.html">Grid</a> </td>
+          <td class="memname"><a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::<a class="el" href="classExaDG_1_1Grid.html">Grid</a> </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;&#160;</td>
           <td class="paramname"><em>data</em>, </td>
@@ -135,34 +143,137 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
-<h2 class="groupheader">Member Data Documentation</h2>
-<a id="aeef7db68d2345518e4e596ecf7414466"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeef7db68d2345518e4e596ecf7414466">&#9670;&nbsp;</a></span>mapping</h2>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a830c7d8039c8226ec9b2f9336187844c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a830c7d8039c8226ec9b2f9336187844c">&#9670;&nbsp;</a></span>attach_grid_motion()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim&gt; </div>
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::shared_ptr&lt;Mapping&lt;dim&gt; &gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::mapping</td>
+          <td class="memname">void <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::attach_grid_motion </td>
+          <td>(</td>
+          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt; dim, Number &gt;&gt;&#160;</td>
+          <td class="paramname"><em>grid_motion_in</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Attach a pointer for moving grid functionality. </p>
+
+</div>
+</div>
+<a id="ace4a4a1d7ac534cf45356d32a2e6035d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace4a4a1d7ac534cf45356d32a2e6035d">&#9670;&nbsp;</a></span>get_dynamic_mapping()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;Mapping&lt;dim&gt; const&gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::get_dynamic_mapping </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Return pointer to dynamic mapping (and redirect to static mapping if dynamic mapping is not initialized). </p>
+
+</div>
+</div>
+<a id="aff2401477e023acc22d4f0ada2d814ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff2401477e023acc22d4f0ada2d814ff">&#9670;&nbsp;</a></span>get_static_mapping()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;Mapping&lt;dim&gt; const&gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::get_static_mapping </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Return pointer to static mapping. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a9d0aa94893e9a8b595c6a9a6005d17ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d0aa94893e9a8b595c6a9a6005d17ba">&#9670;&nbsp;</a></span>grid_motion</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt;dim, Number&gt; &gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::grid_motion</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>dealii::Mapping. </p>
+<p>Computes and describes dynamic grid motion. </p>
 
 </div>
 </div>
-<a id="a7150098ee6126c7c3b8e4645b3ab59a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7150098ee6126c7c3b8e4645b3ab59a1">&#9670;&nbsp;</a></span>periodic_faces</h2>
+<a id="ab87de829d3c339786505e4408d69afbf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab87de829d3c339786505e4408d69afbf">&#9670;&nbsp;</a></span>mapping</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim&gt; </div>
+template&lt;int dim, typename Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">PeriodicFaces <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::periodic_faces</td>
+          <td class="memname">std::shared_ptr&lt;Mapping&lt;dim&gt; &gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::mapping</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>dealii::Mapping. Describes reference configuration. </p>
+
+</div>
+</div>
+<a id="a984073b91b0706dd93e164693c7c3900"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a984073b91b0706dd93e164693c7c3900">&#9670;&nbsp;</a></span>periodic_faces</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">PeriodicFaces <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::periodic_faces</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -170,16 +281,16 @@ template&lt;int dim&gt; </div>
 
 </div>
 </div>
-<a id="af6bd184b8b220be575915fc17a9f040d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af6bd184b8b220be575915fc17a9f040d">&#9670;&nbsp;</a></span>triangulation</h2>
+<a id="ace2b0f53b10a4f5f86c18d707ba6241a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace2b0f53b10a4f5f86c18d707ba6241a">&#9670;&nbsp;</a></span>triangulation</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int dim&gt; </div>
+template&lt;int dim, typename Number &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">std::shared_ptr&lt;Triangulation&lt;dim&gt; &gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim &gt;::triangulation</td>
+          <td class="memname">std::shared_ptr&lt;Triangulation&lt;dim&gt; &gt; <a class="el" href="classExaDG_1_1Grid.html">ExaDG::Grid</a>&lt; dim, Number &gt;::triangulation</td>
         </tr>
       </table>
 </div><div class="memdoc">
