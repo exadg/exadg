@@ -62,10 +62,6 @@ template<int dim, typename Number>
 class ApplicationBase
 {
 public:
-  typedef
-    typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      PeriodicFaces;
-
   virtual void
   add_parameters(ParameterHandler & prm)
   {
@@ -95,8 +91,7 @@ public:
 
   virtual void
   set_boundary_conditions_fluid(
-    std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure) = 0;
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) = 0;
 
   virtual void
   set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) = 0;

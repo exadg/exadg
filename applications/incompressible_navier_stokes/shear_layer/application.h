@@ -200,12 +200,9 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
   {
-    (void)boundary_descriptor_velocity;
-    (void)boundary_descriptor_pressure;
+    (void)boundary_descriptor;
   }
 
 

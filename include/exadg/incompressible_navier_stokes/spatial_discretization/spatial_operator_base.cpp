@@ -38,19 +38,17 @@ using namespace dealii;
 
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
-  std::shared_ptr<Grid<dim, Number> const>        grid_in,
-  unsigned int const                              degree_u_in,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  InputParameters const &                         parameters_in,
-  std::string const &                             field_in,
-  MPI_Comm const &                                mpi_comm_in)
+  std::shared_ptr<Grid<dim, Number> const>       grid_in,
+  unsigned int const                             degree_u_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
+  InputParameters const &                        parameters_in,
+  std::string const &                            field_in,
+  MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
     degree_u(degree_u_in),
-    boundary_descriptor_velocity(boundary_descriptor_velocity_in),
-    boundary_descriptor_pressure(boundary_descriptor_pressure_in),
+    boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(parameters_in),
     field(field_in),
@@ -84,8 +82,8 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   // do not even exist in the triangulation. Here, we make sure that each entry of
   // the boundary descriptor has indeed a counterpart in the triangulation.
   std::vector<types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
-  for(auto it = boundary_descriptor_pressure->dirichlet_bc.begin();
-      it != boundary_descriptor_pressure->dirichlet_bc.end();
+  for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
+      it != boundary_descriptor->pressure->dirichlet_bc.end();
       ++it)
   {
     bool const triangulation_has_boundary_id =
@@ -96,7 +94,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
                            "that are not part of the triangulation."));
   }
 
-  pressure_level_is_undefined = boundary_descriptor_pressure->dirichlet_bc.empty();
+  pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
 
   if(is_pressure_level_undefined())
   {
@@ -212,7 +210,7 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
   boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
   // Dirichlet BCs for pressure
-  boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor_pressure->dirichlet_bc;
+  boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor->pressure->dirichlet_bc;
 
   // Neumann BCs for pressure
   // Note: for the dual splitting scheme, neumann_bc contains functions corresponding
@@ -222,8 +220,8 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
   //       boundary conditions have to be implemented separately
   //       and can not be applied by the Laplace operator.
   for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
-        boundary_descriptor_pressure->neumann_bc.begin();
-      it != boundary_descriptor_pressure->neumann_bc.end();
+        boundary_descriptor->pressure->neumann_bc.begin();
+      it != boundary_descriptor->pressure->neumann_bc.end();
       ++it)
   {
     std::shared_ptr<Function<dim>> zero_function;
@@ -349,7 +347,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   gradient_operator_data.integration_by_parts = param.gradp_integrated_by_parts;
   gradient_operator_data.formulation          = param.gradp_formulation;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
-  gradient_operator_data.bc                   = boundary_descriptor_pressure;
+  gradient_operator_data.bc                   = boundary_descriptor->pressure;
   gradient_operator.initialize(*matrix_free, gradient_operator_data);
 
   // divergence operator
@@ -360,7 +358,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   divergence_operator_data.integration_by_parts = param.divu_integrated_by_parts;
   divergence_operator_data.formulation          = param.divu_formulation;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
-  divergence_operator_data.bc                   = boundary_descriptor_velocity;
+  divergence_operator_data.bc                   = boundary_descriptor->velocity;
   divergence_operator.initialize(*matrix_free, divergence_operator_data);
 
   // convective operator
@@ -370,7 +368,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   convective_operator_data.quad_index           = this->get_quad_index_velocity_linearized();
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.quad_index_nonlinear = get_quad_index_velocity_nonlinear();
-  convective_operator_data.bc                   = boundary_descriptor_velocity;
+  convective_operator_data.bc                   = boundary_descriptor->velocity;
   convective_operator.initialize(*matrix_free,
                                  constraint_dummy,
                                  convective_operator_data,
@@ -379,7 +377,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   // viscous operator
   ViscousOperatorData<dim> viscous_operator_data;
   viscous_operator_data.kernel_data          = viscous_kernel_data;
-  viscous_operator_data.bc                   = boundary_descriptor_velocity;
+  viscous_operator_data.bc                   = boundary_descriptor->velocity;
   viscous_operator_data.dof_index            = get_dof_index_velocity();
   viscous_operator_data.quad_index           = get_quad_index_velocity_linear();
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
@@ -401,7 +399,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   data.convective_kernel_data = convective_kernel_data;
   data.viscous_kernel_data    = viscous_kernel_data;
 
-  data.bc = boundary_descriptor_velocity;
+  data.bc = boundary_descriptor->velocity;
 
   data.dof_index  = get_dof_index_velocity();
   data.quad_index = get_quad_index_velocity_linearized();
@@ -464,7 +462,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     operator_data.dof_index         = get_dof_index_velocity();
     operator_data.quad_index        = get_quad_index_velocity_linear();
     operator_data.use_boundary_data = param.continuity_penalty_use_boundary_data;
-    operator_data.bc                = this->boundary_descriptor_velocity;
+    operator_data.bc                = this->boundary_descriptor->velocity;
 
     conti_penalty_operator.initialize(*matrix_free, operator_data, conti_penalty_kernel);
   }
@@ -481,7 +479,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
       data.use_divergence_penalty = param.use_divergence_penalty;
       data.use_continuity_penalty = param.use_continuity_penalty;
       data.use_boundary_data      = param.continuity_penalty_use_boundary_data;
-      data.bc                     = this->boundary_descriptor_velocity;
+      data.bc                     = this->boundary_descriptor->velocity;
       data.dof_index              = get_dof_index_velocity();
       data.quad_index             = get_quad_index_velocity_linear();
       data.use_cell_based_loops   = param.use_cell_based_face_loops;
@@ -1102,12 +1100,12 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<0, dim>());
 
   // fill boundary descriptor: Assumption: only Dirichlet BC's
-  boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor_velocity->dirichlet_bc;
+  boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor->velocity->dirichlet_bc;
 
-  AssertThrow(boundary_descriptor_velocity->neumann_bc.empty() == true,
+  AssertThrow(boundary_descriptor->velocity->neumann_bc.empty() == true,
               ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
                          "not implemented for this type of boundary conditions."));
-  AssertThrow(boundary_descriptor_velocity->symmetry_bc.empty() == true,
+  AssertThrow(boundary_descriptor->velocity->symmetry_bc.empty() == true,
               ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
                          "not implemented for this type of boundary conditions."));
 
@@ -1600,7 +1598,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
     types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
     BoundaryTypeU const boundary_type =
-      this->boundary_descriptor_velocity->get_boundary_type(boundary_id);
+      this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
     if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
     {
@@ -1618,7 +1616,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
 
         if(boundary_type == BoundaryTypeU::Dirichlet)
         {
-          auto bc = this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id)->second;
+          auto bc = this->boundary_descriptor->velocity->dirichlet_bc.find(boundary_id)->second;
           auto q_points = integrator.quadrature_point(q);
 
           g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
@@ -1626,7 +1624,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
         else if(boundary_type == BoundaryTypeU::DirichletMortar)
         {
           auto bc =
-            this->boundary_descriptor_velocity->dirichlet_mortar_bc.find(boundary_id)->second;
+            this->boundary_descriptor->velocity->dirichlet_mortar_bc.find(boundary_id)->second;
 
           g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
         }
@@ -1667,7 +1665,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_bounda
     types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
     BoundaryTypeP const boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
     if(boundary_type == BoundaryTypeP::Dirichlet)
     {
@@ -1681,7 +1679,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_bounda
         unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
                                      .face_to_cell_index_nodal[local_face_number][q];
 
-        auto bc       = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id)->second;
+        auto bc       = this->boundary_descriptor->pressure->dirichlet_bc.find(boundary_id)->second;
         auto q_points = integrator.quadrature_point(q);
 
         scalar g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, this->evaluation_time);
@@ -1718,7 +1716,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
     types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
     BoundaryTypeU const boundary_type =
-      this->boundary_descriptor_velocity->get_boundary_type(boundary_id);
+      this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
 
     // a Dirichlet boundary for the fluid is a stress boundary for the structure
     if(boundary_type == BoundaryTypeU::DirichletMortar)

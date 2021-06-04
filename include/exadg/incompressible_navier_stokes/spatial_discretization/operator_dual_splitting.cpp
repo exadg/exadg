@@ -33,18 +33,16 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorDualSplitting<dim, Number>::OperatorDualSplitting(
-  std::shared_ptr<Grid<dim, Number> const>        grid_in,
-  unsigned int const                              degree_u_in,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  InputParameters const &                         parameters_in,
-  std::string const &                             field_in,
-  MPI_Comm const &                                mpi_comm_in)
+  std::shared_ptr<Grid<dim, Number> const>       grid_in,
+  unsigned int const                             degree_u_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
+  InputParameters const &                        parameters_in,
+  std::string const &                            field_in,
+  MPI_Comm const &                               mpi_comm_in)
   : ProjectionBase(grid_in,
                    degree_u_in,
-                   boundary_descriptor_velocity_in,
-                   boundary_descriptor_pressure_in,
+                   boundary_descriptor_in,
                    field_functions_in,
                    parameters_in,
                    field_in,
@@ -262,7 +260,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_boundary_
     integrator.reinit(face);
 
     BoundaryTypeU boundary_type =
-      this->boundary_descriptor_velocity->get_boundary_type(matrix_free.get_boundary_id(face));
+      this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -355,7 +353,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_bound
     pressure.reinit(face);
 
     BoundaryTypeU boundary_type =
-      this->boundary_descriptor_velocity->get_boundary_type(matrix_free.get_boundary_id(face));
+      this->boundary_descriptor->velocity->get_boundary_type(matrix_free.get_boundary_id(face));
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
@@ -447,7 +445,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_analytical_time_derivative
 
     types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP      boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -457,7 +455,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_analytical_time_derivative
 
         // evaluate boundary condition
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
+          this->boundary_descriptor->pressure->neumann_bc.find(boundary_id);
         vector dudt =
           FunctionEvaluator<1, dim, Number>::value(it->second, q_points, this->evaluation_time);
 
@@ -520,7 +518,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_numerical_time_derivative_
 
     types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP      boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
     for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
     {
@@ -583,7 +581,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_bounda
 
     types::boundary_id boundary_id = data.get_boundary_id(face);
     BoundaryTypeP      boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+      this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -661,7 +659,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_fa
     pressure.reinit(face);
 
     BoundaryTypeP boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(matrix_free.get_boundary_id(face));
+      this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
@@ -747,7 +745,7 @@ OperatorDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary_face(
     omega.gather_evaluate(src, false, true);
 
     BoundaryTypeP boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(matrix_free.get_boundary_id(face));
+      this->boundary_descriptor->pressure->get_boundary_type(matrix_free.get_boundary_id(face));
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {

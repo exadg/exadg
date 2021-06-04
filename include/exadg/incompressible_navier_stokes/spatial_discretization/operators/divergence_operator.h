@@ -102,7 +102,7 @@ struct DivergenceOperatorData
 
   FormulationVelocityDivergenceTerm formulation;
 
-  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> const> bc;
 };
 
 template<int dim, typename Number>

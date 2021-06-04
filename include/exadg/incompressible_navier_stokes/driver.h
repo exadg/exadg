@@ -230,9 +230,8 @@ private:
   /*
    * Functions and boundary conditions
    */
-  std::shared_ptr<FieldFunctions<dim>>      field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
   /*
    * Parameters

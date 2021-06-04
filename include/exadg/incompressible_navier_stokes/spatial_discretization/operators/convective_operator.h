@@ -946,7 +946,7 @@ struct ConvectiveOperatorData : public OperatorBaseData
    */
   unsigned int quad_index_nonlinear;
 
-  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> const> bc;
 };
 
 

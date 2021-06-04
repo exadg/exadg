@@ -145,13 +145,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // boundary conditions
-  fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
-  fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
-
-  application->set_boundary_conditions(fluid_boundary_descriptor_velocity,
-                                       fluid_boundary_descriptor_pressure);
-  verify_boundary_conditions(*fluid_boundary_descriptor_velocity, *grid);
-  verify_boundary_conditions(*fluid_boundary_descriptor_pressure, *grid);
+  fluid_boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
+  application->set_boundary_conditions(fluid_boundary_descriptor);
+  IncNS::verify_boundary_conditions<dim>(fluid_boundary_descriptor, *grid);
 
   // field functions
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
@@ -176,8 +172,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     fluid_operator = IncNS::create_operator<dim, Number>(grid,
                                                          degree,
-                                                         fluid_boundary_descriptor_velocity,
-                                                         fluid_boundary_descriptor_pressure,
+                                                         fluid_boundary_descriptor,
                                                          fluid_field_functions,
                                                          fluid_param,
                                                          "fluid",
@@ -188,8 +183,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_operator =
       std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
                                                             degree,
-                                                            fluid_boundary_descriptor_velocity,
-                                                            fluid_boundary_descriptor_pressure,
+                                                            fluid_boundary_descriptor,
                                                             fluid_field_functions,
                                                             fluid_param,
                                                             "fluid",

@@ -36,18 +36,16 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
-  std::shared_ptr<Grid<dim, Number> const>        grid_in,
-  unsigned int const                              degree_u_in,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  InputParameters const &                         parameters_in,
-  std::string const &                             field_in,
-  MPI_Comm const &                                mpi_comm_in)
+  std::shared_ptr<Grid<dim, Number> const>       grid_in,
+  unsigned int const                             degree_u_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
+  InputParameters const &                        parameters_in,
+  std::string const &                            field_in,
+  MPI_Comm const &                               mpi_comm_in)
   : Base(grid_in,
          degree_u_in,
-         boundary_descriptor_velocity_in,
-         boundary_descriptor_pressure_in,
+         boundary_descriptor_in,
          field_functions_in,
          parameters_in,
          field_in,
@@ -646,8 +644,8 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
 
   // Dirichlet BC for pressure
   for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
-        this->boundary_descriptor_pressure->dirichlet_bc.begin();
-      it != this->boundary_descriptor_pressure->dirichlet_bc.end();
+        this->boundary_descriptor->pressure->dirichlet_bc.begin();
+      it != this->boundary_descriptor->pressure->dirichlet_bc.end();
       ++it)
   {
     boundary_descriptor->dirichlet_bc.insert(
@@ -655,8 +653,8 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   }
   // Neumann BC for pressure
   for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
-        this->boundary_descriptor_pressure->neumann_bc.begin();
-      it != this->boundary_descriptor_pressure->neumann_bc.end();
+        this->boundary_descriptor->pressure->neumann_bc.begin();
+      it != this->boundary_descriptor->pressure->neumann_bc.end();
       ++it)
   {
     boundary_descriptor->neumann_bc.insert(

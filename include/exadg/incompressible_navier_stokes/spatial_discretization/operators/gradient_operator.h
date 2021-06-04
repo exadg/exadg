@@ -101,7 +101,7 @@ struct GradientOperatorData
 
   FormulationPressureGradientTerm formulation;
 
-  std::shared_ptr<BoundaryDescriptorP<dim>> bc;
+  std::shared_ptr<BoundaryDescriptorP<dim> const> bc;
 };
 
 template<int dim, typename Number>

@@ -146,20 +146,13 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   grid = application->create_grid(grid_data, mpi_comm);
   print_grid_info(pcout, *grid);
 
-  boundary_descriptor_velocity_pre.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure_pre.reset(new BoundaryDescriptorP<dim>());
+  boundary_descriptor_pre = std::make_shared<BoundaryDescriptor<dim>>();
+  application->set_boundary_conditions_precursor(boundary_descriptor_pre);
+  IncNS::verify_boundary_conditions<dim>(boundary_descriptor_pre, *grid_pre);
 
-  application->set_boundary_conditions_precursor(boundary_descriptor_velocity_pre,
-                                                 boundary_descriptor_pressure_pre);
-  verify_boundary_conditions(*boundary_descriptor_velocity_pre, *grid_pre);
-  verify_boundary_conditions(*boundary_descriptor_pressure_pre, *grid_pre);
-
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
-
-  application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *grid);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *grid);
+  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+  application->set_boundary_conditions(boundary_descriptor);
+  IncNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
 
   field_functions_pre.reset(new FieldFunctions<dim>());
   field_functions.reset(new FieldFunctions<dim>());
@@ -180,24 +173,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize pde_operator_pre (precursor domain)
-  pde_operator = create_operator<dim, Number>(grid_pre,
-                                              degree,
-                                              boundary_descriptor_velocity_pre,
-                                              boundary_descriptor_pressure_pre,
-                                              field_functions_pre,
-                                              param_pre,
-                                              "fluid",
-                                              mpi_comm);
+  pde_operator = create_operator<dim, Number>(
+    grid_pre, degree, boundary_descriptor_pre, field_functions_pre, param_pre, "fluid", mpi_comm);
 
   // initialize operator_base (actual domain)
-  pde_operator = create_operator<dim, Number>(grid,
-                                              degree,
-                                              boundary_descriptor_velocity,
-                                              boundary_descriptor_pressure,
-                                              field_functions,
-                                              param,
-                                              "fluid",
-                                              mpi_comm);
+  pde_operator = create_operator<dim, Number>(
+    grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
 
 
   // initialize matrix_free precursor

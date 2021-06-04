@@ -31,6 +31,7 @@
 
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/function_cached.h>
+#include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 
 namespace ExaDG
 {
@@ -94,9 +95,9 @@ struct BoundaryDescriptorU
 
   // Symmetry: For this boundary condition, the velocity normal to boundary is set to zero
   // (u*n=0) as well as the normal velocity gradient in tangential directions
-  // (grad(u)*n - [(grad(u)*n)*n] n = 0). This is done automatically by the code.
-  // The user does not have to prescribe a boundary condition, simply use ZeroFunction<dim>,
-  // it is not relevant because this function will not be evaluated by the code.
+  // (grad(u)*n - [(grad(u)*n)*n] n = 0). This is done automatically by the code. The user does not
+  // have to prescribe a boundary condition, simply use ZeroFunction<dim>, it is not relevant
+  // because this function will not be evaluated by the code.
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> symmetry_bc;
 
   // add more types of boundary conditions
@@ -203,6 +204,28 @@ struct BoundaryDescriptorP
     AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
+
+template<int dim>
+struct BoundaryDescriptor
+{
+  BoundaryDescriptor()
+  {
+    velocity = std::make_shared<BoundaryDescriptorU<dim>>();
+    pressure = std::make_shared<BoundaryDescriptorP<dim>>();
+  }
+
+  std::shared_ptr<BoundaryDescriptorU<dim>> velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>> pressure;
+};
+
+template<int dim, typename Number>
+inline void
+verify_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                           Grid<dim, Number> const &                      grid)
+{
+  ExaDG::verify_boundary_conditions(*boundary_descriptor->velocity, grid);
+  ExaDG::verify_boundary_conditions(*boundary_descriptor->pressure, grid);
+}
 
 } // namespace IncNS
 } // namespace ExaDG

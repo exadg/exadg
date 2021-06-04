@@ -213,12 +213,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // field functions and boundary conditions
 
     // fluid
-    fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
-    fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
-    application->set_boundary_conditions_fluid(fluid_boundary_descriptor_velocity,
-                                               fluid_boundary_descriptor_pressure);
-    verify_boundary_conditions(*fluid_boundary_descriptor_velocity, *fluid_grid);
-    verify_boundary_conditions(*fluid_boundary_descriptor_pressure, *fluid_grid);
+    fluid_boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
+    application->set_boundary_conditions_fluid(fluid_boundary_descriptor);
+    IncNS::verify_boundary_conditions<dim>(fluid_boundary_descriptor, *fluid_grid);
 
     fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
     application->set_field_functions_fluid(fluid_field_functions);
@@ -353,8 +350,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // initialize fluid_operator
     fluid_operator = IncNS::create_operator<dim, Number>(fluid_grid,
                                                          degree_fluid,
-                                                         fluid_boundary_descriptor_velocity,
-                                                         fluid_boundary_descriptor_pressure,
+                                                         fluid_boundary_descriptor,
                                                          fluid_field_functions,
                                                          fluid_param,
                                                          "fluid",
@@ -464,7 +460,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     structure_to_fluid->setup(fluid_matrix_free,
                               fluid_operator->get_dof_index_velocity(),
                               quad_indices,
-                              fluid_boundary_descriptor_velocity->dirichlet_mortar_bc,
+                              fluid_boundary_descriptor->velocity->dirichlet_mortar_bc,
                               structure_grid->triangulation,
                               structure_operator->get_dof_handler(),
                               *structure_grid->mapping,

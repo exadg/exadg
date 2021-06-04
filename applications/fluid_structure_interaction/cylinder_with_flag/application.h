@@ -500,36 +500,35 @@ public:
 
   void
   set_boundary_conditions_fluid(
-    std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // fill boundary descriptor velocity
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
-    boundary_descriptor_velocity->neumann_bc.insert(
+    boundary_descriptor->velocity->neumann_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
-    boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
+    boundary_descriptor->velocity->dirichlet_mortar_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
-    boundary_descriptor_pressure->neumann_bc.insert(
+    boundary_descriptor->pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->neumann_bc.insert(
+    boundary_descriptor->pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->dirichlet_bc.insert(
+    boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor_pressure->neumann_bc.insert(
+    boundary_descriptor->pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->neumann_bc.insert(
+    boundary_descriptor->pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_FLAG, new Functions::ZeroFunction<dim>(dim)));
   }
 

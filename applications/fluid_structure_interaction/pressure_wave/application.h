@@ -358,8 +358,7 @@ public:
 
   void
   set_boundary_conditions_fluid(
-    std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
@@ -368,29 +367,29 @@ public:
     // fill boundary descriptor velocity
 
     // inflow
-    boundary_descriptor_velocity->neumann_bc.insert(
+    boundary_descriptor->velocity->neumann_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
 
     // outflow
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
-    boundary_descriptor_velocity->dirichlet_mortar_bc.insert(
+    boundary_descriptor->velocity->dirichlet_mortar_bc.insert(
       pair_fsi(BOUNDARY_ID_FSI, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
 
     // inflow
-    boundary_descriptor_pressure->dirichlet_bc.insert(
+    boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new PressureInflowBC<dim>()));
 
     // outflow
-    boundary_descriptor_pressure->neumann_bc.insert(
+    boundary_descriptor->pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
 
     // fluid-structure interface
-    boundary_descriptor_pressure->neumann_bc.insert(
+    boundary_descriptor->pressure->neumann_bc.insert(
       pair(BOUNDARY_ID_FSI, new Functions::ZeroFunction<dim>(dim)));
   }
 
