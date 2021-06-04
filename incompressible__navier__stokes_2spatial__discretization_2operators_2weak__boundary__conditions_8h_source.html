@@ -145,7 +145,7 @@ $(function() {
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                             OperatorType <span class="keyword">const</span> &amp;                            operator_type,</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                             BoundaryTypeU <span class="keyword">const</span> &amp;                           boundary_type,</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                             types::boundary_id <span class="keyword">const</span>                        boundary_id,</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                             std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                             std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                             <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                  time)</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;{</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  <span class="comment">// element e⁺</span></div>
@@ -227,7 +227,7 @@ $(function() {
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;      BoundaryTypeU <span class="keyword">const</span> &amp;                           boundary_type,</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      TypeDirichletBCs <span class="keyword">const</span> &amp;                        type_dirichlet_bc,</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;      types::boundary_id <span class="keyword">const</span>                        boundary_id,</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;      std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;      std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;      <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                  time)</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;{</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;  Tensor&lt;1, dim, VectorizedArray&lt;Number&gt;&gt; u_p;</div>
@@ -388,7 +388,7 @@ $(function() {
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;                           OperatorType <span class="keyword">const</span> &amp;                            operator_type,</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                           BoundaryTypeP <span class="keyword">const</span> &amp;                           boundary_type,</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                           types::boundary_id <span class="keyword">const</span>                        boundary_id,</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                           std::shared_ptr&lt;BoundaryDescriptorP&lt;dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                           std::shared_ptr&lt;BoundaryDescriptorP&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                           <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                  time,</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                           <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                  inverse_scaling_factor)</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;{</div>
@@ -508,7 +508,7 @@ $(function() {
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;      OperatorType <span class="keyword">const</span> &amp;                            operator_type,</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;      BoundaryTypeU <span class="keyword">const</span> &amp;                           boundary_type,</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;      types::boundary_id <span class="keyword">const</span>                        boundary_id,</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;      std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;      std::shared_ptr&lt;BoundaryDescriptorU&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;      <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                  time,</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;      <span class="keywordtype">bool</span> <span class="keyword">const</span>                                      variable_normal_vector)</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;{</div>

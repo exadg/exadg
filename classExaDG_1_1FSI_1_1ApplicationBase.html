@@ -66,7 +66,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="classExaDG_1_1FSI_1_1ApplicationBase-members.html">List of all members</a>  </div>
@@ -75,12 +74,6 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:ad2145c829bdebdcd9fc62824b0d06a71"><td class="memItemLeft" align="right" valign="top"><a id="ad2145c829bdebdcd9fc62824b0d06a71"></a>
-typedef std::vector&lt; GridTools::PeriodicFacePair&lt; typename Triangulation&lt; dim &gt;::cell_iterator &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PeriodicFaces</b></td></tr>
-<tr class="separator:ad2145c829bdebdcd9fc62824b0d06a71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a38d898ea6650ddb357c8ebd111a820ae"><td class="memItemLeft" align="right" valign="top"><a id="a38d898ea6650ddb357c8ebd111a820ae"></a>
@@ -95,9 +88,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_par
 <tr class="memitem:a908058005d79cefc5b369d733d284f66"><td class="memItemLeft" align="right" valign="top"><a id="a908058005d79cefc5b369d733d284f66"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid_fluid</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;data, MPI_Comm const &amp;mpi_comm)=0</td></tr>
 <tr class="separator:a908058005d79cefc5b369d733d284f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0cba81ff2f4f8585afdf3614e7cdea2f"><td class="memItemLeft" align="right" valign="top"><a id="a0cba81ff2f4f8585afdf3614e7cdea2f"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions_fluid</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html">IncNS::BoundaryDescriptorU</a>&lt; dim &gt;&gt; boundary_descriptor_velocity, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html">IncNS::BoundaryDescriptorP</a>&lt; dim &gt;&gt; boundary_descriptor_pressure)=0</td></tr>
-<tr class="separator:a0cba81ff2f4f8585afdf3614e7cdea2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa087572fb8fe5323ab9d86b2163d4763"><td class="memItemLeft" align="right" valign="top"><a id="aa087572fb8fe5323ab9d86b2163d4763"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_conditions_fluid</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">IncNS::BoundaryDescriptor</a>&lt; dim &gt;&gt; boundary_descriptor)=0</td></tr>
+<tr class="separator:aa087572fb8fe5323ab9d86b2163d4763"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2859827753c091f5316107450374d816"><td class="memItemLeft" align="right" valign="top"><a id="a2859827753c091f5316107450374d816"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_field_functions_fluid</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">IncNS::FieldFunctions</a>&lt; dim &gt;&gt; field_functions)=0</td></tr>
 <tr class="separator:a2859827753c091f5316107450374d816"><td class="memSeparator" colspan="2">&#160;</td></tr>
