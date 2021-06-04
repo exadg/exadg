@@ -97,7 +97,7 @@ public:
   set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) = 0;
 
   virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
   // ALE
 
@@ -144,7 +144,7 @@ public:
     std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) = 0;
 
   virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
 protected:
   std::string parameter_file;

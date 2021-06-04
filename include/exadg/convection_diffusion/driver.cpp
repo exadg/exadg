@@ -121,7 +121,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(!is_throughput_study)
   {
     // initialize postprocessor
-    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor = application->create_postprocessor(degree, mpi_comm);
     postprocessor->setup(*pde_operator, *grid->get_dynamic_mapping());
 
     // initialize time integrator or driver for steady problems

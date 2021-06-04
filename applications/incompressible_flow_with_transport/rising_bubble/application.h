@@ -374,7 +374,7 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -417,9 +417,9 @@ public:
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(unsigned int const degree,
-                                 MPI_Comm const &   mpi_comm,
-                                 unsigned int const scalar_index) final
+  create_postprocessor_scalar(unsigned int const degree,
+                              MPI_Comm const &   mpi_comm,
+                              unsigned int const scalar_index) final
   {
     ConvDiff::PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output = this->write_output;

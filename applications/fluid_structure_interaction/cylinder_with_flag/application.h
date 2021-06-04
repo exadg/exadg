@@ -542,7 +542,7 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  construct_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -1014,7 +1014,7 @@ public:
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  construct_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     using namespace Structure;
 

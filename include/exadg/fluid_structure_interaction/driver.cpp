@@ -175,7 +175,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize postprocessor
     structure_postprocessor =
-      application->construct_postprocessor_structure(degree_structure, mpi_comm);
+      application->create_postprocessor_structure(degree_structure, mpi_comm);
     structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_grid->mapping);
 
     timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
@@ -373,7 +373,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_operator->setup(fluid_matrix_free, fluid_matrix_free_data);
 
     // setup postprocessor
-    fluid_postprocessor = application->construct_postprocessor_fluid(degree_fluid, mpi_comm);
+    fluid_postprocessor = application->create_postprocessor_fluid(degree_fluid, mpi_comm);
     fluid_postprocessor->setup(*fluid_operator);
 
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
