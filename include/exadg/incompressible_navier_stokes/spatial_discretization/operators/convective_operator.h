@@ -71,18 +71,19 @@ public:
     this->data = data;
 
     // integrators for linearized problem
-    integrator_velocity.reset(new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
-    integrator_velocity_m.reset(
-      new IntegratorFace(matrix_free, true, dof_index, quad_index_linearized));
-    integrator_velocity_p.reset(
-      new IntegratorFace(matrix_free, false, dof_index, quad_index_linearized));
+    integrator_velocity =
+      std::make_shared<IntegratorCell>(matrix_free, dof_index, quad_index_linearized);
+    integrator_velocity_m =
+      std::make_shared<IntegratorFace>(matrix_free, true, dof_index, quad_index_linearized);
+    integrator_velocity_p =
+      std::make_shared<IntegratorFace>(matrix_free, false, dof_index, quad_index_linearized);
 
     if(data.ale)
     {
-      integrator_grid_velocity.reset(
-        new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
-      integrator_grid_velocity_face.reset(
-        new IntegratorFace(matrix_free, true, dof_index, quad_index_linearized));
+      integrator_grid_velocity =
+        std::make_shared<IntegratorCell>(matrix_free, dof_index, quad_index_linearized);
+      integrator_grid_velocity_face =
+        std::make_shared<IntegratorFace>(matrix_free, true, dof_index, quad_index_linearized);
     }
 
     // use own storage of velocity vector only in case of multigrid

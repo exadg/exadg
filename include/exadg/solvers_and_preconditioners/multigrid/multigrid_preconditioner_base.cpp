@@ -786,13 +786,13 @@ MultigridPreconditionerBase<dim, Number>::initialize_matrix_free()
 
   for(unsigned int level = coarse_level; level <= fine_level; level++)
   {
-    matrix_free_data_objects[level].reset(new MatrixFreeData<dim, MultigridNumber>());
+    matrix_free_data_objects[level] = std::make_shared<MatrixFreeData<dim, MultigridNumber>>();
     fill_matrix_free_data(*matrix_free_data_objects[level],
                           level,
                           data.use_global_coarsening ? numbers::invalid_unsigned_int :
                                                        level_info[level].h_level());
 
-    matrix_free_objects[level].reset(new MatrixFree<dim, MultigridNumber>());
+    matrix_free_objects[level] = std::make_shared<MatrixFree<dim, MultigridNumber>>();
 
     auto const & mg_level_info = level_info[level];
     matrix_free_objects[level]->reinit(get_mapping(mg_level_info.h_level()),
@@ -940,14 +940,14 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
   {
     case MultigridSmoother::Chebyshev:
     {
-      smoothers[level].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
+      smoothers[level] = std::make_shared<ChebyshevSmoother<Operator, VectorTypeMG>>();
       initialize_chebyshev_smoother(mg_operator, level);
       break;
     }
     case MultigridSmoother::GMRES:
     {
       typedef GMRESSmoother<Operator, VectorTypeMG> GMRES;
-      smoothers[level].reset(new GMRES());
+      smoothers[level] = std::make_shared<GMRES>();
 
       typename GMRES::AdditionalData smoother_data;
       smoother_data.preconditioner       = data.smoother_data.preconditioner;
@@ -960,7 +960,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
     case MultigridSmoother::CG:
     {
       typedef CGSmoother<Operator, VectorTypeMG> CG;
-      smoothers[level].reset(new CG());
+      smoothers[level] = std::make_shared<CG>();
 
       typename CG::AdditionalData smoother_data;
       smoother_data.preconditioner       = data.smoother_data.preconditioner;
@@ -973,7 +973,7 @@ MultigridPreconditionerBase<dim, Number>::initialize_smoother(Operator &   mg_op
     case MultigridSmoother::Jacobi:
     {
       typedef JacobiSmoother<Operator, VectorTypeMG> Jacobi;
-      smoothers[level].reset(new Jacobi());
+      smoothers[level] = std::make_shared<Jacobi>();
 
       typename Jacobi::AdditionalData smoother_data;
       smoother_data.preconditioner            = data.smoother_data.preconditioner;
@@ -1107,12 +1107,13 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
         ExcMessage(
           "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
 
-      smoothers[0].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
+      smoothers[0] = std::make_shared<ChebyshevSmoother<Operator, VectorTypeMG>>();
       initialize_chebyshev_smoother_coarse_grid(coarse_operator,
                                                 data.coarse_problem.solver_data,
                                                 operator_is_singular);
 
-      coarse_grid_solver.reset(new MGCoarseChebyshev<VectorTypeMG, Smoother>(smoothers[0]));
+      coarse_grid_solver =
+        std::make_shared<MGCoarseChebyshev<VectorTypeMG, Smoother>>(smoothers[0]);
       break;
     }
     case MultigridCoarseGridSolver::CG:
@@ -1132,28 +1133,28 @@ MultigridPreconditionerBase<dim, Number>::initialize_coarse_solver(bool const op
       additional_data.preconditioner       = data.coarse_problem.preconditioner;
       additional_data.amg_data             = data.coarse_problem.amg_data;
 
-      coarse_grid_solver.reset(
-        new MGCoarseKrylov<Operator>(coarse_operator, additional_data, mpi_comm));
+      coarse_grid_solver =
+        std::make_shared<MGCoarseKrylov<Operator>>(coarse_operator, additional_data, mpi_comm);
       break;
     }
     case MultigridCoarseGridSolver::AMG:
     {
       if(data.coarse_problem.amg_data.amg_type == AMGType::ML)
       {
-        coarse_grid_solver.reset(
-          new MGCoarseAMG<Operator>(coarse_operator, data.coarse_problem.amg_data));
-        break;
+        coarse_grid_solver =
+          std::make_shared<MGCoarseAMG<Operator>>(coarse_operator, data.coarse_problem.amg_data);
       }
       else if(data.coarse_problem.amg_data.amg_type == AMGType::BoomerAMG)
       {
-        coarse_grid_solver.reset(
-          new MGCoarseAMG<Operator>(coarse_operator, data.coarse_problem.amg_data));
-        break;
+        coarse_grid_solver =
+          std::make_shared<MGCoarseAMG<Operator>>(coarse_operator, data.coarse_problem.amg_data);
       }
       else
       {
         AssertThrow(false, ExcNotImplemented());
       }
+
+      break;
     }
     default:
     {
@@ -1201,8 +1202,9 @@ template<int dim, typename Number>
 void
 MultigridPreconditionerBase<dim, Number>::initialize_multigrid_algorithm()
 {
-  this->multigrid_algorithm.reset(new MultigridAlgorithm<VectorTypeMG, Operator, Smoother>(
-    this->operators, *this->coarse_grid_solver, *this->transfers, this->smoothers, this->mpi_comm));
+  this
+    ->multigrid_algorithm = std::make_shared<MultigridAlgorithm<VectorTypeMG, Operator, Smoother>>(
+    this->operators, *this->coarse_grid_solver, *this->transfers, this->smoothers, this->mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -1213,8 +1215,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother(Operator
   typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
   typename Chebyshev::AdditionalData                smoother_data;
 
-  std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix;
-  diagonal_matrix.reset(new DiagonalMatrix<VectorTypeMG>());
+  std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix =
+    std::make_shared<DiagonalMatrix<VectorTypeMG>>();
   VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
 
   mg_operator.initialize_dof_vector(diagonal_vector);
@@ -1240,8 +1242,8 @@ MultigridPreconditionerBase<dim, Number>::initialize_chebyshev_smoother_coarse_g
   typedef ChebyshevSmoother<Operator, VectorTypeMG> Chebyshev;
   typename Chebyshev::AdditionalData                smoother_data;
 
-  std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix;
-  diagonal_matrix.reset(new DiagonalMatrix<VectorTypeMG>());
+  std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix =
+    std::make_shared<DiagonalMatrix<VectorTypeMG>>();
   VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
 
   coarse_operator.initialize_dof_vector(diagonal_vector);

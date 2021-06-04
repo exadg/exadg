@@ -78,18 +78,18 @@ Operator<dim, Number, n_components>::distribute_dofs()
   if(n_components == 1)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FE_DGQ<dim>(degree));
+      fe = std::make_shared<FE_DGQ<dim>>(degree);
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FE_Q<dim>(degree));
+      fe = std::make_shared<FE_Q<dim>>(degree);
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
+      fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(degree), dim);
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe.reset(new FESystem<dim>(FE_Q<dim>(degree), dim));
+      fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(degree), dim);
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
@@ -236,11 +236,11 @@ Operator<dim, Number, n_components>::setup_solver()
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    preconditioner.reset(new JacobiPreconditioner<Laplace>(laplace_operator));
+    preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    preconditioner.reset(new BlockJacobiPreconditioner<Laplace>(laplace_operator));
+    preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
@@ -249,7 +249,7 @@ Operator<dim, Number, n_components>::setup_solver()
 
     typedef MultigridPreconditioner<dim, Number, n_components> Multigrid;
 
-    preconditioner.reset(new Multigrid(this->mpi_comm));
+    preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
 
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
@@ -285,8 +285,9 @@ Operator<dim, Number, n_components>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(new Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>(
-      laplace_operator, *preconditioner, solver_data));
+    iterative_solver =
+      std::make_shared<Krylov::SolverCG<Laplace, PreconditionerBase<Number>, VectorType>>(
+        laplace_operator, *preconditioner, solver_data);
   }
   else if(param.solver == Solver::FGMRES)
   {
@@ -302,10 +303,9 @@ Operator<dim, Number, n_components>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(
-      new Krylov::SolverFGMRES<Laplace, PreconditionerBase<Number>, VectorType>(laplace_operator,
-                                                                                *preconditioner,
-                                                                                solver_data));
+    iterative_solver =
+      std::make_shared<Krylov::SolverFGMRES<Laplace, PreconditionerBase<Number>, VectorType>>(
+        laplace_operator, *preconditioner, solver_data);
   }
   else
   {

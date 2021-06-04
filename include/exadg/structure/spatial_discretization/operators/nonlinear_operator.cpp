@@ -37,7 +37,7 @@ NonLinearOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   mat
 {
   Base::initialize(matrix_free, affine_constraints, data);
 
-  integrator_lin.reset(new IntegratorCell(*this->matrix_free));
+  integrator_lin = std::make_shared<IntegratorCell>(*this->matrix_free);
   this->matrix_free->initialize_dof_vector(displacement_lin, data.dof_index);
   displacement_lin.update_ghost_values();
 }

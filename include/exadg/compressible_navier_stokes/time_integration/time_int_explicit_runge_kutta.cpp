@@ -64,38 +64,42 @@ TimeIntExplRK<Number>::initialize_time_integrator()
   // initialize Runge-Kutta time integrator
   if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
   {
-    rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<Operator, VectorType>(param.order_time_integrator,
-                                                                 pde_operator));
+    rk_time_integrator = std::make_shared<ExplicitRungeKuttaTimeIntegrator<Operator, VectorType>>(
+      param.order_time_integrator, pde_operator);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK3Stage4Reg2C)
   {
-    rk_time_integrator.reset(new LowStorageRK3Stage4Reg2C<Operator, VectorType>(pde_operator));
+    rk_time_integrator =
+      std::make_shared<LowStorageRK3Stage4Reg2C<Operator, VectorType>>(pde_operator);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK4Stage5Reg2C)
   {
-    rk_time_integrator.reset(new LowStorageRK4Stage5Reg2C<Operator, VectorType>(pde_operator));
+    rk_time_integrator =
+      std::make_shared<LowStorageRK4Stage5Reg2C<Operator, VectorType>>(pde_operator);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK4Stage5Reg3C)
   {
-    rk_time_integrator.reset(new LowStorageRK4Stage5Reg3C<Operator, VectorType>(pde_operator));
+    rk_time_integrator =
+      std::make_shared<LowStorageRK4Stage5Reg3C<Operator, VectorType>>(pde_operator);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK5Stage9Reg2S)
   {
-    rk_time_integrator.reset(new LowStorageRK5Stage9Reg2S<Operator, VectorType>(pde_operator));
+    rk_time_integrator =
+      std::make_shared<LowStorageRK5Stage9Reg2S<Operator, VectorType>>(pde_operator);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK3Stage7Reg2)
   {
-    rk_time_integrator.reset(new LowStorageRKTD<Operator, VectorType>(pde_operator, 3, 7));
+    rk_time_integrator = std::make_shared<LowStorageRKTD<Operator, VectorType>>(pde_operator, 3, 7);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK4Stage8Reg2)
   {
-    rk_time_integrator.reset(new LowStorageRKTD<Operator, VectorType>(pde_operator, 4, 8));
+    rk_time_integrator = std::make_shared<LowStorageRKTD<Operator, VectorType>>(pde_operator, 4, 8);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::SSPRK)
   {
-    rk_time_integrator.reset(
-      new SSPRK<Operator, VectorType>(pde_operator, param.order_time_integrator, param.stages));
+    rk_time_integrator = std::make_shared<SSPRK<Operator, VectorType>>(pde_operator,
+                                                                       param.order_time_integrator,
+                                                                       param.stages);
   }
 }
 

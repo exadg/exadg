@@ -79,8 +79,8 @@ run(std::string const & input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::Driver<dim, Number>> driver;
-  driver.reset(new IncNS::Driver<dim, Number>(mpi_comm, is_test));
+  std::shared_ptr<IncNS::Driver<dim, Number>> driver =
+    std::make_shared<IncNS::Driver<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<IncNS::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);

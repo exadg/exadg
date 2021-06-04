@@ -353,8 +353,8 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
 
     if(deal_spectrum_wrapper == nullptr)
     {
-      deal_spectrum_wrapper.reset(
-        new DealSpectrumWrapper(mpi_comm, data.write_raw_data_to_files, data.do_fftw));
+      deal_spectrum_wrapper =
+        std::make_shared<DealSpectrumWrapper>(mpi_comm, data.write_raw_data_to_files, data.do_fftw);
     }
 
     unsigned int evaluation_points = std::max(data.degree + 1, data.evaluation_points_per_cell);
@@ -362,18 +362,18 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
     // create data structures for full system
     if(data.exploit_symmetry)
     {
-      tria_full.reset(new parallel::distributed::Triangulation<dim>(
+      tria_full = std::make_shared<parallel::distributed::Triangulation<dim>>(
         mpi_comm,
         Triangulation<dim>::limit_level_difference_at_vertices,
-        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
       GridGenerator::subdivided_hyper_cube(*tria_full,
                                            data.n_cells_1d_coarse_grid,
                                            -data.length_symmetric_domain,
                                            +data.length_symmetric_domain);
       tria_full->refine_global(data.refine_level + 1);
 
-      fe_full.reset(new FESystem<dim>(FE_DGQ<dim>(data.degree), dim));
-      dof_handler_full.reset(new DoFHandler<dim>(*tria_full));
+      fe_full          = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(data.degree), dim);
+      dof_handler_full = std::make_shared<DoFHandler<dim>>(*tria_full);
       dof_handler_full->distribute_dofs(*fe_full);
 
       int cells = tria_full->n_global_active_cells();
@@ -411,7 +411,7 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
           unsigned int n_cells_1d =
             data.n_cells_1d_coarse_grid * Utilities::pow(2, data.refine_level);
 
-          velocity_full.reset(new VectorType());
+          velocity_full = std::make_shared<VectorType>();
           initialize_dof_vector(*velocity_full, *dof_handler_full);
 
           apply_taylor_green_symmetry(*dof_handler,

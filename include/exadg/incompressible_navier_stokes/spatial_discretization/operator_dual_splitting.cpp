@@ -92,26 +92,28 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
-    helmholtz_preconditioner.reset(
-      new InverseMassPreconditioner<dim, dim, Number>(this->get_matrix_free(),
-                                                      this->get_dof_index_velocity(),
-                                                      this->get_quad_index_velocity_linear()));
+    helmholtz_preconditioner = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
+      this->get_matrix_free(),
+      this->get_dof_index_velocity(),
+      this->get_quad_index_velocity_linear());
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
-    helmholtz_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
+    helmholtz_preconditioner =
+      std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
+        this->momentum_operator);
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
   {
-    helmholtz_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
+    helmholtz_preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
+        this->momentum_operator);
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
     typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    helmholtz_preconditioner.reset(new Multigrid(this->mpi_comm));
+    helmholtz_preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
 
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(helmholtz_preconditioner);
@@ -153,9 +155,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-    helmholtz_solver.reset(
-      new Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *helmholtz_preconditioner, solver_data));
+    helmholtz_solver = std::make_shared<
+      Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *helmholtz_preconditioner, solver_data);
   }
   else if(this->param.solver_viscous == SolverViscous::GMRES)
   {
@@ -176,10 +178,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-    helmholtz_solver.reset(new Krylov::SolverGMRES<MomentumOperator<dim, Number>,
-                                                   PreconditionerBase<Number>,
-                                                   VectorType>(
-      this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm));
+    helmholtz_solver = std::make_shared<
+      Krylov::SolverGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm);
   }
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
@@ -197,11 +198,9 @@ OperatorDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-    helmholtz_solver.reset(new Krylov::SolverFGMRES<MomentumOperator<dim, Number>,
-                                                    PreconditionerBase<Number>,
-                                                    VectorType>(this->momentum_operator,
-                                                                *helmholtz_preconditioner,
-                                                                solver_data));
+    helmholtz_solver = std::make_shared<
+      Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *helmholtz_preconditioner, solver_data);
   }
   else
   {

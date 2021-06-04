@@ -81,12 +81,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   print_grid_info(pcout, *grid);
 
   // boundary conditions
-  boundary_descriptor.reset(new BoundaryDescriptor<0, dim>());
+  boundary_descriptor = std::make_shared<BoundaryDescriptor<0, dim>>();
   application->set_boundary_conditions(boundary_descriptor);
   verify_boundary_conditions(*boundary_descriptor, *grid);
 
   // field functions
-  field_functions.reset(new FieldFunctions<dim>());
+  field_functions = std::make_shared<FieldFunctions<dim>>();
   application->set_field_functions(field_functions);
 
   // compute aspect ratio
@@ -102,14 +102,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // initialize Poisson operator
-  pde_operator.reset(new Operator<dim, Number>(
-    grid, degree, boundary_descriptor, field_functions, param, "Poisson", mpi_comm));
+  pde_operator = std::make_shared<Operator<dim, Number>>(
+    grid, degree, boundary_descriptor, field_functions, param, "Poisson", mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(param.enable_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->mapping,

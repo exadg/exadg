@@ -85,11 +85,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
 
-      grid_motion.reset(new GridMotionAnalytical<dim, Number>(grid->mapping,
-                                                              grid_data.mapping_degree,
-                                                              *grid->triangulation,
-                                                              mesh_motion,
-                                                              param.start_time));
+      grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
+                                                                        grid_data.mapping_degree,
+                                                                        *grid->triangulation,
+                                                                        mesh_motion,
+                                                                        param.start_time);
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
@@ -97,11 +97,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_param.check_input_parameters();
       poisson_param.print(pcout, "List of input parameters for Poisson solver (moving mesh):");
 
-      poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
+      poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
       application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
       verify_boundary_conditions(*poisson_boundary_descriptor, *grid);
 
-      poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
+      poisson_field_functions = std::make_shared<Poisson::FieldFunctions<dim>>();
       application->set_field_functions_poisson(poisson_field_functions);
 
       AssertThrow(poisson_param.right_hand_side == false,
@@ -113,19 +113,20 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                              "as for actual application problem."));
 
       // initialize Poisson operator
-      poisson_operator.reset(new Poisson::Operator<dim, Number, dim>(grid,
-                                                                     grid_data.mapping_degree,
-                                                                     poisson_boundary_descriptor,
-                                                                     poisson_field_functions,
-                                                                     poisson_param,
-                                                                     "Poisson",
-                                                                     mpi_comm));
+      poisson_operator =
+        std::make_shared<Poisson::Operator<dim, Number, dim>>(grid,
+                                                              grid_data.mapping_degree,
+                                                              poisson_boundary_descriptor,
+                                                              poisson_field_functions,
+                                                              poisson_param,
+                                                              "Poisson",
+                                                              mpi_comm);
 
       // initialize matrix_free
       poisson_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       poisson_matrix_free_data->append(poisson_operator);
 
-      poisson_matrix_free.reset(new MatrixFree<dim, Number>());
+      poisson_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
       if(poisson_param.enable_cell_based_face_loops)
         Categorization::do_cell_based_loops(*grid->triangulation, poisson_matrix_free_data->data);
       poisson_matrix_free->reinit(*grid->mapping,
@@ -137,7 +138,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       poisson_operator->setup(poisson_matrix_free, poisson_matrix_free_data);
       poisson_operator->setup_solver();
 
-      grid_motion.reset(new GridMotionPoisson<dim, Number>(grid->mapping, poisson_operator));
+      grid_motion =
+        std::make_shared<GridMotionPoisson<dim, Number>>(grid->mapping, poisson_operator);
     }
     else
     {
@@ -153,7 +155,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   IncNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
 
   // field functions
-  field_functions.reset(new FieldFunctions<dim>());
+  field_functions = std::make_shared<FieldFunctions<dim>>();
   application->set_field_functions(field_functions);
 
   if(param.solver_type == SolverType::Unsteady)
@@ -175,7 +177,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->get_dynamic_mapping(),
@@ -207,8 +209,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
         std::dynamic_pointer_cast<OperatorCoupled<dim, Number>>(pde_operator);
 
       // initialize driver for steady state problem that depends on pde_operator
-      driver_steady.reset(new DriverSteadyProblems<dim, Number>(
-        operator_coupled, param, mpi_comm, is_test, postprocessor));
+      driver_steady = std::make_shared<DriverSteadyProblems<dim, Number>>(
+        operator_coupled, param, mpi_comm, is_test, postprocessor);
     }
     else
     {

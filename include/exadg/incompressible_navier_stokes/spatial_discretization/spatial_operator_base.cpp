@@ -207,7 +207,7 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
-  boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<0, dim>());
+  boundary_descriptor_laplace = std::make_shared<Poisson::BoundaryDescriptor<0, dim>>();
 
   // Dirichlet BCs for pressure
   boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor->pressure->dirichlet_bc;
@@ -225,7 +225,7 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
       ++it)
   {
     std::shared_ptr<Function<dim>> zero_function;
-    zero_function.reset(new Functions::ZeroFunction<dim>(1));
+    zero_function = std::make_shared<Functions::ZeroFunction<dim>>(1);
     boundary_descriptor_laplace->neumann_bc.insert(
       std::pair<types::boundary_id, std::shared_ptr<Function<dim>>>(it->first, zero_function));
   }
@@ -288,7 +288,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
   convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
   convective_kernel_data.ale               = param.ale_formulation;
-  convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+  convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
   convective_kernel->reinit(*matrix_free,
                             convective_kernel_data,
                             get_dof_index_velocity(),
@@ -302,7 +302,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
-  viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
+  viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
   viscous_kernel->reinit(*matrix_free, viscous_kernel_data, get_dof_index_velocity());
 
   AffineConstraints<Number> constraint_dummy;
@@ -426,7 +426,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     div_penalty_data.degree                 = degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
 
-    div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
+    div_penalty_kernel = std::make_shared<Operators::DivergencePenaltyKernel<dim, Number>>();
     div_penalty_kernel->reinit(*matrix_free,
                                get_dof_index_velocity(),
                                get_quad_index_velocity_linear(),
@@ -451,7 +451,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     kernel_data.degree                 = degree_u;
     kernel_data.penalty_factor         = param.continuity_penalty_factor;
 
-    conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
+    conti_penalty_kernel = std::make_shared<Operators::ContinuityPenaltyKernel<dim, Number>>();
     conti_penalty_kernel->reinit(*matrix_free,
                                  get_dof_index_velocity(),
                                  get_quad_index_velocity_linear(),
@@ -489,7 +489,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
       data.preconditioner_block_diagonal = param.preconditioner_block_diagonal_projection;
       data.solver_data_block_diagonal    = param.solver_data_block_diagonal_projection;
 
-      projection_operator.reset(new PROJ_OPERATOR());
+      projection_operator = std::make_shared<ProjOperator>();
 
       projection_operator->initialize(
         *matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
@@ -1097,7 +1097,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   laplace_operator_data.quad_index = get_quad_index_velocity_linear();
 
   std::shared_ptr<Poisson::BoundaryDescriptor<0, dim>> boundary_descriptor_streamfunction;
-  boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<0, dim>());
+  boundary_descriptor_streamfunction = std::make_shared<Poisson::BoundaryDescriptor<0, dim>>();
 
   // fill boundary descriptor: Assumption: only Dirichlet BC's
   boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor->velocity->dirichlet_bc;
@@ -1124,7 +1124,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   // use multigrid preconditioner with Chebyshev smoother
   MultigridData mg_data;
 
-  preconditioner.reset(new MultigridPoisson(this->mpi_comm));
+  preconditioner = std::make_shared<MultigridPoisson>(mpi_comm);
 
   std::shared_ptr<MultigridPoisson> mg_preconditioner =
     std::dynamic_pointer_cast<MultigridPoisson>(preconditioner);
@@ -1134,7 +1134,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 dof_handler_u_scalar.get_fe(),
                                 grid->get_dynamic_mapping(),
                                 laplace_operator.get_data(),
-                                this->param.ale_formulation,
+                                param.ale_formulation,
                                 &laplace_operator.get_data().bc->dirichlet_bc,
                                 &grid->periodic_faces);
 
@@ -1379,7 +1379,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     if(param.solver_projection == SolverProjection::CG)
     {
       // projection operator
-      elementwise_projection_operator.reset(new ELEMENTWISE_PROJ_OPERATOR(*projection_operator));
+      elementwise_projection_operator =
+        std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
 
       // preconditioner
       typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PROJ_PRECONDITIONER;
@@ -1388,17 +1389,17 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       {
         typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
 
-        elementwise_preconditioner_projection.reset(
-          new IDENTITY(elementwise_projection_operator->get_problem_size()));
+        elementwise_preconditioner_projection =
+          std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
       }
       else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
       {
         typedef Elementwise::InverseMassPreconditioner<dim, dim, Number> INVERSE_MASS;
 
-        elementwise_preconditioner_projection.reset(
-          new INVERSE_MASS(projection_operator->get_matrix_free(),
-                           projection_operator->get_dof_index(),
-                           projection_operator->get_quad_index()));
+        elementwise_preconditioner_projection =
+          std::make_shared<INVERSE_MASS>(projection_operator->get_matrix_free(),
+                                         projection_operator->get_dof_index(),
+                                         projection_operator->get_quad_index());
       }
       else
       {
@@ -1415,10 +1416,10 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
         IterativeSolver<dim, dim, Number, ELEMENTWISE_PROJ_OPERATOR, PROJ_PRECONDITIONER>
           PROJ_SOLVER;
 
-      projection_solver.reset(new PROJ_SOLVER(
+      projection_solver = std::make_shared<PROJ_SOLVER>(
         *std::dynamic_pointer_cast<ELEMENTWISE_PROJ_OPERATOR>(elementwise_projection_operator),
         *std::dynamic_pointer_cast<PROJ_PRECONDITIONER>(elementwise_preconditioner_projection),
-        projection_solver_data));
+        projection_solver_data);
     }
     else
     {
@@ -1435,8 +1436,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
-      preconditioner_projection.reset(new InverseMassPreconditioner<dim, dim, Number>(
-        *matrix_free, get_dof_index_velocity(), get_quad_index_velocity_linear()));
+      preconditioner_projection = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
+        *matrix_free, get_dof_index_velocity(), get_quad_index_velocity_linear());
     }
     else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {
@@ -1444,8 +1445,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // diagonal) the penalty parameter of the projection operator has not been calculated and the
       // time step size has not been set. Hence, 'update_preconditioner = true' should be used for
       // the Jacobi preconditioner in order to use to correct diagonal for preconditioning.
-      preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>(
-        *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
+      preconditioner_projection =
+        std::make_shared<JacobiPreconditioner<ProjOperator>>(*projection_operator);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
     {
@@ -1453,14 +1454,14 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       // the penalty parameter of the projection operator has not been calculated and the time step
       // size has not been set. Hence, 'update_preconditioner = true' should be used for the Jacobi
       // preconditioner in order to use to correct diagonal blocks for preconditioning.
-      preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>(
-        *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
+      preconditioner_projection =
+        std::make_shared<BlockJacobiPreconditioner<ProjOperator>>(*projection_operator);
     }
     else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
     {
       typedef MultigridPreconditionerProjection<dim, Number> Multigrid;
 
-      preconditioner_projection.reset(new Multigrid(this->mpi_comm));
+      preconditioner_projection = std::make_shared<Multigrid>(this->mpi_comm);
 
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner_projection);
@@ -1496,11 +1497,9 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       }
 
       // setup solver
-      projection_solver.reset(
-        new Krylov::SolverCG<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
-          *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
-          *preconditioner_projection,
-          solver_data));
+      projection_solver =
+        std::make_shared<Krylov::SolverCG<ProjOperator, PreconditionerBase<Number>, VectorType>>(
+          *projection_operator, *preconditioner_projection, solver_data);
     }
     else if(param.solver_projection == SolverProjection::FGMRES)
     {
@@ -1518,11 +1517,9 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       }
 
       // setup solver
-      projection_solver.reset(
-        new Krylov::SolverFGMRES<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
-          *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
-          *preconditioner_projection,
-          solver_data));
+      projection_solver = std::make_shared<
+        Krylov::SolverFGMRES<ProjOperator, PreconditionerBase<Number>, VectorType>>(
+        *projection_operator, *preconditioner_projection, solver_data);
     }
     else
     {
@@ -1563,8 +1560,8 @@ void
 SpatialOperatorBase<dim, Number>::rhs_add_projection_operator(VectorType & dst,
                                                               double const time) const
 {
-  this->projection_operator->set_time(time);
-  this->projection_operator->rhs_add(dst);
+  projection_operator->set_time(time);
+  projection_operator->rhs_add(dst);
 }
 
 template<int dim, typename Number>

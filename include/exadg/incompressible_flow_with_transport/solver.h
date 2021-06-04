@@ -113,8 +113,8 @@ run(std::string const & input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<FTI::Driver<dim, Number>> driver;
-  driver.reset(new FTI::Driver<dim, Number>(mpi_comm, is_test));
+  std::shared_ptr<FTI::Driver<dim, Number>> driver =
+    std::make_shared<FTI::Driver<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<FTI::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);

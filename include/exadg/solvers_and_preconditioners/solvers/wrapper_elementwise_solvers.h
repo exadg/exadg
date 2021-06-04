@@ -103,13 +103,15 @@ private:
     // setup elementwise solver
     if(iterative_solver_data.solver_type == Solver::CG)
     {
-      solver.reset(new Elementwise::SolverCG<VectorizedArray<Number>, Operator, Preconditioner>(
-        dofs_per_cell, iterative_solver_data.solver_data));
+      solver =
+        std::make_shared<Elementwise::SolverCG<VectorizedArray<Number>, Operator, Preconditioner>>(
+          dofs_per_cell, iterative_solver_data.solver_data);
     }
     else if(iterative_solver_data.solver_type == Solver::GMRES)
     {
-      solver.reset(new Elementwise::SolverGMRES<VectorizedArray<Number>, Operator, Preconditioner>(
-        dofs_per_cell, iterative_solver_data.solver_data));
+      solver = std::make_shared<
+        Elementwise::SolverGMRES<VectorizedArray<Number>, Operator, Preconditioner>>(
+        dofs_per_cell, iterative_solver_data.solver_data);
     }
     else
     {

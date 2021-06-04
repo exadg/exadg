@@ -113,8 +113,8 @@ run(std::string const & input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver;
-  driver.reset(new IncNS::DriverPrecursor<dim, Number>(mpi_comm, is_test));
+  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
+    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
     get_application<dim, Number>(input_file);

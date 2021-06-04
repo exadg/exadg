@@ -125,19 +125,19 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
     {
       if(n_components == 1)
       {
-        temp.reset(new MGTransferP<dim, Number, VectorType, 1>(&*mg_matrixfree[i],
-                                                               &*mg_matrixfree[i - 1],
-                                                               fine_level.degree(),
-                                                               coarse_level.degree(),
-                                                               dof_handler_index));
+        temp = std::make_shared<MGTransferP<dim, Number, VectorType, 1>>(&*mg_matrixfree[i],
+                                                                         &*mg_matrixfree[i - 1],
+                                                                         fine_level.degree(),
+                                                                         coarse_level.degree(),
+                                                                         dof_handler_index);
       }
       else if(n_components == dim)
       {
-        temp.reset(new MGTransferP<dim, Number, VectorType, dim>(&*mg_matrixfree[i],
-                                                                 &*mg_matrixfree[i - 1],
-                                                                 fine_level.degree(),
-                                                                 coarse_level.degree(),
-                                                                 dof_handler_index));
+        temp = std::make_shared<MGTransferP<dim, Number, VectorType, dim>>(&*mg_matrixfree[i],
+                                                                           &*mg_matrixfree[i - 1],
+                                                                           fine_level.degree(),
+                                                                           coarse_level.degree(),
+                                                                           dof_handler_index);
       }
       else
       {
@@ -148,25 +148,25 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
     {
       if(n_components == 1)
       {
-        temp.reset(new MGTransferC<dim, Number, VectorType, 1>(mapping,
-                                                               *mg_matrixfree[i],
-                                                               *mg_matrixfree[i - 1],
-                                                               *mg_constraints[i],
-                                                               *mg_constraints[i - 1],
-                                                               fine_level.h_level(),
-                                                               coarse_level.degree(),
-                                                               dof_handler_index));
+        temp = std::make_shared<MGTransferC<dim, Number, VectorType, 1>>(mapping,
+                                                                         *mg_matrixfree[i],
+                                                                         *mg_matrixfree[i - 1],
+                                                                         *mg_constraints[i],
+                                                                         *mg_constraints[i - 1],
+                                                                         fine_level.h_level(),
+                                                                         coarse_level.degree(),
+                                                                         dof_handler_index);
       }
       else if(n_components == dim)
       {
-        temp.reset(new MGTransferC<dim, Number, VectorType, dim>(mapping,
-                                                                 *mg_matrixfree[i],
-                                                                 *mg_matrixfree[i - 1],
-                                                                 *mg_constraints[i],
-                                                                 *mg_constraints[i - 1],
-                                                                 fine_level.h_level(),
-                                                                 coarse_level.degree(),
-                                                                 dof_handler_index));
+        temp = std::make_shared<MGTransferC<dim, Number, VectorType, dim>>(mapping,
+                                                                           *mg_matrixfree[i],
+                                                                           *mg_matrixfree[i - 1],
+                                                                           *mg_constraints[i],
+                                                                           *mg_constraints[i - 1],
+                                                                           fine_level.h_level(),
+                                                                           coarse_level.degree(),
+                                                                           dof_handler_index);
       }
       else
       {

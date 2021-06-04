@@ -69,12 +69,17 @@ OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & 
   // in 3D, and thus necessarily has dofs_per_vertex=0
   is_dg = (this->matrix_free->get_dof_handler(this->data.dof_index).get_fe().dofs_per_vertex == 0);
 
-  integrator.reset(
-    new IntegratorCell(*this->matrix_free, this->data.dof_index, this->data.quad_index));
-  integrator_m.reset(
-    new IntegratorFace(*this->matrix_free, true, this->data.dof_index, this->data.quad_index));
-  integrator_p.reset(
-    new IntegratorFace(*this->matrix_free, false, this->data.dof_index, this->data.quad_index));
+  integrator   = std::make_shared<IntegratorCell>(*this->matrix_free,
+                                                this->data.dof_index,
+                                                this->data.quad_index);
+  integrator_m = std::make_shared<IntegratorFace>(*this->matrix_free,
+                                                  true,
+                                                  this->data.dof_index,
+                                                  this->data.quad_index);
+  integrator_p = std::make_shared<IntegratorFace>(*this->matrix_free,
+                                                  false,
+                                                  this->data.dof_index,
+                                                  this->data.quad_index);
 
   if(!is_dg)
   {
@@ -550,20 +555,21 @@ void
 OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditioner_matrix_free()
   const
 {
-  elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
+  elementwise_operator = std::make_shared<ELEMENTWISE_OPERATOR>(*this);
 
   if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
   {
     typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
 
-    elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
+    elementwise_preconditioner =
+      std::make_shared<IDENTITY>(elementwise_operator->get_problem_size());
   }
   else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
     typedef Elementwise::InverseMassPreconditioner<dim, n_components, Number> INVERSE_MASS;
 
-    elementwise_preconditioner.reset(
-      new INVERSE_MASS(get_matrix_free(), get_dof_index(), get_quad_index()));
+    elementwise_preconditioner =
+      std::make_shared<INVERSE_MASS>(get_matrix_free(), get_dof_index(), get_quad_index());
   }
   else
   {
@@ -574,10 +580,10 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   iterative_solver_data.solver_type = data.solver_block_diagonal;
   iterative_solver_data.solver_data = data.solver_data_block_diagonal;
 
-  elementwise_solver.reset(new ELEMENTWISE_SOLVER(
+  elementwise_solver = std::make_shared<ELEMENTWISE_SOLVER>(
     *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
     *std::dynamic_pointer_cast<ELEMENTWISE_PRECONDITIONER>(elementwise_preconditioner),
-    iterative_solver_data));
+    iterative_solver_data);
 }
 
 template<int dim, typename Number, int n_components>

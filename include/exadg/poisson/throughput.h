@@ -89,8 +89,8 @@ run(ThroughputParameters const & throughput,
     MPI_Comm const &             mpi_comm,
     bool const                   is_test)
 {
-  std::shared_ptr<Poisson::Driver<dim, Number>> driver;
-  driver.reset(new Poisson::Driver<dim, Number>(mpi_comm, is_test));
+  std::shared_ptr<Poisson::Driver<dim, Number>> driver =
+    std::make_shared<Poisson::Driver<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
