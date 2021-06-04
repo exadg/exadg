@@ -94,9 +94,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_
 <tr class="memitem:a2859827753c091f5316107450374d816"><td class="memItemLeft" align="right" valign="top"><a id="a2859827753c091f5316107450374d816"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_field_functions_fluid</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">IncNS::FieldFunctions</a>&lt; dim &gt;&gt; field_functions)=0</td></tr>
 <tr class="separator:a2859827753c091f5316107450374d816"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e4470ae3af8959d85a55c06dad1950f"><td class="memItemLeft" align="right" valign="top"><a id="a1e4470ae3af8959d85a55c06dad1950f"></a>
-virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">IncNS::PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>construct_postprocessor_fluid</b> (unsigned int const degree, MPI_Comm const &amp;mpi_comm)=0</td></tr>
-<tr class="separator:a1e4470ae3af8959d85a55c06dad1950f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7227a44cf4d6be67d5a852e669363e6"><td class="memItemLeft" align="right" valign="top"><a id="ae7227a44cf4d6be67d5a852e669363e6"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1IncNS_1_1PostProcessorBase.html">IncNS::PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor_fluid</b> (unsigned int const degree, MPI_Comm const &amp;mpi_comm)=0</td></tr>
+<tr class="separator:ae7227a44cf4d6be67d5a852e669363e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a125ebc27b6f960547c06fabdfcf14992"><td class="memItemLeft" align="right" valign="top"><a id="a125ebc27b6f960547c06fabdfcf14992"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_input_parameters_ale</b> (<a class="el" href="classExaDG_1_1Poisson_1_1InputParameters.html">Poisson::InputParameters</a> &amp;parameters)=0</td></tr>
 <tr class="separator:a125ebc27b6f960547c06fabdfcf14992"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,9 +133,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_material_
 <tr class="memitem:ad8e12f29c6dcf60b92762a355a9ff5bc"><td class="memItemLeft" align="right" valign="top"><a id="ad8e12f29c6dcf60b92762a355a9ff5bc"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_field_functions_structure</b> (std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Structure_1_1FieldFunctions.html">Structure::FieldFunctions</a>&lt; dim &gt;&gt; field_functions)=0</td></tr>
 <tr class="separator:ad8e12f29c6dcf60b92762a355a9ff5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1548a2d6e59a050cd6dc428c2b9edd2e"><td class="memItemLeft" align="right" valign="top"><a id="a1548a2d6e59a050cd6dc428c2b9edd2e"></a>
-virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html">Structure::PostProcessor</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>construct_postprocessor_structure</b> (unsigned int const degree, MPI_Comm const &amp;mpi_comm)=0</td></tr>
-<tr class="separator:a1548a2d6e59a050cd6dc428c2b9edd2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5bce2a5ba38f6358c17b919176df407"><td class="memItemLeft" align="right" valign="top"><a id="af5bce2a5ba38f6358c17b919176df407"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1PostProcessor.html">Structure::PostProcessor</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor_structure</b> (unsigned int const degree, MPI_Comm const &amp;mpi_comm)=0</td></tr>
+<tr class="separator:af5bce2a5ba38f6358c17b919176df407"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
