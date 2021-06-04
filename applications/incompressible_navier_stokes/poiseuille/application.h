@@ -388,16 +388,14 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
 
     // no-slip walls
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     if(boundary_condition != BoundaryCondition::Periodic)
@@ -405,12 +403,12 @@ public:
       // inflow
       if(boundary_condition == BoundaryCondition::ParabolicInflow)
       {
-        boundary_descriptor_velocity->dirichlet_bc.insert(
+        boundary_descriptor->velocity->dirichlet_bc.insert(
           pair(1, new AnalyticalSolutionVelocity<dim>(max_velocity, H)));
       }
       else if(boundary_condition == BoundaryCondition::PressureInflow)
       {
-        boundary_descriptor_velocity->neumann_bc.insert(
+        boundary_descriptor->velocity->neumann_bc.insert(
           pair(1,
                new NeumannBoundaryVelocity<dim>(formulation_viscous_term, max_velocity, H, -1.0)));
       }
@@ -420,7 +418,7 @@ public:
       }
 
       // outflow
-      boundary_descriptor_velocity->neumann_bc.insert(
+      boundary_descriptor->velocity->neumann_bc.insert(
         pair(2, new NeumannBoundaryVelocity<dim>(formulation_viscous_term, max_velocity, H, 1.0)));
     }
 
@@ -428,26 +426,27 @@ public:
     {
       // slip boundary condition: always u*n=0
       // function will not be used -> use ZeroFunction
-      boundary_descriptor_velocity->symmetry_bc.insert(
+      boundary_descriptor->velocity->symmetry_bc.insert(
         pair(3, new Functions::ZeroFunction<dim>(dim)));
     }
 
     // fill boundary descriptor pressure
 
     // no-slip walls
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     if(boundary_condition != BoundaryCondition::Periodic)
     {
       // inflow
       if(boundary_condition == BoundaryCondition::ParabolicInflow)
       {
-        boundary_descriptor_pressure->neumann_bc.insert(
+        boundary_descriptor->pressure->neumann_bc.insert(
           pair(1, new Functions::ZeroFunction<dim>(dim)));
       }
       else if(boundary_condition == BoundaryCondition::PressureInflow)
       {
-        boundary_descriptor_pressure->dirichlet_bc.insert(
+        boundary_descriptor->pressure->dirichlet_bc.insert(
           pair(1, new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H)));
       }
       else
@@ -456,7 +455,7 @@ public:
       }
 
       // outflow
-      boundary_descriptor_pressure->dirichlet_bc.insert(
+      boundary_descriptor->pressure->dirichlet_bc.insert(
         pair(2, new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H)));
     }
 
@@ -466,7 +465,7 @@ public:
       // -> prescribe dudt for dual-splitting scheme, which is equal to zero since
       // (du/dt)*n = d(u*n)/dt = d(0)/dt = 0, i.e., the time derivative term is multiplied by the
       // normal vector and the normal velocity is zero (= symmetry boundary condition).
-      boundary_descriptor_pressure->neumann_bc.insert(
+      boundary_descriptor->pressure->neumann_bc.insert(
         pair(3, new Functions::ZeroFunction<dim>(dim)));
     }
   }

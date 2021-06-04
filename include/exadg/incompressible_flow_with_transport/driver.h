@@ -110,9 +110,8 @@ private:
   bool use_adaptive_time_stepping;
 
   // INCOMPRESSIBLE NAVIER-STOKES
-  std::shared_ptr<IncNS::FieldFunctions<dim>>      fluid_field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> fluid_boundary_descriptor_velocity;
-  std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
+  std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
+  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
 
   IncNS::InputParameters fluid_param;
 

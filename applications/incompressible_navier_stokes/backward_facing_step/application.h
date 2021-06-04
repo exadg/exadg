@@ -403,53 +403,55 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
     // no slip boundaries at the upper and lower wall with ID=0
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=2: prescribe velocity profile which
     // is obtained as the results of the precursor simulation
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(2, new InflowProfile<dim>(*inflow_data_storage)));
 
     // outflow boundary condition at right boundary with ID=1
-    boundary_descriptor_velocity->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->velocity->neumann_bc.insert(
+      pair(1, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at the upper and lower wall with ID=0
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=2
     // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
     // we assume that this is negligible when using the dual splitting scheme
-    boundary_descriptor_pressure->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(2, new Functions::ZeroFunction<dim>(dim)));
 
     // outflow boundary condition at right boundary with ID=1: set pressure to zero
-    boundary_descriptor_pressure->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->pressure->dirichlet_bc.insert(
+      pair(1, new Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_boundary_conditions_precursor(
-    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+    std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
     // no slip boundaries at lower and upper wall with ID=0
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at lower and upper wall with ID=0
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void

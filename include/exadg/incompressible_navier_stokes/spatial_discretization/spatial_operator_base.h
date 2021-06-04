@@ -148,14 +148,13 @@ public:
   /*
    * Constructor.
    */
-  SpatialOperatorBase(std::shared_ptr<Grid<dim, Number> const>        grid,
-                      unsigned int const                              degree_u,
-                      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-                      std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-                      std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-                      InputParameters const &                         parameters,
-                      std::string const &                             field,
-                      MPI_Comm const &                                mpi_comm);
+  SpatialOperatorBase(std::shared_ptr<Grid<dim, Number> const>       grid,
+                      unsigned int const                             degree_u,
+                      std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+                      std::shared_ptr<FieldFunctions<dim>> const     field_functions,
+                      InputParameters const &                        parameters,
+                      std::string const &                            field,
+                      MPI_Comm const &                               mpi_comm);
 
   /*
    * Destructor.
@@ -511,9 +510,8 @@ protected:
   /*
    * User interface: Boundary conditions and field functions.
    */
-  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
-  std::shared_ptr<FieldFunctions<dim>>      field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
   /*
    * List of input parameters.

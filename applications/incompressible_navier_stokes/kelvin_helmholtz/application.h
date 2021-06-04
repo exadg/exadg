@@ -239,16 +239,15 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    boundary_descriptor_velocity->symmetry_bc.insert(
+    boundary_descriptor->velocity->symmetry_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(dim)));
   }
 
 

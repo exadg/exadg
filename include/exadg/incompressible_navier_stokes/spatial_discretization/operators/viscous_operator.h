@@ -508,7 +508,7 @@ struct ViscousOperatorData : public OperatorBaseData
 
   Operators::ViscousKernelData kernel_data;
 
-  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> const> bc;
 };
 
 template<int dim, typename Number>

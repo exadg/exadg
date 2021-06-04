@@ -74,7 +74,7 @@ inline DEAL_II_ALWAYS_INLINE //
                              OperatorType const &                            operator_type,
                              BoundaryTypeU const &                           boundary_type,
                              types::boundary_id const                        boundary_id,
-                             std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
+                             std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
                              double const &                                  time)
 {
   // element e⁺
@@ -156,7 +156,7 @@ inline DEAL_II_ALWAYS_INLINE //
       BoundaryTypeU const &                           boundary_type,
       TypeDirichletBCs const &                        type_dirichlet_bc,
       types::boundary_id const                        boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
+      std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
       double const &                                  time)
 {
   Tensor<1, dim, VectorizedArray<Number>> u_p;
@@ -317,7 +317,7 @@ inline DEAL_II_ALWAYS_INLINE //
                            OperatorType const &                            operator_type,
                            BoundaryTypeP const &                           boundary_type,
                            types::boundary_id const                        boundary_id,
-                           std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor,
+                           std::shared_ptr<BoundaryDescriptorP<dim> const> boundary_descriptor,
                            double const &                                  time,
                            double const &                                  inverse_scaling_factor)
 {
@@ -437,7 +437,7 @@ inline DEAL_II_ALWAYS_INLINE //
       OperatorType const &                            operator_type,
       BoundaryTypeU const &                           boundary_type,
       types::boundary_id const                        boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
+      std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
       double const &                                  time,
       bool const                                      variable_normal_vector)
 {

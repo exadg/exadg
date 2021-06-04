@@ -364,21 +364,21 @@ public:
   }
 
   void
-  set_boundary_conditions(
-    std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
-    std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> boundary_descriptor_pressure) final
+  set_boundary_conditions(std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_velocity->dirichlet_bc.insert(
+    boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(1, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
-    boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor_pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(dim)));
+    boundary_descriptor->pressure->neumann_bc.insert(
+      pair(1, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void

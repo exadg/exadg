@@ -272,7 +272,7 @@ struct ContinuityPenaltyData
 
   bool use_boundary_data;
 
-  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
+  std::shared_ptr<BoundaryDescriptorU<dim> const> bc;
 };
 
 template<int dim, typename Number>

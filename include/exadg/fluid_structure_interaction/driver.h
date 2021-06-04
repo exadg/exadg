@@ -356,9 +356,8 @@ private:
   // parameters
   IncNS::InputParameters fluid_param;
 
-  std::shared_ptr<IncNS::FieldFunctions<dim>>      fluid_field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> fluid_boundary_descriptor_velocity;
-  std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
+  std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
+  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
 
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;

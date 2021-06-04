@@ -148,12 +148,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // boundary conditions
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
-
-  application->set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *grid);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *grid);
+  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+  application->set_boundary_conditions(boundary_descriptor);
+  IncNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
 
   // field functions
   field_functions.reset(new FieldFunctions<dim>());
@@ -161,26 +158,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   if(param.solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(grid,
-                                                degree,
-                                                boundary_descriptor_velocity,
-                                                boundary_descriptor_pressure,
-                                                field_functions,
-                                                param,
-                                                "fluid",
-                                                mpi_comm);
+    pde_operator = create_operator<dim, Number>(
+      grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
   }
   else if(param.solver_type == SolverType::Steady)
   {
-    pde_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
-                                                            degree,
-                                                            boundary_descriptor_velocity,
-                                                            boundary_descriptor_pressure,
-                                                            field_functions,
-                                                            param,
-                                                            "fluid",
-                                                            mpi_comm);
+    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
   }
   else
   {
