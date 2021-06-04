@@ -10,5 +10,6 @@ var searchData=
   ['boundarydescriptor_14',['BoundaryDescriptor',['../structExaDG_1_1CompNS_1_1BoundaryDescriptor.html',1,'ExaDG::CompNS::BoundaryDescriptor&lt; dim &gt;'],['../structExaDG_1_1ConvDiff_1_1BoundaryDescriptor.html',1,'ExaDG::ConvDiff::BoundaryDescriptor&lt; dim &gt;'],['../structExaDG_1_1IncNS_1_1BoundaryDescriptor.html',1,'ExaDG::IncNS::BoundaryDescriptor&lt; dim &gt;'],['../structExaDG_1_1Poisson_1_1BoundaryDescriptor.html',1,'ExaDG::Poisson::BoundaryDescriptor&lt; rank, dim &gt;'],['../structExaDG_1_1Structure_1_1BoundaryDescriptor.html',1,'ExaDG::Structure::BoundaryDescriptor&lt; dim &gt;']]],
   ['boundarydescriptorenergy_15',['BoundaryDescriptorEnergy',['../structExaDG_1_1CompNS_1_1BoundaryDescriptorEnergy.html',1,'ExaDG::CompNS']]],
   ['boundarydescriptorp_16',['BoundaryDescriptorP',['../structExaDG_1_1IncNS_1_1BoundaryDescriptorP.html',1,'ExaDG::IncNS']]],
-  ['boundarydescriptoru_17',['BoundaryDescriptorU',['../structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html',1,'ExaDG::IncNS']]]
+  ['boundarydescriptorstd_17',['BoundaryDescriptorStd',['../structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html',1,'ExaDG::CompNS']]],
+  ['boundarydescriptoru_18',['BoundaryDescriptorU',['../structExaDG_1_1IncNS_1_1BoundaryDescriptorU.html',1,'ExaDG::IncNS']]]
 ];

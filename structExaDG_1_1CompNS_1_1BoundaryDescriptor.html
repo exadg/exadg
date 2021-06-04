@@ -66,40 +66,27 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="structExaDG_1_1CompNS_1_1BoundaryDescriptor-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">ExaDG::CompNS::BoundaryDescriptor&lt; dim &gt; Struct Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for ExaDG::CompNS::BoundaryDescriptor&lt; dim &gt;:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="structExaDG_1_1CompNS_1_1BoundaryDescriptor.png" usemap="#ExaDG::CompNS::BoundaryDescriptor_3C_20dim_20_3E_map" alt=""/>
-  <map id="ExaDG::CompNS::BoundaryDescriptor_3C_20dim_20_3E_map" name="ExaDG::CompNS::BoundaryDescriptor_3C_20dim_20_3E_map">
-<area href="structExaDG_1_1CompNS_1_1BoundaryDescriptorEnergy.html" alt="ExaDG::CompNS::BoundaryDescriptorEnergy&lt; dim &gt;" shape="rect" coords="0,56,310,80"/>
-  </map>
-</div></div>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
-Public Member Functions</h2></td></tr>
-<tr class="memitem:a169b814bfb36afad6750009dff3832c7"><td class="memItemLeft" align="right" valign="top"><a id="a169b814bfb36afad6750009dff3832c7"></a>
-DEAL_II_ALWAYS_INLINE BoundaryType&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_type</b> (types::boundary_id const &amp;boundary_id) const</td></tr>
-<tr class="separator:a169b814bfb36afad6750009dff3832c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d6b0205f8f90b9b6e271c50d982a1ef"><td class="memItemLeft" align="right" valign="top"><a id="a2d6b0205f8f90b9b6e271c50d982a1ef"></a>
-DEAL_II_ALWAYS_INLINE void&#160;</td><td class="memItemRight" valign="bottom"><b>verify_boundary_conditions</b> (types::boundary_id const boundary_id, std::set&lt; types::boundary_id &gt; const &amp;periodic_boundary_ids) const</td></tr>
-<tr class="separator:a2d6b0205f8f90b9b6e271c50d982a1ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a633102295fa4514113f42fedbb278d85"><td class="memItemLeft" align="right" valign="top"><a id="a633102295fa4514113f42fedbb278d85"></a>
-std::map&lt; types::boundary_id, std::shared_ptr&lt; Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_bc</b></td></tr>
-<tr class="separator:a633102295fa4514113f42fedbb278d85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a68d3d6bf9f41b03bce76382be576d0c1"><td class="memItemLeft" align="right" valign="top"><a id="a68d3d6bf9f41b03bce76382be576d0c1"></a>
-std::map&lt; types::boundary_id, std::shared_ptr&lt; Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neumann_bc</b></td></tr>
-<tr class="separator:a68d3d6bf9f41b03bce76382be576d0c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d0071ea7c4757ed2a4730ae9f0b7c59"><td class="memItemLeft" align="right" valign="top"><a id="a1d0071ea7c4757ed2a4730ae9f0b7c59"></a>
+<a class="el" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">BoundaryDescriptorStd</a>&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>density</b></td></tr>
+<tr class="separator:a1d0071ea7c4757ed2a4730ae9f0b7c59"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45ac24938652a51ce213757dc1fdb04e"><td class="memItemLeft" align="right" valign="top"><a id="a45ac24938652a51ce213757dc1fdb04e"></a>
+<a class="el" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">BoundaryDescriptorStd</a>&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>velocity</b></td></tr>
+<tr class="separator:a45ac24938652a51ce213757dc1fdb04e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af16b0aabfcbdcee0c22ba0ad61e35447"><td class="memItemLeft" align="right" valign="top"><a id="af16b0aabfcbdcee0c22ba0ad61e35447"></a>
+<a class="el" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorStd.html">BoundaryDescriptorStd</a>&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pressure</b></td></tr>
+<tr class="separator:af16b0aabfcbdcee0c22ba0ad61e35447"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaadf99d38b0c83feb520258f8c569d5f"><td class="memItemLeft" align="right" valign="top"><a id="aaadf99d38b0c83feb520258f8c569d5f"></a>
+<a class="el" href="structExaDG_1_1CompNS_1_1BoundaryDescriptorEnergy.html">BoundaryDescriptorEnergy</a>&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>energy</b></td></tr>
+<tr class="separator:aaadf99d38b0c83feb520258f8c569d5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/exadg/compressible_navier_stokes/user_interface/<a class="el" href="compressible__navier__stokes_2user__interface_2boundary__descriptor_8h_source.html">boundary_descriptor.h</a></li>
