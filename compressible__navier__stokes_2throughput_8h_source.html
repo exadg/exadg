@@ -152,8 +152,8 @@ $(function() {
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    MPI_Comm <span class="keyword">const</span> &amp;             mpi_comm,</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keywordtype">bool</span> <span class="keyword">const</span>                   is_test)</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;{</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  std::shared_ptr&lt;CompNS::Driver&lt;dim, Number&gt;&gt; driver;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  driver.reset(<span class="keyword">new</span> CompNS::Driver&lt;dim, Number&gt;(mpi_comm, is_test));</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;  std::shared_ptr&lt;CompNS::Driver&lt;dim, Number&gt;&gt; driver =</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    std::make_shared&lt;CompNS::Driver&lt;dim, Number&gt;&gt;(mpi_comm, is_test);</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  std::shared_ptr&lt;CompNS::ApplicationBase&lt;dim, Number&gt;&gt; application =</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    get_application&lt;dim, Number&gt;(input_file);</div>

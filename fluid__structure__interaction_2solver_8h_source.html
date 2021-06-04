@@ -197,8 +197,8 @@ $(function() {
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;  Timer timer;</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;  timer.restart();</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  std::shared_ptr&lt;FSI::Driver&lt;dim, Number&gt;&gt; driver;</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;  driver.reset(<span class="keyword">new</span> FSI::Driver&lt;dim, Number&gt;(input_file, mpi_comm, is_test));</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;  std::shared_ptr&lt;FSI::Driver&lt;dim, Number&gt;&gt; driver =</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    std::make_shared&lt;FSI::Driver&lt;dim, Number&gt;&gt;(input_file, mpi_comm, is_test);</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160; </div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;  std::shared_ptr&lt;FSI::ApplicationBase&lt;dim, Number&gt;&gt; application =</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    get_application&lt;dim, Number&gt;(input_file);</div>

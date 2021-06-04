@@ -174,8 +174,8 @@ $(function() {
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>              dof_index,</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>              quad_index)</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  {</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    integrator.reset(<span class="keyword">new</span> Integrator(matrix_free, dof_index, quad_index));</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    inverse.reset(<span class="keyword">new</span> CellwiseInverseMass(*integrator));</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    integrator = std::make_shared&lt;Integrator&gt;(matrix_free, dof_index, quad_index);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    inverse    = std::make_shared&lt;CellwiseInverseMass&gt;(*integrator);</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;  }</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="keywordtype">void</span></div>

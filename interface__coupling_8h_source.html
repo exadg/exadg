@@ -517,7 +517,7 @@ $(function() {
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    mapping_src       = &amp;mapping_src_in;</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160; </div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    std::shared_ptr&lt;GridTools::Cache&lt;dim, dim&gt;&gt; cache_src;</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    cache_src.reset(<span class="keyword">new</span> GridTools::Cache&lt;dim, dim&gt;(*triangulation_src, *mapping_src));</div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    cache_src = std::make_shared&lt;GridTools::Cache&lt;dim, dim&gt;&gt;(*triangulation_src, *mapping_src);</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160; </div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    <span class="comment">// mark vertices at interface in order to make search of active cells around point more</span></div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;    <span class="comment">// efficient</span></div>
