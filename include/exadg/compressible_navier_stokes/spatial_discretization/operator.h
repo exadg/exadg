@@ -51,16 +51,13 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Operator(std::shared_ptr<Grid<dim, Number> const>       grid_in,
-           unsigned int const                             degree_in,
-           std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
-           std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
-           std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
-           std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
-           std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
-           InputParameters const &                        param_in,
-           std::string const &                            field_in,
-           MPI_Comm const &                               mpi_comm_in);
+  Operator(std::shared_ptr<Grid<dim, Number> const>       grid,
+           unsigned int const                             degree,
+           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim>>           field_functions,
+           InputParameters const &                        param,
+           std::string const &                            field,
+           MPI_Comm const &                               mpi_comm);
 
   void
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
@@ -199,10 +196,7 @@ private:
   /*
    * User interface: Boundary conditions and field functions.
    */
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
-  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
   /*
@@ -229,12 +223,6 @@ private:
   DoFHandler<dim> dof_handler_vector; // e.g. velocity
   DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
 
-  /*
-   * Constraints.
-   */
-  AffineConstraints<Number> constraint;
-
-
   std::string const dof_index_all    = "all_fields";
   std::string const dof_index_vector = "vector";
   std::string const dof_index_scalar = "scalar";
@@ -246,6 +234,11 @@ private:
   std::string const quad_index_l2_projections = quad_index_standard;
   // alternative: use more accurate over-integration strategy
   //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
+
+  /*
+   * Constraints.
+   */
+  AffineConstraints<Number> constraint;
 
   /*
    * Matrix-free operator evaluation.

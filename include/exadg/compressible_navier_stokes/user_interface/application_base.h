@@ -76,11 +76,7 @@ public:
   create_grid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
 
   virtual void
-  set_boundary_conditions(
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity,
-    std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure,
-    std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy) = 0;
+  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) = 0;
 
   virtual void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;

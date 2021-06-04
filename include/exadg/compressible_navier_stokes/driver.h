@@ -147,11 +147,8 @@ private:
 
   std::shared_ptr<Grid<dim, Number>> grid;
 
-  std::shared_ptr<FieldFunctions<dim>>           field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
-  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
