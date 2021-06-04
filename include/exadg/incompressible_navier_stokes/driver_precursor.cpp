@@ -213,10 +213,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   pde_operator->setup(matrix_free, matrix_free_data);
 
   // setup postprocessor
-  postprocessor_pre = application->construct_postprocessor_precursor(degree, mpi_comm);
+  postprocessor_pre = application->create_postprocessor_precursor(degree, mpi_comm);
   postprocessor_pre->setup(*pde_operator_pre);
 
-  postprocessor = application->construct_postprocessor(degree, mpi_comm);
+  postprocessor = application->create_postprocessor(degree, mpi_comm);
   postprocessor->setup(*pde_operator);
 
 

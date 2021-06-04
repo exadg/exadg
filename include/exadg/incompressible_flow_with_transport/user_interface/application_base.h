@@ -83,9 +83,9 @@ public:
                              unsigned int const                             scalar_index = 0) = 0;
 
   virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  construct_postprocessor_scalar(unsigned int const degree,
-                                 MPI_Comm const &   mpi_comm,
-                                 unsigned int const scalar_index = 0) = 0;
+  create_postprocessor_scalar(unsigned int const degree,
+                              MPI_Comm const &   mpi_comm,
+                              unsigned int const scalar_index = 0) = 0;
 
 protected:
   std::string  output_directory = "output/", output_name = "output";

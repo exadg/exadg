@@ -260,12 +260,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // setup postprocessor
-  fluid_postprocessor = application->construct_postprocessor(degree, mpi_comm);
+  fluid_postprocessor = application->create_postprocessor(degree, mpi_comm);
   fluid_postprocessor->setup(*fluid_operator);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_postprocessor[i] = application->construct_postprocessor_scalar(degree, mpi_comm, i);
+    scalar_postprocessor[i] = application->create_postprocessor_scalar(degree, mpi_comm, i);
     scalar_postprocessor[i]->setup(*conv_diff_operator[i], *grid->get_dynamic_mapping());
   }
 

@@ -129,7 +129,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize postprocessor
   if(not(is_throughput_study))
   {
-    postprocessor = application->construct_postprocessor(degree, mpi_comm);
+    postprocessor = application->create_postprocessor(degree, mpi_comm);
     postprocessor->setup(pde_operator->get_dof_handler(), *grid->mapping);
   }
 

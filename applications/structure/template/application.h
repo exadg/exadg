@@ -89,7 +89,7 @@ public:
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
   {
     (void)degree;
 

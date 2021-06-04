@@ -86,7 +86,7 @@ public:
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
 
   void
   set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)
