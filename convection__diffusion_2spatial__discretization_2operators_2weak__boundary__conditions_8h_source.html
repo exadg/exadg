@@ -153,7 +153,7 @@ $(function() {
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                           OperatorType <span class="keyword">const</span> &amp;                           operator_type,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                           BoundaryType <span class="keyword">const</span> &amp;                           boundary_type,</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                           types::boundary_id <span class="keyword">const</span>                       boundary_id,</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                           std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                           std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                           <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                 time)</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;{</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;  VectorizedArray&lt;Number&gt; value_p = make_vectorized_array&lt;Number&gt;(0.0);</div>
@@ -254,7 +254,7 @@ $(function() {
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    OperatorType <span class="keyword">const</span> &amp;                           operator_type,</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    BoundaryType <span class="keyword">const</span> &amp;                           boundary_type,</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    types::boundary_id <span class="keyword">const</span>                       boundary_id,</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                 time)</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;{</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;  VectorizedArray&lt;Number&gt; normal_gradient_p = make_vectorized_array&lt;Number&gt;(0.0);</div>

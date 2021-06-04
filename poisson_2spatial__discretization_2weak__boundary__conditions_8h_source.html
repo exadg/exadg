@@ -150,7 +150,7 @@ $(function() {
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                           OperatorType <span class="keyword">const</span> &amp;                                 operator_type,</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                           BoundaryType <span class="keyword">const</span> &amp;                                 boundary_type,</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                           types::boundary_id <span class="keyword">const</span>                             boundary_id,</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                           std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                           std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                           <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                       time)</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;{</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;  Tensor&lt;rank, dim, VectorizedArray&lt;Number&gt;&gt; value_p;</div>
@@ -266,7 +266,7 @@ $(function() {
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    OperatorType <span class="keyword">const</span> &amp;                                 operator_type,</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    BoundaryType <span class="keyword">const</span> &amp;                                 boundary_type,</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    types::boundary_id <span class="keyword">const</span>                             boundary_id,</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                       time)</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;{</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;  Tensor&lt;rank, dim, VectorizedArray&lt;Number&gt;&gt; normal_gradient_p;</div>
@@ -314,7 +314,7 @@ $(function() {
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                          FaceIntegrator&lt;dim, n_components, Number&gt; <span class="keyword">const</span> &amp;    integrator,</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                          BoundaryType <span class="keyword">const</span> &amp;                                 boundary_type,</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                          types::boundary_id <span class="keyword">const</span>                             boundary_id,</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                          std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; <span class="keyword">const</span> boundary_descriptor,</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                          std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;                          <span class="keywordtype">double</span> <span class="keyword">const</span> &amp;                                       time)</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;{</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;  Tensor&lt;rank, dim, VectorizedArray&lt;Number&gt;&gt; normal_gradient;</div>

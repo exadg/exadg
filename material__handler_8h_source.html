@@ -119,11 +119,11 @@ $(function() {
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  }</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">void</span></div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  initialize(MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;     matrix_free,</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  n_q_points_1d,</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  dof_index,</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  quad_index,</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;             std::shared_ptr&lt;MaterialDescriptor&gt; material_descriptor)</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  initialize(MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;           matrix_free,</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                        n_q_points_1d,</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                        dof_index,</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;             <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                        quad_index,</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;             std::shared_ptr&lt;MaterialDescriptor const&gt; material_descriptor)</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  {</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    this-&gt;dof_index           = dof_index;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    this-&gt;material_descriptor = material_descriptor;</div>
@@ -183,8 +183,8 @@ $(function() {
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> dof_index;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  std::shared_ptr&lt;MaterialDescriptor&gt; material_descriptor;</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  Materials                           material_map;</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;  std::shared_ptr&lt;MaterialDescriptor const&gt; material_descriptor;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;  Materials                                 material_map;</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <span class="comment">// pointer to material of current cell</span></div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  std::shared_ptr&lt;Material&lt;dim, Number&gt;&gt; material;</div>

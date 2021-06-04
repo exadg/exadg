@@ -117,8 +117,8 @@ $(function() {
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  }</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; bc;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  std::shared_ptr&lt;MaterialDescriptor&gt;      material_descriptor;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt; bc;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  std::shared_ptr&lt;MaterialDescriptor const&gt;      material_descriptor;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="comment">// This parameter is only relevant for nonlinear operator</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="comment">// with large deformations. When set to true, the traction t</span></div>

@@ -127,8 +127,8 @@ $(function() {
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <a class="code" href="classExaDG_1_1Poisson_1_1Operator.html">Operator</a>(std::shared_ptr&lt;<a class="code" href="classExaDG_1_1Grid.html">Grid&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;             grid,</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;           <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                   degree,</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;           std::shared_ptr&lt;<a class="code" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;rank, dim&gt;</a>&gt; <span class="keyword">const</span> boundary_descriptor,</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;           std::shared_ptr&lt;<a class="code" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a>&gt; <span class="keyword">const</span>           field_functions,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;           std::shared_ptr&lt;<a class="code" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;rank, dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor,</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;           std::shared_ptr&lt;<a class="code" href="structExaDG_1_1Poisson_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;           field_functions,</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;           <a class="code" href="classExaDG_1_1Poisson_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp;                              param,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;           std::string <span class="keyword">const</span> &amp;                                  field,</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;           MPI_Comm <span class="keyword">const</span> &amp;                                     mpi_comm);</div>
@@ -245,8 +245,8 @@ $(function() {
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="comment">   * User interface: Boundary conditions and field functions.</span></div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="comment">   */</span></div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt;&gt; boundary_descriptor;</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;           field_functions;</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  std::shared_ptr&lt;BoundaryDescriptor&lt;rank, dim&gt; <span class="keyword">const</span>&gt; boundary_descriptor;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;           field_functions;</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160; </div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  <span class="comment">/*</span></div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="comment">   * List of input parameters.</span></div>
