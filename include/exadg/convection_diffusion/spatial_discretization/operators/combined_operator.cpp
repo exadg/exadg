@@ -45,12 +45,12 @@ CombinedOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matr
 
   if(operator_data.unsteady_problem)
   {
-    mass_kernel.reset(new MassKernel<dim, Number>());
+    mass_kernel = std::make_shared<MassKernel<dim, Number>>();
   }
 
   if(operator_data.convective_problem)
   {
-    convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+    convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
     convective_kernel->reinit(matrix_free,
                               data.convective_kernel_data,
                               data.quad_index,
@@ -59,7 +59,7 @@ CombinedOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matr
 
   if(operator_data.diffusive_problem)
   {
-    diffusive_kernel.reset(new Operators::DiffusiveKernel<dim, Number>());
+    diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
     diffusive_kernel->reinit(matrix_free, data.diffusive_kernel_data, data.dof_index);
   }
 
@@ -88,7 +88,7 @@ CombinedOperator<dim, Number>::initialize(
   Base::reinit(matrix_free, affine_constraints, data);
 
   if(operator_data.unsteady_problem)
-    mass_kernel.reset(new MassKernel<dim, Number>());
+    mass_kernel = std::make_shared<MassKernel<dim, Number>>();
 
   if(operator_data.convective_problem)
     convective_kernel = convective_kernel_in;

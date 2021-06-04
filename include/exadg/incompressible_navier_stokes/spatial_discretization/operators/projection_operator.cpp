@@ -29,7 +29,7 @@ ProjectionOperator<dim, Number>::initialize(
 
   if(operator_data.use_divergence_penalty)
   {
-    this->div_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
+    this->div_kernel = std::make_shared<Operators::DivergencePenaltyKernel<dim, Number>>();
     this->div_kernel->reinit(matrix_free,
                              operator_data.dof_index,
                              operator_data.quad_index,
@@ -38,7 +38,7 @@ ProjectionOperator<dim, Number>::initialize(
 
   if(operator_data.use_continuity_penalty)
   {
-    this->conti_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
+    this->conti_kernel = std::make_shared<Operators::ContinuityPenaltyKernel<dim, Number>>();
     this->conti_kernel->reinit(matrix_free,
                                operator_data.dof_index,
                                operator_data.quad_index,

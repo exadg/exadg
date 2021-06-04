@@ -154,8 +154,8 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   application->set_boundary_conditions(boundary_descriptor);
   IncNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
 
-  field_functions_pre.reset(new FieldFunctions<dim>());
-  field_functions.reset(new FieldFunctions<dim>());
+  field_functions_pre = std::make_shared<FieldFunctions<dim>>();
+  field_functions     = std::make_shared<FieldFunctions<dim>>();
   application->set_field_functions_precursor(field_functions_pre);
   application->set_field_functions(field_functions);
 
@@ -185,7 +185,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   matrix_free_data_pre = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data_pre->append(pde_operator_pre);
 
-  matrix_free_pre.reset(new MatrixFree<dim, Number>());
+  matrix_free_pre = std::make_shared<MatrixFree<dim, Number>>();
   if(param_pre.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid_pre->triangulation, matrix_free_data_pre->data);
   matrix_free_pre->reinit(*grid_pre->mapping,
@@ -198,7 +198,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->mapping,

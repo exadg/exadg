@@ -66,7 +66,7 @@ public:
 
       if(ids.size() == 1) // leaves of tree reached, insert the data
       {
-        data.reset(new Data());
+        data = std::make_shared<Data>();
         data->wall_time += wall_time;
 
         return;
@@ -75,8 +75,7 @@ public:
       {
         std::vector<std::string> remaining_id = erase_first(ids);
 
-        std::shared_ptr<TimerTree> new_tree;
-        new_tree.reset(new TimerTree());
+        std::shared_ptr<TimerTree> new_tree = std::make_shared<TimerTree>();
         new_tree->insert(remaining_id, wall_time);
         sub_trees.push_back(new_tree);
       }
@@ -86,7 +85,7 @@ public:
       if(ids.size() == 1) // leaves of tree reached, insert the data
       {
         if(data.get() == nullptr)
-          data.reset(new Data());
+          data = std::make_shared<Data>();
 
         data->wall_time += wall_time;
 
@@ -110,8 +109,7 @@ public:
 
         if(found == false)
         {
-          std::shared_ptr<TimerTree> new_tree;
-          new_tree.reset(new TimerTree());
+          std::shared_ptr<TimerTree> new_tree = std::make_shared<TimerTree>();
           new_tree->insert(remaining_id, wall_time);
           sub_trees.push_back(new_tree);
         }
@@ -360,8 +358,8 @@ private:
     TimerTree other;
     if(relative && sub_trees.size() > 0)
     {
-      other.id = "Other";
-      other.data.reset(new Data());
+      other.id              = "Other";
+      other.data            = std::make_shared<Data>();
       other.data->wall_time = ref_time;
     }
 

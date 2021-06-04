@@ -100,26 +100,27 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
 {
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
-    momentum_preconditioner.reset(
-      new InverseMassPreconditioner<dim, dim, Number>(this->get_matrix_free(),
-                                                      this->get_dof_index_velocity(),
-                                                      this->get_quad_index_velocity_linear()));
+    momentum_preconditioner = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
+      this->get_matrix_free(),
+      this->get_dof_index_velocity(),
+      this->get_quad_index_velocity_linear());
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
-    momentum_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
+    momentum_preconditioner = std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
+      this->momentum_operator);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
-    momentum_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
+    momentum_preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
+        this->momentum_operator);
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
     typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    momentum_preconditioner.reset(new Multigrid(this->mpi_comm));
+    momentum_preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
 
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(momentum_preconditioner);
@@ -157,9 +158,9 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
       solver_data.use_preconditioner = true;
 
     // setup solver
-    momentum_linear_solver.reset(
-      new Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *momentum_preconditioner, solver_data));
+    momentum_linear_solver = std::make_shared<
+      Krylov::SolverCG<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *momentum_preconditioner, solver_data);
   }
   else if(this->param.solver_momentum == SolverMomentum::GMRES)
   {
@@ -174,10 +175,9 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
       solver_data.use_preconditioner = true;
 
     // setup solver
-    momentum_linear_solver.reset(new Krylov::SolverGMRES<MomentumOperator<dim, Number>,
-                                                         PreconditionerBase<Number>,
-                                                         VectorType>(
-      this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm));
+    momentum_linear_solver = std::make_shared<
+      Krylov::SolverGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm);
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
@@ -189,11 +189,9 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
 
-    momentum_linear_solver.reset(new Krylov::SolverFGMRES<MomentumOperator<dim, Number>,
-                                                          PreconditionerBase<Number>,
-                                                          VectorType>(this->momentum_operator,
-                                                                      *momentum_preconditioner,
-                                                                      solver_data));
+    momentum_linear_solver = std::make_shared<
+      Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      this->momentum_operator, *momentum_preconditioner, solver_data);
   }
   else
   {
@@ -208,14 +206,14 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
     nonlinear_operator.initialize(*this);
 
     // setup Newton solver
-    momentum_newton_solver.reset(
-      new Newton::Solver<VectorType,
-                         NonlinearMomentumOperator<dim, Number>,
-                         MomentumOperator<dim, Number>,
-                         Krylov::SolverBase<VectorType>>(this->param.newton_solver_data_momentum,
-                                                         nonlinear_operator,
-                                                         this->momentum_operator,
-                                                         *momentum_linear_solver));
+    momentum_newton_solver = std::make_shared<Newton::Solver<VectorType,
+                                                             NonlinearMomentumOperator<dim, Number>,
+                                                             MomentumOperator<dim, Number>,
+                                                             Krylov::SolverBase<VectorType>>>(
+      this->param.newton_solver_data_momentum,
+      nonlinear_operator,
+      this->momentum_operator,
+      *momentum_linear_solver);
   }
 }
 

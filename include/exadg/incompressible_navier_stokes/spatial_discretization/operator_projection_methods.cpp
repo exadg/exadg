@@ -161,8 +161,9 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
-    preconditioner_pressure_poisson.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>(laplace_operator));
+    preconditioner_pressure_poisson =
+      std::make_shared<JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>>(
+        laplace_operator);
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
@@ -171,7 +172,7 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
 
     typedef Poisson::MultigridPreconditioner<dim, Number, 1> Multigrid;
 
-    preconditioner_pressure_poisson.reset(new Multigrid(this->mpi_comm));
+    preconditioner_pressure_poisson = std::make_shared<Multigrid>(this->mpi_comm);
 
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner_pressure_poisson);
@@ -212,11 +213,12 @@ OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
     }
 
     // setup solver
-    pressure_poisson_solver.reset(new Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
-                                                       PreconditionerBase<Number>,
-                                                       VectorType>(laplace_operator,
-                                                                   *preconditioner_pressure_poisson,
-                                                                   solver_data));
+    pressure_poisson_solver =
+      std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
+                                        PreconditionerBase<Number>,
+                                        VectorType>>(laplace_operator,
+                                                     *preconditioner_pressure_poisson,
+                                                     solver_data);
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
@@ -232,10 +234,12 @@ OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new Krylov::SolverFGMRES<Poisson::LaplaceOperator<dim, Number, 1>,
-                                                           PreconditionerBase<Number>,
-                                                           VectorType>(
-      laplace_operator, *preconditioner_pressure_poisson, solver_data));
+    pressure_poisson_solver =
+      std::make_shared<Krylov::SolverFGMRES<Poisson::LaplaceOperator<dim, Number, 1>,
+                                            PreconditionerBase<Number>,
+                                            VectorType>>(laplace_operator,
+                                                         *preconditioner_pressure_poisson,
+                                                         solver_data);
   }
   else
   {

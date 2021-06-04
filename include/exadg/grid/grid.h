@@ -83,7 +83,7 @@ public:
     }
 
     // mapping
-    mapping.reset(new MappingQGeneric<dim>(data.mapping_degree));
+    mapping = std::make_shared<MappingQGeneric<dim>>(data.mapping_degree);
   }
 
   /**

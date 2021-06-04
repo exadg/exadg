@@ -101,14 +101,14 @@ public:
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
     {
-      preconditioner.reset(new JacobiPreconditioner<Operator>(coarse_matrix));
+      preconditioner = std::make_shared<JacobiPreconditioner<Operator>>(coarse_matrix);
       std::shared_ptr<JacobiPreconditioner<Operator>> jacobi =
         std::dynamic_pointer_cast<JacobiPreconditioner<Operator>>(preconditioner);
       AssertDimension(jacobi->get_size_of_diagonal(), coarse_matrix.m());
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi)
     {
-      preconditioner.reset(new BlockJacobiPreconditioner<Operator>(coarse_matrix));
+      preconditioner = std::make_shared<BlockJacobiPreconditioner<Operator>>(coarse_matrix);
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
@@ -379,10 +379,11 @@ public:
   MGCoarseAMG(Operator const & op, AMGData data = AMGData())
   {
     if(data.amg_type == AMGType::BoomerAMG)
-      amg_preconditioner.reset(
-        new PreconditionerBoomerAMG<Operator, NumberAMG>(op, data.boomer_data));
+      amg_preconditioner =
+        std::make_shared<PreconditionerBoomerAMG<Operator, NumberAMG>>(op, data.boomer_data);
     else if(data.amg_type == AMGType::ML)
-      amg_preconditioner.reset(new PreconditionerML<Operator, NumberAMG>(op, data.ml_data));
+      amg_preconditioner =
+        std::make_shared<PreconditionerML<Operator, NumberAMG>>(op, data.ml_data);
     else
       AssertThrow(false, ExcNotImplemented());
   }

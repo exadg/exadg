@@ -622,16 +622,16 @@ protected:
   /*
    * Projection operator.
    */
-  typedef ProjectionOperator<dim, Number> PROJ_OPERATOR;
-  std::shared_ptr<PROJ_OPERATOR>          projection_operator;
+  typedef ProjectionOperator<dim, Number> ProjOperator;
+  std::shared_ptr<ProjOperator>           projection_operator;
 
   /*
    * Projection solver.
    */
 
   // elementwise solver/preconditioner
-  typedef Elementwise::OperatorBase<dim, Number, PROJ_OPERATOR> ELEMENTWISE_PROJ_OPERATOR;
-  std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                    elementwise_projection_operator;
+  typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
+  std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
 
   typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
   std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;

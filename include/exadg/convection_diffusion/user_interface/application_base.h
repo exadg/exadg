@@ -73,8 +73,8 @@ public:
   virtual std::shared_ptr<Function<dim>>
   set_mesh_movement_function()
   {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+    std::shared_ptr<Function<dim>> mesh_motion =
+      std::make_shared<Functions::ZeroFunction<dim>>(dim);
 
     return mesh_motion;
   }

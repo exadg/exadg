@@ -449,7 +449,7 @@ public:
     mapping_src       = &mapping_src_in;
 
     std::shared_ptr<GridTools::Cache<dim, dim>> cache_src;
-    cache_src.reset(new GridTools::Cache<dim, dim>(*triangulation_src, *mapping_src));
+    cache_src = std::make_shared<GridTools::Cache<dim, dim>>(*triangulation_src, *mapping_src);
 
     // mark vertices at interface in order to make search of active cells around point more
     // efficient

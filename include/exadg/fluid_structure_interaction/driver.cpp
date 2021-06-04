@@ -138,33 +138,34 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     print_grid_info(pcout, *structure_grid);
 
     // boundary conditions
-    structure_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
+    structure_boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
     application->set_boundary_conditions_structure(structure_boundary_descriptor);
     verify_boundary_conditions(*structure_boundary_descriptor, *structure_grid);
 
     // material_descriptor
-    structure_material_descriptor.reset(new Structure::MaterialDescriptor);
+    structure_material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
     application->set_material_structure(*structure_material_descriptor);
 
     // field functions
-    structure_field_functions.reset(new Structure::FieldFunctions<dim>());
+    structure_field_functions = std::make_shared<Structure::FieldFunctions<dim>>();
     application->set_field_functions_structure(structure_field_functions);
 
     // setup spatial operator
-    structure_operator.reset(new Structure::Operator<dim, Number>(structure_grid,
-                                                                  degree_structure,
-                                                                  structure_boundary_descriptor,
-                                                                  structure_field_functions,
-                                                                  structure_material_descriptor,
-                                                                  structure_param,
-                                                                  "elasticity",
-                                                                  mpi_comm));
+    structure_operator =
+      std::make_shared<Structure::Operator<dim, Number>>(structure_grid,
+                                                         degree_structure,
+                                                         structure_boundary_descriptor,
+                                                         structure_field_functions,
+                                                         structure_material_descriptor,
+                                                         structure_param,
+                                                         "elasticity",
+                                                         mpi_comm);
 
     // initialize matrix_free
-    structure_matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+    structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     structure_matrix_free_data->append(structure_operator);
 
-    structure_matrix_free.reset(new MatrixFree<dim, Number>());
+    structure_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
     structure_matrix_free->reinit(*structure_grid->mapping,
                                   structure_matrix_free_data->get_dof_handler_vector(),
                                   structure_matrix_free_data->get_constraint_vector(),
@@ -217,7 +218,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->set_boundary_conditions_fluid(fluid_boundary_descriptor);
     IncNS::verify_boundary_conditions<dim>(fluid_boundary_descriptor, *fluid_grid);
 
-    fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
+    fluid_field_functions = std::make_shared<IncNS::FieldFunctions<dim>>();
     application->set_field_functions_fluid(fluid_field_functions);
 
     // ALE
@@ -231,22 +232,22 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                   ExcMessage("Fluid and ALE must use the same mapping degree."));
       ale_poisson_param.print(pcout, "List of input parameters for ALE solver (Poisson):");
 
-      ale_poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<1, dim>());
+      ale_poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
       application->set_boundary_conditions_ale(ale_poisson_boundary_descriptor);
       verify_boundary_conditions(*ale_poisson_boundary_descriptor, *fluid_grid);
 
-      ale_poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
+      ale_poisson_field_functions = std::make_shared<Poisson::FieldFunctions<dim>>();
       application->set_field_functions_ale(ale_poisson_field_functions);
 
       // initialize Poisson operator
-      ale_poisson_operator.reset(
-        new Poisson::Operator<dim, Number, dim>(fluid_grid,
-                                                fluid_grid_data.mapping_degree,
-                                                ale_poisson_boundary_descriptor,
-                                                ale_poisson_field_functions,
-                                                ale_poisson_param,
-                                                "Poisson",
-                                                mpi_comm));
+      ale_poisson_operator =
+        std::make_shared<Poisson::Operator<dim, Number, dim>>(fluid_grid,
+                                                              fluid_grid_data.mapping_degree,
+                                                              ale_poisson_boundary_descriptor,
+                                                              ale_poisson_field_functions,
+                                                              ale_poisson_param,
+                                                              "Poisson",
+                                                              mpi_comm);
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
@@ -259,28 +260,28 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       ale_elasticity_param.print(pcout, "List of input parameters for ALE solver (elasticity):");
 
       // boundary conditions
-      ale_elasticity_boundary_descriptor.reset(new Structure::BoundaryDescriptor<dim>());
+      ale_elasticity_boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
       application->set_boundary_conditions_ale(ale_elasticity_boundary_descriptor);
       verify_boundary_conditions(*ale_elasticity_boundary_descriptor, *fluid_grid);
 
       // material_descriptor
-      ale_elasticity_material_descriptor.reset(new Structure::MaterialDescriptor);
+      ale_elasticity_material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
       application->set_material_ale(*ale_elasticity_material_descriptor);
 
       // field functions
-      ale_elasticity_field_functions.reset(new Structure::FieldFunctions<dim>());
+      ale_elasticity_field_functions = std::make_shared<Structure::FieldFunctions<dim>>();
       application->set_field_functions_ale(ale_elasticity_field_functions);
 
       // setup spatial operator
-      ale_elasticity_operator.reset(
-        new Structure::Operator<dim, Number>(fluid_grid,
-                                             fluid_grid_data.mapping_degree,
-                                             ale_elasticity_boundary_descriptor,
-                                             ale_elasticity_field_functions,
-                                             ale_elasticity_material_descriptor,
-                                             ale_elasticity_param,
-                                             "ale_elasticity",
-                                             mpi_comm));
+      ale_elasticity_operator =
+        std::make_shared<Structure::Operator<dim, Number>>(fluid_grid,
+                                                           fluid_grid_data.mapping_degree,
+                                                           ale_elasticity_boundary_descriptor,
+                                                           ale_elasticity_field_functions,
+                                                           ale_elasticity_material_descriptor,
+                                                           ale_elasticity_param,
+                                                           "ale_elasticity",
+                                                           mpi_comm);
     }
     else
     {
@@ -307,7 +308,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
 
     // initialize matrix_free
-    ale_matrix_free.reset(new MatrixFree<dim, Number>());
+    ale_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
     ale_matrix_free->reinit(*fluid_grid->mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
                             ale_matrix_free_data->get_constraint_vector(),
@@ -332,13 +333,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // mapping for fluid problem (moving mesh)
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      fluid_grid_motion.reset(
-        new GridMotionPoisson<dim, Number>(fluid_grid->get_static_mapping(), ale_poisson_operator));
+      fluid_grid_motion =
+        std::make_shared<GridMotionPoisson<dim, Number>>(fluid_grid->get_static_mapping(),
+                                                         ale_poisson_operator);
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
-      fluid_grid_motion.reset(new GridMotionElasticity<dim, Number>(
-        fluid_grid->get_static_mapping(), ale_elasticity_operator, ale_elasticity_param));
+      fluid_grid_motion =
+        std::make_shared<GridMotionElasticity<dim, Number>>(fluid_grid->get_static_mapping(),
+                                                            ale_elasticity_operator,
+                                                            ale_elasticity_param);
     }
     else
     {
@@ -360,7 +364,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     fluid_matrix_free_data->append(fluid_operator);
 
-    fluid_matrix_free.reset(new MatrixFree<dim, Number>());
+    fluid_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
     if(fluid_param.use_cell_based_face_loops)
       Categorization::do_cell_based_loops(*fluid_grid->triangulation, fluid_matrix_free_data->data);
     fluid_matrix_free->reinit(*fluid_grid->get_dynamic_mapping(),
@@ -403,7 +407,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
-      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>());
+      structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       structure_to_ale->setup(ale_matrix_free,
                               ale_poisson_operator->get_dof_index(),
                               quad_indices,
@@ -421,7 +425,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
-      structure_to_ale.reset(new InterfaceCoupling<dim, dim, Number>());
+      structure_to_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
       structure_to_ale->setup(ale_matrix_free,
                               ale_elasticity_operator->get_dof_index(),
                               quad_indices,
@@ -456,7 +460,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     VectorType velocity_structure;
     structure_operator->initialize_dof_vector(velocity_structure);
-    structure_to_fluid.reset(new InterfaceCoupling<dim, dim, Number>());
+    structure_to_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
     structure_to_fluid->setup(fluid_matrix_free,
                               fluid_operator->get_dof_index_velocity(),
                               quad_indices,
@@ -484,7 +488,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     VectorType stress_fluid;
     fluid_operator->initialize_vector_velocity(stress_fluid);
-    fluid_to_structure.reset(new InterfaceCoupling<dim, dim, Number>());
+    fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
     fluid_to_structure->setup(structure_matrix_free,
                               structure_operator->get_dof_index(),
                               quad_indices,
@@ -533,13 +537,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // initialize time integrator
-    structure_time_integrator.reset(
-      new Structure::TimeIntGenAlpha<dim, Number>(structure_operator,
-                                                  structure_postprocessor,
-                                                  0 /* refine_time */,
-                                                  structure_param,
-                                                  mpi_comm,
-                                                  is_test));
+    structure_time_integrator =
+      std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(structure_operator,
+                                                                structure_postprocessor,
+                                                                0 /* refine_time */,
+                                                                structure_param,
+                                                                mpi_comm,
+                                                                is_test);
 
     structure_time_integrator->setup(structure_param.restarted_simulation);
 
@@ -781,8 +785,8 @@ Driver<dim, Number>::solve_partitioned_problem() const
   else if(fsi_data.method == "IQN-ILS")
   {
     std::shared_ptr<std::vector<VectorType>> D, R;
-    D.reset(new std::vector<VectorType>());
-    R.reset(new std::vector<VectorType>());
+    D = std::make_shared<std::vector<VectorType>>();
+    R = std::make_shared<std::vector<VectorType>>();
 
     VectorType d, d_tilde, d_tilde_old, r, r_old;
     structure_operator->initialize_dof_vector(d);
@@ -901,8 +905,8 @@ Driver<dim, Number>::solve_partitioned_problem() const
   else if(fsi_data.method == "IQN-IMVLS")
   {
     std::shared_ptr<std::vector<VectorType>> D, R;
-    D.reset(new std::vector<VectorType>());
-    R.reset(new std::vector<VectorType>());
+    D = std::make_shared<std::vector<VectorType>>();
+    R = std::make_shared<std::vector<VectorType>>();
 
     std::vector<VectorType> B;
 
@@ -973,7 +977,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
             B.push_back(delta_b);
 
             // compute QR-decomposition
-            U.reset(new Matrix<Number>(k));
+            U = std::make_shared<Matrix<Number>>(k);
             Q = *R;
             compute_QR_decomposition(Q, *U);
 
@@ -1016,7 +1020,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
 
     // compute Z and add to Z_history
     std::shared_ptr<std::vector<VectorType>> Z;
-    Z.reset(new std::vector<VectorType>());
+    Z  = std::make_shared<std::vector<VectorType>>();
     *Z = Q; // make sure that Z has correct size
     backward_substitution_multiple_rhs(*U, *Z, Q);
     Z_history.push_back(Z);

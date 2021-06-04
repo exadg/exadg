@@ -110,9 +110,9 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(
-      new Krylov::SolverGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
-        linear_operator, block_preconditioner, solver_data, this->mpi_comm));
+    linear_solver = std::make_shared<
+      Krylov::SolverGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>>(
+      linear_operator, block_preconditioner, solver_data, this->mpi_comm);
   }
   else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
@@ -127,9 +127,9 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(
-      new Krylov::SolverFGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
-        linear_operator, block_preconditioner, solver_data));
+    linear_solver = std::make_shared<
+      Krylov::SolverFGMRES<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>>(
+      linear_operator, block_preconditioner, solver_data);
   }
   else
   {
@@ -141,11 +141,11 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   {
     nonlinear_operator.initialize(*this);
 
-    newton_solver.reset(new Newton::Solver<BlockVectorType,
-                                           NonlinearOperatorCoupled<dim, Number>,
-                                           LinearOperatorCoupled<dim, Number>,
-                                           Krylov::SolverBase<BlockVectorType>>(
-      this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver));
+    newton_solver = std::make_shared<Newton::Solver<BlockVectorType,
+                                                    NonlinearOperatorCoupled<dim, Number>,
+                                                    LinearOperatorCoupled<dim, Number>,
+                                                    Krylov::SolverBase<BlockVectorType>>>(
+      this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver);
   }
 }
 
@@ -416,20 +416,21 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
 
   if(type == MomentumPreconditioner::PointJacobi)
   {
-    preconditioner_momentum.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
+    preconditioner_momentum = std::make_shared<JacobiPreconditioner<MomentumOperator<dim, Number>>>(
+      this->momentum_operator);
   }
   else if(type == MomentumPreconditioner::BlockJacobi)
   {
-    preconditioner_momentum.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
+    preconditioner_momentum =
+      std::make_shared<BlockJacobiPreconditioner<MomentumOperator<dim, Number>>>(
+        this->momentum_operator);
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
-    preconditioner_momentum.reset(
-      new InverseMassPreconditioner<dim, dim, Number>(this->get_matrix_free(),
-                                                      this->get_dof_index_velocity(),
-                                                      this->get_quad_index_velocity_linear()));
+    preconditioner_momentum = std::make_shared<InverseMassPreconditioner<dim, dim, Number>>(
+      this->get_matrix_free(),
+      this->get_dof_index_velocity(),
+      this->get_quad_index_velocity_linear());
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
@@ -452,7 +453,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 {
   typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-  preconditioner_momentum.reset(new Multigrid(this->mpi_comm));
+  preconditioner_momentum = std::make_shared<Multigrid>(this->mpi_comm);
 
   std::shared_ptr<Multigrid> mg_preconditioner =
     std::dynamic_pointer_cast<Multigrid>(preconditioner_momentum);
@@ -484,9 +485,9 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
   gmres_data.solver_tolerance_rel = this->param.solver_data_velocity_block.rel_tol;
   gmres_data.max_n_tmp_vectors    = this->param.solver_data_velocity_block.max_krylov_size;
 
-  solver_velocity_block.reset(
-    new Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-      this->momentum_operator, *preconditioner_momentum, gmres_data));
+  solver_velocity_block = std::make_shared<
+    Krylov::SolverFGMRES<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+    this->momentum_operator, *preconditioner_momentum, gmres_data);
 }
 
 template<int dim, typename Number>
@@ -497,10 +498,10 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
-    inverse_mass_preconditioner_schur_complement.reset(
-      new InverseMassPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                    this->get_dof_index_pressure(),
-                                                    this->get_quad_index_pressure()));
+    inverse_mass_preconditioner_schur_complement =
+      std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
+                                                                  this->get_dof_index_pressure(),
+                                                                  this->get_quad_index_pressure());
   }
   else if(type == SchurComplementPreconditioner::LaplaceOperator)
   {
@@ -526,10 +527,10 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
     // inverse mass operator to also include the part of the preconditioner that is beneficial when
     // using large time steps and large viscosities.
-    inverse_mass_preconditioner_schur_complement.reset(
-      new InverseMassPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                    this->get_dof_index_pressure(),
-                                                    this->get_quad_index_pressure()));
+    inverse_mass_preconditioner_schur_complement =
+      std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
+                                                                  this->get_dof_index_pressure(),
+                                                                  this->get_quad_index_pressure());
 
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);
@@ -550,10 +551,10 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     setup_pressure_convection_diffusion_operator();
 
     // III. inverse pressure mass operator
-    inverse_mass_preconditioner_schur_complement.reset(
-      new InverseMassPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                    this->get_dof_index_pressure(),
-                                                    this->get_quad_index_pressure()));
+    inverse_mass_preconditioner_schur_complement =
+      std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(this->get_matrix_free(),
+                                                                  this->get_dof_index_pressure(),
+                                                                  this->get_quad_index_pressure());
 
     // initialize tmp vector
     this->initialize_vector_pressure(tmp_scp_pressure);
@@ -578,7 +579,7 @@ OperatorCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 
   MultigridData mg_data = this->param.multigrid_data_pressure_block;
 
-  multigrid_preconditioner_schur_complement.reset(new MultigridPoisson(this->mpi_comm));
+  multigrid_preconditioner_schur_complement = std::make_shared<MultigridPoisson>(this->mpi_comm);
 
   std::shared_ptr<MultigridPoisson> mg_preconditioner =
     std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
@@ -615,15 +616,17 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
   laplace_operator_data.kernel_data.IP_factor = 1.0;
 
-  laplace_operator.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
+  laplace_operator = std::make_shared<Poisson::LaplaceOperator<dim, Number, 1>>();
   laplace_operator->initialize(this->get_matrix_free(),
                                this->get_constraint_p(),
                                laplace_operator_data);
 
-  solver_pressure_block.reset(new Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
-                                                   PreconditionerBase<Number>,
-                                                   VectorType>(
-    *laplace_operator, *multigrid_preconditioner_schur_complement, solver_data));
+  solver_pressure_block =
+    std::make_shared<Krylov::SolverCG<Poisson::LaplaceOperator<dim, Number, 1>,
+                                      PreconditionerBase<Number>,
+                                      VectorType>>(*laplace_operator,
+                                                   *multigrid_preconditioner_schur_complement,
+                                                   solver_data);
 }
 
 template<int dim, typename Number>
@@ -634,7 +637,7 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
 
   // fill boundary descriptor
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  boundary_descriptor = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
 
   // For the pressure convection-diffusion operator the homogeneous operators are applied, so there
   // is no need to specify functions for boundary conditions since they will never be used.
@@ -697,7 +700,7 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
   operator_data.convective_kernel_data = convective_kernel_data;
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  pressure_conv_diff_operator.reset(new ConvDiff::CombinedOperator<dim, Number>());
+  pressure_conv_diff_operator = std::make_shared<ConvDiff::CombinedOperator<dim, Number>>();
   pressure_conv_diff_operator->initialize(this->get_matrix_free(),
                                           this->get_constraint_p(),
                                           operator_data);

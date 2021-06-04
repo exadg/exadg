@@ -263,8 +263,8 @@ Operator<dim, Number>::setup_operators()
     // setup() function of time integration scheme.
 
     // preconditioner
-    mass_preconditioner.reset(
-      new JacobiPreconditioner<MassOperator<dim, dim, Number>>(mass_operator));
+    mass_preconditioner =
+      std::make_shared<JacobiPreconditioner<MassOperator<dim, dim, Number>>>(mass_operator);
 
     // initialize solver
     Krylov::SolverDataCG solver_data;
@@ -283,9 +283,9 @@ Operator<dim, Number>::setup_operators()
       solver_data.max_iter             = param.solver_data.max_iter;
     }
 
-    mass_solver.reset(
-      new Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>(
-        mass_operator, *mass_preconditioner, solver_data));
+    typedef Krylov::SolverCG<MassOperator<dim, dim, Number>, PreconditionerBase<Number>, VectorType>
+      CG;
+    mass_solver = std::make_shared<CG>(mass_operator, *mass_preconditioner, solver_data);
   }
 
   // setup rhs operator
@@ -325,13 +325,13 @@ Operator<dim, Number>::initialize_preconditioner()
   {
     if(param.large_deformation)
     {
-      preconditioner.reset(
-        new JacobiPreconditioner<NonLinearOperator<dim, Number>>(elasticity_operator_nonlinear));
+      preconditioner = std::make_shared<JacobiPreconditioner<NonLinearOperator<dim, Number>>>(
+        elasticity_operator_nonlinear);
     }
     else
     {
-      preconditioner.reset(
-        new JacobiPreconditioner<LinearOperator<dim, Number>>(elasticity_operator_linear));
+      preconditioner = std::make_shared<JacobiPreconditioner<LinearOperator<dim, Number>>>(
+        elasticity_operator_linear);
     }
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
@@ -340,7 +340,7 @@ Operator<dim, Number>::initialize_preconditioner()
     {
       typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-      preconditioner.reset(new Multigrid(mpi_comm));
+      preconditioner = std::make_shared<Multigrid>(mpi_comm);
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
@@ -357,7 +357,7 @@ Operator<dim, Number>::initialize_preconditioner()
     {
       typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-      preconditioner.reset(new Multigrid(mpi_comm));
+      preconditioner = std::make_shared<Multigrid>(mpi_comm);
       std::shared_ptr<Multigrid> mg_preconditioner =
         std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
@@ -376,14 +376,14 @@ Operator<dim, Number>::initialize_preconditioner()
     if(param.large_deformation)
     {
       typedef PreconditionerAMG<NonLinearOperator<dim, Number>, Number> AMG;
-      preconditioner.reset(
-        new AMG(elasticity_operator_nonlinear, param.multigrid_data.coarse_problem.amg_data));
+      preconditioner = std::make_shared<AMG>(elasticity_operator_nonlinear,
+                                             param.multigrid_data.coarse_problem.amg_data);
     }
     else
     {
       typedef PreconditionerAMG<LinearOperator<dim, Number>, Number> AMG;
-      preconditioner.reset(
-        new AMG(elasticity_operator_linear, param.multigrid_data.coarse_problem.amg_data));
+      preconditioner = std::make_shared<AMG>(elasticity_operator_linear,
+                                             param.multigrid_data.coarse_problem.amg_data);
     }
   }
   else
@@ -411,17 +411,18 @@ Operator<dim, Number>::initialize_solver()
     // initialize solver
     if(param.large_deformation)
     {
-      linear_solver.reset(new Krylov::SolverCG<NonLinearOperator<dim, Number>,
-                                               PreconditionerBase<Number>,
-                                               VectorType>(elasticity_operator_nonlinear,
-                                                           *preconditioner,
-                                                           solver_data));
+      typedef Krylov::
+        SolverCG<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+          CG;
+      linear_solver =
+        std::make_shared<CG>(elasticity_operator_nonlinear, *preconditioner, solver_data);
     }
     else
     {
-      linear_solver.reset(
-        new Krylov::SolverCG<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-          elasticity_operator_linear, *preconditioner, solver_data));
+      typedef Krylov::SolverCG<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+        CG;
+      linear_solver =
+        std::make_shared<CG>(elasticity_operator_linear, *preconditioner, solver_data);
     }
   }
   else if(param.solver == Solver::FGMRES)
@@ -438,17 +439,21 @@ Operator<dim, Number>::initialize_solver()
 
     // initialize solver
     if(param.large_deformation)
-      linear_solver.reset(new Krylov::SolverFGMRES<NonLinearOperator<dim, Number>,
-                                                   PreconditionerBase<Number>,
-                                                   VectorType>(elasticity_operator_nonlinear,
-                                                               *preconditioner,
-                                                               solver_data));
+    {
+      typedef Krylov::
+        SolverFGMRES<NonLinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+          FGMRES;
+      linear_solver =
+        std::make_shared<FGMRES>(elasticity_operator_nonlinear, *preconditioner, solver_data);
+    }
     else
-      linear_solver.reset(new Krylov::SolverFGMRES<LinearOperator<dim, Number>,
-                                                   PreconditionerBase<Number>,
-                                                   VectorType>(elasticity_operator_linear,
-                                                               *preconditioner,
-                                                               solver_data));
+    {
+      typedef Krylov::
+        SolverFGMRES<LinearOperator<dim, Number>, PreconditionerBase<Number>, VectorType>
+          FGMRES;
+      linear_solver =
+        std::make_shared<FGMRES>(elasticity_operator_linear, *preconditioner, solver_data);
+    }
   }
   else
   {
@@ -461,8 +466,10 @@ Operator<dim, Number>::initialize_solver()
     residual_operator.initialize(*this);
     linearized_operator.initialize(*this);
 
-    newton_solver.reset(new NewtonSolver(
-      param.newton_solver_data, residual_operator, linearized_operator, *linear_solver));
+    newton_solver = std::make_shared<NewtonSolver>(param.newton_solver_data,
+                                                   residual_operator,
+                                                   linearized_operator,
+                                                   *linear_solver);
   }
 }
 

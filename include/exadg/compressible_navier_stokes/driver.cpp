@@ -83,18 +83,18 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_boundary_conditions(boundary_descriptor);
   CompNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
 
-  field_functions.reset(new FieldFunctions<dim>());
+  field_functions = std::make_shared<FieldFunctions<dim>>();
   application->set_field_functions(field_functions);
 
   // initialize compressible Navier-Stokes operator
-  pde_operator.reset(new Operator<dim, Number>(
-    grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm));
+  pde_operator = std::make_shared<Operator<dim, Number>>(
+    grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
 
   // initialize matrix_free
-  matrix_free_data.reset(new MatrixFreeData<dim, Number>());
+  matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
@@ -111,8 +111,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     postprocessor->setup(*pde_operator);
 
     // initialize time integrator
-    time_integrator.reset(new TimeIntExplRK<Number>(
-      pde_operator, param, refine_time, mpi_comm, is_test, postprocessor));
+    time_integrator = std::make_shared<TimeIntExplRK<Number>>(
+      pde_operator, param, refine_time, mpi_comm, is_test, postprocessor);
     time_integrator->setup(param.restarted_simulation);
   }
 

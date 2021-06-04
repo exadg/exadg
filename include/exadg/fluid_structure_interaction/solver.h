@@ -126,8 +126,8 @@ run(std::string const &          input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<FSI::Driver<dim, Number>> driver;
-  driver.reset(new FSI::Driver<dim, Number>(input_file, mpi_comm, is_test));
+  std::shared_ptr<FSI::Driver<dim, Number>> driver =
+    std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, is_test);
 
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);

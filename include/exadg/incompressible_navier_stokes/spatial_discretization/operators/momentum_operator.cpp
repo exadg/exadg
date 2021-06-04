@@ -24,12 +24,12 @@ MomentumOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matr
   // create new objects and initialize kernels
   if(operator_data.unsteady_problem)
   {
-    this->mass_kernel.reset(new MassKernel<dim, Number>());
+    this->mass_kernel = std::make_shared<MassKernel<dim, Number>>();
   }
 
   if(operator_data.convective_problem)
   {
-    this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+    this->convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
     this->convective_kernel->reinit(matrix_free,
                                     operator_data.convective_kernel_data,
                                     operator_data.dof_index,
@@ -39,7 +39,7 @@ MomentumOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matr
 
   if(operator_data.viscous_problem)
   {
-    this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
+    this->viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
     this->viscous_kernel->reinit(matrix_free,
                                  operator_data.viscous_kernel_data,
                                  operator_data.dof_index);
@@ -77,7 +77,7 @@ MomentumOperator<dim, Number>::initialize(
   // mass kernel: create new object and initialize kernel
   if(operator_data.unsteady_problem)
   {
-    this->mass_kernel.reset(new MassKernel<dim, Number>());
+    this->mass_kernel = std::make_shared<MassKernel<dim, Number>>();
   }
 
   // simply set pointers for convective and viscous kernels

@@ -195,7 +195,7 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
                                    *this->constraints[level],
                                    data);
 
-    mg_operator_level.reset(new MGOperatorNonlinear(pde_operator_level));
+    mg_operator_level = std::make_shared<MGOperatorNonlinear>(pde_operator_level);
   }
   else // linear
   {
@@ -204,7 +204,7 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
                                    *this->constraints[level],
                                    data);
 
-    mg_operator_level.reset(new MGOperatorLinear(pde_operator_level));
+    mg_operator_level = std::make_shared<MGOperatorLinear>(pde_operator_level);
   }
 
   return mg_operator_level;

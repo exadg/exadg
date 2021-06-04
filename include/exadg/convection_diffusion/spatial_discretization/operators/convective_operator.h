@@ -89,14 +89,18 @@ public:
 
     if(data.velocity_type == TypeVelocityField::DoFVector)
     {
-      integrator_velocity.reset(
-        new CellIntegratorVelocity(matrix_free, data.dof_index_velocity, quad_index));
+      integrator_velocity =
+        std::make_shared<CellIntegratorVelocity>(matrix_free, data.dof_index_velocity, quad_index);
 
-      integrator_velocity_m.reset(
-        new FaceIntegratorVelocity(matrix_free, true, data.dof_index_velocity, quad_index));
+      integrator_velocity_m = std::make_shared<FaceIntegratorVelocity>(matrix_free,
+                                                                       true,
+                                                                       data.dof_index_velocity,
+                                                                       quad_index);
 
-      integrator_velocity_p.reset(
-        new FaceIntegratorVelocity(matrix_free, false, data.dof_index_velocity, quad_index));
+      integrator_velocity_p = std::make_shared<FaceIntegratorVelocity>(matrix_free,
+                                                                       false,
+                                                                       data.dof_index_velocity,
+                                                                       quad_index);
 
       // use own storage of velocity vector only in case of multigrid
       if(is_mg)

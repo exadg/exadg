@@ -103,8 +103,8 @@ public:
                             unsigned int const              dof_index,
                             unsigned int const              quad_index)
   {
-    integrator.reset(new Integrator(matrix_free, dof_index, quad_index));
-    inverse.reset(new CellwiseInverseMass(*integrator));
+    integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
+    inverse    = std::make_shared<CellwiseInverseMass>(*integrator);
   }
 
   void

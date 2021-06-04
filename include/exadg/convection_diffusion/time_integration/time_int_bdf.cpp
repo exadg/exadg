@@ -115,61 +115,70 @@ TimeIntBDF<dim, Number>::initialize_oif()
     bool numerical_velocity_field =
       (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
 
-    convective_operator_OIF.reset(new OperatorOIF<Number>(pde_operator, numerical_velocity_field));
+    convective_operator_OIF =
+      std::make_shared<OperatorOIF<Number>>(pde_operator, numerical_velocity_field);
 
     if(param.time_integrator_oif == TimeIntegratorRK::ExplRK1Stage1)
     {
-      time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>(
-          1, convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>>(
+          1, convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK2Stage2)
     {
-      time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>(
-          2, convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>>(
+          2, convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK3Stage3)
     {
-      time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>(
-          3, convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>>(
+          3, convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK4Stage4)
     {
-      time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>(
-          4, convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<ExplicitRungeKuttaTimeIntegrator<OperatorOIF<Number>, VectorType>>(
+          4, convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK3Stage4Reg2C)
     {
-      time_integrator_OIF.reset(
-        new LowStorageRK3Stage4Reg2C<OperatorOIF<Number>, VectorType>(convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<LowStorageRK3Stage4Reg2C<OperatorOIF<Number>, VectorType>>(
+          convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK4Stage5Reg2C)
     {
-      time_integrator_OIF.reset(
-        new LowStorageRK4Stage5Reg2C<OperatorOIF<Number>, VectorType>(convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<LowStorageRK4Stage5Reg2C<OperatorOIF<Number>, VectorType>>(
+          convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK4Stage5Reg3C)
     {
-      time_integrator_OIF.reset(
-        new LowStorageRK4Stage5Reg3C<OperatorOIF<Number>, VectorType>(convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<LowStorageRK4Stage5Reg3C<OperatorOIF<Number>, VectorType>>(
+          convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK5Stage9Reg2S)
     {
-      time_integrator_OIF.reset(
-        new LowStorageRK5Stage9Reg2S<OperatorOIF<Number>, VectorType>(convective_operator_OIF));
+      time_integrator_OIF =
+        std::make_shared<LowStorageRK5Stage9Reg2S<OperatorOIF<Number>, VectorType>>(
+          convective_operator_OIF);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK3Stage7Reg2)
     {
-      time_integrator_OIF.reset(
-        new LowStorageRKTD<OperatorOIF<Number>, VectorType>(convective_operator_OIF, 3, 7));
+      time_integrator_OIF =
+        std::make_shared<LowStorageRKTD<OperatorOIF<Number>, VectorType>>(convective_operator_OIF,
+                                                                          3,
+                                                                          7);
     }
     else if(param.time_integrator_oif == TimeIntegratorRK::ExplRK4Stage8Reg2)
     {
-      time_integrator_OIF.reset(
-        new LowStorageRKTD<OperatorOIF<Number>, VectorType>(convective_operator_OIF, 4, 8));
+      time_integrator_OIF =
+        std::make_shared<LowStorageRKTD<OperatorOIF<Number>, VectorType>>(convective_operator_OIF,
+                                                                          4,
+                                                                          8);
     }
     else
     {

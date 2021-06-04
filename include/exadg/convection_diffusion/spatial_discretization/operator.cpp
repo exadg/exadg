@@ -64,8 +64,8 @@ Operator<dim, Number>::Operator(
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
-    dof_handler_velocity.reset(new DoFHandler<dim>(*grid->triangulation));
+    fe_velocity          = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(degree), dim);
+    dof_handler_velocity = std::make_shared<DoFHandler<dim>>(*grid->triangulation);
   }
 
   distribute_dofs();
@@ -164,7 +164,7 @@ Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix
     convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
     convective_kernel_data.velocity                   = field_functions->velocity;
 
-    convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+    convective_kernel = std::make_shared<Operators::ConvectiveKernel<dim, Number>>();
     convective_kernel->reinit(*matrix_free,
                               convective_kernel_data,
                               quad_index_convective,
@@ -193,7 +193,7 @@ Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix
     diffusive_kernel_data.IP_factor   = param.IP_factor;
     diffusive_kernel_data.diffusivity = param.diffusivity;
 
-    diffusive_kernel.reset(new Operators::DiffusiveKernel<dim, Number>());
+    diffusive_kernel = std::make_shared<Operators::DiffusiveKernel<dim, Number>>();
     diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
 
     DiffusiveOperatorData<dim> diffusive_operator_data;
@@ -419,19 +419,19 @@ Operator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    preconditioner.reset(new InverseMassPreconditioner<dim, 1, Number>(*matrix_free,
-                                                                       get_dof_index(),
-                                                                       get_quad_index()));
+    preconditioner = std::make_shared<InverseMassPreconditioner<dim, 1, Number>>(*matrix_free,
+                                                                                 get_dof_index(),
+                                                                                 get_quad_index());
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
-    preconditioner.reset(
-      new JacobiPreconditioner<CombinedOperator<dim, Number>>(combined_operator));
+    preconditioner =
+      std::make_shared<JacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator);
   }
   else if(param.preconditioner == Preconditioner::BlockJacobi)
   {
-    preconditioner.reset(
-      new BlockJacobiPreconditioner<CombinedOperator<dim, Number>>(combined_operator));
+    preconditioner =
+      std::make_shared<BlockJacobiPreconditioner<CombinedOperator<dim, Number>>>(combined_operator);
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -448,7 +448,7 @@ Operator<dim, Number>::initialize_preconditioner()
 
     typedef MultigridPreconditioner<dim, Number> Multigrid;
 
-    preconditioner.reset(new Multigrid(this->mpi_comm));
+    preconditioner = std::make_shared<Multigrid>(this->mpi_comm);
     std::shared_ptr<Multigrid> mg_preconditioner =
       std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
@@ -507,9 +507,9 @@ Operator<dim, Number>::initialize_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(
-      new Krylov::SolverCG<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        combined_operator, *preconditioner, solver_data));
+    iterative_solver = std::make_shared<
+      Krylov::SolverCG<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      combined_operator, *preconditioner, solver_data);
   }
   else if(param.solver == Solver::GMRES)
   {
@@ -524,10 +524,9 @@ Operator<dim, Number>::initialize_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(new Krylov::SolverGMRES<CombinedOperator<dim, Number>,
-                                                   PreconditionerBase<Number>,
-                                                   VectorType>(
-      combined_operator, *preconditioner, solver_data, mpi_comm));
+    iterative_solver = std::make_shared<
+      Krylov::SolverGMRES<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      combined_operator, *preconditioner, solver_data, mpi_comm);
   }
   else if(param.solver == Solver::FGMRES)
   {
@@ -542,10 +541,9 @@ Operator<dim, Number>::initialize_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(
-      new Krylov::SolverFGMRES<CombinedOperator<dim, Number>,
-                               PreconditionerBase<Number>,
-                               VectorType>(combined_operator, *preconditioner, solver_data));
+    iterative_solver = std::make_shared<
+      Krylov::SolverFGMRES<CombinedOperator<dim, Number>, PreconditionerBase<Number>, VectorType>>(
+      combined_operator, *preconditioner, solver_data);
   }
   else
   {

@@ -138,8 +138,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    grid_motion.reset(new GridMotionAnalytical<dim, Number>(
-      grid->mapping, degree, *grid->triangulation, mesh_motion, fluid_param.start_time));
+    grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
+      grid->mapping, degree, *grid->triangulation, mesh_motion, fluid_param.start_time);
 
     grid->attach_grid_motion(grid_motion);
   }
@@ -150,19 +150,19 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   IncNS::verify_boundary_conditions<dim>(fluid_boundary_descriptor, *grid);
 
   // field functions
-  fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
+  fluid_field_functions = std::make_shared<IncNS::FieldFunctions<dim>>();
   application->set_field_functions(fluid_field_functions);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // boundary conditions
-    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<dim>());
+    scalar_boundary_descriptor[i] = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
 
     application->set_boundary_conditions_scalar(scalar_boundary_descriptor[i], i);
     verify_boundary_conditions(*scalar_boundary_descriptor[i], *grid);
 
     // field functions
-    scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());
+    scalar_field_functions[i] = std::make_shared<ConvDiff::FieldFunctions<dim>>();
     application->set_field_functions_scalar(scalar_field_functions[i], i);
   }
 
@@ -197,13 +197,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    conv_diff_operator[i].reset(new ConvDiff::Operator<dim, Number>(grid,
-                                                                    degree,
-                                                                    scalar_boundary_descriptor[i],
-                                                                    scalar_field_functions[i],
-                                                                    scalar_param[i],
-                                                                    "scalar" + std::to_string(i),
-                                                                    mpi_comm));
+    conv_diff_operator[i] =
+      std::make_shared<ConvDiff::Operator<dim, Number>>(grid,
+                                                        degree,
+                                                        scalar_boundary_descriptor[i],
+                                                        scalar_field_functions[i],
+                                                        scalar_param[i],
+                                                        "scalar" + std::to_string(i),
+                                                        mpi_comm);
   }
 
   // initialize matrix_free
@@ -212,7 +213,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
     matrix_free_data->append(conv_diff_operator[i]);
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(fluid_param.use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->mapping,
@@ -283,8 +284,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       std::dynamic_pointer_cast<IncNS::OperatorCoupled<dim, Number>>(fluid_operator);
 
     // initialize driver for steady state problem that depends on fluid_operator
-    fluid_driver_steady.reset(new DriverSteady(
-      fluid_operator_coupled, fluid_param, mpi_comm, is_test, fluid_postprocessor));
+    fluid_driver_steady = std::make_shared<DriverSteady>(
+      fluid_operator_coupled, fluid_param, mpi_comm, is_test, fluid_postprocessor);
   }
   else
   {

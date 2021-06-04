@@ -83,7 +83,7 @@ public:
       t[level]      = solution[level];
     }
 
-    timer_tree.reset(new TimerTree());
+    timer_tree = std::make_shared<TimerTree>();
   }
 
   template<class OtherVectorType>

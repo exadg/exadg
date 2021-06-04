@@ -81,8 +81,8 @@ run(ThroughputParameters const & throughput,
     MPI_Comm const &             mpi_comm,
     bool const                   is_test)
 {
-  std::shared_ptr<CompNS::Driver<dim, Number>> driver;
-  driver.reset(new CompNS::Driver<dim, Number>(mpi_comm, is_test));
+  std::shared_ptr<CompNS::Driver<dim, Number>> driver =
+    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>> application =
     get_application<dim, Number>(input_file);
