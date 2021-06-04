@@ -43,8 +43,8 @@ template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
   unsigned int const                             degree_in,
-  std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   InputParameters const &                        param_in,
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)

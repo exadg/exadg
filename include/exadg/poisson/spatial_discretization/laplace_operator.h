@@ -202,7 +202,7 @@ struct LaplaceOperatorData : public OperatorBaseData
   // is needed to set the constrained DoFs.
   unsigned int quad_index_gauss_lobatto;
 
-  std::shared_ptr<BoundaryDescriptor<rank, dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<rank, dim> const> bc;
 };
 
 template<int dim, typename Number, int n_components>

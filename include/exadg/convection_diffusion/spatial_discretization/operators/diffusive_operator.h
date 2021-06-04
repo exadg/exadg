@@ -205,7 +205,7 @@ struct DiffusiveOperatorData : public OperatorBaseData
 
   Operators::DiffusiveKernelData kernel_data;
 
-  std::shared_ptr<BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 };
 
 
