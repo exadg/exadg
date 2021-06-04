@@ -50,7 +50,7 @@ struct CombinedOperatorData : public OperatorBaseData
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   Operators::DiffusiveKernelData       diffusive_kernel_data;
 
-  std::shared_ptr<BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 };
 
 template<int dim, typename Number>

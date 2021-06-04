@@ -82,7 +82,7 @@ inline DEAL_II_ALWAYS_INLINE //
                            OperatorType const &                           operator_type,
                            BoundaryType const &                           boundary_type,
                            types::boundary_id const                       boundary_id,
-                           std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+                           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
                            double const &                                 time)
 {
   VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
@@ -183,7 +183,7 @@ inline DEAL_II_ALWAYS_INLINE //
     OperatorType const &                           operator_type,
     BoundaryType const &                           boundary_type,
     types::boundary_id const                       boundary_id,
-    std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+    std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
     double const &                                 time)
 {
   VectorizedArray<Number> normal_gradient_p = make_vectorized_array<Number>(0.0);

@@ -79,7 +79,7 @@ inline DEAL_II_ALWAYS_INLINE //
                            OperatorType const &                                 operator_type,
                            BoundaryType const &                                 boundary_type,
                            types::boundary_id const                             boundary_id,
-                           std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+                           std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor,
                            double const &                                       time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> value_p;
@@ -195,7 +195,7 @@ inline DEAL_II_ALWAYS_INLINE //
     OperatorType const &                                 operator_type,
     BoundaryType const &                                 boundary_type,
     types::boundary_id const                             boundary_id,
-    std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+    std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor,
     double const &                                       time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> normal_gradient_p;
@@ -243,7 +243,7 @@ inline DEAL_II_ALWAYS_INLINE //
                           FaceIntegrator<dim, n_components, Number> const &    integrator,
                           BoundaryType const &                                 boundary_type,
                           types::boundary_id const                             boundary_id,
-                          std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+                          std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor,
                           double const &                                       time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> normal_gradient;

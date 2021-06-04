@@ -46,8 +46,8 @@ struct OperatorData : public OperatorBaseData
   {
   }
 
-  std::shared_ptr<BoundaryDescriptor<dim>> bc;
-  std::shared_ptr<MaterialDescriptor>      material_descriptor;
+  std::shared_ptr<BoundaryDescriptor<dim> const> bc;
+  std::shared_ptr<MaterialDescriptor const>      material_descriptor;
 
   // This parameter is only relevant for nonlinear operator
   // with large deformations. When set to true, the traction t

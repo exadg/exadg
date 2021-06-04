@@ -544,7 +544,7 @@ struct ConvectiveOperatorData : public OperatorBaseData
 
   Operators::ConvectiveKernelData<dim> kernel_data;
 
-  std::shared_ptr<BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<BoundaryDescriptor<dim> const> bc;
 };
 
 template<int dim, typename Number>

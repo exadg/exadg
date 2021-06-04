@@ -48,11 +48,11 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &     matrix_free,
-             unsigned int const                  n_q_points_1d,
-             unsigned int const                  dof_index,
-             unsigned int const                  quad_index,
-             std::shared_ptr<MaterialDescriptor> material_descriptor)
+  initialize(MatrixFree<dim, Number> const &           matrix_free,
+             unsigned int const                        n_q_points_1d,
+             unsigned int const                        dof_index,
+             unsigned int const                        quad_index,
+             std::shared_ptr<MaterialDescriptor const> material_descriptor)
   {
     this->dof_index           = dof_index;
     this->material_descriptor = material_descriptor;
@@ -112,8 +112,8 @@ public:
 private:
   unsigned int dof_index;
 
-  std::shared_ptr<MaterialDescriptor> material_descriptor;
-  Materials                           material_map;
+  std::shared_ptr<MaterialDescriptor const> material_descriptor;
+  Materials                                 material_map;
 
   // pointer to material of current cell
   std::shared_ptr<Material<dim, Number>> material;
