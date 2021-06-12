@@ -62,13 +62,19 @@ write_output(OutputData const &                                 output_data,
     velocity_component_interpretation(dim,
                                       DataComponentInterpretation::component_is_part_of_vector);
 
+#if !DEAL_II_VERSION_GTE(10, 0, 0)
   velocity.update_ghost_values();
+#endif
+
   data_out.add_data_vector(dof_handler_velocity,
                            velocity,
                            velocity_names,
                            velocity_component_interpretation);
 
+#if !DEAL_II_VERSION_GTE(10, 0, 0)
   pressure.update_ghost_values();
+#endif
+
   data_out.add_data_vector(dof_handler_pressure, pressure, "p");
 
   // vector needs to survive until build_patches
@@ -87,7 +93,9 @@ write_output(OutputData const &                                 output_data,
       it != additional_fields.end();
       ++it)
   {
+#if !DEAL_II_VERSION_GTE(10, 0, 0)
     it->vector->update_ghost_values();
+#endif
 
     if(it->type == SolutionFieldType::scalar)
     {

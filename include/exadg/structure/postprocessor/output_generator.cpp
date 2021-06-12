@@ -54,7 +54,10 @@ write_output(OutputDataBase const &  output_data,
   std::vector<DataComponentInterpretation::DataComponentInterpretation> component_interpretation(
     dim, DataComponentInterpretation::component_is_part_of_vector);
 
+#if !DEAL_II_VERSION_GTE(10, 0, 0)
   solution_vector.update_ghost_values();
+#endif
+
   data_out.add_data_vector(dof_handler, solution_vector, names, component_interpretation);
 
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
