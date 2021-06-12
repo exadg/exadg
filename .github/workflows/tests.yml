@@ -29,4 +29,27 @@ jobs:
 
          echo $command
          docker run -t dealii/dealii:master-focal /bin/sh -c "$command";
+         
+  build-dealii-9-3:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup
+      run: |
+         command="git clone https://github.com/${{ github.repository }} && \ 
+                  cd exadg                                              && \
+                  git fetch origin ${{ github.ref }}                    && \ 
+                  git checkout FETCH_HEAD                               && \
+                  mkdir build                                           && \ 
+                  cd build                                              && \ 
+                  cmake .. -D DEGREE_MAX=3                              && \ 
+                  make -j2"
+
+         # TODO: currently we are not running any tests, we need to identify/
+         #   create some quick tests
+
+         echo $command
+         docker run -t dealii/dealii:v9.3.0-focal /bin/sh -c "$command";
 
