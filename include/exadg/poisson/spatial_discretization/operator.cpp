@@ -47,7 +47,6 @@ using namespace dealii;
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
   std::shared_ptr<Grid<dim, Number> const>             grid_in,
-  unsigned int const                                   degree_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
   InputParameters const &                              param_in,
@@ -55,7 +54,6 @@ Operator<dim, Number, n_components>::Operator(
   MPI_Comm const &                                     mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
-    degree(degree_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
@@ -78,18 +76,18 @@ Operator<dim, Number, n_components>::distribute_dofs()
   if(n_components == 1)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<FE_DGQ<dim>>(degree);
+      fe = std::make_shared<FE_DGQ<dim>>(param.degree);
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<FE_Q<dim>>(degree);
+      fe = std::make_shared<FE_Q<dim>>(param.degree);
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(degree), dim);
+      fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(degree), dim);
+      fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(param.degree), dim);
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
@@ -128,7 +126,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
     affine_constraints.close();
   }
 
-  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
 
   pcout << std::endl;
 
@@ -143,7 +141,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
   else
     AssertThrow(false, ExcMessage("Not implemented."));
 
-  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
@@ -170,7 +168,7 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
-  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
+  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
 
   // In order to set constrained degrees of freedom for continuous Galerkin
   // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
@@ -180,7 +178,8 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree + 1), get_quad_gauss_lobatto_name());
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree + 1),
+                                       get_quad_gauss_lobatto_name());
   }
 }
 
@@ -417,13 +416,6 @@ double
 Operator<dim, Number, n_components>::get_average_convergence_rate() const
 {
   return iterative_solver->rho;
-}
-
-template<int dim, typename Number, int n_components>
-unsigned int
-Operator<dim, Number, n_components>::get_degree() const
-{
-  return degree;
 }
 
 #ifdef DEAL_II_WITH_TRILINOS

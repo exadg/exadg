@@ -224,6 +224,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // ALE
     if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
+      ale_poisson_param.degree = fluid_grid_data.mapping_degree;
       application->set_input_parameters_ale(ale_poisson_param);
       ale_poisson_param.check_input_parameters();
       AssertThrow(ale_poisson_param.right_hand_side == false,
@@ -242,7 +243,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // initialize Poisson operator
       ale_poisson_operator =
         std::make_shared<Poisson::Operator<dim, Number, dim>>(fluid_grid,
-                                                              fluid_grid_data.mapping_degree,
                                                               ale_poisson_boundary_descriptor,
                                                               ale_poisson_field_functions,
                                                               ale_poisson_param,

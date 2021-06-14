@@ -39,6 +39,7 @@ InputParameters::InputParameters()
     triangulation_type(TriangulationType::Undefined),
     mapping(MappingType::Affine),
     spatial_discretization(SpatialDiscretization::Undefined),
+    degree(1),
     IP_factor(1.0),
 
     // SOLVER
@@ -62,6 +63,8 @@ InputParameters::check_input_parameters()
 
   AssertThrow(spatial_discretization != SpatialDiscretization::Undefined,
               ExcMessage("parameter must be defined."));
+
+  AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   // SOLVER
   AssertThrow(solver != Solver::Undefined, ExcMessage("parameter must be defined."));
@@ -105,6 +108,8 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
 
   print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
+
+  print_parameter(pcout, "Polynomial degree", degree);
 
   if(spatial_discretization == SpatialDiscretization::DG)
     print_parameter(pcout, "IP factor", IP_factor);

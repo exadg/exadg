@@ -100,8 +100,7 @@ run(ThroughputParameters const & throughput,
   driver->setup(application, degree, refine_space, true);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
-    driver->apply_operator(degree,
-                           throughput.operator_type,
+    driver->apply_operator(throughput.operator_type,
                            throughput.n_repetitions_inner,
                            throughput.n_repetitions_outer);
 

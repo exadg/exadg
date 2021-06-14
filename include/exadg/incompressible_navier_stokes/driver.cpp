@@ -93,6 +93,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
     else if(param.mesh_movement_type == MeshMovementType::Poisson)
     {
+      poisson_param.degree = grid_data.mapping_degree;
       application->set_input_parameters_poisson(poisson_param);
       poisson_param.check_input_parameters();
       poisson_param.print(pcout, "List of input parameters for Poisson solver (moving mesh):");
@@ -115,7 +116,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // initialize Poisson operator
       poisson_operator =
         std::make_shared<Poisson::Operator<dim, Number, dim>>(grid,
-                                                              grid_data.mapping_degree,
                                                               poisson_boundary_descriptor,
                                                               poisson_field_functions,
                                                               poisson_param,

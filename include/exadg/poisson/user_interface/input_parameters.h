@@ -84,6 +84,9 @@ public:
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;
 
+  // polynomial degree of shape functions
+  unsigned int degree;
+
   // Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
   double IP_factor;
