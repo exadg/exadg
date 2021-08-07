@@ -323,9 +323,8 @@ template<int dim, int spacedim = dim>
 class BalancedGranularityPartitionPolicy : public RepartitioningPolicyTools::Base<dim, spacedim>
 {
 public:
-  BalancedGranularityPartitionPolicy(types::global_cell_index const n_cells_fine,
-                                     unsigned int const             n_mpi_processes)
-    : n_cells_per_level{n_cells_fine}, n_mpi_processes_per_level{n_mpi_processes}
+  BalancedGranularityPartitionPolicy(unsigned int const n_mpi_processes)
+    : n_mpi_processes_per_level{n_mpi_processes}
   {
   }
 
@@ -336,8 +335,10 @@ public:
 
     // TODO: We hard-code a grain-size limit of 200 cells per processor
     // (assuming linear finite elements and typical behavior of
-    // supercomputers), but we also do not want to coarsen by more than a
-    // factor of 8 to not create too many MPI messages.
+    // supercomputers). In case we have fewer cells on the fine level, we do
+    // not immediately go to 200 cells per rank, but limit the growth by a
+    // factor of 8, which limits makes sure that we do not create too many
+    // messages for individual MPI processes.
     unsigned int const grain_size_limit =
       std::min(200U, 8 * n_cells / n_mpi_processes_per_level.back() + 1);
 
@@ -349,13 +350,11 @@ public:
     // The vector 'partitions' contains the partition numbers. To get the
     // number of partitions, we take the infinity norm.
     n_mpi_processes_per_level.push_back(static_cast<unsigned int>(partitions.linfty_norm()) + 1);
-    n_cells_per_level.push_back(n_cells);
     return partitions;
   }
 
 private:
-  mutable std::vector<types::global_cell_index> n_cells_per_level;
-  mutable std::vector<unsigned int>             n_mpi_processes_per_level;
+  mutable std::vector<unsigned int> n_mpi_processes_per_level;
 };
 
 #else
@@ -470,9 +469,8 @@ create_geometric_coarsening_sequence(Triangulation<dim, spacedim> const & fine_t
 
   return dealii::MGTransferGlobalCoarseningTools::create_geometric_coarsening_sequence(
     fine_triangulation_in,
-    BalancedGranularityPartitionPolicy<dim>(fine_triangulation_in.n_global_active_cells(),
-                                            Utilities::MPI::n_mpi_processes(
-                                              fine_triangulation_in.get_communicator())));
+    BalancedGranularityPartitionPolicy<dim>(
+      Utilities::MPI::n_mpi_processes(fine_triangulation_in.get_communicator())));
 
 #else
 
