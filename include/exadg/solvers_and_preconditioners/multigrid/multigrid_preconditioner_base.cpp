@@ -340,7 +340,7 @@ public:
     // factor of 8, which limits makes sure that we do not create too many
     // messages for individual MPI processes.
     unsigned int const grain_size_limit =
-      std::min(200U, 8 * n_cells / n_mpi_processes_per_level.back() + 1);
+      std::min<unsigned int>(200, 8 * n_cells / n_mpi_processes_per_level.back() + 1);
 
     RepartitioningPolicyTools::MinimalGranularityPolicy<dim, spacedim> partitioning_policy(
       grain_size_limit);
