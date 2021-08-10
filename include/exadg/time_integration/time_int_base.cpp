@@ -20,6 +20,7 @@
  */
 
 #include <exadg/time_integration/time_int_base.h>
+#include <iostream>
 
 namespace ExaDG
 {

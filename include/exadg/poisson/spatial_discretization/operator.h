@@ -49,9 +49,7 @@ private:
   typedef LaplaceOperator<dim, Number, n_components> Laplace;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-#ifdef DEAL_II_WITH_TRILINOS
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-#endif
 
 public:
   Operator(std::shared_ptr<Grid<dim, Number> const>             grid,

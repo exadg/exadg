@@ -27,6 +27,8 @@
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
 
+#include <iostream>
+
 namespace ExaDG
 {
 using namespace dealii;
