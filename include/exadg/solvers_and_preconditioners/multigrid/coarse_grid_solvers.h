@@ -176,6 +176,7 @@ public:
     {
       if(additional_data.amg_data.amg_type == AMGType::ML)
       {
+#ifdef DEAL_II_WITH_TRILINOS
         // create temporal vectors of type NumberAMG (double)
         VectorTypeAMG dst_tri;
         dst_tri.reinit(dst, false);
@@ -211,6 +212,7 @@ public:
 
         // convert NumberAMG (double) -> MultigridNumber (float)
         dst.copy_locally_owned_data_from(dst_tri);
+#endif
       }
       else if(additional_data.amg_data.amg_type == AMGType::BoomerAMG)
       {
