@@ -57,7 +57,7 @@ public:
   restrict_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const;
 
   virtual void
-  prolongate(unsigned int const level, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const;
 
 private:
   MGLevelObject<std::shared_ptr<MGTransfer<VectorType>>> mg_level_object;

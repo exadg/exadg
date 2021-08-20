@@ -293,15 +293,10 @@ MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &    
                                            fe_eval2.begin_dof_values(),
                                            fe_eval1.begin_dof_values());
 
-    if(is_dg)
-    {
-      fe_eval1.set_dof_values(dst);
-    }
-    else
-    {
+    if(!is_dg)
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
-      fe_eval1.distribute_local_to_global(dst);
-    }
+
+    fe_eval1.distribute_local_to_global(dst);
   }
 }
 
@@ -573,13 +568,12 @@ MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferP<dim, Number, VectorType, components>::prolongate(unsigned int const /*level*/,
-                                                             VectorType &       dst,
-                                                             VectorType const & src) const
+MGTransferP<dim, Number, VectorType, components>::prolongate_and_add(unsigned int const /*level*/,
+                                                                     VectorType &       dst,
+                                                                     VectorType const & src) const
 {
   if(!this->is_dg) // only if CG
   {
-    dst = 0.0;
     src.update_ghost_values();
   }
 

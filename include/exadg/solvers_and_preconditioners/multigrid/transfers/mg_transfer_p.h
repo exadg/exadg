@@ -62,7 +62,7 @@ public:
   restrict_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
   virtual void
-  prolongate(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
 private:
   template<int fe_degree_1, int fe_degree_2>

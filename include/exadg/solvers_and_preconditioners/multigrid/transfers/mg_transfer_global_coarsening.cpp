@@ -38,11 +38,12 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(unsigned i
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate(unsigned int const level,
-                                                                VectorType &       dst,
-                                                                VectorType const & src) const
+MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate_and_add(
+  unsigned int const level,
+  VectorType &       dst,
+  VectorType const & src) const
 {
-  mg_transfer_global_coarsening->prolongate(level, dst, src);
+  mg_transfer_global_coarsening->prolongate_and_add(level, dst, src);
 }
 
 template<int dim, typename Number, typename VectorType>

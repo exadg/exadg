@@ -39,7 +39,7 @@ public:
   restrict_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  prolongate(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
+  prolongate_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const = 0;
 };
 } // namespace ExaDG
 

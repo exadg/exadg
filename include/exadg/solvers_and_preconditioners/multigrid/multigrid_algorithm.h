@@ -230,8 +230,7 @@ private:
 #endif
 
       // prolongation
-      transfer.prolongate(level, t[level], solution[level - 1]);
-      solution[level] += t[level];
+      transfer.prolongate_and_add(level, solution[level], solution[level - 1]);
 
       // post-smoothing
       (*smoother)[level]->step(solution[level], defect[level]);
