@@ -57,7 +57,7 @@ public:
   restrict_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
   void
-  prolongate(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const /*level*/, VectorType & dst, VectorType const & src) const;
 
 private:
   template<int degree>

@@ -56,7 +56,7 @@ public:
     MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const & operator_in);
 
   virtual void
-  prolongate(unsigned int const to_level, VectorType & dst, VectorType const & src) const;
+  prolongate_and_add(unsigned int const to_level, VectorType & dst, VectorType const & src) const;
 
   virtual void
   restrict_and_add(unsigned int const from_level, VectorType & dst, VectorType const & src) const;

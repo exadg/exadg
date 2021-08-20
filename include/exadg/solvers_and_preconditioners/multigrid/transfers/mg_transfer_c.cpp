@@ -96,16 +96,12 @@ MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
-  VectorType vec_dg;
-  data_composite.initialize_dof_vector(vec_dg, 1);
-  vec_dg.copy_locally_owned_data_from(src);
-
   for(unsigned int cell = 0; cell < data_composite.n_cell_batches(); ++cell)
   {
     fe_eval_cg.reinit(cell);
     fe_eval_dg.reinit(cell);
 
-    fe_eval_dg.read_dof_values(vec_dg);
+    fe_eval_dg.read_dof_values(src);
 
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_cg.begin_dof_values()[i] = fe_eval_dg.begin_dof_values()[i];
@@ -127,9 +123,6 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
-  VectorType vec_dg;
-  data_composite.initialize_dof_vector(vec_dg, 1);
-
   for(unsigned int cell = 0; cell < data_composite.n_cell_batches(); ++cell)
   {
     fe_eval_cg.reinit(cell);
@@ -140,9 +133,8 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_dg.begin_dof_values()[i] = fe_eval_cg.begin_dof_values()[i];
 
-    fe_eval_dg.distribute_local_to_global(vec_dg);
+    fe_eval_dg.distribute_local_to_global(dst);
   }
-  dst.copy_locally_owned_data_from(vec_dg);
   src.zero_out_ghost_values();
 }
 
@@ -210,9 +202,9 @@ MGTransferC<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
 
 template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferC<dim, Number, VectorType, components>::prolongate(unsigned int const /*level*/,
-                                                             VectorType &       dst,
-                                                             VectorType const & src) const
+MGTransferC<dim, Number, VectorType, components>::prolongate_and_add(unsigned int const /*level*/,
+                                                                     VectorType &       dst,
+                                                                     VectorType const & src) const
 {
   switch(this->fe_degree)
   {

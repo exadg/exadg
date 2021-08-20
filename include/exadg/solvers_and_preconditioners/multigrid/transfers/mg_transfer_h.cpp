@@ -46,13 +46,13 @@ MGTransferH<dim, Number>::set_operator(
 
 template<int dim, typename Number>
 void
-MGTransferH<dim, Number>::prolongate(unsigned int const to_level,
-                                     VectorType &       dst,
-                                     VectorType const & src) const
+MGTransferH<dim, Number>::prolongate_and_add(unsigned int const to_level,
+                                             VectorType &       dst,
+                                             VectorType const & src) const
 {
-  MGTransferMatrixFree<dim, Number>::prolongate(level_to_triangulation_level_map[to_level],
-                                                dst,
-                                                src);
+  MGTransferMatrixFree<dim, Number>::prolongate_and_add(level_to_triangulation_level_map[to_level],
+                                                        dst,
+                                                        src);
 }
 
 template<int dim, typename Number>

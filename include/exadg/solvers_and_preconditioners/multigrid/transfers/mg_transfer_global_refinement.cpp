@@ -197,11 +197,12 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::restrict_and_add(unsigned i
 
 template<int dim, typename Number, typename VectorType>
 void
-MGTransferGlobalRefinement<dim, Number, VectorType>::prolongate(unsigned int const level,
-                                                                VectorType &       dst,
-                                                                VectorType const & src) const
+MGTransferGlobalRefinement<dim, Number, VectorType>::prolongate_and_add(
+  unsigned int const level,
+  VectorType &       dst,
+  VectorType const & src) const
 {
-  this->mg_level_object[level]->prolongate(level, dst, src);
+  this->mg_level_object[level]->prolongate_and_add(level, dst, src);
 }
 
 typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
