@@ -61,8 +61,8 @@ A detailed list of publications can be found on the wiki page [Publications](htt
 ExaDG's principal developers are:
 
 - [Niklas Fehn](https://www.lnm.mw.tum.de/staff/niklas-fehn/) ([@nfehn](https://github.com/nfehn)), Technical University of Munich, DE
-- [Martin Kronbichler](https://www.lnm.mw.tum.de/staff/martin-kronbichler/) ([@kronbichler](https://github.com/kronbichler)), Technical University of Munich, DE
-- [Peter Munch](https://www.lnm.mw.tum.de/staff/peter-muench/) ([@peterrum](https://github.com/peterrum)), Technical University of Munich and Helmholtz-Zentrum Geesthacht, DE
+- [Martin Kronbichler](https://www.lnm.mw.tum.de/staff/martin-kronbichler/) ([@kronbichler](https://github.com/kronbichler)), Uppsala University, SW
+- [Peter Munch](https://www.lnm.mw.tum.de/staff/peter-muench/) ([@peterrum](https://github.com/peterrum)), Technical University of Munich and Helmholtz-Zentrum Hereon, DE
 
 ## List of contributors
 
