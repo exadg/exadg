@@ -46,6 +46,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         1
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -163,6 +164,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         2
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -280,6 +282,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -397,6 +400,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         4
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 
@@ -514,6 +518,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         5
   Numerical flux convective term:            LaxFriedrichsFlux
   IP factor viscous term:                    1.0000e+00
 

@@ -45,6 +45,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         5
   IP factor viscous term:                    1.0000e+00
 
 Solver:
