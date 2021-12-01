@@ -233,6 +233,9 @@ public:
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
+  // polynomial degree of shape functions
+  unsigned int degree;
+
   // description: see enum declaration
   NumericalFluxConvectiveOperator numerical_flux_convective_operator;
 

@@ -42,7 +42,6 @@ using namespace dealii;
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  unsigned int const                             degree_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   InputParameters const &                        param_in,
@@ -50,12 +49,11 @@ Operator<dim, Number>::Operator(
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
-    degree(degree_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    fe(degree_in),
+    fe(param_in.degree),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -64,7 +62,7 @@ Operator<dim, Number>::Operator(
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity          = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(degree), dim);
+    fe_velocity          = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
     dof_handler_velocity = std::make_shared<DoFHandler<dim>>(*grid->triangulation);
   }
 
@@ -115,11 +113,11 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   }
 
   // Quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
+  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
 
   if(param.use_overintegration)
   {
-    matrix_free_data.insert_quadrature(QGauss<1>(degree + (degree + 2) / 2),
+    matrix_free_data.insert_quadrature(QGauss<1>(param.degree + (param.degree + 2) / 2),
                                        get_quad_name_overintegration());
   }
 }
@@ -299,13 +297,13 @@ Operator<dim, Number>::distribute_dofs()
     dof_handler_velocity->distribute_mg_dofs();
   }
 
-  unsigned int const ndofs_per_cell = Utilities::pow(degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
@@ -885,7 +883,7 @@ Operator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
                                                     get_quad_index(),
                                                     velocity,
                                                     cfl,
-                                                    degree,
+                                                    param.degree,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -904,7 +902,7 @@ Operator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
                                                     field_functions->velocity,
                                                     time,
                                                     cfl,
-                                                    degree,
+                                                    param.degree,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -945,8 +943,9 @@ template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::get_polynomial_degree() const
 {
-  return degree;
+  return param.degree;
 }
+
 
 template<int dim, typename Number>
 types::global_dof_index

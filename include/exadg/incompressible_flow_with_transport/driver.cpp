@@ -81,6 +81,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // parameters scalar
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
+    scalar_param[i].degree = degree;
     application->set_input_parameters_scalar(scalar_param[i], i);
     scalar_param[i].check_input_parameters();
     AssertThrow(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady,
@@ -199,7 +200,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     conv_diff_operator[i] =
       std::make_shared<ConvDiff::Operator<dim, Number>>(grid,
-                                                        degree,
                                                         scalar_boundary_descriptor[i],
                                                         scalar_field_functions[i],
                                                         scalar_param[i],
@@ -266,7 +266,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_postprocessor[i] = application->create_postprocessor_scalar(degree, mpi_comm, i);
+    scalar_postprocessor[i] =
+      application->create_postprocessor_scalar(scalar_param[i].degree, mpi_comm, i);
     scalar_postprocessor[i]->setup(*conv_diff_operator[i], *grid->get_dynamic_mapping());
   }
 
