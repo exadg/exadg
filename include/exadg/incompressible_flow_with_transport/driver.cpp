@@ -223,17 +223,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
         "Parameter use_cell_based_face_loops should be the same for fluid and scalar transport."));
   }
 
-  // compute maximum aspect ratio (default = false)
-  // TODO: remove this; it is shown exemplarily in Poisson::Driver how to do this
-  if(false)
-  {
-    QGauss<dim> quadrature(degree + 1);
-    double      AR = GridTools::compute_maximum_aspect_ratio(*grid->get_dynamic_mapping(),
-                                                        *grid->triangulation,
-                                                        quadrature);
-    pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
-  }
-
   // setup Navier-Stokes operator
   if(fluid_param.boussinesq_term)
   {
