@@ -701,7 +701,7 @@ private:
                                             Range const &                   face_range) const;
 
   // Interpolation of stress requires velocity and pressure, but the MatrixFree interface
-  // only provides one argument, so we store boundaries to have access to both velocity and
+  // only provides one argument, so we store pointers to have access to both velocity and
   // pressure.
   mutable VectorType const * velocity_ptr;
   mutable VectorType const * pressure_ptr;
