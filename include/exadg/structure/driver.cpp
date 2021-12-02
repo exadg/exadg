@@ -65,8 +65,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
+  param.degree = degree;
   application->set_input_parameters(param);
-
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
@@ -74,7 +74,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   GridData grid_data;
   grid_data.triangulation_type = param.triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree);
 
   grid = application->create_grid(grid_data, mpi_comm);
   print_grid_info(pcout, *grid);
@@ -93,14 +93,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application->set_field_functions(field_functions);
 
   // setup spatial operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
-                                                         degree,
-                                                         boundary_descriptor,
-                                                         field_functions,
-                                                         material_descriptor,
-                                                         param,
-                                                         "elasticity",
-                                                         mpi_comm);
+  pde_operator = std::make_shared<Operator<dim, Number>>(
+    grid, boundary_descriptor, field_functions, material_descriptor, param, "elasticity", mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -118,7 +112,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(!is_throughput_study)
   {
     // initialize postprocessor
-    postprocessor = application->create_postprocessor(degree, mpi_comm);
+    postprocessor = application->create_postprocessor(param.degree, mpi_comm);
     postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
 
     // initialize time integrator/driver
@@ -249,13 +243,10 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(unsigned int const  degree,
-                                    std::string const & operator_type_string,
+Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
 {
-  (void)degree;
-
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   OperatorType operator_type;
@@ -293,7 +284,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   // do the measurements
   double const wall_time = measure_operator_evaluation_time(
-    operator_evaluation, degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
+    operator_evaluation, param.degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
 
   // calculate throughput
   types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
@@ -314,9 +305,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(pde_operator->get_degree(),
-                                                                   dofs,
-                                                                   throughput);
+  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree, dofs, throughput);
 }
 
 template class Driver<2, float>;

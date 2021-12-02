@@ -174,7 +174,6 @@ public:
    * Constructor.
    */
   Operator(std::shared_ptr<Grid<dim, Number> const>       grid_in,
-           unsigned int const &                           degree_in,
            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
            std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
            std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
@@ -297,9 +296,6 @@ public:
   get_number_of_dofs() const;
 
   unsigned int
-  get_degree() const;
-
-  unsigned int
   get_dof_index() const;
 
   unsigned int
@@ -370,8 +366,6 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  unsigned int const degree;
-
   FESystem<dim>             fe;
   DoFHandler<dim>           dof_handler;
   AffineConstraints<Number> affine_constraints;

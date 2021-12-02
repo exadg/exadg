@@ -120,6 +120,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     Timer timer_local;
     timer_local.restart();
 
+    structure_param.degree = degree_structure;
     application->set_input_parameters_structure(structure_param);
     structure_param.check_input_parameters();
     // Some FSI specific Asserts
@@ -132,7 +133,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     structure_grid_data.triangulation_type = structure_param.triangulation_type;
     structure_grid_data.n_refine_global    = refine_space_structure;
     structure_grid_data.mapping_degree =
-      get_mapping_degree(structure_param.mapping, degree_structure);
+      get_mapping_degree(structure_param.mapping, structure_param.degree);
 
     structure_grid = application->create_grid_structure(structure_grid_data, mpi_comm);
     print_grid_info(pcout, *structure_grid);
@@ -153,7 +154,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // setup spatial operator
     structure_operator =
       std::make_shared<Structure::Operator<dim, Number>>(structure_grid,
-                                                         degree_structure,
                                                          structure_boundary_descriptor,
                                                          structure_field_functions,
                                                          structure_material_descriptor,
@@ -176,7 +176,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize postprocessor
     structure_postprocessor =
-      application->create_postprocessor_structure(degree_structure, mpi_comm);
+      application->create_postprocessor_structure(structure_param.degree, mpi_comm);
     structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_grid->mapping);
 
     timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
@@ -252,6 +252,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
     else if(fluid_param.mesh_movement_type == IncNS::MeshMovementType::Elasticity)
     {
+      ale_elasticity_param.degree = fluid_grid_data.mapping_degree;
       application->set_input_parameters_ale(ale_elasticity_param);
       ale_elasticity_param.check_input_parameters();
       AssertThrow(ale_elasticity_param.body_force == false,
@@ -276,7 +277,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       // setup spatial operator
       ale_elasticity_operator =
         std::make_shared<Structure::Operator<dim, Number>>(fluid_grid,
-                                                           fluid_grid_data.mapping_degree,
                                                            ale_elasticity_boundary_descriptor,
                                                            ale_elasticity_field_functions,
                                                            ale_elasticity_material_descriptor,
