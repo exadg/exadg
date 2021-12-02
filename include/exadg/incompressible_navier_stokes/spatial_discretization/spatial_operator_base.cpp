@@ -39,7 +39,6 @@ using namespace dealii;
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  unsigned int const                             degree_u_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   InputParameters const &                        parameters_in,
@@ -47,16 +46,15 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
-    degree_u(degree_u_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(parameters_in),
     field(field_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
-    fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u_in), dim)),
-    fe_p(parameters_in.get_degree_p(degree_u_in)),
-    fe_u_scalar(degree_u_in),
+    fe_u(new FESystem<dim>(FE_DGQ<dim>(parameters_in.degree_u), dim)),
+    fe_p(parameters_in.get_degree_p(parameters_in.degree_u)),
+    fe_u_scalar(parameters_in.degree_u),
     dof_handler_u(*grid_in->triangulation),
     dof_handler_p(*grid_in->triangulation),
     dof_handler_u_scalar(*grid_in->triangulation),
@@ -149,16 +147,16 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(degree_u + 1), field + quad_index_u);
-  matrix_free_data.insert_quadrature(QGauss<1>(param.get_degree_p(degree_u) + 1),
+  matrix_free_data.insert_quadrature(QGauss<1>(param.degree_u + 1), field + quad_index_u);
+  matrix_free_data.insert_quadrature(QGauss<1>(param.get_degree_p(param.degree_u) + 1),
                                      field + quad_index_p);
-  matrix_free_data.insert_quadrature(QGauss<1>(degree_u + (degree_u + 2) / 2),
+  matrix_free_data.insert_quadrature(QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
                                      field + quad_index_u_nonlinear);
   if(param.store_previous_boundary_values)
   {
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree_u + 1),
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree_u + 1),
                                        field + quad_index_u_gauss_lobatto);
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(degree_u) + 1),
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(param.degree_u) + 1),
                                        field + quad_index_p_gauss_lobatto);
   }
 }
@@ -243,9 +241,9 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
-  unsigned int const ndofs_per_cell_velocity = Utilities::pow(degree_u + 1, dim) * dim;
+  unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
   unsigned int const ndofs_per_cell_pressure =
-    Utilities::pow(param.get_degree_p(degree_u) + 1, dim);
+    Utilities::pow(param.get_degree_p(param.degree_u) + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -253,12 +251,12 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
         << std::flush;
 
   pcout << "Velocity:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", degree_u);
+  print_parameter(pcout, "degree of 1D polynomials", param.degree_u);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_velocity);
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
 
   pcout << "Pressure:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p(degree_u));
+  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p(param.degree_u));
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_pressure);
   print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
 
@@ -423,7 +421,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     Operators::DivergencePenaltyKernelData div_penalty_data;
     div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
     div_penalty_data.viscosity              = param.viscosity;
-    div_penalty_data.degree                 = degree_u;
+    div_penalty_data.degree                 = param.degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
 
     div_penalty_kernel = std::make_shared<Operators::DivergencePenaltyKernel<dim, Number>>();
@@ -448,7 +446,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
     kernel_data.type_penalty_parameter = param.type_penalty_parameter;
     kernel_data.which_components       = param.continuity_penalty_components;
     kernel_data.viscosity              = param.viscosity;
-    kernel_data.degree                 = degree_u;
+    kernel_data.degree                 = param.degree_u;
     kernel_data.penalty_factor         = param.continuity_penalty_factor;
 
     conti_penalty_kernel = std::make_shared<Operators::ContinuityPenaltyKernel<dim, Number>>();
@@ -508,7 +506,7 @@ SpatialOperatorBase<dim, Number>::initialize_turbulence_model()
   model_data.kinematic_viscosity = param.viscosity;
   model_data.dof_index           = get_dof_index_velocity();
   model_data.quad_index          = get_quad_index_velocity_linear();
-  model_data.degree              = degree_u;
+  model_data.degree              = param.degree_u;
   turbulence_model.initialize(*matrix_free, *get_mapping(), viscous_kernel, model_data);
 }
 
@@ -743,11 +741,12 @@ SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const
 }
 
 // Polynomial degree required for CFL condition, e.g., CFL_k = CFL / k^{exp}.
+// TODO remove this function
 template<int dim, typename Number>
 unsigned int
 SpatialOperatorBase<dim, Number>::get_polynomial_degree() const
 {
-  return degree_u;
+  return param.degree_u;
 }
 
 template<int dim, typename Number>
@@ -900,7 +899,7 @@ SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & vel
                                                     get_quad_index_velocity_linear(),
                                                     velocity,
                                                     cfl,
-                                                    degree_u,
+                                                    param.degree_u,
                                                     exponent_degree,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
@@ -919,7 +918,7 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
                              get_quad_index_velocity_linear(),
                              velocity,
                              time_step_size,
-                             degree_u,
+                             param.degree_u,
                              param.cfl_exponent_fe_degree_velocity);
 }
 

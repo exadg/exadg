@@ -27,6 +27,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         1
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -117,6 +118,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         2
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -207,6 +209,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         3
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -297,6 +300,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         4
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -387,6 +391,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         5
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -477,6 +482,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         6
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -567,6 +573,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         7
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -657,6 +664,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         8
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -747,6 +755,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         9
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -837,6 +846,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         10
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -927,6 +937,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         11
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -1017,6 +1028,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         12
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -1107,6 +1119,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         13
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -1197,6 +1210,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         14
   IP factor:                                 1.0000e+00
 
 Solver:
@@ -1287,6 +1301,7 @@ Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
   Element type:                              DG
+  Polynomial degree:                         15
   IP factor:                                 1.0000e+00
 
 Solver:

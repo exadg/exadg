@@ -288,7 +288,10 @@ public:
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
-  // Polynomial degree used for pressure shape functions
+  // Polynomial degree of velocity shape functions
+  unsigned int degree_u;
+
+  // Polynomial degree of pressure shape functions
   DegreePressure degree_p;
 
   // convective term: upwind factor describes the scaling factor in front of the

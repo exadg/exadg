@@ -56,7 +56,6 @@ public:
    * Constructor.
    */
   Operator(std::shared_ptr<Grid<dim, Number> const>       grid,
-           unsigned int const                             degree,
            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim> const>     field_functions,
            InputParameters const &                        param,
@@ -339,11 +338,6 @@ private:
    * Grid
    */
   std::shared_ptr<Grid<dim, Number> const> grid;
-
-  /*
-   * Polynomial degree of shape function
-   */
-  unsigned int const degree;
 
   /*
    * User interface: Boundary conditions and field functions.

@@ -40,7 +40,6 @@ using namespace dealii;
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  unsigned int const &                           degree_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
@@ -54,8 +53,7 @@ Operator<dim, Number>::Operator(
     material_descriptor(material_descriptor_in),
     param(param_in),
     field(field_in),
-    degree(degree_in),
-    fe(FE_Q<dim>(degree_in), dim),
+    fe(FE_Q<dim>(param_in.degree), dim),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -119,8 +117,8 @@ Operator<dim, Number>::distribute_dofs()
         << "Continuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", degree);
-  print_parameter(pcout, "number of dofs per cell", Utilities::pow(degree + 1, dim));
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "number of dofs per cell", Utilities::pow(param.degree + 1, dim));
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
@@ -203,7 +201,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   }
 
   // Quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), get_quad_name());
+  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
 
   // In order to set constrained degrees of freedom for continuous Galerkin
   // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
@@ -212,7 +210,8 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   // injected into the DoF vector)
   if(not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(degree + 1), get_quad_gauss_lobatto_name());
+    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree + 1),
+                                       get_quad_gauss_lobatto_name());
   }
 }
 
@@ -227,7 +226,7 @@ Operator<dim, Number>::setup_operators()
     operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
   operator_data.bc                  = boundary_descriptor;
   operator_data.material_descriptor = material_descriptor;
-  operator_data.n_q_points_1d       = degree + 1;
+  operator_data.n_q_points_1d       = param.degree + 1;
   operator_data.unsteady            = (param.problem_type == ProblemType::Unsteady);
   operator_data.density             = param.density;
   if(param.large_deformation)
@@ -752,13 +751,6 @@ types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
-}
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_degree() const
-{
-  return degree;
 }
 
 template class Operator<2, float>;

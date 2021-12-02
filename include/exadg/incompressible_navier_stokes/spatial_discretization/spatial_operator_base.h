@@ -149,7 +149,6 @@ public:
    * Constructor.
    */
   SpatialOperatorBase(std::shared_ptr<Grid<dim, Number> const>       grid,
-                      unsigned int const                             degree_u,
                       std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
                       std::shared_ptr<FieldFunctions<dim> const>     field_functions,
                       InputParameters const &                        parameters,
@@ -218,9 +217,6 @@ public:
   unsigned int
   get_quad_index_velocity_linearized() const;
 
-  unsigned int
-  get_degree_p() const;
-
   std::shared_ptr<Mapping<dim> const>
   get_mapping() const;
 
@@ -252,6 +248,7 @@ public:
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
   // Polynomial degree required, e.g., for CFL condition (CFL_k = CFL / k^{exp}).
+  // TODO remove this function
   unsigned int
   get_polynomial_degree() const;
 
@@ -503,11 +500,6 @@ protected:
   std::shared_ptr<Grid<dim, Number> const> grid;
 
   /*
-   * Polynomial degree of velocity shape functions.
-   */
-  unsigned int const degree_u;
-
-  /*
    * User interface: Boundary conditions and field functions.
    */
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor;
@@ -709,7 +701,7 @@ private:
                                             Range const &                   face_range) const;
 
   // Interpolation of stress requires velocity and pressure, but the MatrixFree interface
-  // only provides one argument, so we store boundaries to have access to both velocity and
+  // only provides one argument, so we store pointers to have access to both velocity and
   // pressure.
   mutable VectorType const * velocity_ptr;
   mutable VectorType const * pressure_ptr;

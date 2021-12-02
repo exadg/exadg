@@ -70,6 +70,7 @@ InputParameters::InputParameters()
     // triangulation
     triangulation_type(TriangulationType::Undefined),
     mapping(MappingType::Affine),
+    degree(1),
     n_q_points_convective(QuadratureRule::Standard),
     n_q_points_viscous(QuadratureRule::Standard),
 
@@ -125,6 +126,8 @@ InputParameters::check_input_parameters()
   // SPATIAL DISCRETIZATION
   AssertThrow(triangulation_type != TriangulationType::Undefined,
               ExcMessage("parameter must be defined"));
+
+  AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   if(use_combined_operator)
   {
@@ -232,6 +235,8 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
   print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
+
+  print_parameter(pcout, "Polynomial degree", degree);
 
   print_parameter(pcout, "Quadrature rule convective term", enum_to_string(n_q_points_convective));
   print_parameter(pcout, "Quadrature rule viscous term", enum_to_string(n_q_points_viscous));

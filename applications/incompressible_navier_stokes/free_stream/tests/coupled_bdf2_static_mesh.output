@@ -59,6 +59,7 @@ Temporal discretization:
 Spatial discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
+  Polynomial degree velocity:                3
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
   Convective term - Type of Dirichlet BC's:  Mirror

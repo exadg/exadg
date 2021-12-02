@@ -171,6 +171,9 @@ public:
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
+  // polynomial degree of shape functions
+  unsigned int degree;
+
   QuadratureRule n_q_points_convective, n_q_points_viscous;
 
   // diffusive term: Symmetric interior penalty Galerkin (SIPG) discretization

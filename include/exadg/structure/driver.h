@@ -106,8 +106,7 @@ public:
   print_performance_results(double const total_time) const;
 
   std::tuple<unsigned int, types::global_dof_index, double>
-  apply_operator(unsigned int const  degree,
-                 std::string const & operator_type_string,
+  apply_operator(std::string const & operator_type_string,
                  unsigned int const  n_repetitions_inner,
                  unsigned int const  n_repetitions_outer) const;
 

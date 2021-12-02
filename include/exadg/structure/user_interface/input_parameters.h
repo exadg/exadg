@@ -76,6 +76,7 @@ public:
       // SPATIAL DISCRETIZATION
       triangulation_type(TriangulationType::Undefined),
       mapping(MappingType::Affine),
+      degree(1),
 
       // SOLVER
       newton_solver_data(Newton::SolverData(1e4, 1.e-12, 1.e-6)),
@@ -109,6 +110,8 @@ public:
     // SPATIAL DISCRETIZATION
     AssertThrow(triangulation_type != TriangulationType::Undefined,
                 ExcMessage("Parameter must be defined."));
+
+    AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
     // SOLVER
     AssertThrow(solver != Solver::Undefined, ExcMessage("Parameter must be defined."));
@@ -196,6 +199,7 @@ public:
 
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
     print_parameter(pcout, "Mapping", enum_to_string(mapping));
+    print_parameter(pcout, "Polynomial degree", degree);
   }
 
   void
@@ -335,6 +339,8 @@ public:
   // Type of mapping (polynomial degree) use for geometry approximation
   MappingType mapping;
 
+  // polynomial degree of shape functions
+  unsigned int degree;
 
   /**************************************************************************************/
   /*                                                                                    */

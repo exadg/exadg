@@ -44,6 +44,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -160,6 +161,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -276,6 +278,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -392,6 +395,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -508,6 +512,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -624,6 +629,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -740,6 +746,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -856,6 +863,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 
@@ -972,6 +980,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         3
 
 Solver:
 

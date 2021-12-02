@@ -45,6 +45,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Affine
+  Polynomial degree:                         15
   Numerical flux convective term:            LaxFriedrichsFlux
 
 Numerical parameters:

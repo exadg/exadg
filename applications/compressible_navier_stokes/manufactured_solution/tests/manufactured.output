@@ -48,6 +48,7 @@ Temporal discretization:
 Spatial Discretization:
   Triangulation type:                        Distributed
   Mapping:                                   Isoparametric
+  Polynomial degree:                         6
   Quadrature rule convective term:           Standard
   Quadrature rule viscous term:              Standard
   IP factor viscous term:                    1.0000e+00

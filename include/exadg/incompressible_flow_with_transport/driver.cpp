@@ -73,6 +73,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
+  fluid_param.degree_u = degree;
   application->set_input_parameters(fluid_param);
   fluid_param.check_input_parameters(pcout);
 
@@ -81,6 +82,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // parameters scalar
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
+    scalar_param[i].degree = degree;
     application->set_input_parameters_scalar(scalar_param[i], i);
     scalar_param[i].check_input_parameters();
     AssertThrow(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady,
@@ -119,7 +121,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   GridData grid_data;
   grid_data.triangulation_type = fluid_param.triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(fluid_param.mapping, degree);
+  grid_data.mapping_degree     = get_mapping_degree(fluid_param.mapping, fluid_param.degree_u);
 
   grid = application->create_grid(grid_data, mpi_comm);
   print_grid_info(pcout, *grid);
@@ -138,8 +140,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     std::shared_ptr<Function<dim>> mesh_motion;
     mesh_motion = application->set_mesh_movement_function();
-    grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
-      grid->mapping, degree, *grid->triangulation, mesh_motion, fluid_param.start_time);
+    grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
+                                                                      fluid_param.degree_u,
+                                                                      *grid->triangulation,
+                                                                      mesh_motion,
+                                                                      fluid_param.start_time);
 
     grid->attach_grid_motion(grid_motion);
   }
@@ -170,24 +175,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize fluid_operator
   if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_operator = IncNS::create_operator<dim, Number>(grid,
-                                                         degree,
-                                                         fluid_boundary_descriptor,
-                                                         fluid_field_functions,
-                                                         fluid_param,
-                                                         "fluid",
-                                                         mpi_comm);
+    fluid_operator = IncNS::create_operator<dim, Number>(
+      grid, fluid_boundary_descriptor, fluid_field_functions, fluid_param, "fluid", mpi_comm);
   }
   else if(fluid_param.solver_type == IncNS::SolverType::Steady)
   {
-    fluid_operator =
-      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
-                                                            degree,
-                                                            fluid_boundary_descriptor,
-                                                            fluid_field_functions,
-                                                            fluid_param,
-                                                            "fluid",
-                                                            mpi_comm);
+    fluid_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
+      grid, fluid_boundary_descriptor, fluid_field_functions, fluid_param, "fluid", mpi_comm);
   }
   else
   {
@@ -199,7 +193,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     conv_diff_operator[i] =
       std::make_shared<ConvDiff::Operator<dim, Number>>(grid,
-                                                        degree,
                                                         scalar_boundary_descriptor[i],
                                                         scalar_field_functions[i],
                                                         scalar_param[i],
@@ -231,6 +224,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // compute maximum aspect ratio (default = false)
+  // TODO: remove this; it is shown exemplarily in Poisson::Driver how to do this
   if(false)
   {
     QGauss<dim> quadrature(degree + 1);
@@ -261,12 +255,13 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // setup postprocessor
-  fluid_postprocessor = application->create_postprocessor(degree, mpi_comm);
+  fluid_postprocessor = application->create_postprocessor(fluid_param.degree_u, mpi_comm);
   fluid_postprocessor->setup(*fluid_operator);
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_postprocessor[i] = application->create_postprocessor_scalar(degree, mpi_comm, i);
+    scalar_postprocessor[i] =
+      application->create_postprocessor_scalar(scalar_param[i].degree, mpi_comm, i);
     scalar_postprocessor[i]->setup(*conv_diff_operator[i], *grid->get_dynamic_mapping());
   }
 
