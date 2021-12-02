@@ -38,7 +38,6 @@ namespace IncNS
 template<int dim, typename Number>
 std::shared_ptr<SpatialOperatorBase<dim, Number>>
 create_operator(std::shared_ptr<Grid<dim, Number> const>       grid,
-                unsigned int const                             degree_velocity,
                 std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
                 std::shared_ptr<FieldFunctions<dim> const>     field_functions,
                 InputParameters const &                        parameters,
@@ -51,17 +50,17 @@ create_operator(std::shared_ptr<Grid<dim, Number> const>       grid,
   if(parameters.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     pde_operator = std::make_shared<OperatorCoupled<dim, Number>>(
-      grid, degree_velocity, boundary_descriptor, field_functions, parameters, field, mpi_comm);
+      grid, boundary_descriptor, field_functions, parameters, field, mpi_comm);
   }
   else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     pde_operator = std::make_shared<OperatorDualSplitting<dim, Number>>(
-      grid, degree_velocity, boundary_descriptor, field_functions, parameters, field, mpi_comm);
+      grid, boundary_descriptor, field_functions, parameters, field, mpi_comm);
   }
   else if(parameters.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     pde_operator = std::make_shared<OperatorPressureCorrection<dim, Number>>(
-      grid, degree_velocity, boundary_descriptor, field_functions, parameters, field, mpi_comm);
+      grid, boundary_descriptor, field_functions, parameters, field, mpi_comm);
   }
   else
   {

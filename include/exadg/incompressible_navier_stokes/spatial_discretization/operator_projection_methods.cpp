@@ -33,23 +33,13 @@ using namespace dealii;
 template<int dim, typename Number>
 OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  unsigned int const                             degree_u_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   InputParameters const &                        parameters_in,
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
-  : Base(grid_in,
-         degree_u_in,
-         boundary_descriptor_in,
-         field_functions_in,
-         parameters_in,
-         field_in,
-         mpi_comm_in)
+  : Base(grid_in, boundary_descriptor_in, field_functions_in, parameters_in, field_in, mpi_comm_in)
 {
-  AssertThrow(this->param.get_degree_p(degree_u_in) > 0,
-              ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
-                         "zero for projection methods."));
 }
 
 template<int dim, typename Number>

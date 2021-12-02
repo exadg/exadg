@@ -99,7 +99,7 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
-                                    unsigned int const                                     degree,
+                                    unsigned int const degree_velocity,
                                     unsigned int const refine_space)
 {
   Timer timer;
@@ -117,10 +117,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   application = app;
 
+  param_pre.degree_u = degree_velocity;
   application->set_input_parameters_precursor(param_pre);
   param_pre.check_input_parameters(pcout);
   param_pre.print(pcout, "List of input parameters for precursor domain:");
 
+  param.degree_u = degree_velocity;
   application->set_input_parameters(param);
   param.check_input_parameters(pcout);
   param.print(pcout, "List of input parameters for actual domain:");
@@ -132,7 +134,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   GridData grid_data_pre;
   grid_data_pre.triangulation_type = param_pre.triangulation_type;
   grid_data_pre.n_refine_global    = refine_space;
-  grid_data_pre.mapping_degree     = get_mapping_degree(param_pre.mapping, degree);
+  grid_data_pre.mapping_degree     = get_mapping_degree(param_pre.mapping, param_pre.degree_u);
 
   grid_pre = application->create_grid(grid_data_pre, mpi_comm);
   print_grid_info(pcout, *grid_pre);
@@ -141,7 +143,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   GridData grid_data;
   grid_data.triangulation_type = param.triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree_u);
 
   grid = application->create_grid(grid_data, mpi_comm);
   print_grid_info(pcout, *grid);
@@ -174,11 +176,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   // initialize pde_operator_pre (precursor domain)
   pde_operator = create_operator<dim, Number>(
-    grid_pre, degree, boundary_descriptor_pre, field_functions_pre, param_pre, "fluid", mpi_comm);
+    grid_pre, boundary_descriptor_pre, field_functions_pre, param_pre, "fluid", mpi_comm);
 
   // initialize operator_base (actual domain)
   pde_operator = create_operator<dim, Number>(
-    grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
+    grid, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
 
 
   // initialize matrix_free precursor
@@ -213,10 +215,10 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   pde_operator->setup(matrix_free, matrix_free_data);
 
   // setup postprocessor
-  postprocessor_pre = application->create_postprocessor_precursor(degree, mpi_comm);
+  postprocessor_pre = application->create_postprocessor_precursor(param_pre.degree_u, mpi_comm);
   postprocessor_pre->setup(*pde_operator_pre);
 
-  postprocessor = application->create_postprocessor(degree, mpi_comm);
+  postprocessor = application->create_postprocessor(param.degree_u, mpi_comm);
   postprocessor->setup(*pde_operator);
 
 

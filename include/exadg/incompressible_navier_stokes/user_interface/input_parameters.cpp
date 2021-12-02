@@ -98,6 +98,7 @@ InputParameters::InputParameters()
     mapping(MappingType::Affine),
 
     // polynomial degrees
+    degree_u(2),
     degree_p(DegreePressure::MixedOrder),
 
     // convective term
@@ -346,6 +347,15 @@ InputParameters::check_input_parameters(ConditionalOStream & pcout)
   AssertThrow(triangulation_type != TriangulationType::Undefined,
               ExcMessage("parameter must be defined"));
 
+  // For the coupled solution approach, degree_p = 0 is allowed in principle.
+  // For projection-type methods, degree_p > 0 has to be fulfilled (the SIPG discretization
+  // of the pressure Poisson equation would be inconsistent for degree_p = 0).
+  if(temporal_discretization != TemporalDiscretization::BDFCoupledSolution)
+    AssertThrow(
+      get_degree_p(degree_u) > 0,
+      ExcMessage(
+        "Polynomial degree of pressure has to be larger than zero for projection-type methods."));
+
   AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined,
               ExcMessage("parameter must be defined"));
 
@@ -536,11 +546,21 @@ InputParameters::get_degree_p(unsigned int const degree_u) const
   unsigned int k = 1;
 
   if(degree_p == DegreePressure::MixedOrder)
+  {
+    AssertThrow(degree_u > 0,
+                ExcMessage("The polynomial degree of the velocity shape functions"
+                           " has to be larger than zero for a mixed-order formulation."));
+
     k = degree_u - 1;
+  }
   else if(degree_p == DegreePressure::EqualOrder)
+  {
     k = degree_u;
+  }
   else
+  {
     AssertThrow(false, ExcMessage("Not implemented."));
+  }
 
   return k;
 }
@@ -715,6 +735,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Mapping", enum_to_string(mapping));
 
+  print_parameter(pcout, "Polynomial degree velocity", degree_u);
   print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));
 
   if(this->convective_problem())

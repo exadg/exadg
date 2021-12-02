@@ -192,6 +192,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // parameters fluid
+    fluid_param.degree_u = degree_fluid;
     application->set_input_parameters_fluid(fluid_param);
     fluid_param.check_input_parameters(pcout);
     fluid_param.print(pcout, "List of input parameters for incompressible flow solver:");
@@ -206,7 +207,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     GridData fluid_grid_data;
     fluid_grid_data.triangulation_type = fluid_param.triangulation_type;
     fluid_grid_data.n_refine_global    = refine_space_fluid;
-    fluid_grid_data.mapping_degree     = get_mapping_degree(fluid_param.mapping, degree_fluid);
+    fluid_grid_data.mapping_degree = get_mapping_degree(fluid_param.mapping, fluid_param.degree_u);
 
     fluid_grid = application->create_grid_fluid(fluid_grid_data, mpi_comm);
     print_grid_info(pcout, *fluid_grid);
@@ -352,13 +353,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_grid->attach_grid_motion(fluid_grid_motion);
 
     // initialize fluid_operator
-    fluid_operator = IncNS::create_operator<dim, Number>(fluid_grid,
-                                                         degree_fluid,
-                                                         fluid_boundary_descriptor,
-                                                         fluid_field_functions,
-                                                         fluid_param,
-                                                         "fluid",
-                                                         mpi_comm);
+    fluid_operator = IncNS::create_operator<dim, Number>(
+      fluid_grid, fluid_boundary_descriptor, fluid_field_functions, fluid_param, "fluid", mpi_comm);
 
     // initialize matrix_free
     fluid_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -377,7 +373,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     fluid_operator->setup(fluid_matrix_free, fluid_matrix_free_data);
 
     // setup postprocessor
-    fluid_postprocessor = application->create_postprocessor_fluid(degree_fluid, mpi_comm);
+    fluid_postprocessor = application->create_postprocessor_fluid(fluid_param.degree_u, mpi_comm);
     fluid_postprocessor->setup(*fluid_operator);
 
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());

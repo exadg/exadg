@@ -46,7 +46,7 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
 template<int dim, typename Number>
 void
 Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree,
+                           unsigned int const                            degree_velocity,
                            unsigned int const                            refine_space,
                            unsigned int const                            refine_time,
                            bool const                                    is_throughput_study)
@@ -66,6 +66,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
+  param.degree_u = degree_velocity;
   application->set_input_parameters(param);
   param.check_input_parameters(pcout);
   param.print(pcout, "List of input parameters:");
@@ -74,7 +75,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   GridData grid_data;
   grid_data.triangulation_type = param.triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, degree);
+  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree_u);
 
   grid = application->create_grid(grid_data, mpi_comm);
   print_grid_info(pcout, *grid);
@@ -161,12 +162,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(param.solver_type == SolverType::Unsteady)
   {
     pde_operator = create_operator<dim, Number>(
-      grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
+      grid, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
   }
   else if(param.solver_type == SolverType::Steady)
   {
     pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
-      grid, degree, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
+      grid, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
   }
   else
   {
@@ -192,7 +193,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(!is_throughput_study)
   {
     // setup postprocessor
-    postprocessor = application->create_postprocessor(degree, mpi_comm);
+    postprocessor = application->create_postprocessor(param.degree_u, mpi_comm);
     postprocessor->setup(*pde_operator);
 
     // setup time integrator before calling setup_solvers
@@ -383,13 +384,10 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
 template<int dim, typename Number>
 std::tuple<unsigned int, types::global_dof_index, double>
-Driver<dim, Number>::apply_operator(unsigned int const  degree,
-                                    std::string const & operator_type_string,
+Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
 {
-  (void)degree;
-
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   OperatorType operator_type;
@@ -568,11 +566,9 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
     return;
   };
 
-  // do the measurements
-  double const wall_time = measure_operator_evaluation_time(
-    operator_evaluation, degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
-
   // calculate throughput
+
+  // determine DoFs and degree
   types::global_dof_index dofs      = 0;
   unsigned int            fe_degree = 1;
 
@@ -581,7 +577,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   {
     dofs = pde_operator->get_dof_handler_u().n_dofs() + pde_operator->get_dof_handler_p().n_dofs();
 
-    fe_degree = pde_operator->get_polynomial_degree();
+    fe_degree = param.degree_u;
   }
   else if(operator_type == OperatorType::ConvectiveOperator ||
           operator_type == OperatorType::VelocityConvDiffOperator ||
@@ -591,7 +587,7 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   {
     dofs = pde_operator->get_dof_handler_u().n_dofs();
 
-    fe_degree = pde_operator->get_polynomial_degree();
+    fe_degree = param.degree_u;
   }
   else if(operator_type == OperatorType::PressurePoissonOperator)
   {
@@ -603,6 +599,10 @@ Driver<dim, Number>::apply_operator(unsigned int const  degree,
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
+
+  // do the measurements
+  double const wall_time = measure_operator_evaluation_time(
+    operator_evaluation, fe_degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
 
   double const throughput = (double)dofs / wall_time;
 
