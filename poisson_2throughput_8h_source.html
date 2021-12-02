@@ -171,94 +171,93 @@ $(function() {
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  driver-&gt;setup(application, degree, refine_space, <span class="keyword">true</span>);</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  std::tuple&lt;unsigned int, types::global_dof_index, double&gt; wall_time =</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    driver-&gt;apply_operator(degree,</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                           throughput.operator_type,</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                           throughput.n_repetitions_inner,</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>                           throughput.n_repetitions_outer);</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  throughput.wall_times.push_back(wall_time);</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>}</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span><span class="keywordtype">int</span></div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> ** argv)</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>{</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  LIKWID_MARKER_INIT;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  MPI_Comm mpi_comm(MPI_COMM_WORLD);</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  std::string input_file;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  <span class="keywordflow">if</span>(argc == 1)</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  {</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <span class="keywordflow">if</span>(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    {</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>      std::cout &lt;&lt; <span class="stringliteral">&quot;To run the program, use:      ./throughput input_file&quot;</span> &lt;&lt; std::endl</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>                &lt;&lt; <span class="stringliteral">&quot;To setup the input file, use: ./throughput input_file --help&quot;</span> &lt;&lt; std::endl;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    }</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  }</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(argc &gt;= 2)</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  {</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    input_file = std::string(argv[1]);</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span> </div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    <span class="keywordflow">if</span>(argc == 3 &amp;&amp; std::string(argv[2]) == <span class="stringliteral">&quot;--help&quot;</span>)</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    {</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>      <span class="keywordflow">if</span>(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>        ExaDG::create_input_file(input_file);</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span> </div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>      <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    }</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  }</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <a class="code hl_struct" href="structExaDG_1_1GeneralParameters.html">ExaDG::GeneralParameters</a>             general(input_file);</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <a class="code hl_struct" href="structExaDG_1_1HypercubeResolutionParameters.html">ExaDG::HypercubeResolutionParameters</a> resolution(input_file, general.dim);</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <a class="code hl_struct" href="structExaDG_1_1ThroughputParameters.html">ExaDG::ThroughputParameters</a>          throughput(input_file);</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="comment">// fill resolution vector depending on the operator_type</span></div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  resolution.fill_resolution_vector(&amp;ExaDG::Poisson::get_dofs_per_element, input_file);</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="comment">// loop over resolutions vector and run simulations</span></div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  {</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree       = std::get&lt;0&gt;(*iter);</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> refine_space = std::get&lt;1&gt;(*iter);</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_cells_1d   = std::get&lt;2&gt;(*iter);</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    <span class="keywordflow">if</span>(general.dim == 2 &amp;&amp; general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>      ExaDG::run&lt;2, float&gt;(</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 2 &amp;&amp; general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>      ExaDG::run&lt;2, double&gt;(</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 &amp;&amp; general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>      ExaDG::run&lt;3, float&gt;(</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 &amp;&amp; general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>      ExaDG::run&lt;3, double&gt;(</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>      AssertThrow(<span class="keyword">false</span>,</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;Only dim = 2|3 and precision=float|double implemented.&quot;</span>));</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  }</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keywordflow">if</span>(not(general.is_test))</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    throughput.print_results(mpi_comm);</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span> </div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  LIKWID_MARKER_CLOSE;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>}</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    driver-&gt;apply_operator(throughput.operator_type,</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                           throughput.n_repetitions_inner,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                           throughput.n_repetitions_outer);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  throughput.wall_times.push_back(wall_time);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>}</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span><span class="keywordtype">int</span></div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>main(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> ** argv)</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>{</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  LIKWID_MARKER_INIT;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  MPI_Comm mpi_comm(MPI_COMM_WORLD);</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  std::string input_file;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keywordflow">if</span>(argc == 1)</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  {</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    <span class="keywordflow">if</span>(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    {</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      std::cout &lt;&lt; <span class="stringliteral">&quot;To run the program, use:      ./throughput input_file&quot;</span> &lt;&lt; std::endl</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>                &lt;&lt; <span class="stringliteral">&quot;To setup the input file, use: ./throughput input_file --help&quot;</span> &lt;&lt; std::endl;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    }</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  }</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keywordflow">else</span> <span class="keywordflow">if</span>(argc &gt;= 2)</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  {</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    input_file = std::string(argv[1]);</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    <span class="keywordflow">if</span>(argc == 3 &amp;&amp; std::string(argv[2]) == <span class="stringliteral">&quot;--help&quot;</span>)</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    {</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>      <span class="keywordflow">if</span>(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>        ExaDG::create_input_file(input_file);</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>      <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    }</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  }</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  <a class="code hl_struct" href="structExaDG_1_1GeneralParameters.html">ExaDG::GeneralParameters</a>             general(input_file);</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <a class="code hl_struct" href="structExaDG_1_1HypercubeResolutionParameters.html">ExaDG::HypercubeResolutionParameters</a> resolution(input_file, general.dim);</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <a class="code hl_struct" href="structExaDG_1_1ThroughputParameters.html">ExaDG::ThroughputParameters</a>          throughput(input_file);</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="comment">// fill resolution vector depending on the operator_type</span></div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  resolution.fill_resolution_vector(&amp;ExaDG::Poisson::get_dofs_per_element, input_file);</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span> </div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="comment">// loop over resolutions vector and run simulations</span></div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> iter = resolution.resolutions.begin(); iter != resolution.resolutions.end(); ++iter)</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  {</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree       = std::get&lt;0&gt;(*iter);</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> refine_space = std::get&lt;1&gt;(*iter);</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> n_cells_1d   = std::get&lt;2&gt;(*iter);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <span class="keywordflow">if</span>(general.dim == 2 &amp;&amp; general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>      ExaDG::run&lt;2, float&gt;(</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 2 &amp;&amp; general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>      ExaDG::run&lt;2, double&gt;(</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 &amp;&amp; general.precision == <span class="stringliteral">&quot;float&quot;</span>)</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>      ExaDG::run&lt;3, float&gt;(</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(general.dim == 3 &amp;&amp; general.precision == <span class="stringliteral">&quot;double&quot;</span>)</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>      ExaDG::run&lt;3, double&gt;(</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>        throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>      AssertThrow(<span class="keyword">false</span>,</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>                  dealii::ExcMessage(<span class="stringliteral">&quot;Only dim = 2|3 and precision=float|double implemented.&quot;</span>));</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  }</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keywordflow">if</span>(not(general.is_test))</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    throughput.print_results(mpi_comm);</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span> </div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span><span class="preprocessor">#ifdef LIKWID_PERFMON</span></div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  LIKWID_MARKER_CLOSE;</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>}</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_THROUGHPUT_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_POISSON_THROUGHPUT_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="astructExaDG_1_1GeneralParameters_html"><div class="ttname"><a href="structExaDG_1_1GeneralParameters.html">ExaDG::GeneralParameters</a></div><div class="ttdef"><b>Definition:</b> general_parameters.h:33</div></div>
 <div class="ttc" id="astructExaDG_1_1HypercubeResolutionParameters_html"><div class="ttname"><a href="structExaDG_1_1HypercubeResolutionParameters.html">ExaDG::HypercubeResolutionParameters</a></div><div class="ttdef"><b>Definition:</b> hypercube_resolution_parameters.h:172</div></div>
 <div class="ttc" id="astructExaDG_1_1ThroughputParameters_html"><div class="ttname"><a href="structExaDG_1_1ThroughputParameters.html">ExaDG::ThroughputParameters</a></div><div class="ttdef"><b>Definition:</b> throughput_parameters.h:85</div></div>

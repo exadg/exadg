@@ -87,9 +87,9 @@ Inheritance diagram for ExaDG::IncNS::SpatialOperatorBase&lt; dim, Number &gt;:<
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a47e1bc7f48e54b1ec3cc8df8fb8e8fdc"><td class="memItemLeft" align="right" valign="top"><a id="a47e1bc7f48e54b1ec3cc8df8fb8e8fdc" name="a47e1bc7f48e54b1ec3cc8df8fb8e8fdc"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialOperatorBase</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; const &gt; grid, unsigned int const degree_u, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">InputParameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
-<tr class="separator:a47e1bc7f48e54b1ec3cc8df8fb8e8fdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a400840692c8c42e6ef951e481b3c7d55"><td class="memItemLeft" align="right" valign="top"><a id="a400840692c8c42e6ef951e481b3c7d55" name="a400840692c8c42e6ef951e481b3c7d55"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SpatialOperatorBase</b> (std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; const &gt; grid, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const &gt; boundary_descriptor, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1FieldFunctions.html">FieldFunctions</a>&lt; dim &gt; const &gt; field_functions, <a class="el" href="classExaDG_1_1IncNS_1_1InputParameters.html">InputParameters</a> const &amp;parameters, std::string const &amp;field, MPI_Comm const &amp;mpi_comm)</td></tr>
+<tr class="separator:a400840692c8c42e6ef951e481b3c7d55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48632e10b788b5204a3c2a194e0b96e3"><td class="memItemLeft" align="right" valign="top"><a id="a48632e10b788b5204a3c2a194e0b96e3" name="a48632e10b788b5204a3c2a194e0b96e3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a48632e10b788b5204a3c2a194e0b96e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -132,9 +132,6 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_inde
 <tr class="memitem:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memItemLeft" align="right" valign="top"><a id="ab3922a0ae5ed0041c75e08973a78ef0e" name="ab3922a0ae5ed0041c75e08973a78ef0e"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_linearized</b> () const</td></tr>
 <tr class="separator:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a7f6781a785959dddedaba4867f3ffa"><td class="memItemLeft" align="right" valign="top"><a id="a8a7f6781a785959dddedaba4867f3ffa" name="a8a7f6781a785959dddedaba4867f3ffa"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_degree_p</b> () const</td></tr>
-<tr class="separator:a8a7f6781a785959dddedaba4867f3ffa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7bff5f9a9e029f1279eb44cc4f5dcab5"><td class="memItemLeft" align="right" valign="top"><a id="a7bff5f9a9e029f1279eb44cc4f5dcab5" name="a7bff5f9a9e029f1279eb44cc4f5dcab5"></a>
 std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
 <tr class="separator:a7bff5f9a9e029f1279eb44cc4f5dcab5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -357,9 +354,6 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a469823276a20678e43b5f8ee9a723987"><td class="memItemLeft" align="right" valign="top"><a id="a469823276a20678e43b5f8ee9a723987" name="a469823276a20678e43b5f8ee9a723987"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
 <tr class="separator:a469823276a20678e43b5f8ee9a723987"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5174a0d43cc1fbbede41a21b30517eb6"><td class="memItemLeft" align="right" valign="top"><a id="a5174a0d43cc1fbbede41a21b30517eb6" name="a5174a0d43cc1fbbede41a21b30517eb6"></a>
-unsigned int const&#160;</td><td class="memItemRight" valign="bottom"><b>degree_u</b></td></tr>
-<tr class="separator:a5174a0d43cc1fbbede41a21b30517eb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84e1befa2a42251868b1bb16d3c43848"><td class="memItemLeft" align="right" valign="top"><a id="a84e1befa2a42251868b1bb16d3c43848" name="a84e1befa2a42251868b1bb16d3c43848"></a>
 std::shared_ptr&lt; <a class="el" href="structExaDG_1_1IncNS_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; dim &gt; const  &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>boundary_descriptor</b></td></tr>
 <tr class="separator:a84e1befa2a42251868b1bb16d3c43848"><td class="memSeparator" colspan="2">&#160;</td></tr>
