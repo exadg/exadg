@@ -36,7 +36,6 @@ using namespace dealii;
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  unsigned int const                             degree_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
   InputParameters const &                        param_in,
@@ -44,16 +43,15 @@ Operator<dim, Number>::Operator(
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
-    degree(degree_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    fe(new FESystem<dim>(FE_DGQ<dim>(degree_in), dim + 2)),
-    fe_vector(new FESystem<dim>(FE_DGQ<dim>(degree_in), dim)),
-    fe_scalar(degree_in),
-    n_q_points_conv(degree_in + 1),
-    n_q_points_visc(degree_in + 1),
+    fe(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim + 2)),
+    fe_vector(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim)),
+    fe_scalar(param_in.degree),
+    n_q_points_conv(param_in.degree + 1),
+    n_q_points_visc(param_in.degree + 1),
     dof_handler(*grid_in->triangulation),
     dof_handler_vector(*grid_in->triangulation),
     dof_handler_scalar(*grid_in->triangulation),
@@ -65,20 +63,20 @@ Operator<dim, Number>::Operator(
 
   // Quadrature rule
   if(param.n_q_points_convective == QuadratureRule::Standard)
-    n_q_points_conv = degree + 1;
+    n_q_points_conv = param.degree + 1;
   else if(param.n_q_points_convective == QuadratureRule::Overintegration32k)
-    n_q_points_conv = degree + (degree + 2) / 2;
+    n_q_points_conv = param.degree + (param.degree + 2) / 2;
   else if(param.n_q_points_convective == QuadratureRule::Overintegration2k)
-    n_q_points_conv = 2 * degree + 1;
+    n_q_points_conv = 2 * param.degree + 1;
   else
     AssertThrow(false, ExcMessage("Specified quadrature rule is not implemented."));
 
   if(param.n_q_points_viscous == QuadratureRule::Standard)
-    n_q_points_visc = degree + 1;
+    n_q_points_visc = param.degree + 1;
   else if(param.n_q_points_viscous == QuadratureRule::Overintegration32k)
-    n_q_points_visc = degree + (degree + 2) / 2;
+    n_q_points_visc = param.degree + (param.degree + 2) / 2;
   else if(param.n_q_points_viscous == QuadratureRule::Overintegration2k)
-    n_q_points_visc = 2 * degree + 1;
+    n_q_points_visc = 2 * param.degree + 1;
   else
     AssertThrow(false, ExcMessage("Specified quadrature rule is not implemented."));
 
@@ -114,7 +112,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_constraint(&constraint, field + dof_index_scalar);
 
   // quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(degree + 1), field + quad_index_standard);
+  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index_standard);
   matrix_free_data.insert_quadrature(QGauss<1>(n_q_points_conv),
                                      field + quad_index_overintegration_conv);
   matrix_free_data.insert_quadrature(QGauss<1>(n_q_points_visc),
@@ -418,11 +416,12 @@ Operator<dim, Number>::calculate_minimum_element_length() const
   return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 }
 
+// TODO
 template<int dim, typename Number>
 unsigned int
 Operator<dim, Number>::get_polynomial_degree() const
 {
-  return degree;
+  return param.degree;
 }
 
 template<int dim, typename Number>
@@ -434,16 +433,16 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler_vector.distribute_dofs(*fe_vector);
   dof_handler_scalar.distribute_dofs(fe_scalar);
 
-  unsigned int ndofs_per_cell = Utilities::pow(degree + 1, dim) * (dim + 2);
+  unsigned int ndofs_per_cell = Utilities::pow(param.degree + 1, dim) * (dim + 2);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-  print_parameter(pcout, "number of 1D q-points (std)", degree + 1);
+  print_parameter(pcout, "number of 1D q-points (std)", param.degree + 1);
   print_parameter(pcout, "number of 1D q-points (over-conv)", n_q_points_conv);
   print_parameter(pcout, "number of 1D q-points (over-vis)", n_q_points_visc);
 }
