@@ -936,9 +936,9 @@ template<int dim, typename Number>
 double
 SpatialOperatorBase<dim, Number>::calculate_characteristic_element_length() const
 {
-  double minimum_element_length = calculate_minimum_element_length();
+  double const h_min = calculate_minimum_element_length();
 
-  return ExaDG::calculate_characteristic_element_length(minimum_element_length, param.degree_u);
+  return ExaDG::calculate_characteristic_element_length(h_min, param.degree_u);
 }
 
 template<int dim, typename Number>
