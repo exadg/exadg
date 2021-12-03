@@ -85,9 +85,6 @@ Setup time integrator ...
 
 Calculation of time step size:
 
-  h_min:                                     5.0000e-01
-  U_max:                                     1.0000e+00
-  speed of sound:                            5.0000e+00
   CFL:                                       1.0000e-01
   Time step size (convection):               2.3148e-04
   Diffusion number:                          1.0000e-02

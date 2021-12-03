@@ -169,10 +169,7 @@ Setup BDF time integrator ...
 
 Calculation of time step size according to CFL condition:
 
-  h_min:                                     2.5000e-01
-  U_max:                                     1.0000e+00
   CFL:                                       2.5000e-01
-  exponent fe_degree:                        1.5000e+00
   Time step size (global):                   1.2028e-02
   Time step size (adaptive):                 8.5050e-03
 
