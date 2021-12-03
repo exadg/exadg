@@ -124,7 +124,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -136,8 +137,10 @@ public:
   double const end_time   = 10.0;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters() final
   {
+    InputParameters & param = this->parameters;
+
     // MATHEMATICAL MODEL
     param.equation_type   = EquationType::NavierStokes;
     param.right_hand_side = true;
@@ -179,14 +182,17 @@ public:
     param.use_combined_operator = false;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  void
+  create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    this->grid = std::make_shared<Grid<dim, Number>>(this->grid_data, this->mpi_comm);
 
     std::vector<unsigned int> repetitions({2, 1});
     Point<dim>                point1(0.0, 0.0), point2(L, H);
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                              repetitions,
+                                              point1,
+                                              point2);
 
     // indicator
     // fixed wall = 0
@@ -202,7 +208,7 @@ public:
      *   |__________________________________|
      *             indicator = 0
      */
-    for(auto cell : *grid->triangulation)
+    for(auto cell : *this->grid->triangulation)
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -225,59 +231,60 @@ public:
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, grid->periodic_faces);
-    grid->triangulation->add_periodicity(grid->periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*this->grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
-    grid->triangulation->refine_global(data.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->grid_data.n_refine_global);
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
 
     // density
-    boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
-    boundary_descriptor->density.dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
+    this->boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
+    this->boundary_descriptor->density.dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
     //  boundary_descriptor->density.neumann_bc.insert(pair(0,new
     //  Functions::ZeroFunction<dim>(1)));
     //  boundary_descriptor->density.neumann_bc.insert(pair(1,new
     //  Functions::ZeroFunction<dim>(1)));
 
     // velocity
-    boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
-    boundary_descriptor->velocity.dirichlet_bc.insert(pair(1, new VelocityBC<dim>()));
+    this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
+    this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(1, new VelocityBC<dim>()));
 
     // pressure
-    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->pressure.neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->pressure.neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->pressure.neumann_bc.insert(
+      pair(1, new Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
-    boundary_descriptor->energy.boundary_variable.insert(
+    this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Temperature));
-    boundary_descriptor->energy.boundary_variable.insert(
+    this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(1, EnergyBoundaryVariable::Temperature));
 
-    boundary_descriptor->energy.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->energy.dirichlet_bc.insert(
+    this->boundary_descriptor->energy.neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->energy.dirichlet_bc.insert(
       pair(1, new Functions::ConstantFunction<dim>(T_0, 1)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new Solution<dim>());
-    field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new Solution<dim>());
+    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output      = this->write_output;
@@ -290,7 +297,7 @@ public:
     pp_data.output_data.write_divergence  = true;
     pp_data.output_data.start_time        = start_time;
     pp_data.output_data.interval_time     = (end_time - start_time) / 10;
-    pp_data.output_data.degree            = degree;
+    pp_data.output_data.degree            = this->parameters.degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
@@ -298,7 +305,7 @@ public:
     pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 10;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -308,9 +315,9 @@ public:
 
 template<int dim, typename Number>
 std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
+get_application(std::string input_file, MPI_Comm const & comm)
 {
-  return std::make_shared<CompNS::Application<dim, Number>>(input_file);
+  return std::make_shared<CompNS::Application<dim, Number>>(input_file, comm);
 }
 
 } // namespace ExaDG

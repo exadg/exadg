@@ -130,24 +130,14 @@ public:
                  unsigned int const  n_repetitions_outer) const;
 
 private:
-  // MPI communicator
   MPI_Comm const mpi_comm;
 
-  // output to std::cout
   ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
 
-  // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
-
-  InputParameters param;
-
-  std::shared_ptr<Grid<dim, Number>> grid;
-
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
