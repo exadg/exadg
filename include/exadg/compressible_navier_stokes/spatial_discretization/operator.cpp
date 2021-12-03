@@ -416,12 +416,33 @@ Operator<dim, Number>::calculate_minimum_element_length() const
   return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 }
 
-// TODO
 template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_polynomial_degree() const
+double
+Operator<dim, Number>::calculate_time_step_cfl_global() const
 {
-  return param.degree;
+  // speed of sound a = sqrt(gamma * R * T)
+  double const speed_of_sound =
+    sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
+  double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
+
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_time_step_cfl_global(acoustic_wave_speed,
+                                               h_min,
+                                               param.degree,
+                                               param.exponent_fe_degree_cfl);
+}
+
+template<int dim, typename Number>
+double
+Operator<dim, Number>::calculate_time_step_diffusion() const
+{
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_const_time_step_diff(param.dynamic_viscosity / param.reference_density,
+                                               h_min,
+                                               param.degree,
+                                               param.exponent_fe_degree_viscous);
 }
 
 template<int dim, typename Number>

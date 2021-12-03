@@ -357,8 +357,6 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 {
   double time_step = 1.0;
 
-  unsigned int const degree_u = operator_base->get_polynomial_degree();
-
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
     time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
@@ -368,18 +366,13 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
-    double const h_min = operator_base->calculate_minimum_element_length();
-
-    double time_step_global = calculate_time_step_cfl_global(
-      cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
+    double time_step_global = operator_base->calculate_time_step_cfl_global();
+    time_step_global *= cfl;
 
     this->pcout << std::endl
                 << "Calculation of time step size according to CFL condition:" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "h_min", h_min);
-    print_parameter(this->pcout, "U_max", param.max_velocity);
     print_parameter(this->pcout, "CFL", cfl);
-    print_parameter(this->pcout, "exponent fe_degree", param.cfl_exponent_fe_degree_velocity);
     print_parameter(this->pcout, "Time step size (global)", time_step_global);
 
     if(this->adaptive_time_stepping == true)
@@ -387,10 +380,8 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
       // if u(x,t=0)=0, this time step size will tend to infinity
       // Note that in the ALE case there is no possibility to know the grid velocity at this point
       // and to use it for the calculation of the time step size.
-      double time_step_adap =
-        operator_base->calculate_time_step_cfl(get_velocity(),
-                                               cfl,
-                                               param.cfl_exponent_fe_degree_velocity);
+      double time_step_adap = operator_base->calculate_time_step_cfl(get_velocity());
+      time_step_adap *= cfl;
 
       // use adaptive time step size only if it is smaller, otherwise use temporary time step size
       time_step = std::min(time_step_adap, time_step_global);
@@ -413,17 +404,16 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
-    double const h_min = operator_base->calculate_minimum_element_length();
-
-    time_step = calculate_time_step_max_efficiency(
-      param.c_eff, h_min, degree_u, this->order, refine_steps_time);
+    time_step          = operator_base->calculate_time_step_max_efficiency(this->order);
+    double const c_eff = param.c_eff / std::pow(2., refine_steps_time);
+    time_step *= c_eff;
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2.0, refine_steps_time));
+    print_parameter(this->pcout, "C_eff", c_eff);
     print_parameter(this->pcout, "Time step size", time_step);
   }
   else
@@ -458,8 +448,8 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
   if(param.ale_formulation == true)
     u_relative -= grid_velocity;
 
-  double new_time_step_size =
-    operator_base->calculate_time_step_cfl(u_relative, cfl, param.cfl_exponent_fe_degree_velocity);
+  double new_time_step_size = operator_base->calculate_time_step_cfl(u_relative);
+  new_time_step_size *= cfl;
 
   // make sure that time step size does not exceed maximum allowable time step size
   new_time_step_size = std::min(new_time_step_size, param.time_step_size_max);

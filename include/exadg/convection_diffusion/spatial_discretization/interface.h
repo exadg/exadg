@@ -93,30 +93,24 @@ public:
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;
 
-  // time step calculation: CFL condition (has to loop over all cells and evaluate quantities
-  // related to spatial discretization (which is why this function is part of this interface
-  // class)
+  // time step calculation: max efficiency
   virtual double
-  calculate_time_step_cfl_analytical_velocity(double const time,
-                                              double const cfl,
-                                              double const exponent_fe_degree) const = 0;
+  calculate_time_step_max_efficiency(unsigned int const order_time_integrator) const = 0;
+
+  // time step calculation: global CFL condition
+  virtual double
+  calculate_time_step_cfl_global(double const time) const = 0;
+
+  // time step calculation: local CFL condition
+  virtual double
+  calculate_time_step_cfl_analytical_velocity(double const time) const = 0;
 
   virtual double
-  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity,
-                                             double const       cfl,
-                                             double const       exponent_fe_degree) const = 0;
-
-  // needed for time step calculation
-  virtual double
-  calculate_maximum_velocity(double const time) const = 0;
+  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity) const = 0;
 
   // needed for time step calculation
   virtual double
-  calculate_minimum_element_length() const = 0;
-
-  // needed for time step calculation
-  virtual unsigned int
-  get_polynomial_degree() const = 0;
+  calculate_time_step_diffusion() const = 0;
 
   // needed for ALE-type problems
   virtual void

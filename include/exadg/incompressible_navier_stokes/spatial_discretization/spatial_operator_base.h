@@ -247,11 +247,6 @@ public:
   VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
-  // Polynomial degree required, e.g., for CFL condition (CFL_k = CFL / k^{exp}).
-  // TODO remove this function
-  unsigned int
-  get_polynomial_degree() const;
-
   void
   set_velocity_ptr(VectorType const & velocity) const;
 
@@ -303,21 +298,31 @@ public:
    * Time step calculation.
    */
 
-  // Minimum element length h_min required for global CFL condition.
+  /*
+   * Calculate time step size according to maximum efficiency criterion
+   */
   double
-  calculate_minimum_element_length() const;
+  calculate_time_step_max_efficiency(unsigned int const order_time_integrator) const;
+
+  // global CFL criterion
+  double
+  calculate_time_step_cfl_global() const;
 
   // Calculate time step size according to local CFL criterion
   double
-  calculate_time_step_cfl(VectorType const & velocity,
-                          double const       cfl,
-                          double const       exponent_degree) const;
+  calculate_time_step_cfl(VectorType const & velocity) const;
 
   // Calculate CFL numbers of cells
   void
   calculate_cfl_from_time_step(VectorType &       cfl,
                                VectorType const & velocity,
                                double const       time_step_size) const;
+
+  /*
+   * Calculates characteristic element length h
+   */
+  double
+  calculate_characteristic_element_length() const;
 
   /*
    * For certain setups and types of boundary conditions, the pressure field is only defined up to
@@ -645,6 +650,10 @@ protected:
   ConditionalOStream pcout;
 
 private:
+  // Minimum element length h_min required for global CFL condition.
+  double
+  calculate_minimum_element_length() const;
+
   /*
    * Initialization functions called during setup phase.
    */

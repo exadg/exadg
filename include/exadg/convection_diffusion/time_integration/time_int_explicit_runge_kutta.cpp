@@ -94,8 +94,6 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::calculate_time_step_size()
 {
-  unsigned int degree = pde_operator->get_polynomial_degree();
-
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
     this->time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
@@ -108,30 +106,13 @@ TimeIntExplRK<Number>::calculate_time_step_size()
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL ||
           param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    // maximum velocity
-    double max_velocity = 0.0;
-    if(param.analytical_velocity_field)
-    {
-      max_velocity = pde_operator->calculate_maximum_velocity(this->get_time());
-    }
-
-    // max_velocity computed above might be zero depending on the initial velocity field -> dt would
-    // tend to infinity
-    max_velocity = std::max(max_velocity, param.max_velocity);
-
-    double time_step_conv = calculate_time_step_cfl_global(
-      cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
+    double time_step_conv = pde_operator->calculate_time_step_cfl_global(this->get_time());
+    time_step_conv *= cfl;
 
     this->pcout << std::endl
                 << "Calculation of time step size according to CFL condition:" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "h_min", h_min);
-    print_parameter(this->pcout, "U_max", max_velocity);
     print_parameter(this->pcout, "CFL", cfl);
-    print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_convection);
     print_parameter(this->pcout, "Time step size (CFL global)", time_step_conv);
 
     // adaptive time stepping
@@ -141,8 +122,9 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
       if(param.analytical_velocity_field)
       {
-        time_step_adap = pde_operator->calculate_time_step_cfl_analytical_velocity(
-          this->get_time(), cfl, param.exponent_fe_degree_convection);
+        time_step_adap =
+          pde_operator->calculate_time_step_cfl_analytical_velocity(this->get_time());
+        time_step_adap *= cfl;
       }
       else
       {
@@ -162,15 +144,13 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     if(param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
     {
       // calculate time step according to Diffusion number condition
-      time_step_diff = calculate_const_time_step_diff(
-        diffusion_number, param.diffusivity, h_min, degree, param.exponent_fe_degree_diffusion);
+      time_step_diff = pde_operator->calculate_time_step_diffusion();
+      time_step_diff *= diffusion_number;
 
       this->pcout << std::endl
                   << "Calculation of time step size according to Diffusion condition:" << std::endl
                   << std::endl;
-      print_parameter(this->pcout, "h_min", h_min);
       print_parameter(this->pcout, "Diffusion number", diffusion_number);
-      print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_diffusion);
       print_parameter(this->pcout, "Time step size (diffusion)", time_step_diff);
 
       time_step_conv = std::min(time_step_conv, time_step_diff);
@@ -195,12 +175,9 @@ TimeIntExplRK<Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::Diffusion)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
     // calculate time step according to Diffusion number condition
-    time_step_diff = calculate_const_time_step_diff(
-      diffusion_number, param.diffusivity, h_min, degree, param.exponent_fe_degree_diffusion);
+    time_step_diff = pde_operator->calculate_time_step_diffusion();
+    time_step_diff *= diffusion_number;
 
     this->time_step =
       adjust_time_step_to_hit_end_time(this->start_time, this->end_time, time_step_diff);
@@ -208,20 +185,16 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     this->pcout << std::endl
                 << "Calculation of time step size according to Diffusion condition:" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "h_min", h_min);
     print_parameter(this->pcout, "Diffusion number", diffusion_number);
-    print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_diffusion);
     print_parameter(this->pcout, "Time step size (diffusion)", this->time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
     unsigned int const order = rk_time_integrator->get_order();
 
-    this->time_step =
-      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, refine_steps_time);
+    this->time_step    = pde_operator->calculate_time_step_max_efficiency(order);
+    double const c_eff = param.c_eff / std::pow(2., refine_steps_time);
+    this->time_step *= c_eff;
 
     this->time_step =
       adjust_time_step_to_hit_end_time(this->start_time, this->end_time, this->time_step);
@@ -229,7 +202,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2.0, refine_steps_time));
+    print_parameter(this->pcout, "C_eff", c_eff);
     print_parameter(this->pcout, "Time step size", this->time_step);
   }
   else
@@ -250,17 +223,16 @@ TimeIntExplRK<Number>::recalculate_time_step_size() const
   double new_time_step_size = std::numeric_limits<double>::max();
   if(param.analytical_velocity_field)
   {
-    new_time_step_size = pde_operator->calculate_time_step_cfl_analytical_velocity(
-      this->get_time(), cfl, param.exponent_fe_degree_convection);
+    new_time_step_size =
+      pde_operator->calculate_time_step_cfl_analytical_velocity(this->get_time());
+    new_time_step_size *= cfl;
   }
   else
   {
     AssertThrow(velocities[0] != nullptr, ExcMessage("Pointer velocities[0] is not initialized."));
 
-    new_time_step_size =
-      pde_operator->calculate_time_step_cfl_numerical_velocity(*velocities[0],
-                                                               cfl,
-                                                               param.exponent_fe_degree_convection);
+    new_time_step_size = pde_operator->calculate_time_step_cfl_numerical_velocity(*velocities[0]);
+    new_time_step_size *= cfl;
   }
 
   // make sure that time step size does not exceed maximum allowable time step size

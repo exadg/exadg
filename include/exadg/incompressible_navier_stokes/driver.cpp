@@ -593,7 +593,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   {
     dofs = pde_operator->get_dof_handler_p().n_dofs();
 
-    fe_degree = param.get_degree_p(pde_operator->get_polynomial_degree());
+    fe_degree = param.get_degree_p(param.degree_u);
   }
   else
   {

@@ -98,12 +98,7 @@ TimeIntBDFCoupled<dim, Number>::setup_derived()
 
   // scaling factor continuity equation:
   // Calculate characteristic element length h
-  double minimum_element_length = pde_operator->calculate_minimum_element_length();
-
-  unsigned int const degree_u = pde_operator->get_polynomial_degree();
-
-  characteristic_element_length =
-    calculate_characteristic_element_length(minimum_element_length, degree_u);
+  characteristic_element_length = pde_operator->calculate_characteristic_element_length();
 }
 
 template<int dim, typename Number>

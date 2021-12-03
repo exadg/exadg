@@ -83,15 +83,12 @@ calculate_const_time_step(double const dt, unsigned int const n_refine_time)
  *    temporal error: e = C_dt * dt^{n} (n: order of time integration method)
  */
 inline double
-calculate_time_step_max_efficiency(double const       c_eff,
-                                   double const       global_min_cell_diameter,
+calculate_time_step_max_efficiency(double const       global_min_cell_diameter,
                                    unsigned int const fe_degree,
-                                   unsigned int const order_time_integration,
-                                   unsigned int const n_refine_time)
+                                   unsigned int const order_time_integration)
 {
-  double const exponent = (double)(fe_degree + 1) / order_time_integration;
-  double const time_step =
-    c_eff * std::pow(global_min_cell_diameter, exponent) / std::pow(2., n_refine_time);
+  double const exponent  = (double)(fe_degree + 1) / order_time_integration;
+  double const time_step = std::pow(global_min_cell_diameter, exponent);
 
   return time_step;
 }
@@ -138,19 +135,19 @@ calculate_max_velocity(Triangulation<dim> const &     triangulation,
 /*
  * This function calculates the time step size according to the CFL condition where a global
  * criterion is used based on the maximum velocity and the minimum mesh size. Hence, this leads to a
- * conservative estimate of the time step size.
+ * conservative estimate of the time step size. The time step size computed by this function
+ * corresponds to a value of CFL = 1.
  *
  *    cfl/k^{exponent_fe_degree} = || U || * time_step / h
  */
 inline double
-calculate_time_step_cfl_global(double const       cfl,
-                               double const       max_velocity,
+calculate_time_step_cfl_global(double const       max_velocity,
                                double const       global_min_cell_diameter,
                                unsigned int const fe_degree,
                                double const       exponent_fe_degree = 2.0)
 {
   double const time_step =
-    cfl / pow(fe_degree, exponent_fe_degree) * global_min_cell_diameter / max_velocity;
+    global_min_cell_diameter / pow(fe_degree, exponent_fe_degree) / max_velocity;
 
   return time_step;
 }
@@ -161,21 +158,20 @@ calculate_time_step_cfl_global(double const       cfl,
  *    diffusion_number/k^{exponent_fe_degree} = diffusivity * time_step / h²
  */
 inline double
-calculate_const_time_step_diff(double const       diffusion_number,
-                               double const       diffusivity,
+calculate_const_time_step_diff(double const       diffusivity,
                                double const       global_min_cell_diameter,
                                unsigned int const fe_degree,
                                double const       exponent_fe_degree = 3.0)
 {
-  double const time_step = diffusion_number / pow(fe_degree, exponent_fe_degree) *
-                           pow(global_min_cell_diameter, 2.0) / diffusivity;
+  double const time_step =
+    pow(global_min_cell_diameter, 2.0) / pow(fe_degree, exponent_fe_degree) / diffusivity;
 
   return time_step;
 }
 
 /*
  * Calculate time step size according to local CFL criterion where the velocity field is a
- * prescribed analytical function.
+ * prescribed analytical function. The computed time step size corresponds to CFL = 1.0.
  */
 template<int dim, typename value_type>
 inline double
@@ -184,7 +180,6 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
                               unsigned int const                   quad_index,
                               std::shared_ptr<Function<dim>> const velocity,
                               double const                         time,
-                              double const                         cfl,
                               unsigned int const                   degree,
                               double const                         exponent_fe_degree,
                               CFLConditionType const               cfl_condition_type,
@@ -194,7 +189,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
 
   double new_time_step = std::numeric_limits<double>::max();
 
-  double const cfl_p = cfl / pow(degree, exponent_fe_degree);
+  double const cfl_p = 1.0 / pow(degree, exponent_fe_degree);
 
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
@@ -248,7 +243,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
 
 /*
  * Calculate time step size according to local CFL criterion where the velocity field is a numerical
- * solution field.
+ * solution field. The computed time step size corresponds to CFL = 1.0.
  */
 template<int dim, typename value_type>
 inline double
@@ -256,7 +251,6 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
                               unsigned int const                                     dof_index,
                               unsigned int const                                     quad_index,
                               LinearAlgebra::distributed::Vector<value_type> const & velocity,
-                              double const                                           cfl,
                               unsigned int const                                     degree,
                               double const           exponent_fe_degree,
                               CFLConditionType const cfl_condition_type,
@@ -266,7 +260,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
 
   double new_time_step = std::numeric_limits<double>::max();
 
-  double const cfl_p = cfl / pow(degree, exponent_fe_degree);
+  double const cfl_p = 1.0 / pow(degree, exponent_fe_degree);
 
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
