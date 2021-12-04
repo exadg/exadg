@@ -38,11 +38,11 @@ calculate_maximum_vertex_distance(typename Triangulation<dim>::active_cell_itera
 {
   double maximum_vertex_distance = 0.0;
 
-  for(unsigned int i = 0; i < GeometryInfo<dim>::vertices_per_cell; ++i)
+  for(const unsigned int i : cell->vertex_indices())
   {
     Point<dim> & ref_vertex = cell->vertex(i);
     // start the loop with the second vertex!
-    for(unsigned int j = 0; j < GeometryInfo<dim>::vertices_per_cell; ++j)
+    for(const unsigned int j : cell->vertex_indices())
     {
       if(j != i)
       {

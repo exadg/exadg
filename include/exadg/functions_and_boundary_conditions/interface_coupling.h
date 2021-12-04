@@ -458,13 +458,13 @@ public:
     {
       if(!cell->is_artificial() && cell->at_boundary())
       {
-        for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+        for(const unsigned int f : cell->face_indices())
         {
           if(cell->face(f)->at_boundary())
           {
             if(map_bc.find(cell->face(f)->boundary_id()) != map_bc.end())
             {
-              for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+              for(const unsigned int v : cell->face(f)->vertex_indices())
               {
                 marked_vertices[cell->face(f)->vertex_index(v)] = true;
               }

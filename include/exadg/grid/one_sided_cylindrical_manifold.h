@@ -109,9 +109,9 @@ public:
     Point<dim> x;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+    for(const unsigned int v : cell->vertex_indices())
     {
-      double shape_function_value = GeometryInfo<dim>::d_linear_shape_function(xi, v);
+      double shape_function_value = cell->reference_cell().d_linear_shape_function(xi, v);
       x += shape_function_value * cell->vertex(v);
     }
 
@@ -139,9 +139,10 @@ public:
     // calculate displacement as compared to straight sided quadrilateral element
     // on the face that is subject to the manifold
     Tensor<1, 2> displ, x_lin;
-    for(unsigned int v = 0; v < GeometryInfo<1>::vertices_per_cell; ++v)
+    for(unsigned int v : ReferenceCells::template get_hypercube<1>().vertex_indices())
     {
-      double shape_function_value = GeometryInfo<1>::d_linear_shape_function(Point<1>(xi_face), v);
+      double shape_function_value =
+        ReferenceCells::template get_hypercube<1>().d_linear_shape_function(Point<1>(xi_face), v);
 
       unsigned int vertex_id = get_vertex_id(v);
       Point<dim>   vertex    = cell->vertex(vertex_id);
@@ -153,9 +154,10 @@ public:
     displ = x_S - x_lin;
 
     // deformation decreases linearly in the second (other) direction
-    Point<1>     xi_other_1d  = Point<1>(xi_other);
-    unsigned int index_1d     = get_index_1d();
-    double       fading_value = GeometryInfo<1>::d_linear_shape_function(xi_other_1d, index_1d);
+    Point<1>     xi_other_1d = Point<1>(xi_other);
+    unsigned int index_1d    = get_index_1d();
+    double       fading_value =
+      ReferenceCells::template get_hypercube<1>().d_linear_shape_function(xi_other_1d, index_1d);
     x[0] += fading_value * displ[0];
     x[1] += fading_value * displ[1];
 
@@ -246,10 +248,10 @@ public:
     Tensor<2, dim> jacobian;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+    for(const unsigned int v : cell->vertex_indices())
     {
       Tensor<1, dim> shape_function_gradient =
-        GeometryInfo<dim>::d_linear_shape_function_gradient(xi, v);
+        cell->reference_cell().d_linear_shape_function_gradient(xi, v);
       jacobian += outer_product(cell->vertex(v), shape_function_gradient);
     }
 
@@ -417,9 +419,9 @@ public:
     Point<dim> x;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+    for(const unsigned int v : cell->vertex_indices())
     {
-      double shape_function_value = GeometryInfo<dim>::d_linear_shape_function(xi, v);
+      double shape_function_value = cell->reference_cell().d_linear_shape_function(xi, v);
       x += shape_function_value * cell->vertex(v);
     }
 
@@ -447,9 +449,10 @@ public:
     // calculate displacement as compared to straight sided quadrilateral element
     // on the face that is subject to the manifold
     Tensor<1, 2> displ, x_lin;
-    for(unsigned int v = 0; v < GeometryInfo<1>::vertices_per_cell; ++v)
+    for(const unsigned int v : ReferenceCells::template get_hypercube<1>().vertex_indices())
     {
-      double shape_function_value = GeometryInfo<1>::d_linear_shape_function(Point<1>(xi_face), v);
+      double shape_function_value =
+        ReferenceCells::template get_hypercube<1>().d_linear_shape_function(Point<1>(xi_face), v);
 
       unsigned int vertex_id = get_vertex_id(v);
       Point<dim>   vertex    = cell->vertex(vertex_id);
@@ -464,9 +467,10 @@ public:
     displ *= (1 - xi[2] * (r_0 - r_1) / r_0);
 
     // deformation decreases linearly in the second (other) direction
-    Point<1>     xi_other_1d  = Point<1>(xi_other);
-    unsigned int index_1d     = get_index_1d();
-    double       fading_value = GeometryInfo<1>::d_linear_shape_function(xi_other_1d, index_1d);
+    Point<1>     xi_other_1d = Point<1>(xi_other);
+    unsigned int index_1d    = get_index_1d();
+    double       fading_value =
+      ReferenceCells::template get_hypercube<1>().d_linear_shape_function(xi_other_1d, index_1d);
     x[0] += fading_value * displ[0];
     x[1] += fading_value * displ[1];
 
@@ -557,10 +561,10 @@ public:
     Tensor<2, dim> jacobian;
 
     // standard mapping from reference space to physical space using d-linear shape functions
-    for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+    for(const unsigned int v : cell->vertex_indices())
     {
       Tensor<1, dim> shape_function_gradient =
-        GeometryInfo<dim>::d_linear_shape_function_gradient(xi, v);
+        cell->reference_cell().d_linear_shape_function_gradient(xi, v);
       jacobian += outer_product(cell->vertex(v), shape_function_gradient);
     }
 

@@ -618,7 +618,7 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
   if(is_dg && evaluate_face_integrals())
   {
     // face integrals
-    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    unsigned int const n_faces = ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
       auto bids = (*matrix_free).get_faces_by_cells_boundary_id(cell, face);
@@ -1409,7 +1409,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
     }
 
     // loop over all faces and gather results into local diagonal local_diag
-    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    unsigned int const n_faces = ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
@@ -1699,7 +1699,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
     }
 
     // loop over all faces
-    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
+    unsigned int const n_faces = ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);

@@ -62,7 +62,7 @@ create_periodic_box(
         cell != triangulation->end();
         ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+      for(const unsigned int v : cell->vertex_indices())
       {
         if(vertex_touched[cell->vertex_index(v)] == false)
         {
@@ -79,8 +79,7 @@ create_periodic_box(
                                              endc = triangulation->end();
   for(; cell != endc; ++cell)
   {
-    for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-        ++face_number)
+    for(const unsigned int face_number : cell->face_indices())
     {
       // x-direction
       if((std::fabs(cell->face(face_number)->center()(0) - left) < 1e-12))
