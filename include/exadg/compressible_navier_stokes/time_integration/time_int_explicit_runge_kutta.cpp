@@ -133,8 +133,6 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 {
   this->pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
-  unsigned int degree = pde_operator->get_polynomial_degree();
-
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
     this->time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
@@ -143,43 +141,21 @@ TimeIntExplRK<Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    print_parameter(this->pcout, "h_min", h_min);
-
     // calculate time step according to CFL condition
-
-    // speed of sound a = sqrt(gamma * R * T)
-    double const speed_of_sound =
-      sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
-    double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
-
-    this->time_step = calculate_time_step_cfl_global(
-      cfl_number, acoustic_wave_speed, h_min, degree, param.exponent_fe_degree_cfl);
+    this->time_step = pde_operator->calculate_time_step_cfl_global();
+    this->time_step *= cfl_number;
 
     this->time_step =
       adjust_time_step_to_hit_end_time(this->start_time, this->end_time, this->time_step);
 
-    print_parameter(this->pcout, "U_max", param.max_velocity);
-    print_parameter(this->pcout, "speed of sound", speed_of_sound);
     print_parameter(this->pcout, "CFL", cfl_number);
     print_parameter(this->pcout, "Time step size (convection)", this->time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::Diffusion)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    print_parameter(this->pcout, "h_min", h_min);
-
     // calculate time step size according to diffusion number condition
-    this->time_step =
-      calculate_const_time_step_diff(diffusion_number,
-                                     param.dynamic_viscosity / param.reference_density,
-                                     h_min,
-                                     degree,
-                                     param.exponent_fe_degree_viscous);
+    this->time_step = pde_operator->calculate_time_step_diffusion();
+    this->time_step *= diffusion_number;
 
     this->time_step =
       adjust_time_step_to_hit_end_time(this->start_time, this->end_time, this->time_step);
@@ -189,36 +165,19 @@ TimeIntExplRK<Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    print_parameter(this->pcout, "h_min", h_min);
-
     double time_step_conv = std::numeric_limits<double>::max();
     double time_step_diff = std::numeric_limits<double>::max();
 
     // calculate time step according to CFL condition
+    time_step_conv = pde_operator->calculate_time_step_cfl_global();
+    time_step_conv *= cfl_number;
 
-    // speed of sound a = sqrt(gamma * R * T)
-    double const speed_of_sound =
-      sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
-    double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
-
-    time_step_conv = calculate_time_step_cfl_global(
-      cfl_number, acoustic_wave_speed, h_min, degree, param.exponent_fe_degree_cfl);
-
-    print_parameter(this->pcout, "U_max", param.max_velocity);
-    print_parameter(this->pcout, "speed of sound", speed_of_sound);
     print_parameter(this->pcout, "CFL", cfl_number);
     print_parameter(this->pcout, "Time step size (convection)", time_step_conv);
 
     // calculate time step size according to diffusion number condition
-    time_step_diff =
-      calculate_const_time_step_diff(diffusion_number,
-                                     param.dynamic_viscosity / param.reference_density,
-                                     h_min,
-                                     degree,
-                                     param.exponent_fe_degree_viscous);
+    time_step_diff = pde_operator->calculate_time_step_diffusion();
+    time_step_diff *= diffusion_number;
 
     print_parameter(this->pcout, "Diffusion number", diffusion_number);
     print_parameter(this->pcout, "Time step size (diffusion)", time_step_diff);

@@ -740,15 +740,6 @@ SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const
   return viscosity;
 }
 
-// Polynomial degree required for CFL condition, e.g., CFL_k = CFL / k^{exp}.
-// TODO remove this function
-template<int dim, typename Number>
-unsigned int
-SpatialOperatorBase<dim, Number>::get_polynomial_degree() const
-{
-  return param.degree_u;
-}
-
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
@@ -890,17 +881,36 @@ SpatialOperatorBase<dim, Number>::calculate_minimum_element_length() const
 
 template<int dim, typename Number>
 double
-SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & velocity,
-                                                          double const       cfl,
-                                                          double const       exponent_degree) const
+SpatialOperatorBase<dim, Number>::calculate_time_step_max_efficiency(
+  unsigned int const order_time_integrator) const
+{
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_time_step_max_efficiency(h_min, param.degree_u, order_time_integrator);
+}
+
+template<int dim, typename Number>
+double
+SpatialOperatorBase<dim, Number>::calculate_time_step_cfl_global() const
+{
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_time_step_cfl_global(param.max_velocity,
+                                               h_min,
+                                               param.degree_u,
+                                               param.cfl_exponent_fe_degree_velocity);
+}
+
+template<int dim, typename Number>
+double
+SpatialOperatorBase<dim, Number>::calculate_time_step_cfl(VectorType const & velocity) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
                                                     get_dof_index_velocity(),
                                                     get_quad_index_velocity_linear(),
                                                     velocity,
-                                                    cfl,
                                                     param.degree_u,
-                                                    exponent_degree,
+                                                    param.cfl_exponent_fe_degree_velocity,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
 }
@@ -922,6 +932,14 @@ SpatialOperatorBase<dim, Number>::calculate_cfl_from_time_step(VectorType &     
                              param.cfl_exponent_fe_degree_velocity);
 }
 
+template<int dim, typename Number>
+double
+SpatialOperatorBase<dim, Number>::calculate_characteristic_element_length() const
+{
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_characteristic_element_length(h_min, param.degree_u);
+}
 
 template<int dim, typename Number>
 void

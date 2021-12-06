@@ -243,29 +243,34 @@ public:
         VectorType const * velocity       = nullptr);
 
   /*
-   * Calculate time step size according to local CFL criterion
+   * Calculate time step size according to maximum efficiency criterion
+   */
+  double
+  calculate_time_step_max_efficiency(unsigned int const order_time_integrator) const;
+
+  /*
+   * Calculate time step size according to CFL criterion
    */
 
-  // use numerical velocity field
+  // global CFL criterion
   double
-  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity,
-                                             double const       cfl,
-                                             double const       exponent_degree) const;
+  calculate_time_step_cfl_global(double const time) const;
 
-  // use analytical velocity field
+  // local CFL criterion: use numerical velocity field
   double
-  calculate_time_step_cfl_analytical_velocity(double const time,
-                                              double const cfl,
-                                              double const exponent_degree) const;
+  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity) const;
 
-  // Calculate maximum velocity (required for global CFL criterion).
+  // local CFL criterion: use analytical velocity field
   double
-  calculate_maximum_velocity(double const time) const;
+  calculate_time_step_cfl_analytical_velocity(double const time) const;
 
-  // Calculate minimum element length (required for global CFL criterion).
+  /*
+   * Calculate time step size according to diffusion term
+   */
   double
-  calculate_minimum_element_length() const;
+  calculate_time_step_diffusion() const;
 
+public:
   /*
    * Setters and getters.
    */
@@ -278,9 +283,6 @@ public:
 
   DoFHandler<dim> const &
   get_dof_handler_velocity() const;
-
-  unsigned int
-  get_polynomial_degree() const;
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -295,6 +297,18 @@ public:
   get_quad_index() const;
 
 private:
+  /*
+   * Calculates maximum velocity (required for global CFL criterion).
+   */
+  double
+  calculate_maximum_velocity(double const time) const;
+
+  /*
+   * Calculates minimum element length (required for global CFL criterion).
+   */
+  double
+  calculate_minimum_element_length() const;
+
   /*
    * Initializes DoFHandlers.
    */

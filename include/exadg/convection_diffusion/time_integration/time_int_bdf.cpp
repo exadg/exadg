@@ -271,8 +271,6 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 {
   double time_step = 1.0;
 
-  unsigned int const degree = pde_operator->get_polynomial_degree();
-
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
     time_step = calculate_const_time_step(param.time_step_size, refine_steps_time);
@@ -287,28 +285,13 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     AssertThrow(param.convective_problem(),
                 ExcMessage("Specified type of time step calculation does not make sense!"));
 
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    double max_velocity = 0.0;
-    if(param.analytical_velocity_field)
-    {
-      max_velocity = pde_operator->calculate_maximum_velocity(this->get_time());
-    }
-
-    // max_velocity computed above might be zero depending on the initial velocity field -> dt would
-    // tend to infinity
-    max_velocity = std::max(max_velocity, param.max_velocity);
-
-    double time_step_global = calculate_time_step_cfl_global(
-      cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
+    double time_step_global = pde_operator->calculate_time_step_cfl_global(this->get_time());
+    time_step_global *= cfl;
 
     this->pcout << std::endl
                 << "Calculation of time step size according to CFL condition:" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "h_min", h_min);
-    print_parameter(this->pcout, "U_max", max_velocity);
     print_parameter(this->pcout, "CFL", cfl);
-    print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_convection);
     print_parameter(this->pcout, "Time step size (CFL global)", time_step_global);
 
     if(this->adaptive_time_stepping == true)
@@ -320,8 +303,9 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 
       if(param.analytical_velocity_field)
       {
-        time_step_adap = pde_operator->calculate_time_step_cfl_analytical_velocity(
-          this->get_time(), cfl, param.exponent_fe_degree_convection);
+        time_step_adap =
+          pde_operator->calculate_time_step_cfl_analytical_velocity(this->get_time());
+        time_step_adap *= cfl;
       }
       else
       {
@@ -349,18 +333,16 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    time_step = calculate_time_step_max_efficiency(
-      param.c_eff, h_min, degree, this->order, refine_steps_time);
+    time_step          = pde_operator->calculate_time_step_max_efficiency(this->order);
+    double const c_eff = param.c_eff / std::pow(2., refine_steps_time);
+    time_step *= c_eff;
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2.0, refine_steps_time));
+    print_parameter(this->pcout, "C_eff", c_eff);
     print_parameter(this->pcout, "Time step size", time_step);
   }
   else
@@ -395,8 +377,9 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
   double new_time_step_size = std::numeric_limits<double>::max();
   if(param.analytical_velocity_field)
   {
-    new_time_step_size = pde_operator->calculate_time_step_cfl_analytical_velocity(
-      this->get_time(), cfl, param.exponent_fe_degree_convection);
+    new_time_step_size =
+      pde_operator->calculate_time_step_cfl_analytical_velocity(this->get_time());
+    new_time_step_size *= cfl;
   }
   else // numerical velocity field
   {
@@ -406,10 +389,8 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
     if(param.ale_formulation == true)
       u_relative -= grid_velocity;
 
-    new_time_step_size =
-      pde_operator->calculate_time_step_cfl_numerical_velocity(u_relative,
-                                                               cfl,
-                                                               param.exponent_fe_degree_convection);
+    new_time_step_size = pde_operator->calculate_time_step_cfl_numerical_velocity(u_relative);
+    new_time_step_size *= cfl;
   }
 
   // make sure that time step size does not exceed maximum allowable time step size

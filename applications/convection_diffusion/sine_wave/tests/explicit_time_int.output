@@ -80,10 +80,7 @@ Setup time integrator ...
 
 Calculation of time step size according to CFL condition:
 
-  h_min:                                     5.0000e-01
-  U_max:                                     1.0000e+00
   CFL:                                       2.0000e-01
-  Exponent fe_degree:                        1.5000e+00
   Time step size (CFL global):               5.3995e-03
   Time step size (CFL adaptive):             5.3995e-03
 

@@ -54,13 +54,13 @@ public:
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;
 
-  // needed time step calculation
+  // time step calculation: CFL condition
   virtual double
-  calculate_minimum_element_length() const = 0;
+  calculate_time_step_cfl_global() const = 0;
 
-  // needed time step calculation
-  virtual unsigned int
-  get_polynomial_degree() const = 0;
+  // Calculate time step size according to diffusion term
+  virtual double
+  calculate_time_step_diffusion() const = 0;
 
   // explicit time integration: evaluate operator
   virtual void

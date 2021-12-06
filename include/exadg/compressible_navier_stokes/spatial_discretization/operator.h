@@ -157,14 +157,18 @@ public:
   double
   get_wall_time_operator_evaluation() const;
 
+  // global CFL criterion: calculates the time step size for a given global maximum velocity
+  double
+  calculate_time_step_cfl_global() const;
+
+  // Calculate time step size according to diffusion term
+  double
+  calculate_time_step_diffusion() const;
+
+private:
   double
   calculate_minimum_element_length() const;
 
-  // TODO: remove this function
-  unsigned int
-  get_polynomial_degree() const;
-
-private:
   void
   distribute_dofs();
 

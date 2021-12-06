@@ -167,10 +167,7 @@ Setup BDF time integrator ...
 
 Calculation of time step size according to CFL condition:
 
-  h_min:                                     1.0000e+00
-  U_max:                                     1.0000e+00
   CFL:                                       2.0000e-01
-  exponent fe_degree:                        2.0000e+00
   Time step size (global):                   5.0000e-02
   Time step size (adaptive):                 5.0000e-02
 
@@ -193,107 +190,107 @@ ________________________________________________________________________________
  Time step number = 1       t = 0.00000e+00 -> t + dt = 5.00000e-02
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 1.0093e+01:
-  Absolute error (L2-norm): 1.05388e-15
+Calculate error for velocity at time t = 1.0100e+01:
+  Absolute error (L2-norm): 1.01551e-15
 
-Calculate error for pressure at time t = 1.0093e+01:
-  Absolute error (L2-norm): 2.54455e-14
-
-________________________________________________________________________________
-
- Time step number = 102     t = 1.00933e+01 -> t + dt = 1.01945e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 2.0011e+01:
-  Absolute error (L2-norm): 7.77234e-16
-
-Calculate error for pressure at time t = 2.0011e+01:
-  Absolute error (L2-norm): 1.49759e-14
+Calculate error for pressure at time t = 1.0100e+01:
+  Absolute error (L2-norm): 3.34918e-15
 
 ________________________________________________________________________________
 
- Time step number = 200     t = 2.00109e+01 -> t + dt = 2.01121e+01
+ Time step number = 102     t = 1.01004e+01 -> t + dt = 1.02017e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 3.0030e+01:
-  Absolute error (L2-norm): 6.60021e-16
+Calculate error for velocity at time t = 2.0026e+01:
+  Absolute error (L2-norm): 8.63388e-16
 
-Calculate error for pressure at time t = 3.0030e+01:
-  Absolute error (L2-norm): 3.66149e-15
-
-________________________________________________________________________________
-
- Time step number = 299     t = 3.00297e+01 -> t + dt = 3.01309e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 4.0048e+01:
-  Absolute error (L2-norm): 6.78476e-16
-
-Calculate error for pressure at time t = 4.0048e+01:
-  Absolute error (L2-norm): 1.06551e-14
+Calculate error for pressure at time t = 2.0026e+01:
+  Absolute error (L2-norm): 1.12048e-14
 
 ________________________________________________________________________________
 
- Time step number = 398     t = 4.00485e+01 -> t + dt = 4.01497e+01
+ Time step number = 200     t = 2.00259e+01 -> t + dt = 2.01272e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 5.0067e+01:
-  Absolute error (L2-norm): 7.31115e-16
+Calculate error for velocity at time t = 3.0053e+01:
+  Absolute error (L2-norm): 9.79182e-16
 
-Calculate error for pressure at time t = 5.0067e+01:
-  Absolute error (L2-norm): 7.35121e-15
-
-________________________________________________________________________________
-
- Time step number = 497     t = 5.00673e+01 -> t + dt = 5.01685e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 6.0086e+01:
-  Absolute error (L2-norm): 5.14123e-16
-
-Calculate error for pressure at time t = 6.0086e+01:
-  Absolute error (L2-norm): 6.82496e-15
+Calculate error for pressure at time t = 3.0053e+01:
+  Absolute error (L2-norm): 2.18385e-14
 
 ________________________________________________________________________________
 
- Time step number = 596     t = 6.00861e+01 -> t + dt = 6.01873e+01
+ Time step number = 299     t = 3.00526e+01 -> t + dt = 3.01539e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 7.0004e+01:
-  Absolute error (L2-norm): 4.78612e-16
+Calculate error for velocity at time t = 4.0079e+01:
+  Absolute error (L2-norm): 9.18992e-16
 
-Calculate error for pressure at time t = 7.0004e+01:
-  Absolute error (L2-norm): 7.08202e-15
-
-________________________________________________________________________________
-
- Time step number = 694     t = 7.00037e+01 -> t + dt = 7.01049e+01
-________________________________________________________________________________
-
-Calculate error for velocity at time t = 8.0022e+01:
-  Absolute error (L2-norm): 5.31713e-16
-
-Calculate error for pressure at time t = 8.0022e+01:
-  Absolute error (L2-norm): 1.85308e-15
+Calculate error for pressure at time t = 4.0079e+01:
+  Absolute error (L2-norm): 1.30316e-14
 
 ________________________________________________________________________________
 
- Time step number = 793     t = 8.00225e+01 -> t + dt = 8.01237e+01
+ Time step number = 398     t = 4.00793e+01 -> t + dt = 4.01806e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 9.0041e+01:
-  Absolute error (L2-norm): 6.21610e-16
+Calculate error for velocity at time t = 5.0005e+01:
+  Absolute error (L2-norm): 8.13911e-16
 
-Calculate error for pressure at time t = 9.0041e+01:
-  Absolute error (L2-norm): 2.70162e-15
+Calculate error for pressure at time t = 5.0005e+01:
+  Absolute error (L2-norm): 7.92967e-15
 
 ________________________________________________________________________________
 
- Time step number = 892     t = 9.00413e+01 -> t + dt = 9.01425e+01
+ Time step number = 496     t = 5.00048e+01 -> t + dt = 5.01060e+01
 ________________________________________________________________________________
 
-Calculate error for velocity at time t = 1.0006e+02:
-  Absolute error (L2-norm): 8.15936e-16
+Calculate error for velocity at time t = 6.0031e+01:
+  Absolute error (L2-norm): 1.06468e-15
 
-Calculate error for pressure at time t = 1.0006e+02:
-  Absolute error (L2-norm): 9.82875e-15
+Calculate error for pressure at time t = 6.0031e+01:
+  Absolute error (L2-norm): 1.54704e-14
+
+________________________________________________________________________________
+
+ Time step number = 595     t = 6.00315e+01 -> t + dt = 6.01328e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 7.0058e+01:
+  Absolute error (L2-norm): 8.34695e-16
+
+Calculate error for pressure at time t = 7.0058e+01:
+  Absolute error (L2-norm): 9.77302e-15
+
+________________________________________________________________________________
+
+ Time step number = 694     t = 7.00582e+01 -> t + dt = 7.01595e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 8.0085e+01:
+  Absolute error (L2-norm): 7.70908e-16
+
+Calculate error for pressure at time t = 8.0085e+01:
+  Absolute error (L2-norm): 2.37695e-15
+
+________________________________________________________________________________
+
+ Time step number = 793     t = 8.00849e+01 -> t + dt = 8.01862e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 9.0010e+01:
+  Absolute error (L2-norm): 7.95194e-16
+
+Calculate error for pressure at time t = 9.0010e+01:
+  Absolute error (L2-norm): 2.42748e-14
+
+________________________________________________________________________________
+
+ Time step number = 891     t = 9.00104e+01 -> t + dt = 9.01116e+01
+________________________________________________________________________________
+
+Calculate error for velocity at time t = 1.0004e+02:
+  Absolute error (L2-norm): 6.26066e-16
+
+Calculate error for pressure at time t = 1.0004e+02:
+  Absolute error (L2-norm): 1.35771e-14

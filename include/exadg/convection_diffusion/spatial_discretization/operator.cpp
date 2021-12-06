@@ -870,40 +870,75 @@ Operator<dim, Number>::solve(VectorType &       sol,
   return iterations;
 }
 
-// use numerical velocity field
 template<int dim, typename Number>
 double
-Operator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
-  VectorType const & velocity,
-  double const       cfl,
-  double const       exponent_degree) const
+Operator<dim, Number>::calculate_time_step_cfl_global(double const time) const
+{
+  double max_velocity = 0.0;
+  if(param.analytical_velocity_field)
+  {
+    max_velocity = calculate_maximum_velocity(time);
+  }
+
+  // max_velocity computed above might be zero depending on the initial velocity field -> dt would
+  // tend to infinity
+  max_velocity = std::max(max_velocity, param.max_velocity);
+
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_time_step_cfl_global(max_velocity,
+                                               h_min,
+                                               param.degree,
+                                               param.exponent_fe_degree_convection);
+}
+
+template<int dim, typename Number>
+double
+Operator<dim, Number>::calculate_time_step_max_efficiency(
+  unsigned int const order_time_integrator) const
+{
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_time_step_max_efficiency(h_min, param.degree, order_time_integrator);
+}
+
+template<int dim, typename Number>
+double
+Operator<dim, Number>::calculate_time_step_diffusion() const
+{
+  double const h_min = calculate_minimum_element_length();
+
+  return ExaDG::calculate_const_time_step_diff(param.diffusivity,
+                                               h_min,
+                                               param.degree,
+                                               param.exponent_fe_degree_diffusion);
+}
+
+template<int dim, typename Number>
+double
+Operator<dim, Number>::calculate_time_step_cfl_numerical_velocity(VectorType const & velocity) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
                                                     get_dof_index_velocity(),
                                                     get_quad_index(),
                                                     velocity,
-                                                    cfl,
                                                     param.degree,
-                                                    exponent_degree,
+                                                    param.exponent_fe_degree_convection,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
 }
 
 template<int dim, typename Number>
 double
-Operator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
-  double const time,
-  double const cfl,
-  double const exponent_degree) const
+Operator<dim, Number>::calculate_time_step_cfl_analytical_velocity(double const time) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
                                                     get_dof_index(),
                                                     get_quad_index(),
                                                     field_functions->velocity,
                                                     time,
-                                                    cfl,
                                                     param.degree,
-                                                    exponent_degree,
+                                                    param.exponent_fe_degree_convection,
                                                     param.adaptive_time_stepping_cfl_type,
                                                     mpi_comm);
 }
@@ -938,14 +973,6 @@ Operator<dim, Number>::get_dof_handler_velocity() const
 {
   return matrix_free_data->get_dof_handler(get_dof_name_velocity());
 }
-
-template<int dim, typename Number>
-unsigned int
-Operator<dim, Number>::get_polynomial_degree() const
-{
-  return param.degree;
-}
-
 
 template<int dim, typename Number>
 types::global_dof_index

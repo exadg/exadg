@@ -452,11 +452,9 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
 
     if(output_data.write_cfl)
     {
-      auto param = navier_stokes_operator->get_param();
-      auto time_step_size =
-        navier_stokes_operator->calculate_time_step_cfl(velocity,
-                                                        param.cfl,
-                                                        param.cfl_exponent_fe_degree_velocity);
+      auto   param          = navier_stokes_operator->get_param();
+      double time_step_size = navier_stokes_operator->calculate_time_step_cfl(velocity);
+      time_step_size *= param.cfl;
 
       navier_stokes_operator->calculate_cfl_from_time_step(cfl, velocity, time_step_size);
     }
