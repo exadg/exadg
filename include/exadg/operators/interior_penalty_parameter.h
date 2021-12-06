@@ -73,7 +73,7 @@ calculate_penalty_parameter(AlignedVector<VectorizedArray<Number>> & array_penal
 
       // calculate surface area
       Number surface_area = 0;
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(const unsigned int f : cell->face_indices())
       {
         fe_face_values.reinit(cell, f);
         Number const factor = (cell->at_boundary(f) && !cell->has_periodic_neighbor(f)) ? 1. : 0.5;

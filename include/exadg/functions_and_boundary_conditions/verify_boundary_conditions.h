@@ -50,7 +50,7 @@ verify_boundary_conditions(BoundaryDescriptor const & boundary_descriptor,
   // Make sure that each boundary face has exactly one boundary type
   for(auto cell : *grid.triangulation)
   {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+    for(const unsigned int f : cell.face_indices())
     {
       if(cell.at_boundary(f))
       {
