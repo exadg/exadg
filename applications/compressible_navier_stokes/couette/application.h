@@ -165,8 +165,7 @@ public:
     this->param.exponent_fe_degree_viscous    = 4.0;
 
     // output of solver information
-    this->param.solver_info_data.interval_time =
-      (this->param.end_time - this->param.start_time) / 10;
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10;
 
     // SPATIAL DISCRETIZATION
     this->param.triangulation_type    = TriangulationType::Distributed;
@@ -185,8 +184,8 @@ public:
   std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid;
-    grid = std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     std::vector<unsigned int> repetitions({2, 1});
     Point<dim>                point1(0.0, 0.0), point2(L, H);

@@ -48,7 +48,7 @@ struct RestartData
   }
 
   void
-  print(ConditionalOStream const & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     pcout << "  Restart:" << std::endl;
     print_parameter(pcout, "Write restart", write_restart);

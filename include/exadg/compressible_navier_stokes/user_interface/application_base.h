@@ -92,19 +92,19 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
-  InputParameters
+  InputParameters const &
   get_parameters() const
   {
     return param;
   }
 
-  std::shared_ptr<BoundaryDescriptor<dim>>
+  std::shared_ptr<BoundaryDescriptor<dim> const>
   get_boundary_descriptor() const
   {
     return boundary_descriptor;
   }
 
-  std::shared_ptr<FieldFunctions<dim>>
+  std::shared_ptr<FieldFunctions<dim> const>
   get_field_functions() const
   {
     return field_functions;
