@@ -526,13 +526,13 @@ $(function() {
 <div class="line"><a id="l00458" name="l00458"></a><span class="lineno">  458</span>    {</div>
 <div class="line"><a id="l00459" name="l00459"></a><span class="lineno">  459</span>      <span class="keywordflow">if</span>(!cell-&gt;is_artificial() &amp;&amp; cell-&gt;at_boundary())</div>
 <div class="line"><a id="l00460" name="l00460"></a><span class="lineno">  460</span>      {</div>
-<div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> f = 0; f &lt; GeometryInfo&lt;dim&gt;::faces_per_cell; ++f)</div>
+<div class="line"><a id="l00461" name="l00461"></a><span class="lineno">  461</span>        <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> f : cell-&gt;face_indices())</div>
 <div class="line"><a id="l00462" name="l00462"></a><span class="lineno">  462</span>        {</div>
 <div class="line"><a id="l00463" name="l00463"></a><span class="lineno">  463</span>          <span class="keywordflow">if</span>(cell-&gt;face(f)-&gt;at_boundary())</div>
 <div class="line"><a id="l00464" name="l00464"></a><span class="lineno">  464</span>          {</div>
 <div class="line"><a id="l00465" name="l00465"></a><span class="lineno">  465</span>            <span class="keywordflow">if</span>(map_bc.find(cell-&gt;face(f)-&gt;boundary_id()) != map_bc.end())</div>
 <div class="line"><a id="l00466" name="l00466"></a><span class="lineno">  466</span>            {</div>
-<div class="line"><a id="l00467" name="l00467"></a><span class="lineno">  467</span>              <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; GeometryInfo&lt;dim - 1&gt;::vertices_per_cell; ++v)</div>
+<div class="line"><a id="l00467" name="l00467"></a><span class="lineno">  467</span>              <span class="keywordflow">for</span>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v : cell-&gt;face(f)-&gt;vertex_indices())</div>
 <div class="line"><a id="l00468" name="l00468"></a><span class="lineno">  468</span>              {</div>
 <div class="line"><a id="l00469" name="l00469"></a><span class="lineno">  469</span>                marked_vertices[cell-&gt;face(f)-&gt;vertex_index(v)] = <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00470" name="l00470"></a><span class="lineno">  470</span>              }</div>
