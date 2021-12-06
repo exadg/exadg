@@ -36,7 +36,6 @@
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
 #include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
 #include <exadg/grid/grid.h>
-#include <exadg/grid/mapping_degree.h>
 
 namespace ExaDG
 {
@@ -64,46 +63,19 @@ public:
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm), parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
   {
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+    field_functions     = std::make_shared<FieldFunctions<dim>>();
   }
 
   virtual ~ApplicationBase()
   {
   }
 
-  void
-  setup(unsigned int const         degree,
-        unsigned int const         refine_space,
-        ConditionalOStream const & pcout)
-  {
-    parameters.degree = degree;
-
-    set_input_parameters();
-    parameters.check_input_parameters();
-    parameters.print(pcout, "List of input parameters:");
-
-    // grid
-    grid_data.triangulation_type = parameters.triangulation_type;
-    grid_data.n_refine_global    = refine_space;
-    grid_data.mapping_degree     = get_mapping_degree(parameters.mapping, parameters.degree);
-
-    create_grid();
-    print_grid_info(pcout, *grid);
-
-    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-    field_functions     = std::make_shared<FieldFunctions<dim>>();
-
-    set_boundary_conditions();
-    CompNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
-
-    set_field_functions();
-  }
-
-private:
   virtual void
-  set_input_parameters() = 0;
+  set_input_parameters(unsigned int const degree) = 0;
 
-  virtual void
-  create_grid() = 0;
+  virtual std::shared_ptr<Grid<dim, Number>>
+  create_grid(GridData const & data) = 0;
 
   virtual void
   set_boundary_conditions() = 0;
@@ -111,7 +83,6 @@ private:
   virtual void
   set_field_functions() = 0;
 
-public:
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   create_postprocessor() = 0;
 
@@ -121,15 +92,31 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
-  MPI_Comm const & mpi_comm;
+  InputParameters
+  get_parameters() const
+  {
+    return param;
+  }
 
-  InputParameters                          parameters;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  GridData                                 grid_data;
-  std::shared_ptr<Grid<dim, Number>>       grid;
+  std::shared_ptr<BoundaryDescriptor<dim>>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<FieldFunctions<dim>>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
 
 protected:
+  MPI_Comm const & mpi_comm;
+
+  InputParameters                          param;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+
   std::string parameter_file;
 
   unsigned int n_subdivisions_1d_hypercube;

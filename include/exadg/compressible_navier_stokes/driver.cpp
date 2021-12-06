@@ -66,13 +66,30 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->setup(degree, refine_space, pcout);
+  application->set_input_parameters(degree);
+  application->get_parameters().check_input_parameters();
+  application->get_parameters().print(pcout, "List of input parameters:");
+
+  // grid
+  GridData grid_data;
+  grid_data.triangulation_type = application->get_parameters().triangulation_type;
+  grid_data.n_refine_global    = refine_space;
+  grid_data.mapping_degree =
+    get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
+
+  grid = application->create_grid(grid_data);
+  print_grid_info(pcout, *grid);
+
+  application->set_boundary_conditions();
+  CompNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
+
+  application->set_field_functions();
 
   // initialize compressible Navier-Stokes operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(application->grid,
-                                                         application->boundary_descriptor,
-                                                         application->field_functions,
-                                                         application->parameters,
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         application->get_boundary_descriptor(),
+                                                         application->get_field_functions(),
+                                                         application->get_parameters(),
                                                          "fluid",
                                                          mpi_comm);
 
@@ -81,7 +98,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-  matrix_free->reinit(*application->grid->mapping,
+  matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -98,8 +115,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
     // initialize time integrator
     time_integrator = std::make_shared<TimeIntExplRK<Number>>(
-      pde_operator, application->parameters, refine_time, mpi_comm, is_test, postprocessor);
-    time_integrator->setup(application->parameters.restarted_simulation);
+      pde_operator, application->get_parameters(), refine_time, mpi_comm, is_test, postprocessor);
+    time_integrator->setup(application->get_parameters().restarted_simulation);
   }
 
   timer_tree.insert({"Compressible flow", "Setup"}, timer.wall_time());
@@ -193,7 +210,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   // do the measurements
   double const wall_time = measure_operator_evaluation_time(operator_evaluation,
-                                                            application->parameters.degree,
+                                                            application->get_parameters().degree,
                                                             n_repetitions_inner,
                                                             n_repetitions_outer,
                                                             mpi_comm);
@@ -217,9 +234,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(application->parameters.degree,
-                                                                   dofs,
-                                                                   throughput);
+  return std::tuple<unsigned int, types::global_dof_index, double>(
+    application->get_parameters().degree, dofs, throughput);
 }
 
 template class Driver<2, float>;

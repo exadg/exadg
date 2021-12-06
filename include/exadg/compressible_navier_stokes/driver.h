@@ -139,6 +139,8 @@ private:
 
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
+  std::shared_ptr<Grid<dim, Number>> grid;
+
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 
