@@ -148,14 +148,16 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>update_after_grid_mot
 <tr class="separator:a7a06387448756d20efc44fc54020c304"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36b45c34465061c3ddd44ee95831450e"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a36b45c34465061c3ddd44ee95831450e">solve</a> (VectorType &amp;sol, VectorType const &amp;rhs, bool const update_preconditioner, double const scaling_factor=-1.0, double const time=-1.0, VectorType const *velocity=nullptr)</td></tr>
 <tr class="separator:a36b45c34465061c3ddd44ee95831450e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46491ab004f1a2b6f07cdd3c7080e265"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a46491ab004f1a2b6f07cdd3c7080e265">calculate_time_step_cfl_numerical_velocity</a> (VectorType const &amp;velocity, double const cfl, double const exponent_degree) const</td></tr>
-<tr class="separator:a46491ab004f1a2b6f07cdd3c7080e265"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f77cc1f9a0fcff8d07d18da03a45ad3"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a1f77cc1f9a0fcff8d07d18da03a45ad3">calculate_time_step_cfl_analytical_velocity</a> (double const time, double const cfl, double const exponent_degree) const</td></tr>
-<tr class="separator:a1f77cc1f9a0fcff8d07d18da03a45ad3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a3b536b1b99631f47cdb45a70acb329"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a4a3b536b1b99631f47cdb45a70acb329">calculate_maximum_velocity</a> (double const time) const</td></tr>
-<tr class="separator:a4a3b536b1b99631f47cdb45a70acb329"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14889f799c05379a5af6df08045f6b86"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#a14889f799c05379a5af6df08045f6b86">calculate_minimum_element_length</a> () const</td></tr>
-<tr class="separator:a14889f799c05379a5af6df08045f6b86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf671bc9b1af3d34e3a18e52a450fb8c"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#aaf671bc9b1af3d34e3a18e52a450fb8c">calculate_time_step_max_efficiency</a> (unsigned int const order_time_integrator) const</td></tr>
+<tr class="separator:aaf671bc9b1af3d34e3a18e52a450fb8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8d4468af191ea502447d8d32e37f8d1"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ab8d4468af191ea502447d8d32e37f8d1">calculate_time_step_cfl_global</a> (double const time) const</td></tr>
+<tr class="separator:ab8d4468af191ea502447d8d32e37f8d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2582e8c0f732ec8460b51128c9943c9"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ae2582e8c0f732ec8460b51128c9943c9">calculate_time_step_cfl_numerical_velocity</a> (VectorType const &amp;velocity) const</td></tr>
+<tr class="separator:ae2582e8c0f732ec8460b51128c9943c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9cd249d2cb74f649f613b9f7b86c283"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ae9cd249d2cb74f649f613b9f7b86c283">calculate_time_step_cfl_analytical_velocity</a> (double const time) const</td></tr>
+<tr class="separator:ae9cd249d2cb74f649f613b9f7b86c283"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4f13ce4981b62428b4c1c9148029b9e"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ac4f13ce4981b62428b4c1c9148029b9e">calculate_time_step_diffusion</a> () const</td></tr>
+<tr class="separator:ac4f13ce4981b62428b4c1c9148029b9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaefdcbd846e44b204fe540747db132f7"><td class="memItemLeft" align="right" valign="top"><a id="aaefdcbd846e44b204fe540747db132f7" name="aaefdcbd846e44b204fe540747db132f7"></a>
 MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
 <tr class="separator:aaefdcbd846e44b204fe540747db132f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,8 +167,6 @@ DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="b
 <tr class="memitem:a9b8e369e7e53dd0fdda623a7de9c3903"><td class="memItemLeft" align="right" valign="top"><a id="a9b8e369e7e53dd0fdda623a7de9c3903" name="a9b8e369e7e53dd0fdda623a7de9c3903"></a>
 DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_velocity</b> () const</td></tr>
 <tr class="separator:a9b8e369e7e53dd0fdda623a7de9c3903"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7695aa34e7599913828a92d3ba9e955"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html#ae7695aa34e7599913828a92d3ba9e955">get_polynomial_degree</a> () const</td></tr>
-<tr class="separator:ae7695aa34e7599913828a92d3ba9e955"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9bc4a5ba1d7c88cf7d824d8533e5fe4e"><td class="memItemLeft" align="right" valign="top"><a id="a9bc4a5ba1d7c88cf7d824d8533e5fe4e" name="a9bc4a5ba1d7c88cf7d824d8533e5fe4e"></a>
 types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
 <tr class="separator:a9bc4a5ba1d7c88cf7d824d8533e5fe4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -188,8 +188,8 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 <tr class="separator:aeec5447d621ff8791f2d1f16c9f5af7f inherit pub_types_classExaDG_1_1ConvDiff_1_1Interface_1_1Operator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4a3b536b1b99631f47cdb45a70acb329" name="a4a3b536b1b99631f47cdb45a70acb329"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4a3b536b1b99631f47cdb45a70acb329">&#9670;&nbsp;</a></span>calculate_maximum_velocity()</h2>
+<a id="ae9cd249d2cb74f649f613b9f7b86c283" name="ae9cd249d2cb74f649f613b9f7b86c283"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9cd249d2cb74f649f613b9f7b86c283">&#9670;&nbsp;</a></span>calculate_time_step_cfl_analytical_velocity()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -200,7 +200,7 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_maximum_velocity </td>
+          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_time_step_cfl_analytical_velocity </td>
           <td>(</td>
           <td class="paramtype">double const&#160;</td>
           <td class="paramname"><em>time</em></td><td>)</td>
@@ -218,8 +218,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a14889f799c05379a5af6df08045f6b86" name="a14889f799c05379a5af6df08045f6b86"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14889f799c05379a5af6df08045f6b86">&#9670;&nbsp;</a></span>calculate_minimum_element_length()</h2>
+<a id="ab8d4468af191ea502447d8d32e37f8d1" name="ab8d4468af191ea502447d8d32e37f8d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8d4468af191ea502447d8d32e37f8d1">&#9670;&nbsp;</a></span>calculate_time_step_cfl_global()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -230,53 +230,11 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_minimum_element_length</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="a1f77cc1f9a0fcff8d07d18da03a45ad3" name="a1f77cc1f9a0fcff8d07d18da03a45ad3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1f77cc1f9a0fcff8d07d18da03a45ad3">&#9670;&nbsp;</a></span>calculate_time_step_cfl_analytical_velocity()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_time_step_cfl_analytical_velocity </td>
+          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_time_step_cfl_global </td>
           <td>(</td>
           <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>time</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>cfl</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>exponent_degree</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td> const</td>
+          <td class="paramname"><em>time</em></td><td>)</td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -290,8 +248,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a46491ab004f1a2b6f07cdd3c7080e265" name="a46491ab004f1a2b6f07cdd3c7080e265"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a46491ab004f1a2b6f07cdd3c7080e265">&#9670;&nbsp;</a></span>calculate_time_step_cfl_numerical_velocity()</h2>
+<a id="ae2582e8c0f732ec8460b51128c9943c9" name="ae2582e8c0f732ec8460b51128c9943c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae2582e8c0f732ec8460b51128c9943c9">&#9670;&nbsp;</a></span>calculate_time_step_cfl_numerical_velocity()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -305,24 +263,64 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_time_step_cfl_numerical_velocity </td>
           <td>(</td>
           <td class="paramtype">VectorType const &amp;&#160;</td>
-          <td class="paramname"><em>velocity</em>, </td>
+          <td class="paramname"><em>velocity</em></td><td>)</td>
+          <td> const</td>
         </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ac4f13ce4981b62428b4c1c9148029b9e" name="ac4f13ce4981b62428b4c1c9148029b9e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4f13ce4981b62428b4c1c9148029b9e">&#9670;&nbsp;</a></span>calculate_time_step_diffusion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
         <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>cfl</em>, </td>
+          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_time_step_diffusion</td>
         </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="aaf671bc9b1af3d34e3a18e52a450fb8c" name="aaf671bc9b1af3d34e3a18e52a450fb8c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaf671bc9b1af3d34e3a18e52a450fb8c">&#9670;&nbsp;</a></span>calculate_time_step_max_efficiency()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
         <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double const&#160;</td>
-          <td class="paramname"><em>exponent_degree</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td> const</td>
+          <td class="memname">double <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::calculate_time_step_max_efficiency </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int const&#160;</td>
+          <td class="paramname"><em>order_time_integrator</em></td><td>)</td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -457,32 +455,6 @@ template&lt;int dim, typename Number &gt; </div>
           <td class="paramtype">VectorType &amp;&#160;</td>
           <td class="paramname"><em>vector</em></td><td>)</td>
           <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1ConvDiff_1_1Interface_1_1Operator.html">ExaDG::ConvDiff::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="ae7695aa34e7599913828a92d3ba9e955" name="ae7695aa34e7599913828a92d3ba9e955"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7695aa34e7599913828a92d3ba9e955">&#9670;&nbsp;</a></span>get_polynomial_degree()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">ExaDG::ConvDiff::Operator</a>&lt; dim, Number &gt;::get_polynomial_degree</td>
         </tr>
       </table>
   </td>

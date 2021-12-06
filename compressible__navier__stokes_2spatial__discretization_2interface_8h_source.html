@@ -125,13 +125,13 @@ $(function() {
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  prescribe_initial_conditions(VectorType &amp; src, <span class="keywordtype">double</span> <span class="keyword">const</span> evaluation_time) <span class="keyword">const</span> = 0;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="comment">// needed time step calculation</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="comment">// time step calculation: CFL condition</span></div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">virtual</span> <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  calculate_minimum_element_length() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  calculate_time_step_cfl_global() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="comment">// needed time step calculation</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">virtual</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  get_polynomial_degree() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="comment">// Calculate time step size according to diffusion term</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">virtual</span> <span class="keywordtype">double</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  calculate_time_step_diffusion() <span class="keyword">const</span> = 0;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="comment">// explicit time integration: evaluate operator</span></div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>

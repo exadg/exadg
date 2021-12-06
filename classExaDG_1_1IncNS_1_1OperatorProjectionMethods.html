@@ -182,9 +182,6 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity</b> (
 <tr class="memitem:a1469dbb63f11a5679311129edb6d9735 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a1469dbb63f11a5679311129edb6d9735" name="a1469dbb63f11a5679311129edb6d9735"></a>
 VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity_boundary_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
 <tr class="separator:a1469dbb63f11a5679311129edb6d9735 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a509ecd037311d8e5b7c0f997b9f2e50a inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a509ecd037311d8e5b7c0f997b9f2e50a" name="a509ecd037311d8e5b7c0f997b9f2e50a"></a>
-unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_polynomial_degree</b> () const</td></tr>
-<tr class="separator:a509ecd037311d8e5b7c0f997b9f2e50a inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98d70633d644c79832b2b9c80417b2dd inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a98d70633d644c79832b2b9c80417b2dd" name="a98d70633d644c79832b2b9c80417b2dd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocity_ptr</b> (VectorType const &amp;velocity) const</td></tr>
 <tr class="separator:a98d70633d644c79832b2b9c80417b2dd inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -212,15 +209,21 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_pressure_
 <tr class="memitem:a447141ab86fa9cdeef77c6b6aaddcb32 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a447141ab86fa9cdeef77c6b6aaddcb32" name="a447141ab86fa9cdeef77c6b6aaddcb32"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate_stress_bc</b> (VectorType &amp;stress, VectorType const &amp;velocity, VectorType const &amp;pressure) const</td></tr>
 <tr class="separator:a447141ab86fa9cdeef77c6b6aaddcb32 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6b3efd3845fd8a97a9a359843bc815de inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a6b3efd3845fd8a97a9a359843bc815de" name="a6b3efd3845fd8a97a9a359843bc815de"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_minimum_element_length</b> () const</td></tr>
-<tr class="separator:a6b3efd3845fd8a97a9a359843bc815de inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abaa8e9b889dd0bcf74f7e75b44feb0c2 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="abaa8e9b889dd0bcf74f7e75b44feb0c2" name="abaa8e9b889dd0bcf74f7e75b44feb0c2"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_cfl</b> (VectorType const &amp;velocity, double const cfl, double const exponent_degree) const</td></tr>
-<tr class="separator:abaa8e9b889dd0bcf74f7e75b44feb0c2 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fbac4007afa391442072323f711fbc1 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a5fbac4007afa391442072323f711fbc1" name="a5fbac4007afa391442072323f711fbc1"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_max_efficiency</b> (unsigned int const order_time_integrator) const</td></tr>
+<tr class="separator:a5fbac4007afa391442072323f711fbc1 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8aee422c5af620c94487df5c12e2629a inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a8aee422c5af620c94487df5c12e2629a" name="a8aee422c5af620c94487df5c12e2629a"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_cfl_global</b> () const</td></tr>
+<tr class="separator:a8aee422c5af620c94487df5c12e2629a inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a53dec9ee2cc13a3990f41dc84ea87e inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a3a53dec9ee2cc13a3990f41dc84ea87e" name="a3a53dec9ee2cc13a3990f41dc84ea87e"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_time_step_cfl</b> (VectorType const &amp;velocity) const</td></tr>
+<tr class="separator:a3a53dec9ee2cc13a3990f41dc84ea87e inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37b959bb2952ab56d5f80e72035b2f8e inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a37b959bb2952ab56d5f80e72035b2f8e" name="a37b959bb2952ab56d5f80e72035b2f8e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_cfl_from_time_step</b> (VectorType &amp;cfl, VectorType const &amp;velocity, double const time_step_size) const</td></tr>
 <tr class="separator:a37b959bb2952ab56d5f80e72035b2f8e inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1d6d289ce39bb9ea3297ae79dbfa07b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="af1d6d289ce39bb9ea3297ae79dbfa07b" name="af1d6d289ce39bb9ea3297ae79dbfa07b"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_characteristic_element_length</b> () const</td></tr>
+<tr class="separator:af1d6d289ce39bb9ea3297ae79dbfa07b inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98e816e2b9fd5dfcc864ca19a041e713 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a98e816e2b9fd5dfcc864ca19a041e713" name="a98e816e2b9fd5dfcc864ca19a041e713"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_pressure_level_undefined</b> () const</td></tr>
 <tr class="separator:a98e816e2b9fd5dfcc864ca19a041e713 inherit pub_methods_classExaDG_1_1IncNS_1_1SpatialOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>

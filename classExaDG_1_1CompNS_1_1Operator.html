@@ -164,10 +164,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_divergence</b
 <tr class="separator:abe523c1d711ac1ad3c0d1c44869ace89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bcc325776905654140295befc2c6126"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1Operator.html#a1bcc325776905654140295befc2c6126">get_wall_time_operator_evaluation</a> () const</td></tr>
 <tr class="separator:a1bcc325776905654140295befc2c6126"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad17339986468b9393d1be272283af36f"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1Operator.html#ad17339986468b9393d1be272283af36f">calculate_minimum_element_length</a> () const</td></tr>
-<tr class="separator:ad17339986468b9393d1be272283af36f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa47e0b9e1b93517858c24d93bba5450c"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1Operator.html#aa47e0b9e1b93517858c24d93bba5450c">get_polynomial_degree</a> () const</td></tr>
-<tr class="separator:aa47e0b9e1b93517858c24d93bba5450c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa455e175217660f2ce7697adcca4ad52"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1Operator.html#aa455e175217660f2ce7697adcca4ad52">calculate_time_step_cfl_global</a> () const</td></tr>
+<tr class="separator:aa455e175217660f2ce7697adcca4ad52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9b06863fb50840270c55be92b83d009"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1Operator.html#ae9b06863fb50840270c55be92b83d009">calculate_time_step_diffusion</a> () const</td></tr>
+<tr class="separator:ae9b06863fb50840270c55be92b83d009"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -177,8 +177,8 @@ typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="
 <tr class="separator:a4c94cc45ff5a7917869329553336e035 inherit pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad17339986468b9393d1be272283af36f" name="ad17339986468b9393d1be272283af36f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad17339986468b9393d1be272283af36f">&#9670;&nbsp;</a></span>calculate_minimum_element_length()</h2>
+<a id="aa455e175217660f2ce7697adcca4ad52" name="aa455e175217660f2ce7697adcca4ad52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa455e175217660f2ce7697adcca4ad52">&#9670;&nbsp;</a></span>calculate_time_step_cfl_global()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -189,7 +189,33 @@ template&lt;int dim, typename Number &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">double <a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a>&lt; dim, Number &gt;::calculate_minimum_element_length</td>
+          <td class="memname">double <a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a>&lt; dim, Number &gt;::calculate_time_step_cfl_global</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classExaDG_1_1CompNS_1_1Interface_1_1Operator.html">ExaDG::CompNS::Interface::Operator&lt; Number &gt;</a>.</p>
+
+</div>
+</div>
+<a id="ae9b06863fb50840270c55be92b83d009" name="ae9b06863fb50840270c55be92b83d009"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9b06863fb50840270c55be92b83d009">&#9670;&nbsp;</a></span>calculate_time_step_diffusion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim, typename Number &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">double <a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a>&lt; dim, Number &gt;::calculate_time_step_diffusion</td>
         </tr>
       </table>
   </td>
@@ -236,32 +262,6 @@ template&lt;int dim, typename Number &gt; </div>
           <td></td>
           <td>)</td>
           <td></td><td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Implements <a class="el" href="classExaDG_1_1CompNS_1_1Interface_1_1Operator.html">ExaDG::CompNS::Interface::Operator&lt; Number &gt;</a>.</p>
-
-</div>
-</div>
-<a id="aa47e0b9e1b93517858c24d93bba5450c" name="aa47e0b9e1b93517858c24d93bba5450c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa47e0b9e1b93517858c24d93bba5450c">&#9670;&nbsp;</a></span>get_polynomial_degree()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int dim, typename Number &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned int <a class="el" href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a>&lt; dim, Number &gt;::get_polynomial_degree</td>
         </tr>
       </table>
   </td>
