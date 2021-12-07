@@ -29,6 +29,9 @@
 #include <exadg/utilities/general_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
+// application
+#include <exadg/compressible_navier_stokes/user_interface/declare_get_application.h>
+
 namespace ExaDG
 {
 // forward declarations

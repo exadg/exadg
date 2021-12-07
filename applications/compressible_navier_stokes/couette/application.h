@@ -312,14 +312,8 @@ public:
 
 } // namespace CompNS
 
-template<int dim, typename Number>
-std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file, MPI_Comm const & comm)
-{
-  return std::make_shared<CompNS::Application<dim, Number>>(input_file, comm);
-}
-
 } // namespace ExaDG
 
+#include <exadg/compressible_navier_stokes/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COUETTE_H_ */
