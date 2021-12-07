@@ -39,7 +39,8 @@ enum class TriangulationType
 {
   Undefined,
   Distributed,
-  FullyDistributed
+  FullyDistributed,
+  Serial
 };
 
 std::string

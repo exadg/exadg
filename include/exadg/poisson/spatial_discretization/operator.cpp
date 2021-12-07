@@ -22,6 +22,7 @@
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/fe_system.h>
 #ifdef DEAL_II_WITH_PETSC
 #  include <deal.II/lac/petsc_vector.h>
@@ -76,18 +77,38 @@ Operator<dim, Number, n_components>::distribute_dofs()
   if(n_components == 1)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<FE_DGQ<dim>>(param.degree);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<FE_DGQ<dim>>(param.degree);
+      else
+        fe = std::make_shared<FE_SimplexDGP<dim>>(param.degree);
+    }
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<FE_Q<dim>>(param.degree);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<FE_Q<dim>>(param.degree);
+      else
+        fe = std::make_shared<FE_SimplexP<dim>>(param.degree);
+    }
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
+      else
+        fe = std::make_shared<FESystem<dim>>(FE_SimplexDGP<dim>(param.degree), dim);
+    }
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(param.degree), dim);
+    {
+      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+        fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(param.degree), dim);
+      else
+        fe = std::make_shared<FESystem<dim>>(FE_SimplexP<dim>(param.degree), dim);
+    }
     else
       AssertThrow(false, ExcMessage("not implemented."));
   }
@@ -98,7 +119,8 @@ Operator<dim, Number, n_components>::distribute_dofs()
 
   dof_handler.distribute_dofs(*fe);
 
-  dof_handler.distribute_mg_dofs();
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    dof_handler.distribute_mg_dofs();
 
   // affine constraints only relevant for continuous FE discretization
   if(param.spatial_discretization == SpatialDiscretization::CG)
@@ -168,7 +190,11 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
+
+  if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
+  else
+    matrix_free_data.insert_quadrature(QGaussSimplex<dim>(param.degree + 1), get_quad_name());
 
   // In order to set constrained degrees of freedom for continuous Galerkin
   // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
@@ -178,6 +204,9 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
+    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+                ExcNotImplemented());
+
     matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
   }

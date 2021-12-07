@@ -77,6 +77,11 @@ public:
     {
       triangulation = std::make_shared<parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
     }
+    else if(data.triangulation_type == TriangulationType::Serial)
+    {
+      AssertDimension(Utilities::MPI::n_mpi_processes(mpi_comm), 1);
+      triangulation = std::make_shared<Triangulation<dim>>();
+    }
     else
     {
       AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));

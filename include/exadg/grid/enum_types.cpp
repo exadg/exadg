@@ -45,6 +45,9 @@ enum_to_string(TriangulationType const enum_type)
     case TriangulationType::FullyDistributed:
       string_type = "FullyDistributed";
       break;
+    case TriangulationType::Serial:
+      string_type = "Serial";
+      break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
       break;
