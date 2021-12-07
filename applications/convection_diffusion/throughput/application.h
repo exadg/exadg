@@ -66,7 +66,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -92,55 +93,54 @@ public:
   MeshType    mesh_type        = MeshType::Cartesian;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.problem_type    = ProblemType::Unsteady;
-    param.equation_type   = EquationType::ConvectionDiffusion;
-    param.right_hand_side = false;
+    this->param.problem_type    = ProblemType::Unsteady;
+    this->param.equation_type   = EquationType::ConvectionDiffusion;
+    this->param.right_hand_side = false;
     // Note: set parameter store_analytical_velocity_in_dof_vector to test different implementation
     // variants
-    param.analytical_velocity_field = true;
+    this->param.analytical_velocity_field = true;
 
     // PHYSICAL QUANTITIES
-    param.start_time  = 0.0;
-    param.end_time    = 1.0;
-    param.diffusivity = 1.0;
+    this->param.start_time  = 0.0;
+    this->param.end_time    = 1.0;
+    this->param.diffusivity = 1.0;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization       = TemporalDiscretization::BDF;
-    param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
-    param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    param.time_step_size                = 1.e-2;
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+    this->param.time_step_size                = 1.e-2;
 
     // SPATIAL DISCRETIZATION
-
-    // triangulation
-    param.triangulation_type = TriangulationType::Distributed;
-
-    // mapping
-    param.mapping = MappingType::Affine;
+    this->param.triangulation_type = TriangulationType::Distributed;
+    this->param.mapping            = MappingType::Affine;
+    this->param.degree             = degree;
 
     // convective term
-    param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
     // viscous term
-    param.IP_factor = 1.0;
+    this->param.IP_factor = 1.0;
 
     // SOLVER
-    param.solver         = Solver::GMRES;
-    param.preconditioner = Preconditioner::None;
+    this->param.solver         = Solver::GMRES;
+    this->param.preconditioner = Preconditioner::None;
 
     // NUMERICAL PARAMETERS
-    param.use_cell_based_face_loops               = false;
-    param.use_combined_operator                   = true;
-    param.store_analytical_velocity_in_dof_vector = true;
+    this->param.use_cell_based_face_loops               = false;
+    this->param.use_combined_operator                   = true;
+    this->param.store_analytical_velocity_in_dof_vector = true;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     double const left = -1.0, right = 1.0;
     double const deformation = 0.1;
@@ -160,7 +160,7 @@ public:
     }
 
     create_periodic_box(grid->triangulation,
-                        data.n_refine_global,
+                        grid_data.n_refine_global,
                         grid->periodic_faces,
                         this->n_subdivisions_1d_hypercube,
                         left,
@@ -172,37 +172,26 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
-    (void)boundary_descriptor;
   }
 
-
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
     // these lines show exemplarily how the field functions are filled
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->velocity.reset(new Velocity<dim>(dim));
-  }
-
-  void
-  set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
-  {
-    // these lines show exemplarily how the analytical solution is filled
-    analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->velocity.reset(new Velocity<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
-    (void)degree;
-
     PostProcessorData<dim> pp_data;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -210,14 +199,8 @@ public:
 
 } // namespace ConvDiff
 
-template<int dim, typename Number>
-std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<ConvDiff::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/convection_diffusion/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_ */

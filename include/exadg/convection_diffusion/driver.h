@@ -152,11 +152,6 @@ private:
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 
-  InputParameters param;
-
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
 

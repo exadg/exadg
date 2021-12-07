@@ -41,13 +41,11 @@
 #include <exadg/utilities/hypercube_resolution_parameters.h>
 #include <exadg/utilities/throughput_parameters.h>
 
+// application
+#include <exadg/convection_diffusion/user_interface/declare_get_application.h>
+
 namespace ExaDG
 {
-// forward declarations
-template<int dim, typename Number>
-std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>
-get_application(std::string input_file);
-
 void
 create_input_file(std::string const & input_file)
 {
@@ -68,7 +66,7 @@ create_input_file(std::string const & input_file)
     // for the automatic generation of a default input file
     unsigned int const Dim = 2;
     typedef double     Number;
-    get_application<Dim, Number>(input_file)->add_parameters(prm);
+    ConvDiff::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
   }
   catch(...)
   {
@@ -94,7 +92,7 @@ run(ThroughputParameters const & throughput,
     std::make_shared<ConvDiff::Driver<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> application =
-    get_application<dim, Number>(input_file);
+    ConvDiff::get_application<dim, Number>(input_file, mpi_comm);
 
   application->set_subdivisions_hypercube(n_cells_1d);
 

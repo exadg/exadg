@@ -50,7 +50,7 @@ public:
 
   // check correctness of parameters
   void
-  check_input_parameters();
+  check_input_parameters() const;
 
   bool
   linear_system_including_convective_term_has_to_be_solved() const;
@@ -69,26 +69,26 @@ public:
 
   // print functions
   void
-  print(ConditionalOStream & pcout, std::string const & name);
+  print(ConditionalOStream const & pcout, std::string const & name) const;
 
 private:
   void
-  print_parameters_mathematical_model(ConditionalOStream & pcout);
+  print_parameters_mathematical_model(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_physical_quantities(ConditionalOStream & pcout);
+  print_parameters_physical_quantities(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_temporal_discretization(ConditionalOStream & pcout);
+  print_parameters_temporal_discretization(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_spatial_discretization(ConditionalOStream & pcout);
+  print_parameters_spatial_discretization(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_solver(ConditionalOStream & pcout);
+  print_parameters_solver(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_numerical_parameters(ConditionalOStream & pcout);
+  print_parameters_numerical_parameters(ConditionalOStream const & pcout) const;
 
 public:
   /**************************************************************************************/

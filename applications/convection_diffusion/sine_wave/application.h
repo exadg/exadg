@@ -57,7 +57,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -74,68 +75,67 @@ public:
   bool const ale = false;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.problem_type                = ProblemType::Unsteady;
-    param.equation_type               = EquationType::Convection;
-    param.analytical_velocity_field   = true;
-    param.right_hand_side             = false;
-    param.ale_formulation             = ale;
-    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+    this->param.problem_type                = ProblemType::Unsteady;
+    this->param.equation_type               = EquationType::Convection;
+    this->param.analytical_velocity_field   = true;
+    this->param.right_hand_side             = false;
+    this->param.ale_formulation             = ale;
+    this->param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
     // PHYSICAL QUANTITIES
-    param.start_time  = start_time;
-    param.end_time    = end_time;
-    param.diffusivity = 0.0;
+    this->param.start_time  = start_time;
+    this->param.end_time    = end_time;
+    this->param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization = TemporalDiscretization::ExplRK;
-    param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
-    param.treatment_of_convective_term =
+    this->param.temporal_discretization = TemporalDiscretization::ExplRK;
+    this->param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.treatment_of_convective_term =
       TreatmentOfConvectiveTerm::Explicit; // ExplicitOIF; //Explicit;
-    param.time_integrator_oif           = TimeIntegratorRK::ExplRK3Stage7Reg2;
-    param.adaptive_time_stepping        = true;
-    param.order_time_integrator         = 2;
-    param.start_with_low_order          = false;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-    param.time_step_size                = 1.0e-1;
-    param.cfl                           = 0.2;
-    param.cfl_oif                       = param.cfl / 1.0;
-    param.diffusion_number              = 0.01;
+    this->param.time_integrator_oif           = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    this->param.adaptive_time_stepping        = true;
+    this->param.order_time_integrator         = 2;
+    this->param.start_with_low_order          = false;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+    this->param.time_step_size                = 1.0e-1;
+    this->param.cfl                           = 0.2;
+    this->param.cfl_oif                       = this->param.cfl / 1.0;
+    this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION
-
-    // triangulation
-    param.triangulation_type = TriangulationType::Distributed;
-
-    // polynomial degree
-    param.mapping = MappingType::Affine;
+    this->param.triangulation_type = TriangulationType::Distributed;
+    this->param.mapping            = MappingType::Affine;
+    this->param.degree             = degree;
 
     // convective term
-    param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
     // viscous term
-    param.IP_factor = 1.0;
+    this->param.IP_factor = 1.0;
 
     // SOLVER
-    param.solver         = Solver::GMRES;
-    param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
-    param.preconditioner = Preconditioner::InverseMassMatrix;
+    this->param.solver         = Solver::GMRES;
+    this->param.solver_data    = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    this->param.preconditioner = Preconditioner::InverseMassMatrix;
     // use default parameters of multigrid preconditioner
 
     // output of solver information
-    param.solver_info_data.interval_time = (end_time - start_time) / 20;
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 20;
 
     // NUMERICAL PARAMETERS
-    param.use_combined_operator                   = true;
-    param.store_analytical_velocity_in_dof_vector = false;
+    this->param.use_combined_operator                   = true;
+    this->param.store_analytical_velocity_in_dof_vector = false;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     GridGenerator::hyper_cube(*grid->triangulation, left, right);
 
@@ -149,13 +149,13 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   std::shared_ptr<Function<dim>>
-  set_mesh_movement_function() final
+  create_mesh_movement_function() final
   {
     std::shared_ptr<Function<dim>> mesh_motion;
 
@@ -175,27 +175,27 @@ public:
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
-    boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
+    this->boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
   }
 
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new Solution<dim>());
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new Solution<dim>());
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
     std::vector<double> velocity = std::vector<double>(dim, 0.0);
     velocity[0]                  = 1.0;
-    field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
+    this->field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output  = this->write_output;
@@ -203,7 +203,7 @@ public:
     pp_data.output_data.filename      = this->output_name;
     pp_data.output_data.start_time    = start_time;
     pp_data.output_data.interval_time = (end_time - start_time) / 100;
-    pp_data.output_data.degree        = degree;
+    pp_data.output_data.degree        = this->param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(1));
@@ -211,7 +211,7 @@ public:
     pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 20;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -219,14 +219,8 @@ public:
 
 } // namespace ConvDiff
 
-template<int dim, typename Number>
-std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<ConvDiff::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/convection_diffusion/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_PROPAGATING_SINE_WAVE_H_ */
