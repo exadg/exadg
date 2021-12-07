@@ -34,7 +34,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -43,80 +44,85 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param)
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.right_hand_side = false;
+    this->param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type     = TriangulationType::Distributed;
-    param.mapping                = MappingType::Cubic; // Isoparametric;
-    param.spatial_discretization = SpatialDiscretization::DG;
-    param.IP_factor              = 1.0e0;
+    this->param.triangulation_type     = TriangulationType::Distributed;
+    this->param.mapping                = MappingType::Cubic; // Isoparametric;
+    this->param.degree                 = degree;
+    this->param.spatial_discretization = SpatialDiscretization::DG;
+    this->param.IP_factor              = 1.0e0;
 
     // SOLVER
-    param.solver                      = Poisson::Solver::CG;
-    param.solver_data.abs_tol         = 1.e-20;
-    param.solver_data.rel_tol         = 1.e-10;
-    param.solver_data.max_iter        = 1e4;
-    param.compute_performance_metrics = true;
-    param.preconditioner              = Preconditioner::Multigrid;
-    param.multigrid_data.type         = MultigridType::cphMG;
-    param.multigrid_data.p_sequence   = PSequenceType::Bisect;
+    this->param.solver                      = Poisson::Solver::CG;
+    this->param.solver_data.abs_tol         = 1.e-20;
+    this->param.solver_data.rel_tol         = 1.e-10;
+    this->param.solver_data.max_iter        = 1e4;
+    this->param.compute_performance_metrics = true;
+    this->param.preconditioner              = Preconditioner::Multigrid;
+    this->param.multigrid_data.type         = MultigridType::cphMG;
+    this->param.multigrid_data.p_sequence   = PSequenceType::Bisect;
     // MG smoother
-    param.multigrid_data.smoother_data.smoother   = MultigridSmoother::Chebyshev;
-    param.multigrid_data.smoother_data.iterations = 5;
+    this->param.multigrid_data.smoother_data.smoother   = MultigridSmoother::Chebyshev;
+    this->param.multigrid_data.smoother_data.iterations = 5;
     // MG coarse grid solver
-    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
-    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-    param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
+    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+    this->param.multigrid_data.coarse_problem.preconditioner =
+      MultigridCoarseGridPreconditioner::AMG;
+    this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
-                                                       data.n_refine_global,
+                                                       grid_data.n_refine_global,
                                                        grid->periodic_faces);
 
     return grid;
   }
 
-  void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
+  void
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // inflow
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ConstantFunction<dim>(1.0, 1)));
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(1, new Functions::ConstantFunction<dim>(1.0, 1)));
 
     // outflow
-    boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
 
     // walls
-    boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm)
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->write_output;
     pp_data.output_data.directory          = this->output_directory + "vtu/";
     pp_data.output_data.filename           = this->output_name;
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = degree;
+    pp_data.output_data.degree             = this->param.degree;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -124,13 +130,8 @@ public:
 
 } // namespace Poisson
 
-template<int dim, typename Number>
-std::shared_ptr<Poisson::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<Poisson::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
+
+#include <exadg/poisson/user_interface/implement_get_application.h>
 
 #endif

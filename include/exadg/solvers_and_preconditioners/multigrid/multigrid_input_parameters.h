@@ -188,7 +188,7 @@ struct AMGData
   };
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "    AMG type", enum_to_string(amg_type));
 
@@ -241,7 +241,7 @@ struct SmootherData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Smoother", enum_to_string(smoother));
     print_parameter(pcout, "Preconditioner smoother", enum_to_string(preconditioner));
@@ -289,7 +289,7 @@ struct CoarseGridData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Coarse grid solver", enum_to_string(solver));
     print_parameter(pcout, "Coarse grid preconditioner", enum_to_string(preconditioner));
@@ -329,7 +329,7 @@ struct MultigridData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Multigrid type", enum_to_string(type));
 

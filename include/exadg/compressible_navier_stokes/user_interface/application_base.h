@@ -75,7 +75,7 @@ public:
   set_input_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data) = 0;
+  create_grid(GridData const & grid_data) = 0;
 
   virtual void
   set_boundary_conditions() = 0;

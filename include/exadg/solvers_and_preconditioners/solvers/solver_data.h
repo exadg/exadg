@@ -47,7 +47,7 @@ struct SolverData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Maximum number of iterations", max_iter);
     print_parameter(pcout, "Absolute solver tolerance", abs_tol);

@@ -12,11 +12,14 @@
 
 namespace ExaDG
 {
+namespace CompNS
+{
 // forward declarations
 template<int dim, typename Number>
-std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
+std::shared_ptr<ApplicationBase<dim, Number>>
 get_application(std::string input_file, MPI_Comm const & comm);
 
+} // namespace CompNS
 } // namespace ExaDG
 
 

@@ -67,8 +67,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  param.degree = degree;
-  application->set_input_parameters(param);
+  application->set_input_parameters(degree);
   param.check_input_parameters();
   param.print(pcout, "List of input parameters:");
 
@@ -78,17 +77,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   grid_data.n_refine_global    = refine_space;
   grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree);
 
-  grid = application->create_grid(grid_data, mpi_comm);
+  grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
   // boundary conditions
-  boundary_descriptor = std::make_shared<BoundaryDescriptor<0, dim>>();
-  application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *grid);
+  application->set_boundary_conditions();
+  verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
 
   // field functions
-  field_functions = std::make_shared<FieldFunctions<dim>>();
-  application->set_field_functions(field_functions);
+  application->set_field_functions();
 
   // compute aspect ratio
   if(false)
@@ -130,7 +127,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize postprocessor
   if(not(is_throughput_study))
   {
-    postprocessor = application->create_postprocessor(param.degree, mpi_comm);
+    postprocessor = application->create_postprocessor();
     postprocessor->setup(pde_operator->get_dof_handler(), *grid->mapping);
   }
 
