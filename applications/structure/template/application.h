@@ -32,7 +32,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -53,50 +54,46 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & parameters) final
+  set_input_parameters(unsigned int const degree) final
   {
-    (void)parameters;
+    this->param.degree = degree;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
-    (void)boundary_descriptor;
   }
 
   void
-  set_material(MaterialDescriptor & material_descriptor) final
+  set_material() final
   {
-    (void)material_descriptor;
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    (void)field_functions;
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
-    (void)degree;
-
     PostProcessorData<dim> pp_data;
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
-      new PostProcessor<dim, Number>(pp_data, mpi_comm));
+      new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return post;
   }
@@ -104,14 +101,8 @@ public:
 
 } // namespace Structure
 
-template<int dim, typename Number>
-std::shared_ptr<Structure::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<Structure::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/structure/user_interface/implement_get_application.h>
 
 #endif

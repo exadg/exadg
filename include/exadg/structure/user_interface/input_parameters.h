@@ -91,7 +91,7 @@ public:
   }
 
   void
-  check_input_parameters()
+  check_input_parameters() const
   {
     // MATHEMATICAL MODEL
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("Parameter must be defined."));
@@ -118,7 +118,7 @@ public:
   }
 
   void
-  print(ConditionalOStream & pcout, std::string const & name)
+  print(ConditionalOStream const & pcout, std::string const & name) const
   {
     pcout << std::endl << name << std::endl;
 
@@ -139,7 +139,7 @@ public:
   }
 
   void
-  print_parameters_mathematical_model(ConditionalOStream & pcout)
+  print_parameters_mathematical_model(ConditionalOStream const & pcout) const
   {
     pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -157,7 +157,7 @@ public:
   }
 
   void
-  print_parameters_physical_quantities(ConditionalOStream & pcout)
+  print_parameters_physical_quantities(ConditionalOStream const & pcout) const
   {
     pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -168,7 +168,7 @@ public:
   }
 
   void
-  print_parameters_temporal_discretization(ConditionalOStream & pcout)
+  print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
   {
     pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -193,7 +193,7 @@ public:
   }
 
   void
-  print_parameters_spatial_discretization(ConditionalOStream & pcout)
+  print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
   {
     pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -203,7 +203,7 @@ public:
   }
 
   void
-  print_parameters_solver(ConditionalOStream & pcout)
+  print_parameters_solver(ConditionalOStream const & pcout) const
   {
     pcout << std::endl << "Solver:" << std::endl;
 

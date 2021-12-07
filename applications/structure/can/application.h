@@ -113,7 +113,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -152,40 +153,40 @@ public:
   double area_force   = 1.0; // "Neumann"
 
   void
-  set_input_parameters(InputParameters & parameters) final
+  set_input_parameters(unsigned int const degree) final
   {
-    parameters.problem_type         = ProblemType::QuasiStatic; // Steady;
-    parameters.body_force           = use_volume_force;
-    parameters.large_deformation    = true;
-    parameters.pull_back_body_force = false;
-    parameters.pull_back_traction   = false;
+    this->param.problem_type         = ProblemType::QuasiStatic; // Steady;
+    this->param.body_force           = use_volume_force;
+    this->param.large_deformation    = true;
+    this->param.pull_back_body_force = false;
+    this->param.pull_back_traction   = false;
 
-    parameters.triangulation_type = TriangulationType::Distributed;
-    parameters.mapping            = MappingType::Affine;
+    this->param.triangulation_type = TriangulationType::Distributed;
+    this->param.mapping            = MappingType::Affine;
+    this->param.degree             = degree;
 
-    parameters.load_increment            = 0.01;
-    parameters.adjust_load_increment     = false; // true;
-    parameters.desired_newton_iterations = 10;
+    this->param.load_increment            = 0.01;
+    this->param.adjust_load_increment     = false; // true;
+    this->param.desired_newton_iterations = 10;
 
-    parameters.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
-    parameters.solver                                 = Solver::CG;
-    parameters.solver_data                            = SolverData(1e3, 1.e-14, 1.e-6, 100);
-    parameters.preconditioner                         = Preconditioner::Multigrid;
-    parameters.update_preconditioner                  = true;
-    parameters.update_preconditioner_every_time_steps = 1;
-    parameters.update_preconditioner_every_newton_iterations = 1;
-    parameters.multigrid_data.type                           = MultigridType::hpMG;
-    parameters.multigrid_data.coarse_problem.solver          = MultigridCoarseGridSolver::CG;
-    parameters.multigrid_data.coarse_problem.preconditioner =
+    this->param.newton_solver_data                     = Newton::SolverData(1e3, 1.e-10, 1.e-6);
+    this->param.solver                                 = Solver::CG;
+    this->param.solver_data                            = SolverData(1e3, 1.e-14, 1.e-6, 100);
+    this->param.preconditioner                         = Preconditioner::Multigrid;
+    this->param.update_preconditioner                  = true;
+    this->param.update_preconditioner_every_time_steps = 1;
+    this->param.update_preconditioner_every_newton_iterations = 1;
+    this->param.multigrid_data.type                           = MultigridType::hpMG;
+    this->param.multigrid_data.coarse_problem.solver          = MultigridCoarseGridSolver::CG;
+    this->param.multigrid_data.coarse_problem.preconditioner =
       MultigridCoarseGridPreconditioner::AMG;
-
-    this->param = parameters;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     AssertThrow(dim == 3, ExcMessage("This application only makes sense for dim=3."));
 
@@ -219,13 +220,13 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
@@ -233,8 +234,8 @@ public:
     // Dirichlet BC at the bottom (boundary_id = 0)
     //     std::vector<bool> mask_lower = {false, false, true}; // let boundary slide in x-y-plane
     std::vector<bool> mask_lower = {true, true, true}; // clamp boundary, i.e., fix all directions
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask_lower));
+    this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask_lower));
 
     // BC at the top (boundary_id = 1)
     bool const incremental_loading = (this->param.problem_type == ProblemType::QuasiStatic);
@@ -243,13 +244,13 @@ public:
       std::vector<bool> mask_upper = {false, false, true}; // let boundary slide in x-y-plane
       //      std::vector<bool> mask_upper = {true, true, true}; // clamp boundary, i.e., fix all
       //      directions
-      boundary_descriptor->dirichlet_bc.insert(
+      this->boundary_descriptor->dirichlet_bc.insert(
         pair(1, new DisplacementDBC<dim>(displacement, incremental_loading)));
-      boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_upper));
+      this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, mask_upper));
     }
     else if(boundary_type == "Neumann")
     {
-      boundary_descriptor->neumann_bc.insert(
+      this->boundary_descriptor->neumann_bc.insert(
         pair(1, new AreaForce<dim>(area_force, incremental_loading)));
     }
     else
@@ -258,11 +259,11 @@ public:
     }
 
     // Neumann BC at the inner and outer radius (boundary_id = 2)
-    boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void
-  set_material(MaterialDescriptor & material_descriptor) final
+  set_material() final
   {
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 
@@ -270,33 +271,34 @@ public:
     double const       E = 200.0e9, nu = 0.3;
     Type2D const       two_dim_type = Type2D::PlaneStress;
 
-    material_descriptor.insert(Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
+    this->material_descriptor->insert(
+      Pair(0, new StVenantKirchhoffData<dim>(type, E, nu, two_dim_type)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
     if(use_volume_force)
-      field_functions->right_hand_side.reset(new VolumeForce<dim>(volume_force));
+      this->field_functions->right_hand_side.reset(new VolumeForce<dim>(volume_force));
     else
-      field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+      this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 
-    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output       = this->write_output;
     pp_data.output_data.directory          = this->output_directory + "vtu/";
     pp_data.output_data.filename           = this->output_name;
     pp_data.output_data.write_higher_order = false;
-    pp_data.output_data.degree             = degree;
+    pp_data.output_data.degree             = this->param.degree;
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
-      new PostProcessor<dim, Number>(pp_data, mpi_comm));
+      new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return post;
   }
@@ -304,13 +306,8 @@ public:
 
 } // namespace Structure
 
-template<int dim, typename Number>
-std::shared_ptr<Structure::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<Structure::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
+
+#include <exadg/structure/user_interface/implement_get_application.h>
 
 #endif

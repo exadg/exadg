@@ -65,36 +65,38 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  param.degree = degree;
-  application->set_input_parameters(param);
-  param.check_input_parameters();
-  param.print(pcout, "List of input parameters:");
+  application->set_input_parameters(degree);
+  application->get_parameters().check_input_parameters();
+  application->get_parameters().print(pcout, "List of input parameters:");
 
   // grid
   GridData grid_data;
-  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.triangulation_type = application->get_parameters().triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree);
+  grid_data.mapping_degree =
+    get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
 
-  grid = application->create_grid(grid_data, mpi_comm);
+  grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
   // boundary conditions
-  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-  application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *grid);
+  application->set_boundary_conditions();
+  verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
 
   // material_descriptor
-  material_descriptor = std::make_shared<MaterialDescriptor>();
-  application->set_material(*material_descriptor);
+  application->set_material();
 
   // field functions
-  field_functions = std::make_shared<FieldFunctions<dim>>();
-  application->set_field_functions(field_functions);
+  application->set_field_functions();
 
   // setup spatial operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(
-    grid, boundary_descriptor, field_functions, material_descriptor, param, "elasticity", mpi_comm);
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         application->get_boundary_descriptor(),
+                                                         application->get_field_functions(),
+                                                         application->get_material_descriptor(),
+                                                         application->get_parameters(),
+                                                         "elasticity",
+                                                         mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
@@ -112,26 +114,26 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(!is_throughput_study)
   {
     // initialize postprocessor
-    postprocessor = application->create_postprocessor(param.degree, mpi_comm);
+    postprocessor = application->create_postprocessor();
     postprocessor->setup(pde_operator->get_dof_handler(), pde_operator->get_mapping());
 
     // initialize time integrator/driver
-    if(param.problem_type == ProblemType::Unsteady)
+    if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
       time_integrator = std::make_shared<TimeIntGenAlpha<dim, Number>>(
-        pde_operator, postprocessor, refine_time, param, mpi_comm, is_test);
-      time_integrator->setup(param.restarted_simulation);
+        pde_operator, postprocessor, refine_time, application->get_parameters(), mpi_comm, is_test);
+      time_integrator->setup(application->get_parameters().restarted_simulation);
     }
-    else if(param.problem_type == ProblemType::Steady)
+    else if(application->get_parameters().problem_type == ProblemType::Steady)
     {
       driver_steady = std::make_shared<DriverSteady<dim, Number>>(
-        pde_operator, postprocessor, param, mpi_comm, is_test);
+        pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
       driver_steady->setup();
     }
-    else if(param.problem_type == ProblemType::QuasiStatic)
+    else if(application->get_parameters().problem_type == ProblemType::QuasiStatic)
     {
       driver_quasi_static = std::make_shared<DriverQuasiStatic<dim, Number>>(
-        pde_operator, postprocessor, param, mpi_comm, is_test);
+        pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
       driver_quasi_static->setup();
     }
     else
@@ -149,15 +151,15 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::solve() const
 {
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
     time_integrator->timeloop();
   }
-  else if(param.problem_type == ProblemType::Steady)
+  else if(application->get_parameters().problem_type == ProblemType::Steady)
   {
     driver_steady->solve_problem();
   }
-  else if(param.problem_type == ProblemType::QuasiStatic)
+  else if(application->get_parameters().problem_type == ProblemType::QuasiStatic)
   {
     driver_quasi_static->solve_problem();
   }
@@ -179,12 +181,12 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   pcout << "Performance results for elasticity solver:" << std::endl;
 
   // Iterations
-  if(param.problem_type == ProblemType::QuasiStatic)
+  if(application->get_parameters().problem_type == ProblemType::QuasiStatic)
   {
     pcout << std::endl << "Average number of iterations:" << std::endl;
     driver_quasi_static->print_iterations();
   }
-  else if(param.problem_type == ProblemType::Unsteady)
+  else if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
     pcout << std::endl << "Average number of iterations:" << std::endl;
     time_integrator->print_iterations();
@@ -192,15 +194,15 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 
   timer_tree.insert({"Elasticity"}, total_time);
 
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
     timer_tree.insert({"Elasticity"}, time_integrator->get_timings());
   }
-  else if(param.problem_type == ProblemType::Steady)
+  else if(application->get_parameters().problem_type == ProblemType::Steady)
   {
     timer_tree.insert({"Elasticity"}, driver_steady->get_timings());
   }
-  else if(param.problem_type == ProblemType::QuasiStatic)
+  else if(application->get_parameters().problem_type == ProblemType::QuasiStatic)
   {
     timer_tree.insert({"Elasticity"}, driver_quasi_static->get_timings());
   }
@@ -222,7 +224,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
   double const              total_time_avg  = total_time_data.avg;
 
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
     unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
     print_throughput_unsteady(pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
@@ -257,14 +259,14 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   pde_operator->initialize_dof_vector(dst);
   src = 1.0;
 
-  if(param.large_deformation && operator_type == OperatorType::Linearized)
+  if(application->get_parameters().large_deformation && operator_type == OperatorType::Linearized)
   {
     pde_operator->initialize_dof_vector(linearization);
     linearization = 1.0;
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
-    if(param.large_deformation)
+    if(application->get_parameters().large_deformation)
     {
       if(operator_type == OperatorType::Nonlinear)
       {
@@ -283,8 +285,11 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   };
 
   // do the measurements
-  double const wall_time = measure_operator_evaluation_time(
-    operator_evaluation, param.degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
+  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
+                                                            application->get_parameters().degree,
+                                                            n_repetitions_inner,
+                                                            n_repetitions_outer,
+                                                            mpi_comm);
 
   // calculate throughput
   types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
@@ -305,7 +310,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree, dofs, throughput);
+  return std::tuple<unsigned int, types::global_dof_index, double>(
+    application->get_parameters().degree, dofs, throughput);
 }
 
 template class Driver<2, float>;
