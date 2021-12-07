@@ -87,20 +87,24 @@ LaplaceOperator<dim, Number, n_components>::rhs_add_dirichlet_bc_from_dof_vector
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_face(unsigned int const face) const
+LaplaceOperator<dim, Number, n_components>::reinit_face(unsigned int const face,
+                                                        IntegratorFace &   integrator_m,
+                                                        IntegratorFace &   integrator_p) const
 {
-  Base::reinit_face(face);
+  Base::reinit_face(face, integrator_m, integrator_p);
 
-  kernel.reinit_face(*this->integrator_m, *this->integrator_p);
+  kernel.reinit_face(integrator_m, integrator_p);
 }
 
 template<int dim, typename Number, int n_components>
 void
-LaplaceOperator<dim, Number, n_components>::reinit_boundary_face(unsigned int const face) const
+LaplaceOperator<dim, Number, n_components>::reinit_boundary_face(
+  unsigned int const face,
+  IntegratorFace &   integrator_m) const
 {
-  Base::reinit_boundary_face(face);
+  Base::reinit_boundary_face(face, integrator_m);
 
-  kernel.reinit_boundary_face(*this->integrator_m);
+  kernel.reinit_boundary_face(integrator_m);
 }
 
 template<int dim, typename Number, int n_components>
@@ -108,11 +112,13 @@ void
 LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based(
   unsigned int const       cell,
   unsigned int const       face,
-  types::boundary_id const boundary_id) const
+  types::boundary_id const boundary_id,
+  IntegratorFace &         integrator_m,
+  IntegratorFace &         integrator_p) const
 {
-  Base::reinit_face_cell_based(cell, face, boundary_id);
+  Base::reinit_face_cell_based(cell, face, boundary_id, integrator_m, integrator_p);
 
-  kernel.reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+  kernel.reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
 }
 
 template<int dim, typename Number, int n_components>
@@ -294,23 +300,24 @@ LaplaceOperator<dim, Number, n_components>::
     VectorType const &              src,
     Range const &                   range) const
 {
+  IntegratorFace integrator_m(matrix_free, true, operator_data.dof_index, operator_data.quad_index);
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(face, integrator_m);
 
     // deviating from the standard function boundary_face_loop_inhom_operator()
     // because the boundary condition comes from the vector src
-    this->integrator_m->gather_evaluate(src,
-                                        this->integrator_flags.face_evaluate.value,
-                                        this->integrator_flags.face_evaluate.gradient);
+    integrator_m.gather_evaluate(src,
+                                 this->integrator_flags.face_evaluate.value,
+                                 this->integrator_flags.face_evaluate.gradient);
 
-    do_boundary_integral_dirichlet_bc_from_dof_vector(*this->integrator_m,
+    do_boundary_integral_dirichlet_bc_from_dof_vector(integrator_m,
                                                       OperatorType::inhomogeneous,
                                                       matrix_free.get_boundary_id(face));
 
-    this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
-                                          this->integrator_flags.face_integrate.gradient,
-                                          dst);
+    integrator_m.integrate_scatter(this->integrator_flags.face_integrate.value,
+                                   this->integrator_flags.face_integrate.gradient,
+                                   dst);
   }
 }
 

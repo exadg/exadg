@@ -69,18 +69,6 @@ OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & 
   // in 3D, and thus necessarily has dofs_per_vertex=0
   is_dg = (this->matrix_free->get_dof_handler(this->data.dof_index).get_fe().dofs_per_vertex == 0);
 
-  integrator   = std::make_shared<IntegratorCell>(*this->matrix_free,
-                                                this->data.dof_index,
-                                                this->data.quad_index);
-  integrator_m = std::make_shared<IntegratorFace>(*this->matrix_free,
-                                                  true,
-                                                  this->data.dof_index,
-                                                  this->data.quad_index);
-  integrator_p = std::make_shared<IntegratorFace>(*this->matrix_free,
-                                                  false,
-                                                  this->data.dof_index,
-                                                  this->data.quad_index);
-
   if(!is_dg)
   {
     constrained_indices.clear();
@@ -423,7 +411,7 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
       [&](auto & integrator) -> void {
         // TODO this line is currently needed as bugfix, but should be
         // removed because reinit is now done twice
-        this->reinit_cell(integrator.get_current_cell_index());
+        this->reinit_cell(integrator.get_current_cell_index(), integrator);
 
         integrator.evaluate(integrator_flags.cell_evaluate.value,
                             integrator_flags.cell_evaluate.gradient,
@@ -594,26 +582,29 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
   VectorizedArray<Number> const * const src,
   unsigned int const                    problem_size) const
 {
+  IntegratorCell integrator(*this->matrix_free, data.dof_index, data.quad_index);
+  IntegratorFace integrator_m(*this->matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace integrator_p(*this->matrix_free, false, data.dof_index, data.quad_index);
   (void)problem_size;
 
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
-  this->reinit_cell(cell);
+  this->reinit_cell(cell, integrator);
 
-  for(unsigned int i = 0; i < integrator->dofs_per_cell; ++i)
-    integrator->begin_dof_values()[i] = src[i];
+  for(unsigned int i = 0; i < integrator.dofs_per_cell; ++i)
+    integrator.begin_dof_values()[i] = src[i];
 
-  integrator->evaluate(integrator_flags.cell_evaluate.value,
-                       integrator_flags.cell_evaluate.gradient,
-                       integrator_flags.cell_evaluate.hessian);
+  integrator.evaluate(integrator_flags.cell_evaluate.value,
+                      integrator_flags.cell_evaluate.gradient,
+                      integrator_flags.cell_evaluate.hessian);
 
-  this->do_cell_integral(*integrator);
+  this->do_cell_integral(integrator);
 
-  integrator->integrate(integrator_flags.cell_integrate.value,
-                        integrator_flags.cell_integrate.gradient);
+  integrator.integrate(integrator_flags.cell_integrate.value,
+                       integrator_flags.cell_integrate.gradient);
 
-  for(unsigned int i = 0; i < integrator->dofs_per_cell; ++i)
-    dst[i] += integrator->begin_dof_values()[i];
+  for(unsigned int i = 0; i < integrator.dofs_per_cell; ++i)
+    dst[i] += integrator.begin_dof_values()[i];
 
   if(is_dg && evaluate_face_integrals())
   {
@@ -624,30 +615,30 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
       auto bids = (*matrix_free).get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
-      this->reinit_face_cell_based(cell, face, bid);
+      this->reinit_face_cell_based(cell, face, bid, integrator_m, integrator_p);
 
-      for(unsigned int i = 0; i < integrator_m->dofs_per_cell; ++i)
-        integrator_m->begin_dof_values()[i] = src[i];
+      for(unsigned int i = 0; i < integrator_m.dofs_per_cell; ++i)
+        integrator_m.begin_dof_values()[i] = src[i];
 
       // no need to read dof values for integrator_p (already initialized with 0)
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
       if(bid == numbers::internal_face_boundary_id) // internal face
       {
-        this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
+        this->do_face_int_integral_cell_based(integrator_m, integrator_p);
       }
       else // boundary face
       {
-        this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+        this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
       }
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
-      for(unsigned int i = 0; i < integrator_m->dofs_per_cell; ++i)
-        dst[i] += integrator_m->begin_dof_values()[i];
+      for(unsigned int i = 0; i < integrator_m.dofs_per_cell; ++i)
+        dst[i] += integrator_m.begin_dof_values()[i];
     }
   }
 }
@@ -844,24 +835,28 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_cell(unsigned int const cell) const
+OperatorBase<dim, Number, n_components>::reinit_cell(unsigned int const cell,
+                                                     IntegratorCell &   integrator) const
 {
-  integrator->reinit(cell);
+  integrator.reinit(cell);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_face(unsigned int const face) const
+OperatorBase<dim, Number, n_components>::reinit_face(unsigned int const face,
+                                                     IntegratorFace &   integrator_m,
+                                                     IntegratorFace &   integrator_p) const
 {
-  integrator_m->reinit(face);
-  integrator_p->reinit(face);
+  integrator_p.reinit(face);
+  integrator_m.reinit(face);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_boundary_face(unsigned int const face) const
+OperatorBase<dim, Number, n_components>::reinit_boundary_face(unsigned int const face,
+                                                              IntegratorFace &   integrator_m) const
 {
-  integrator_m->reinit(face);
+  integrator_m.reinit(face);
 }
 
 template<int dim, typename Number, int n_components>
@@ -950,17 +945,15 @@ OperatorBase<dim, Number, n_components>::do_face_ext_integral(IntegratorFace & i
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit_face_cell_based(
-  unsigned int const       cell,
-  unsigned int const       face,
-  types::boundary_id const boundary_id) const
+OperatorBase<dim, Number, n_components>::reinit_face_cell_based(unsigned int const       cell,
+                                                                unsigned int const       face,
+                                                                types::boundary_id const bid,
+                                                                IntegratorFace & integrator_m,
+                                                                IntegratorFace & integrator_p) const
 {
-  integrator_m->reinit(cell, face);
-
-  if(boundary_id == numbers::internal_face_boundary_id) // internal face
-  {
-    integrator_p->reinit(cell, face);
-  }
+  (void)bid;
+  integrator_m.reinit(cell, face);
+  integrator_p.reinit(cell, face);
 }
 
 template<int dim, typename Number, int n_components>
@@ -1018,23 +1011,23 @@ OperatorBase<dim, Number, n_components>::cell_loop_dbc(MatrixFree<dim, Number> c
                                                        VectorType const &              src,
                                                        Range const &                   range) const
 {
-  (void)matrix_free;
+  IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
-    integrator->read_dof_values_plain(src);
+    integrator.read_dof_values_plain(src);
 
-    integrator->evaluate(integrator_flags.cell_evaluate.value,
-                         integrator_flags.cell_evaluate.gradient,
-                         integrator_flags.cell_evaluate.hessian);
+    integrator.evaluate(integrator_flags.cell_evaluate.value,
+                        integrator_flags.cell_evaluate.gradient,
+                        integrator_flags.cell_evaluate.hessian);
 
-    this->do_cell_integral(*integrator);
+    this->do_cell_integral(integrator);
 
-    integrator->integrate_scatter(integrator_flags.cell_integrate.value,
-                                  integrator_flags.cell_integrate.gradient,
-                                  dst);
+    integrator.integrate_scatter(integrator_flags.cell_integrate.value,
+                                 integrator_flags.cell_integrate.gradient,
+                                 dst);
   }
 }
 
@@ -1045,22 +1038,22 @@ OperatorBase<dim, Number, n_components>::cell_loop(MatrixFree<dim, Number> const
                                                    VectorType const &              src,
                                                    Range const &                   range) const
 {
-  (void)matrix_free;
+  IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
-    integrator->gather_evaluate(src,
-                                integrator_flags.cell_evaluate.value,
-                                integrator_flags.cell_evaluate.gradient,
-                                integrator_flags.cell_evaluate.hessian);
+    integrator.gather_evaluate(src,
+                               integrator_flags.cell_evaluate.value,
+                               integrator_flags.cell_evaluate.gradient,
+                               integrator_flags.cell_evaluate.hessian);
 
-    this->do_cell_integral(*integrator);
+    this->do_cell_integral(integrator);
 
-    integrator->integrate_scatter(integrator_flags.cell_integrate.value,
-                                  integrator_flags.cell_integrate.gradient,
-                                  dst);
+    integrator.integrate_scatter(integrator_flags.cell_integrate.value,
+                                 integrator_flags.cell_integrate.gradient,
+                                 dst);
   }
 }
 
@@ -1071,27 +1064,28 @@ OperatorBase<dim, Number, n_components>::face_loop(MatrixFree<dim, Number> const
                                                    VectorType const &              src,
                                                    Range const &                   range) const
 {
-  (void)matrix_free;
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace integrator_p(matrix_free, false, data.dof_index, data.quad_index);
 
   for(auto face = range.first; face < range.second; ++face)
   {
-    this->reinit_face(face);
+    this->reinit_face(face, integrator_m, integrator_p);
 
-    integrator_m->gather_evaluate(src,
-                                  integrator_flags.face_evaluate.value,
-                                  integrator_flags.face_evaluate.gradient);
-    integrator_p->gather_evaluate(src,
-                                  integrator_flags.face_evaluate.value,
-                                  integrator_flags.face_evaluate.gradient);
+    integrator_m.gather_evaluate(src,
+                                 integrator_flags.face_evaluate.value,
+                                 integrator_flags.face_evaluate.gradient);
+    integrator_p.gather_evaluate(src,
+                                 integrator_flags.face_evaluate.value,
+                                 integrator_flags.face_evaluate.gradient);
 
-    this->do_face_integral(*integrator_m, *integrator_p);
+    this->do_face_integral(integrator_m, integrator_p);
 
-    integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
-                                    integrator_flags.face_integrate.gradient,
-                                    dst);
-    integrator_p->integrate_scatter(integrator_flags.face_integrate.value,
-                                    integrator_flags.face_integrate.gradient,
-                                    dst);
+    integrator_m.integrate_scatter(integrator_flags.face_integrate.value,
+                                   integrator_flags.face_integrate.gradient,
+                                   dst);
+    integrator_p.integrate_scatter(integrator_flags.face_integrate.value,
+                                   integrator_flags.face_integrate.gradient,
+                                   dst);
   }
 }
 
@@ -1103,21 +1097,22 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
   VectorType const &              src,
   Range const &                   range) const
 {
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(face, integrator_m);
 
-    integrator_m->gather_evaluate(src,
-                                  integrator_flags.face_evaluate.value,
-                                  integrator_flags.face_evaluate.gradient);
+    integrator_m.gather_evaluate(src,
+                                 integrator_flags.face_evaluate.value,
+                                 integrator_flags.face_evaluate.gradient);
 
-    do_boundary_integral(*integrator_m,
+    do_boundary_integral(integrator_m,
                          OperatorType::homogeneous,
                          matrix_free.get_boundary_id(face));
 
-    integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
-                                    integrator_flags.face_integrate.gradient,
-                                    dst);
+    integrator_m.integrate_scatter(integrator_flags.face_integrate.value,
+                                   integrator_flags.face_integrate.gradient,
+                                   dst);
   }
 }
 
@@ -1130,39 +1125,40 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
   Range const &                   range) const
 {
   (void)src;
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
 
   if(is_dg)
   {
     for(unsigned int face = range.first; face < range.second; face++)
     {
-      this->reinit_boundary_face(face);
+      this->reinit_boundary_face(face, integrator_m);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
 
-      do_boundary_integral(*integrator_m,
+      do_boundary_integral(integrator_m,
                            OperatorType::inhomogeneous,
                            matrix_free.get_boundary_id(face));
 
-      integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
-                                      integrator_flags.face_integrate.gradient,
-                                      dst);
+      integrator_m.integrate_scatter(integrator_flags.face_integrate.value,
+                                     integrator_flags.face_integrate.gradient,
+                                     dst);
     }
   }
   else // continuous FE discretization (e.g., apply Neumann BCs)
   {
     for(unsigned int face = range.first; face < range.second; face++)
     {
-      this->reinit_boundary_face(face);
+      this->reinit_boundary_face(face, integrator_m);
 
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
 
-      do_boundary_integral_continuous(*integrator_m, matrix_free.get_boundary_id(face));
+      do_boundary_integral_continuous(integrator_m, matrix_free.get_boundary_id(face));
 
-      integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
-                                      integrator_flags.face_integrate.gradient,
-                                      dst);
+      integrator_m.integrate_scatter(integrator_flags.face_integrate.value,
+                                     integrator_flags.face_integrate.gradient,
+                                     dst);
     }
   }
 }
@@ -1175,19 +1171,20 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_full_operator(
   VectorType const &              src,
   Range const &                   range) const
 {
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(face, integrator_m);
 
-    integrator_m->gather_evaluate(src,
-                                  integrator_flags.face_evaluate.value,
-                                  integrator_flags.face_evaluate.gradient);
+    integrator_m.gather_evaluate(src,
+                                 integrator_flags.face_evaluate.value,
+                                 integrator_flags.face_evaluate.gradient);
 
-    do_boundary_integral(*integrator_m, OperatorType::full, matrix_free.get_boundary_id(face));
+    do_boundary_integral(integrator_m, OperatorType::full, matrix_free.get_boundary_id(face));
 
-    integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
-                                    integrator_flags.face_integrate.gradient,
-                                    dst);
+    integrator_m.integrate_scatter(integrator_flags.face_integrate.value,
+                                   integrator_flags.face_integrate.gradient,
+                                   dst);
   }
 }
 
@@ -1233,38 +1230,39 @@ OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
 {
   (void)matrix_free;
   (void)src;
+  IntegratorCell integrator(matrix_free, this->data.dof_index, this->data.quad_index);
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator->dofs_per_cell;
+  unsigned int const                     dofs_per_cell = integrator.dofs_per_cell;
   AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       // write standard basis into dof values of FEEvaluation
-      this->create_standard_basis(j, *integrator);
+      this->create_standard_basis(j, integrator);
 
-      integrator->evaluate(integrator_flags.cell_evaluate.value,
-                           integrator_flags.cell_evaluate.gradient,
-                           integrator_flags.cell_evaluate.hessian);
+      integrator.evaluate(integrator_flags.cell_evaluate.value,
+                          integrator_flags.cell_evaluate.gradient,
+                          integrator_flags.cell_evaluate.hessian);
 
-      this->do_cell_integral(*integrator);
+      this->do_cell_integral(integrator);
 
-      integrator->integrate(integrator_flags.cell_integrate.value,
-                            integrator_flags.cell_integrate.gradient);
+      integrator.integrate(integrator_flags.cell_integrate.value,
+                           integrator_flags.cell_integrate.gradient);
 
       // extract single value from result vector and temporally store it
-      local_diag[j] = integrator->begin_dof_values()[j];
+      local_diag[j] = integrator.begin_dof_values()[j];
     }
     // copy local diagonal entries into dof values of FEEvaluation ...
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator->begin_dof_values()[j] = local_diag[j];
+      integrator.begin_dof_values()[j] = local_diag[j];
 
     // ... and write it back to global vector
-    integrator->distribute_local_to_global(dst);
+    integrator.distribute_local_to_global(dst);
   }
 }
 
@@ -1276,58 +1274,60 @@ OperatorBase<dim, Number, n_components>::face_loop_diagonal(
   VectorType const &              src,
   Range const &                   range) const
 {
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace integrator_p(matrix_free, false, data.dof_index, data.quad_index);
   (void)matrix_free;
   (void)src;
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator_m->dofs_per_cell;
+  unsigned int const                     dofs_per_cell = integrator_m.dofs_per_cell;
   AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(auto face = range.first; face < range.second; ++face)
   {
-    this->reinit_face(face);
+    this->reinit_face(face, integrator_m, integrator_p);
 
     // interior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_m);
+      this->create_standard_basis(j, integrator_m);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_face_int_integral(*integrator_m, *integrator_p);
+      this->do_face_int_integral(integrator_m, integrator_p);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
-      local_diag[j] = integrator_m->begin_dof_values()[j];
+      local_diag[j] = integrator_m.begin_dof_values()[j];
     }
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator_m->begin_dof_values()[j] = local_diag[j];
+      integrator_m.begin_dof_values()[j] = local_diag[j];
 
-    integrator_m->distribute_local_to_global(dst);
+    integrator_m.distribute_local_to_global(dst);
 
     // exterior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_p);
+      this->create_standard_basis(j, integrator_p);
 
-      integrator_p->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_p.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_face_ext_integral(*integrator_m, *integrator_p);
+      this->do_face_ext_integral(integrator_m, integrator_p);
 
-      integrator_p->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_p.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
-      local_diag[j] = integrator_p->begin_dof_values()[j];
+      local_diag[j] = integrator_p.begin_dof_values()[j];
     }
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator_p->begin_dof_values()[j] = local_diag[j];
+      integrator_p.begin_dof_values()[j] = local_diag[j];
 
-    integrator_p->distribute_local_to_global(dst);
+    integrator_p.distribute_local_to_global(dst);
   }
 }
 
@@ -1340,36 +1340,37 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
   Range const &                   range) const
 {
   (void)src;
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator_m->dofs_per_cell;
+  unsigned int const                     dofs_per_cell = integrator_m.dofs_per_cell;
   AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
     auto bid = matrix_free.get_boundary_id(face);
 
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(face, integrator_m);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_m);
+      this->create_standard_basis(j, integrator_m);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+      this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
-      local_diag[j] = integrator_m->begin_dof_values()[j];
+      local_diag[j] = integrator_m.begin_dof_values()[j];
     }
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator_m->begin_dof_values()[j] = local_diag[j];
+      integrator_m.begin_dof_values()[j] = local_diag[j];
 
-    integrator_m->distribute_local_to_global(dst);
+    integrator_m.distribute_local_to_global(dst);
   }
 }
 
@@ -1383,29 +1384,32 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
   Range const &                   range) const
 {
   (void)src;
+  IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace integrator_p(matrix_free, false, data.dof_index, data.quad_index);
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator->dofs_per_cell;
+  unsigned int const                     dofs_per_cell = integrator.dofs_per_cell;
   AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator);
+      this->create_standard_basis(j, integrator);
 
-      integrator->evaluate(integrator_flags.cell_evaluate.value,
-                           integrator_flags.cell_evaluate.gradient,
-                           integrator_flags.cell_evaluate.hessian);
+      integrator.evaluate(integrator_flags.cell_evaluate.value,
+                          integrator_flags.cell_evaluate.gradient,
+                          integrator_flags.cell_evaluate.hessian);
 
-      this->do_cell_integral(*integrator);
+      this->do_cell_integral(integrator);
 
-      integrator->integrate(integrator_flags.cell_integrate.value,
-                            integrator_flags.cell_integrate.gradient);
+      integrator.integrate(integrator_flags.cell_integrate.value,
+                           integrator_flags.cell_integrate.gradient);
 
-      local_diag[j] = integrator->begin_dof_values()[j];
+      local_diag[j] = integrator.begin_dof_values()[j];
     }
 
     // loop over all faces and gather results into local diagonal local_diag
@@ -1415,7 +1419,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
-      this->reinit_face_cell_based(cell, face, bid);
+      this->reinit_face_cell_based(cell, face, bid, integrator_m, integrator_p);
 
 #ifdef DEBUG
       unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
@@ -1426,33 +1430,33 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
-        this->create_standard_basis(j, *integrator_m);
+        this->create_standard_basis(j, integrator_m);
 
-        integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                               integrator_flags.face_evaluate.gradient);
+        integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                              integrator_flags.face_evaluate.gradient);
 
         if(bid == numbers::internal_face_boundary_id) // internal face
         {
-          this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
+          this->do_face_int_integral_cell_based(integrator_m, integrator_p);
         }
         else // boundary face
         {
-          this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
         }
 
-        integrator_m->integrate(integrator_flags.face_integrate.value,
-                                integrator_flags.face_integrate.gradient);
+        integrator_m.integrate(integrator_flags.face_integrate.value,
+                               integrator_flags.face_integrate.gradient);
 
         // note: += for accumulation of all contributions of this (macro) cell
         //          including: cell-, face-, boundary-stiffness matrix
-        local_diag[j] += integrator_m->begin_dof_values()[j];
+        local_diag[j] += integrator_m.begin_dof_values()[j];
       }
     }
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      integrator->begin_dof_values()[j] = local_diag[j];
+      integrator.begin_dof_values()[j] = local_diag[j];
 
-    integrator->distribute_local_to_global(dst);
+    integrator.distribute_local_to_global(dst);
   }
 }
 
@@ -1464,30 +1468,30 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_
   VectorType const &              src,
   Range const &                   cell_range) const
 {
-  (void)matrix_free;
+  IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
-    integrator->read_dof_values(src);
+    integrator.read_dof_values(src);
 
     for(unsigned int v = 0; v < vectorization_length; ++v)
     {
       Vector<Number> src_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = integrator->begin_dof_values()[j][v];
+        src_vector(j) = integrator.begin_dof_values()[j][v];
 
       // apply inverse matrix
       matrices[cell * vectorization_length + v].solve(src_vector, false);
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator->begin_dof_values()[j][v] = src_vector(j);
+        integrator.begin_dof_values()[j][v] = src_vector(j);
     }
 
-    integrator->set_dof_values(dst);
+    integrator.set_dof_values(dst);
   }
 }
 
@@ -1499,31 +1503,31 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_b
   VectorType const &              src,
   Range const &                   range) const
 {
-  (void)matrix_free;
+  IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
   for(unsigned int cell = range.first; cell < range.second; ++cell)
   {
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
-    integrator->read_dof_values(src);
+    integrator.read_dof_values(src);
 
     for(unsigned int v = 0; v < vectorization_length; ++v)
     {
       Vector<Number> src_vector(dofs_per_cell);
       Vector<Number> dst_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = integrator->begin_dof_values()[j][v];
+        src_vector(j) = integrator.begin_dof_values()[j][v];
 
       // apply matrix
       matrices[cell * vectorization_length + v].vmult(dst_vector, src_vector, false);
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator->begin_dof_values()[j][v] = dst_vector(j);
+        integrator.begin_dof_values()[j][v] = dst_vector(j);
     }
 
-    integrator->set_dof_values(dst);
+    integrator.set_dof_values(dst);
   }
 }
 
@@ -1535,30 +1539,31 @@ OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
   BlockMatrix const &,
   Range const & range) const
 {
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+  IntegratorCell     integrator(matrix_free, data.dof_index, data.quad_index);
+  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
 
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator);
+      this->create_standard_basis(j, integrator);
 
-      integrator->evaluate(integrator_flags.cell_evaluate.value,
-                           integrator_flags.cell_evaluate.gradient,
-                           integrator_flags.cell_evaluate.hessian);
+      integrator.evaluate(integrator_flags.cell_evaluate.value,
+                          integrator_flags.cell_evaluate.gradient,
+                          integrator_flags.cell_evaluate.hessian);
 
-      this->do_cell_integral(*integrator);
+      this->do_cell_integral(integrator);
 
-      integrator->integrate(integrator_flags.cell_integrate.value,
-                            integrator_flags.cell_integrate.gradient);
+      integrator.integrate(integrator_flags.cell_integrate.value,
+                           integrator_flags.cell_integrate.gradient);
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices[cell * vectorization_length + v](i, j) += integrator->begin_dof_values()[i][v];
+          matrices[cell * vectorization_length + v](i, j) += integrator.begin_dof_values()[i][v];
     }
   }
 }
@@ -1571,53 +1576,55 @@ OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
   BlockMatrix const &,
   Range const & range) const
 {
-  unsigned int const dofs_per_cell = integrator_m->dofs_per_cell;
+  IntegratorFace     integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace     integrator_p(matrix_free, true, data.dof_index, data.quad_index);
+  unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
 
   for(auto face = range.first; face < range.second; ++face)
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
 
-    this->reinit_face(face);
+    this->reinit_face(face, integrator_m, integrator_p);
 
     // interior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_m);
+      this->create_standard_basis(j, integrator_m);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_face_int_integral(*integrator_m, *integrator_p);
+      this->do_face_int_integral(integrator_m, integrator_p);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = matrix_free.get_face_info(face).cells_interior[v];
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          matrices[cell](i, j) += integrator_m->begin_dof_values()[i][v];
+          matrices[cell](i, j) += integrator_m.begin_dof_values()[i][v];
       }
     }
 
     // exterior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_p);
+      this->create_standard_basis(j, integrator_p);
 
-      integrator_p->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_p.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_face_ext_integral(*integrator_m, *integrator_p);
+      this->do_face_ext_integral(integrator_m, integrator_p);
 
-      integrator_p->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_p.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = matrix_free.get_face_info(face).cells_exterior[v];
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          matrices[cell](i, j) += integrator_p->begin_dof_values()[i][v];
+          matrices[cell](i, j) += integrator_p.begin_dof_values()[i][v];
       }
     }
   }
@@ -1631,33 +1638,34 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
   BlockMatrix const &,
   Range const & range) const
 {
-  unsigned int const dofs_per_cell = integrator_m->dofs_per_cell;
+  IntegratorFace     integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
 
   for(auto face = range.first; face < range.second; ++face)
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
 
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(face, integrator_m);
 
     auto bid = matrix_free.get_boundary_id(face);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_m);
+      this->create_standard_basis(j, integrator_m);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+      this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = matrix_free.get_face_info(face).cells_interior[v];
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          matrices[cell](i, j) += integrator_m->begin_dof_values()[i][v];
+          matrices[cell](i, j) += integrator_m.begin_dof_values()[i][v];
       }
     }
   }
@@ -1672,30 +1680,33 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
   BlockMatrix const &,
   Range const & range) const
 {
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+  IntegratorCell     integrator(matrix_free, this->data.dof_index, this->data.quad_index);
+  IntegratorFace     integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace     integrator_p(matrix_free, false, data.dof_index, data.quad_index);
+  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
 
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator);
+      this->create_standard_basis(j, integrator);
 
-      integrator->evaluate(integrator_flags.cell_evaluate.value,
-                           integrator_flags.cell_evaluate.gradient,
-                           integrator_flags.cell_evaluate.hessian);
+      integrator.evaluate(integrator_flags.cell_evaluate.value,
+                          integrator_flags.cell_evaluate.gradient,
+                          integrator_flags.cell_evaluate.hessian);
 
-      this->do_cell_integral(*integrator);
+      this->do_cell_integral(integrator);
 
-      integrator->integrate(integrator_flags.cell_integrate.value,
-                            integrator_flags.cell_integrate.gradient);
+      integrator.integrate(integrator_flags.cell_integrate.value,
+                           integrator_flags.cell_integrate.gradient);
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices[cell * vectorization_length + v](i, j) += integrator->begin_dof_values()[i][v];
+          matrices[cell * vectorization_length + v](i, j) += integrator.begin_dof_values()[i][v];
     }
 
     // loop over all faces
@@ -1705,7 +1716,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
 
-      this->reinit_face_cell_based(cell, face, bid);
+      this->reinit_face_cell_based(cell, face, bid, integrator_m, integrator_p);
 
 #ifdef DEBUG
       for(unsigned int v = 0; v < n_filled_lanes; v++)
@@ -1715,27 +1726,27 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
-        this->create_standard_basis(j, *integrator_m);
+        this->create_standard_basis(j, integrator_m);
 
-        integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                               integrator_flags.face_evaluate.gradient);
+        integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                              integrator_flags.face_evaluate.gradient);
 
         if(bid == numbers::internal_face_boundary_id) // internal face
         {
-          this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
+          this->do_face_int_integral_cell_based(integrator_m, integrator_p);
         }
         else // boundary face
         {
-          this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+          this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
         }
 
-        integrator_m->integrate(integrator_flags.face_integrate.value,
-                                integrator_flags.face_integrate.gradient);
+        integrator_m.integrate(integrator_flags.face_integrate.value,
+                               integrator_flags.face_integrate.gradient);
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             matrices[cell * vectorization_length + v](i, j) +=
-              integrator_m->begin_dof_values()[i][v];
+              integrator_m.begin_dof_values()[i][v];
       }
     }
   }
@@ -1750,9 +1761,10 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
   SparseMatrix const &            src,
   Range const &                   range) const
 {
+  IntegratorCell integrator(matrix_free, this->data.dof_index, this->data.quad_index);
   (void)src;
 
-  unsigned int const dofs_per_cell = integrator->dofs_per_cell;
+  unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -1764,24 +1776,24 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
     // set their size
     std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
-    this->reinit_cell(cell);
+    this->reinit_cell(cell, integrator);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator);
+      this->create_standard_basis(j, integrator);
 
-      integrator->evaluate(integrator_flags.cell_evaluate.value,
-                           integrator_flags.cell_evaluate.gradient,
-                           integrator_flags.cell_evaluate.hessian);
+      integrator.evaluate(integrator_flags.cell_evaluate.value,
+                          integrator_flags.cell_evaluate.gradient,
+                          integrator_flags.cell_evaluate.hessian);
 
-      this->do_cell_integral(*integrator);
+      this->do_cell_integral(integrator);
 
-      integrator->integrate(integrator_flags.cell_integrate.value,
-                            integrator_flags.cell_integrate.gradient);
+      integrator.integrate(integrator_flags.cell_integrate.value,
+                           integrator_flags.cell_integrate.gradient);
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices[v](i, j) = integrator->begin_dof_values()[i][v];
+          matrices[v](i, j) = integrator.begin_dof_values()[i][v];
     }
 
     // finally assemble local matrices into global matrix
@@ -1825,8 +1837,10 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
   Range const &                   range) const
 {
   (void)src;
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
+  IntegratorFace integrator_p(matrix_free, false, data.dof_index, data.quad_index);
 
-  unsigned int const dofs_per_cell = integrator_m->dofs_per_cell;
+  unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
 
   // There are four matrices: M_mm, M_mp, M_pm, M_pp with M_mm, M_pp denoting
   // the block diagonal matrices for elements m,p and M_mp, M_pm the matrices
@@ -1849,36 +1863,36 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
     // determine number of filled vector lanes
     unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_face_batch(face);
 
-    this->reinit_face(face);
+    this->reinit_face(face, integrator_m, integrator_p);
 
     // process minus trial function
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
       // write standard basis into dof values of first FEFaceEvaluation and
       // clear dof values of second FEFaceEvaluation
-      this->create_standard_basis(j, *integrator_m, *integrator_p);
+      this->create_standard_basis(j, integrator_m, integrator_p);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
-      integrator_p->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
+      integrator_p.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_face_integral(*integrator_m, *integrator_p);
+      this->do_face_integral(integrator_m, integrator_p);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
-      integrator_p->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
+      integrator_p.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_m[v](i, j) = integrator_m->begin_dof_values()[i][v];
+          matrices_m[v](i, j) = integrator_m.begin_dof_values()[i][v];
 
       // insert result vector into local matrix  u1_v2
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_p[v](i, j) = integrator_p->begin_dof_values()[i][v];
+          matrices_p[v](i, j) = integrator_p.begin_dof_values()[i][v];
     }
 
     // save local matrices into global matrix
@@ -1920,29 +1934,29 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
     {
       // write standard basis into dof values of first FEFaceEvaluation and
       // clear dof values of second FEFaceEvaluation
-      this->create_standard_basis(j, *integrator_p, *integrator_m);
+      this->create_standard_basis(j, integrator_p, integrator_m);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
-      integrator_p->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
+      integrator_p.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_face_integral(*integrator_m, *integrator_p);
+      this->do_face_integral(integrator_m, integrator_p);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
-      integrator_p->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
+      integrator_p.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
       // insert result vector into local matrix M_mp
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_m[v](i, j) = integrator_m->begin_dof_values()[i][v];
+          matrices_m[v](i, j) = integrator_m.begin_dof_values()[i][v];
 
       // insert result vector into local matrix  M_pp
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices_p[v](i, j) = integrator_p->begin_dof_values()[i][v];
+          matrices_p[v](i, j) = integrator_p.begin_dof_values()[i][v];
     }
 
     // save local matrices into global matrix
@@ -1991,8 +2005,9 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
   Range const &                   range) const
 {
   (void)src;
+  IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
 
-  unsigned int const dofs_per_cell = integrator_m->dofs_per_cell;
+  unsigned int const dofs_per_cell = integrator_m.dofs_per_cell;
 
   for(auto face = range.first; face < range.second; ++face)
   {
@@ -2002,25 +2017,25 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
     FullMatrix_ matrices[vectorization_length];
     std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
 
-    this->reinit_boundary_face(face);
+    this->reinit_boundary_face(face, integrator_m);
 
     auto bid = matrix_free.get_boundary_id(face);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      this->create_standard_basis(j, *integrator_m);
+      this->create_standard_basis(j, integrator_m);
 
-      integrator_m->evaluate(integrator_flags.face_evaluate.value,
-                             integrator_flags.face_evaluate.gradient);
+      integrator_m.evaluate(integrator_flags.face_evaluate.value,
+                            integrator_flags.face_evaluate.gradient);
 
-      this->do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
+      this->do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
 
-      integrator_m->integrate(integrator_flags.face_integrate.value,
-                              integrator_flags.face_integrate.gradient);
+      integrator_m.integrate(integrator_flags.face_integrate.value,
+                             integrator_flags.face_integrate.gradient);
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
-          matrices[v](i, j) = integrator_m->begin_dof_values()[i][v];
+          matrices[v](i, j) = integrator_m.begin_dof_values()[i][v];
     }
 
     // save local matrices into global matrix

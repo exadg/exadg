@@ -257,15 +257,19 @@ public:
 
 private:
   void
-  reinit_face(unsigned int const face) const final;
+  reinit_face(unsigned int const face,
+              IntegratorFace &   integrator_m,
+              IntegratorFace &   integrator_p) const final;
 
   void
-  reinit_boundary_face(unsigned int const face) const final;
+  reinit_boundary_face(unsigned int const face, IntegratorFace & integrator_m) const final;
 
   void
   reinit_face_cell_based(unsigned int const       cell,
                          unsigned int const       face,
-                         types::boundary_id const boundary_id) const final;
+                         types::boundary_id const boundary_id,
+                         IntegratorFace &         integrator_m,
+                         IntegratorFace &         integrator_p) const final;
 
   void
   do_cell_integral(IntegratorCell & integrator) const final;
