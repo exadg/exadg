@@ -28,7 +28,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-// forward declarations
 template<int dim, typename Number>
 std::shared_ptr<ApplicationBasePrecursor<dim, Number>>
 get_application(std::string input_file, MPI_Comm const & comm);

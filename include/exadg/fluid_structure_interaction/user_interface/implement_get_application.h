@@ -19,21 +19,25 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
-#define INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_DECLARE_GET_APPLICATION_H_
+#ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
+#define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_
 
-#include <exadg/structure/user_interface/application_base.h>
+
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 namespace ExaDG
 {
-namespace Structure
+namespace FSI
 {
 template<int dim, typename Number>
 std::shared_ptr<ApplicationBase<dim, Number>>
-get_application(std::string input_file, MPI_Comm const & comm);
+get_application(std::string input_file, MPI_Comm const & comm)
+{
+  return std::make_shared<Application<dim, Number>>(input_file, comm);
+}
 
-} // namespace Structure
+} // namespace FSI
 } // namespace ExaDG
 
 
-#endif /* INCLUDE_EXADG_STRUCTURE_USER_INTERFACE_DECLARE_GET_APPLICATION_H_ */
+#endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_USER_INTERFACE_IMPLEMENT_GET_APPLICATION_H_ */

@@ -314,20 +314,8 @@ private:
 
   /**************************************** STRUCTURE *****************************************/
 
-  // input parameters
-  Structure::InputParameters structure_param;
-
   // grid
   std::shared_ptr<Grid<dim, Number>> structure_grid;
-
-  // material descriptor
-  std::shared_ptr<Structure::MaterialDescriptor> structure_material_descriptor;
-
-  // boundary conditions
-  std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
-
-  // field functions
-  std::shared_ptr<Structure::FieldFunctions<dim>> structure_field_functions;
 
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> structure_matrix_free_data;
@@ -353,12 +341,6 @@ private:
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
 
-  // parameters
-  IncNS::InputParameters fluid_param;
-
-  std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
-
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
@@ -381,21 +363,10 @@ private:
   std::shared_ptr<MatrixFreeData<dim, Number>> ale_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     ale_matrix_free;
 
-  // Poisson-type mesh smoothing
-  Poisson::InputParameters ale_poisson_param;
-
-  std::shared_ptr<Poisson::FieldFunctions<dim>>        ale_poisson_field_functions;
-  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> ale_poisson_boundary_descriptor;
-
+  // Poisson-type mesh motion
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;
 
-  // elasticity-type mesh smoothing
-  Structure::InputParameters ale_elasticity_param;
-
-  std::shared_ptr<Structure::FieldFunctions<dim>>     ale_elasticity_field_functions;
-  std::shared_ptr<Structure::BoundaryDescriptor<dim>> ale_elasticity_boundary_descriptor;
-  std::shared_ptr<Structure::MaterialDescriptor>      ale_elasticity_material_descriptor;
-
+  // elasticity-type mesh motion
   std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
 
   /************************************ ALE - MOVING MESH *************************************/

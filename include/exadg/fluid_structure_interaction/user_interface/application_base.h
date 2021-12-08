@@ -74,8 +74,22 @@ public:
     // clang-format on
   }
 
-  ApplicationBase(std::string parameter_file) : parameter_file(parameter_file)
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
+    : mpi_comm(comm), parameter_file(parameter_file)
   {
+    fluid_boundary_descriptor = std::make_shared<IncNS::BoundaryDescriptor<dim>>();
+    fluid_field_functions     = std::make_shared<IncNS::FieldFunctions<dim>>();
+
+    ale_poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
+    ale_poisson_field_functions     = std::make_shared<Poisson::FieldFunctions<dim>>();
+
+    ale_elasticity_boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
+    ale_elasticity_material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
+    ale_elasticity_field_functions     = std::make_shared<Structure::FieldFunctions<dim>>();
+
+    structure_boundary_descriptor = std::make_shared<Structure::BoundaryDescriptor<dim>>();
+    structure_material_descriptor = std::make_shared<Structure::MaterialDescriptor>();
+    structure_field_functions     = std::make_shared<Structure::FieldFunctions<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -84,69 +98,175 @@ public:
 
   // fluid
   virtual void
-  set_input_parameters_fluid(IncNS::InputParameters & parameters) = 0;
+  set_input_parameters_fluid(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
+  create_grid_fluid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_fluid(
-    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+  set_boundary_conditions_fluid() = 0;
 
   virtual void
-  set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions_fluid() = 0;
 
   virtual std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor_fluid() = 0;
 
   // ALE
 
   // Poisson type mesh motion
   virtual void
-  set_input_parameters_ale(Poisson::InputParameters & parameters) = 0;
-
-  virtual void set_boundary_conditions_ale(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) = 0;
+  set_input_parameters_ale_poisson(unsigned int const degree) = 0;
 
   virtual void
-  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) = 0;
+  set_boundary_conditions_ale_poisson() = 0;
+
+  virtual void
+  set_field_functions_ale_poisson() = 0;
 
   // elasticity type mesh motion
   virtual void
-  set_input_parameters_ale(Structure::InputParameters & parameters) = 0;
+  set_input_parameters_ale_elasticity(unsigned int const degree) = 0;
 
   virtual void
-  set_boundary_conditions_ale(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+  set_boundary_conditions_ale_elasticity() = 0;
 
   virtual void
-  set_material_ale(Structure::MaterialDescriptor & material_descriptor) = 0;
+  set_material_ale_elasticity() = 0;
 
   virtual void
-  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions_ale_elasticity() = 0;
 
   // Structure
   virtual void
-  set_input_parameters_structure(Structure::InputParameters & parameters) = 0;
+  set_input_parameters_structure(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) = 0;
+  create_grid_structure(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_structure(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+  set_boundary_conditions_structure() = 0;
 
   virtual void
-  set_material_structure(Structure::MaterialDescriptor & material_descriptor) = 0;
+  set_material_structure() = 0;
 
   virtual void
-  set_field_functions_structure(
-    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions_structure() = 0;
 
   virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  create_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor_structure() = 0;
+
+  IncNS::InputParameters const &
+  get_parameters_fluid() const
+  {
+    return fluid_param;
+  }
+
+  std::shared_ptr<IncNS::BoundaryDescriptor<dim> const>
+  get_boundary_descriptor_fluid() const
+  {
+    return fluid_boundary_descriptor;
+  }
+
+  std::shared_ptr<IncNS::FieldFunctions<dim> const>
+  get_field_functions_fluid() const
+  {
+    return fluid_field_functions;
+  }
+
+  Structure::InputParameters const &
+  get_parameters_structure() const
+  {
+    return structure_param;
+  }
+
+  std::shared_ptr<Structure::BoundaryDescriptor<dim> const>
+  get_boundary_descriptor_structure() const
+  {
+    return structure_boundary_descriptor;
+  }
+
+  std::shared_ptr<Structure::MaterialDescriptor const>
+  get_material_descriptor_structure() const
+  {
+    return structure_material_descriptor;
+  }
+
+  std::shared_ptr<Structure::FieldFunctions<dim> const>
+  get_field_functions_structure() const
+  {
+    return structure_field_functions;
+  }
+
+  Poisson::InputParameters const &
+  get_parameters_ale_poisson() const
+  {
+    return ale_poisson_param;
+  }
+
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const>
+  get_boundary_descriptor_ale_poisson() const
+  {
+    return ale_poisson_boundary_descriptor;
+  }
+
+  std::shared_ptr<Poisson::FieldFunctions<dim> const>
+  get_field_functions_ale_poisson() const
+  {
+    return ale_poisson_field_functions;
+  }
+
+  Structure::InputParameters const &
+  get_parameters_ale_elasticity() const
+  {
+    return ale_elasticity_param;
+  }
+
+  std::shared_ptr<Structure::BoundaryDescriptor<dim> const>
+  get_boundary_descriptor_ale_elasticity() const
+  {
+    return ale_elasticity_boundary_descriptor;
+  }
+
+  std::shared_ptr<Structure::MaterialDescriptor const>
+  get_material_descriptor_ale_elasticity() const
+  {
+    return ale_elasticity_material_descriptor;
+  }
+
+  std::shared_ptr<Structure::FieldFunctions<dim> const>
+  get_field_functions_ale_elasticity() const
+  {
+    return ale_elasticity_field_functions;
+  }
 
 protected:
+  MPI_Comm const & mpi_comm;
+
+  // fluid
+  IncNS::InputParameters                          fluid_param;
+  std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
+  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
+
+  // ALE mesh motion
+
+  // Poisson-type mesh motion
+  Poisson::InputParameters                             ale_poisson_param;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>        ale_poisson_field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> ale_poisson_boundary_descriptor;
+
+  // elasticity-type mesh motion
+  Structure::InputParameters                          ale_elasticity_param;
+  std::shared_ptr<Structure::FieldFunctions<dim>>     ale_elasticity_field_functions;
+  std::shared_ptr<Structure::BoundaryDescriptor<dim>> ale_elasticity_boundary_descriptor;
+  std::shared_ptr<Structure::MaterialDescriptor>      ale_elasticity_material_descriptor;
+
+  // structure
+  Structure::InputParameters                          structure_param;
+  std::shared_ptr<Structure::MaterialDescriptor>      structure_material_descriptor;
+  std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
+  std::shared_ptr<Structure::FieldFunctions<dim>>     structure_field_functions;
+
   std::string parameter_file;
 
   std::string output_directory = "output/", output_name = "output";
