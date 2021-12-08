@@ -217,25 +217,9 @@ private:
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 
   // solve mesh deformation by a Poisson problem
-  Poisson::InputParameters poisson_param;
-
-  std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
-  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
-
   std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator;
-
-  /*
-   * Functions and boundary conditions
-   */
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-
-  /*
-   * Parameters
-   */
-  InputParameters param;
 
   /*
    * MatrixFree

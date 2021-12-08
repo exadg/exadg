@@ -32,7 +32,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -41,100 +42,95 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
-    (void)param;
+    this->param.degree_u = degree;
   }
 
   void
-  set_input_parameters_precursor(InputParameters & param)
+  set_input_parameters_precursor(unsigned int const degree) final
   {
-    (void)param;
+    this->param_pre.degree_u = degree;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid_precursor(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-
-    (void)boundary_descriptor;
   }
 
   void
-  set_boundary_conditions_precursor(
-    std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_precursor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-
-    (void)boundary_descriptor;
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   void
-  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions_precursor() final
   {
-    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions_pre->initial_solution_velocity.reset(
+      new Functions::ZeroFunction<dim>(dim));
+    this->field_functions_pre->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->analytical_solution_pressure.reset(
+      new Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
-    (void)degree;
-
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
     PostProcessorData<dim> pp_data;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_precursor() final
   {
-    (void)degree;
-
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
     PostProcessorData<dim> pp_data;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -142,21 +138,10 @@ public:
 
 } // namespace IncNS
 
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
-}
-
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application.h>
+
+#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application_precursor.h>
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_PRECURSOR_H_ */

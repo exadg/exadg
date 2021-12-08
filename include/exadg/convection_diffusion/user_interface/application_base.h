@@ -58,6 +58,8 @@ public:
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm), parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
   {
+    field_functions     = std::make_shared<FieldFunctions<dim>>();
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
   }
 
   virtual ~ApplicationBase()

@@ -26,17 +26,21 @@
 #include <deal.II/base/parameter_handler.h>
 
 // ExaDG
+
+// configuration
 #include <exadg/configuration/config.h>
+
+// driver
 #include <exadg/incompressible_navier_stokes/driver_precursor.h>
+
+// utilities
 #include <exadg/utilities/general_parameters.h>
+
+// application
+#include <exadg/incompressible_navier_stokes/user_interface/declare_get_application_precursor.h>
 
 namespace ExaDG
 {
-// forward declarations
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>>
-get_application(std::string input_file);
-
 struct ResolutionParameters
 {
   ResolutionParameters()
@@ -91,7 +95,7 @@ create_input_file(std::string const & input_file)
     // for the automatic generation of a default input file
     unsigned int const Dim = 2;
     typedef double     Number;
-    get_application<Dim, Number>(input_file)->add_parameters(prm);
+    IncNS::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
   }
   catch(...)
   {
@@ -117,7 +121,7 @@ run(std::string const & input_file,
     std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
-    get_application<dim, Number>(input_file);
+    IncNS::get_application<dim, Number>(input_file, mpi_comm);
 
   driver->setup(application, degree, refine_space);
 

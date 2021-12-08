@@ -237,7 +237,7 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters(ConditionalOStream & pcout)
+InputParameters::check_input_parameters(ConditionalOStream const & pcout) const
 {
   // MATHEMATICAL MODEL
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
@@ -566,7 +566,7 @@ InputParameters::get_degree_p(unsigned int const degree_u) const
 }
 
 void
-InputParameters::print(ConditionalOStream & pcout, std::string const & name)
+InputParameters::print(ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -605,7 +605,7 @@ InputParameters::print(ConditionalOStream & pcout, std::string const & name)
 }
 
 void
-InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
+InputParameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -639,7 +639,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 
 
 void
-InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout)
+InputParameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -664,7 +664,7 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
 }
 
 void
-InputParameters::print_parameters_temporal_discretization(ConditionalOStream & pcout)
+InputParameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -727,7 +727,7 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
 }
 
 void
-InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pcout)
+InputParameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial discretization:" << std::endl;
 
@@ -816,7 +816,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 }
 
 void
-InputParameters::print_parameters_turbulence(ConditionalOStream & pcout)
+InputParameters::print_parameters_turbulence(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Turbulence:" << std::endl;
 
@@ -830,7 +830,7 @@ InputParameters::print_parameters_turbulence(ConditionalOStream & pcout)
 }
 
 void
-InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcout)
+InputParameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 
@@ -849,7 +849,7 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
 }
 
 void
-InputParameters::print_parameters_pressure_poisson(ConditionalOStream & pcout)
+InputParameters::print_parameters_pressure_poisson(ConditionalOStream const & pcout) const
 {
   // pressure Poisson equation
   pcout << std::endl << "  Pressure Poisson equation (PPE):" << std::endl;
@@ -880,7 +880,7 @@ InputParameters::print_parameters_pressure_poisson(ConditionalOStream & pcout)
 }
 
 void
-InputParameters::print_parameters_projection_step(ConditionalOStream & pcout)
+InputParameters::print_parameters_projection_step(ConditionalOStream const & pcout) const
 {
   if(use_divergence_penalty == true)
   {
@@ -924,7 +924,7 @@ InputParameters::print_parameters_projection_step(ConditionalOStream & pcout)
 }
 
 void
-InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
+InputParameters::print_parameters_dual_splitting(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "High-order dual splitting scheme:" << std::endl;
 
@@ -975,7 +975,7 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
 }
 
 void
-InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout)
+InputParameters::print_parameters_pressure_correction(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Pressure-correction scheme:" << std::endl;
 
@@ -1046,7 +1046,7 @@ InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout
 
 
 void
-InputParameters::print_parameters_coupled_solver(ConditionalOStream & pcout)
+InputParameters::print_parameters_coupled_solver(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Coupled Navier-Stokes solver:" << std::endl;
 

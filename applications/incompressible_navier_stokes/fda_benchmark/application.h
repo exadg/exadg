@@ -161,7 +161,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBasePrecursor<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -271,7 +272,9 @@ public:
    *  for the precursor by passing an additional parameter is_precursor.
    */
   void
-  do_set_input_parameters(InputParameters & param, bool const is_precursor = false)
+  do_set_input_parameters(InputParameters &  param,
+                          unsigned int const degree,
+                          bool const         is_precursor = false)
   {
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -315,6 +318,7 @@ public:
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type = TriangulationType::Distributed;
+    param.degree_u           = degree;
     param.degree_p           = DegreePressure::MixedOrder;
     param.mapping            = MappingType::Isoparametric;
 
@@ -426,33 +430,35 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
-    do_set_input_parameters(param);
+    do_set_input_parameters(this->param, degree);
   }
 
   void
-  set_input_parameters_precursor(InputParameters & param)
+  set_input_parameters_precursor(unsigned int const degree) final
   {
-    do_set_input_parameters(param, true);
+    do_set_input_parameters(this->param_pre, degree, true);
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
-                                                       data.n_refine_global,
+                                                       grid_data.n_refine_global,
                                                        grid->periodic_faces);
 
     return grid;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid_precursor(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
@@ -538,13 +544,14 @@ public:
     grid->triangulation->add_periodicity(grid->periodic_faces);
 
     // perform global refinements
-    grid->triangulation->refine_global(data.n_refine_global + additional_refinements_precursor);
+    grid->triangulation->refine_global(grid_data.n_refine_global +
+                                       additional_refinements_precursor);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS
@@ -553,37 +560,36 @@ public:
 
     // fill boundary descriptor velocity
     // no slip boundaries at the upper and lower wall with ID=0
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=1: prescribe velocity profile which
     // is obtained as the results of the simulation on DOMAIN 1
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(1, new InflowProfile<dim>(*inflow_data_storage)));
 
     // outflow boundary condition at right boundary with ID=2
-    boundary_descriptor->velocity->neumann_bc.insert(
+    this->boundary_descriptor->velocity->neumann_bc.insert(
       pair(2, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at the upper and lower wall with ID=0
-    boundary_descriptor->pressure->neumann_bc.insert(
+    this->boundary_descriptor->pressure->neumann_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=1
     // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
     // we assume that this is negligible when using the dual splitting scheme
-    boundary_descriptor->pressure->neumann_bc.insert(
+    this->boundary_descriptor->pressure->neumann_bc.insert(
       pair(1, new Functions::ZeroFunction<dim>(dim)));
 
     // outflow boundary condition at right boundary with ID=2: set pressure to zero
-    boundary_descriptor->pressure->dirichlet_bc.insert(
+    this->boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(2, new Functions::ZeroFunction<dim>(1)));
   }
 
   void
-  set_boundary_conditions_precursor(
-    std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_precursor() final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS
@@ -592,38 +598,39 @@ public:
 
     // fill boundary descriptor velocity
     // no slip boundaries at lower and upper wall with ID=0
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    this->boundary_descriptor_pre->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at lower and upper wall with ID=0
-    boundary_descriptor->pressure->neumann_bc.insert(
+    this->boundary_descriptor_pre->pressure->neumann_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution_velocity.reset(
+    this->field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(max_velocity));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   void
-  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions_precursor() final
   {
-    field_functions->initial_solution_velocity.reset(
+    this->field_functions_pre->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(max_velocity));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->analytical_solution_pressure.reset(
+      new Functions::ZeroFunction<dim>(1));
     // prescribe body force for the turbulent pipe flow (precursor) to adjust the desired flow rate
-    field_functions->right_hand_side.reset(new RightHandSide<dim>(*flow_rate_controller));
+    this->field_functions_pre->right_hand_side.reset(new RightHandSide<dim>(*flow_rate_controller));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -640,7 +647,7 @@ public:
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.degree                               = degree;
+    pp_data.output_data.degree                               = this->param.degree_u;
 
     PostProcessorDataFDA<dim> pp_data_fda;
     pp_data_fda.pp_data = pp_data;
@@ -814,7 +821,7 @@ public:
     pp_data_fda.line_plot_data.line_data.lines.push_back(radial_profile_z12);
 
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
-                                               mpi_comm,
+                                               this->mpi_comm,
                                                area_inflow,
                                                *flow_rate_controller,
                                                *inflow_data_storage,
@@ -825,7 +832,7 @@ public:
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_precursor() final
   {
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
 
@@ -842,7 +849,7 @@ public:
     pp_data.output_data.mean_velocity.sample_start_time      = sample_start_time;
     pp_data.output_data.mean_velocity.sample_end_time        = sample_end_time;
     pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
-    pp_data.output_data.degree                               = degree;
+    pp_data.output_data.degree                               = this->param_pre.degree_u;
 
     PostProcessorDataFDA<dim> pp_data_fda;
     pp_data_fda.pp_data = pp_data;
@@ -870,7 +877,7 @@ public:
     pp_data_fda.mean_velocity_data.write_to_file = true;
 
     pp.reset(new PostProcessorFDA<dim, Number>(pp_data_fda,
-                                               mpi_comm,
+                                               this->mpi_comm,
                                                area_inflow,
                                                *flow_rate_controller,
                                                *inflow_data_storage,
@@ -883,21 +890,10 @@ public:
 
 } // namespace IncNS
 
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
-}
-
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application.h>
+
+#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application_precursor.h>
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FDA_H_ */
