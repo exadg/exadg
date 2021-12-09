@@ -117,8 +117,8 @@ $(function() {
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  }</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  print(ConditionalOStream &amp; pcout)</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    print_parameter(pcout, <span class="stringliteral">&quot;Maximum number of iterations&quot;</span>, max_iter);</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    print_parameter(pcout, <span class="stringliteral">&quot;Absolute solver tolerance&quot;</span>, abs_tol);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    print_parameter(pcout, <span class="stringliteral">&quot;Relative solver tolerance&quot;</span>, rel_tol);</div>

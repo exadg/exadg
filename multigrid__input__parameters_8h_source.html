@@ -259,8 +259,8 @@ $(function() {
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  };</div>
 <div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
 <div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  print(ConditionalOStream &amp; pcout)</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  {</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    print_parameter(pcout, <span class="stringliteral">&quot;    AMG type&quot;</span>, enum_to_string(amg_type));</div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span> </div>
 <div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    <span class="keywordflow">if</span>(amg_type == AMGType::ML)</div>
@@ -312,8 +312,8 @@ $(function() {
 <div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>  }</div>
 <div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
 <div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  print(ConditionalOStream &amp; pcout)</div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>  {</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    print_parameter(pcout, <span class="stringliteral">&quot;Smoother&quot;</span>, enum_to_string(smoother));</div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    print_parameter(pcout, <span class="stringliteral">&quot;Preconditioner smoother&quot;</span>, enum_to_string(preconditioner));</div>
 <div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    print_parameter(pcout, <span class="stringliteral">&quot;Iterations smoother&quot;</span>, iterations);</div>
@@ -360,8 +360,8 @@ $(function() {
 <div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  }</div>
 <div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
 <div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  print(ConditionalOStream &amp; pcout)</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  {</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    print_parameter(pcout, <span class="stringliteral">&quot;Coarse grid solver&quot;</span>, enum_to_string(solver));</div>
 <div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    print_parameter(pcout, <span class="stringliteral">&quot;Coarse grid preconditioner&quot;</span>, enum_to_string(preconditioner));</div>
 <div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
@@ -400,8 +400,8 @@ $(function() {
 <div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>  }</div>
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>  print(ConditionalOStream &amp; pcout)</div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  {</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>    print_parameter(pcout, <span class="stringliteral">&quot;Multigrid type&quot;</span>, enum_to_string(type));</div>
 <div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span> </div>
 <div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>    <span class="keywordflow">if</span>(involves_p_transfer())</div>
