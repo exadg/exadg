@@ -60,9 +60,11 @@ public:
     // clang-format on
   }
 
-  ApplicationBase(std::string parameter_file)
-    : parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
+    : mpi_comm(comm), parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
   {
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+    field_functions     = std::make_shared<FieldFunctions<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -70,19 +72,19 @@ public:
   }
 
   virtual void
-  set_input_parameters(InputParameters & parameters) = 0;
+  set_input_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
+  create_grid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+  set_boundary_conditions() = 0;
 
   virtual void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions() = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor() = 0;
 
   void
   set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)
@@ -90,9 +92,32 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
+  InputParameters const &
+  get_parameters() const
+  {
+    return param;
+  }
+
+  std::shared_ptr<BoundaryDescriptor<dim> const>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<FieldFunctions<dim> const>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
+
 protected:
-  InputParameters param;
-  std::string     parameter_file;
+  MPI_Comm const & mpi_comm;
+
+  InputParameters                          param;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+
+  std::string parameter_file;
 
   unsigned int n_subdivisions_1d_hypercube;
 

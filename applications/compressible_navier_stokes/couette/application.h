@@ -124,7 +124,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -136,53 +137,55 @@ public:
   double const end_time   = 10.0;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.equation_type   = EquationType::NavierStokes;
-    param.right_hand_side = true;
+    this->param.equation_type   = EquationType::NavierStokes;
+    this->param.right_hand_side = true;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = start_time;
-    param.end_time              = end_time;
-    param.dynamic_viscosity     = DYN_VISCOSITY;
-    param.reference_density     = RHO_0;
-    param.heat_capacity_ratio   = GAMMA;
-    param.thermal_conductivity  = LAMBDA;
-    param.specific_gas_constant = R;
-    param.max_temperature       = T_0;
+    this->param.start_time            = start_time;
+    this->param.end_time              = end_time;
+    this->param.dynamic_viscosity     = DYN_VISCOSITY;
+    this->param.reference_density     = RHO_0;
+    this->param.heat_capacity_ratio   = GAMMA;
+    this->param.thermal_conductivity  = LAMBDA;
+    this->param.specific_gas_constant = R;
+    this->param.max_temperature       = T_0;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization       = TemporalDiscretization::ExplRK;
-    param.order_time_integrator         = 2;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
-    param.time_step_size                = 1.0e-3;
-    param.max_velocity                  = U_0;
-    param.cfl_number                    = 0.1;
-    param.diffusion_number              = 0.01;
-    param.exponent_fe_degree_cfl        = 2.0;
-    param.exponent_fe_degree_viscous    = 4.0;
+    this->param.temporal_discretization       = TemporalDiscretization::ExplRK;
+    this->param.order_time_integrator         = 2;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
+    this->param.time_step_size                = 1.0e-3;
+    this->param.max_velocity                  = U_0;
+    this->param.cfl_number                    = 0.1;
+    this->param.diffusion_number              = 0.01;
+    this->param.exponent_fe_degree_cfl        = 2.0;
+    this->param.exponent_fe_degree_viscous    = 4.0;
 
     // output of solver information
-    param.solver_info_data.interval_time = (param.end_time - param.start_time) / 10;
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 10;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type    = TriangulationType::Distributed;
-    param.mapping               = MappingType::Isoparametric;
-    param.n_q_points_convective = QuadratureRule::Standard;
-    param.n_q_points_viscous    = QuadratureRule::Standard;
+    this->param.triangulation_type    = TriangulationType::Distributed;
+    this->param.mapping               = MappingType::Isoparametric;
+    this->param.degree                = degree;
+    this->param.n_q_points_convective = QuadratureRule::Standard;
+    this->param.n_q_points_viscous    = QuadratureRule::Standard;
 
     // viscous term
-    param.IP_factor = 1.0;
+    this->param.IP_factor = 1.0;
 
     // NUMERICAL PARAMETERS
-    param.use_combined_operator = false;
+    this->param.use_combined_operator = false;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     std::vector<unsigned int> repetitions({2, 1});
     Point<dim>                point1(0.0, 0.0), point2(L, H);
@@ -229,55 +232,58 @@ public:
     GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, grid->periodic_faces);
     grid->triangulation->add_periodicity(grid->periodic_faces);
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
 
     // density
-    boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
-    boundary_descriptor->density.dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
+    this->boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
+    this->boundary_descriptor->density.dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
     //  boundary_descriptor->density.neumann_bc.insert(pair(0,new
     //  Functions::ZeroFunction<dim>(1)));
     //  boundary_descriptor->density.neumann_bc.insert(pair(1,new
     //  Functions::ZeroFunction<dim>(1)));
 
     // velocity
-    boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
-    boundary_descriptor->velocity.dirichlet_bc.insert(pair(1, new VelocityBC<dim>()));
+    this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
+    this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(1, new VelocityBC<dim>()));
 
     // pressure
-    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->pressure.neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->pressure.neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->pressure.neumann_bc.insert(
+      pair(1, new Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
-    boundary_descriptor->energy.boundary_variable.insert(
+    this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Temperature));
-    boundary_descriptor->energy.boundary_variable.insert(
+    this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(1, EnergyBoundaryVariable::Temperature));
 
-    boundary_descriptor->energy.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->energy.dirichlet_bc.insert(
+    this->boundary_descriptor->energy.neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->energy.dirichlet_bc.insert(
       pair(1, new Functions::ConstantFunction<dim>(T_0, 1)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new Solution<dim>());
-    field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new Solution<dim>());
+    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output      = this->write_output;
@@ -290,7 +296,7 @@ public:
     pp_data.output_data.write_divergence  = true;
     pp_data.output_data.start_time        = start_time;
     pp_data.output_data.interval_time     = (end_time - start_time) / 10;
-    pp_data.output_data.degree            = degree;
+    pp_data.output_data.degree            = this->param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>());
@@ -298,7 +304,7 @@ public:
     pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 10;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -306,14 +312,8 @@ public:
 
 } // namespace CompNS
 
-template<int dim, typename Number>
-std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<CompNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/compressible_navier_stokes/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COUETTE_H_ */

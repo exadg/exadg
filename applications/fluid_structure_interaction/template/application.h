@@ -52,7 +52,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -61,39 +62,37 @@ public:
   }
 
   void
-  set_input_parameters_fluid(IncNS::InputParameters & param) final
+  set_input_parameters_fluid(unsigned int const degree) final
   {
-    (void)param;
+    using namespace IncNS;
+
+    InputParameters & param = this->fluid_param;
 
     // Here, set all parameters differing from their default values as initialized in
     // IncNS::InputParameters::InputParameters()
-  }
 
-  void
-  set_input_parameters_ale(Poisson::InputParameters & param) final
-  {
-    (void)param;
-
-    // Here, set all parameters differing from their default values as initialized in
-    // Poisson::InputParameters::InputParameters()
+    param.degree_u = degree;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid_fluid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions_fluid(
-    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_fluid() final
   {
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
+      this->fluid_boundary_descriptor;
+
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // these lines show exemplarily how the boundary descriptors are filled
@@ -112,8 +111,10 @@ public:
   }
 
   void
-  set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) final
+  set_field_functions_fluid() final
   {
+    std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->fluid_field_functions;
+
     // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -121,9 +122,37 @@ public:
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
-  void set_boundary_conditions_ale(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) final
+  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
+  create_postprocessor_fluid() final
   {
+    // these lines show exemplarily how the postprocessor is constructued
+    IncNS::PostProcessorData<dim> pp_data;
+
+    std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
+    pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
+
+    return pp;
+  }
+
+  void
+  set_input_parameters_ale_poisson(unsigned int const degree) final
+  {
+    using namespace Poisson;
+
+    InputParameters & param = this->ale_poisson_param;
+
+    // Here, set all parameters differing from their default values as initialized in
+    // Poisson::InputParameters::InputParameters()
+
+    param.degree = degree;
+  }
+
+  void
+  set_boundary_conditions_ale_poisson() final
+  {
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor =
+      this->ale_poisson_boundary_descriptor;
+
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // these lines show exemplarily how the boundary descriptors are filled
@@ -132,101 +161,87 @@ public:
   }
 
   void
-  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) final
+  set_field_functions_ale_poisson() final
   {
+    std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions =
+      this->ale_poisson_field_functions;
+
     // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   void
-  set_input_parameters_ale(Structure::InputParameters & parameters) final
+  set_input_parameters_ale_elasticity(unsigned int const degree) final
   {
-    (void)parameters;
+    using namespace Structure;
+
+    InputParameters & param = this->ale_elasticity_param;
+
+    param.degree = degree;
   }
 
   void
-  set_boundary_conditions_ale(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_ale_elasticity() final
   {
-    (void)boundary_descriptor;
   }
 
   void
-  set_material_ale(Structure::MaterialDescriptor & material_descriptor) final
+  set_material_ale_elasticity() final
   {
-    (void)material_descriptor;
   }
 
   void
-  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) final
+  set_field_functions_ale_elasticity() final
   {
-    (void)field_functions;
-  }
-
-
-  std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) final
-  {
-    (void)degree;
-
-    // these lines show exemplarily how the postprocessor is constructued
-    IncNS::PostProcessorData<dim> pp_data;
-
-    std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
-
-    return pp;
   }
 
   // Structure
   void
-  set_input_parameters_structure(Structure::InputParameters & parameters) final
+  set_input_parameters_structure(unsigned int const degree) final
   {
-    (void)parameters;
+    using namespace Structure;
+
+    InputParameters & param = this->structure_param;
+
+    param.degree = degree;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid_structure(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions_structure(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_structure() final
   {
-    (void)boundary_descriptor;
   }
 
   void
-  set_material_structure(Structure::MaterialDescriptor & material_descriptor) final
+  set_material_structure() final
   {
-    (void)material_descriptor;
   }
 
   void
-  set_field_functions_structure(
-    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) final
+  set_field_functions_structure() final
   {
-    (void)field_functions;
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  create_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_structure() final
   {
-    (void)degree;
-
     Structure::PostProcessorData<dim>                      pp_data;
     std::shared_ptr<Structure::PostProcessor<dim, Number>> pp;
 
-    pp.reset(new Structure::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new Structure::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -234,13 +249,8 @@ public:
 
 } // namespace FSI
 
-template<int dim, typename Number>
-std::shared_ptr<FSI::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<FSI::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
+
+#include <exadg/fluid_structure_interaction/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_FSI_TEMPLATE_H_ */

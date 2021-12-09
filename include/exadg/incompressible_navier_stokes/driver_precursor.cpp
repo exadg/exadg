@@ -45,7 +45,8 @@ void
 DriverPrecursor<dim, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
-  double const start_time = std::min(param_pre.start_time, param.start_time);
+  double const start_time = std::min(application->get_parameters_precursor().start_time,
+                                     application->get_parameters().start_time);
 
   // Set the same time step size for both time integrators
   time_integrator_pre->reset_time(start_time);
@@ -65,10 +66,11 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   // get time step sizes
   if(use_adaptive_time_stepping == true)
   {
-    if(time_integrator_pre->get_time() > param_pre.start_time - EPSILON)
+    if(time_integrator_pre->get_time() >
+       application->get_parameters_precursor().start_time - EPSILON)
       time_step_size_pre = time_integrator_pre->get_time_step_size();
 
-    if(time_integrator->get_time() > param.start_time - EPSILON)
+    if(time_integrator->get_time() > application->get_parameters().start_time - EPSILON)
       time_step_size = time_integrator->get_time_step_size();
   }
   else
@@ -85,7 +87,9 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
   {
     // assume that the precursor domain is the first to start and the last to end
     time_step_size =
-      adjust_time_step_to_hit_end_time(param_pre.start_time, param_pre.end_time, time_step_size);
+      adjust_time_step_to_hit_end_time(application->get_parameters_precursor().start_time,
+                                       application->get_parameters_precursor().end_time,
+                                       time_step_size);
 
     pcout << std::endl
           << "Combined time step size for both domains: " << time_step_size << std::endl;
@@ -117,70 +121,81 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   application = app;
 
-  param_pre.degree_u = degree_velocity;
-  application->set_input_parameters_precursor(param_pre);
-  param_pre.check_input_parameters(pcout);
-  param_pre.print(pcout, "List of input parameters for precursor domain:");
+  application->set_input_parameters_precursor(degree_velocity);
+  application->get_parameters_precursor().check_input_parameters(pcout);
+  application->get_parameters_precursor().print(pcout,
+                                                "List of input parameters for precursor domain:");
 
-  param.degree_u = degree_velocity;
-  application->set_input_parameters(param);
-  param.check_input_parameters(pcout);
-  param.print(pcout, "List of input parameters for actual domain:");
+  application->set_input_parameters(degree_velocity);
+  application->get_parameters().check_input_parameters(pcout);
+  application->get_parameters().print(pcout, "List of input parameters for actual domain:");
 
-  AssertThrow(param_pre.ale_formulation == false, ExcMessage("not implemented."));
-  AssertThrow(param.ale_formulation == false, ExcMessage("not implemented."));
+  AssertThrow(application->get_parameters_precursor().ale_formulation == false,
+              ExcMessage("not implemented."));
+  AssertThrow(application->get_parameters().ale_formulation == false,
+              ExcMessage("not implemented."));
 
   // grid_pre
   GridData grid_data_pre;
-  grid_data_pre.triangulation_type = param_pre.triangulation_type;
+  grid_data_pre.triangulation_type = application->get_parameters_precursor().triangulation_type;
   grid_data_pre.n_refine_global    = refine_space;
-  grid_data_pre.mapping_degree     = get_mapping_degree(param_pre.mapping, param_pre.degree_u);
+  grid_data_pre.mapping_degree =
+    get_mapping_degree(application->get_parameters_precursor().mapping,
+                       application->get_parameters_precursor().degree_u);
 
-  grid_pre = application->create_grid(grid_data_pre, mpi_comm);
+  grid_pre = application->create_grid_precursor(grid_data_pre);
   print_grid_info(pcout, *grid_pre);
 
   // grid
   GridData grid_data;
-  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.triangulation_type = application->get_parameters().triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree_u);
+  grid_data.mapping_degree     = get_mapping_degree(application->get_parameters().mapping,
+                                                application->get_parameters().degree_u);
 
-  grid = application->create_grid(grid_data, mpi_comm);
+  grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
-  boundary_descriptor_pre = std::make_shared<BoundaryDescriptor<dim>>();
-  application->set_boundary_conditions_precursor(boundary_descriptor_pre);
-  IncNS::verify_boundary_conditions<dim>(boundary_descriptor_pre, *grid_pre);
+  application->set_boundary_conditions_precursor();
+  IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_precursor(),
+                                         *grid_pre);
 
-  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-  application->set_boundary_conditions(boundary_descriptor);
-  IncNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
+  application->set_boundary_conditions();
+  IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
-  field_functions_pre = std::make_shared<FieldFunctions<dim>>();
-  field_functions     = std::make_shared<FieldFunctions<dim>>();
-  application->set_field_functions_precursor(field_functions_pre);
-  application->set_field_functions(field_functions);
+  application->set_field_functions_precursor();
+  application->set_field_functions();
 
   // constant vs. adaptive time stepping
-  use_adaptive_time_stepping = param_pre.adaptive_time_stepping;
+  use_adaptive_time_stepping = application->get_parameters_precursor().adaptive_time_stepping;
 
-  AssertThrow(param_pre.calculation_of_time_step_size == param.calculation_of_time_step_size,
+  AssertThrow(application->get_parameters_precursor().calculation_of_time_step_size ==
+                application->get_parameters().calculation_of_time_step_size,
               ExcMessage("Type of time step calculation has to be the same for both domains."));
 
-  AssertThrow(param_pre.adaptive_time_stepping == param.adaptive_time_stepping,
+  AssertThrow(application->get_parameters_precursor().adaptive_time_stepping ==
+                application->get_parameters().adaptive_time_stepping,
               ExcMessage("Type of time step calculation has to be the same for both domains."));
 
-  AssertThrow(param_pre.solver_type == SolverType::Unsteady &&
-                param.solver_type == SolverType::Unsteady,
+  AssertThrow(application->get_parameters_precursor().solver_type == SolverType::Unsteady &&
+                application->get_parameters().solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize pde_operator_pre (precursor domain)
-  pde_operator = create_operator<dim, Number>(
-    grid_pre, boundary_descriptor_pre, field_functions_pre, param_pre, "fluid", mpi_comm);
+  pde_operator = create_operator<dim, Number>(grid_pre,
+                                              application->get_boundary_descriptor_precursor(),
+                                              application->get_field_functions_precursor(),
+                                              application->get_parameters_precursor(),
+                                              "fluid",
+                                              mpi_comm);
 
   // initialize operator_base (actual domain)
-  pde_operator = create_operator<dim, Number>(
-    grid, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
+  pde_operator = create_operator<dim, Number>(grid,
+                                              application->get_boundary_descriptor(),
+                                              application->get_field_functions(),
+                                              application->get_parameters(),
+                                              "fluid",
+                                              mpi_comm);
 
 
   // initialize matrix_free precursor
@@ -188,7 +203,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   matrix_free_data_pre->append(pde_operator_pre);
 
   matrix_free_pre = std::make_shared<MatrixFree<dim, Number>>();
-  if(param_pre.use_cell_based_face_loops)
+  if(application->get_parameters_precursor().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid_pre->triangulation, matrix_free_data_pre->data);
   matrix_free_pre->reinit(*grid_pre->mapping,
                           matrix_free_data_pre->get_dof_handler_vector(),
@@ -201,7 +216,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-  if(param.use_cell_based_face_loops)
+  if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
@@ -215,19 +230,27 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   pde_operator->setup(matrix_free, matrix_free_data);
 
   // setup postprocessor
-  postprocessor_pre = application->create_postprocessor_precursor(param_pre.degree_u, mpi_comm);
+  postprocessor_pre = application->create_postprocessor_precursor();
   postprocessor_pre->setup(*pde_operator_pre);
 
-  postprocessor = application->create_postprocessor(param.degree_u, mpi_comm);
+  postprocessor = application->create_postprocessor();
   postprocessor->setup(*pde_operator);
 
 
   // Setup time integrator
-  time_integrator_pre = create_time_integrator<dim, Number>(
-    pde_operator_pre, param_pre, 0 /* refine_time */, mpi_comm, is_test, postprocessor_pre);
+  time_integrator_pre = create_time_integrator<dim, Number>(pde_operator_pre,
+                                                            application->get_parameters_precursor(),
+                                                            0 /* refine_time */,
+                                                            mpi_comm,
+                                                            is_test,
+                                                            postprocessor_pre);
 
-  time_integrator = create_time_integrator<dim, Number>(
-    pde_operator, param, 0 /* refine_time */, mpi_comm, is_test, postprocessor);
+  time_integrator = create_time_integrator<dim, Number>(pde_operator,
+                                                        application->get_parameters(),
+                                                        0 /* refine_time */,
+                                                        mpi_comm,
+                                                        is_test,
+                                                        postprocessor);
 
 
   // For the two-domain solver the parameter start_with_low_order has to be true.
@@ -237,13 +260,14 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   // is not known at this point since the two domains have to first communicate with each other
   // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
   // inconsistencies is to preclude the case start_with_low_order == false.
-  AssertThrow(param_pre.start_with_low_order == true && param.start_with_low_order == true,
+  AssertThrow(application->get_parameters_precursor().start_with_low_order == true &&
+                application->get_parameters().start_with_low_order == true,
               ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
   // solvers depends on quantities such as the time_step_size or gamma0!!!)
-  time_integrator_pre->setup(param_pre.restarted_simulation);
-  time_integrator->setup(param.restarted_simulation);
+  time_integrator_pre->setup(application->get_parameters_precursor().restarted_simulation);
+  time_integrator->setup(application->get_parameters().restarted_simulation);
 
   // setup solvers
 

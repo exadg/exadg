@@ -67,48 +67,54 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  param.degree = degree;
-  application->set_input_parameters(param);
-  param.check_input_parameters();
-  param.print(pcout, "List of input parameters:");
+  application->set_input_parameters(degree);
+  application->get_parameters().check_input_parameters();
+  application->get_parameters().print(pcout, "List of input parameters:");
 
   // grid
   GridData grid_data;
-  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.triangulation_type = application->get_parameters().triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree);
+  grid_data.mapping_degree =
+    get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
 
-  grid = application->create_grid(grid_data, mpi_comm);
+  grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
   // boundary conditions
-  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-  application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *grid);
+  application->set_boundary_conditions();
+  verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
 
   // field functions
-  field_functions = std::make_shared<FieldFunctions<dim>>();
-  application->set_field_functions(field_functions);
+  application->set_field_functions();
 
-  if(param.ale_formulation) // moving mesh
+  if(application->get_parameters().ale_formulation) // moving mesh
   {
-    std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
-    grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
-      grid->mapping, param.degree, *grid->triangulation, mesh_motion, param.start_time);
+    std::shared_ptr<Function<dim>> mesh_motion = application->create_mesh_movement_function();
+    grid_motion =
+      std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
+                                                          application->get_parameters().degree,
+                                                          *grid->triangulation,
+                                                          mesh_motion,
+                                                          application->get_parameters().start_time);
 
     grid->attach_grid_motion(grid_motion);
   }
 
   // initialize convection-diffusion operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(
-    grid, boundary_descriptor, field_functions, param, "scalar", mpi_comm);
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         application->get_boundary_descriptor(),
+                                                         application->get_field_functions(),
+                                                         application->get_parameters(),
+                                                         "scalar",
+                                                         mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-  if(param.use_cell_based_face_loops)
+  if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->get_dynamic_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
@@ -122,21 +128,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(!is_throughput_study)
   {
     // initialize postprocessor
-    postprocessor = application->create_postprocessor(param.degree, mpi_comm);
+    postprocessor = application->create_postprocessor();
     postprocessor->setup(*pde_operator, *grid->get_dynamic_mapping());
 
     // initialize time integrator or driver for steady problems
-    if(param.problem_type == ProblemType::Unsteady)
+    if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, param, refine_time, mpi_comm, is_test, postprocessor);
+        pde_operator, application->get_parameters(), refine_time, mpi_comm, is_test, postprocessor);
 
-      time_integrator->setup(param.restarted_simulation);
+      time_integrator->setup(application->get_parameters().restarted_simulation);
     }
-    else if(param.problem_type == ProblemType::Steady)
+    else if(application->get_parameters().problem_type == ProblemType::Steady)
     {
       driver_steady = std::make_shared<DriverSteadyProblems<Number>>(
-        pde_operator, param, mpi_comm, is_test, postprocessor);
+        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
 
       driver_steady->setup();
     }
@@ -150,14 +156,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     VectorType const *                                 velocity_ptr = nullptr;
     VectorType                                         velocity;
 
-    if(param.problem_type == ProblemType::Unsteady)
+    if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
-      if(param.temporal_discretization == TemporalDiscretization::BDF)
+      if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
       {
         std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
           std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
-        if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+        if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
         {
           pde_operator->initialize_dof_vector_velocity(velocity);
           pde_operator->interpolate_velocity(velocity, time_integrator->get_time());
@@ -169,13 +175,14 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       }
       else
       {
-        AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK,
+        AssertThrow(application->get_parameters().temporal_discretization ==
+                      TemporalDiscretization::ExplRK,
                     ExcMessage("Not implemented."));
       }
     }
-    else if(param.problem_type == ProblemType::Steady)
+    else if(application->get_parameters().problem_type == ProblemType::Steady)
     {
-      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+      if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
         pde_operator->initialize_dof_vector_velocity(velocity);
         pde_operator->interpolate_velocity(velocity, 0.0 /* time */);
@@ -210,9 +217,9 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::solve()
 {
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
-    if(this->param.ale_formulation == true)
+    if(application->get_parameters().ale_formulation == true)
     {
       do
       {
@@ -230,7 +237,7 @@ Driver<dim, Number>::solve()
       time_integrator->timeloop();
     }
   }
-  else if(param.problem_type == ProblemType::Steady)
+  else if(application->get_parameters().problem_type == ProblemType::Steady)
   {
     driver_steady->solve_problem();
   }
@@ -252,8 +259,8 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   this->pcout << "Performance results for convection-diffusion solver:" << std::endl;
 
   // Averaged number of iterations are only relevant for BDF time integrator
-  if(param.problem_type == ProblemType::Unsteady &&
-     param.temporal_discretization == TemporalDiscretization::BDF)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady &&
+     application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
   {
     this->pcout << std::endl << "Average number of iterations:" << std::endl;
 
@@ -265,15 +272,15 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   // wall times
   timer_tree.insert({"Convection-diffusion"}, total_time);
 
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
-    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    if(application->get_parameters().temporal_discretization == TemporalDiscretization::ExplRK)
     {
       std::shared_ptr<TimeIntExplRK<Number>> time_integrator_rk =
         std::dynamic_pointer_cast<TimeIntExplRK<Number>>(time_integrator);
       timer_tree.insert({"Convection-diffusion"}, time_integrator_rk->get_timings());
     }
-    else if(param.temporal_discretization == TemporalDiscretization::BDF)
+    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDF)
     {
       std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
         std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
@@ -302,7 +309,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
   double const              overall_time_avg  = overall_time_data.avg;
 
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
     unsigned int N_time_steps = this->time_integrator->get_number_of_time_steps();
     print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
@@ -338,9 +345,9 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   pde_operator->initialize_dof_vector(dst);
 
   LinearAlgebra::distributed::Vector<Number> velocity;
-  if(param.convective_problem())
+  if(application->get_parameters().convective_problem())
   {
-    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
       pde_operator->initialize_dof_vector_velocity(velocity);
       velocity = 1.0;
@@ -366,8 +373,11 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   };
 
   // do the measurements
-  double const wall_time = measure_operator_evaluation_time(
-    operator_evaluation, param.degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
+  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
+                                                            application->get_parameters().degree,
+                                                            n_repetitions_inner,
+                                                            n_repetitions_outer,
+                                                            mpi_comm);
 
   // calculate throughput
   types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
@@ -388,7 +398,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree, dofs, throughput);
+  return std::tuple<unsigned int, types::global_dof_index, double>(
+    application->get_parameters().degree, dofs, throughput);
 }
 
 template class Driver<2, float>;

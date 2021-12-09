@@ -83,17 +83,6 @@ private:
   std::shared_ptr<Grid<dim, Number>> grid_pre, grid;
 
   /*
-   * Field functions and boundary descriptor
-   */
-  std::shared_ptr<FieldFunctions<dim>>     field_functions_pre, field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre, boundary_descriptor;
-
-  /*
-   * Parameters
-   */
-  InputParameters param_pre, param;
-
-  /*
    * MatrixFree
    */
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_pre, matrix_free_data;

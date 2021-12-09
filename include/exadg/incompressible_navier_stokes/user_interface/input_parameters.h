@@ -49,7 +49,7 @@ public:
   InputParameters();
 
   void
-  check_input_parameters(ConditionalOStream & pcout);
+  check_input_parameters(ConditionalOStream const & pcout) const;
 
   bool
   convective_problem() const;
@@ -67,41 +67,41 @@ public:
   get_degree_p(unsigned int const degree_u) const;
 
   void
-  print(ConditionalOStream & pcout, std::string const & name);
+  print(ConditionalOStream const & pcout, std::string const & name) const;
 
 private:
   void
-  print_parameters_mathematical_model(ConditionalOStream & pcout);
+  print_parameters_mathematical_model(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_physical_quantities(ConditionalOStream & pcout);
+  print_parameters_physical_quantities(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_temporal_discretization(ConditionalOStream & pcout);
+  print_parameters_temporal_discretization(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_spatial_discretization(ConditionalOStream & pcout);
+  print_parameters_spatial_discretization(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_turbulence(ConditionalOStream & pcout);
+  print_parameters_turbulence(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_numerical_parameters(ConditionalOStream & pcout);
+  print_parameters_numerical_parameters(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_pressure_poisson(ConditionalOStream & pcout);
+  print_parameters_pressure_poisson(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_projection_step(ConditionalOStream & pcout);
+  print_parameters_projection_step(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_dual_splitting(ConditionalOStream & pcout);
+  print_parameters_dual_splitting(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_pressure_correction(ConditionalOStream & pcout);
+  print_parameters_pressure_correction(ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_coupled_solver(ConditionalOStream & pcout);
+  print_parameters_coupled_solver(ConditionalOStream const & pcout) const;
 
 public:
   /**************************************************************************************/

@@ -67,28 +67,26 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  param.degree = degree;
-  application->set_input_parameters(param);
-  param.check_input_parameters();
-  param.print(pcout, "List of input parameters:");
+  application->set_input_parameters(degree);
+  application->get_parameters().check_input_parameters();
+  application->get_parameters().print(pcout, "List of input parameters:");
 
   // grid
   GridData grid_data;
-  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.triangulation_type = application->get_parameters().triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree);
+  grid_data.mapping_degree =
+    get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
 
-  grid = application->create_grid(grid_data, mpi_comm);
+  grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
   // boundary conditions
-  boundary_descriptor = std::make_shared<BoundaryDescriptor<0, dim>>();
-  application->set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *grid);
+  application->set_boundary_conditions();
+  verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
 
   // field functions
-  field_functions = std::make_shared<FieldFunctions<dim>>();
-  application->set_field_functions(field_functions);
+  application->set_field_functions();
 
   // compute aspect ratio
   if(false)
@@ -97,21 +95,25 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
     pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
-    QGauss<dim> quadrature(param.degree + 1);
+    QGauss<dim> quadrature(application->get_parameters().degree + 1);
     AR = GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   // initialize Poisson operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(
-    grid, boundary_descriptor, field_functions, param, "Poisson", mpi_comm);
+  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+                                                         application->get_boundary_descriptor(),
+                                                         application->get_field_functions(),
+                                                         application->get_parameters(),
+                                                         "Poisson",
+                                                         mpi_comm);
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-  if(param.enable_cell_based_face_loops)
+  if(application->get_parameters().enable_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->mapping,
                       matrix_free_data->get_dof_handler_vector(),
@@ -130,7 +132,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // initialize postprocessor
   if(not(is_throughput_study))
   {
-    postprocessor = application->create_postprocessor(param.degree, mpi_comm);
+    postprocessor = application->create_postprocessor();
     postprocessor->setup(pde_operator->get_dof_handler(), *grid->mapping);
   }
 
@@ -230,7 +232,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     this->pcout << print_horizontal_line() << std::endl << std::endl;
   }
 
-  return SolverResult(param.degree, DoFs, n_10, tau_10);
+  return SolverResult(application->get_parameters().degree, DoFs, n_10, tau_10);
 }
 
 template<int dim, typename Number>
@@ -284,8 +286,11 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   };
 
   // do the measurements
-  double const wall_time = measure_operator_evaluation_time(
-    operator_evaluation, param.degree, n_repetitions_inner, n_repetitions_outer, mpi_comm);
+  double const wall_time = measure_operator_evaluation_time(operator_evaluation,
+                                                            application->get_parameters().degree,
+                                                            n_repetitions_inner,
+                                                            n_repetitions_outer,
+                                                            mpi_comm);
 
   // calculate throughput
   types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
@@ -306,7 +311,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree, dofs, throughput);
+  return std::tuple<unsigned int, types::global_dof_index, double>(
+    application->get_parameters().degree, dofs, throughput);
 }
 
 

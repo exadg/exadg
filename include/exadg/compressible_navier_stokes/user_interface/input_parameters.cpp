@@ -84,7 +84,7 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters()
+InputParameters::check_input_parameters() const
 {
   // MATHEMATICAL MODEL
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
@@ -142,7 +142,7 @@ InputParameters::check_input_parameters()
 
 
 void
-InputParameters::print(ConditionalOStream & pcout, std::string const & name)
+InputParameters::print(ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -167,7 +167,7 @@ InputParameters::print(ConditionalOStream & pcout, std::string const & name)
 }
 
 void
-InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
+InputParameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -176,7 +176,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 }
 
 void
-InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout)
+InputParameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -191,7 +191,7 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
 }
 
 void
-InputParameters::print_parameters_temporal_discretization(ConditionalOStream & pcout)
+InputParameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -228,7 +228,7 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
 }
 
 void
-InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pcout)
+InputParameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -245,7 +245,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 }
 
 void
-InputParameters::print_parameters_solver(ConditionalOStream & /*pcout*/)
+InputParameters::print_parameters_solver(ConditionalOStream const & /*pcout*/) const
 {
   /*
   pcout << std::endl
@@ -254,7 +254,7 @@ InputParameters::print_parameters_solver(ConditionalOStream & /*pcout*/)
 }
 
 void
-InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcout)
+InputParameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 

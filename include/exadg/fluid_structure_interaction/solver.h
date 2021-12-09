@@ -28,15 +28,11 @@
 // ExaDG
 #include <exadg/configuration/config.h>
 #include <exadg/fluid_structure_interaction/driver.h>
+#include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
 {
-// forward declarations
-template<int dim, typename Number>
-std::shared_ptr<FSI::ApplicationBase<dim, Number>>
-get_application(std::string input_file);
-
 struct ResolutionParameters
 {
   ResolutionParameters()
@@ -105,7 +101,7 @@ create_input_file(std::string const & input_file)
 
   try
   {
-    get_application<Dim, Number>(input_file)->add_parameters(prm);
+    FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
   }
   catch(...)
   {
@@ -130,7 +126,7 @@ run(std::string const &          input_file,
     std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, is_test);
 
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
-    get_application<dim, Number>(input_file);
+    FSI::get_application<dim, Number>(input_file, mpi_comm);
 
   driver->setup(application,
                 resolution.degree_fluid,

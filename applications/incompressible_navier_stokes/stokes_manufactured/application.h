@@ -150,7 +150,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -164,90 +165,92 @@ public:
   double const end_time   = 1.0e-1;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.problem_type             = ProblemType::Unsteady;
-    param.equation_type            = EquationType::Stokes;
-    param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-    param.right_hand_side          = false;
+    this->param.problem_type             = ProblemType::Unsteady;
+    this->param.equation_type            = EquationType::Stokes;
+    this->param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+    this->param.right_hand_side          = false;
 
 
     // PHYSICAL QUANTITIES
-    param.start_time = start_time;
-    param.end_time   = end_time;
-    param.viscosity  = viscosity;
+    this->param.start_time = start_time;
+    this->param.end_time   = end_time;
+    this->param.viscosity  = viscosity;
 
 
     // TEMPORAL DISCRETIZATION
-    param.solver_type                   = SolverType::Unsteady;
-    param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
-    param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    param.time_step_size                = param.end_time;
-    param.order_time_integrator         = 1; // 1; // 2; // 3;
+    this->param.solver_type                   = SolverType::Unsteady;
+    this->param.temporal_discretization       = TemporalDiscretization::BDFDualSplittingScheme;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+    this->param.time_step_size                = this->param.end_time;
+    this->param.order_time_integrator         = 1; // 1; // 2; // 3;
     if(STABILITY_ANALYSIS)
-      param.order_time_integrator = 1;
-    param.start_with_low_order = true; // true; // false;
+      this->param.order_time_integrator = 1;
+    this->param.start_with_low_order = true; // true; // false;
 
     // output of solver information
-    param.solver_info_data.interval_time = 1.0; //(param.end_time-param.start_time)/10;
+    this->param.solver_info_data.interval_time =
+      1.0; //(this->param.end_time-this->param.start_time)/10;
 
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type = TriangulationType::Distributed;
-    param.degree_p           = DegreePressure::MixedOrder;
-    param.mapping            = MappingType::Isoparametric;
+    this->param.triangulation_type = TriangulationType::Distributed;
+    this->param.degree_u           = degree;
+    this->param.degree_p           = DegreePressure::MixedOrder;
+    this->param.mapping            = MappingType::Isoparametric;
 
     // convective term
 
     // viscous term
-    param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+    this->param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
     // gradient term
-    param.gradp_integrated_by_parts = true;
-    param.gradp_use_boundary_data   = true;
-    param.gradp_formulation         = FormulationPressureGradientTerm::Weak;
+    this->param.gradp_integrated_by_parts = true;
+    this->param.gradp_use_boundary_data   = true;
+    this->param.gradp_formulation         = FormulationPressureGradientTerm::Weak;
 
     // divergence term
-    param.divu_integrated_by_parts = true;
-    param.divu_use_boundary_data   = true;
-    param.divu_formulation         = FormulationVelocityDivergenceTerm::Weak;
+    this->param.divu_integrated_by_parts = true;
+    this->param.divu_use_boundary_data   = true;
+    this->param.divu_formulation         = FormulationVelocityDivergenceTerm::Weak;
 
     // pressure level is undefined
-    param.adjust_pressure_level =
+    this->param.adjust_pressure_level =
       AdjustPressureLevel::ApplyZeroMeanValue; // ApplyAnalyticalSolutionInPoint;
 
     // div-div and continuity penalty terms
-    param.use_divergence_penalty                     = true;
-    param.use_continuity_penalty                     = true;
-    param.continuity_penalty_use_boundary_data       = true;
-    param.apply_penalty_terms_in_postprocessing_step = true;
+    this->param.use_divergence_penalty                     = true;
+    this->param.use_continuity_penalty                     = true;
+    this->param.continuity_penalty_use_boundary_data       = true;
+    this->param.apply_penalty_terms_in_postprocessing_step = true;
 
     // PROJECTION METHODS
 
     // formulation
-    param.store_previous_boundary_values = true;
+    this->param.store_previous_boundary_values = true;
 
     // pressure Poisson equation
-    param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-    param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-    param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.solver_pressure_poisson         = SolverPressurePoisson::CG;
+    this->param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+    this->param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-8);
 
     // projection step
-    param.solver_projection         = SolverProjection::CG;
-    param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8);
-    param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+    this->param.solver_projection         = SolverProjection::CG;
+    this->param.solver_data_projection    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
     // HIGH-ORDER DUAL SPLITTING SCHEME
 
     // formulations
-    param.order_extrapolation_pressure_nbc =
-      param.order_time_integrator <= 2 ? param.order_time_integrator : 2;
+    this->param.order_extrapolation_pressure_nbc =
+      this->param.order_time_integrator <= 2 ? this->param.order_time_integrator : 2;
 
     // viscous step
-    param.solver_viscous         = SolverViscous::CG;
-    param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-8);
-    param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
+    this->param.solver_viscous         = SolverViscous::CG;
+    this->param.solver_data_viscous    = SolverData(1000, 1.e-12, 1.e-8);
+    this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; // Multigrid;
 
 
     // PRESSURE-CORRECTION SCHEME
@@ -257,14 +260,14 @@ public:
     // Newton solver
 
     // linear solver
-    param.solver_momentum                = SolverMomentum::GMRES;
-    param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-8, 100);
-    param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
-    param.update_preconditioner_momentum = false;
+    this->param.solver_momentum                = SolverMomentum::GMRES;
+    this->param.solver_data_momentum           = SolverData(1e4, 1.e-12, 1.e-8, 100);
+    this->param.preconditioner_momentum        = MomentumPreconditioner::InverseMassMatrix;
+    this->param.update_preconditioner_momentum = false;
 
     // formulation
-    param.order_pressure_extrapolation = param.order_time_integrator - 1;
-    param.rotational_formulation       = true;
+    this->param.order_pressure_extrapolation = this->param.order_time_integrator - 1;
+    this->param.rotational_formulation       = true;
 
 
     // COUPLED NAVIER-STOKES SOLVER
@@ -272,34 +275,35 @@ public:
     // nonlinear solver (Newton solver)
 
     // linear solver
-    param.solver_coupled      = SolverCoupled::GMRES;
-    param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-8, 100);
+    this->param.solver_coupled      = SolverCoupled::GMRES;
+    this->param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-8, 100);
 
     // preconditioning linear solver
-    param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
+    this->param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
     // preconditioner velocity/momentum block
-    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
+    this->param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
     // preconditioner Schur-complement block
-    param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
+    this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     double const left = -1.0, right = 1.0;
     GridGenerator::hyper_cube(*grid->triangulation, left, right);
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     // test case with pure Dirichlet boundary conditions for velocity
     // all boundaries have ID = 0 by default
@@ -307,27 +311,28 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // fill boundary descriptor velocity
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new AnalyticalSolutionVelocity<dim>(viscosity)));
 
     // fill boundary descriptor pressure
-    boundary_descriptor->pressure->neumann_bc.insert(pair(0, new PressureBC_dudt<dim>(viscosity)));
+    this->boundary_descriptor->pressure->neumann_bc.insert(
+      pair(0, new PressureBC_dudt<dim>(viscosity)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution_velocity.reset(
+    this->field_functions->initial_solution_velocity.reset(
       new AnalyticalSolutionVelocity<dim>(viscosity));
-    field_functions->initial_solution_pressure.reset(
+    this->field_functions->initial_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(viscosity));
-    field_functions->analytical_solution_pressure.reset(
+    this->field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(viscosity));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
 
@@ -338,7 +343,7 @@ public:
     pp_data.output_data.start_time       = start_time;
     pp_data.output_data.interval_time    = (end_time - start_time); // /10;
     pp_data.output_data.write_divergence = false;
-    pp_data.output_data.degree           = degree;
+    pp_data.output_data.degree           = this->param.degree_u;
 
     // calculation of velocity error
     pp_data.error_data_u.analytical_solution_available = true;
@@ -357,7 +362,7 @@ public:
     pp_data.error_data_p.name                      = "pressure";
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -365,14 +370,8 @@ public:
 
 } // namespace IncNS
 
-template<int dim, typename Number>
-std::shared_ptr<IncNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<IncNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/incompressible_navier_stokes/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_STOKES_MANUFACTURED_H_ */

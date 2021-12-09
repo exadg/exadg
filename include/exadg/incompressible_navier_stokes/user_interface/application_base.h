@@ -65,9 +65,14 @@ public:
     // clang-format on
   }
 
-  ApplicationBase(std::string parameter_file)
-    : parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
+    : mpi_comm(comm), parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
   {
+    field_functions     = std::make_shared<FieldFunctions<dim>>();
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+
+    poisson_field_functions     = std::make_shared<Poisson::FieldFunctions<dim>>();
+    poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -75,23 +80,23 @@ public:
   }
 
   virtual void
-  set_input_parameters(InputParameters & parameters) = 0;
+  set_input_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) = 0;
+  create_grid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+  set_boundary_conditions() = 0;
 
   virtual void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions() = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor() = 0;
 
   // Moving mesh (analytical function)
   virtual std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
+  create_mesh_movement_function()
   {
     std::shared_ptr<Function<dim>> mesh_motion =
       std::make_shared<Functions::ZeroFunction<dim>>(dim);
@@ -101,19 +106,9 @@ public:
 
   // Moving mesh (Poisson problem)
   virtual void
-  set_input_parameters_poisson(Poisson::InputParameters & parameters)
+  set_input_parameters_poisson(unsigned int const degree)
   {
-    (void)parameters;
-
-    AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
-  }
-
-  virtual void set_boundary_conditions_poisson(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor)
-  {
-    (void)boundary_descriptor;
+    (void)degree;
 
     AssertThrow(false,
                 ExcMessage("Has to be overwritten by derived classes in order "
@@ -121,15 +116,20 @@ public:
   }
 
   virtual void
-  set_field_functions_poisson(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+  set_boundary_conditions_poisson()
   {
-    (void)field_functions;
-
     AssertThrow(false,
                 ExcMessage("Has to be overwritten by derived classes in order "
                            "to use Poisson solver for mesh movement."));
   }
 
+  virtual void
+  set_field_functions_poisson()
+  {
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
 
   void
   set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)
@@ -137,7 +137,54 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
+  InputParameters const &
+  get_parameters() const
+  {
+    return param;
+  }
+
+  std::shared_ptr<BoundaryDescriptor<dim> const>
+  get_boundary_descriptor() const
+  {
+    return boundary_descriptor;
+  }
+
+  std::shared_ptr<FieldFunctions<dim> const>
+  get_field_functions() const
+  {
+    return field_functions;
+  }
+
+  Poisson::InputParameters const &
+  get_parameters_poisson() const
+  {
+    return poisson_param;
+  }
+
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim> const>
+  get_boundary_descriptor_poisson() const
+  {
+    return poisson_boundary_descriptor;
+  }
+
+  std::shared_ptr<Poisson::FieldFunctions<dim> const>
+  get_field_functions_poisson() const
+  {
+    return poisson_field_functions;
+  }
+
 protected:
+  MPI_Comm const & mpi_comm;
+
+  InputParameters                          param;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+
+  // solve mesh deformation by a Poisson problem
+  Poisson::InputParameters                             poisson_param;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
+  std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
+
   std::string parameter_file;
 
   unsigned int n_subdivisions_1d_hypercube;
@@ -150,8 +197,8 @@ template<int dim, typename Number>
 class ApplicationBasePrecursor : public ApplicationBase<dim, Number>
 {
 public:
-  ApplicationBasePrecursor(std::string parameter_file)
-    : ApplicationBase<dim, Number>(parameter_file)
+  ApplicationBasePrecursor(std::string parameter_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(parameter_file, comm)
   {
   }
 
@@ -160,20 +207,42 @@ public:
   }
 
   virtual void
-  set_input_parameters_precursor(InputParameters & parameters) = 0;
+  set_input_parameters_precursor(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor(GridData const & data, MPI_Comm const & mpi_comm) = 0;
+  create_grid_precursor(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_precursor(
-    std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) = 0;
+  set_boundary_conditions_precursor() = 0;
 
   virtual void
-  set_field_functions_precursor(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
+  set_field_functions_precursor() = 0;
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor_precursor(unsigned int const degree, MPI_Comm const & mpi_comm) = 0;
+  create_postprocessor_precursor() = 0;
+
+  InputParameters const &
+  get_parameters_precursor() const
+  {
+    return param_pre;
+  }
+
+  std::shared_ptr<BoundaryDescriptor<dim> const>
+  get_boundary_descriptor_precursor() const
+  {
+    return boundary_descriptor_pre;
+  }
+
+  std::shared_ptr<FieldFunctions<dim> const>
+  get_field_functions_precursor() const
+  {
+    return field_functions_pre;
+  }
+
+protected:
+  InputParameters                          param_pre;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
 };
 
 

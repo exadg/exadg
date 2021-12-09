@@ -29,13 +29,11 @@
 #include <exadg/utilities/general_parameters.h>
 #include <exadg/utilities/resolution_parameters.h>
 
+// application
+#include <exadg/compressible_navier_stokes/user_interface/declare_get_application.h>
+
 namespace ExaDG
 {
-// forward declarations
-template<int dim, typename Number>
-std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file);
-
 void
 create_input_file(std::string const & input_file)
 {
@@ -56,7 +54,7 @@ create_input_file(std::string const & input_file)
     // for the automatic generation of a default input file
     unsigned int const Dim = 2;
     typedef double     Number;
-    get_application<Dim, Number>(input_file)->add_parameters(prm);
+    CompNS::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
   }
   catch(...)
   {
@@ -83,7 +81,7 @@ run(std::string const & input_file,
     std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, is_test);
 
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>> application =
-    get_application<dim, Number>(input_file);
+    CompNS::get_application<dim, Number>(input_file, mpi_comm);
 
   driver->setup(application, degree, refine_space, refine_time, false);
 

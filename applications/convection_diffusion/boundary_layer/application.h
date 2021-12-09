@@ -61,7 +61,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -77,72 +78,71 @@ public:
   double const end_time   = 1.0;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.problem_type              = ProblemType::Steady;
-    param.equation_type             = EquationType::ConvectionDiffusion;
-    param.right_hand_side           = false;
-    param.analytical_velocity_field = true;
+    this->param.problem_type              = ProblemType::Steady;
+    this->param.equation_type             = EquationType::ConvectionDiffusion;
+    this->param.right_hand_side           = false;
+    this->param.analytical_velocity_field = true;
 
     // PHYSICAL QUANTITIES
-    param.start_time  = start_time;
-    param.end_time    = end_time;
-    param.diffusivity = diffusivity;
+    this->param.start_time  = start_time;
+    this->param.end_time    = end_time;
+    this->param.diffusivity = diffusivity;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization       = TemporalDiscretization::BDF;
-    param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
-    param.order_time_integrator         = 2;
-    param.start_with_low_order          = true;
-    param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-    param.time_step_size                = 1.0e-1;
-    param.cfl                           = 0.2;
-    param.diffusion_number              = 0.01;
+    this->param.temporal_discretization       = TemporalDiscretization::BDF;
+    this->param.treatment_of_convective_term  = TreatmentOfConvectiveTerm::Implicit;
+    this->param.order_time_integrator         = 2;
+    this->param.start_with_low_order          = true;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+    this->param.time_step_size                = 1.0e-1;
+    this->param.cfl                           = 0.2;
+    this->param.diffusion_number              = 0.01;
 
     // SPATIAL DISCRETIZATION
-
-    // triangulation
-    param.triangulation_type = TriangulationType::Distributed;
-
-    // mapping
-    param.mapping = MappingType::Affine;
+    this->param.triangulation_type = TriangulationType::Distributed;
+    this->param.mapping            = MappingType::Affine;
+    this->param.degree             = degree;
 
     // convective term
-    param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+    this->param.numerical_flux_convective_operator =
+      NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
     // viscous term
-    param.IP_factor = 1.0;
+    this->param.IP_factor = 1.0;
 
     // SOLVER
-    param.use_cell_based_face_loops = true;
-    param.solver                    = Solver::GMRES;
-    param.solver_data               = SolverData(1e4, 1.e-20, 1.e-8, 100);
-    param.preconditioner            = Preconditioner::Multigrid; // PointJacobi;
-    param.mg_operator_type          = MultigridOperatorType::ReactionConvectionDiffusion;
-    param.multigrid_data.type       = MultigridType::phMG;
+    this->param.use_cell_based_face_loops = true;
+    this->param.solver                    = Solver::GMRES;
+    this->param.solver_data               = SolverData(1e4, 1.e-20, 1.e-8, 100);
+    this->param.preconditioner            = Preconditioner::Multigrid; // PointJacobi;
+    this->param.mg_operator_type          = MultigridOperatorType::ReactionConvectionDiffusion;
+    this->param.multigrid_data.type       = MultigridType::phMG;
     // MG smoother
-    param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi; // Chebyshev;
+    this->param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi; // Chebyshev;
     // MG smoother data
-    param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-    param.multigrid_data.smoother_data.iterations     = 5;
+    this->param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+    this->param.multigrid_data.smoother_data.iterations     = 5;
 
     // MG coarse grid solver
-    param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+    this->param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
-    param.update_preconditioner = false;
+    this->param.update_preconditioner = false;
 
     // output of solver information
-    param.solver_info_data.interval_time = (param.end_time - param.start_time) / 20;
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 20;
 
     // NUMERICAL PARAMETERS
-    param.use_combined_operator = true;
+    this->param.use_combined_operator = true;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // hypercube volume is [left,right]^dim
     GridGenerator::hyper_cube(*grid->triangulation, left, right);
@@ -162,32 +162,32 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>(diffusivity)));
-    boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>(diffusivity)));
+    this->boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
     std::vector<double> velocity = std::vector<double>(dim, 0.0);
     velocity[0]                  = 1.0;
-    field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
+    this->field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output  = this->write_output;
@@ -195,7 +195,7 @@ public:
     pp_data.output_data.filename      = this->output_name;
     pp_data.output_data.start_time    = start_time;
     pp_data.output_data.interval_time = (end_time - start_time) / 20;
-    pp_data.output_data.degree        = degree;
+    pp_data.output_data.degree        = this->param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
     pp_data.error_data.analytical_solution.reset(new Solution<dim>(diffusivity));
@@ -203,7 +203,7 @@ public:
     pp_data.error_data.error_calc_interval_time = (end_time - start_time) / 20;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -211,14 +211,8 @@ public:
 
 } // namespace ConvDiff
 
-template<int dim, typename Number>
-std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<ConvDiff::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/convection_diffusion/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_BOUNDARY_LAYER_H_ */

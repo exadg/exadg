@@ -132,15 +132,6 @@ private:
   // grid
   std::shared_ptr<Grid<dim, Number>> grid;
 
-  // material descriptor
-  std::shared_ptr<MaterialDescriptor> material_descriptor;
-
-  // boundary conditions
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-
-  // field functions
-  std::shared_ptr<FieldFunctions<dim>> field_functions;
-
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;

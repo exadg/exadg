@@ -55,8 +55,20 @@ public:
     // clang-format on
   }
 
-  ApplicationBase(std::string parameter_file) : IncNS::ApplicationBase<dim, Number>(parameter_file)
+  ApplicationBase(std::string parameter_file, MPI_Comm const & comm, unsigned int n_scalar_fields)
+    : IncNS::ApplicationBase<dim, Number>(parameter_file, comm)
   {
+    n_scalars = n_scalar_fields;
+
+    scalar_param.resize(n_scalars);
+    scalar_boundary_descriptor.resize(n_scalars);
+    scalar_field_functions.resize(n_scalars);
+
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
+      scalar_boundary_descriptor[i] = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
+      scalar_field_functions[i]     = std::make_shared<ConvDiff::FieldFunctions<dim>>();
+    }
   }
 
   virtual ~ApplicationBase()
@@ -70,24 +82,40 @@ public:
   }
 
   virtual void
-  set_input_parameters_scalar(ConvDiff::InputParameters & parameters,
-                              unsigned int const          scalar_index = 0) = 0;
+  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index = 0) = 0;
 
   virtual void
-  set_boundary_conditions_scalar(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
-    unsigned int const                                 scalar_index = 0) = 0;
+  set_boundary_conditions_scalar(unsigned int const scalar_index = 0) = 0;
 
   virtual void
-  set_field_functions_scalar(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions,
-                             unsigned int const                             scalar_index = 0) = 0;
+  set_field_functions_scalar(unsigned int const scalar_index = 0) = 0;
 
   virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  create_postprocessor_scalar(unsigned int const degree,
-                              MPI_Comm const &   mpi_comm,
-                              unsigned int const scalar_index = 0) = 0;
+  create_postprocessor_scalar(unsigned int const scalar_index = 0) = 0;
+
+  ConvDiff::InputParameters const &
+  get_parameters_scalar(unsigned int const scalar_index = 0) const
+  {
+    return scalar_param[scalar_index];
+  }
+
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> const>
+  get_boundary_descriptor_scalar(unsigned int const scalar_index = 0) const
+  {
+    return scalar_boundary_descriptor[scalar_index];
+  }
+
+  std::shared_ptr<ConvDiff::FieldFunctions<dim> const>
+  get_field_functions_scalar(unsigned int const scalar_index = 0) const
+  {
+    return scalar_field_functions[scalar_index];
+  }
 
 protected:
+  std::vector<ConvDiff::InputParameters>                          scalar_param;
+  std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
+  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
+
   std::string  output_directory = "output/", output_name = "output";
   bool         write_output = false;
   unsigned int n_scalars    = 1;

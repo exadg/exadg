@@ -66,69 +66,69 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  param.degree_u = degree_velocity;
-  application->set_input_parameters(param);
-  param.check_input_parameters(pcout);
-  param.print(pcout, "List of input parameters:");
+  application->set_input_parameters(degree_velocity);
+  application->get_parameters().check_input_parameters(pcout);
+  application->get_parameters().print(pcout, "List of input parameters:");
 
   // grid
   GridData grid_data;
-  grid_data.triangulation_type = param.triangulation_type;
+  grid_data.triangulation_type = application->get_parameters().triangulation_type;
   grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(param.mapping, param.degree_u);
+  grid_data.mapping_degree     = get_mapping_degree(application->get_parameters().mapping,
+                                                application->get_parameters().degree_u);
 
-  grid = application->create_grid(grid_data, mpi_comm);
+  grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
-  if(param.ale_formulation) // moving mesh
+  if(application->get_parameters().ale_formulation) // moving mesh
   {
-    if(param.mesh_movement_type == MeshMovementType::Analytical)
+    if(application->get_parameters().mesh_movement_type == MeshMovementType::Analytical)
     {
-      std::shared_ptr<Function<dim>> mesh_motion = application->set_mesh_movement_function();
+      std::shared_ptr<Function<dim>> mesh_motion = application->create_mesh_movement_function();
 
-      grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
-                                                                        grid_data.mapping_degree,
-                                                                        *grid->triangulation,
-                                                                        mesh_motion,
-                                                                        param.start_time);
+      grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
+        grid->mapping,
+        grid_data.mapping_degree,
+        *grid->triangulation,
+        mesh_motion,
+        application->get_parameters().start_time);
     }
-    else if(param.mesh_movement_type == MeshMovementType::Poisson)
+    else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
-      poisson_param.degree = grid_data.mapping_degree;
-      application->set_input_parameters_poisson(poisson_param);
-      poisson_param.check_input_parameters();
-      poisson_param.print(pcout, "List of input parameters for Poisson solver (moving mesh):");
+      application->set_input_parameters_poisson(grid_data.mapping_degree);
+      application->get_parameters_poisson().check_input_parameters();
+      application->get_parameters_poisson().print(
+        pcout, "List of input parameters for Poisson solver (moving mesh):");
 
-      poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
-      application->set_boundary_conditions_poisson(poisson_boundary_descriptor);
-      verify_boundary_conditions(*poisson_boundary_descriptor, *grid);
+      application->set_boundary_conditions_poisson();
+      verify_boundary_conditions(*application->get_boundary_descriptor_poisson(), *grid);
 
-      poisson_field_functions = std::make_shared<Poisson::FieldFunctions<dim>>();
-      application->set_field_functions_poisson(poisson_field_functions);
+      application->set_field_functions_poisson();
 
-      AssertThrow(poisson_param.right_hand_side == false,
+      AssertThrow(application->get_parameters_poisson().right_hand_side == false,
                   ExcMessage("Poisson problem is used for mesh movement. Hence, "
                              "the right-hand side has to be zero for the Poisson problem."));
 
-      AssertThrow(poisson_param.mapping == param.mapping,
+      AssertThrow(application->get_parameters_poisson().mapping ==
+                    application->get_parameters().mapping,
                   ExcMessage("Use the same mapping degree for Poisson mesh motion problem "
                              "as for actual application problem."));
 
       // initialize Poisson operator
-      poisson_operator =
-        std::make_shared<Poisson::Operator<dim, Number, dim>>(grid,
-                                                              poisson_boundary_descriptor,
-                                                              poisson_field_functions,
-                                                              poisson_param,
-                                                              "Poisson",
-                                                              mpi_comm);
+      poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(
+        grid,
+        application->get_boundary_descriptor_poisson(),
+        application->get_field_functions_poisson(),
+        application->get_parameters_poisson(),
+        "Poisson",
+        mpi_comm);
 
       // initialize matrix_free
       poisson_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       poisson_matrix_free_data->append(poisson_operator);
 
       poisson_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-      if(poisson_param.enable_cell_based_face_loops)
+      if(application->get_parameters_poisson().enable_cell_based_face_loops)
         Categorization::do_cell_based_loops(*grid->triangulation, poisson_matrix_free_data->data);
       poisson_matrix_free->reinit(*grid->mapping,
                                   poisson_matrix_free_data->get_dof_handler_vector(),
@@ -151,23 +151,30 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // boundary conditions
-  boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-  application->set_boundary_conditions(boundary_descriptor);
-  IncNS::verify_boundary_conditions<dim>(boundary_descriptor, *grid);
+  application->set_boundary_conditions();
+  IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   // field functions
-  field_functions = std::make_shared<FieldFunctions<dim>>();
-  application->set_field_functions(field_functions);
+  application->set_field_functions();
 
-  if(param.solver_type == SolverType::Unsteady)
+  if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
-    pde_operator = create_operator<dim, Number>(
-      grid, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
+    pde_operator = create_operator<dim, Number>(grid,
+                                                application->get_boundary_descriptor(),
+                                                application->get_field_functions(),
+                                                application->get_parameters(),
+                                                "fluid",
+                                                mpi_comm);
   }
-  else if(param.solver_type == SolverType::Steady)
+  else if(application->get_parameters().solver_type == SolverType::Steady)
   {
-    pde_operator = std::make_shared<IncNS::OperatorCoupled<dim, Number>>(
-      grid, boundary_descriptor, field_functions, param, "fluid", mpi_comm);
+    pde_operator =
+      std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
+                                                            application->get_boundary_descriptor(),
+                                                            application->get_field_functions(),
+                                                            application->get_parameters(),
+                                                            "fluid",
+                                                            mpi_comm);
   }
   else
   {
@@ -179,7 +186,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-  if(param.use_cell_based_face_loops)
+  if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->get_dynamic_mapping(),
                       matrix_free_data->get_dof_handler_vector(),
@@ -193,39 +200,39 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   if(!is_throughput_study)
   {
     // setup postprocessor
-    postprocessor = application->create_postprocessor(param.degree_u, mpi_comm);
+    postprocessor = application->create_postprocessor();
     postprocessor->setup(*pde_operator);
 
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
     // depends on quantities such as the time_step_size or gamma0!!!)
-    if(param.solver_type == SolverType::Unsteady)
+    if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, param, refine_time, mpi_comm, is_test, postprocessor);
+        pde_operator, application->get_parameters(), refine_time, mpi_comm, is_test, postprocessor);
     }
-    else if(param.solver_type == SolverType::Steady)
+    else if(application->get_parameters().solver_type == SolverType::Steady)
     {
       std::shared_ptr<OperatorCoupled<dim, Number>> operator_coupled =
         std::dynamic_pointer_cast<OperatorCoupled<dim, Number>>(pde_operator);
 
       // initialize driver for steady state problem that depends on pde_operator
       driver_steady = std::make_shared<DriverSteadyProblems<dim, Number>>(
-        operator_coupled, param, mpi_comm, is_test, postprocessor);
+        operator_coupled, application->get_parameters(), mpi_comm, is_test, postprocessor);
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    if(param.solver_type == SolverType::Unsteady)
+    if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
-      time_integrator->setup(param.restarted_simulation);
+      time_integrator->setup(application->get_parameters().restarted_simulation);
 
       pde_operator->setup_solvers(time_integrator->get_scaling_factor_time_derivative_term(),
                                   time_integrator->get_velocity());
     }
-    else if(param.solver_type == SolverType::Steady)
+    else if(application->get_parameters().solver_type == SolverType::Steady)
     {
       driver_steady->setup();
 
@@ -275,12 +282,12 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::solve() const
 {
-  if(param.problem_type == ProblemType::Unsteady)
+  if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
     // stability analysis (uncomment if desired)
     // time_integrator->postprocessing_stability_analysis();
 
-    if(param.ale_formulation == true)
+    if(application->get_parameters().ale_formulation == true)
     {
       while(not time_integrator->finished())
       {
@@ -298,13 +305,13 @@ Driver<dim, Number>::solve() const
       time_integrator->timeloop();
     }
   }
-  else if(param.problem_type == ProblemType::Steady)
+  else if(application->get_parameters().problem_type == ProblemType::Steady)
   {
-    if(param.solver_type == SolverType::Unsteady)
+    if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator->timeloop_steady_problem();
     }
-    else if(param.solver_type == SolverType::Steady)
+    else if(application->get_parameters().solver_type == SolverType::Steady)
     {
       // solve steady problem
       driver_steady->solve_steady_problem();
@@ -332,7 +339,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   pcout << "Performance results for incompressible Navier-Stokes solver:" << std::endl;
 
   // Iterations
-  if(param.solver_type == SolverType::Unsteady)
+  if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
     pcout << std::endl << "Average number of iterations:" << std::endl;
 
@@ -342,7 +349,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   // Wall times
   timer_tree.insert({"Incompressible flow"}, total_time);
 
-  if(param.solver_type == SolverType::Unsteady)
+  if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
     timer_tree.insert({"Incompressible flow"}, time_integrator->get_timings());
   }
@@ -364,7 +371,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
   double const              overall_time_avg  = overall_time_data.avg;
 
-  if(param.solver_type == SolverType::Unsteady)
+  if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
     unsigned int const N_time_steps = time_integrator->get_number_of_time_steps();
     print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
@@ -393,14 +400,15 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
-  AssertThrow(param.degree_p == DegreePressure::MixedOrder,
+  AssertThrow(application->get_parameters().degree_p == DegreePressure::MixedOrder,
               ExcMessage(
                 "The function get_dofs_per_element() assumes mixed-order polynomials for "
                 "velocity and pressure. Additional operator types have to be introduced to "
                 "enable equal-order polynomials for this throughput study."));
 
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  if(application->get_parameters().temporal_discretization ==
+     TemporalDiscretization::BDFCoupledSolution)
   {
     AssertThrow(operator_type == OperatorType::ConvectiveOperator ||
                   operator_type == OperatorType::CoupledNonlinearResidual ||
@@ -408,7 +416,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                   operator_type == OperatorType::InverseMassOperator,
                 ExcMessage("Invalid operator specified for coupled solution approach."));
   }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  else if(application->get_parameters().temporal_discretization ==
+          TemporalDiscretization::BDFDualSplittingScheme)
   {
     AssertThrow(operator_type == OperatorType::ConvectiveOperator ||
                   operator_type == OperatorType::PressurePoissonOperator ||
@@ -417,7 +426,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                   operator_type == OperatorType::InverseMassOperator,
                 ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  else if(application->get_parameters().temporal_discretization ==
+          TemporalDiscretization::BDFPressureCorrection)
   {
     AssertThrow(operator_type == OperatorType::ConvectiveOperator ||
                   operator_type == OperatorType::PressurePoissonOperator ||
@@ -444,7 +454,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   pde_operator->set_velocity_ptr(velocity);
 
   // initialize vectors
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  if(application->get_parameters().temporal_discretization ==
+     TemporalDiscretization::BDFCoupledSolution)
   {
     pde_operator->initialize_block_vector_velocity_pressure(dst1);
     pde_operator->initialize_block_vector_velocity_pressure(src1);
@@ -457,7 +468,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       pde_operator->initialize_vector_velocity(dst2);
     }
   }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  else if(application->get_parameters().temporal_discretization ==
+          TemporalDiscretization::BDFDualSplittingScheme)
   {
     if(operator_type == OperatorType::ConvectiveOperator ||
        operator_type == OperatorType::HelmholtzOperator ||
@@ -479,7 +491,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
     src2 = 1.0;
   }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  else if(application->get_parameters().temporal_discretization ==
+          TemporalDiscretization::BDFPressureCorrection)
   {
     if(operator_type == OperatorType::VelocityConvDiffOperator ||
        operator_type == OperatorType::ProjectionOperator ||
@@ -507,7 +520,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   const std::function<void(void)> operator_evaluation = [&](void) {
     // clang-format off
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
       std::shared_ptr<OperatorCoupled<dim, Number>> operator_coupled =
           std::dynamic_pointer_cast<OperatorCoupled<dim, Number>>(pde_operator);
@@ -523,7 +536,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       else
         AssertThrow(false,ExcMessage("Not implemented."));
     }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
       std::shared_ptr<OperatorDualSplitting<dim, Number>>      operator_dual_splitting =
           std::dynamic_pointer_cast<OperatorDualSplitting<dim, Number>>(pde_operator);
@@ -541,7 +554,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       else
         AssertThrow(false,ExcMessage("Not implemented."));
     }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
       std::shared_ptr<OperatorPressureCorrection<dim, Number>> operator_pressure_correction =
           std::dynamic_pointer_cast<OperatorPressureCorrection<dim, Number>>(pde_operator);
@@ -577,7 +590,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   {
     dofs = pde_operator->get_dof_handler_u().n_dofs() + pde_operator->get_dof_handler_p().n_dofs();
 
-    fe_degree = param.degree_u;
+    fe_degree = application->get_parameters().degree_u;
   }
   else if(operator_type == OperatorType::ConvectiveOperator ||
           operator_type == OperatorType::VelocityConvDiffOperator ||
@@ -587,13 +600,13 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   {
     dofs = pde_operator->get_dof_handler_u().n_dofs();
 
-    fe_degree = param.degree_u;
+    fe_degree = application->get_parameters().degree_u;
   }
   else if(operator_type == OperatorType::PressurePoissonOperator)
   {
     dofs = pde_operator->get_dof_handler_p().n_dofs();
 
-    fe_degree = param.get_degree_p(param.degree_u);
+    fe_degree = application->get_parameters().get_degree_p(application->get_parameters().degree_u);
   }
   else
   {

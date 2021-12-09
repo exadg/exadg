@@ -110,10 +110,6 @@ private:
   bool use_adaptive_time_stepping;
 
   // INCOMPRESSIBLE NAVIER-STOKES
-  std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
-  std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
-
-  IncNS::InputParameters fluid_param;
 
   //  MatrixFree
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
@@ -134,15 +130,7 @@ private:
 
   // SCALAR TRANSPORT
 
-  // number of scalar quantities
-  unsigned int n_scalars;
-
-  std::vector<ConvDiff::InputParameters> scalar_param;
-
-  std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
-  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
-
-  std::vector<std::shared_ptr<ConvDiff::Operator<dim, Number>>> conv_diff_operator;
+  std::vector<std::shared_ptr<ConvDiff::Operator<dim, Number>>> scalar_operator;
 
   std::vector<std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>> scalar_postprocessor;
 

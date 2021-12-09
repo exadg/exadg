@@ -52,7 +52,8 @@ template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : FTI::ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -61,118 +62,109 @@ public:
   }
 
   void
-  set_input_parameters(IncNS::InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
-    (void)param;
-
     using namespace IncNS;
 
     // Here, set all parameters differing from their default values as initialized in
     // IncNS::InputParameters::InputParameters()
+
+    this->param.degree_u = degree;
   }
 
   void
-  set_input_parameters_scalar(ConvDiff::InputParameters & param,
-                              unsigned int const          scalar_index) final
+  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
   {
-    (void)param;
-    (void)scalar_index;
-
     using namespace ConvDiff;
 
     // Here, set all parameters differing from their default values as initialized in
     // ConvDiff::InputParameters::InputParameters()
+
+    this->scalar_param[scalar_index].degree = degree;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // velocity
-    boundary_descriptor->velocity->dirichlet_bc.insert(
+    this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->velocity->neumann_bc.insert(
+    this->boundary_descriptor->velocity->neumann_bc.insert(
       pair(1, new Functions::ZeroFunction<dim>(dim)));
 
     // pressure
-    boundary_descriptor->pressure->neumann_bc.insert(
+    this->boundary_descriptor->pressure->neumann_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure->dirichlet_bc.insert(
+    this->boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(1, new Functions::ZeroFunction<dim>(1)));
   }
 
   void
-  set_field_functions(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
-    (void)degree;
-
     IncNS::PostProcessorData<dim> pp_data;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
 
   void
-  set_boundary_conditions_scalar(
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor,
-    unsigned int const                                 scalar_index = 0) final
+  set_boundary_conditions_scalar(unsigned int scalar_index = 0) final
   {
-    (void)scalar_index;
-
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->scalar_boundary_descriptor[scalar_index]->neumann_bc.insert(
+      pair(1, new Functions::ZeroFunction<dim>(1)));
   }
 
 
   void
-  set_field_functions_scalar(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions,
-                             unsigned int const                             scalar_index = 0) final
+  set_field_functions_scalar(unsigned int scalar_index = 0) final
   {
-    (void)scalar_index;
-
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->velocity.reset(new Functions::ZeroFunction<dim>(1));
+    this->scalar_field_functions[scalar_index]->initial_solution.reset(
+      new Functions::ZeroFunction<dim>(1));
+    this->scalar_field_functions[scalar_index]->right_hand_side.reset(
+      new Functions::ZeroFunction<dim>(1));
+    this->scalar_field_functions[scalar_index]->velocity.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
-  create_postprocessor_scalar(unsigned int const degree,
-                              MPI_Comm const &   mpi_comm,
-                              unsigned int const scalar_index) final
+  create_postprocessor_scalar(unsigned int const scalar_index) final
   {
-    (void)degree;
     (void)scalar_index;
 
     ConvDiff::PostProcessorData<dim> pp_data;
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -180,13 +172,8 @@ public:
 
 } // namespace FTI
 
-template<int dim, typename Number>
-std::shared_ptr<FTI::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<FTI::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
+
+#include <exadg/incompressible_flow_with_transport/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_ */

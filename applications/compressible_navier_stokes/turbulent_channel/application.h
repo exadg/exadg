@@ -259,7 +259,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -268,54 +269,56 @@ public:
   }
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.equation_type   = EquationType::NavierStokes;
-    param.right_hand_side = true;
+    this->param.equation_type   = EquationType::NavierStokes;
+    this->param.right_hand_side = true;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = START_TIME;
-    param.end_time              = END_TIME;
-    param.dynamic_viscosity     = DYN_VISCOSITY;
-    param.reference_density     = RHO_0;
-    param.heat_capacity_ratio   = GAMMA;
-    param.thermal_conductivity  = LAMBDA;
-    param.specific_gas_constant = R;
-    param.max_temperature       = T_0;
+    this->param.start_time            = START_TIME;
+    this->param.end_time              = END_TIME;
+    this->param.dynamic_viscosity     = DYN_VISCOSITY;
+    this->param.reference_density     = RHO_0;
+    this->param.heat_capacity_ratio   = GAMMA;
+    this->param.thermal_conductivity  = LAMBDA;
+    this->param.specific_gas_constant = R;
+    this->param.max_temperature       = T_0;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization       = TemporalDiscretization::ExplRK3Stage7Reg2;
-    param.order_time_integrator         = 3;
-    param.stages                        = 7;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
-    param.time_step_size                = 1.0e-3;
-    param.max_velocity                  = MAX_VELOCITY;
-    param.cfl_number                    = 1.5;
-    param.diffusion_number              = 0.17;
-    param.exponent_fe_degree_cfl        = 1.5;
-    param.exponent_fe_degree_viscous    = 3.0;
+    this->param.temporal_discretization       = TemporalDiscretization::ExplRK3Stage7Reg2;
+    this->param.order_time_integrator         = 3;
+    this->param.stages                        = 7;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
+    this->param.time_step_size                = 1.0e-3;
+    this->param.max_velocity                  = MAX_VELOCITY;
+    this->param.cfl_number                    = 1.5;
+    this->param.diffusion_number              = 0.17;
+    this->param.exponent_fe_degree_cfl        = 1.5;
+    this->param.exponent_fe_degree_viscous    = 3.0;
 
     // output of solver information
-    param.solver_info_data.interval_time = CHARACTERISTIC_TIME;
+    this->param.solver_info_data.interval_time = CHARACTERISTIC_TIME;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type    = TriangulationType::Distributed;
-    param.mapping               = MappingType::Affine;
-    param.n_q_points_convective = QuadratureRule::Overintegration32k;
-    param.n_q_points_viscous    = QuadratureRule::Overintegration32k;
+    this->param.triangulation_type    = TriangulationType::Distributed;
+    this->param.mapping               = MappingType::Affine;
+    this->param.degree                = degree;
+    this->param.n_q_points_convective = QuadratureRule::Overintegration32k;
+    this->param.n_q_points_viscous    = QuadratureRule::Overintegration32k;
 
     // viscous term
-    param.IP_factor = 1.0;
+    this->param.IP_factor = 1.0;
 
     // NUMERICAL PARAMETERS
-    param.use_combined_operator = true;
+    this->param.use_combined_operator = true;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;
@@ -356,44 +359,47 @@ public:
 
     grid->triangulation->add_periodicity(grid->periodic_faces);
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
 
     // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in
     // equations). Hence the specified function is irrelevant (i.e., it is not used).
-    boundary_descriptor->density.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
-    boundary_descriptor->velocity.dirichlet_bc.insert(
+    this->boundary_descriptor->density.neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->velocity.dirichlet_bc.insert(
       pair(0, new Functions::ZeroFunction<dim>(dim)));
-    boundary_descriptor->pressure.neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->pressure.neumann_bc.insert(
+      pair(0, new Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
-    boundary_descriptor->energy.boundary_variable.insert(
+    this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Temperature));
-    boundary_descriptor->energy.dirichlet_bc.insert(
+    this->boundary_descriptor->energy.dirichlet_bc.insert(
       pair(0, new Functions::ConstantFunction<dim>(T_0, 1)));
   }
 
   void
-  set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new InitialSolution<dim>());
-    field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new InitialSolution<dim>());
+    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
     std::vector<double> forcing = std::vector<double>(dim, 0.0);
     forcing[0]                  = RHO_0; // constant forcing in x_1-direction
-    field_functions->right_hand_side_velocity.reset(new Functions::ConstantFunction<dim>(forcing));
-    field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(
+      new Functions::ConstantFunction<dim>(forcing));
+    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output = this->write_output;
@@ -407,7 +413,7 @@ public:
     pp_data.output_data.write_divergence   = false;
     pp_data.output_data.start_time         = START_TIME;
     pp_data.output_data.interval_time      = 1.0;
-    pp_data.output_data.degree             = degree;
+    pp_data.output_data.degree             = this->param.degree;
     pp_data.output_data.write_higher_order = false;
 
     MyPostProcessorData<dim> pp_data_turb_ch;
@@ -425,7 +431,7 @@ public:
     pp_data_turb_ch.turb_ch_data.filename               = this->output_name;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, mpi_comm));
+    pp.reset(new MyPostProcessor<dim, Number>(pp_data_turb_ch, this->mpi_comm));
 
     return pp;
   }
@@ -433,13 +439,8 @@ public:
 
 } // namespace CompNS
 
-template<int dim, typename Number>
-std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<CompNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
+
+#include <exadg/compressible_navier_stokes/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

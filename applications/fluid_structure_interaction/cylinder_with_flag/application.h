@@ -152,7 +152,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -161,9 +162,11 @@ public:
   }
 
   void
-  set_input_parameters_fluid(IncNS::InputParameters & param) final
+  set_input_parameters_fluid(unsigned int const degree) final
   {
     using namespace IncNS;
+
+    InputParameters & param = this->fluid_param;
 
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -211,6 +214,7 @@ public:
 
     // SPATIAL DISCRETIZATION
     param.triangulation_type = TriangulationType::Distributed;
+    param.degree_u           = degree;
     param.degree_p           = DegreePressure::MixedOrder;
     param.mapping            = MappingType::Isoparametric;
 
@@ -405,9 +409,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid_fluid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     create_triangulation_fluid(*grid->triangulation);
 
@@ -493,15 +498,17 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions_fluid(
-    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_fluid() final
   {
+    std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
+      this->fluid_boundary_descriptor;
+
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
@@ -533,8 +540,10 @@ public:
   }
 
   void
-  set_field_functions_fluid(std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions) final
+  set_field_functions_fluid() final
   {
+    std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->fluid_field_functions;
+
     field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
@@ -542,7 +551,7 @@ public:
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
-  create_postprocessor_fluid(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_fluid() final
   {
     IncNS::PostProcessorData<dim> pp_data;
 
@@ -555,18 +564,20 @@ public:
     pp_data.output_data.start_time         = 0.0;
     pp_data.output_data.interval_time      = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = degree;
+    pp_data.output_data.degree             = this->fluid_param.degree_u;
 
     std::shared_ptr<IncNS::PostProcessorBase<dim, Number>> pp;
-    pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new IncNS::PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
 
   void
-  set_input_parameters_ale(Poisson::InputParameters & param) final
+  set_input_parameters_ale_poisson(unsigned int const degree) final
   {
     using namespace Poisson;
+
+    InputParameters & param = this->ale_poisson_param;
 
     // MATHEMATICAL MODEL
     param.right_hand_side = false;
@@ -574,6 +585,7 @@ public:
     // SPATIAL DISCRETIZATION
     param.triangulation_type     = TriangulationType::Distributed;
     param.mapping                = MappingType::Isoparametric;
+    param.degree                 = degree;
     param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
@@ -588,9 +600,12 @@ public:
     param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
   }
 
-  void set_boundary_conditions_ale(
-    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor) final
+  void
+  set_boundary_conditions_ale_poisson() final
   {
+    std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor =
+      this->ale_poisson_boundary_descriptor;
+
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
@@ -611,46 +626,53 @@ public:
 
 
   void
-  set_field_functions_ale(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions) final
+  set_field_functions_ale_poisson() final
   {
+    std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions =
+      this->ale_poisson_field_functions;
+
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   void
-  set_input_parameters_ale(Structure::InputParameters & parameters) final
+  set_input_parameters_ale_elasticity(unsigned int const degree) final
   {
     using namespace Structure;
 
-    parameters.problem_type         = ProblemType::Steady;
-    parameters.body_force           = false;
-    parameters.pull_back_body_force = false;
-    parameters.large_deformation    = false;
-    parameters.pull_back_traction   = false;
+    InputParameters & param = this->ale_elasticity_param;
 
-    parameters.triangulation_type = TriangulationType::Distributed;
-    parameters.mapping            = MappingType::Isoparametric;
+    param.problem_type         = ProblemType::Steady;
+    param.body_force           = false;
+    param.pull_back_body_force = false;
+    param.large_deformation    = false;
+    param.pull_back_traction   = false;
 
-    parameters.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    parameters.solver             = Structure::Solver::FGMRES;
-    if(parameters.large_deformation)
-      parameters.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+    param.triangulation_type = TriangulationType::Distributed;
+    param.mapping            = MappingType::Isoparametric;
+    param.degree             = degree;
+
+    param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
+    param.solver             = Structure::Solver::FGMRES;
+    if(param.large_deformation)
+      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
     else
-      parameters.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    parameters.preconditioner                       = Preconditioner::Multigrid;
-    parameters.multigrid_data.type                  = MultigridType::phMG;
-    parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-    parameters.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    param.preconditioner                               = Preconditioner::Multigrid;
+    param.multigrid_data.type                          = MultigridType::phMG;
+    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
+    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
-    parameters.update_preconditioner                         = parameters.large_deformation;
-    parameters.update_preconditioner_every_newton_iterations = 10;
+    param.update_preconditioner                         = param.large_deformation;
+    param.update_preconditioner_every_newton_iterations = 10;
   }
 
   void
-  set_boundary_conditions_ale(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_ale_elasticity() final
   {
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
+      this->ale_elasticity_boundary_descriptor;
+
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
@@ -680,8 +702,11 @@ public:
   }
 
   void
-  set_material_ale(Structure::MaterialDescriptor & material_descriptor) final
+  set_material_ale_elasticity() final
   {
+    std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
+      this->ale_elasticity_material_descriptor;
+
     using namespace Structure;
 
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
@@ -693,13 +718,16 @@ public:
     double const                   poisson = 0.3;
     std::shared_ptr<Function<dim>> E_function;
     E_function.reset(new SpatiallyVaryingE<dim>());
-    material_descriptor.insert(
+    material_descriptor->insert(
       Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
   }
 
   void
-  set_field_functions_ale(std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) final
+  set_field_functions_ale_elasticity() final
   {
+    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions =
+      this->ale_elasticity_field_functions;
+
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
@@ -707,43 +735,45 @@ public:
 
   // Structure
   void
-  set_input_parameters_structure(Structure::InputParameters & parameters) final
+  set_input_parameters_structure(unsigned int const degree) final
   {
     using namespace Structure;
 
-    parameters.problem_type         = ProblemType::Unsteady;
-    parameters.body_force           = false;
-    parameters.pull_back_body_force = false;
-    parameters.large_deformation    = true;
-    parameters.pull_back_traction   = true;
+    InputParameters & param = this->structure_param;
 
-    parameters.density = DENSITY_STRUCTURE;
+    param.problem_type         = ProblemType::Unsteady;
+    param.body_force           = false;
+    param.pull_back_body_force = false;
+    param.large_deformation    = true;
+    param.pull_back_traction   = true;
 
-    parameters.start_time                           = 0.0;
-    parameters.end_time                             = END_TIME;
-    parameters.time_step_size                       = END_TIME / 100.0;
-    parameters.gen_alpha_type                       = GenAlphaType::BossakAlpha;
-    parameters.spectral_radius                      = 0.8;
-    parameters.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
+    param.density = DENSITY_STRUCTURE;
 
-    parameters.triangulation_type = TriangulationType::Distributed;
-    parameters.mapping            = MappingType::Isoparametric;
+    param.start_time                           = 0.0;
+    param.end_time                             = END_TIME;
+    param.time_step_size                       = END_TIME / 100.0;
+    param.gen_alpha_type                       = GenAlphaType::BossakAlpha;
+    param.spectral_radius                      = 0.8;
+    param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
-    parameters.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
-    parameters.solver             = Structure::Solver::FGMRES;
-    if(parameters.large_deformation)
-      parameters.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
+    param.triangulation_type = TriangulationType::Distributed;
+    param.mapping            = MappingType::Isoparametric;
+    param.degree             = degree;
+
+    param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
+    param.solver             = Structure::Solver::FGMRES;
+    if(param.large_deformation)
+      param.solver_data = SolverData(1e4, ABS_TOL_LINEARIZED, REL_TOL_LINEARIZED, 100);
     else
-      parameters.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
-    parameters.preconditioner                       = Preconditioner::Multigrid;
-    parameters.multigrid_data.type                  = MultigridType::phMG;
-    parameters.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-    parameters.multigrid_data.coarse_problem.preconditioner =
-      MultigridCoarseGridPreconditioner::AMG;
+      param.solver_data = SolverData(1e4, ABS_TOL, REL_TOL, 100);
+    param.preconditioner                               = Preconditioner::Multigrid;
+    param.multigrid_data.type                          = MultigridType::phMG;
+    param.multigrid_data.coarse_problem.solver         = MultigridCoarseGridSolver::CG;
+    param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
-    parameters.update_preconditioner                         = true;
-    parameters.update_preconditioner_every_time_steps        = 10;
-    parameters.update_preconditioner_every_newton_iterations = 10;
+    param.update_preconditioner                         = true;
+    param.update_preconditioner_every_time_steps        = 10;
+    param.update_preconditioner_every_newton_iterations = 10;
   }
 
   void create_triangulation_structure(Triangulation<2> & tria)
@@ -882,9 +912,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid_structure(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     create_triangulation_structure(*grid->triangulation);
 
@@ -964,15 +995,17 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions_structure(
-    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions_structure() final
   {
+    std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
+      this->structure_boundary_descriptor;
+
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
 
@@ -990,18 +1023,22 @@ public:
   }
 
   void
-  set_field_functions_structure(
-    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions) final
+  set_field_functions_structure() final
   {
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    std::shared_ptr<Structure::FieldFunctions<dim>> field_functions =
+      this->structure_field_functions;
 
+    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
     field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
   void
-  set_material_structure(Structure::MaterialDescriptor & material_descriptor) final
+  set_material_structure() final
   {
+    std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
+      this->structure_material_descriptor;
+
     using namespace Structure;
 
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
@@ -1009,12 +1046,12 @@ public:
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    material_descriptor.insert(Pair(
+    material_descriptor->insert(Pair(
       0, new StVenantKirchhoffData<dim>(type, E_STRUCTURE, POISSON_RATIO_STRUCTURE, two_dim_type)));
   }
 
   std::shared_ptr<Structure::PostProcessor<dim, Number>>
-  create_postprocessor_structure(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor_structure() final
   {
     using namespace Structure;
 
@@ -1026,10 +1063,10 @@ public:
     pp_data.output_data.start_time         = 0.0;
     pp_data.output_data.interval_time      = OUTPUT_INTERVAL_TIME;
     pp_data.output_data.write_higher_order = true;
-    pp_data.output_data.degree             = degree;
+    pp_data.output_data.degree             = this->structure_param.degree;
 
     std::shared_ptr<PostProcessor<dim, Number>> post(
-      new PostProcessor<dim, Number>(pp_data, mpi_comm));
+      new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return post;
   }
@@ -1037,13 +1074,8 @@ public:
 
 } // namespace FSI
 
-template<int dim, typename Number>
-std::shared_ptr<FSI::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<FSI::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
+
+#include <exadg/fluid_structure_interaction/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_FSI_CYLINDER_WITH_FLAG_H_ */

@@ -115,7 +115,8 @@ template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
 public:
-  Application(std::string input_file) : ApplicationBase<dim, Number>(input_file)
+  Application(std::string input_file, MPI_Comm const & comm)
+    : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
     ParameterHandler prm;
@@ -144,21 +145,21 @@ public:
   double const end_time   = 20.0 * CHARACTERISTIC_TIME;
 
   void
-  set_input_parameters(InputParameters & param) final
+  set_input_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
-    param.equation_type   = EquationType::NavierStokes;
-    param.right_hand_side = false;
+    this->param.equation_type   = EquationType::NavierStokes;
+    this->param.right_hand_side = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = start_time;
-    param.end_time              = end_time;
-    param.dynamic_viscosity     = DYN_VISCOSITY;
-    param.reference_density     = RHO_0;
-    param.heat_capacity_ratio   = GAMMA;
-    param.thermal_conductivity  = LAMBDA;
-    param.specific_gas_constant = R;
-    param.max_temperature       = T_0;
+    this->param.start_time            = start_time;
+    this->param.end_time              = end_time;
+    this->param.dynamic_viscosity     = DYN_VISCOSITY;
+    this->param.reference_density     = RHO_0;
+    this->param.heat_capacity_ratio   = GAMMA;
+    this->param.thermal_conductivity  = LAMBDA;
+    this->param.specific_gas_constant = R;
+    this->param.max_temperature       = T_0;
 
     // TEMPORAL DISCRETIZATION
 
@@ -186,42 +187,44 @@ public:
     // SSPRK(8,3): CFL_crit = 1.5 - 1.6, costs = stages / CFL = 5.0 - 5.3, computational costs =
     // 0.77 CPUh SSPRK(8,4): CFL_crit = 1.25 - 1.3, costs = stages / CFL = 6.2 - 6.4
 
-    param.temporal_discretization       = TemporalDiscretization::ExplRK3Stage7Reg2;
-    param.order_time_integrator         = 3;
-    param.stages                        = 7;
-    param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
-    param.time_step_size                = 1.0e-3;
-    param.max_velocity                  = MAX_VELOCITY;
-    param.cfl_number                    = 0.6;
-    param.diffusion_number              = 0.02;
-    param.exponent_fe_degree_cfl        = 1.5;
-    param.exponent_fe_degree_viscous    = 3.0;
+    this->param.temporal_discretization       = TemporalDiscretization::ExplRK3Stage7Reg2;
+    this->param.order_time_integrator         = 3;
+    this->param.stages                        = 7;
+    this->param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
+    this->param.time_step_size                = 1.0e-3;
+    this->param.max_velocity                  = MAX_VELOCITY;
+    this->param.cfl_number                    = 0.6;
+    this->param.diffusion_number              = 0.02;
+    this->param.exponent_fe_degree_cfl        = 1.5;
+    this->param.exponent_fe_degree_viscous    = 3.0;
 
     // output of solver information
-    param.solver_info_data.interval_time = (param.end_time - param.start_time) / 20;
+    this->param.solver_info_data.interval_time = (end_time - start_time) / 20;
 
     // restart
-    param.restart_data.write_restart = false;
-    param.restart_data.interval_time = 1.0;
-    param.restart_data.filename      = this->output_directory + this->output_name + "_restart";
+    this->param.restart_data.write_restart = false;
+    this->param.restart_data.interval_time = 1.0;
+    this->param.restart_data.filename = this->output_directory + this->output_name + "_restart";
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type    = TriangulationType::Distributed;
-    param.mapping               = MappingType::Affine;
-    param.n_q_points_convective = QuadratureRule::Overintegration32k;
-    param.n_q_points_viscous    = QuadratureRule::Overintegration32k;
+    this->param.triangulation_type    = TriangulationType::Distributed;
+    this->param.mapping               = MappingType::Affine;
+    this->param.degree                = degree;
+    this->param.n_q_points_convective = QuadratureRule::Overintegration32k;
+    this->param.n_q_points_viscous    = QuadratureRule::Overintegration32k;
 
     // viscous term
-    param.IP_factor = 1.0;
+    this->param.IP_factor = 1.0;
 
     // NUMERICAL PARAMETERS
-    param.use_combined_operator = true;
+    this->param.use_combined_operator = true;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & data, MPI_Comm const & mpi_comm) final
+  create_grid(GridData const & grid_data) final
   {
-    std::shared_ptr<Grid<dim, Number>> grid = std::make_shared<Grid<dim, Number>>(data, mpi_comm);
+    std::shared_ptr<Grid<dim, Number>> grid =
+      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
 
     double const pi   = numbers::PI;
     double const left = -pi * L, right = pi * L;
@@ -242,7 +245,7 @@ public:
     }
 
     create_periodic_box(grid->triangulation,
-                        data.n_refine_global,
+                        grid_data.n_refine_global,
                         grid->periodic_faces,
                         this->n_subdivisions_1d_hypercube,
                         left,
@@ -250,30 +253,28 @@ public:
                         curvilinear_mesh,
                         deformation);
 
-    grid->triangulation->refine_global(data.n_refine_global);
+    grid->triangulation->refine_global(grid_data.n_refine_global);
 
     return grid;
   }
 
   void
-  set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor) final
+  set_boundary_conditions() final
   {
-    (void)boundary_descriptor;
-
     // test case with periodic BC -> boundary descriptors remain empty
   }
 
   void
-  set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) final
+  set_field_functions() final
   {
-    field_functions->initial_solution.reset(new InitialSolution<dim>());
-    field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new InitialSolution<dim>());
+    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
-  create_postprocessor(unsigned int const degree, MPI_Comm const & mpi_comm) final
+  create_postprocessor() final
   {
     PostProcessorData<dim> pp_data;
     pp_data.output_data.write_output = this->write_output;
@@ -287,7 +288,7 @@ public:
     pp_data.output_data.write_divergence  = true;
     pp_data.output_data.start_time        = start_time;
     pp_data.output_data.interval_time     = (end_time - start_time) / 20;
-    pp_data.output_data.degree            = degree;
+    pp_data.output_data.degree            = this->param.degree;
 
     // kinetic energy
     pp_data.kinetic_energy_data.calculate                  = true;
@@ -302,12 +303,12 @@ public:
     pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
     pp_data.kinetic_energy_spectrum_data.directory                     = this->output_directory;
     pp_data.kinetic_energy_spectrum_data.filename = this->output_name + "_spectrum";
-    pp_data.kinetic_energy_spectrum_data.degree   = degree;
-    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (degree + 1) * 1;
+    pp_data.kinetic_energy_spectrum_data.degree   = this->param.degree;
+    pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (this->param.degree + 1) * 1;
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry           = false;
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));
 
     return pp;
   }
@@ -315,14 +316,8 @@ public:
 
 } // namespace CompNS
 
-template<int dim, typename Number>
-std::shared_ptr<CompNS::ApplicationBase<dim, Number>>
-get_application(std::string input_file)
-{
-  return std::make_shared<CompNS::Application<dim, Number>>(input_file);
-}
-
 } // namespace ExaDG
 
+#include <exadg/compressible_navier_stokes/user_interface/implement_get_application.h>
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_ */

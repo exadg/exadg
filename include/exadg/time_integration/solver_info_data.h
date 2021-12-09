@@ -48,7 +48,7 @@ struct SolverInfoData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream const & pcout) const
   {
     pcout << "  Solver information:" << std::endl;
     print_parameter(pcout, "Interval physical time", interval_time);
