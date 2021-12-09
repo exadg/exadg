@@ -1,3 +1,5 @@
-PROJECT(incompressible_backward_facing_step)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver_precursor.cpp incompressible_backward_facing_step solver_precursor)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver_precursor.cpp ${TARGET_NAME} solver_precursor)

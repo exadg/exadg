@@ -1,4 +1,8 @@
-PROJECT(compressible_taylor_green)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp compressible_taylor_green solver)
-EXADG_PICKUP_EXE(throughput.cpp compressible_throughput throughput)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
+
+STRING(APPEND TARGET_NAME "_throughput")
+EXADG_PICKUP_EXE(throughput.cpp ${TARGET_NAME} throughput)

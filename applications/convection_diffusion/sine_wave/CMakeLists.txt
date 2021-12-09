@@ -1,5 +1,7 @@
-PROJECT(conv_diff_sine_wave)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp conv_diff_sine_wave solver)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
 
 ADD_SUBDIRECTORY(tests)

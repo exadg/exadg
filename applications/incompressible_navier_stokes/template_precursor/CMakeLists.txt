@@ -1,3 +1,5 @@
-PROJECT(incompressible_template_precursor)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver_precursor.cpp incompressible_template_precursor solver_precursor)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver_precursor.cpp ${TARGET_NAME} solver_precursor)

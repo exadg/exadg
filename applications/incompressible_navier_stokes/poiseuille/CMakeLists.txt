@@ -1,5 +1,7 @@
-PROJECT(incompressible_poiseuille)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp incompressible_poiseuille solver)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
 
 ADD_SUBDIRECTORY(tests)
