@@ -190,7 +190,7 @@ private:
   VectorType   streamfunction;
   VectorType   q_criterion;
   VectorType   mean_velocity; // velocity field averaged over time
-  VectorType   cfl;
+  VectorType   cfl_vector;
   unsigned int counter_mean_velocity;
 
   std::vector<SolutionField<dim, Number>> additional_fields;
