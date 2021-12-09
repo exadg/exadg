@@ -455,7 +455,7 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
       // This time step size corresponds to CFL = 1.
       auto time_step_size = navier_stokes_operator->calculate_time_step_cfl(velocity);
 
-      // The computed dof-vector of CFL values contains relative CFL numbers with a value of
+      // The computed cell-vector of CFL values contains relative CFL numbers with a value of
       // CFL = 1 in the most critical cell and CFL < 1 in other cells.
       navier_stokes_operator->calculate_cfl_from_time_step(cfl_vector, velocity, time_step_size);
     }
