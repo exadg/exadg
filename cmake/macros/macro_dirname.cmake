@@ -25,10 +25,9 @@
 #
 #########################################################################
 
-INCLUDE(macro_print_exadg_header.cmake)
-INCLUDE(macro_target_link_fftw.cmake)
-INCLUDE(macro_exadg_pickup_exe.cmake)
-INCLUDE(macro_exadg_pickup_tests.cmake)
-INCLUDE(macro_subdir_list.cmake)
-INCLUDE(macro_exename.cmake)
-INCLUDE(macro_dirname.cmake)
+# example: curdir = applications/poisson -> result = poisson
+MACRO(DIRNAME result curdir)
+GET_FILENAME_COMPONENT(PARENT_DIR ${curdir} DIRECTORY)
+
+STRING(REPLACE "${PARENT_DIR}/" "" ${result} ${curdir})
+ENDMACRO(DIRNAME)

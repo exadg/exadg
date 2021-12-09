@@ -25,10 +25,13 @@
 #
 #########################################################################
 
-INCLUDE(macro_print_exadg_header.cmake)
-INCLUDE(macro_target_link_fftw.cmake)
-INCLUDE(macro_exadg_pickup_exe.cmake)
-INCLUDE(macro_exadg_pickup_tests.cmake)
-INCLUDE(macro_subdir_list.cmake)
-INCLUDE(macro_exename.cmake)
-INCLUDE(macro_dirname.cmake)
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO(SUBDIRLIST)

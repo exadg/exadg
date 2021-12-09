@@ -25,10 +25,11 @@
 #
 #########################################################################
 
-INCLUDE(macro_print_exadg_header.cmake)
-INCLUDE(macro_target_link_fftw.cmake)
-INCLUDE(macro_exadg_pickup_exe.cmake)
-INCLUDE(macro_exadg_pickup_tests.cmake)
-INCLUDE(macro_subdir_list.cmake)
-INCLUDE(macro_exename.cmake)
-INCLUDE(macro_dirname.cmake)
+# example: curdir = applications/poisson/template -> result = poisson_template
+MACRO(EXENAME result curdir)
+GET_FILENAME_COMPONENT(PARENT_DIR ${curdir} DIRECTORY)
+GET_FILENAME_COMPONENT(PARENT_PARENT_DIR ${PARENT_DIR} DIRECTORY)
+
+STRING(REPLACE "${PARENT_PARENT_DIR}/" "" INTERMEDIATE_NAME ${curdir})
+STRING(REPLACE "/" "_" ${result} ${INTERMEDIATE_NAME})
+ENDMACRO(EXENAME)

@@ -1,3 +1,5 @@
-PROJECT(poisson_throughput)
+EXENAME(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(throughput.cpp poisson_throughput throughput)
+PROJECT(${PROJECT_NAME})
+
+EXADG_PICKUP_EXE(throughput.cpp ${PROJECT_NAME} throughput)

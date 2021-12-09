@@ -1,3 +1,5 @@
-PROJECT(poisson_template)
+EXENAME(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp poisson_template solver)
+PROJECT(${PROJECT_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${PROJECT_NAME} solver)
