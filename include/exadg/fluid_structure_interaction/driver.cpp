@@ -120,7 +120,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     Timer timer_local;
     timer_local.restart();
 
-    application->set_input_parameters_structure(degree_structure);
+    application->set_parameters_structure(degree_structure);
     application->get_parameters_structure().check_input_parameters();
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_structure().pull_back_traction == true,
@@ -189,7 +189,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // parameters fluid
-    application->set_input_parameters_fluid(degree_fluid);
+    application->set_parameters_fluid(degree_fluid);
     application->get_parameters_fluid().check_input_parameters(pcout);
     application->get_parameters_fluid().print(
       pcout, "List of input parameters for incompressible flow solver:");
@@ -223,7 +223,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // ALE
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      application->set_input_parameters_ale_poisson(fluid_grid_data.mapping_degree);
+      application->set_parameters_ale_poisson(fluid_grid_data.mapping_degree);
       application->get_parameters_ale_poisson().check_input_parameters();
       AssertThrow(application->get_parameters_ale_poisson().right_hand_side == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
@@ -250,7 +250,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      application->set_input_parameters_ale_elasticity(fluid_grid_data.mapping_degree);
+      application->set_parameters_ale_elasticity(fluid_grid_data.mapping_degree);
       application->get_parameters_ale_elasticity().check_input_parameters();
       AssertThrow(application->get_parameters_ale_elasticity().body_force == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));

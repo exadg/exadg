@@ -210,7 +210,7 @@ public:
   double const density = 0.001;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.problem_type         = ProblemType::Steady;
     this->param.body_force           = use_volume_force;

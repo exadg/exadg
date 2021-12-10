@@ -42,13 +42,13 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.degree_u = degree;
   }
 
   void
-  set_input_parameters_precursor(unsigned int const degree) final
+  set_parameters_precursor(unsigned int const degree) final
   {
     this->param_pre.degree_u = degree;
   }

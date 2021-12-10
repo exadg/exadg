@@ -98,7 +98,7 @@ public:
 
   // fluid
   virtual void
-  set_input_parameters_fluid(unsigned int const degree) = 0;
+  set_parameters_fluid(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_fluid(GridData const & grid_data) = 0;
@@ -116,7 +116,7 @@ public:
 
   // Poisson type mesh motion
   virtual void
-  set_input_parameters_ale_poisson(unsigned int const degree) = 0;
+  set_parameters_ale_poisson(unsigned int const degree) = 0;
 
   virtual void
   set_boundary_descriptor_ale_poisson() = 0;
@@ -126,7 +126,7 @@ public:
 
   // elasticity type mesh motion
   virtual void
-  set_input_parameters_ale_elasticity(unsigned int const degree) = 0;
+  set_parameters_ale_elasticity(unsigned int const degree) = 0;
 
   virtual void
   set_boundary_descriptor_ale_elasticity() = 0;
@@ -139,7 +139,7 @@ public:
 
   // Structure
   virtual void
-  set_input_parameters_structure(unsigned int const degree) = 0;
+  set_parameters_structure(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_structure(GridData const & grid_data) = 0;

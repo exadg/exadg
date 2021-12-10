@@ -153,7 +153,7 @@ public:
   double area_force   = 1.0; // "Neumann"
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.problem_type         = ProblemType::QuasiStatic; // Steady;
     this->param.body_force           = use_volume_force;

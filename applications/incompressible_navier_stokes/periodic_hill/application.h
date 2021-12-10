@@ -176,7 +176,7 @@ public:
   unsigned int points_per_line        = 20;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type = ProblemType::Unsteady;

@@ -67,7 +67,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->set_input_parameters(degree);
+  application->set_parameters(degree);
   application->get_parameters().check_input_parameters();
   application->get_parameters().print(pcout, "List of input parameters:");
 

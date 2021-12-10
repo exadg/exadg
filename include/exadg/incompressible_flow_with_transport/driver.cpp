@@ -69,7 +69,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
-  application->set_input_parameters(degree);
+  application->set_parameters(degree);
   application->get_parameters().check_input_parameters(pcout);
 
   application->get_parameters().print(pcout, "List of input parameters for fluid solver:");
@@ -77,7 +77,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // parameters scalar
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    application->set_input_parameters_scalar(degree, i);
+    application->set_parameters_scalar(degree, i);
     application->get_parameters_scalar(i).check_input_parameters();
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,

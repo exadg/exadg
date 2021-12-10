@@ -370,7 +370,7 @@ public:
   double const end_time   = 0.75;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.equation_type   = EquationType::NavierStokes;

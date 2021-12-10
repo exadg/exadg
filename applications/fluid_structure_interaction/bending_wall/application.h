@@ -131,7 +131,7 @@ public:
   }
 
   void
-  set_input_parameters_fluid(unsigned int const degree) final
+  set_parameters_fluid(unsigned int const degree) final
   {
     using namespace IncNS;
 
@@ -555,7 +555,7 @@ public:
 
 
   void
-  set_input_parameters_ale_poisson(unsigned int const degree) final
+  set_parameters_ale_poisson(unsigned int const degree) final
   {
     using namespace Poisson;
 
@@ -629,7 +629,7 @@ public:
   }
 
   void
-  set_input_parameters_ale_elasticity(unsigned int const degree) final
+  set_parameters_ale_elasticity(unsigned int const degree) final
   {
     using namespace Structure;
 
@@ -730,7 +730,7 @@ public:
 
   // Structure
   void
-  set_input_parameters_structure(unsigned int const degree) final
+  set_parameters_structure(unsigned int const degree) final
   {
     using namespace Structure;
 

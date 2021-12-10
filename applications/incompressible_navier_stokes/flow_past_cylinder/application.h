@@ -293,7 +293,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type                = problem_type;

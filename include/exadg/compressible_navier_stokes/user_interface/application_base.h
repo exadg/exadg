@@ -72,7 +72,7 @@ public:
   }
 
   virtual void
-  set_input_parameters(unsigned int const degree) = 0;
+  set_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & grid_data) = 0;

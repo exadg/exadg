@@ -62,7 +62,7 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     using namespace IncNS;
 
@@ -73,7 +73,7 @@ public:
   }
 
   void
-  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 

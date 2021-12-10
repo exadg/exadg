@@ -80,7 +80,7 @@ public:
   }
 
   virtual void
-  set_input_parameters(unsigned int const degree) = 0;
+  set_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & grid_data) = 0;
@@ -106,7 +106,7 @@ public:
 
   // Moving mesh (Poisson problem)
   virtual void
-  set_input_parameters_poisson(unsigned int const degree)
+  set_parameters_poisson(unsigned int const degree)
   {
     (void)degree;
 
@@ -207,7 +207,7 @@ public:
   }
 
   virtual void
-  set_input_parameters_precursor(unsigned int const degree) = 0;
+  set_parameters_precursor(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_precursor(GridData const & grid_data) = 0;

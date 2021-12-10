@@ -82,7 +82,7 @@ public:
   }
 
   virtual void
-  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index = 0) = 0;
+  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index = 0) = 0;
 
   virtual void
   set_boundary_descriptor_scalar(unsigned int const scalar_index = 0) = 0;

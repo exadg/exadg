@@ -62,7 +62,7 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // Here, set all parameters differing from their default values as initialized in
     // InputParameters::InputParameters()

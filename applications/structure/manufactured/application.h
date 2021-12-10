@@ -324,7 +324,7 @@ public:
   double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.problem_type         = unsteady ? ProblemType::Unsteady : ProblemType::Steady;
     this->param.body_force           = true;

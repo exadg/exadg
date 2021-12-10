@@ -272,9 +272,9 @@ public:
    *  for the precursor by passing an additional parameter is_precursor.
    */
   void
-  do_set_input_parameters(InputParameters &  param,
-                          unsigned int const degree,
-                          bool const         is_precursor = false)
+  do_set_parameters(InputParameters &  param,
+                    unsigned int const degree,
+                    bool const         is_precursor = false)
   {
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -430,15 +430,15 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
-    do_set_input_parameters(this->param, degree);
+    do_set_parameters(this->param, degree);
   }
 
   void
-  set_input_parameters_precursor(unsigned int const degree) final
+  set_parameters_precursor(unsigned int const degree) final
   {
-    do_set_input_parameters(this->param_pre, degree, true);
+    do_set_parameters(this->param_pre, degree, true);
   }
 
   std::shared_ptr<Grid<dim, Number>>

@@ -81,7 +81,7 @@ public:
   double const end_time   = 4.0;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type = ProblemType::Unsteady;
