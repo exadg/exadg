@@ -39,6 +39,9 @@ enum_to_string(TriangulationType const enum_type)
     case TriangulationType::Undefined:
       string_type = "Undefined";
       break;
+    case TriangulationType::Serial:
+      string_type = "Serial";
+      break;
     case TriangulationType::Distributed:
       string_type = "Distributed";
       break;
