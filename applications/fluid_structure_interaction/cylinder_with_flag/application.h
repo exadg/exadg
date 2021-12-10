@@ -702,7 +702,7 @@ public:
   }
 
   void
-  set_material_ale_elasticity() final
+  set_material_descriptor_ale_elasticity() final
   {
     std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
       this->ale_elasticity_material_descriptor;
@@ -1034,7 +1034,7 @@ public:
   }
 
   void
-  set_material_structure() final
+  set_material_descriptor_structure() final
   {
     std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
       this->structure_material_descriptor;

@@ -144,7 +144,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     verify_boundary_conditions(*application->get_boundary_descriptor_structure(), *structure_grid);
 
     // material_descriptor
-    application->set_material_structure();
+    application->set_material_descriptor_structure();
 
     // field functions
     application->set_field_functions_structure();
@@ -266,7 +266,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                  *fluid_grid);
 
       // material_descriptor
-      application->set_material_ale_elasticity();
+      application->set_material_descriptor_ale_elasticity();
 
       // field functions
       application->set_field_functions_ale_elasticity();

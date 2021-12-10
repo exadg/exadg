@@ -79,7 +79,7 @@ public:
   set_boundary_conditions() = 0;
 
   virtual void
-  set_material() = 0;
+  set_material_descriptor() = 0;
 
   virtual void
   set_field_functions() = 0;

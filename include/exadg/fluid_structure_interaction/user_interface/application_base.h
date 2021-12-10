@@ -132,7 +132,7 @@ public:
   set_boundary_conditions_ale_elasticity() = 0;
 
   virtual void
-  set_material_ale_elasticity() = 0;
+  set_material_descriptor_ale_elasticity() = 0;
 
   virtual void
   set_field_functions_ale_elasticity() = 0;
@@ -148,7 +148,7 @@ public:
   set_boundary_conditions_structure() = 0;
 
   virtual void
-  set_material_structure() = 0;
+  set_material_descriptor_structure() = 0;
 
   virtual void
   set_field_functions_structure() = 0;

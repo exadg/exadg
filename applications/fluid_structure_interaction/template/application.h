@@ -187,7 +187,7 @@ public:
   }
 
   void
-  set_material_ale_elasticity() final
+  set_material_descriptor_ale_elasticity() final
   {
   }
 
@@ -226,7 +226,7 @@ public:
   }
 
   void
-  set_material_structure() final
+  set_material_descriptor_structure() final
   {
   }
 

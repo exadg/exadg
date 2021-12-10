@@ -84,7 +84,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
 
   // material_descriptor
-  application->set_material();
+  application->set_material_descriptor();
 
   // field functions
   application->set_field_functions();

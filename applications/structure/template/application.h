@@ -78,7 +78,7 @@ public:
   }
 
   void
-  set_material() final
+  set_material_descriptor() final
   {
   }
 
