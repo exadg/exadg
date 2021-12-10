@@ -29,7 +29,7 @@ using namespace dealii;
 #include <deal.II/base/types.h>
 
 // ExaDG
-#include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 
 namespace ExaDG

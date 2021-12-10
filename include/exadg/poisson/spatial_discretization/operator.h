@@ -30,7 +30,7 @@
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
-#include <exadg/poisson/user_interface/input_parameters.h>
+#include <exadg/poisson/user_interface/parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/preconditioner_base.h>
 
 namespace ExaDG

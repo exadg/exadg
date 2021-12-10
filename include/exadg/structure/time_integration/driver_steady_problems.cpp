@@ -22,7 +22,7 @@
 #include <exadg/structure/postprocessor/postprocessor_base.h>
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/time_integration/driver_steady_problems.h>
-#include <exadg/structure/user_interface/input_parameters.h>
+#include <exadg/structure/user_interface/parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG

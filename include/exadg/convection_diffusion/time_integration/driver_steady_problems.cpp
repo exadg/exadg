@@ -22,7 +22,7 @@
 #include <exadg/convection_diffusion/postprocessor/postprocessor_base.h>
 #include <exadg/convection_diffusion/spatial_discretization/interface.h>
 #include <exadg/convection_diffusion/time_integration/driver_steady_problems.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG

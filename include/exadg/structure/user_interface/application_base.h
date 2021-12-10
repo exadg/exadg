@@ -32,8 +32,8 @@
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 #include <exadg/structure/user_interface/field_functions.h>
-#include <exadg/structure/user_interface/input_parameters.h>
 #include <exadg/structure/user_interface/material_descriptor.h>
+#include <exadg/structure/user_interface/parameters.h>
 
 namespace ExaDG
 {

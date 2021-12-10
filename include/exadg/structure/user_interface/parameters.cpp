@@ -23,7 +23,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/structure/user_interface/input_parameters.h>
+#include <exadg/structure/user_interface/parameters.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG

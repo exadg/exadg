@@ -23,7 +23,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/poisson/user_interface/input_parameters.h>
+#include <exadg/poisson/user_interface/parameters.h>
 
 namespace ExaDG
 {

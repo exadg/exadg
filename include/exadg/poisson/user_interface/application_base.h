@@ -35,7 +35,7 @@
 #include <exadg/poisson/postprocessor/postprocessor.h>
 #include <exadg/poisson/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/field_functions.h>
-#include <exadg/poisson/user_interface/input_parameters.h>
+#include <exadg/poisson/user_interface/parameters.h>
 
 namespace ExaDG
 {

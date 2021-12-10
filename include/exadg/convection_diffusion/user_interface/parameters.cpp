@@ -20,7 +20,7 @@
  */
 
 // ExaDG
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG

@@ -22,7 +22,7 @@
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/compressible_navier_stokes/spatial_discretization/interface.h>
 #include <exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h>
-#include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
 

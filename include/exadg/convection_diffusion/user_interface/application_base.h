@@ -30,7 +30,7 @@
 #include <exadg/convection_diffusion/postprocessor/postprocessor.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
 
 namespace ExaDG
