@@ -360,7 +360,7 @@ private:
   std::shared_ptr<FieldFunctions<dim> const>     field_functions;
 
   /*
-   * List of input parameters.
+   * List of parameters.
    */
   Parameters const & param;
 

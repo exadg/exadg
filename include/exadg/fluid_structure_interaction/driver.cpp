@@ -125,7 +125,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_structure().pull_back_traction == true,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    application->get_parameters_structure().print(pcout, "List of input parameters for structure:");
+    application->get_parameters_structure().print(pcout, "List of parameters for structure:");
 
     // grid
     GridData structure_grid_data;
@@ -192,7 +192,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->set_parameters_fluid(degree_fluid);
     application->get_parameters_fluid().check(pcout);
     application->get_parameters_fluid().print(
-      pcout, "List of input parameters for incompressible flow solver:");
+      pcout, "List of parameters for incompressible flow solver:");
 
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_fluid().problem_type == IncNS::ProblemType::Unsteady,
@@ -231,7 +231,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                     application->get_parameters_fluid().mapping,
                   ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_poisson().print(
-        pcout, "List of input parameters for ALE solver (Poisson):");
+        pcout, "List of parameters for ALE solver (Poisson):");
 
       application->set_boundary_descriptor_ale_poisson();
       verify_boundary_conditions(*application->get_boundary_descriptor_ale_poisson(), *fluid_grid);
@@ -258,7 +258,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                     application->get_parameters_fluid().mapping,
                   ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_elasticity().print(
-        pcout, "List of input parameters for ALE solver (elasticity):");
+        pcout, "List of parameters for ALE solver (elasticity):");
 
       // boundary conditions
       application->set_boundary_descriptor_ale_elasticity();

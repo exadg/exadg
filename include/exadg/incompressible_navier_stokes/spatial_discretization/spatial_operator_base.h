@@ -336,7 +336,7 @@ public:
   is_pressure_level_undefined() const;
 
   // This function adjust the pressure level, where different options are available to fix the
-  // pressure level. The method selected by this function depends on the specified input parameter.
+  // pressure level. The method selected by this function depends on the specified parameter.
   void
   adjust_pressure_level_if_undefined(VectorType & pressure, double const & time) const;
 
@@ -511,7 +511,7 @@ protected:
   std::shared_ptr<FieldFunctions<dim> const>     field_functions;
 
   /*
-   * List of input parameters.
+   * List of parameters.
    */
   Parameters const & param;
 

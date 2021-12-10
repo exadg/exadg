@@ -250,7 +250,7 @@ public:
     // clang-format on
   }
 
-  // string to read input parameter
+  // string to read parameter
   std::string cylinder_type_string = "circular";
 
   // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3

@@ -84,7 +84,7 @@ grid_transform_y(double const & eta)
 
 /*
  *  grid transform function for turbulent channel statistics
- *  requires that the input parameter is 0 < xi < 1
+ *  requires that the parameter is 0 < xi < 1
  */
 double
 grid_transform_turb_channel(double const & xi)

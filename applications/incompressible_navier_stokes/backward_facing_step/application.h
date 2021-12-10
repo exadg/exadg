@@ -195,7 +195,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   /*
-   *  Most of the input parameters are the same for both domains, so we write
+   *  Most of the parameters are the same for both domains, so we write
    *  this function for the actual domain and only "correct" the parameters
    *  for the precursor by passing an additional parameter is_precursor.
    */

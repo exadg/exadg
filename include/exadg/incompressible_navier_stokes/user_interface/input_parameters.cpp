@@ -408,7 +408,7 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
-                ExcMessage("Invalid input parameter order_extrapolation_pressure_nbc!"));
+                ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
 
     if(order_extrapolation_pressure_nbc > 2)
     {
@@ -435,7 +435,7 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
-                ExcMessage("Invalid input parameter order_pressure_extrapolation!"));
+                ExcMessage("Invalid parameter order_pressure_extrapolation!"));
 
     if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
     {

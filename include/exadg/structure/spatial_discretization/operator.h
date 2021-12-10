@@ -357,7 +357,7 @@ private:
   std::shared_ptr<MaterialDescriptor const>      material_descriptor;
 
   /*
-   * List of input parameters.
+   * List of parameters.
    */
   Parameters const & param;
 

@@ -126,7 +126,7 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  // user input parameters
+  // user parameters
   Parameters param;
 
   // grid

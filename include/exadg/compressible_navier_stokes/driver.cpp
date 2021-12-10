@@ -68,7 +68,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application->set_parameters(degree);
   application->get_parameters().check();
-  application->get_parameters().print(pcout, "List of input parameters:");
+  application->get_parameters().print(pcout, "List of parameters:");
 
   // grid
   GridData grid_data;

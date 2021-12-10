@@ -294,7 +294,7 @@ public:
 
   /*
    * This function calculates the numerical flux where the type of the numerical flux depends on the
-   * specified input parameter. This function handles both analytical and numerical velocity fields.
+   * specified parameter. This function handles both analytical and numerical velocity fields.
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar

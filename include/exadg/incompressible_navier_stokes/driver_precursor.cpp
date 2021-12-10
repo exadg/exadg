@@ -124,11 +124,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   application->set_parameters_precursor(degree_velocity);
   application->get_parameters_precursor().check(pcout);
   application->get_parameters_precursor().print(pcout,
-                                                "List of input parameters for precursor domain:");
+                                                "List of parameters for precursor domain:");
 
   application->set_parameters(degree_velocity);
   application->get_parameters().check(pcout);
-  application->get_parameters().print(pcout, "List of input parameters for actual domain:");
+  application->get_parameters().print(pcout, "List of parameters for actual domain:");
 
   AssertThrow(application->get_parameters_precursor().ale_formulation == false,
               ExcMessage("not implemented."));
@@ -179,7 +179,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   AssertThrow(application->get_parameters_precursor().solver_type == SolverType::Unsteady &&
                 application->get_parameters().solver_type == SolverType::Unsteady,
-              ExcMessage("This is an unsteady solver. Check input parameters."));
+              ExcMessage("This is an unsteady solver. Check parameters."));
 
   // initialize pde_operator_pre (precursor domain)
   pde_operator = create_operator<dim, Number>(grid_pre,
