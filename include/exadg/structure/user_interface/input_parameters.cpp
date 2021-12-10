@@ -30,7 +30,7 @@ namespace ExaDG
 {
 namespace Structure
 {
-InputParameters::InputParameters()
+Parameters::Parameters()
   : // MATHEMATICAL MODEL
     problem_type(ProblemType::Undefined),
     body_force(false),
@@ -75,7 +75,7 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters() const
+Parameters::check() const
 {
   // MATHEMATICAL MODEL
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("Parameter must be defined."));
@@ -102,7 +102,7 @@ InputParameters::check_input_parameters() const
 }
 
 void
-InputParameters::print(dealii::ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -123,7 +123,7 @@ InputParameters::print(dealii::ConditionalOStream const & pcout, std::string con
 }
 
 void
-InputParameters::print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -141,8 +141,7 @@ InputParameters::print_parameters_mathematical_model(dealii::ConditionalOStream 
 }
 
 void
-InputParameters::print_parameters_physical_quantities(
-  dealii::ConditionalOStream const & pcout) const
+Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -153,8 +152,7 @@ InputParameters::print_parameters_physical_quantities(
 }
 
 void
-InputParameters::print_parameters_temporal_discretization(
-  dealii::ConditionalOStream const & pcout) const
+Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -179,8 +177,7 @@ InputParameters::print_parameters_temporal_discretization(
 }
 
 void
-InputParameters::print_parameters_spatial_discretization(
-  dealii::ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -190,7 +187,7 @@ InputParameters::print_parameters_spatial_discretization(
 }
 
 void
-InputParameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) const
+Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
 
