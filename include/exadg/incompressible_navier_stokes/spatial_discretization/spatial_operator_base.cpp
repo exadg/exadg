@@ -1775,13 +1775,6 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
   }
 }
 
-template<int dim, typename Number>
-const InputParameters &
-SpatialOperatorBase<dim, Number>::get_param() const
-{
-  return param;
-}
-
 template class SpatialOperatorBase<2, float>;
 template class SpatialOperatorBase<3, float>;
 

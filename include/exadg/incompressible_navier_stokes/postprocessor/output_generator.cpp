@@ -371,8 +371,8 @@ OutputGenerator<dim, Number>::initialize_additional_fields()
     {
       SolutionField<dim, Number> sol;
       sol.type   = SolutionFieldType::cellwise;
-      sol.name   = "cfl";
-      sol.vector = &cfl;
+      sol.name   = "cfl_relative";
+      sol.vector = &cfl_vector;
       this->additional_fields.push_back(sol);
     }
   }
@@ -452,11 +452,12 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
 
     if(output_data.write_cfl)
     {
-      auto   param          = navier_stokes_operator->get_param();
-      double time_step_size = navier_stokes_operator->calculate_time_step_cfl(velocity);
-      time_step_size *= param.cfl;
+      // This time step size corresponds to CFL = 1.
+      auto const time_step_size = navier_stokes_operator->calculate_time_step_cfl(velocity);
 
-      navier_stokes_operator->calculate_cfl_from_time_step(cfl, velocity, time_step_size);
+      // The computed cell-vector of CFL values contains relative CFL numbers with a value of
+      // CFL = 1 in the most critical cell and CFL < 1 in other cells.
+      navier_stokes_operator->calculate_cfl_from_time_step(cfl_vector, velocity, time_step_size);
     }
   }
 }

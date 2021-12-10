@@ -515,10 +515,6 @@ protected:
    */
   InputParameters const & param;
 
-public:
-  const InputParameters &
-  get_param() const;
-
 protected:
   std::string const field;
 
