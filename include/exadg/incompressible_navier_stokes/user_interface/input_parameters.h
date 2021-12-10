@@ -49,7 +49,7 @@ public:
   Parameters();
 
   void
-  check_input_parameters(ConditionalOStream const & pcout) const;
+  check(ConditionalOStream const & pcout) const;
 
   bool
   convective_problem() const;

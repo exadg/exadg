@@ -70,7 +70,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // parameters fluid
   application->set_parameters(degree);
-  application->get_parameters().check_input_parameters(pcout);
+  application->get_parameters().check(pcout);
 
   application->get_parameters().print(pcout, "List of input parameters for fluid solver:");
 
@@ -78,7 +78,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     application->set_parameters_scalar(degree, i);
-    application->get_parameters_scalar(i).check_input_parameters();
+    application->get_parameters_scalar(i).check();
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,
                 ExcMessage("ProblemType must be unsteady!"));

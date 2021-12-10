@@ -67,7 +67,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   application = app;
 
   application->set_parameters(degree_velocity);
-  application->get_parameters().check_input_parameters(pcout);
+  application->get_parameters().check(pcout);
   application->get_parameters().print(pcout, "List of input parameters:");
 
   // grid
@@ -96,7 +96,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
       application->set_parameters_poisson(grid_data.mapping_degree);
-      application->get_parameters_poisson().check_input_parameters();
+      application->get_parameters_poisson().check();
       application->get_parameters_poisson().print(
         pcout, "List of input parameters for Poisson solver (moving mesh):");
 

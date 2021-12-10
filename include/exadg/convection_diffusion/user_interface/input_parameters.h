@@ -50,7 +50,7 @@ public:
 
   // check correctness of parameters
   void
-  check_input_parameters() const;
+  check() const;
 
   bool
   linear_system_including_convective_term_has_to_be_solved() const;

@@ -53,7 +53,7 @@ Parameters::Parameters()
 }
 
 void
-Parameters::check_input_parameters() const
+Parameters::check() const
 {
   // MATHEMATICAL MODEL
 

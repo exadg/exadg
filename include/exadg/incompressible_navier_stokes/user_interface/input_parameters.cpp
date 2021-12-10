@@ -237,7 +237,7 @@ Parameters::Parameters()
 }
 
 void
-Parameters::check_input_parameters(ConditionalOStream const & pcout) const
+Parameters::check(ConditionalOStream const & pcout) const
 {
   // MATHEMATICAL MODEL
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));

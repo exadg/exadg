@@ -97,7 +97,7 @@ Parameters::Parameters()
 }
 
 void
-Parameters::check_input_parameters() const
+Parameters::check() const
 {
   // MATHEMATICAL MODEL
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));

@@ -41,7 +41,7 @@ public:
   Parameters();
 
   void
-  check_input_parameters() const;
+  check() const;
 
   void
   print(ConditionalOStream const & pcout, std::string const & name) const;
