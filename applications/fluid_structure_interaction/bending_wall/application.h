@@ -469,7 +469,7 @@ public:
   }
 
   void
-  set_boundary_conditions_fluid() final
+  set_boundary_descriptor_fluid() final
   {
     std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
       this->fluid_boundary_descriptor;
@@ -583,7 +583,7 @@ public:
   }
 
   void
-  set_boundary_conditions_ale_poisson() final
+  set_boundary_descriptor_ale_poisson() final
   {
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor =
       this->ale_poisson_boundary_descriptor;
@@ -661,7 +661,7 @@ public:
   }
 
   void
-  set_boundary_conditions_ale_elasticity() final
+  set_boundary_descriptor_ale_elasticity() final
   {
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->ale_elasticity_boundary_descriptor;
@@ -822,7 +822,7 @@ public:
   }
 
   void
-  set_boundary_conditions_structure() final
+  set_boundary_descriptor_structure() final
   {
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->structure_boundary_descriptor;

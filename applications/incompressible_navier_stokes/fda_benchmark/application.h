@@ -551,7 +551,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS
@@ -589,7 +589,7 @@ public:
   }
 
   void
-  set_boundary_conditions_precursor() final
+  set_boundary_descriptor_precursor() final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS

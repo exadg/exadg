@@ -242,7 +242,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     // all boundaries have ID = 0 by default -> Dirichlet boundaries
 

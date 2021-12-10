@@ -104,7 +104,7 @@ public:
   create_grid_fluid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_fluid() = 0;
+  set_boundary_descriptor_fluid() = 0;
 
   virtual void
   set_field_functions_fluid() = 0;
@@ -119,7 +119,7 @@ public:
   set_input_parameters_ale_poisson(unsigned int const degree) = 0;
 
   virtual void
-  set_boundary_conditions_ale_poisson() = 0;
+  set_boundary_descriptor_ale_poisson() = 0;
 
   virtual void
   set_field_functions_ale_poisson() = 0;
@@ -129,7 +129,7 @@ public:
   set_input_parameters_ale_elasticity(unsigned int const degree) = 0;
 
   virtual void
-  set_boundary_conditions_ale_elasticity() = 0;
+  set_boundary_descriptor_ale_elasticity() = 0;
 
   virtual void
   set_material_descriptor_ale_elasticity() = 0;
@@ -145,7 +145,7 @@ public:
   create_grid_structure(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_structure() = 0;
+  set_boundary_descriptor_structure() = 0;
 
   virtual void
   set_material_descriptor_structure() = 0;

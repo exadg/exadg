@@ -100,7 +100,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       application->get_parameters_poisson().print(
         pcout, "List of input parameters for Poisson solver (moving mesh):");
 
-      application->set_boundary_conditions_poisson();
+      application->set_boundary_descriptor_poisson();
       verify_boundary_conditions(*application->get_boundary_descriptor_poisson(), *grid);
 
       application->set_field_functions_poisson();
@@ -151,7 +151,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // boundary conditions
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   // field functions

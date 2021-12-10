@@ -149,7 +149,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // boundary conditions
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   // field functions
@@ -158,7 +158,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // boundary conditions
-    application->set_boundary_conditions_scalar(i);
+    application->set_boundary_descriptor_scalar(i);
     verify_boundary_conditions(*application->get_boundary_descriptor_scalar(i), *grid);
 
     // field functions

@@ -448,7 +448,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     if(exploit_symmetry)
     {

@@ -259,7 +259,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     // test case with periodic BC -> boundary descriptors remain empty
   }

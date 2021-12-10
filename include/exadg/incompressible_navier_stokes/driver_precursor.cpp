@@ -156,11 +156,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
-  application->set_boundary_conditions_precursor();
+  application->set_boundary_descriptor_precursor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_precursor(),
                                          *grid_pre);
 
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   application->set_field_functions_precursor();

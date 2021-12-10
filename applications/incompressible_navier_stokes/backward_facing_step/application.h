@@ -407,7 +407,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -442,7 +442,7 @@ public:
   }
 
   void
-  set_boundary_conditions_precursor() final
+  set_boundary_descriptor_precursor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

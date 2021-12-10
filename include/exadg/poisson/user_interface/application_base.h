@@ -81,7 +81,7 @@ public:
   create_grid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions() = 0;
+  set_boundary_descriptor() = 0;
 
   virtual void
   set_field_functions() = 0;

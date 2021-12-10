@@ -86,7 +86,7 @@ public:
   create_grid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions() = 0;
+  set_boundary_descriptor() = 0;
 
   virtual void
   set_field_functions() = 0;
@@ -116,7 +116,7 @@ public:
   }
 
   virtual void
-  set_boundary_conditions_poisson()
+  set_boundary_descriptor_poisson()
   {
     AssertThrow(false,
                 ExcMessage("Has to be overwritten by derived classes in order "
@@ -213,7 +213,7 @@ public:
   create_grid_precursor(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_precursor() = 0;
+  set_boundary_descriptor_precursor() = 0;
 
   virtual void
   set_field_functions_precursor() = 0;

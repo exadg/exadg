@@ -82,7 +82,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   print_grid_info(pcout, *grid);
 
   // boundary conditions
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
 
   // field functions

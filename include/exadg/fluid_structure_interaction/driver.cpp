@@ -140,7 +140,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     print_grid_info(pcout, *structure_grid);
 
     // boundary conditions
-    application->set_boundary_conditions_structure();
+    application->set_boundary_descriptor_structure();
     verify_boundary_conditions(*application->get_boundary_descriptor_structure(), *structure_grid);
 
     // material_descriptor
@@ -214,7 +214,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // field functions and boundary conditions
 
     // fluid
-    application->set_boundary_conditions_fluid();
+    application->set_boundary_descriptor_fluid();
     IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_fluid(),
                                            *fluid_grid);
 
@@ -233,7 +233,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       application->get_parameters_ale_poisson().print(
         pcout, "List of input parameters for ALE solver (Poisson):");
 
-      application->set_boundary_conditions_ale_poisson();
+      application->set_boundary_descriptor_ale_poisson();
       verify_boundary_conditions(*application->get_boundary_descriptor_ale_poisson(), *fluid_grid);
 
       application->set_field_functions_ale_poisson();
@@ -261,7 +261,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
         pcout, "List of input parameters for ALE solver (elasticity):");
 
       // boundary conditions
-      application->set_boundary_conditions_ale_elasticity();
+      application->set_boundary_descriptor_ale_elasticity();
       verify_boundary_conditions(*application->get_boundary_descriptor_ale_elasticity(),
                                  *fluid_grid);
 
