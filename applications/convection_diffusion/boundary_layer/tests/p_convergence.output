@@ -18,7 +18,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -136,7 +136,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -254,7 +254,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -351,7 +351,7 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.11729e-04
+  Relative error (L2-norm): 1.11727e-04
 
 
 
@@ -372,7 +372,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -469,7 +469,7 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 6.62560e-06
+  Relative error (L2-norm): 6.62607e-06
 
 
 
@@ -490,7 +490,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -587,4 +587,4 @@ Solving steady state problem ...
 ... done!
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.61241e-07
+  Relative error (L2-norm): 4.58368e-07

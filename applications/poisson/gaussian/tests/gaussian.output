@@ -18,7 +18,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -109,7 +109,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -200,7 +200,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -291,7 +291,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -382,7 +382,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -473,7 +473,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -564,7 +564,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -655,7 +655,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -746,7 +746,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -837,7 +837,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -928,7 +928,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -1019,7 +1019,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -1089,7 +1089,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.58595e-11
+  Relative error (L2-norm): 4.58639e-11
 
 
 
@@ -1110,7 +1110,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -1180,7 +1180,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.24996e-11
+  Relative error (L2-norm): 4.25089e-11
 
 
 
@@ -1201,7 +1201,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -1271,7 +1271,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.47323e-12
+  Relative error (L2-norm): 2.45105e-12
 
 
 
@@ -1292,7 +1292,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Right-hand side:                           true
@@ -1362,4 +1362,4 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.28171e-12
+  Relative error (L2-norm): 1.66421e-12

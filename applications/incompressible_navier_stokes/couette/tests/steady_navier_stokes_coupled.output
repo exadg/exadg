@@ -18,7 +18,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -162,10 +162,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.81266e-13
+  Absolute error (L2-norm): 7.86914e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.11294e-11
+  Absolute error (L2-norm): 2.13094e-11
 
 
 
@@ -186,7 +186,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -330,10 +330,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 5.46529e-13
+  Absolute error (L2-norm): 5.91330e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.03890e-11
+  Absolute error (L2-norm): 1.15169e-11
 
 
 
@@ -354,7 +354,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -498,10 +498,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 2.98389e-14
+  Absolute error (L2-norm): 3.21295e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.22650e-13
+  Absolute error (L2-norm): 8.70634e-13
 
 
 
@@ -522,7 +522,7 @@ MPI info:
 
   Number of processes:                       1
 
-List of input parameters:
+List of parameters:
 
 Mathematical model:
   Problem type:                              Steady
@@ -666,7 +666,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 9.34871e-12
+  Absolute error (L2-norm): 9.27360e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.32619e-10
+  Absolute error (L2-norm): 2.29763e-10
