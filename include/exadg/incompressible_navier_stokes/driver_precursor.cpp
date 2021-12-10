@@ -123,8 +123,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   application->set_parameters_precursor(degree_velocity);
   application->get_parameters_precursor().check(pcout);
-  application->get_parameters_precursor().print(pcout,
-                                                "List of parameters for precursor domain:");
+  application->get_parameters_precursor().print(pcout, "List of parameters for precursor domain:");
 
   application->set_parameters(degree_velocity);
   application->get_parameters().check(pcout);

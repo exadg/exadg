@@ -191,8 +191,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // parameters fluid
     application->set_parameters_fluid(degree_fluid);
     application->get_parameters_fluid().check(pcout);
-    application->get_parameters_fluid().print(
-      pcout, "List of parameters for incompressible flow solver:");
+    application->get_parameters_fluid().print(pcout,
+                                              "List of parameters for incompressible flow solver:");
 
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_fluid().problem_type == IncNS::ProblemType::Unsteady,
