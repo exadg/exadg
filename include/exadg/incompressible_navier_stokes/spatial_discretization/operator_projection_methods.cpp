@@ -35,7 +35,7 @@ OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
   std::shared_ptr<Grid<dim, Number> const>       grid_in,
   std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  InputParameters const &                        parameters_in,
+  Parameters const &                             parameters_in,
   std::string const &                            field_in,
   MPI_Comm const &                               mpi_comm_in)
   : Base(grid_in, boundary_descriptor_in, field_functions_in, parameters_in, field_in, mpi_comm_in)

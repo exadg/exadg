@@ -36,7 +36,7 @@ namespace Structure
 using namespace dealii;
 
 // forward declarations
-class InputParameters;
+class Parameters;
 
 template<typename Number>
 class PostProcessorBase;
@@ -46,7 +46,7 @@ namespace Interface
 template<typename Number>
 class Operator;
 
-class InputParameters;
+class Parameters;
 } // namespace Interface
 
 template<int dim, typename Number>
@@ -59,7 +59,7 @@ public:
   TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_,
                   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
                   unsigned int const                           refine_time_,
-                  InputParameters const &                      param_,
+                  Parameters const &                           param_,
                   MPI_Comm const &                             mpi_comm_,
                   bool const                                   is_test_);
 
@@ -117,7 +117,7 @@ private:
   // factors of 2 with each refinement
   unsigned int const refine_steps_time;
 
-  InputParameters const & param;
+  Parameters const & param;
 
   MPI_Comm const mpi_comm;
 

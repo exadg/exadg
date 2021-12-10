@@ -156,7 +156,7 @@ public:
   virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
   create_postprocessor_structure() = 0;
 
-  IncNS::InputParameters const &
+  IncNS::Parameters const &
   get_parameters_fluid() const
   {
     return fluid_param;
@@ -174,7 +174,7 @@ public:
     return fluid_field_functions;
   }
 
-  Structure::InputParameters const &
+  Structure::Parameters const &
   get_parameters_structure() const
   {
     return structure_param;
@@ -198,7 +198,7 @@ public:
     return structure_field_functions;
   }
 
-  Poisson::InputParameters const &
+  Poisson::Parameters const &
   get_parameters_ale_poisson() const
   {
     return ale_poisson_param;
@@ -216,7 +216,7 @@ public:
     return ale_poisson_field_functions;
   }
 
-  Structure::InputParameters const &
+  Structure::Parameters const &
   get_parameters_ale_elasticity() const
   {
     return ale_elasticity_param;
@@ -244,25 +244,25 @@ protected:
   MPI_Comm const & mpi_comm;
 
   // fluid
-  IncNS::InputParameters                          fluid_param;
+  IncNS::Parameters                               fluid_param;
   std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
 
   // ALE mesh motion
 
   // Poisson-type mesh motion
-  Poisson::InputParameters                             ale_poisson_param;
+  Poisson::Parameters                                  ale_poisson_param;
   std::shared_ptr<Poisson::FieldFunctions<dim>>        ale_poisson_field_functions;
   std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> ale_poisson_boundary_descriptor;
 
   // elasticity-type mesh motion
-  Structure::InputParameters                          ale_elasticity_param;
+  Structure::Parameters                               ale_elasticity_param;
   std::shared_ptr<Structure::FieldFunctions<dim>>     ale_elasticity_field_functions;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> ale_elasticity_boundary_descriptor;
   std::shared_ptr<Structure::MaterialDescriptor>      ale_elasticity_material_descriptor;
 
   // structure
-  Structure::InputParameters                          structure_param;
+  Structure::Parameters                               structure_param;
   std::shared_ptr<Structure::MaterialDescriptor>      structure_material_descriptor;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
   std::shared_ptr<Structure::FieldFunctions<dim>>     structure_field_functions;

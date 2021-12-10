@@ -96,7 +96,7 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
-  InputParameters const &
+  Parameters const &
   get_parameters() const
   {
     return param;
@@ -117,7 +117,7 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  InputParameters                          param;
+  Parameters                               param;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 

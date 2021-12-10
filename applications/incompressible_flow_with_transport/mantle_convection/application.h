@@ -272,7 +272,7 @@ public:
   {
     using namespace ConvDiff;
 
-    InputParameters param;
+    Parameters param;
 
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;

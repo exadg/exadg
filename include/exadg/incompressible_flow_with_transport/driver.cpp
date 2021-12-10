@@ -430,7 +430,7 @@ Driver<dim, Number>::synchronize_time_step_size() const
     // Setup time integrator and get time step size
     double time_step_size_fluid = std::numeric_limits<double>::max();
 
-    IncNS::InputParameters const & fluid_param = application->get_parameters();
+    IncNS::Parameters const & fluid_param = application->get_parameters();
 
     // fluid
     if(fluid_time_integrator->get_time() > fluid_param.start_time - EPSILON)
@@ -450,7 +450,7 @@ Driver<dim, Number>::synchronize_time_step_size() const
   // scalar transport
   for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
   {
-    ConvDiff::InputParameters const & scalar_param_i = application->get_parameters_scalar(i);
+    ConvDiff::Parameters const & scalar_param_i = application->get_parameters_scalar(i);
 
     double time_step_size_scalar = std::numeric_limits<double>::max();
     if(scalar_time_integrator[i]->get_time() > scalar_param_i.start_time - EPSILON)

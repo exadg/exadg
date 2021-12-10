@@ -42,11 +42,11 @@ namespace IncNS
 {
 using namespace dealii;
 
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters
-  InputParameters();
+  Parameters();
 
   void
   check_input_parameters(ConditionalOStream const & pcout) const;

@@ -66,10 +66,10 @@ public:
   {
     using namespace IncNS;
 
-    InputParameters & param = this->fluid_param;
+    Parameters & param = this->fluid_param;
 
     // Here, set all parameters differing from their default values as initialized in
-    // IncNS::InputParameters::InputParameters()
+    // IncNS::Parameters::Parameters()
 
     param.degree_u = degree;
   }
@@ -139,10 +139,10 @@ public:
   {
     using namespace Poisson;
 
-    InputParameters & param = this->ale_poisson_param;
+    Parameters & param = this->ale_poisson_param;
 
     // Here, set all parameters differing from their default values as initialized in
-    // Poisson::InputParameters::InputParameters()
+    // Poisson::Parameters::Parameters()
 
     param.degree = degree;
   }
@@ -176,7 +176,7 @@ public:
   {
     using namespace Structure;
 
-    InputParameters & param = this->ale_elasticity_param;
+    Parameters & param = this->ale_elasticity_param;
 
     param.degree = degree;
   }
@@ -202,7 +202,7 @@ public:
   {
     using namespace Structure;
 
-    InputParameters & param = this->structure_param;
+    Parameters & param = this->structure_param;
 
     param.degree = degree;
   }

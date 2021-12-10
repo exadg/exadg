@@ -177,7 +177,7 @@ public:
            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
            std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
            std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
-           InputParameters const &                        param_in,
+           Parameters const &                             param_in,
            std::string const &                            field_in,
            MPI_Comm const &                               mpi_comm_in);
 
@@ -359,7 +359,7 @@ private:
   /*
    * List of input parameters.
    */
-  InputParameters const & param;
+  Parameters const & param;
 
   std::string const field;
 

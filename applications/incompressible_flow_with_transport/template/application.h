@@ -67,7 +67,7 @@ public:
     using namespace IncNS;
 
     // Here, set all parameters differing from their default values as initialized in
-    // IncNS::InputParameters::InputParameters()
+    // IncNS::Parameters::Parameters()
 
     this->param.degree_u = degree;
   }
@@ -78,7 +78,7 @@ public:
     using namespace ConvDiff;
 
     // Here, set all parameters differing from their default values as initialized in
-    // ConvDiff::InputParameters::InputParameters()
+    // ConvDiff::Parameters::Parameters()
 
     this->scalar_param[scalar_index].degree = degree;
   }

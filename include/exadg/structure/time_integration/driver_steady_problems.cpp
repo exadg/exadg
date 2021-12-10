@@ -34,7 +34,7 @@ using namespace dealii;
 template<int dim, typename Number>
 DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_,
                                         std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-                                        InputParameters const &                      param_,
+                                        Parameters const &                           param_,
                                         MPI_Comm const &                             mpi_comm_,
                                         bool const                                   is_test_)
   : pde_operator(operator_),

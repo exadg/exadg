@@ -166,7 +166,7 @@ public:
   {
     using namespace IncNS;
 
-    InputParameters & param = this->fluid_param;
+    Parameters & param = this->fluid_param;
 
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -577,7 +577,7 @@ public:
   {
     using namespace Poisson;
 
-    InputParameters & param = this->ale_poisson_param;
+    Parameters & param = this->ale_poisson_param;
 
     // MATHEMATICAL MODEL
     param.right_hand_side = false;
@@ -640,7 +640,7 @@ public:
   {
     using namespace Structure;
 
-    InputParameters & param = this->ale_elasticity_param;
+    Parameters & param = this->ale_elasticity_param;
 
     param.problem_type         = ProblemType::Steady;
     param.body_force           = false;
@@ -739,7 +739,7 @@ public:
   {
     using namespace Structure;
 
-    InputParameters & param = this->structure_param;
+    Parameters & param = this->structure_param;
 
     param.problem_type         = ProblemType::Unsteady;
     param.body_force           = false;

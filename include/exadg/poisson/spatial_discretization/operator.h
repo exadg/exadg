@@ -55,7 +55,7 @@ public:
   Operator(std::shared_ptr<Grid<dim, Number> const>             grid,
            std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim> const>           field_functions,
-           InputParameters const &                              param,
+           Parameters const &                                   param,
            std::string const &                                  field,
            MPI_Comm const &                                     mpi_comm);
 
@@ -169,7 +169,7 @@ private:
   /*
    * List of input parameters.
    */
-  InputParameters const & param;
+  Parameters const & param;
 
   std::string const field;
 

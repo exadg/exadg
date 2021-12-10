@@ -42,11 +42,11 @@ namespace ConvDiff
 {
 using namespace dealii;
 
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters();
+  Parameters();
 
   // check correctness of parameters
   void

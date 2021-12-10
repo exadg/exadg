@@ -36,11 +36,11 @@ namespace ExaDG
 {
 namespace Structure
 {
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters();
+  Parameters();
 
   void
   check_input_parameters() const;

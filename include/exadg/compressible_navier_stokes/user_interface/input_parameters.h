@@ -33,11 +33,11 @@ namespace CompNS
 {
 using namespace dealii;
 
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters();
+  Parameters();
 
   void
   check_input_parameters() const;

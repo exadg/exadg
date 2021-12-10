@@ -36,7 +36,7 @@ namespace Structure
 using namespace dealii;
 
 // forward declarations
-class InputParameters;
+class Parameters;
 
 template<typename Number>
 class PostProcessorBase;
@@ -55,7 +55,7 @@ public:
 
   DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_,
                std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-               InputParameters const &                      param_,
+               Parameters const &                           param_,
                MPI_Comm const &                             mpi_comm_,
                bool const                                   is_test_);
 
@@ -85,7 +85,7 @@ private:
 
   std::shared_ptr<PostProcessorBase<Number>> postprocessor;
 
-  InputParameters const & param;
+  Parameters const & param;
 
   MPI_Comm const mpi_comm;
 

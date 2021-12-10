@@ -31,7 +31,7 @@ namespace Poisson
 {
 using namespace dealii;
 
-InputParameters::InputParameters()
+Parameters::Parameters()
   : // MATHEMATICAL MODEL
     right_hand_side(false),
 
@@ -53,7 +53,7 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters() const
+Parameters::check_input_parameters() const
 {
   // MATHEMATICAL MODEL
 
@@ -73,7 +73,7 @@ InputParameters::check_input_parameters() const
 }
 
 void
-InputParameters::print(ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -91,7 +91,7 @@ InputParameters::print(ConditionalOStream const & pcout, std::string const & nam
 }
 
 void
-InputParameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -99,7 +99,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream const & 
 }
 
 void
-InputParameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -116,7 +116,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream cons
 }
 
 void
-InputParameters::print_parameters_solver(ConditionalOStream const & pcout) const
+Parameters::print_parameters_solver(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
 
@@ -132,7 +132,7 @@ InputParameters::print_parameters_solver(ConditionalOStream const & pcout) const
 
 
 void
-InputParameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
+Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 

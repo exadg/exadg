@@ -64,7 +64,7 @@ public:
   set_parameters(unsigned int const degree) final
   {
     // Here, set all parameters differing from their default values as initialized in
-    // Poisson::InputParameters::InputParameters()
+    // Poisson::Parameters::Parameters()
 
     this->param.degree = degree;
   }

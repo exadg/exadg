@@ -93,7 +93,7 @@ public:
   virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
   create_postprocessor_scalar(unsigned int const scalar_index = 0) = 0;
 
-  ConvDiff::InputParameters const &
+  ConvDiff::Parameters const &
   get_parameters_scalar(unsigned int const scalar_index = 0) const
   {
     return scalar_param[scalar_index];
@@ -112,7 +112,7 @@ public:
   }
 
 protected:
-  std::vector<ConvDiff::InputParameters>                          scalar_param;
+  std::vector<ConvDiff::Parameters>                               scalar_param;
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 

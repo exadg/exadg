@@ -137,7 +137,7 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
-  InputParameters const &
+  Parameters const &
   get_parameters() const
   {
     return param;
@@ -155,7 +155,7 @@ public:
     return field_functions;
   }
 
-  Poisson::InputParameters const &
+  Poisson::Parameters const &
   get_parameters_poisson() const
   {
     return poisson_param;
@@ -176,12 +176,12 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  InputParameters                          param;
+  Parameters                               param;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
   // solve mesh deformation by a Poisson problem
-  Poisson::InputParameters                             poisson_param;
+  Poisson::Parameters                                  poisson_param;
   std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
   std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
 
@@ -221,7 +221,7 @@ public:
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   create_postprocessor_precursor() = 0;
 
-  InputParameters const &
+  Parameters const &
   get_parameters_precursor() const
   {
     return param_pre;
@@ -240,7 +240,7 @@ public:
   }
 
 protected:
-  InputParameters                          param_pre;
+  Parameters                               param_pre;
   std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
 };

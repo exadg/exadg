@@ -34,7 +34,7 @@ using namespace dealii;
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_,
-  InputParameters const &                         param_,
+  Parameters const &                              param_,
   MPI_Comm const &                                mpi_comm_,
   bool const                                      is_test_,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_)

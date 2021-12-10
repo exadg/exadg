@@ -36,7 +36,7 @@ namespace ConvDiff
 template<int dim, typename Number>
 std::shared_ptr<TimeIntBase>
 create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_operator,
-                       InputParameters const &                         parameters,
+                       Parameters const &                              parameters,
                        unsigned int const                              refine_steps_time,
                        MPI_Comm const &                                mpi_comm,
                        bool const                                      is_test,

@@ -38,7 +38,7 @@ namespace CompNS
 using namespace dealii;
 
 // forward declarations
-class InputParameters;
+class Parameters;
 
 template<typename Number>
 class PostProcessorInterface;
@@ -58,7 +58,7 @@ public:
   typedef Interface::Operator<Number> Operator;
 
   TimeIntExplRK(std::shared_ptr<Operator>                       operator_in,
-                InputParameters const &                         param_in,
+                Parameters const &                              param_in,
                 unsigned int const                              refine_steps_time_in,
                 MPI_Comm const &                                mpi_comm_in,
                 bool const                                      print_wall_times_in,
@@ -114,7 +114,7 @@ private:
 
   std::shared_ptr<ExplicitTimeIntegrator<Operator, VectorType>> rk_time_integrator;
 
-  InputParameters const & param;
+  Parameters const & param;
 
   unsigned int const refine_steps_time;
 

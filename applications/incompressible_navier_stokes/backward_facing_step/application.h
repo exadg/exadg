@@ -200,9 +200,7 @@ public:
    *  for the precursor by passing an additional parameter is_precursor.
    */
   void
-  do_set_parameters(InputParameters &  param,
-                    unsigned int const degree,
-                    bool const         is_precursor = false)
+  do_set_parameters(Parameters & param, unsigned int const degree, bool const is_precursor = false)
   {
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;

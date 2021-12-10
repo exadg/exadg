@@ -35,7 +35,7 @@ namespace IncNS
 {
 using namespace dealii;
 
-class InputParameters;
+class Parameters;
 
 template<int dim, typename Number>
 class SpatialOperatorBase;
@@ -57,7 +57,7 @@ public:
   typedef SpatialOperatorBase<dim, Number> OperatorBase;
 
   TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
-             InputParameters const &                         param_in,
+             Parameters const &                              param_in,
              unsigned int const                              refine_steps_time_in,
              MPI_Comm const &                                mpi_comm_in,
              bool const                                      is_test_in,
@@ -121,7 +121,7 @@ protected:
                                           double const cfl,
                                           double const cfl_oif) final;
 
-  InputParameters const & param;
+  Parameters const & param;
 
   // number of refinement steps, where the time step size is reduced in
   // factors of 2 with each refinement

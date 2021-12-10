@@ -35,7 +35,7 @@ using namespace dealii;
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<OperatorBase>                   operator_in,
-  InputParameters const &                         param_in,
+  Parameters const &                              param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
