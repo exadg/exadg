@@ -72,7 +72,7 @@ SET(TARGET_SRC
      include/exadg/solvers_and_preconditioners/preconditioners/enum_types.cpp
      include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_c.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.cpp

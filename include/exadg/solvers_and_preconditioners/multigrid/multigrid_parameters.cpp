@@ -23,7 +23,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 
 namespace ExaDG
 {

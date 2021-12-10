@@ -22,7 +22,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/multigrid/smoothers/smoother_base.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/block_jacobi_preconditioner.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/jacobi_preconditioner.h>
