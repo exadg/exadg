@@ -166,6 +166,7 @@ SET(TARGET_SRC
      include/exadg/compressible_navier_stokes/driver.cpp
      # elasticity
      include/exadg/structure/user_interface/enum_types.cpp
+     include/exadg/structure/user_interface/input_parameters.cpp
      include/exadg/structure/material/library/st_venant_kirchhoff.cpp
      include/exadg/structure/spatial_discretization/operators/elasticity_operator_base.cpp
      include/exadg/structure/spatial_discretization/operators/nonlinear_operator.cpp
