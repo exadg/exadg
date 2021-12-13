@@ -66,7 +66,12 @@ public:
   Grid(GridData const & data, MPI_Comm const & mpi_comm)
   {
     // triangulation
-    if(data.triangulation_type == TriangulationType::Distributed)
+    if(data.triangulation_type == TriangulationType::Serial)
+    {
+      AssertDimension(Utilities::MPI::n_mpi_processes(mpi_comm), 1);
+      triangulation = std::make_shared<Triangulation<dim>>();
+    }
+    else if(data.triangulation_type == TriangulationType::Distributed)
     {
       triangulation = std::make_shared<parallel::distributed::Triangulation<dim>>(
         mpi_comm,
