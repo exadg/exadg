@@ -94,7 +94,7 @@ $(function() {
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#define CONV_DIFF_CONVECTION_OPERATOR</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/boundary_descriptor.h&gt;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/input_parameters.h&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/parameters.h&gt;</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;exadg/functions_and_boundary_conditions/evaluate_functions.h&gt;</span></div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#include &lt;exadg/matrix_free/integrators.h&gt;</span></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;exadg/operators/operator_base.h&gt;</span></div>
@@ -365,7 +365,7 @@ $(function() {
 <div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span> </div>
 <div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  <span class="comment">/*</span></div>
 <div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span><span class="comment">   * This function calculates the numerical flux where the type of the numerical flux depends on the</span></div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span><span class="comment">   * specified input parameter. This function handles both analytical and numerical velocity fields.</span></div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span><span class="comment">   * specified parameter. This function handles both analytical and numerical velocity fields.</span></div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span><span class="comment">   */</span></div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  <span class="keyword">inline</span> DEAL_II_ALWAYS_INLINE <span class="comment">//</span></div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>    scalar</div>

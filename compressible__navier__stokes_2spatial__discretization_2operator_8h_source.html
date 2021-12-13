@@ -104,7 +104,7 @@ $(function() {
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/spatial_discretization/kernels_and_operators.h&gt;</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h&gt;</span></div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/field_functions.h&gt;</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/input_parameters.h&gt;</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/parameters.h&gt;</span></div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;exadg/grid/grid.h&gt;</span></div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;exadg/matrix_free/matrix_free_data.h&gt;</span></div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;exadg/operators/inverse_mass_operator.h&gt;</span></div>
@@ -125,7 +125,7 @@ $(function() {
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Operator.html">Operator</a>(std::shared_ptr&lt;<a class="code hl_class" href="classExaDG_1_1Grid.html">Grid&lt;dim, Number&gt;</a> <span class="keyword">const</span>&gt;       grid,</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1CompNS_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor,</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1CompNS_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;     field_functions,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>           <a class="code hl_class" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp;                        param,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>           <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                             param,</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>           std::string <span class="keyword">const</span> &amp;                            field,</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>           MPI_Comm <span class="keyword">const</span> &amp;                               mpi_comm);</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
@@ -270,9 +270,9 @@ $(function() {
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;     field_functions;</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span><span class="comment">   * List of input parameters.</span></div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span><span class="comment">   * List of parameters.</span></div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp; param;</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>  std::string <span class="keyword">const</span> field;</div>
 <div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
@@ -360,10 +360,10 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1CombinedOperator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1CombinedOperator.html">ExaDG::CompNS::CombinedOperator</a></div><div class="ttdef"><b>Definition:</b> kernels_and_operators.h:1643</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1ConvectiveOperator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1ConvectiveOperator.html">ExaDG::CompNS::ConvectiveOperator</a></div><div class="ttdef"><b>Definition:</b> kernels_and_operators.h:506</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1DivergenceCalculator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1DivergenceCalculator.html">ExaDG::CompNS::DivergenceCalculator</a></div><div class="ttdef"><b>Definition:</b> calculators.h:113</div></div>
-<div class="ttc" id="aclassExaDG_1_1CompNS_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1InputParameters.html">ExaDG::CompNS::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:37</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Interface_1_1Operator.html">ExaDG::CompNS::Interface::Operator</a></div><div class="ttdef"><b>Definition:</b> interface.h:37</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1MassOperator.html">ExaDG::CompNS::MassOperator</a></div><div class="ttdef"><b>Definition:</b> kernels_and_operators.h:414</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Operator.html">ExaDG::CompNS::Operator</a></div><div class="ttdef"><b>Definition:</b> operator.h:49</div></div>
+<div class="ttc" id="aclassExaDG_1_1CompNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Parameters.html">ExaDG::CompNS::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:37</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1ViscousOperator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1ViscousOperator.html">ExaDG::CompNS::ViscousOperator</a></div><div class="ttdef"><b>Definition:</b> kernels_and_operators.h:945</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1VorticityCalculator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1VorticityCalculator.html">ExaDG::CompNS::VorticityCalculator</a></div><div class="ttdef"><b>Definition:</b> calculators.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1p__u__T__Calculator_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1p__u__T__Calculator.html">ExaDG::CompNS::p_u_T_Calculator</a></div><div class="ttdef"><b>Definition:</b> calculators.h:189</div></div>

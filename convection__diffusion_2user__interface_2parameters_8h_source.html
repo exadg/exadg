@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/convection_diffusion/user_interface/input_parameters.h Source File</title>
+<title>ExaDG: include/exadg/convection_diffusion/user_interface/parameters.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -66,7 +66,7 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">input_parameters.h</div></div>
+  <div class="headertitle"><div class="title">parameters.h</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">/*  ______________________________________________________________________</span></div>
@@ -99,7 +99,7 @@ $(function() {
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// ExaDG</span></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/enum_types.h&gt;</span></div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#include &lt;exadg/grid/enum_types.h&gt;</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h&gt;</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h&gt;</span></div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/preconditioners/enum_types.h&gt;</span></div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/solvers/enum_types.h&gt;</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;exadg/solvers_and_preconditioners/solvers/solver_data.h&gt;</span></div>
@@ -113,15 +113,15 @@ $(function() {
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>{</div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">using namespace </span>dealii;</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">   45</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classExaDG_1_1ConvDiff_1_1Parameters.html">   45</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a></div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>{</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="comment">// standard constructor that initializes parameters with default values</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1InputParameters.html">InputParameters</a>();</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <a class="code hl_class" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a>();</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="comment">// check correctness of parameters</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  check_input_parameters() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  check() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">bool</span></div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  linear_system_including_convective_term_has_to_be_solved() <span class="keyword">const</span>;</div>
@@ -401,8 +401,8 @@ $(function() {
 <div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span> </div>
 <div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_CONVECTION_DIFFUSION_INPUT_PARAMETERS_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1InputParameters.html">ExaDG::ConvDiff::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:46</div></div>
-<div class="ttc" id="astructExaDG_1_1MultigridData_html"><div class="ttname"><a href="structExaDG_1_1MultigridData.html">ExaDG::MultigridData</a></div><div class="ttdef"><b>Definition:</b> multigrid_input_parameters.h:321</div></div>
+<div class="ttc" id="aclassExaDG_1_1ConvDiff_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1ConvDiff_1_1Parameters.html">ExaDG::ConvDiff::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:46</div></div>
+<div class="ttc" id="astructExaDG_1_1MultigridData_html"><div class="ttname"><a href="structExaDG_1_1MultigridData.html">ExaDG::MultigridData</a></div><div class="ttdef"><b>Definition:</b> multigrid_parameters.h:321</div></div>
 <div class="ttc" id="astructExaDG_1_1RestartData_html"><div class="ttname"><a href="structExaDG_1_1RestartData.html">ExaDG::RestartData</a></div><div class="ttdef"><b>Definition:</b> restart_data.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition:</b> solver_data.h:36</div></div>
 <div class="ttc" id="astructExaDG_1_1SolverInfoData_html"><div class="ttname"><a href="structExaDG_1_1SolverInfoData.html">ExaDG::SolverInfoData</a></div><div class="ttdef"><b>Definition:</b> solver_info_data.h:39</div></div>

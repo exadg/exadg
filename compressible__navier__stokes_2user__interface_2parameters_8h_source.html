@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.2"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ExaDG: include/exadg/compressible_navier_stokes/user_interface/input_parameters.h Source File</title>
+<title>ExaDG: include/exadg/compressible_navier_stokes/user_interface/parameters.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -66,7 +66,7 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
-  <div class="headertitle"><div class="title">input_parameters.h</div></div>
+  <div class="headertitle"><div class="title">parameters.h</div></div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="comment">/*  ______________________________________________________________________</span></div>
@@ -104,14 +104,14 @@ $(function() {
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>{</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">using namespace </span>dealii;</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classExaDG_1_1CompNS_1_1InputParameters.html">   36</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno"><a class="line" href="classExaDG_1_1CompNS_1_1Parameters.html">   36</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a></div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>{</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="comment">// standard constructor that initializes parameters with default values</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a>();</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a>();</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  check_input_parameters() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  check() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout, std::string <span class="keyword">const</span> &amp; name) <span class="keyword">const</span>;</div>
@@ -270,7 +270,7 @@ $(function() {
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
 <div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_INPUT_PARAMETERS_H_*/</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1CompNS_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1InputParameters.html">ExaDG::CompNS::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1CompNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Parameters.html">ExaDG::CompNS::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:37</div></div>
 <div class="ttc" id="astructExaDG_1_1RestartData_html"><div class="ttname"><a href="structExaDG_1_1RestartData.html">ExaDG::RestartData</a></div><div class="ttdef"><b>Definition:</b> restart_data.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1SolverInfoData_html"><div class="ttname"><a href="structExaDG_1_1SolverInfoData.html">ExaDG::SolverInfoData</a></div><div class="ttdef"><b>Definition:</b> solver_info_data.h:39</div></div>
 </div><!-- fragment --></div><!-- contents -->

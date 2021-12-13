@@ -95,7 +95,7 @@ $(function() {
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/time_integration/time_int_bdf.h&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h&gt;</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/input_parameters.h&gt;</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &lt;exadg/convection_diffusion/user_interface/parameters.h&gt;</span></div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>{</div>
@@ -104,7 +104,7 @@ $(function() {
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>std::shared_ptr&lt;TimeIntBase&gt;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>create_time_integrator(std::shared_ptr&lt;Operator&lt;dim, Number&gt;&gt;          pde_operator,</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                       InputParameters <span class="keyword">const</span> &amp;                         parameters,</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>                       Parameters <span class="keyword">const</span> &amp;                              parameters,</div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>                       <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                              refine_steps_time,</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>                       MPI_Comm <span class="keyword">const</span> &amp;                                mpi_comm,</div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>                       <span class="keywordtype">bool</span> <span class="keyword">const</span>                                      is_test,</div>

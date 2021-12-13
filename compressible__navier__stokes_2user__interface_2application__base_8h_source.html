@@ -105,7 +105,7 @@ $(function() {
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/postprocessor/postprocessor.h&gt;</span></div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h&gt;</span></div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/field_functions.h&gt;</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/input_parameters.h&gt;</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#include &lt;exadg/compressible_navier_stokes/user_interface/parameters.h&gt;</span></div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;exadg/grid/grid.h&gt;</span></div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">namespace </span>ExaDG</div>
@@ -143,13 +143,13 @@ $(function() {
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  set_input_parameters(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree) = 0;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  set_parameters(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> degree) = 0;</div>
 <div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;Grid&lt;dim, Number&gt;&gt;</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  create_grid(<a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a> <span class="keyword">const</span> &amp; grid_data) = 0;</div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  set_boundary_conditions() = 0;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  set_boundary_descriptor() = 0;</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  set_field_functions() = 0;</div>
@@ -163,7 +163,7 @@ $(function() {
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    n_subdivisions_1d_hypercube = n_subdivisions_1d;</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  }</div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  get_parameters()<span class="keyword"> const</span></div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span><span class="keyword">  </span>{</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keywordflow">return</span> param;</div>
@@ -184,7 +184,7 @@ $(function() {
 <div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span><span class="keyword">protected</span>:</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1InputParameters.html">InputParameters</a>                          param;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a>                               param;</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; boundary_descriptor;</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;     field_functions;</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
@@ -202,7 +202,7 @@ $(function() {
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ExaDG::CompNS::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:49</div></div>
-<div class="ttc" id="aclassExaDG_1_1CompNS_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1InputParameters.html">ExaDG::CompNS::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:37</div></div>
+<div class="ttc" id="aclassExaDG_1_1CompNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Parameters.html">ExaDG::CompNS::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:37</div></div>
 <div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid.h:39</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

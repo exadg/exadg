@@ -109,7 +109,7 @@ $(function() {
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="preprocessor">#include &lt;exadg/structure/spatial_discretization/operators/nonlinear_operator.h&gt;</span></div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;exadg/structure/user_interface/boundary_descriptor.h&gt;</span></div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#include &lt;exadg/structure/user_interface/field_functions.h&gt;</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;exadg/structure/user_interface/input_parameters.h&gt;</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="preprocessor">#include &lt;exadg/structure/user_interface/parameters.h&gt;</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>{</div>
@@ -248,7 +248,7 @@ $(function() {
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">BoundaryDescriptor&lt;dim&gt;</a> <span class="keyword">const</span>&gt; boundary_descriptor_in,</div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>           std::shared_ptr&lt;<a class="code hl_struct" href="structExaDG_1_1Structure_1_1FieldFunctions.html">FieldFunctions&lt;dim&gt;</a> <span class="keyword">const</span>&gt;     field_functions_in,</div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>           std::shared_ptr&lt;MaterialDescriptor const&gt;      material_descriptor_in,</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>           <a class="code hl_class" href="classExaDG_1_1Structure_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp;                        param_in,</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>           <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;                             param_in,</div>
 <div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>           std::string <span class="keyword">const</span> &amp;                            field_in,</div>
 <div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>           MPI_Comm <span class="keyword">const</span> &amp;                               mpi_comm_in);</div>
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
@@ -428,9 +428,9 @@ $(function() {
 <div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>  std::shared_ptr&lt;MaterialDescriptor const&gt;      material_descriptor;</div>
 <div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span> </div>
 <div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>  <span class="comment">/*</span></div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span><span class="comment">   * List of input parameters.</span></div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span><span class="comment">   * List of parameters.</span></div>
 <div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span><span class="comment">   */</span></div>
-<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1InputParameters.html">InputParameters</a> <span class="keyword">const</span> &amp; param;</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>  <a class="code hl_class" href="classExaDG_1_1Structure_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp; param;</div>
 <div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span> </div>
 <div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>  std::string <span class="keyword">const</span> field;</div>
 <div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span> </div>
@@ -517,12 +517,12 @@ $(function() {
 <div class="ttc" id="aclassExaDG_1_1MassOperator_html"><div class="ttname"><a href="classExaDG_1_1MassOperator.html">ExaDG::MassOperator</a></div><div class="ttdef"><b>Definition:</b> mass_operator.h:43</div></div>
 <div class="ttc" id="aclassExaDG_1_1Newton_1_1Solver_html"><div class="ttname"><a href="classExaDG_1_1Newton_1_1Solver.html">ExaDG::Newton::Solver</a></div><div class="ttdef"><b>Definition:</b> newton_solver.h:42</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1BodyForceOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1BodyForceOperator.html">ExaDG::Structure::BodyForceOperator</a></div><div class="ttdef"><b>Definition:</b> body_force_operator.h:52</div></div>
-<div class="ttc" id="aclassExaDG_1_1Structure_1_1InputParameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1InputParameters.html">ExaDG::Structure::InputParameters</a></div><div class="ttdef"><b>Definition:</b> input_parameters.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Interface_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Interface_1_1Operator.html">ExaDG::Structure::Interface::Operator</a></div><div class="ttdef"><b>Definition:</b> interface.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1LinearOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1LinearOperator.html">ExaDG::Structure::LinearOperator</a></div><div class="ttdef"><b>Definition:</b> linear_operator.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1LinearizedOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1LinearizedOperator.html">ExaDG::Structure::LinearizedOperator</a></div><div class="ttdef"><b>Definition:</b> operator.h:112</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1NonLinearOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1NonLinearOperator.html">ExaDG::Structure::NonLinearOperator</a></div><div class="ttdef"><b>Definition:</b> nonlinear_operator.h:35</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1Operator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Operator.html">ExaDG::Structure::Operator</a></div><div class="ttdef"><b>Definition:</b> operator.h:166</div></div>
+<div class="ttc" id="aclassExaDG_1_1Structure_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1Parameters.html">ExaDG::Structure::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:40</div></div>
 <div class="ttc" id="aclassExaDG_1_1Structure_1_1ResidualOperator_html"><div class="ttname"><a href="classExaDG_1_1Structure_1_1ResidualOperator.html">ExaDG::Structure::ResidualOperator</a></div><div class="ttdef"><b>Definition:</b> operator.h:60</div></div>
 <div class="ttc" id="astructExaDG_1_1MatrixFreeData_html"><div class="ttname"><a href="structExaDG_1_1MatrixFreeData.html">ExaDG::MatrixFreeData</a></div><div class="ttdef"><b>Definition:</b> matrix_free_data.h:39</div></div>
 <div class="ttc" id="astructExaDG_1_1Structure_1_1BoundaryDescriptor_html"><div class="ttname"><a href="structExaDG_1_1Structure_1_1BoundaryDescriptor.html">ExaDG::Structure::BoundaryDescriptor</a></div><div class="ttdef"><b>Definition:</b> boundary_descriptor.h:50</div></div>
