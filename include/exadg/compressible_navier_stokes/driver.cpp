@@ -66,9 +66,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->set_input_parameters(degree);
-  application->get_parameters().check_input_parameters();
-  application->get_parameters().print(pcout, "List of input parameters:");
+  application->set_parameters(degree);
+  application->get_parameters().check();
+  application->get_parameters().print(pcout, "List of parameters:");
 
   // grid
   GridData grid_data;
@@ -80,7 +80,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   CompNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   application->set_field_functions();

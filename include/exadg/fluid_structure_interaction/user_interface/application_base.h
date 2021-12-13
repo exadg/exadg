@@ -36,21 +36,21 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 
 // Structure
 #include <exadg/structure/material/library/st_venant_kirchhoff.h>
 #include <exadg/structure/postprocessor/postprocessor.h>
 #include <exadg/structure/user_interface/boundary_descriptor.h>
 #include <exadg/structure/user_interface/field_functions.h>
-#include <exadg/structure/user_interface/input_parameters.h>
 #include <exadg/structure/user_interface/material_descriptor.h>
+#include <exadg/structure/user_interface/parameters.h>
 
 // moving mesh
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/field_functions.h>
-#include <exadg/poisson/user_interface/input_parameters.h>
+#include <exadg/poisson/user_interface/parameters.h>
 
 namespace ExaDG
 {
@@ -98,13 +98,13 @@ public:
 
   // fluid
   virtual void
-  set_input_parameters_fluid(unsigned int const degree) = 0;
+  set_parameters_fluid(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_fluid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_fluid() = 0;
+  set_boundary_descriptor_fluid() = 0;
 
   virtual void
   set_field_functions_fluid() = 0;
@@ -116,39 +116,39 @@ public:
 
   // Poisson type mesh motion
   virtual void
-  set_input_parameters_ale_poisson(unsigned int const degree) = 0;
+  set_parameters_ale_poisson(unsigned int const degree) = 0;
 
   virtual void
-  set_boundary_conditions_ale_poisson() = 0;
+  set_boundary_descriptor_ale_poisson() = 0;
 
   virtual void
   set_field_functions_ale_poisson() = 0;
 
   // elasticity type mesh motion
   virtual void
-  set_input_parameters_ale_elasticity(unsigned int const degree) = 0;
+  set_parameters_ale_elasticity(unsigned int const degree) = 0;
 
   virtual void
-  set_boundary_conditions_ale_elasticity() = 0;
+  set_boundary_descriptor_ale_elasticity() = 0;
 
   virtual void
-  set_material_ale_elasticity() = 0;
+  set_material_descriptor_ale_elasticity() = 0;
 
   virtual void
   set_field_functions_ale_elasticity() = 0;
 
   // Structure
   virtual void
-  set_input_parameters_structure(unsigned int const degree) = 0;
+  set_parameters_structure(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_structure(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_structure() = 0;
+  set_boundary_descriptor_structure() = 0;
 
   virtual void
-  set_material_structure() = 0;
+  set_material_descriptor_structure() = 0;
 
   virtual void
   set_field_functions_structure() = 0;
@@ -156,7 +156,7 @@ public:
   virtual std::shared_ptr<Structure::PostProcessor<dim, Number>>
   create_postprocessor_structure() = 0;
 
-  IncNS::InputParameters const &
+  IncNS::Parameters const &
   get_parameters_fluid() const
   {
     return fluid_param;
@@ -174,7 +174,7 @@ public:
     return fluid_field_functions;
   }
 
-  Structure::InputParameters const &
+  Structure::Parameters const &
   get_parameters_structure() const
   {
     return structure_param;
@@ -198,7 +198,7 @@ public:
     return structure_field_functions;
   }
 
-  Poisson::InputParameters const &
+  Poisson::Parameters const &
   get_parameters_ale_poisson() const
   {
     return ale_poisson_param;
@@ -216,7 +216,7 @@ public:
     return ale_poisson_field_functions;
   }
 
-  Structure::InputParameters const &
+  Structure::Parameters const &
   get_parameters_ale_elasticity() const
   {
     return ale_elasticity_param;
@@ -244,25 +244,25 @@ protected:
   MPI_Comm const & mpi_comm;
 
   // fluid
-  IncNS::InputParameters                          fluid_param;
+  IncNS::Parameters                               fluid_param;
   std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
 
   // ALE mesh motion
 
   // Poisson-type mesh motion
-  Poisson::InputParameters                             ale_poisson_param;
+  Poisson::Parameters                                  ale_poisson_param;
   std::shared_ptr<Poisson::FieldFunctions<dim>>        ale_poisson_field_functions;
   std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> ale_poisson_boundary_descriptor;
 
   // elasticity-type mesh motion
-  Structure::InputParameters                          ale_elasticity_param;
+  Structure::Parameters                               ale_elasticity_param;
   std::shared_ptr<Structure::FieldFunctions<dim>>     ale_elasticity_field_functions;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> ale_elasticity_boundary_descriptor;
   std::shared_ptr<Structure::MaterialDescriptor>      ale_elasticity_material_descriptor;
 
   // structure
-  Structure::InputParameters                          structure_param;
+  Structure::Parameters                               structure_param;
   std::shared_ptr<Structure::MaterialDescriptor>      structure_material_descriptor;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
   std::shared_ptr<Structure::FieldFunctions<dim>>     structure_field_functions;

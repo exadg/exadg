@@ -26,7 +26,7 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/time_integration/driver_steady_problems.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -38,7 +38,7 @@ using namespace dealii;
 template<int dim, typename Number>
 DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_,
-  InputParameters const &                         param_,
+  Parameters const &                              param_,
   MPI_Comm const &                                mpi_comm_,
   bool const                                      is_test_,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_)

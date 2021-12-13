@@ -72,7 +72,7 @@ SET(TARGET_SRC
      include/exadg/solvers_and_preconditioners/preconditioners/enum_types.cpp
      include/exadg/solvers_and_preconditioners/solvers/enum_types.cpp
      include/exadg/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
-     include/exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp
+     include/exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_p.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_c.cpp
      include/exadg/solvers_and_preconditioners/multigrid/transfers/mg_transfer_h.cpp
@@ -90,7 +90,7 @@ SET(TARGET_SRC
      include/exadg/operators/rhs_operator.cpp
      # Poisson equation
      include/exadg/poisson/user_interface/enum_types.cpp
-     include/exadg/poisson/user_interface/input_parameters.cpp
+     include/exadg/poisson/user_interface/parameters.cpp
      include/exadg/poisson/spatial_discretization/operator.cpp
      include/exadg/poisson/spatial_discretization/laplace_operator.cpp
      include/exadg/poisson/preconditioners/multigrid_preconditioner.cpp
@@ -98,7 +98,7 @@ SET(TARGET_SRC
      include/exadg/poisson/driver.cpp
      # convection-diffusion equation
      include/exadg/convection_diffusion/user_interface/enum_types.cpp
-     include/exadg/convection_diffusion/user_interface/input_parameters.cpp
+     include/exadg/convection_diffusion/user_interface/parameters.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/exadg/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
@@ -112,7 +112,7 @@ SET(TARGET_SRC
      include/exadg/postprocessor/output_generator_scalar.cpp
      include/exadg/convection_diffusion/driver.cpp
      # incompressible Navier-Stokes equations
-     include/exadg/incompressible_navier_stokes/user_interface/input_parameters.cpp
+     include/exadg/incompressible_navier_stokes/user_interface/parameters.cpp
      include/exadg/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp
      include/exadg/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp
@@ -157,7 +157,7 @@ SET(TARGET_SRC
      include/exadg/incompressible_flow_with_transport/driver.cpp
      # compressible Navier-Stokes equations
      include/exadg/compressible_navier_stokes/user_interface/enum_types.cpp
-     include/exadg/compressible_navier_stokes/user_interface/input_parameters.cpp
+     include/exadg/compressible_navier_stokes/user_interface/parameters.cpp
      include/exadg/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/exadg/compressible_navier_stokes/spatial_discretization/interface.cpp
      include/exadg/compressible_navier_stokes/spatial_discretization/operator.cpp
@@ -166,7 +166,7 @@ SET(TARGET_SRC
      include/exadg/compressible_navier_stokes/driver.cpp
      # elasticity
      include/exadg/structure/user_interface/enum_types.cpp
-     include/exadg/structure/user_interface/input_parameters.cpp
+     include/exadg/structure/user_interface/parameters.cpp
      include/exadg/structure/material/library/st_venant_kirchhoff.cpp
      include/exadg/structure/spatial_discretization/operators/elasticity_operator_base.cpp
      include/exadg/structure/spatial_discretization/operators/nonlinear_operator.cpp

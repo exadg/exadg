@@ -9,7 +9,7 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_CONTINUITY_PENALTY_OPERATOR_H_
 
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/integrator_flags.h>
 #include <exadg/operators/mapping_flags.h>

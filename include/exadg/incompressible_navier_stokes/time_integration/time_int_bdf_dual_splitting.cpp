@@ -21,7 +21,7 @@
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
 #include <exadg/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/time_integration/push_back_vectors.h>
 #include <exadg/time_integration/time_step_calculation.h>
 #include <exadg/utilities/print_solver_results.h>
@@ -35,7 +35,7 @@ using namespace dealii;
 template<int dim, typename Number>
 TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<Operator>                       operator_in,
-  InputParameters const &                         param_in,
+  Parameters const &                              param_in,
   unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,

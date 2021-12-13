@@ -28,7 +28,7 @@
 // ExaDG
 #include <exadg/convection_diffusion/user_interface/enum_types.h>
 #include <exadg/grid/enum_types.h>
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -42,15 +42,15 @@ namespace ConvDiff
 {
 using namespace dealii;
 
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters();
+  Parameters();
 
   // check correctness of parameters
   void
-  check_input_parameters() const;
+  check() const;
 
   bool
   linear_system_including_convective_term_has_to_be_solved() const;

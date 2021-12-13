@@ -46,7 +46,7 @@
 #include <exadg/incompressible_navier_stokes/spatial_discretization/turbulence_model.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
 #include <exadg/operators/mass_operator.h>
@@ -151,7 +151,7 @@ public:
   SpatialOperatorBase(std::shared_ptr<Grid<dim, Number> const>       grid,
                       std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
                       std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-                      InputParameters const &                        parameters,
+                      Parameters const &                             parameters,
                       std::string const &                            field,
                       MPI_Comm const &                               mpi_comm);
 
@@ -336,7 +336,7 @@ public:
   is_pressure_level_undefined() const;
 
   // This function adjust the pressure level, where different options are available to fix the
-  // pressure level. The method selected by this function depends on the specified input parameter.
+  // pressure level. The method selected by this function depends on the specified parameter.
   void
   adjust_pressure_level_if_undefined(VectorType & pressure, double const & time) const;
 
@@ -511,9 +511,9 @@ protected:
   std::shared_ptr<FieldFunctions<dim> const>     field_functions;
 
   /*
-   * List of input parameters.
+   * List of parameters.
    */
-  InputParameters const & param;
+  Parameters const & param;
 
 protected:
   std::string const field;

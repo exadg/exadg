@@ -210,7 +210,7 @@ public:
   double const density = 0.001;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.problem_type         = ProblemType::Steady;
     this->param.body_force           = use_volume_force;
@@ -298,7 +298,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
@@ -334,7 +334,7 @@ public:
   }
 
   void
-  set_material() final
+  set_material_descriptor() final
   {
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 

@@ -26,7 +26,7 @@
 #include <exadg/convection_diffusion/postprocessor/postprocessor.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
 #include <exadg/incompressible_navier_stokes/user_interface/application_base.h>
 
@@ -82,10 +82,10 @@ public:
   }
 
   virtual void
-  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index = 0) = 0;
+  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index = 0) = 0;
 
   virtual void
-  set_boundary_conditions_scalar(unsigned int const scalar_index = 0) = 0;
+  set_boundary_descriptor_scalar(unsigned int const scalar_index = 0) = 0;
 
   virtual void
   set_field_functions_scalar(unsigned int const scalar_index = 0) = 0;
@@ -93,7 +93,7 @@ public:
   virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
   create_postprocessor_scalar(unsigned int const scalar_index = 0) = 0;
 
-  ConvDiff::InputParameters const &
+  ConvDiff::Parameters const &
   get_parameters_scalar(unsigned int const scalar_index = 0) const
   {
     return scalar_param[scalar_index];
@@ -112,7 +112,7 @@ public:
   }
 
 protected:
-  std::vector<ConvDiff::InputParameters>                          scalar_param;
+  std::vector<ConvDiff::Parameters>                               scalar_param;
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 

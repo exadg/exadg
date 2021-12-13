@@ -69,22 +69,22 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
-  application->set_input_parameters(degree);
-  application->get_parameters().check_input_parameters(pcout);
+  application->set_parameters(degree);
+  application->get_parameters().check(pcout);
 
-  application->get_parameters().print(pcout, "List of input parameters for fluid solver:");
+  application->get_parameters().print(pcout, "List of parameters for fluid solver:");
 
   // parameters scalar
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    application->set_input_parameters_scalar(degree, i);
-    application->get_parameters_scalar(i).check_input_parameters();
+    application->set_parameters_scalar(degree, i);
+    application->get_parameters_scalar(i).check();
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,
                 ExcMessage("ProblemType must be unsteady!"));
 
     application->get_parameters_scalar(i).print(pcout,
-                                                "List of input parameters for scalar quantity " +
+                                                "List of parameters for scalar quantity " +
                                                   Utilities::to_string(i) + ":");
   }
 
@@ -149,7 +149,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   }
 
   // boundary conditions
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   // field functions
@@ -158,7 +158,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // boundary conditions
-    application->set_boundary_conditions_scalar(i);
+    application->set_boundary_descriptor_scalar(i);
     verify_boundary_conditions(*application->get_boundary_descriptor_scalar(i), *grid);
 
     // field functions
@@ -430,7 +430,7 @@ Driver<dim, Number>::synchronize_time_step_size() const
     // Setup time integrator and get time step size
     double time_step_size_fluid = std::numeric_limits<double>::max();
 
-    IncNS::InputParameters const & fluid_param = application->get_parameters();
+    IncNS::Parameters const & fluid_param = application->get_parameters();
 
     // fluid
     if(fluid_time_integrator->get_time() > fluid_param.start_time - EPSILON)
@@ -450,7 +450,7 @@ Driver<dim, Number>::synchronize_time_step_size() const
   // scalar transport
   for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
   {
-    ConvDiff::InputParameters const & scalar_param_i = application->get_parameters_scalar(i);
+    ConvDiff::Parameters const & scalar_param_i = application->get_parameters_scalar(i);
 
     double time_step_size_scalar = std::numeric_limits<double>::max();
     if(scalar_time_integrator[i]->get_time() > scalar_param_i.start_time - EPSILON)

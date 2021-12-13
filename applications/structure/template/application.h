@@ -54,7 +54,7 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.degree = degree;
   }
@@ -73,12 +73,12 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
   }
 
   void
-  set_material() final
+  set_material_descriptor() final
   {
   }
 

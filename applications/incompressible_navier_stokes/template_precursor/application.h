@@ -42,13 +42,13 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.degree_u = degree;
   }
 
   void
-  set_input_parameters_precursor(unsigned int const degree) final
+  set_parameters_precursor(unsigned int const degree) final
   {
     this->param_pre.degree_u = degree;
   }
@@ -82,13 +82,13 @@ public:
 
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
   }
 
   void
-  set_boundary_conditions_precursor() final
+  set_boundary_descriptor_precursor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
   }

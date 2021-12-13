@@ -120,12 +120,12 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     Timer timer_local;
     timer_local.restart();
 
-    application->set_input_parameters_structure(degree_structure);
-    application->get_parameters_structure().check_input_parameters();
+    application->set_parameters_structure(degree_structure);
+    application->get_parameters_structure().check();
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_structure().pull_back_traction == true,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    application->get_parameters_structure().print(pcout, "List of input parameters for structure:");
+    application->get_parameters_structure().print(pcout, "List of parameters for structure:");
 
     // grid
     GridData structure_grid_data;
@@ -140,11 +140,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     print_grid_info(pcout, *structure_grid);
 
     // boundary conditions
-    application->set_boundary_conditions_structure();
+    application->set_boundary_descriptor_structure();
     verify_boundary_conditions(*application->get_boundary_descriptor_structure(), *structure_grid);
 
     // material_descriptor
-    application->set_material_structure();
+    application->set_material_descriptor_structure();
 
     // field functions
     application->set_field_functions_structure();
@@ -189,10 +189,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // parameters fluid
-    application->set_input_parameters_fluid(degree_fluid);
-    application->get_parameters_fluid().check_input_parameters(pcout);
-    application->get_parameters_fluid().print(
-      pcout, "List of input parameters for incompressible flow solver:");
+    application->set_parameters_fluid(degree_fluid);
+    application->get_parameters_fluid().check(pcout);
+    application->get_parameters_fluid().print(pcout,
+                                              "List of parameters for incompressible flow solver:");
 
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_fluid().problem_type == IncNS::ProblemType::Unsteady,
@@ -214,7 +214,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // field functions and boundary conditions
 
     // fluid
-    application->set_boundary_conditions_fluid();
+    application->set_boundary_descriptor_fluid();
     IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_fluid(),
                                            *fluid_grid);
 
@@ -223,17 +223,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // ALE
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      application->set_input_parameters_ale_poisson(fluid_grid_data.mapping_degree);
-      application->get_parameters_ale_poisson().check_input_parameters();
+      application->set_parameters_ale_poisson(fluid_grid_data.mapping_degree);
+      application->get_parameters_ale_poisson().check();
       AssertThrow(application->get_parameters_ale_poisson().right_hand_side == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(application->get_parameters_ale_poisson().mapping ==
                     application->get_parameters_fluid().mapping,
                   ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_poisson().print(
-        pcout, "List of input parameters for ALE solver (Poisson):");
+        pcout, "List of parameters for ALE solver (Poisson):");
 
-      application->set_boundary_conditions_ale_poisson();
+      application->set_boundary_descriptor_ale_poisson();
       verify_boundary_conditions(*application->get_boundary_descriptor_ale_poisson(), *fluid_grid);
 
       application->set_field_functions_ale_poisson();
@@ -250,23 +250,23 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      application->set_input_parameters_ale_elasticity(fluid_grid_data.mapping_degree);
-      application->get_parameters_ale_elasticity().check_input_parameters();
+      application->set_parameters_ale_elasticity(fluid_grid_data.mapping_degree);
+      application->get_parameters_ale_elasticity().check();
       AssertThrow(application->get_parameters_ale_elasticity().body_force == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
       AssertThrow(application->get_parameters_ale_elasticity().mapping ==
                     application->get_parameters_fluid().mapping,
                   ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_elasticity().print(
-        pcout, "List of input parameters for ALE solver (elasticity):");
+        pcout, "List of parameters for ALE solver (elasticity):");
 
       // boundary conditions
-      application->set_boundary_conditions_ale_elasticity();
+      application->set_boundary_descriptor_ale_elasticity();
       verify_boundary_conditions(*application->get_boundary_descriptor_ale_elasticity(),
                                  *fluid_grid);
 
       // material_descriptor
-      application->set_material_ale_elasticity();
+      application->set_material_descriptor_ale_elasticity();
 
       // field functions
       application->set_field_functions_ale_elasticity();

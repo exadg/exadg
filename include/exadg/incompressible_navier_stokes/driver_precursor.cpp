@@ -121,14 +121,13 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   application = app;
 
-  application->set_input_parameters_precursor(degree_velocity);
-  application->get_parameters_precursor().check_input_parameters(pcout);
-  application->get_parameters_precursor().print(pcout,
-                                                "List of input parameters for precursor domain:");
+  application->set_parameters_precursor(degree_velocity);
+  application->get_parameters_precursor().check(pcout);
+  application->get_parameters_precursor().print(pcout, "List of parameters for precursor domain:");
 
-  application->set_input_parameters(degree_velocity);
-  application->get_parameters().check_input_parameters(pcout);
-  application->get_parameters().print(pcout, "List of input parameters for actual domain:");
+  application->set_parameters(degree_velocity);
+  application->get_parameters().check(pcout);
+  application->get_parameters().print(pcout, "List of parameters for actual domain:");
 
   AssertThrow(application->get_parameters_precursor().ale_formulation == false,
               ExcMessage("not implemented."));
@@ -156,11 +155,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   grid = application->create_grid(grid_data);
   print_grid_info(pcout, *grid);
 
-  application->set_boundary_conditions_precursor();
+  application->set_boundary_descriptor_precursor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_precursor(),
                                          *grid_pre);
 
-  application->set_boundary_conditions();
+  application->set_boundary_descriptor();
   IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
 
   application->set_field_functions_precursor();
@@ -179,7 +178,7 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   AssertThrow(application->get_parameters_precursor().solver_type == SolverType::Unsteady &&
                 application->get_parameters().solver_type == SolverType::Unsteady,
-              ExcMessage("This is an unsteady solver. Check input parameters."));
+              ExcMessage("This is an unsteady solver. Check parameters."));
 
   // initialize pde_operator_pre (precursor domain)
   pde_operator = create_operator<dim, Number>(grid_pre,

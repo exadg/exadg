@@ -22,7 +22,7 @@
 #include <exadg/convection_diffusion/postprocessor/postprocessor_base.h>
 #include <exadg/convection_diffusion/spatial_discretization/interface.h>
 #include <exadg/convection_diffusion/time_integration/driver_steady_problems.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -34,7 +34,7 @@ using namespace dealii;
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_,
-  InputParameters const &                         param_,
+  Parameters const &                              param_,
   MPI_Comm const &                                mpi_comm_,
   bool const                                      is_test_,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_)

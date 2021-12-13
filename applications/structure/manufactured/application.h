@@ -324,7 +324,7 @@ public:
   double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     this->param.problem_type         = unsteady ? ProblemType::Unsteady : ProblemType::Steady;
     this->param.body_force           = true;
@@ -387,7 +387,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
@@ -398,7 +398,7 @@ public:
   }
 
   void
-  set_material() final
+  set_material_descriptor() final
   {
     typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
 

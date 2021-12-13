@@ -41,7 +41,7 @@
 #include <exadg/convection_diffusion/user_interface/application_base.h>
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
 #include <exadg/convection_diffusion/user_interface/field_functions.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/grid_motion_analytical.h>
 #include <exadg/grid/mapping_degree.h>

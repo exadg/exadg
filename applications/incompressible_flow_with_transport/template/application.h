@@ -62,23 +62,23 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     using namespace IncNS;
 
     // Here, set all parameters differing from their default values as initialized in
-    // IncNS::InputParameters::InputParameters()
+    // IncNS::Parameters::Parameters()
 
     this->param.degree_u = degree;
   }
 
   void
-  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 
     // Here, set all parameters differing from their default values as initialized in
-    // ConvDiff::InputParameters::InputParameters()
+    // ConvDiff::Parameters::Parameters()
 
     this->scalar_param[scalar_index].degree = degree;
   }
@@ -97,7 +97,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -135,7 +135,7 @@ public:
   }
 
   void
-  set_boundary_conditions_scalar(unsigned int scalar_index = 0) final
+  set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

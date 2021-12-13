@@ -64,7 +64,7 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // TODO fill parameters
 
@@ -85,7 +85,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));

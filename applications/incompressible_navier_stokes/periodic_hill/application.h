@@ -176,7 +176,7 @@ public:
   unsigned int points_per_line        = 20;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type = ProblemType::Unsteady;
@@ -334,7 +334,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     // set boundary conditions
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;

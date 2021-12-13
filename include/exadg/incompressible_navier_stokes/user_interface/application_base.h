@@ -35,10 +35,10 @@
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/incompressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/poisson/user_interface/analytical_solution.h>
 #include <exadg/poisson/user_interface/field_functions.h>
-#include <exadg/poisson/user_interface/input_parameters.h>
+#include <exadg/poisson/user_interface/parameters.h>
 
 namespace ExaDG
 {
@@ -80,13 +80,13 @@ public:
   }
 
   virtual void
-  set_input_parameters(unsigned int const degree) = 0;
+  set_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions() = 0;
+  set_boundary_descriptor() = 0;
 
   virtual void
   set_field_functions() = 0;
@@ -106,7 +106,7 @@ public:
 
   // Moving mesh (Poisson problem)
   virtual void
-  set_input_parameters_poisson(unsigned int const degree)
+  set_parameters_poisson(unsigned int const degree)
   {
     (void)degree;
 
@@ -116,7 +116,7 @@ public:
   }
 
   virtual void
-  set_boundary_conditions_poisson()
+  set_boundary_descriptor_poisson()
   {
     AssertThrow(false,
                 ExcMessage("Has to be overwritten by derived classes in order "
@@ -137,7 +137,7 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
-  InputParameters const &
+  Parameters const &
   get_parameters() const
   {
     return param;
@@ -155,7 +155,7 @@ public:
     return field_functions;
   }
 
-  Poisson::InputParameters const &
+  Poisson::Parameters const &
   get_parameters_poisson() const
   {
     return poisson_param;
@@ -176,12 +176,12 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  InputParameters                          param;
+  Parameters                               param;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
   // solve mesh deformation by a Poisson problem
-  Poisson::InputParameters                             poisson_param;
+  Poisson::Parameters                                  poisson_param;
   std::shared_ptr<Poisson::FieldFunctions<dim>>        poisson_field_functions;
   std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
 
@@ -207,13 +207,13 @@ public:
   }
 
   virtual void
-  set_input_parameters_precursor(unsigned int const degree) = 0;
+  set_parameters_precursor(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid_precursor(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions_precursor() = 0;
+  set_boundary_descriptor_precursor() = 0;
 
   virtual void
   set_field_functions_precursor() = 0;
@@ -221,7 +221,7 @@ public:
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   create_postprocessor_precursor() = 0;
 
-  InputParameters const &
+  Parameters const &
   get_parameters_precursor() const
   {
     return param_pre;
@@ -240,7 +240,7 @@ public:
   }
 
 protected:
-  InputParameters                          param_pre;
+  Parameters                               param_pre;
   std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
 };

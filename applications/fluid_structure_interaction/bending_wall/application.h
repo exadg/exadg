@@ -131,11 +131,11 @@ public:
   }
 
   void
-  set_input_parameters_fluid(unsigned int const degree) final
+  set_parameters_fluid(unsigned int const degree) final
   {
     using namespace IncNS;
 
-    InputParameters & param = this->fluid_param;
+    Parameters & param = this->fluid_param;
 
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -469,7 +469,7 @@ public:
   }
 
   void
-  set_boundary_conditions_fluid() final
+  set_boundary_descriptor_fluid() final
   {
     std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
       this->fluid_boundary_descriptor;
@@ -555,11 +555,11 @@ public:
 
 
   void
-  set_input_parameters_ale_poisson(unsigned int const degree) final
+  set_parameters_ale_poisson(unsigned int const degree) final
   {
     using namespace Poisson;
 
-    InputParameters & param = this->ale_poisson_param;
+    Parameters & param = this->ale_poisson_param;
 
     // MATHEMATICAL MODEL
     param.right_hand_side = false;
@@ -583,7 +583,7 @@ public:
   }
 
   void
-  set_boundary_conditions_ale_poisson() final
+  set_boundary_descriptor_ale_poisson() final
   {
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor =
       this->ale_poisson_boundary_descriptor;
@@ -629,11 +629,11 @@ public:
   }
 
   void
-  set_input_parameters_ale_elasticity(unsigned int const degree) final
+  set_parameters_ale_elasticity(unsigned int const degree) final
   {
     using namespace Structure;
 
-    InputParameters & param = this->ale_elasticity_param;
+    Parameters & param = this->ale_elasticity_param;
 
     param.problem_type         = ProblemType::Steady;
     param.body_force           = false;
@@ -661,7 +661,7 @@ public:
   }
 
   void
-  set_boundary_conditions_ale_elasticity() final
+  set_boundary_descriptor_ale_elasticity() final
   {
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->ale_elasticity_boundary_descriptor;
@@ -696,7 +696,7 @@ public:
   }
 
   void
-  set_material_ale_elasticity() final
+  set_material_descriptor_ale_elasticity() final
   {
     std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
       this->ale_elasticity_material_descriptor;
@@ -730,11 +730,11 @@ public:
 
   // Structure
   void
-  set_input_parameters_structure(unsigned int const degree) final
+  set_parameters_structure(unsigned int const degree) final
   {
     using namespace Structure;
 
-    InputParameters & param = this->structure_param;
+    Parameters & param = this->structure_param;
 
     param.problem_type         = ProblemType::Unsteady;
     param.body_force           = false;
@@ -822,7 +822,7 @@ public:
   }
 
   void
-  set_boundary_conditions_structure() final
+  set_boundary_descriptor_structure() final
   {
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->structure_boundary_descriptor;
@@ -845,7 +845,7 @@ public:
   }
 
   void
-  set_material_structure() final
+  set_material_descriptor_structure() final
   {
     std::shared_ptr<Structure::MaterialDescriptor> material_descriptor =
       this->structure_material_descriptor;

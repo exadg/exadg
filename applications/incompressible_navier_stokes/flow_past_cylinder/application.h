@@ -250,7 +250,7 @@ public:
     // clang-format on
   }
 
-  // string to read input parameter
+  // string to read parameter
   std::string cylinder_type_string = "circular";
 
   // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
@@ -293,7 +293,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type                = problem_type;
@@ -519,7 +519,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

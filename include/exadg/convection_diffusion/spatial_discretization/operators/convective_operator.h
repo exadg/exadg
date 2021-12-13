@@ -23,7 +23,7 @@
 #define CONV_DIFF_CONVECTION_OPERATOR
 
 #include <exadg/convection_diffusion/user_interface/boundary_descriptor.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/evaluate_functions.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_base.h>
@@ -294,7 +294,7 @@ public:
 
   /*
    * This function calculates the numerical flux where the type of the numerical flux depends on the
-   * specified input parameter. This function handles both analytical and numerical velocity fields.
+   * specified parameter. This function handles both analytical and numerical velocity fields.
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar

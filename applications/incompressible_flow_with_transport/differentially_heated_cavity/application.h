@@ -87,7 +87,7 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     using namespace IncNS;
 
@@ -238,11 +238,11 @@ public:
   }
 
   void
-  set_input_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 
-    InputParameters param;
+    Parameters param;
 
     // MATHEMATICAL MODEL
     param.problem_type                = ProblemType::Unsteady;
@@ -367,7 +367,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -422,7 +422,7 @@ public:
   }
 
   void
-  set_boundary_conditions_scalar(unsigned int scalar_index = 0) final
+  set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

@@ -24,7 +24,7 @@
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 #include <exadg/structure/user_interface/enum_types.h>
@@ -36,14 +36,14 @@ namespace ExaDG
 {
 namespace Structure
 {
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters();
+  Parameters();
 
   void
-  check_input_parameters() const;
+  check() const;
 
   void
   print(dealii::ConditionalOStream const & pcout, std::string const & name) const;

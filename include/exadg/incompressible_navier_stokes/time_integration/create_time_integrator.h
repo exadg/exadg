@@ -37,7 +37,7 @@ namespace IncNS
 template<int dim, typename Number>
 std::shared_ptr<TimeIntBDF<dim, Number>>
 create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator,
-                       InputParameters const &                           parameters,
+                       Parameters const &                                parameters,
                        unsigned int const                                refine_time,
                        MPI_Comm const &                                  mpi_comm,
                        bool const                                        is_test,

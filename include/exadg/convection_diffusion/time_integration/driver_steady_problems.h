@@ -36,7 +36,7 @@ namespace ConvDiff
 using namespace dealii;
 
 // forward declaration
-class InputParameters;
+class Parameters;
 
 template<typename Number>
 class PostProcessorInterface;
@@ -56,7 +56,7 @@ public:
   typedef Interface::Operator<Number> Operator;
 
   DriverSteadyProblems(std::shared_ptr<Operator>                       operator_,
-                       InputParameters const &                         param_,
+                       Parameters const &                              param_,
                        MPI_Comm const &                                mpi_comm_,
                        bool const                                      is_test_,
                        std::shared_ptr<PostProcessorInterface<Number>> postprocessor_);
@@ -85,7 +85,7 @@ private:
 
   std::shared_ptr<Operator> pde_operator;
 
-  InputParameters const & param;
+  Parameters const & param;
 
   MPI_Comm const mpi_comm;
 

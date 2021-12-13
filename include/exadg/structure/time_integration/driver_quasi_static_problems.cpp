@@ -22,7 +22,7 @@
 #include <exadg/structure/postprocessor/postprocessor_base.h>
 #include <exadg/structure/spatial_discretization/interface.h>
 #include <exadg/structure/time_integration/driver_quasi_static_problems.h>
-#include <exadg/structure/user_interface/input_parameters.h>
+#include <exadg/structure/user_interface/parameters.h>
 #include <exadg/utilities/print_solver_results.h>
 
 namespace ExaDG
@@ -35,7 +35,7 @@ template<int dim, typename Number>
 DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
   std::shared_ptr<Interface::Operator<Number>> operator_,
   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-  InputParameters const &                      param_,
+  Parameters const &                           param_,
   MPI_Comm const &                             mpi_comm_,
   bool const                                   is_test_)
   : pde_operator(operator_),

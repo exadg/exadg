@@ -24,7 +24,7 @@
 
 #include <exadg/grid/enum_types.h>
 #include <exadg/poisson/user_interface/enum_types.h>
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 #include <exadg/utilities/print_functions.h>
 
@@ -34,14 +34,14 @@ namespace Poisson
 {
 using namespace dealii;
 
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters();
+  Parameters();
 
   void
-  check_input_parameters() const;
+  check() const;
 
   void
   print(ConditionalOStream const & pcout, std::string const & name) const;

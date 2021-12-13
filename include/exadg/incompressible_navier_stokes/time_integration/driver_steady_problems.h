@@ -37,7 +37,7 @@ namespace IncNS
 using namespace dealii;
 
 // forward declarations
-class InputParameters;
+class Parameters;
 
 template<int dim, typename Number>
 class OperatorCoupled;
@@ -55,7 +55,7 @@ public:
   typedef OperatorCoupled<dim, Number> Operator;
 
   DriverSteadyProblems(std::shared_ptr<Operator>                       operator_,
-                       InputParameters const &                         param_,
+                       Parameters const &                              param_,
                        MPI_Comm const &                                mpi_comm_,
                        bool const                                      is_test_,
                        std::shared_ptr<PostProcessorInterface<Number>> postprocessor_);
@@ -93,7 +93,7 @@ private:
 
   std::shared_ptr<Operator> pde_operator;
 
-  InputParameters const & param;
+  Parameters const & param;
 
   MPI_Comm const mpi_comm;
 

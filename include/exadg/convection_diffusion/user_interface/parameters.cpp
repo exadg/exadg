@@ -20,7 +20,7 @@
  */
 
 // ExaDG
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
@@ -29,7 +29,7 @@ namespace ConvDiff
 {
 using namespace dealii;
 
-InputParameters::InputParameters()
+Parameters::Parameters()
   : // MATHEMATICAL MODEL
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
@@ -97,7 +97,7 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters() const
+Parameters::check() const
 {
   // MATHEMATICAL MODEL
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
@@ -335,7 +335,7 @@ InputParameters::check_input_parameters() const
 }
 
 bool
-InputParameters::linear_system_including_convective_term_has_to_be_solved() const
+Parameters::linear_system_including_convective_term_has_to_be_solved() const
 {
   bool equation_with_convective_term =
     equation_type == EquationType::Convection || equation_type == EquationType::ConvectionDiffusion;
@@ -350,14 +350,14 @@ InputParameters::linear_system_including_convective_term_has_to_be_solved() cons
 }
 
 bool
-InputParameters::convective_problem() const
+Parameters::convective_problem() const
 {
   return (equation_type == EquationType::Convection ||
           equation_type == EquationType::ConvectionDiffusion);
 }
 
 bool
-InputParameters::diffusive_problem() const
+Parameters::diffusive_problem() const
 {
   return (equation_type == EquationType::Diffusion ||
           equation_type == EquationType::ConvectionDiffusion);
@@ -365,7 +365,7 @@ InputParameters::diffusive_problem() const
 
 
 bool
-InputParameters::linear_system_has_to_be_solved() const
+Parameters::linear_system_has_to_be_solved() const
 {
   bool linear_solver_needed =
     problem_type == ProblemType::Steady || (problem_type == ProblemType::Unsteady &&
@@ -375,7 +375,7 @@ InputParameters::linear_system_has_to_be_solved() const
 }
 
 TypeVelocityField
-InputParameters::get_type_velocity_field() const
+Parameters::get_type_velocity_field() const
 {
   if(analytical_velocity_field == true && store_analytical_velocity_in_dof_vector == false)
     return TypeVelocityField::Function;
@@ -384,7 +384,7 @@ InputParameters::get_type_velocity_field() const
 }
 
 void
-InputParameters::print(ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -411,7 +411,7 @@ InputParameters::print(ConditionalOStream const & pcout, std::string const & nam
 }
 
 void
-InputParameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -431,7 +431,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream const & 
 }
 
 void
-InputParameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
+Parameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -449,7 +449,7 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream const &
 }
 
 void
-InputParameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -509,7 +509,7 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream con
 }
 
 void
-InputParameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -534,7 +534,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream cons
 }
 
 void
-InputParameters::print_parameters_solver(ConditionalOStream const & pcout) const
+Parameters::print_parameters_solver(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
 
@@ -578,7 +578,7 @@ InputParameters::print_parameters_solver(ConditionalOStream const & pcout) const
 
 
 void
-InputParameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
+Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 

@@ -145,7 +145,7 @@ public:
   double const end_time   = 20.0 * CHARACTERISTIC_TIME;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.equation_type   = EquationType::NavierStokes;
@@ -259,7 +259,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     // test case with periodic BC -> boundary descriptors remain empty
   }

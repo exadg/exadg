@@ -33,7 +33,7 @@
 #include <exadg/compressible_navier_stokes/spatial_discretization/kernels_and_operators.h>
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/operators/inverse_mass_operator.h>
@@ -54,7 +54,7 @@ public:
   Operator(std::shared_ptr<Grid<dim, Number> const>       grid,
            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           InputParameters const &                        param,
+           Parameters const &                             param,
            std::string const &                            field,
            MPI_Comm const &                               mpi_comm);
 
@@ -199,9 +199,9 @@ private:
   std::shared_ptr<FieldFunctions<dim> const>     field_functions;
 
   /*
-   * List of input parameters.
+   * List of parameters.
    */
-  InputParameters const & param;
+  Parameters const & param;
 
   std::string const field;
 

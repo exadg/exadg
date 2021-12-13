@@ -78,7 +78,7 @@ public:
   MeshType    mesh_type        = MeshType::Cartesian;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.right_hand_side = false;
@@ -131,7 +131,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
   }
 

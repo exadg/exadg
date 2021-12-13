@@ -9,7 +9,7 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTIVE_OPERATOR_H_
 
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operators/weak_boundary_conditions.h>
-#include <exadg/incompressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/incompressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/matrix_free/integrators.h>
 #include <exadg/operators/operator_base.h>
 

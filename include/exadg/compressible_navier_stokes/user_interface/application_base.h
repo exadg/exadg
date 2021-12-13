@@ -34,7 +34,7 @@
 #include <exadg/compressible_navier_stokes/postprocessor/postprocessor.h>
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/grid/grid.h>
 
 namespace ExaDG
@@ -72,13 +72,13 @@ public:
   }
 
   virtual void
-  set_input_parameters(unsigned int const degree) = 0;
+  set_parameters(unsigned int const degree) = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
   create_grid(GridData const & grid_data) = 0;
 
   virtual void
-  set_boundary_conditions() = 0;
+  set_boundary_descriptor() = 0;
 
   virtual void
   set_field_functions() = 0;
@@ -92,7 +92,7 @@ public:
     n_subdivisions_1d_hypercube = n_subdivisions_1d;
   }
 
-  InputParameters const &
+  Parameters const &
   get_parameters() const
   {
     return param;
@@ -113,7 +113,7 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  InputParameters                          param;
+  Parameters                               param;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
 

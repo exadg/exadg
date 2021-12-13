@@ -267,14 +267,12 @@ public:
   double const output_interval_time        = 5.0 * T_0; // 10.0*T_0;
 
   /*
-   *  Most of the input parameters are the same for both domains, so we write
+   *  Most of the parameters are the same for both domains, so we write
    *  this function for the actual domain and only "correct" the parameters
    *  for the precursor by passing an additional parameter is_precursor.
    */
   void
-  do_set_input_parameters(InputParameters &  param,
-                          unsigned int const degree,
-                          bool const         is_precursor = false)
+  do_set_parameters(Parameters & param, unsigned int const degree, bool const is_precursor = false)
   {
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -430,15 +428,15 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
-    do_set_input_parameters(this->param, degree);
+    do_set_parameters(this->param, degree);
   }
 
   void
-  set_input_parameters_precursor(unsigned int const degree) final
+  set_parameters_precursor(unsigned int const degree) final
   {
-    do_set_input_parameters(this->param_pre, degree, true);
+    do_set_parameters(this->param_pre, degree, true);
   }
 
   std::shared_ptr<Grid<dim, Number>>
@@ -551,7 +549,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS
@@ -589,7 +587,7 @@ public:
   }
 
   void
-  set_boundary_conditions_precursor() final
+  set_boundary_descriptor_precursor() final
   {
     /*
      *  FILL BOUNDARY DESCRIPTORS

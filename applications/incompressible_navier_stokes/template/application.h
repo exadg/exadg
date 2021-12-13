@@ -62,10 +62,10 @@ public:
   }
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // Here, set all parameters differing from their default values as initialized in
-    // IncNS::InputParameters::InputParameters()
+    // IncNS::Parameters::Parameters()
 
     this->param.degree_u = degree;
   }
@@ -84,7 +84,7 @@ public:
   }
 
   void
-  set_boundary_conditions() final
+  set_boundary_descriptor() final
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

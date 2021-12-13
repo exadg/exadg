@@ -48,7 +48,7 @@ public:
    */
   GridMotionElasticity(std::shared_ptr<Mapping<dim> const>               mapping_undeformed,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
-                       Structure::InputParameters const &                structure_parameters)
+                       Structure::Parameters const &                     structure_parameters)
     : GridMotionBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from elasticity operator
                                   structure_operator->get_dof_handler().get_fe().degree,
@@ -152,7 +152,7 @@ public:
 private:
   std::shared_ptr<Structure::Operator<dim, Number>> pde_operator;
 
-  Structure::InputParameters const & param;
+  Structure::Parameters const & param;
 
   // store solution of previous time step / iteration so that a good initial
   // guess is available in the next step, easing convergence or reducing computational

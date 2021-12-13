@@ -24,7 +24,7 @@
 
 #include <exadg/convection_diffusion/time_integration/time_int_bdf.h>
 #include <exadg/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h>
-#include <exadg/convection_diffusion/user_interface/input_parameters.h>
+#include <exadg/convection_diffusion/user_interface/parameters.h>
 
 namespace ExaDG
 {
@@ -36,7 +36,7 @@ namespace ConvDiff
 template<int dim, typename Number>
 std::shared_ptr<TimeIntBase>
 create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_operator,
-                       InputParameters const &                         parameters,
+                       Parameters const &                              parameters,
                        unsigned int const                              refine_steps_time,
                        MPI_Comm const &                                mpi_comm,
                        bool const                                      is_test,

@@ -28,7 +28,7 @@
 #include <exadg/compressible_navier_stokes/user_interface/application_base.h>
 #include <exadg/compressible_navier_stokes/user_interface/boundary_descriptor.h>
 #include <exadg/compressible_navier_stokes/user_interface/field_functions.h>
-#include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mapping_dof_vector.h>

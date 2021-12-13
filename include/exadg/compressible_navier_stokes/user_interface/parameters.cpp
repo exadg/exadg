@@ -23,7 +23,7 @@
 #include <deal.II/base/exceptions.h>
 
 // ExaDG
-#include <exadg/compressible_navier_stokes/user_interface/input_parameters.h>
+#include <exadg/compressible_navier_stokes/user_interface/parameters.h>
 
 namespace ExaDG
 {
@@ -33,7 +33,7 @@ using namespace dealii;
 
 
 // standard constructor that initializes parameters with default values
-InputParameters::InputParameters()
+Parameters::Parameters()
   : // MATHEMATICAL MODEL
     equation_type(EquationType::Undefined),
     right_hand_side(false),
@@ -84,7 +84,7 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters() const
+Parameters::check() const
 {
   // MATHEMATICAL MODEL
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
@@ -142,7 +142,7 @@ InputParameters::check_input_parameters() const
 
 
 void
-InputParameters::print(ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -167,7 +167,7 @@ InputParameters::print(ConditionalOStream const & pcout, std::string const & nam
 }
 
 void
-InputParameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -176,7 +176,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream const & 
 }
 
 void
-InputParameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
+Parameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -191,7 +191,7 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream const &
 }
 
 void
-InputParameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -228,7 +228,7 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream con
 }
 
 void
-InputParameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -245,7 +245,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream cons
 }
 
 void
-InputParameters::print_parameters_solver(ConditionalOStream const & /*pcout*/) const
+Parameters::print_parameters_solver(ConditionalOStream const & /*pcout*/) const
 {
   /*
   pcout << std::endl
@@ -254,7 +254,7 @@ InputParameters::print_parameters_solver(ConditionalOStream const & /*pcout*/) c
 }
 
 void
-InputParameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
+Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 

@@ -28,7 +28,7 @@
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
-#include <exadg/solvers_and_preconditioners/multigrid/multigrid_input_parameters.h>
+#include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -42,14 +42,14 @@ namespace IncNS
 {
 using namespace dealii;
 
-class InputParameters
+class Parameters
 {
 public:
   // standard constructor that initializes parameters
-  InputParameters();
+  Parameters();
 
   void
-  check_input_parameters(ConditionalOStream const & pcout) const;
+  check(ConditionalOStream const & pcout) const;
 
   bool
   convective_problem() const;

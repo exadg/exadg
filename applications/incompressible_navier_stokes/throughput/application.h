@@ -76,7 +76,7 @@ public:
   MeshType    mesh_type        = MeshType::Cartesian;
 
   void
-  set_input_parameters(unsigned int const degree) final
+  set_parameters(unsigned int const degree) final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type                = ProblemType::Unsteady;
@@ -206,7 +206,7 @@ public:
   }
 
   void
-  set_boundary_conditions()
+  set_boundary_descriptor()
   {
     // test case with purely periodic boundary conditions
     // boundary descriptors remain empty for velocity and pressure
