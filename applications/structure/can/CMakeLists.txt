@@ -1,3 +1,5 @@
-PROJECT(structure_can)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp structure_can solver)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)

@@ -1,3 +1,5 @@
-PROJECT(incompressible_turbulent_channel)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp incompressible_turbulent_channel solver)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)

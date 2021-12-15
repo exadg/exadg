@@ -1,3 +1,5 @@
-PROJECT(fsi_cylinder_with_flag)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp fsi_cylinder_with_flag solver)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)

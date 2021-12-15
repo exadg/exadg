@@ -1,6 +1,10 @@
-PROJECT(structure_manufactured)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver.cpp structure_manufactured solver)
-EXADG_PICKUP_EXE(throughput.cpp structure_throughput throughput)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
+
+STRING(APPEND TARGET_NAME "_throughput")
+EXADG_PICKUP_EXE(throughput.cpp ${TARGET_NAME} throughput)
 
 ADD_SUBDIRECTORY(tests)

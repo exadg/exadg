@@ -32,10 +32,8 @@ INCLUDE_DIRECTORIES(
         ${CMAKE_SOURCE_DIR}/include
         )
 
-ADD_SUBDIRECTORY(compressible_navier_stokes)
-ADD_SUBDIRECTORY(convection_diffusion)
-ADD_SUBDIRECTORY(fluid_structure_interaction)
-ADD_SUBDIRECTORY(incompressible_flow_with_transport)
-ADD_SUBDIRECTORY(incompressible_navier_stokes)
-ADD_SUBDIRECTORY(poisson)
-ADD_SUBDIRECTORY(structure)
+SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR})
+
+FOREACH(subdir ${SUBDIRS})
+  ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()

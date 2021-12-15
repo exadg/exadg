@@ -1,5 +1,13 @@
-PROJECT(fda_benchmark)
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-EXADG_PICKUP_EXE(solver_poisson.cpp poisson_fda solver_poisson)
-EXADG_PICKUP_EXE(solver.cpp incompressible_fda solver)
-EXADG_PICKUP_EXE(solver_precursor.cpp incompressible_precursor_fda solver_precursor)
+PROJECT(${TARGET_NAME})
+
+EXADG_PICKUP_EXE(solver.cpp ${TARGET_NAME} solver)
+
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
+STRING(APPEND TARGET_NAME "_poisson")
+EXADG_PICKUP_EXE(solver_poisson.cpp ${TARGET_NAME} solver_poisson)
+
+TARGETNAME(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR})
+STRING(APPEND TARGET_NAME "_precursor")
+EXADG_PICKUP_EXE(solver_precursor.cpp ${TARGET_NAME} solver_precursor)

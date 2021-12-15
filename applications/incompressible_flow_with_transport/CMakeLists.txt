@@ -1,7 +1,9 @@
-PROJECT(incompressible_flow_with_transport)
+DIRNAME(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_SUBDIRECTORY(differentially_heated_cavity)
-ADD_SUBDIRECTORY(mantle_convection)
-ADD_SUBDIRECTORY(rayleigh_benard)
-ADD_SUBDIRECTORY(rising_bubble)
-ADD_SUBDIRECTORY(template)
+PROJECT(${PROJECT_NAME})
+
+SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR})
+
+FOREACH(subdir ${SUBDIRS})
+  ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()
