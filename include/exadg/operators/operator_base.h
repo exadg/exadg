@@ -303,13 +303,15 @@ protected:
    * operator-specific and define how the operator looks like.
    */
   virtual void
-  reinit_cell(unsigned int const cell) const;
+  reinit_cell(unsigned int const cell, IntegratorCell & integrator) const;
 
   virtual void
-  reinit_face(unsigned int const face) const;
+  reinit_face(unsigned int const face,
+              IntegratorFace &   integrator_m,
+              IntegratorFace &   integrator_p) const;
 
   virtual void
-  reinit_boundary_face(unsigned int const face) const;
+  reinit_boundary_face(unsigned int const face, IntegratorFace & integrator_m) const;
 
   // standard integration procedure with separate loops for cell and face integrals
   virtual void
@@ -339,7 +341,9 @@ protected:
   virtual void
   reinit_face_cell_based(unsigned int const       cell,
                          unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+                         types::boundary_id const boundary_id,
+                         IntegratorFace &         integrator_m,
+                         IntegratorFace &         integrator_p) const;
 
   // This function is currently only needed due to limitations of deal.II which do
   // currently not allow to access neighboring data in case of cell-based face loops.
@@ -383,10 +387,6 @@ protected:
    * Is the discretization based on discontinuous Galerkin method?
    */
   bool is_dg;
-
-  std::shared_ptr<IntegratorCell> integrator;
-  std::shared_ptr<IntegratorFace> integrator_m;
-  std::shared_ptr<IntegratorFace> integrator_p;
 
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
