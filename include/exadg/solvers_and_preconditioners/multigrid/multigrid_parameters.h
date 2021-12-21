@@ -88,6 +88,74 @@ struct AdditionalData
 } // namespace dealii
 #endif
 
+#ifndef DEAL_II_WITH_PETSC
+namespace dealii::PETScWrappers::PreconditionBoomerAMG
+{
+// copy of interface from deal.II (lac/petsc_precondition.h)
+struct AdditionalData
+{
+  enum class RelaxationType
+  {
+    Jacobi,
+    sequentialGaussSeidel,
+    seqboundaryGaussSeidel,
+    SORJacobi,
+    backwardSORJacobi,
+    symmetricSORJacobi,
+    l1scaledSORJacobi,
+    GaussianElimination,
+    l1GaussSeidel,
+    backwardl1GaussSeidel,
+    CG,
+    Chebyshev,
+    FCFJacobi,
+    l1scaledJacobi,
+    None
+  };
+
+  AdditionalData(const bool           symmetric_operator               = false,
+                 const double         strong_threshold                 = 0.25,
+                 const double         max_row_sum                      = 0.9,
+                 const unsigned int   aggressive_coarsening_num_levels = 0,
+                 const bool           output_details                   = false,
+                 const RelaxationType relaxation_type_up               = RelaxationType::SORJacobi,
+                 const RelaxationType relaxation_type_down             = RelaxationType::SORJacobi,
+                 const RelaxationType relaxation_type_coarse = RelaxationType::GaussianElimination,
+                 const unsigned int   n_sweeps_coarse        = 1,
+                 const double         tol                    = 0.0,
+                 const unsigned int   max_iter               = 1,
+                 const bool           w_cycle                = false)
+    : symmetric_operator(symmetric_operator),
+      strong_threshold(strong_threshold),
+      max_row_sum(max_row_sum),
+      aggressive_coarsening_num_levels(aggressive_coarsening_num_levels),
+      output_details(output_details),
+      relaxation_type_up(relaxation_type_up),
+      relaxation_type_down(relaxation_type_down),
+      relaxation_type_coarse(relaxation_type_coarse),
+      n_sweeps_coarse(n_sweeps_coarse),
+      tol(tol),
+      max_iter(max_iter),
+      w_cycle(w_cycle)
+  {
+  }
+
+  bool           symmetric_operator;
+  double         strong_threshold;
+  double         max_row_sum;
+  unsigned int   aggressive_coarsening_num_levels;
+  bool           output_details;
+  RelaxationType relaxation_type_up;
+  RelaxationType relaxation_type_down;
+  RelaxationType relaxation_type_coarse;
+  unsigned int   n_sweeps_coarse;
+  double         tol;
+  unsigned int   max_iter;
+  bool           w_cycle;
+};
+} // namespace dealii::PETScWrappers::PreconditionBoomerAMG
+#endif
+
 namespace ExaDG
 {
 enum class MultigridType
