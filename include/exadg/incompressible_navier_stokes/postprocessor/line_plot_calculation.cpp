@@ -196,6 +196,8 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
             f.close();
           }
         }
+
+        point_offset += n_points;
       }
     }
   }
