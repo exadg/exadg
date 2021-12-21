@@ -25,7 +25,6 @@
 // ExaDG
 #include <exadg/postprocessor/pressure_difference_calculation.h>
 #include <exadg/utilities/create_directories.h>
-#include <exadg/vector_tools/point_value.h>
 
 namespace ExaDG
 {
@@ -48,7 +47,20 @@ PressureDifferenceCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_han
   data                 = data_in;
 
   if(data.calculate)
+  {
     create_directories(data.directory, mpi_comm);
+    evaluation_cache = std::make_shared<Utilities::MPI::RemotePointEvaluation<dim>>(
+      1e-8 * dof_handler_pressure->begin()->diameter());
+
+    // only request result on rank 0
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    {
+      std::vector<Point<dim>> points{data.point_1, data.point_2};
+      evaluation_cache->reinit(points, dof_handler_pressure->get_triangulation(), mapping_in);
+    }
+    else
+      evaluation_cache->reinit({}, dof_handler_pressure->get_triangulation(), mapping_in);
+  }
 }
 
 template<int dim, typename Number>
@@ -58,21 +70,21 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
 {
   if(data.calculate)
   {
-    Number pressure_1 = 0.0, pressure_2 = 0.0;
+    AssertThrow(evaluation_cache.get() != nullptr, ExcNotInitialized());
 
-    Point<dim> point_1, point_2;
-    point_1 = data.point_1;
-    point_2 = data.point_2;
+    // convert to double vector to ensure we can evaluate with deal.II's function
+    LinearAlgebra::distributed::Vector<double> ghosted_vector(pressure.get_partitioner());
+    ghosted_vector.copy_locally_owned_data_from(pressure);
+    ghosted_vector.update_ghost_values();
 
-    evaluate_scalar_quantity_in_point(
-      pressure_1, *dof_handler_pressure, *mapping, pressure, point_1, mpi_comm);
-    evaluate_scalar_quantity_in_point(
-      pressure_2, *dof_handler_pressure, *mapping, pressure, point_2, mpi_comm);
-
-    Number const pressure_difference = pressure_1 - pressure_2;
+    // default flag combination computes average from all cells
+    std::vector<double> point_values =
+      VectorTools::point_values<1>(*evaluation_cache, *dof_handler_pressure, ghosted_vector);
 
     if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
+      double const pressure_difference = point_values[0] - point_values[1];
+
       std::string filename = data.directory + data.filename;
 
       unsigned int precision = 12;

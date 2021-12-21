@@ -23,7 +23,8 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_CALCULATION_H_
 
 #include <exadg/incompressible_navier_stokes/postprocessor/line_plot_data.h>
-#include <exadg/vector_tools/point_value.h>
+
+#include <deal.II/numerics/vector_tools_evaluate.h>
 
 namespace ExaDG
 {
@@ -67,6 +68,9 @@ private:
   SmartPointer<Mapping<dim> const>    mapping;
 
   LinePlotDataInstantaneous<dim> data;
+
+  std::vector<Point<dim>>                                     evaluation_points;
+  std::shared_ptr<Utilities::MPI::RemotePointEvaluation<dim>> evaluation_cache;
 };
 
 } // namespace IncNS
