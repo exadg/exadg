@@ -79,27 +79,26 @@ create_subcommunicator(DoFHandler<dim, spacedim> const & dof_handler)
   }
 }
 
+#ifdef DEAL_II_WITH_TRILINOS
 template<typename Operator, typename Number>
 class PreconditionerML : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number>        VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   typedef TrilinosWrappers::PreconditionAMG::AdditionalData MLData;
 
-#ifdef DEAL_II_WITH_TRILINOS
 public:
   // distributed sparse system matrix
   TrilinosWrappers::SparseMatrix system_matrix;
 
 private:
   TrilinosWrappers::PreconditionAMG amg;
-#endif
 
 public:
   PreconditionerML(Operator const & op, MLData ml_data = MLData())
     : pde_operator(op), ml_data(ml_data)
   {
-#ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix,
                                     op.get_matrix_free().get_dof_handler().get_communicator());
@@ -109,23 +108,17 @@ public:
 
     // initialize Trilinos' AMG
     amg.initialize(system_matrix, ml_data);
-#else
-    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
-#endif
   }
 
-#ifdef DEAL_II_WITH_TRILINOS
   TrilinosWrappers::SparseMatrix const &
   get_system_matrix()
   {
     return system_matrix;
   }
-#endif
 
   void
   update() override
   {
-#ifdef DEAL_II_WITH_TRILINOS
     // clear content of matrix since the next calculate_system_matrix-commands add their result
     system_matrix *= 0.0;
 
@@ -134,21 +127,12 @@ public:
 
     // initialize Trilinos' AMG
     amg.initialize(system_matrix, ml_data);
-#else
-    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
-#endif
   }
 
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
-#ifdef DEAL_II_WITH_TRILINOS
     amg.vmult(dst, src);
-#else
-    (void)dst;
-    (void)src;
-    AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
-#endif
   }
 
 private:
@@ -157,8 +141,9 @@ private:
 
   MLData ml_data;
 };
+#endif
 
-
+#ifdef DEAL_II_WITH_PETSC
 /*
  * Wrapper class for BoomerAMG from Hypre
  */
@@ -166,7 +151,8 @@ template<typename Operator, typename Number>
 class PreconditionerBoomerAMG : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number>           VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   typedef PETScWrappers::PreconditionBoomerAMG::AdditionalData BoomerData;
 
   // subcommunicator; declared before the matrix to ensure that it gets
@@ -174,13 +160,11 @@ private:
   std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> subcommunicator;
 
 public:
-#ifdef DEAL_II_WITH_PETSC
   // distributed sparse system matrix
   PETScWrappers::MPI::SparseMatrix system_matrix;
 
   // amg preconditioner for access by PETSc solver
   PETScWrappers::PreconditionBoomerAMG amg;
-#endif
 
   PreconditionerBoomerAMG(Operator const & op, BoomerData boomer_data = BoomerData())
     : subcommunicator(
@@ -188,17 +172,14 @@ public:
       pde_operator(op),
       boomer_data(boomer_data)
   {
-#ifdef DEAL_II_WITH_PETSC
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix, *subcommunicator);
-#endif
 
     calculate_preconditioner();
   }
 
   ~PreconditionerBoomerAMG()
   {
-#ifdef DEAL_II_WITH_PETSC
     if(system_matrix.m() > 0)
     {
       PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
@@ -206,28 +187,23 @@ public:
       ierr = VecDestroy(&petsc_vector_src);
       AssertThrow(ierr == 0, ExcPETScError(ierr));
     }
-#endif
   }
 
-#ifdef DEAL_II_WITH_PETSC
   PETScWrappers::MPI::SparseMatrix const &
   get_system_matrix()
   {
     return system_matrix;
   }
-#endif
 
   void
   update() override
   {
-#ifdef DEAL_II_WITH_PETSC
     // clear content of matrix since the next calculate_system_matrix calls
     // add their result; since we might run this on a sub-communicator, we
     // skip the processes that do not participate in the matrix and have size
     // zero
     if(system_matrix.m() > 0)
       system_matrix = 0.0;
-#endif
 
     calculate_preconditioner();
   }
@@ -235,7 +211,6 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const override
   {
-#ifdef DEAL_II_WITH_PETSC
     if(system_matrix.m() > 0)
       apply_petsc_operation(dst,
                             src,
@@ -245,18 +220,12 @@ public:
                                 PETScWrappers::VectorBase const & petsc_src) {
                               amg.vmult(petsc_dst, petsc_src);
                             });
-#else
-    (void)dst;
-    (void)src;
-    AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
-#endif
   }
 
 private:
   void
   calculate_preconditioner()
   {
-#ifdef DEAL_II_WITH_PETSC
     // calculate_matrix in case the current MPI rank participates in the PETSc communicator
     if(system_matrix.m() > 0)
     {
@@ -276,9 +245,6 @@ private:
                    PETSC_DETERMINE,
                    &petsc_vector_src);
     }
-#else
-    AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
-#endif
   }
 
   // reference to matrix-free operator
@@ -286,12 +252,13 @@ private:
 
   BoomerData boomer_data;
 
-#ifdef DEAL_II_WITH_PETSC
   // PETSc vector objects to avoid re-allocation in every vmult() operation
   mutable VectorTypePETSc petsc_vector_src;
   mutable VectorTypePETSc petsc_vector_dst;
-#endif
 };
+#endif
+
+
 } // namespace ExaDG
 
 #endif

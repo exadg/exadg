@@ -114,14 +114,22 @@ public:
     {
       if(additional_data.amg_data.amg_type == AMGType::ML)
       {
-        preconditioner_amg.reset(
-          new PreconditionerML<Operator, NumberAMG>(matrix, additional_data.amg_data.ml_data));
+#ifdef DEAL_II_WITH_TRILINOS
+        preconditioner_amg =
+          std::make_shared<PreconditionerML<Operator, NumberAMG>>(matrix,
+                                                                  additional_data.amg_data.ml_data);
+#else
+        AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+#endif
       }
       else if(additional_data.amg_data.amg_type == AMGType::BoomerAMG)
       {
-        preconditioner_amg.reset(
-          new PreconditionerBoomerAMG<Operator, NumberAMG>(matrix,
-                                                           additional_data.amg_data.boomer_data));
+#ifdef DEAL_II_WITH_PETSC
+        preconditioner_amg = std::make_shared<PreconditionerBoomerAMG<Operator, NumberAMG>>(
+          matrix, additional_data.amg_data.boomer_data);
+#else
+        AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+#endif
       }
       else
       {
@@ -380,14 +388,31 @@ private:
 public:
   MGCoarseAMG(Operator const & op, AMGData data = AMGData())
   {
+    (void)op;
+    (void)data;
+
     if(data.amg_type == AMGType::BoomerAMG)
+    {
+#ifdef DEAL_II_WITH_PETSC
       amg_preconditioner =
         std::make_shared<PreconditionerBoomerAMG<Operator, NumberAMG>>(op, data.boomer_data);
+#else
+      AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+#endif
+    }
     else if(data.amg_type == AMGType::ML)
+    {
+#ifdef DEAL_II_WITH_PETSC
       amg_preconditioner =
         std::make_shared<PreconditionerML<Operator, NumberAMG>>(op, data.ml_data);
+#else
+      AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+#endif
+    }
     else
+    {
       AssertThrow(false, ExcNotImplemented());
+    }
   }
 
   void

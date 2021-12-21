@@ -42,15 +42,26 @@ private:
 public:
   PreconditionerAMG(Operator const & pde_operator, AMGData const & data)
   {
+    (void)pde_operator;
+    (void)data;
+
     if(data.amg_type == AMGType::BoomerAMG)
     {
+#ifdef DEAL_II_WITH_PETSC
       preconditioner_amg =
         std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data.boomer_data);
+#else
+      AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+#endif
     }
     else if(data.amg_type == AMGType::ML)
     {
+#ifdef DEAL_II_WITH_PETSC
       preconditioner_amg =
         std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data.ml_data);
+#else
+      AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+#endif
     }
     else
     {

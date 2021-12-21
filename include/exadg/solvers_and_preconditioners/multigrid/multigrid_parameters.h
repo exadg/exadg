@@ -34,128 +34,6 @@
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
 #include <exadg/utilities/print_functions.h>
 
-#ifndef DEAL_II_WITH_TRILINOS
-namespace dealii
-{
-namespace TrilinosWrappers
-{
-namespace PreconditionAMG
-{
-// copy of interface from deal.II (lac/trilinos_precondition.h)
-struct AdditionalData
-{
-  AdditionalData(
-    bool const                           elliptic              = true,
-    bool const                           higher_order_elements = false,
-    unsigned int const                   n_cycles              = 1,
-    bool const                           w_cycle               = false,
-    double const                         aggregation_threshold = 1e-4,
-    std::vector<std::vector<bool>> const constant_modes        = std::vector<std::vector<bool>>(0),
-    unsigned int const                   smoother_sweeps       = 2,
-    unsigned int const                   smoother_overlap      = 0,
-    bool const                           output_details        = false,
-    char const *                         smoother_type         = "Chebyshev",
-    char const *                         coarse_type           = "Amesos-KLU")
-    : elliptic(elliptic),
-      higher_order_elements(higher_order_elements),
-      n_cycles(n_cycles),
-      w_cycle(w_cycle),
-      aggregation_threshold(aggregation_threshold),
-      constant_modes(constant_modes),
-      smoother_sweeps(smoother_sweeps),
-      smoother_overlap(smoother_overlap),
-      output_details(output_details),
-      smoother_type(smoother_type),
-      coarse_type(coarse_type)
-  {
-  }
-
-  bool                           elliptic;
-  bool                           higher_order_elements;
-  unsigned int                   n_cycles;
-  bool                           w_cycle;
-  double                         aggregation_threshold;
-  std::vector<std::vector<bool>> constant_modes;
-  unsigned int                   smoother_sweeps;
-  unsigned int                   smoother_overlap;
-  bool                           output_details;
-  char const *                   smoother_type;
-  char const *                   coarse_type;
-};
-
-} // namespace PreconditionAMG
-} // namespace TrilinosWrappers
-} // namespace dealii
-#endif
-
-#ifndef DEAL_II_WITH_PETSC
-namespace dealii::PETScWrappers::PreconditionBoomerAMG
-{
-// copy of interface from deal.II (lac/petsc_precondition.h)
-struct AdditionalData
-{
-  enum class RelaxationType
-  {
-    Jacobi,
-    sequentialGaussSeidel,
-    seqboundaryGaussSeidel,
-    SORJacobi,
-    backwardSORJacobi,
-    symmetricSORJacobi,
-    l1scaledSORJacobi,
-    GaussianElimination,
-    l1GaussSeidel,
-    backwardl1GaussSeidel,
-    CG,
-    Chebyshev,
-    FCFJacobi,
-    l1scaledJacobi,
-    None
-  };
-
-  AdditionalData(const bool           symmetric_operator               = false,
-                 const double         strong_threshold                 = 0.25,
-                 const double         max_row_sum                      = 0.9,
-                 const unsigned int   aggressive_coarsening_num_levels = 0,
-                 const bool           output_details                   = false,
-                 const RelaxationType relaxation_type_up               = RelaxationType::SORJacobi,
-                 const RelaxationType relaxation_type_down             = RelaxationType::SORJacobi,
-                 const RelaxationType relaxation_type_coarse = RelaxationType::GaussianElimination,
-                 const unsigned int   n_sweeps_coarse        = 1,
-                 const double         tol                    = 0.0,
-                 const unsigned int   max_iter               = 1,
-                 const bool           w_cycle                = false)
-    : symmetric_operator(symmetric_operator),
-      strong_threshold(strong_threshold),
-      max_row_sum(max_row_sum),
-      aggressive_coarsening_num_levels(aggressive_coarsening_num_levels),
-      output_details(output_details),
-      relaxation_type_up(relaxation_type_up),
-      relaxation_type_down(relaxation_type_down),
-      relaxation_type_coarse(relaxation_type_coarse),
-      n_sweeps_coarse(n_sweeps_coarse),
-      tol(tol),
-      max_iter(max_iter),
-      w_cycle(w_cycle)
-  {
-  }
-
-  bool           symmetric_operator;
-  double         strong_threshold;
-  double         max_row_sum;
-  unsigned int   aggressive_coarsening_num_levels;
-  bool           output_details;
-  RelaxationType relaxation_type_up;
-  RelaxationType relaxation_type_down;
-  RelaxationType relaxation_type_coarse;
-  unsigned int   n_sweeps_coarse;
-  double         tol;
-  unsigned int   max_iter;
-  bool           w_cycle;
-};
-} // namespace dealii::PETScWrappers::PreconditionBoomerAMG
-#endif
-
 namespace ExaDG
 {
 enum class MultigridType
@@ -241,10 +119,13 @@ struct AMGData
   {
     amg_type = AMGType::ML;
 
+#ifdef DEAL_II_WITH_TRILINOS
     ml_data.smoother_sweeps = 1;
     ml_data.n_cycles        = 1;
     ml_data.smoother_type   = "ILU";
+#endif
 
+#ifdef DEAL_II_WITH_PETSC
     boomer_data.n_sweeps_coarse = 1;
     boomer_data.max_iter        = 1;
     boomer_data.relaxation_type_down =
@@ -253,6 +134,7 @@ struct AMGData
       PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
     boomer_data.relaxation_type_coarse =
       PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+#endif
   };
 
   void
@@ -262,18 +144,22 @@ struct AMGData
 
     if(amg_type == AMGType::ML)
     {
+#ifdef DEAL_II_WITH_TRILINOS
       print_parameter(pcout, "    Smoother sweeps", ml_data.smoother_sweeps);
       print_parameter(pcout, "    Number of cycles", ml_data.n_cycles);
       print_parameter(pcout, "    Smoother type", ml_data.smoother_type);
+#endif
     }
     else if(amg_type == AMGType::BoomerAMG)
     {
+#ifdef DEAL_II_WITH_PETSC
       print_parameter(pcout, "    Smoother sweeps", boomer_data.n_sweeps_coarse);
       print_parameter(pcout, "    Number of cycles", boomer_data.max_iter);
       // TODO: add enum_to_string function (in dealii?)
       print_parameter(pcout, "    Smoother type down", (int)boomer_data.relaxation_type_down);
       print_parameter(pcout, "    Smoother type up", (int)boomer_data.relaxation_type_up);
       print_parameter(pcout, "    Smoother type coarse", (int)boomer_data.relaxation_type_coarse);
+#endif
     }
     else
     {
@@ -281,9 +167,15 @@ struct AMGData
     }
   }
 
-  AMGType                                              amg_type;
-  TrilinosWrappers::PreconditionAMG::AdditionalData    ml_data;
+  AMGType amg_type;
+
+#ifdef DEAL_II_WITH_TRILINOS
+  TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
+#endif
+
+#ifdef DEAL_II_WITH_PETSC
   PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
+#endif
 };
 
 enum class PreconditionerSmoother
