@@ -1,0 +1,3 @@
+PROJECT(incompressible_flow_past_sphere)
+
+EXADG_PICKUP_EXE(solver.cpp incompressible_flow_past_sphere solver)
