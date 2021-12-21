@@ -402,11 +402,11 @@ public:
     }
     else if(data.amg_type == AMGType::ML)
     {
-#ifdef DEAL_II_WITH_PETSC
+#ifdef DEAL_II_WITH_TRILINOS
       amg_preconditioner =
         std::make_shared<PreconditionerML<Operator, NumberAMG>>(op, data.ml_data);
 #else
-      AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+      AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
     }
     else
