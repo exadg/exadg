@@ -14,11 +14,9 @@ var searchData=
   ['preconditionerbase_3c_20operator_3a_3avalue_5ftype_20_3e_11',['PreconditionerBase&lt; Operator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
   ['preconditionerbase_3c_20typenameoperator_3a_3avalue_5ftype_20_3e_12',['PreconditionerBase&lt; typenameOperator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
   ['preconditionerbase_3c_20vectorizedarray_3c_20number_20_3e_20_3e_13',['PreconditionerBase&lt; VectorizedArray&lt; Number &gt; &gt;',['../classExaDG_1_1Elementwise_1_1PreconditionerBase.html',1,'ExaDG::Elementwise']]],
-  ['preconditionerboomeramg_14',['PreconditionerBoomerAMG',['../classExaDG_1_1PreconditionerBoomerAMG.html',1,'ExaDG']]],
-  ['preconditioneridentity_15',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
-  ['preconditionerml_16',['PreconditionerML',['../classExaDG_1_1PreconditionerML.html',1,'ExaDG']]],
-  ['pressuredifferencecalculator_17',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
-  ['pressuredifferencedata_18',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
-  ['projectionoperator_19',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
-  ['projectionoperatordata_20',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
+  ['preconditioneridentity_14',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
+  ['pressuredifferencecalculator_15',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
+  ['pressuredifferencedata_16',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
+  ['projectionoperator_17',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
+  ['projectionoperatordata_18',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
 ];
