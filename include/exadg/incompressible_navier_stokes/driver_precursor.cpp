@@ -181,12 +181,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
               ExcMessage("This is an unsteady solver. Check parameters."));
 
   // initialize pde_operator_pre (precursor domain)
-  pde_operator = create_operator<dim, Number>(grid_pre,
-                                              application->get_boundary_descriptor_precursor(),
-                                              application->get_field_functions_precursor(),
-                                              application->get_parameters_precursor(),
-                                              "fluid",
-                                              mpi_comm);
+  pde_operator_pre = create_operator<dim, Number>(grid_pre,
+                                                  application->get_boundary_descriptor_precursor(),
+                                                  application->get_field_functions_precursor(),
+                                                  application->get_parameters_precursor(),
+                                                  "fluid",
+                                                  mpi_comm);
 
   // initialize operator_base (actual domain)
   pde_operator = create_operator<dim, Number>(grid,

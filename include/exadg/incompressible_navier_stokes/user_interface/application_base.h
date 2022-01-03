@@ -200,6 +200,8 @@ public:
   ApplicationBasePrecursor(std::string parameter_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(parameter_file, comm)
   {
+    field_functions_pre     = std::make_shared<FieldFunctions<dim>>();
+    boundary_descriptor_pre = std::make_shared<BoundaryDescriptor<dim>>();
   }
 
   virtual ~ApplicationBasePrecursor()
