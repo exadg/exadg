@@ -25,12 +25,17 @@
 #
 #########################################################################
 
+# The following code is a modified version of the code proposed in:
+# https://stackoverflow.com/questions/7787823/cmake-how-to-get-the-name-of-all-subdirectories-of-a-directory
+
 MACRO(SUBDIRLIST result curdir)
   FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
   SET(dirlist "")
   FOREACH(child ${children})
     IF(IS_DIRECTORY ${curdir}/${child})
-      LIST(APPEND dirlist ${child})
+       IF(NOT "${child}" STREQUAL "CMakeFiles")
+         LIST(APPEND dirlist ${child})
+       ENDIF()
     ENDIF()
   ENDFOREACH()
   SET(${result} ${dirlist})
