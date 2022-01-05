@@ -27,7 +27,9 @@
 
 // ExaDG
 #include <exadg/configuration/config.h>
-#include <exadg/fluid_structure_interaction/driver.h>
+#include <exadg/fluid_structure_interaction_precice/driver.h>
+#include <exadg/fluid_structure_interaction_precice/driver_fluid.h>
+#include <exadg/fluid_structure_interaction_precice/driver_solid.h>
 #include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/utilities/general_parameters.h>
 
@@ -90,8 +92,14 @@ run(std::string const &          input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<FSI::Driver<dim, Number>> driver =
-    std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, is_test);
+  bool const is_solid = false;
+
+  std::shared_ptr<FSI::Driver<dim, Number>> driver;
+
+  if (is_solid)
+    driver = std::make_shared<FSI::DriverSolid<dim, Number>>(input_file, mpi_comm, is_test);
+  else
+    driver = std::make_shared<FSI::DriverFluid<dim, Number>>(input_file, mpi_comm, is_test);
 
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     FSI::get_application<dim, Number>(input_file, mpi_comm);
