@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2022 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,8 +22,10 @@
 #ifndef INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_
 #define INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_PRECICE_DRIVER_H_
 
+#include <deal.II/lac/la_parallel_vector.h>
+
 // application
-#include <exadg/fluid_structure_interaction_precice/driver.h>
+#include <exadg/fluid_structure_interaction/user_interface/application_base.h>
 
 namespace ExaDG
 {
@@ -35,24 +37,49 @@ template<int dim, typename Number>
 class Driver
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  using VectorType = LinearAlgebra::distributed::Vector<Number>;
 
 public:
-  static void
-  add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data) = 0;
+  Driver(std::string const & input_file, MPI_Comm const & comm, bool const is_test)
+    : mpi_comm(comm),
+      pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+      is_test(is_test)
+  {
+    dealii::ParameterHandler prm;
 
-  void
+    add_parameters(prm);
+
+    prm.parse_input(input_file, "", true, true);
+  }
+
+  static void
+  add_parameters(dealii::ParameterHandler & prm)
+  {
+    (void)prm;
+  }
+
+  virtual void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const                            degree_fluid,
         unsigned int const                            degree_structure,
         unsigned int const                            refine_space_fluid,
-        unsigned int const                            refine_space_structure);
+        unsigned int const                            refine_space_structure) = 0;
 
-  void
+  virtual void
   solve() const = 0;
 
-  void
-  print_performance_results(double const total_time) const = 0;
+protected:
+  // MPI communicator
+  MPI_Comm const mpi_comm;
+
+  // output to std::cout
+  ConditionalOStream pcout;
+
+  // do not print wall times if is_test
+  bool const is_test;
+
+  // application
+  std::shared_ptr<ApplicationBase<dim, Number>> application;
 };
 
 } // namespace FSI

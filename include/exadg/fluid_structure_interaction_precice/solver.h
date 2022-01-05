@@ -2,7 +2,7 @@
  *
  *  ExaDG - High-Order Discontinuous Galerkin for the Exa-Scale
  *
- *  Copyright (C) 2021 by the ExaDG authors
+ *  Copyright (C) 2022 by the ExaDG authors
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -111,9 +111,6 @@ run(std::string const &          input_file,
                 resolution.refine_structure);
 
   driver->solve();
-
-  if(not(is_test))
-    driver->print_performance_results(timer.wall_time());
 }
 } // namespace ExaDG
 
@@ -144,7 +141,7 @@ main(int argc, char ** argv)
 
     if(argc == 3 and std::string(argv[2]) == "--help")
     {
-      Assert(false, ExcNotImplemented());
+      Assert(false, dealii::StandardExceptions::ExcNotImplemented());
 
       return 0;
     }

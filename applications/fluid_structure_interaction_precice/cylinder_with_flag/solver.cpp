@@ -23,4 +23,4 @@
 #include <exadg/fluid_structure_interaction_precice/solver.h>
 
 // application
-#include "../fluid_structure_interaction/cylinder_with_flag/application.h"
+#include "../../fluid_structure_interaction/cylinder_with_flag/application.h"
