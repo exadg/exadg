@@ -26,6 +26,8 @@
 
 // application
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
+#include <exadg/fluid_structure_interaction_precice/precice_adapter.h>
+#include <exadg/fluid_structure_interaction_precice/precice_parameter.h>
 
 namespace ExaDG
 {
@@ -49,6 +51,7 @@ public:
 
     add_parameters(prm);
 
+    precice_parameters.add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
 
@@ -79,7 +82,9 @@ protected:
   bool const is_test;
 
   // application
-  std::shared_ptr<ApplicationBase<dim, Number>> application;
+  std::shared_ptr<ApplicationBase<dim, Number>>           application;
+  std::unique_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
+  Parameters::PreciceAdapterConfiguration                 precice_parameters;
 };
 
 } // namespace FSI

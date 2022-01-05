@@ -24,9 +24,9 @@
 
 // application
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
+#include <exadg/fluid_structure_interaction_precice/interface_coupling.h>
 
 // utilities
-#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_general_infos.h>
@@ -358,10 +358,10 @@ public:
         solve_ale();
 
         // update velocity boundary condition for fluid
-        coupling_structure_to_fluid(/*iteration ==*/ 0);
+        coupling_structure_to_fluid();
 
         // solve fluid problem
-        fluid_time_integrator->advance_one_timestep_partitioned_solve(/*iteration ==*/ 0, true);
+        fluid_time_integrator->advance_one_timestep_partitioned_solve(/*iteration ==*/0, true);
 
         // update stress boundary condition for solid
         coupling_fluid_to_structure();
@@ -378,16 +378,13 @@ private:
   void
   coupling_structure_to_ale() const
   {
-    Assert(false, ExcNotImplemented());
-    // VectorType displacement_structure; // TODO
-    // structure_to_ale->update_data(displacement_structure);
+    communicator_ale->read();
   }
 
   void
-  coupling_structure_to_fluid(bool const extrapolate) const
+  coupling_structure_to_fluid() const
   {
-    Assert(false, ExcNotImplemented());
-    (void)extrapolate;
+    communicator_fluid->read();
   }
 
   void
@@ -401,10 +398,7 @@ private:
                                           fluid_time_integrator->get_pressure_np());
     stress_fluid *= -1.0;
 
-    Assert(false, ExcNotImplemented());
-
-    // TODO
-    // fluid_to_structure->update_data(stress_fluid);
+    communicator->write(stress_fluid);
   }
 
   void
@@ -458,6 +452,15 @@ private:
   std::shared_ptr<Structure::Operator<dim, Number>> ale_elasticity_operator;
 
   /************************************ ALE - MOVING MESH *************************************/
+
+
+  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
+
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator;
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_fluid;
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_ale;
+
+  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };
 
 } // namespace FSI

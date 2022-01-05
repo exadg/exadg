@@ -27,10 +27,10 @@
 
 // ExaDG
 #include <exadg/configuration/config.h>
+#include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/fluid_structure_interaction_precice/driver.h>
 #include <exadg/fluid_structure_interaction_precice/driver_fluid.h>
 #include <exadg/fluid_structure_interaction_precice/driver_solid.h>
-#include <exadg/fluid_structure_interaction/user_interface/declare_get_application.h>
 #include <exadg/utilities/general_parameters.h>
 
 namespace ExaDG
@@ -96,7 +96,7 @@ run(std::string const &          input_file,
 
   std::shared_ptr<FSI::Driver<dim, Number>> driver;
 
-  if (is_solid)
+  if(is_solid)
     driver = std::make_shared<FSI::DriverSolid<dim, Number>>(input_file, mpi_comm, is_test);
   else
     driver = std::make_shared<FSI::DriverFluid<dim, Number>>(input_file, mpi_comm, is_test);
@@ -151,17 +151,12 @@ main(int argc, char ** argv)
   ExaDG::ResolutionParameters resolution(input_file);
 
   // run the simulation
-  if(general.dim == 2 && general.precision == "float")
-    ExaDG::run<2, float>(input_file, resolution, mpi_comm, general.is_test);
-  else if(general.dim == 2 && general.precision == "double")
+  if(general.dim == 2 && general.precision == "double")
     ExaDG::run<2, double>(input_file, resolution, mpi_comm, general.is_test);
-  else if(general.dim == 3 && general.precision == "float")
-    ExaDG::run<3, float>(input_file, resolution, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "double")
     ExaDG::run<3, double>(input_file, resolution, mpi_comm, general.is_test);
   else
-    AssertThrow(false,
-                dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+    AssertThrow(false, dealii::ExcMessage("Only dim = 2|3 and precision=double implemented."));
 
   return 0;
 }

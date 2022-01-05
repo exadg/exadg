@@ -24,9 +24,9 @@
 
 // application
 #include <exadg/fluid_structure_interaction/user_interface/application_base.h>
+#include <exadg/fluid_structure_interaction_precice/interface_coupling.h>
 
 // utilities
-#include <exadg/functions_and_boundary_conditions/interface_coupling.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_general_infos.h>
@@ -148,6 +148,14 @@ public:
 
     /*********************************** INTERFACE COUPLING *************************************/
 
+    this->precice =
+      std::make_unique<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters,
+                                                               1,
+                                                               structure_matrix_free,
+                                                               0 /*MF dof index*/,
+                                                               0 /*MF quad index*/,
+                                                               /*dirichlet*/ false);
+
     // structure to ALE
 
     // structure to fluid
@@ -192,14 +200,7 @@ public:
 
       // solve (using strongly-coupled partitioned scheme)
       VectorType const & d = structure_time_integrator->get_displacement_np();
-      VectorType         d_tilde(d);
       {
-        // send displacement data to ale
-        coupling_structure_to_ale(d);
-
-        // send velocity boundary condition for fluid
-        coupling_structure_to_fluid(/*iteration ==*/0);
-
         // update stress boundary condition for solid
         coupling_fluid_to_structure();
 
@@ -207,7 +208,11 @@ public:
         structure_time_integrator->advance_one_timestep_partitioned_solve(/*iteration == */ 0,
                                                                           true);
 
-        d_tilde = structure_time_integrator->get_displacement_np();
+        // send displacement data to ale
+        coupling_structure_to_ale(d);
+
+        // send velocity boundary condition for fluid
+        coupling_structure_to_fluid(/*iteration ==*/0);
       }
 
       // post-solve
@@ -216,24 +221,22 @@ public:
   }
 
 private:
-  /**************************************** STRUCTURE *****************************************/
-
   void
-  coupling_structure_to_ale(VectorType const &) const
+  coupling_structure_to_ale(VectorType const & displacement_structure) const
   {
-    Assert(false, ExcNotImplemented());
+    communicator->write(displacement_structure);
   }
 
   void
-  coupling_structure_to_fluid(bool) const
+  coupling_structure_to_fluid(bool const) const
   {
-    Assert(false, ExcNotImplemented());
+    communicator->write(structure_time_integrator->get_velocity_np());
   }
 
   void
   coupling_fluid_to_structure() const
   {
-    Assert(false, ExcNotImplemented());
+    communicator->read();
   }
 
   // grid
@@ -253,6 +256,13 @@ private:
   std::shared_ptr<Structure::PostProcessor<dim, Number>> structure_postprocessor;
 
   /**************************************** STRUCTURE *****************************************/
+
+
+  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
+
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator;
+
+  /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };
 
 } // namespace FSI
