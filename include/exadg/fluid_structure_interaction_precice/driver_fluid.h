@@ -74,8 +74,8 @@ public:
         unsigned int const                            refine_space_fluid,
         unsigned int const                            refine_space_structure)
   {
-    (void) degree_structure;
-    (void) refine_space_structure;
+    (void)degree_structure;
+    (void)refine_space_structure;
 
     print_exadg_header(this->pcout);
     this->pcout << "Setting up coupled fluid solver:" << std::endl;
@@ -341,13 +341,86 @@ public:
   void
   solve() const final
   {
-    Assert(false, ExcNotImplemented());
-
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
-           ExcNotImplemented())
+           ExcNotImplemented());
+
+    // The fluid domain is the master that dictates when the time loop is finished
+    while(!fluid_time_integrator->finished())
+    {
+      // pre-solve
+      fluid_time_integrator->advance_one_timestep_pre_solve(true);
+
+      // solve (using strongly-coupled partitioned scheme)
+      {
+        coupling_structure_to_ale();
+
+        // move the fluid mesh and update dependent data structures
+        solve_ale();
+
+        // update velocity boundary condition for fluid
+        coupling_structure_to_fluid(/*iteration ==*/ 0);
+
+        // solve fluid problem
+        fluid_time_integrator->advance_one_timestep_partitioned_solve(/*iteration ==*/ 0, true);
+
+        // update stress boundary condition for solid
+        coupling_fluid_to_structure();
+
+        // solve structural problem
+      }
+
+      // post-solve
+      fluid_time_integrator->advance_one_timestep_post_solve();
+    }
   }
 
 private:
+  void
+  coupling_structure_to_ale() const
+  {
+    Assert(false, ExcNotImplemented());
+    // VectorType displacement_structure; // TODO
+    // structure_to_ale->update_data(displacement_structure);
+  }
+
+  void
+  coupling_structure_to_fluid(bool const extrapolate) const
+  {
+    Assert(false, ExcNotImplemented());
+    (void)extrapolate;
+  }
+
+  void
+  coupling_fluid_to_structure() const
+  {
+    VectorType stress_fluid;
+    fluid_operator->initialize_vector_velocity(stress_fluid);
+    // calculate fluid stress at fluid-structure interface
+    fluid_operator->interpolate_stress_bc(stress_fluid,
+                                          fluid_time_integrator->get_velocity_np(),
+                                          fluid_time_integrator->get_pressure_np());
+    stress_fluid *= -1.0;
+
+    Assert(false, ExcNotImplemented());
+
+    // TODO
+    // fluid_to_structure->update_data(stress_fluid);
+  }
+
+  void
+  solve_ale() const
+  {
+    bool const print_solver_info = fluid_time_integrator->print_solver_info();
+    fluid_grid_motion->update(fluid_time_integrator->get_next_time(),
+                              print_solver_info and not(this->is_test));
+
+    fluid_matrix_free->update_mapping(*fluid_grid->get_dynamic_mapping());
+
+    fluid_operator->update_after_grid_motion();
+
+    fluid_time_integrator->ale_update();
+  }
+
   /****************************************** FLUID *******************************************/
 
   // grid

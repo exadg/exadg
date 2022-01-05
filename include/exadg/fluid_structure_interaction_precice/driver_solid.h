@@ -66,84 +66,87 @@ public:
         unsigned int const                            refine_space_fluid,
         unsigned int const                            refine_space_structure)
   {
-    (void) degree_fluid;
-    (void) refine_space_fluid;
+    (void)degree_fluid;
+    (void)refine_space_fluid;
 
-  print_exadg_header(this->pcout);
-  this->pcout << "Setting up fluid-structure interaction solver:" << std::endl;
+    print_exadg_header(this->pcout);
+    this->pcout << "Setting up fluid-structure interaction solver:" << std::endl;
 
-  if(!(this->is_test))
-  {
-    print_dealii_info(this->pcout);
-    print_matrixfree_info<Number>(this->pcout);
-  }
-  print_MPI_info(this->pcout, this->mpi_comm);
+    if(!(this->is_test))
+    {
+      print_dealii_info(this->pcout);
+      print_matrixfree_info<Number>(this->pcout);
+    }
+    print_MPI_info(this->pcout, this->mpi_comm);
 
-  this->application = application;
+    this->application = application;
 
-  /**************************************** STRUCTURE *****************************************/
-  {
-    this->application->set_parameters_structure(degree_structure);
-    this->application->get_parameters_structure().check();
-    // Some FSI specific Asserts
-    AssertThrow(this->application->get_parameters_structure().pull_back_traction == true,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    this->application->get_parameters_structure().print(this->pcout, "List of parameters for structure:");
+    /**************************************** STRUCTURE *****************************************/
+    {
+      this->application->set_parameters_structure(degree_structure);
+      this->application->get_parameters_structure().check();
+      // Some FSI specific Asserts
+      AssertThrow(this->application->get_parameters_structure().pull_back_traction == true,
+                  ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+      this->application->get_parameters_structure().print(this->pcout,
+                                                          "List of parameters for structure:");
 
-    // grid
-    GridData structure_grid_data;
-    structure_grid_data.triangulation_type =
-      this->application->get_parameters_structure().triangulation_type;
-    structure_grid_data.n_refine_global = refine_space_structure;
-    structure_grid_data.mapping_degree =
-      get_mapping_degree(this->application->get_parameters_structure().mapping,
-                         this->application->get_parameters_structure().degree);
+      // grid
+      GridData structure_grid_data;
+      structure_grid_data.triangulation_type =
+        this->application->get_parameters_structure().triangulation_type;
+      structure_grid_data.n_refine_global = refine_space_structure;
+      structure_grid_data.mapping_degree =
+        get_mapping_degree(this->application->get_parameters_structure().mapping,
+                           this->application->get_parameters_structure().degree);
 
-    structure_grid = this->application->create_grid_structure(structure_grid_data);
-    print_grid_info(this->pcout, *structure_grid);
+      structure_grid = this->application->create_grid_structure(structure_grid_data);
+      print_grid_info(this->pcout, *structure_grid);
 
-    // boundary conditions
-    this->application->set_boundary_descriptor_structure();
-    verify_boundary_conditions(*this->application->get_boundary_descriptor_structure(), *structure_grid);
+      // boundary conditions
+      this->application->set_boundary_descriptor_structure();
+      verify_boundary_conditions(*this->application->get_boundary_descriptor_structure(),
+                                 *structure_grid);
 
-    // material_descriptor
-    this->application->set_material_descriptor_structure();
+      // material_descriptor
+      this->application->set_material_descriptor_structure();
 
-    // field functions
-    this->application->set_field_functions_structure();
+      // field functions
+      this->application->set_field_functions_structure();
 
-    // setup spatial operator
-    structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-      structure_grid,
-      this->application->get_boundary_descriptor_structure(),
-      this->application->get_field_functions_structure(),
-      this->application->get_material_descriptor_structure(),
-      this->application->get_parameters_structure(),
-      "elasticity",
-      this->mpi_comm);
+      // setup spatial operator
+      structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
+        structure_grid,
+        this->application->get_boundary_descriptor_structure(),
+        this->application->get_field_functions_structure(),
+        this->application->get_material_descriptor_structure(),
+        this->application->get_parameters_structure(),
+        "elasticity",
+        this->mpi_comm);
 
-    // initialize matrix_free
-    structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
-    structure_matrix_free_data->append(structure_operator);
+      // initialize matrix_free
+      structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
+      structure_matrix_free_data->append(structure_operator);
 
-    structure_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-    structure_matrix_free->reinit(*structure_grid->mapping,
-                                  structure_matrix_free_data->get_dof_handler_vector(),
-                                  structure_matrix_free_data->get_constraint_vector(),
-                                  structure_matrix_free_data->get_quadrature_vector(),
-                                  structure_matrix_free_data->data);
+      structure_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+      structure_matrix_free->reinit(*structure_grid->mapping,
+                                    structure_matrix_free_data->get_dof_handler_vector(),
+                                    structure_matrix_free_data->get_constraint_vector(),
+                                    structure_matrix_free_data->get_quadrature_vector(),
+                                    structure_matrix_free_data->data);
 
-    structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
+      structure_operator->setup(structure_matrix_free, structure_matrix_free_data);
 
-    // initialize postprocessor
-    structure_postprocessor = this->application->create_postprocessor_structure();
-    structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_grid->mapping);
-  }
+      // initialize postprocessor
+      structure_postprocessor = this->application->create_postprocessor_structure();
+      structure_postprocessor->setup(structure_operator->get_dof_handler(),
+                                     *structure_grid->mapping);
+    }
 
-  /**************************************** STRUCTURE *****************************************/
+    /**************************************** STRUCTURE *****************************************/
 
 
-  /*********************************** INTERFACE COUPLING *************************************/
+    /*********************************** INTERFACE COUPLING *************************************/
 
     // structure to ALE
 
@@ -151,41 +154,87 @@ public:
 
     // fluid to structure
 
-  /*********************************** INTERFACE COUPLING *************************************/
+    /*********************************** INTERFACE COUPLING *************************************/
 
 
-  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
+    /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
 
-  // Structure
-  {
-    // initialize time integrator
-    structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
-      structure_operator,
-      structure_postprocessor,
-      0 /* refine_time */,
-      this->application->get_parameters_structure(),
-      this->mpi_comm,
-      this->is_test);
+    // Structure
+    {
+      // initialize time integrator
+      structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
+        structure_operator,
+        structure_postprocessor,
+        0 /* refine_time */,
+        this->application->get_parameters_structure(),
+        this->mpi_comm,
+        this->is_test);
 
-    structure_time_integrator->setup(this->application->get_parameters_structure().restarted_simulation);
+      structure_time_integrator->setup(
+        this->application->get_parameters_structure().restarted_simulation);
 
-    structure_operator->setup_solver();
-  }
+      structure_operator->setup_solver();
+    }
 
-  /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
+    /**************************** SETUP TIME INTEGRATORS AND SOLVERS ****************************/
   }
 
   void
   solve() const final
   {
-    Assert(false, ExcNotImplemented());
-
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
-           ExcNotImplemented())
+           ExcNotImplemented());
+
+    // The fluid domain is the master that dictates when the time loop is finished
+    while(!structure_time_integrator->finished())
+    {
+      structure_time_integrator->advance_one_timestep_pre_solve(false);
+
+      // solve (using strongly-coupled partitioned scheme)
+      VectorType const & d = structure_time_integrator->get_displacement_np();
+      VectorType         d_tilde(d);
+      {
+        // send displacement data to ale
+        coupling_structure_to_ale(d);
+
+        // send velocity boundary condition for fluid
+        coupling_structure_to_fluid(/*iteration ==*/0);
+
+        // update stress boundary condition for solid
+        coupling_fluid_to_structure();
+
+        // solve structural problem
+        structure_time_integrator->advance_one_timestep_partitioned_solve(/*iteration == */ 0,
+                                                                          true);
+
+        d_tilde = structure_time_integrator->get_displacement_np();
+      }
+
+      // post-solve
+      structure_time_integrator->advance_one_timestep_post_solve();
+    }
   }
 
 private:
   /**************************************** STRUCTURE *****************************************/
+
+  void
+  coupling_structure_to_ale(VectorType const &) const
+  {
+    Assert(false, ExcNotImplemented());
+  }
+
+  void
+  coupling_structure_to_fluid(bool) const
+  {
+    Assert(false, ExcNotImplemented());
+  }
+
+  void
+  coupling_fluid_to_structure() const
+  {
+    Assert(false, ExcNotImplemented());
+  }
 
   // grid
   std::shared_ptr<Grid<dim, Number>> structure_grid;
