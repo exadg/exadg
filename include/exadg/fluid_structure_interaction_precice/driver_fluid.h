@@ -85,7 +85,8 @@ public:
   {
     Assert(false, ExcNotImplemented());
 
-    Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false, ExcNotImplemented())
+    Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
+           ExcNotImplemented())
   }
 
 private:
