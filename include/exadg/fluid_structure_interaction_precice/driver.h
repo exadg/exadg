@@ -83,7 +83,7 @@ protected:
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>>           application;
-  std::unique_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
+  std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
   Parameters::PreciceAdapterConfiguration                 precice_parameters;
 };
 

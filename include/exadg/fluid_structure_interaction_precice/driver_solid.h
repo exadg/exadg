@@ -148,19 +148,32 @@ public:
 
     /*********************************** INTERFACE COUPLING *************************************/
 
-    this->precice =
-      std::make_unique<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters,
-                                                               1,
-                                                               structure_matrix_free,
-                                                               0 /*MF dof index*/,
-                                                               0 /*MF quad index*/,
-                                                               /*dirichlet*/ false);
+    this->precice = std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(
+      this->precice_parameters,
+      application->get_boundary_descriptor_structure()->neumann_mortar_bc.begin()->first,
+      structure_matrix_free,
+      structure_operator->get_dof_index(),
+      0 /*dummy*/,
+      /*unused(dummy)*/ false);
+
 
     // structure to ALE
-
     // structure to fluid
 
     // fluid to structure
+    {
+      std::vector<unsigned int> quad_indices;
+      quad_indices.emplace_back(structure_operator->get_quad_index());
+
+      // VectorType stress_fluid;
+      // fluid_operator->initialize_vector_velocity(stress_fluid);
+      communicator = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+      communicator->setup(structure_matrix_free,
+                          structure_operator->get_dof_index(),
+                          quad_indices,
+                          this->application->get_boundary_descriptor_structure()->neumann_mortar_bc,
+                          structure_time_integrator->get_displacement_np());
+    }
 
     /*********************************** INTERFACE COUPLING *************************************/
 
@@ -194,43 +207,44 @@ public:
            ExcNotImplemented());
 
     // The fluid domain is the master that dictates when the time loop is finished
-    while(!structure_time_integrator->finished())
+    while(this->precice->is_coupling_ongoing())
     {
+      // TODO
       structure_time_integrator->advance_one_timestep_pre_solve(false);
 
       // solve (using strongly-coupled partitioned scheme)
-      VectorType const & d = structure_time_integrator->get_displacement_np();
-      {
-        // update stress boundary condition for solid
-        coupling_fluid_to_structure();
 
-        // solve structural problem
-        structure_time_integrator->advance_one_timestep_partitioned_solve(/*iteration == */ 0,
-                                                                          true);
+      // update stress boundary condition for solid
+      coupling_fluid_to_structure();
 
-        // send displacement data to ale
-        coupling_structure_to_ale(d);
+      // solve structural problem
+      structure_time_integrator->advance_one_timestep_partitioned_solve(false, true);
+      // send displacement data to ale
+      coupling_structure_to_ale(structure_time_integrator->get_displacement_np(),
+                                structure_time_integrator->get_time_step_size());
 
-        // send velocity boundary condition for fluid
-        coupling_structure_to_fluid(/*iteration ==*/0);
-      }
+      // send velocity boundary condition for fluid
+      // coupling_structure_to_fluid(structure_time_integrator->get_velocity_np(),
+      //                             structure_time_integrator->get_time_step_size());
 
-      // post-solve
+      this->precice->advance(structure_time_integrator->get_time_step_size());
+
+      // TODO
       structure_time_integrator->advance_one_timestep_post_solve();
     }
   }
 
 private:
   void
-  coupling_structure_to_ale(VectorType const & displacement_structure) const
+  coupling_structure_to_ale(VectorType const & displacement_structure,
+                            const double       time_step_size) const
   {
-    communicator->write(displacement_structure);
+    this->precice->write_data(displacement_structure, time_step_size);
   }
 
   void
   coupling_structure_to_fluid(bool const) const
   {
-    communicator->write(structure_time_integrator->get_velocity_np());
   }
 
   void

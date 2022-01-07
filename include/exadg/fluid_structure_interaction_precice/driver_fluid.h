@@ -398,7 +398,7 @@ private:
                                           fluid_time_integrator->get_pressure_np());
     stress_fluid *= -1.0;
 
-    communicator->write(stress_fluid);
+    this->precice->advance(fluid_time_integrator->get_time_step_size());
   }
 
   void
@@ -456,7 +456,6 @@ private:
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
-  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_fluid;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_ale;
 

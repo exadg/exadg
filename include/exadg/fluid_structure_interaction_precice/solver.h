@@ -82,6 +82,40 @@ struct ResolutionParameters
   unsigned int refine_fluid = 0, refine_structure = 0;
 };
 
+
+void
+create_input_file(std::string const & input_file)
+{
+  dealii::ParameterHandler prm;
+
+  GeneralParameters general;
+  general.add_parameters(prm);
+
+  ResolutionParameters resolution;
+  resolution.add_parameters(prm);
+
+  Parameters::PreciceAdapterConfiguration precice_parameters;
+  precice_parameters.add_parameters(prm);
+
+  // we have to assume a default dimension and default Number type
+  // for the automatic generation of a default input file
+  constexpr int Dim = 2;
+  using Number      = double;
+
+  try
+  {
+    FSI::get_application<Dim, Number>(input_file, MPI_COMM_WORLD)->add_parameters(prm);
+  }
+  catch(...)
+  {
+  }
+
+  prm.print_parameters(input_file,
+                       dealii::ParameterHandler::Short |
+                         dealii::ParameterHandler::KeepDeclarationOrder);
+}
+
+
 template<int dim, typename Number>
 void
 run(std::string const &          input_file,
@@ -92,7 +126,12 @@ run(std::string const &          input_file,
   Timer timer;
   timer.restart();
 
-  bool const is_solid = false;
+  Parameters::PreciceAdapterConfiguration precice_param;
+  dealii::ParameterHandler                prm;
+  precice_param.add_parameters(prm);
+  prm.parse_input(input_file, "", true, true);
+
+  bool const is_solid = precice_param.physics == "Structure";
 
   std::shared_ptr<FSI::Driver<dim, Number>> driver;
 
@@ -133,7 +172,7 @@ main(int argc, char ** argv)
       // clang-format on
     }
 
-    return 0;
+    return EXIT_SUCCESS;
   }
   else if(argc >= 2)
   {
@@ -141,9 +180,10 @@ main(int argc, char ** argv)
 
     if(argc == 3 and std::string(argv[2]) == "--help")
     {
-      Assert(false, dealii::StandardExceptions::ExcNotImplemented());
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        ExaDG::create_input_file(input_file);
 
-      return 0;
+      return EXIT_SUCCESS;
     }
   }
 
@@ -158,7 +198,7 @@ main(int argc, char ** argv)
   else
     AssertThrow(false, dealii::ExcMessage("Only dim = 2|3 and precision=double implemented."));
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 #endif /* INCLUDE_EXADG_FLUID_STRUCTURE_INTERACTION_SOLVER_H_ */
