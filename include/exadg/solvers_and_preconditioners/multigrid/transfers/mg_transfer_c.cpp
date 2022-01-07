@@ -100,10 +100,6 @@ MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
   data_composite.initialize_dof_vector(src_temp, 1);
   src_temp.copy_locally_owned_data_from(src);
 
-  VectorType dst_temp;
-  data_composite.initialize_dof_vector(dst_temp, 0);
-  dst_temp.copy_locally_owned_data_from(dst);
-
   for(unsigned int cell = 0; cell < data_composite.n_cell_batches(); ++cell)
   {
     fe_eval_cg.reinit(cell);
@@ -114,12 +110,10 @@ MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_cg.begin_dof_values()[i] = fe_eval_dg.begin_dof_values()[i];
 
-    fe_eval_cg.distribute_local_to_global(dst_temp);
+    fe_eval_cg.distribute_local_to_global(dst);
   }
 
-  dst_temp.compress(VectorOperation::add);
-
-  dst.copy_locally_owned_data_from(dst_temp);
+  dst.compress(VectorOperation::add);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -128,13 +122,10 @@ void
 MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
                                                                 VectorType const & src) const
 {
+  src.update_ghost_values();
+
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
   FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
-
-  VectorType src_temp;
-  data_composite.initialize_dof_vector(src_temp, 0);
-  src_temp.copy_locally_owned_data_from(src);
-  src_temp.update_ghost_values();
 
   VectorType dst_temp;
   data_composite.initialize_dof_vector(dst_temp, 1);
@@ -144,7 +135,7 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
     fe_eval_cg.reinit(cell);
     fe_eval_dg.reinit(cell);
 
-    fe_eval_cg.read_dof_values(src_temp);
+    fe_eval_cg.read_dof_values(src);
 
     for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
       fe_eval_dg.begin_dof_values()[i] = fe_eval_cg.begin_dof_values()[i];
@@ -152,6 +143,7 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
     fe_eval_dg.distribute_local_to_global(dst_temp);
   }
 
+  src.zero_out_ghost_values();
   dst.copy_locally_owned_data_from(dst_temp);
 }
 
