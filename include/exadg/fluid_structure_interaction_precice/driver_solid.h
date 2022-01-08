@@ -166,7 +166,6 @@ public:
       quad_indices.emplace_back(structure_operator->get_quad_index());
 
       // VectorType stress_fluid;
-      // fluid_operator->initialize_vector_velocity(stress_fluid);
       communicator = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
       communicator->setup(structure_matrix_free,
                           structure_operator->get_dof_index(),

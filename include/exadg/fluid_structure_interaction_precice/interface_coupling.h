@@ -127,7 +127,7 @@ public:
         }
       }
       array_solution_dst.resize(array_q_points_dst.size(),
-                                std::vector<Tensor<rank, dim, double>>());
+                                std::vector<Tensor<rank, dim, double>>(1));
     }
 
     ArrayQuadraturePoints map_q_points_dst_precice;
