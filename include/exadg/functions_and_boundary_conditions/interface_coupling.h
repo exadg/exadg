@@ -58,18 +58,15 @@ public:
   }
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>  matrix_free_dst,
-        unsigned int const                        dof_index_dst,
-        std::vector<quad_index> const &           quad_indices_dst_in,
-        MapBoundaryCondition const &              map_bc_in,
-        std::shared_ptr<Triangulation<dim>> const triangulation_src,
-        DoFHandler<dim> const &                   dof_handler_src_in,
-        Mapping<dim> const &                      mapping_src,
-        VectorType const &                        dof_vector_src_in,
-        double const                              tolerance)
+  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst,
+        unsigned int const                       dof_index_dst,
+        std::vector<quad_index> const &          quad_indices_dst_in,
+        MapBoundaryCondition const &             map_bc_in,
+        DoFHandler<dim> const &                  dof_handler_src_in,
+        Mapping<dim> const &                     mapping_src,
+        VectorType const &                       dof_vector_src_in,
+        double const                             tolerance)
   {
-    (void)triangulation_src;
-
     quad_rules_dst  = quad_indices_dst_in;
     map_bc          = map_bc_in;
     dof_handler_src = &dof_handler_src_in;
