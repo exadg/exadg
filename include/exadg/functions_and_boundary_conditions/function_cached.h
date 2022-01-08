@@ -38,7 +38,7 @@ class FunctionCached
 private:
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
   typedef std::map<Id, types::global_dof_index>                                     MapVectorIndex;
-  typedef std::vector<std::vector<Tensor<rank, dim, Number>>> ArrayVectorTensor;
+  typedef std::vector<Tensor<rank, dim, Number>>                                    ArrayTensors;
 
 public:
   FunctionCached() : global_map_vector_index(nullptr), map_solution(nullptr)
@@ -60,43 +60,28 @@ public:
     Assert(map_solution->find(quad_index) != map_solution->end(),
            ExcMessage("Specified quad_index does not exist in map_solution."));
 
-    MapVectorIndex const &    map_vector_index = global_map_vector_index->find(quad_index)->second;
-    ArrayVectorTensor const & array_solution   = map_solution->find(quad_index)->second;
+    MapVectorIndex const & map_vector_index = global_map_vector_index->find(quad_index)->second;
+    ArrayTensors const &   array_solution   = map_solution->find(quad_index)->second;
 
     Id                      id    = std::make_tuple(face, q, v);
     types::global_dof_index index = map_vector_index.find(id)->second;
 
     Assert(index < array_solution.size(), ExcMessage("Index exceeds dimensions of vector."));
 
-    std::vector<Tensor<rank, dim, double>> const & vector_solution = array_solution[index];
-
-    // average
-    unsigned int              counter = 0;
-    Tensor<rank, dim, double> solution;
-    for(unsigned int i = 0; i < vector_solution.size(); ++i)
-    {
-      solution += vector_solution[i];
-      ++counter;
-    }
-
-    Assert(counter > 0, ExcMessage("Vector must contain at least one value."));
-
-    solution *= 1.0 / (double)counter;
-
-    return solution;
+    return array_solution[index];
   }
 
   void
-  set_data_pointer(std::map<unsigned int, MapVectorIndex> const &    global_map_vector_index_in,
-                   std::map<unsigned int, ArrayVectorTensor> const & map_solution_in)
+  set_data_pointer(std::map<unsigned int, MapVectorIndex> const & global_map_vector_index_in,
+                   std::map<unsigned int, ArrayTensors> const &   map_solution_in)
   {
     global_map_vector_index = &global_map_vector_index_in;
     map_solution            = &map_solution_in;
   }
 
 private:
-  std::map<unsigned int, MapVectorIndex> const *    global_map_vector_index;
-  std::map<unsigned int, ArrayVectorTensor> const * map_solution;
+  std::map<unsigned int, MapVectorIndex> const * global_map_vector_index;
+  std::map<unsigned int, ArrayTensors> const *   map_solution;
 };
 
 } // namespace ExaDG

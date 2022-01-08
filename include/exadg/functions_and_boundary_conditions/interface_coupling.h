@@ -50,7 +50,7 @@ private:
   using MapIndex = std::map<Id, types::global_dof_index>;
 
   using ArrayQuadraturePoints = std::vector<Point<dim>>;
-  using ArrayVectorTensor     = std::vector<std::vector<Tensor<rank, dim, double>>>;
+  using ArrayTensors          = std::vector<Tensor<rank, dim, double>>;
 
 public:
   InterfaceCoupling() : dof_handler_src(nullptr)
@@ -101,11 +101,11 @@ public:
       // initialize maps
       map_index_dst.emplace(quadrature, MapIndex());
       map_q_points_dst.emplace(quadrature, ArrayQuadraturePoints());
-      map_solution_dst.emplace(quadrature, ArrayVectorTensor());
+      map_solution_dst.emplace(quadrature, ArrayTensors());
 
       MapIndex &              map_index          = map_index_dst.find(quadrature)->second;
       ArrayQuadraturePoints & array_q_points_dst = map_q_points_dst.find(quadrature)->second;
-      ArrayVectorTensor &     array_solution_dst = map_solution_dst.find(quadrature)->second;
+      ArrayTensors &          array_solution_dst = map_solution_dst.find(quadrature)->second;
 
 
       /*
@@ -142,8 +142,7 @@ public:
         }
       }
 
-      array_solution_dst.resize(array_q_points_dst.size(),
-                                std::vector<Tensor<rank, dim, double>>(1));
+      array_solution_dst.resize(array_q_points_dst.size(), Tensor<rank, dim, double>());
 
       /*
        * 2. Communication: receive and cache quadrature points of other ranks,
@@ -204,7 +203,7 @@ public:
 
       for(unsigned int i = 0; i < result.size(); ++i)
         for(unsigned int c = 0; c < n_components; ++c)
-          map_solution_dst[quadrature][i][0][c] = result[i][c];
+          map_solution_dst[quadrature][i][c] = result[i][c];
     }
   }
 
@@ -216,7 +215,7 @@ private:
 
   mutable std::map<quad_index, MapIndex>              map_index_dst;
   mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points_dst;
-  mutable std::map<quad_index, ArrayVectorTensor>     map_solution_dst;
+  mutable std::map<quad_index, ArrayTensors>          map_solution_dst;
 
   std::map<quad_index, Utilities::MPI::RemotePointEvaluation<dim>> map_communicator;
 
