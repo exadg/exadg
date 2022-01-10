@@ -36,9 +36,12 @@ private:
   static unsigned int const rank =
     (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
 
-  using VectorType       = LinearAlgebra::distributed::Vector<Number>;
+  using VectorType = LinearAlgebra::distributed::Vector<Number>;
+#if DEAL_II_VERSION_GTE(10, 0, 0)
+#else
   using VectorTypeDouble = LinearAlgebra::distributed::Vector<double>;
-  using Integrator       = FaceIntegrator<dim, n_components, Number>;
+#endif
+  using Integrator = FaceIntegrator<dim, n_components, Number>;
 
   using MapBoundaryCondition =
     std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>>;
@@ -50,7 +53,7 @@ private:
   using MapIndex = std::map<Id, types::global_dof_index>;
 
   using ArrayQuadraturePoints = std::vector<Point<dim>>;
-  using ArrayTensors          = std::vector<Tensor<rank, dim, double>>;
+  using ArrayTensor           = std::vector<Tensor<rank, dim, double>>;
 
 public:
   InterfaceCoupling() : dof_handler_src(nullptr)
@@ -58,14 +61,14 @@ public:
   }
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst,
-        unsigned int const                       dof_index_dst,
+  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_dst_in,
+        unsigned int const                       dof_index_dst_in,
         std::vector<quad_index> const &          quad_indices_dst_in,
         MapBoundaryCondition const &             map_bc_in,
         DoFHandler<dim> const &                  dof_handler_src_in,
-        Mapping<dim> const &                     mapping_src,
+        Mapping<dim> const &                     mapping_src_in,
         VectorType const &                       dof_vector_src_in,
-        double const                             tolerance)
+        double const                             tolerance_in)
   {
     quad_rules_dst  = quad_indices_dst_in;
     map_bc          = map_bc_in;
@@ -75,17 +78,17 @@ public:
     // mark vertices at interface in order to make search of active cells around point more
     // efficient
     std::vector<bool> marked_vertices(dof_handler_src_in.get_triangulation().n_vertices(), false);
-    for(auto cell : dof_handler_src_in.get_triangulation().active_cell_iterators())
+    for(auto const & cell : dof_handler_src_in.get_triangulation().active_cell_iterators())
     {
       if(!cell->is_artificial() && cell->at_boundary())
       {
-        for(const unsigned int f : cell->face_indices())
+        for(unsigned int const f : cell->face_indices())
         {
           if(cell->face(f)->at_boundary())
           {
             if(map_bc.find(cell->face(f)->boundary_id()) != map_bc.end())
             {
-              for(const unsigned int v : cell->face(f)->vertex_indices())
+              for(unsigned int const v : cell->face(f)->vertex_indices())
               {
                 marked_vertices[cell->face(f)->vertex_index(v)] = true;
               }
@@ -101,26 +104,26 @@ public:
       // initialize maps
       map_index_dst.emplace(quadrature, MapIndex());
       map_q_points_dst.emplace(quadrature, ArrayQuadraturePoints());
-      map_solution_dst.emplace(quadrature, ArrayTensors());
+      map_solution_dst.emplace(quadrature, ArrayTensor());
 
       MapIndex &              map_index          = map_index_dst.find(quadrature)->second;
       ArrayQuadraturePoints & array_q_points_dst = map_q_points_dst.find(quadrature)->second;
-      ArrayTensors &          array_solution_dst = map_solution_dst.find(quadrature)->second;
+      ArrayTensor &           array_solution_dst = map_solution_dst.find(quadrature)->second;
 
 
       /*
        * 1. Setup: create map "ID = {face, q, v} <-> vector_index" and fill array of quadrature
        * points
        */
-      for(unsigned int face = matrix_free_dst->n_inner_face_batches();
-          face <
-          matrix_free_dst->n_inner_face_batches() + matrix_free_dst->n_boundary_face_batches();
+      for(unsigned int face = matrix_free_dst_in->n_inner_face_batches();
+          face < matrix_free_dst_in->n_inner_face_batches() +
+                   matrix_free_dst_in->n_boundary_face_batches();
           ++face)
       {
         // only consider relevant boundary IDs
-        if(map_bc.find(matrix_free_dst->get_boundary_id(face)) != map_bc.end())
+        if(map_bc.find(matrix_free_dst_in->get_boundary_id(face)) != map_bc.end())
         {
-          Integrator integrator(*matrix_free_dst, true, dof_index_dst, quadrature);
+          Integrator integrator(*matrix_free_dst_in, true, dof_index_dst_in, quadrature);
           integrator.reinit(face);
 
           for(unsigned int q = 0; q < integrator.n_q_points; ++q)
@@ -145,24 +148,23 @@ public:
       array_solution_dst.resize(array_q_points_dst.size(), Tensor<rank, dim, double>());
 
       /*
-       * 2. Communication: receive and cache quadrature points of other ranks,
-       *    redundantly store own q-points (those that are needed)
+       * 2. Communication: exchange quadarature points with their owners
        */
-      map_communicator.emplace(quadrature,
-                               Utilities::MPI::RemotePointEvaluation<dim>(tolerance,
-                                                                          false
+      map_evaluator.emplace(quadrature,
+                            Utilities::MPI::RemotePointEvaluation<dim>(tolerance_in,
+                                                                       false
 #if DEAL_II_VERSION_GTE(10, 0, 0)
-                                                                          ,
-                                                                          0,
-                                                                          [marked_vertices]() {
-                                                                            return marked_vertices;
-                                                                          }
+                                                                       ,
+                                                                       0,
+                                                                       [marked_vertices]() {
+                                                                         return marked_vertices;
+                                                                       }
 #endif
-                                                                          ));
+                                                                       ));
 
-      map_communicator[quadrature].reinit(array_q_points_dst,
-                                          dof_handler_src_in.get_triangulation(),
-                                          mapping_src);
+      map_evaluator[quadrature].reinit(array_q_points_dst,
+                                       dof_handler_src_in.get_triangulation(),
+                                       mapping_src_in);
     }
 
     // finally, give boundary condition access to the data
@@ -188,22 +190,21 @@ public:
     for(auto quadrature : quad_rules_dst)
     {
 #if DEAL_II_VERSION_GTE(10, 0, 0)
-      auto const result =
-        VectorTools::point_values<n_components>(map_communicator[quadrature],
+      std::vector<Tensor<rank, dim, Number>> const result =
+        VectorTools::point_values<n_components>(map_evaluator[quadrature],
                                                 *dof_handler_src,
                                                 dof_vector_src,
                                                 VectorTools::EvaluationFlags::avg);
 #else
-      auto const result =
-        VectorTools::point_values<n_components>(map_communicator[quadrature],
+      std::vector<Tensor<rank, dim, double>> const result =
+        VectorTools::point_values<n_components>(map_evaluator[quadrature],
                                                 *dof_handler_src,
                                                 dof_vector_src_double,
                                                 VectorTools::EvaluationFlags::avg);
 #endif
 
       for(unsigned int i = 0; i < result.size(); ++i)
-        for(unsigned int c = 0; c < n_components; ++c)
-          map_solution_dst[quadrature][i][c] = result[i][c];
+        map_solution_dst[quadrature][i] = result[i];
     }
   }
 
@@ -215,9 +216,9 @@ private:
 
   mutable std::map<quad_index, MapIndex>              map_index_dst;
   mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points_dst;
-  mutable std::map<quad_index, ArrayTensors>          map_solution_dst;
+  mutable std::map<quad_index, ArrayTensor>           map_solution_dst;
 
-  std::map<quad_index, Utilities::MPI::RemotePointEvaluation<dim>> map_communicator;
+  std::map<quad_index, Utilities::MPI::RemotePointEvaluation<dim>> map_evaluator;
 
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> map_bc;
 

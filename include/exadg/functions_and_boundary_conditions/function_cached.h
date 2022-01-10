@@ -38,7 +38,7 @@ class FunctionCached
 private:
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
   typedef std::map<Id, types::global_dof_index>                                     MapVectorIndex;
-  typedef std::vector<Tensor<rank, dim, Number>>                                    ArrayTensors;
+  typedef std::vector<Tensor<rank, dim, Number>>                                    ArrayTensor;
 
 public:
   FunctionCached() : global_map_vector_index(nullptr), map_solution(nullptr)
@@ -61,7 +61,7 @@ public:
            ExcMessage("Specified quad_index does not exist in map_solution."));
 
     MapVectorIndex const & map_vector_index = global_map_vector_index->find(quad_index)->second;
-    ArrayTensors const &   array_solution   = map_solution->find(quad_index)->second;
+    ArrayTensor const &    array_solution   = map_solution->find(quad_index)->second;
 
     Id                      id    = std::make_tuple(face, q, v);
     types::global_dof_index index = map_vector_index.find(id)->second;
@@ -73,7 +73,7 @@ public:
 
   void
   set_data_pointer(std::map<unsigned int, MapVectorIndex> const & global_map_vector_index_in,
-                   std::map<unsigned int, ArrayTensors> const &   map_solution_in)
+                   std::map<unsigned int, ArrayTensor> const &    map_solution_in)
   {
     global_map_vector_index = &global_map_vector_index_in;
     map_solution            = &map_solution_in;
@@ -81,7 +81,7 @@ public:
 
 private:
   std::map<unsigned int, MapVectorIndex> const * global_map_vector_index;
-  std::map<unsigned int, ArrayTensors> const *   map_solution;
+  std::map<unsigned int, ArrayTensor> const *    map_solution;
 };
 
 } // namespace ExaDG
