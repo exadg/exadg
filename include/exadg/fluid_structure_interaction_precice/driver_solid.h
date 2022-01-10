@@ -217,6 +217,7 @@ public:
       coupling_fluid_to_structure();
 
       // solve structural problem
+      // store_solution needs to be true for compatibility
       structure_time_integrator->advance_one_timestep_partitioned_solve(false, true);
       // send displacement data to ale
       coupling_structure_to_ale(structure_time_integrator->get_displacement_np(),
