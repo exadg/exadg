@@ -41,7 +41,7 @@ LaplaceOperator<dim, Number, n_components>::initialize(
 
   Base::reinit(matrix_free, affine_constraints, data);
 
-  kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
+  kernel.reinit(matrix_free, data.kernel_data, data.dof_index, data.quad_index);
 
   this->integrator_flags = kernel.get_integrator_flags(this->is_dg);
 }
@@ -50,9 +50,10 @@ template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::calculate_penalty_parameter(
   dealii::MatrixFree<dim, Number> const & matrix_free,
-  unsigned int const                      dof_index)
+  unsigned int const                      dof_index,
+  unsigned int const                      quad_index)
 {
-  kernel.calculate_penalty_parameter(matrix_free, dof_index);
+  kernel.calculate_penalty_parameter(matrix_free, dof_index, quad_index);
 }
 
 template<int dim, typename Number, int n_components>

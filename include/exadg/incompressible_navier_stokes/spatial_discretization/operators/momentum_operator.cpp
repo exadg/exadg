@@ -41,7 +41,8 @@ MomentumOperator<dim, Number>::initialize(
     this->viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
     this->viscous_kernel->reinit(matrix_free,
                                  operator_data.viscous_kernel_data,
-                                 operator_data.dof_index);
+                                 operator_data.dof_index,
+                                 operator_data.quad_index);
   }
 
   if(operator_data.unsteady_problem)
@@ -132,7 +133,8 @@ MomentumOperator<dim, Number>::update_after_grid_motion()
 {
   if(operator_data.viscous_problem)
     viscous_kernel->calculate_penalty_parameter(this->get_matrix_free(),
-                                                this->get_data().dof_index);
+                                                this->get_data().dof_index,
+                                                this->get_data().quad_index);
 }
 
 template<int dim, typename Number>

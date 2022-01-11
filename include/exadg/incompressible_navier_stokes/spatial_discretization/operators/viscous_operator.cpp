@@ -33,7 +33,9 @@ template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::update()
 {
-  kernel->calculate_penalty_parameter(this->get_matrix_free(), operator_data.dof_index);
+  kernel->calculate_penalty_parameter(this->get_matrix_free(),
+                                      operator_data.dof_index,
+                                      operator_data.quad_index);
 }
 
 template<int dim, typename Number>

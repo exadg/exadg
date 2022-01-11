@@ -45,7 +45,8 @@ void
 calculate_penalty_parameter(
   dealii::AlignedVector<dealii::VectorizedArray<Number>> & array_penalty_parameter,
   dealii::MatrixFree<dim, Number> const &                  matrix_free,
-  unsigned int const                                       dof_index = 0)
+  unsigned int const                                       dof_index,
+  unsigned int const                                       quad_index)
 {
   // Start by first computing the surface areas of the cells. Since
   // FaceIntegrator runs through all faces independently of cells, we need to
@@ -57,9 +58,9 @@ calculate_penalty_parameter(
   // in the mesh provided by deal.II's parallel triangulation classes (or
   // simply all cells in serial) and running compress() +
   // update_ghost_values() to communicate the information.
-  unsigned int const                         level = matrix_free.get_mg_level();
-  LinearAlgebra::distributed::Vector<Number> surface_areas;
-  if(auto * tria = dynamic_cast<parallel::TriangulationBase<dim> const *>(
+  unsigned int const                                 level = matrix_free.get_mg_level();
+  dealii::LinearAlgebra::distributed::Vector<Number> surface_areas;
+  if(auto * tria = dynamic_cast<dealii::parallel::TriangulationBase<dim> const *>(
        &matrix_free.get_dof_handler(dof_index).get_triangulation()))
   {
     if(level == numbers::invalid_unsigned_int)
@@ -75,21 +76,22 @@ calculate_penalty_parameter(
 
   // Lambda function to simplify access to cell index for the two cases of
   // multigrid cells versus active cells
-  auto const get_cell_index = [level](typename Triangulation<dim>::cell_iterator const & cell) {
-    if(level == numbers::invalid_unsigned_int)
-      return cell->global_active_cell_index();
-    else
-      return cell->global_level_cell_index();
-  };
+  auto const get_cell_index =
+    [level](typename dealii::Triangulation<dim>::cell_iterator const & cell) {
+      if(level == dealii::numbers::invalid_unsigned_int)
+        return cell->global_active_cell_index();
+      else
+        return cell->global_level_cell_index();
+    };
 
-  FaceIntegrator<dim, 1, Number> face_integrator(matrix_free, true, dof_index);
+  FaceIntegrator<dim, 1, Number> face_integrator(matrix_free, true, dof_index, quad_index);
 
   for(unsigned int face = 0;
       face < matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches();
       ++face)
   {
     face_integrator.reinit(face);
-    VectorizedArray<Number> face_area = 0.0;
+    dealii::VectorizedArray<Number> face_area = 0.0;
     for(unsigned int q = 0; q < face_integrator.n_q_points; ++q)
       face_area += face_integrator.JxW(q);
 
@@ -124,11 +126,11 @@ calculate_penalty_parameter(
   // combine it with the surface areas computed before
   unsigned int const n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
-  CellIntegrator<dim, 1, Number> integrator(matrix_free, dof_index);
+  CellIntegrator<dim, 1, Number> integrator(matrix_free, dof_index, quad_index);
   for(unsigned int cell = 0; cell < n_cells; ++cell)
   {
     integrator.reinit(cell);
-    VectorizedArray<Number> volume = 0.0;
+    dealii::VectorizedArray<Number> volume = 0.0;
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       volume += integrator.JxW(q);
 

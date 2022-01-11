@@ -60,21 +60,26 @@ public:
   void
   reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
          LaplaceKernelData const &               data_in,
-         unsigned int const                      dof_index)
+         unsigned int const                      dof_index,
+         unsigned int const                      quad_index)
   {
     data = data_in;
 
     dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
     degree                                = fe.degree;
 
-    calculate_penalty_parameter(matrix_free, dof_index);
+    calculate_penalty_parameter(matrix_free, dof_index, quad_index);
   }
 
   void
   calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const                      dof_index)
+                              unsigned int const                      dof_index,
+                              unsigned int const                      quad_index)
   {
-    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter, matrix_free, dof_index);
+    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
+                                                 matrix_free,
+                                                 dof_index,
+                                                 quad_index);
   }
 
   IntegratorFlags
@@ -239,7 +244,8 @@ public:
 
   void
   calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const                      dof_index);
+                              unsigned int const                      dof_index,
+                              unsigned int const                      quad_index);
 
   void
   update_penalty_parameter();

@@ -983,7 +983,8 @@ public:
 
     IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
                                                  *matrix_free,
-                                                 data.dof_index);
+                                                 data.dof_index,
+                                                 data.quad_index);
   }
 
   void
