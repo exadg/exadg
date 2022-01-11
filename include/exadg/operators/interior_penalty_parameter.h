@@ -82,40 +82,38 @@ calculate_penalty_parameter(
       return cell->global_level_cell_index();
   };
 
+  FaceIntegrator<dim, 1, Number> face_integrator(matrix_free, true, dof_index);
+
+  for(unsigned int face = 0;
+      face < matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches();
+      ++face)
   {
-    FaceIntegrator<dim, 1, Number> face_integrator(matrix_free, true, dof_index);
+    face_integrator.reinit(face);
+    VectorizedArray<Number> face_area = 0.0;
+    for(unsigned int q = 0; q < face_integrator.n_q_points; ++q)
+      face_area += face_integrator.JxW(q);
 
-    unsigned int const n_face_batches =
-      matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches();
-    for(unsigned int face = 0; face < n_face_batches; ++face)
+    bool const is_interior_face = face < matrix_free.n_inner_face_batches();
+
+    // For interior faces, the face area is weighted by a factor of 0.5
+    // according to the formula by "K. Hillewaert, Development of the
+    // Discontinuous Galerkin Method for High-Resolution, Large Scale CFD
+    // and Acoustics in Industrial Geometries, Ph.D. thesis, Univ. de
+    // Louvain, 2013."
+    if(is_interior_face)
+      face_area = face_area * 0.5;
+
+    // Write the result to the vector entry corresponding to the respective
+    // cell slot. For boundary faces, we write it to only one cell,
+    // otherwise to both adjacent cells of the face.
+    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_face_batch(face); ++v)
     {
-      face_integrator.reinit(face);
-      VectorizedArray<Number> face_area = 0.0;
-      for(unsigned int q = 0; q < face_integrator.n_q_points; ++q)
-        face_area += face_integrator.JxW(q);
+      surface_areas(get_cell_index(matrix_free.get_face_iterator(face, v, true).first)) +=
+        face_area[v];
 
-      bool const is_interior_face = face < matrix_free.n_inner_face_batches();
-
-      // For interior faces, the face area is weighted by a factor of 0.5
-      // according to the formula by "K. Hillewaert, Development of the
-      // Discontinuous Galerkin Method for High-Resolution, Large Scale CFD
-      // and Acoustics in Industrial Geometries, Ph.D. thesis, Univ. de
-      // Louvain, 2013."
       if(is_interior_face)
-        face_area = face_area * 0.5;
-
-      // Write the result to the vector entry corresponding to the respective
-      // cell slot. For boundary faces, we write it to only one cell,
-      // otherwise to both adjacent cells of the face.
-      for(unsigned int v = 0; v < matrix_free.n_active_entries_per_face_batch(face); ++v)
-      {
-        surface_areas(get_cell_index(matrix_free.get_face_iterator(face, v, true).first)) +=
+        surface_areas(get_cell_index(matrix_free.get_face_iterator(face, v, false).first)) +=
           face_area[v];
-
-        if(is_interior_face)
-          surface_areas(get_cell_index(matrix_free.get_face_iterator(face, v, false).first)) +=
-            face_area[v];
-      }
     }
   }
 
@@ -126,19 +124,17 @@ calculate_penalty_parameter(
   // combine it with the surface areas computed before
   unsigned int const n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
+  CellIntegrator<dim, 1, Number> integrator(matrix_free, dof_index);
+  for(unsigned int cell = 0; cell < n_cells; ++cell)
   {
-    CellIntegrator<dim, 1, Number> integrator(matrix_free, dof_index);
-    for(unsigned int cell = 0; cell < n_cells; ++cell)
-    {
-      integrator.reinit(cell);
-      VectorizedArray<Number> volume = 0.0;
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-        volume += integrator.JxW(q);
+    integrator.reinit(cell);
+    VectorizedArray<Number> volume = 0.0;
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      volume += integrator.JxW(q);
 
-      for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
-        array_penalty_parameter[cell][v] =
-          surface_areas(get_cell_index(matrix_free.get_cell_iterator(cell, v))) / volume[v];
-    }
+    for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
+      array_penalty_parameter[cell][v] =
+        surface_areas(get_cell_index(matrix_free.get_cell_iterator(cell, v))) / volume[v];
   }
 }
 
