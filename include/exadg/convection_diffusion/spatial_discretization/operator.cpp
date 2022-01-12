@@ -289,12 +289,10 @@ Operator<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(fe);
-  dof_handler.distribute_mg_dofs();
 
   if(needs_own_dof_handler_velocity())
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
-    dof_handler_velocity->distribute_mg_dofs();
   }
 
   unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);

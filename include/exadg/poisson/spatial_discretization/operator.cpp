@@ -98,8 +98,6 @@ Operator<dim, Number, n_components>::distribute_dofs()
 
   dof_handler.distribute_dofs(*fe);
 
-  dof_handler.distribute_mg_dofs();
-
   // affine constraints only relevant for continuous FE discretization
   if(param.spatial_discretization == SpatialDiscretization::CG)
   {

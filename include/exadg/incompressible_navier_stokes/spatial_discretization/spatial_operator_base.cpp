@@ -235,11 +235,8 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);
-  dof_handler_u.distribute_mg_dofs();
   dof_handler_p.distribute_dofs(fe_p);
-  dof_handler_p.distribute_mg_dofs();
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
-  dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
   unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
   unsigned int const ndofs_per_cell_pressure =
