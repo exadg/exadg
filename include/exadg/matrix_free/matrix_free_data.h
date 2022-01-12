@@ -69,7 +69,7 @@ public:
     return constraint_vec;
   }
 
-  std::vector<Quadrature<1>> &
+  std::vector<Quadrature<dim>> &
   get_quadrature_vector()
   {
     return quadrature_vec;
@@ -110,9 +110,11 @@ public:
     insert_element(constraint_vec, constraint_index_map, constraint, name);
   }
 
-  void insert_quadrature(Quadrature<1> const & quadrature, std::string const & name)
+  template<int dim_quad>
+  void
+  insert_quadrature(Quadrature<dim_quad> const & quadrature, std::string const & name)
   {
-    insert_element(quadrature_vec, quad_index_map, quadrature, name);
+    insert_element(quadrature_vec, quad_index_map, Quadrature<dim>(quadrature), name);
   }
 
   unsigned int
@@ -189,7 +191,7 @@ private:
   // collection of data structures required for initialization and update of matrix_free
   std::vector<DoFHandler<dim> const *>           dof_handler_vec;
   std::vector<AffineConstraints<Number> const *> constraint_vec;
-  std::vector<Quadrature<1>>                     quadrature_vec;
+  std::vector<Quadrature<dim>>                   quadrature_vec;
 };
 } // namespace ExaDG
 
