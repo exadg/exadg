@@ -87,9 +87,9 @@ std::vector&lt; DoFHandler&lt; dim &gt; const * &gt; &amp;&#160;</td><td class="
 <tr class="memitem:a963336522e5b72399145ccc31957a565"><td class="memItemLeft" align="right" valign="top"><a id="a963336522e5b72399145ccc31957a565" name="a963336522e5b72399145ccc31957a565"></a>
 std::vector&lt; AffineConstraints&lt; Number &gt; const * &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraint_vector</b> ()</td></tr>
 <tr class="separator:a963336522e5b72399145ccc31957a565"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60530da1287285f633dd322c0b83effc"><td class="memItemLeft" align="right" valign="top"><a id="a60530da1287285f633dd322c0b83effc" name="a60530da1287285f633dd322c0b83effc"></a>
-std::vector&lt; Quadrature&lt; 1 &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_quadrature_vector</b> ()</td></tr>
-<tr class="separator:a60530da1287285f633dd322c0b83effc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d280e5d452bc40face6320716b12e4a"><td class="memItemLeft" align="right" valign="top"><a id="a1d280e5d452bc40face6320716b12e4a" name="a1d280e5d452bc40face6320716b12e4a"></a>
+std::vector&lt; Quadrature&lt; dim &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_quadrature_vector</b> ()</td></tr>
+<tr class="separator:a1d280e5d452bc40face6320716b12e4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adff375ec2b7d080fd7b742fd2aa35a36"><td class="memItemLeft" align="right" valign="top"><a id="adff375ec2b7d080fd7b742fd2aa35a36" name="adff375ec2b7d080fd7b742fd2aa35a36"></a>
 DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> (std::string const &amp;name)</td></tr>
 <tr class="separator:adff375ec2b7d080fd7b742fd2aa35a36"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -102,9 +102,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>insert_dof_handler</b
 <tr class="memitem:a88b71d1ff35d93db650edaa2417fa5ab"><td class="memItemLeft" align="right" valign="top"><a id="a88b71d1ff35d93db650edaa2417fa5ab" name="a88b71d1ff35d93db650edaa2417fa5ab"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>insert_constraint</b> (AffineConstraints&lt; Number &gt; const *constraint, std::string const &amp;name)</td></tr>
 <tr class="separator:a88b71d1ff35d93db650edaa2417fa5ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad553cb550d708243b56a5571f34ff103"><td class="memItemLeft" align="right" valign="top"><a id="ad553cb550d708243b56a5571f34ff103" name="ad553cb550d708243b56a5571f34ff103"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>insert_quadrature</b> (Quadrature&lt; 1 &gt; const &amp;quadrature, std::string const &amp;name)</td></tr>
-<tr class="separator:ad553cb550d708243b56a5571f34ff103"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1efcea20ca902ca99cb2a577485ce3a"><td class="memTemplParams" colspan="2"><a id="ae1efcea20ca902ca99cb2a577485ce3a" name="ae1efcea20ca902ca99cb2a577485ce3a"></a>
+template&lt;int dim_quad&gt; </td></tr>
+<tr class="memitem:ae1efcea20ca902ca99cb2a577485ce3a"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>insert_quadrature</b> (Quadrature&lt; dim_quad &gt; const &amp;quadrature, std::string const &amp;name)</td></tr>
+<tr class="separator:ae1efcea20ca902ca99cb2a577485ce3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aabd6cfa0346841229ce8c2147f1a3109"><td class="memItemLeft" align="right" valign="top"><a id="aabd6cfa0346841229ce8c2147f1a3109" name="aabd6cfa0346841229ce8c2147f1a3109"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> (std::string const &amp;name)</td></tr>
 <tr class="separator:aabd6cfa0346841229ce8c2147f1a3109"><td class="memSeparator" colspan="2">&#160;</td></tr>
