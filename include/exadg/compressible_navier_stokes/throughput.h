@@ -87,10 +87,8 @@ run(ThroughputParameters const & throughput,
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>> application =
     CompNS::get_application<dim, Number>(input_file, mpi_comm);
 
-  application->set_subdivisions_hypercube(n_cells_1d);
-
   unsigned int const refine_time = 0; // not used
-  driver->setup(application, degree, refine_space, refine_time, true);
+  driver->setup(application, degree, refine_space, n_cells_1d, refine_time, true);
 
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =

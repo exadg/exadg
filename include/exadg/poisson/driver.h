@@ -118,6 +118,7 @@ public:
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
         unsigned int const                            degree,
         unsigned int const                            refine_space,
+        unsigned int const                            n_subdivisions_1d_hypercube,
         bool const                                    is_throughput_study);
 
   void

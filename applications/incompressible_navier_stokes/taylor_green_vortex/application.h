@@ -125,7 +125,7 @@ public:
     // clang-format off
     prm.enter_subsection("Application");
       prm.add_parameter("MeshType",        mesh_type_string,                  "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
-      prm.add_parameter("NCoarseCells1D",  this->n_subdivisions_1d_hypercube, "Number of cells per direction on coarse grid.", Patterns::Integer(1,5));
+      prm.add_parameter("NCoarseCells1D",  n_subdivisions_1d_hypercube,       "Number of cells per direction on coarse grid.", Patterns::Integer(1,5));
       prm.add_parameter("ExploitSymmetry", exploit_symmetry,                  "Exploit symmetry and reduce DoFs by a factor of 8?");
       prm.add_parameter("MovingMesh",      ALE,                               "Moving mesh?");
       prm.add_parameter("Inviscid",        inviscid,                          "Is this an inviscid simulation?");
@@ -139,6 +139,8 @@ public:
   // mesh type
   std::string mesh_type_string = "Cartesian";
   MeshType    mesh_type        = MeshType::Cartesian;
+
+  unsigned int n_subdivisions_1d_hypercube = 1;
 
   // inviscid limit
   bool inviscid = false;
@@ -382,7 +384,7 @@ public:
       create_periodic_box(grid->triangulation,
                           grid_data.n_refine_global,
                           grid->periodic_faces,
-                          this->n_subdivisions_1d_hypercube,
+                          n_subdivisions_1d_hypercube,
                           left,
                           right,
                           curvilinear_mesh,
@@ -391,7 +393,7 @@ public:
     else // symmetric box
     {
       GridGenerator::subdivided_hyper_cube(*grid->triangulation,
-                                           this->n_subdivisions_1d_hypercube,
+                                           n_subdivisions_1d_hypercube,
                                            0.0,
                                            right);
 
@@ -529,8 +531,8 @@ public:
     pp_data.kinetic_energy_spectrum_data.degree                        = this->param.degree_u;
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell    = (this->param.degree_u + 1);
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry              = exploit_symmetry;
-    pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid = this->n_subdivisions_1d_hypercube;
-    pp_data.kinetic_energy_spectrum_data.refine_level           = this->refine_level;
+    pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid  = n_subdivisions_1d_hypercube;
+    pp_data.kinetic_energy_spectrum_data.refine_level            = this->refine_level;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
     pp_data.kinetic_energy_spectrum_data.clear_file              = !read_restart;
 

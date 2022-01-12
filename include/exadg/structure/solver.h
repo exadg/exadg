@@ -88,7 +88,7 @@ run(std::string const & input_file,
   std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
     Structure::get_application<dim, Number>(input_file, mpi_comm);
 
-  driver->setup(application, degree, refine_space, refine_time, false);
+  driver->setup(application, degree, refine_space, 1, refine_time, false);
 
   driver->solve();
 
