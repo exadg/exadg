@@ -785,9 +785,13 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
   }
   else // can only be used for triangulations without hanging nodes
   {
-    Assert(tria->has_hanging_nodes() == false,
-           ExcMessage(
-             "Hanging nodes are only supported with the option use_global_coarsening enabled."));
+    AssertThrow(tria->has_hanging_nodes() == false,
+                ExcMessage("Hanging nodes are only supported with the option "
+                           "use_global_coarsening enabled."));
+    AssertThrow(tria->all_reference_cells_are_hyper_cube(),
+                ExcMessage("This multigrid implementation is currently only available for "
+                           "hyper-cube elements. Other grids need to enable the option "
+                           "use_global_coarsening."));
 
     unsigned int const n_components = fe.n_components();
 
