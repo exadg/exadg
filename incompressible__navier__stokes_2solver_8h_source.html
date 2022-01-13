@@ -154,7 +154,7 @@ $(function() {
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::shared_ptr&lt;IncNS::ApplicationBase&lt;dim, Number&gt;&gt; application =</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    IncNS::get_application&lt;dim, Number&gt;(input_file, mpi_comm);</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  driver-&gt;setup(application, degree, refine_space, refine_time, <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  driver-&gt;setup(application, degree, refine_space, 1, refine_time, <span class="keyword">false</span>);</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  driver-&gt;solve();</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
