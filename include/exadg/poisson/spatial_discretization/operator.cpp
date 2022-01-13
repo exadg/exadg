@@ -77,18 +77,18 @@ Operator<dim, n_components, Number>::distribute_dofs()
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
     {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+      if(all_reference_cells_are_hyper_cubes(*this->grid->triangulation))
         fe = std::make_shared<FE_DGQ<dim>>(param.degree);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+      else if(all_reference_cells_are_simplices(*this->grid->triangulation))
         fe = std::make_shared<FE_SimplexDGP<dim>>(param.degree);
       else
         AssertThrow(false, ExcNotImplemented());
     }
     else if(param.spatial_discretization == SpatialDiscretization::CG)
     {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+      if(all_reference_cells_are_hyper_cubes(*this->grid->triangulation))
         fe = std::make_shared<FE_Q<dim>>(param.degree);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+      else if(all_reference_cells_are_simplices(*this->grid->triangulation))
         fe = std::make_shared<FE_SimplexP<dim>>(param.degree);
       else
         AssertThrow(false, ExcNotImplemented());
@@ -101,19 +101,19 @@ Operator<dim, n_components, Number>::distribute_dofs()
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-   {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+    {
+      if(all_reference_cells_are_hyper_cubes(*this->grid->triangulation))
         fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+      else if(all_reference_cells_are_simplices(*this->grid->triangulation))
         fe = std::make_shared<FESystem<dim>>(FE_SimplexDGP<dim>(param.degree), dim);
       else
         AssertThrow(false, ExcNotImplemented());
     }
     else if(param.spatial_discretization == SpatialDiscretization::CG)
     {
-      if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
+      if(all_reference_cells_are_hyper_cubes(*this->grid->triangulation))
         fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(param.degree), dim);
-      else if(this->grid->triangulation->all_reference_cells_are_simplex())
+      else if(all_reference_cells_are_simplices(*this->grid->triangulation))
         fe = std::make_shared<FESystem<dim>>(FE_SimplexP<dim>(param.degree), dim);
       else
         AssertThrow(false, ExcNotImplemented());
@@ -210,7 +210,7 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
 
   if(this->grid->triangulation->all_reference_cells_are_hyper_cube())
     matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
-  else if(this->grid->triangulation->all_reference_cells_are_simplex())
+  else if(all_reference_cells_are_simplices(*this->grid->triangulation))
     matrix_free_data.insert_quadrature(QGaussSimplex<dim>(param.degree + 1), get_quad_name());
   else
     AssertThrow(false, ExcNotImplemented());
@@ -226,7 +226,7 @@ Operator<dim, n_components, Number>::fill_matrix_free_data(
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+    AssertThrow(all_reference_cells_are_hyper_cubes(*this->grid->triangulation),
                 ExcNotImplemented());
 
     matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree + 1),
@@ -245,7 +245,7 @@ Operator<dim, n_components, Number>::setup_operators()
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_cached_bc.empty()))
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+    AssertThrow(all_reference_cells_are_hyper_cubes(*this->grid->triangulation),
                 ExcNotImplemented());
 
     laplace_operator_data.quad_index_gauss_lobatto = get_quad_index_gauss_lobatto();
@@ -313,21 +313,21 @@ Operator<dim, n_components, Number>::setup_solver()
   }
   else if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+    AssertThrow(all_reference_cells_are_hyper_cubes(*this->grid->triangulation),
                 ExcNotImplemented());
 
     preconditioner = std::make_shared<JacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+    AssertThrow(all_reference_cells_are_hyper_cubes(*this->grid->triangulation),
                 ExcNotImplemented());
 
     preconditioner = std::make_shared<BlockJacobiPreconditioner<Laplace>>(laplace_operator);
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
-    AssertThrow(this->grid->triangulation->all_reference_cells_are_hyper_cube(),
+    AssertThrow(all_reference_cells_are_hyper_cubes(*this->grid->triangulation),
                 ExcNotImplemented());
 
     MultigridData mg_data;
