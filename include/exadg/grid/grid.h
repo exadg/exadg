@@ -45,11 +45,11 @@ all_reference_cells_are_simplices(Triangulation<dim> const & tria)
 #if DEAL_II_VERSION_GTE(10, 0, 0)
   return tria.all_reference_cells_are_simplex();
 #else
-  Assert(tria.reference_cells.size() > 0,
+  Assert(tria.get_reference_cells().size() > 0,
          ExcMessage("You can't ask about the kinds of reference "
                     "cells used by this triangulation if the "
                     "triangulation doesn't yet have any cells in it."));
-  return (tria.reference_cells.size() == 1 && tria.reference_cells[0].is_simplex());
+  return (tria.get_reference_cells().size() == 1 && tria.get_reference_cells()[0].is_simplex());
 #endif
 }
 
