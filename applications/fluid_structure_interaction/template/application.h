@@ -142,6 +142,7 @@ public:
     Parameters & param = this->ale_poisson_param;
 
     // Set parameters here
+    (void)param;
   }
 
   void
@@ -175,7 +176,8 @@ public:
 
     Parameters & param = this->ale_elasticity_param;
 
-    // set parameters here
+    // Set parameters here
+    (void)param;
   }
 
   void
@@ -201,7 +203,8 @@ public:
 
     Parameters & param = this->structure_param;
 
-    // set parameters here
+    // Set parameters here
+    (void)param;
   }
 
   std::shared_ptr<Grid<dim, Number>>

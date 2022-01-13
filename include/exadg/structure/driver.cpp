@@ -125,7 +125,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
       time_integrator = std::make_shared<TimeIntGenAlpha<dim, Number>>(
-        pde_operator, postprocessor, refine_time, application->get_parameters(), mpi_comm, is_test);
+        pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
       time_integrator->setup(application->get_parameters().restarted_simulation);
     }
     else if(application->get_parameters().problem_type == ProblemType::Steady)

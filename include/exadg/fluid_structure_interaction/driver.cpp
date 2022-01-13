@@ -551,7 +551,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
       structure_operator,
       structure_postprocessor,
-      0 /* refine_time */,
       application->get_parameters_structure(),
       mpi_comm,
       is_test);
