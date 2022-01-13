@@ -247,7 +247,7 @@ public:
     create_periodic_box(grid->triangulation,
                         grid_data.n_refine_global,
                         grid->periodic_faces,
-                        this->n_subdivisions_1d_hypercube,
+                        grid_data.n_subdivisions_1d_hypercube,
                         left,
                         right,
                         curvilinear_mesh,

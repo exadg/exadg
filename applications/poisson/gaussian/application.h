@@ -252,7 +252,7 @@ public:
     double const length = 1.0;
     double const left = -length, right = length;
     GridGenerator::subdivided_hyper_cube(*grid->triangulation,
-                                         this->n_subdivisions_1d_hypercube,
+                                         grid_data.n_subdivisions_1d_hypercube,
                                          left,
                                          right);
 

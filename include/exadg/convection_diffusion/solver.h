@@ -89,7 +89,7 @@ run(std::string const & input_file,
   std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> application =
     ConvDiff::get_application<dim, Number>(input_file, mpi_comm);
 
-  solver->setup(application, degree, refine_space, refine_time, false);
+  solver->setup(application, degree, refine_space, 1, refine_time, false);
 
   solver->solve();
 

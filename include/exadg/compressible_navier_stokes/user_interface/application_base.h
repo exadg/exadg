@@ -61,7 +61,7 @@ public:
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
-    : mpi_comm(comm), parameter_file(parameter_file), n_subdivisions_1d_hypercube(1)
+    : mpi_comm(comm), parameter_file(parameter_file)
   {
     boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
     field_functions     = std::make_shared<FieldFunctions<dim>>();
@@ -85,12 +85,6 @@ public:
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   create_postprocessor() = 0;
-
-  void
-  set_subdivisions_hypercube(unsigned int const n_subdivisions_1d)
-  {
-    n_subdivisions_1d_hypercube = n_subdivisions_1d;
-  }
 
   Parameters const &
   get_parameters() const
@@ -118,8 +112,6 @@ protected:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
 
   std::string parameter_file;
-
-  unsigned int n_subdivisions_1d_hypercube;
 
   std::string output_directory = "output/", output_name = "output";
   bool        write_output = false;

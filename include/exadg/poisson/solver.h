@@ -83,9 +83,7 @@ run(std::vector<SolverResult> & results,
   std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =
     Poisson::get_application<dim, Number>(input_file, mpi_comm);
 
-  application->set_subdivisions_hypercube(n_cells_1d);
-
-  driver->setup(application, degree, refine_space, false);
+  driver->setup(application, degree, refine_space, n_cells_1d, false);
 
   driver->solve();
 

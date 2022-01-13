@@ -187,7 +187,7 @@ public:
     double const length = 1.0;
     double const left = -length, right = length;
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
-    unsigned int n_cells_1d = std::max((unsigned int)2, this->n_subdivisions_1d_hypercube);
+    unsigned int n_cells_1d = std::max((unsigned int)2, grid_data.n_subdivisions_1d_hypercube);
     GridGenerator::subdivided_hyper_cube(*grid->triangulation, n_cells_1d, left, right);
 
     if(mesh_type == MeshType::Cartesian)

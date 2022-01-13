@@ -93,9 +93,7 @@ run(ThroughputParameters const & throughput,
   std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
     Structure::get_application<dim, Number>(input_file, mpi_comm);
 
-  application->set_subdivisions_hypercube(n_cells_1d);
-
-  driver->setup(application, degree, refine_space, 0 /* refine time */, true);
+  driver->setup(application, degree, refine_space, n_cells_1d, 0 /* refine time */, true);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,

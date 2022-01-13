@@ -374,10 +374,10 @@ public:
       p2[2] = this->width;
 
     std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = this->n_subdivisions_1d_hypercube;
-    repetitions[1] = this->n_subdivisions_1d_hypercube;
+    repetitions[0] = grid_data.n_subdivisions_1d_hypercube;
+    repetitions[1] = grid_data.n_subdivisions_1d_hypercube;
     if(dim == 3)
-      repetitions[2] = this->n_subdivisions_1d_hypercube;
+      repetitions[2] = grid_data.n_subdivisions_1d_hypercube;
 
     GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
 

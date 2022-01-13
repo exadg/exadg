@@ -49,7 +49,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                            unsigned int const                            degree,
                            unsigned int const                            refine_space,
                            unsigned int const                            refine_time,
-                           bool const                                    is_throughput_study)
+                           unsigned int const n_subdivisions_1d_hypercube,
+                           bool const         is_throughput_study)
 {
   Timer timer;
   timer.restart();
@@ -72,8 +73,9 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   // grid
   GridData grid_data;
-  grid_data.triangulation_type = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global    = refine_space;
+  grid_data.triangulation_type          = application->get_parameters().triangulation_type;
+  grid_data.n_refine_global             = refine_space;
+  grid_data.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
   grid_data.mapping_degree =
     get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
 
