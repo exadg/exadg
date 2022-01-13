@@ -120,7 +120,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     Timer timer_local;
     timer_local.restart();
 
-    application->set_parameters_structure(degree_structure);
+    application->set_parameters_structure(degree_structure, refine_space_structure);
     application->get_parameters_structure().check();
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_structure().pull_back_traction == true,
@@ -128,15 +128,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->get_parameters_structure().print(pcout, "List of parameters for structure:");
 
     // grid
-    GridData structure_grid_data;
-    structure_grid_data.triangulation_type =
-      application->get_parameters_structure().triangulation_type;
-    structure_grid_data.n_refine_global = refine_space_structure;
-    structure_grid_data.mapping_degree =
-      get_mapping_degree(application->get_parameters_structure().mapping,
-                         application->get_parameters_structure().degree);
+    // TODO
+    //    GridData structure_grid_data;
+    //    structure_grid_data.triangulation_type =
+    //      application->get_parameters_structure().triangulation_type;
+    //    structure_grid_data.n_refine_global = refine_space_structure;
+    //    structure_grid_data.mapping_degree =
+    //      get_mapping_degree(application->get_parameters_structure().mapping,
+    //                         application->get_parameters_structure().degree);
 
-    structure_grid = application->create_grid_structure(structure_grid_data);
+    structure_grid = application->create_grid_structure();
     print_grid_info(pcout, *structure_grid);
 
     // boundary conditions
@@ -255,9 +256,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       application->get_parameters_ale_elasticity().check();
       AssertThrow(application->get_parameters_ale_elasticity().body_force == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
-      AssertThrow(application->get_parameters_ale_elasticity().mapping ==
-                    application->get_parameters_fluid().mapping,
-                  ExcMessage("Fluid and ALE must use the same mapping degree."));
+      // TODO
+      //      AssertThrow(application->get_parameters_ale_elasticity().mapping ==
+      //                    application->get_parameters_fluid().mapping,
+      //                  ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_elasticity().print(
         pcout, "List of parameters for ALE solver (elasticity):");
 

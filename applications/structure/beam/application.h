@@ -164,15 +164,14 @@ public:
   unsigned int const repetitions0 = 20, repetitions1 = 4, repetitions2 = 1;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     this->param.problem_type      = ProblemType::QuasiStatic;
     this->param.body_force        = false;
     this->param.large_deformation = true;
 
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping            = MappingType::Affine;
-    this->param.degree             = degree;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 1;
 
     this->param.load_increment            = 0.1;
     this->param.adjust_load_increment     = true;
@@ -192,10 +191,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     Point<dim> p1, p2;
     p1[0] = 0;
@@ -216,7 +215,7 @@ public:
 
     GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
 
-    element_length = this->length / (this->repetitions0 * pow(2, grid_data.n_refine_global));
+    element_length = this->length / (this->repetitions0 * pow(2, this->param.grid.n_refine_global));
 
     double const tol = 1.e-8;
     for(auto cell : *grid->triangulation)
@@ -249,7 +248,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

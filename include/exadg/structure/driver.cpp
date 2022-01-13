@@ -66,19 +66,21 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->set_parameters(degree);
+  application->set_parameters(degree, refine_space, n_subdivisions_1d_hypercube, refine_time);
   application->get_parameters().check();
   application->get_parameters().print(pcout, "List of parameters:");
 
   // grid
-  GridData grid_data;
-  grid_data.triangulation_type          = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global             = refine_space;
-  grid_data.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
-  grid_data.mapping_degree =
-    get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
+  // TODO
+  //  GridData grid_data;
+  //  grid_data.triangulation_type          = application->get_parameters().triangulation_type;
+  //  grid_data.n_refine_global             = refine_space;
+  //  grid_data.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+  //  grid_data.mapping_degree =
+  //    get_mapping_degree(application->get_parameters().mapping,
+  //    application->get_parameters().degree);
 
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   // boundary conditions

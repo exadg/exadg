@@ -573,7 +573,7 @@ public:
   }
 
   void
-  set_parameters_ale_poisson(unsigned int const degree) final
+  set_parameters_ale_poisson() final
   {
     using namespace Poisson;
 
@@ -584,7 +584,7 @@ public:
 
     // SPATIAL DISCRETIZATION
     param.grid.triangulation_type = TriangulationType::Distributed;
-    param.grid.mapping_degree     = degree;
+    param.grid.mapping_degree     = param.degree;
     param.spatial_discretization  = SpatialDiscretization::CG;
 
     // SOLVER
@@ -635,7 +635,7 @@ public:
   }
 
   void
-  set_parameters_ale_elasticity(unsigned int const degree) final
+  set_parameters_ale_elasticity() final
   {
     using namespace Structure;
 
@@ -647,9 +647,8 @@ public:
     param.large_deformation    = false;
     param.pull_back_traction   = false;
 
-    param.triangulation_type = TriangulationType::Distributed;
-    param.mapping            = MappingType::Isoparametric;
-    param.degree             = degree;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -734,7 +733,7 @@ public:
 
   // Structure
   void
-  set_parameters_structure(unsigned int const degree) final
+  set_parameters_structure() final
   {
     using namespace Structure;
 
@@ -755,9 +754,8 @@ public:
     param.spectral_radius                      = 0.8;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
-    param.triangulation_type = TriangulationType::Distributed;
-    param.mapping            = MappingType::Isoparametric;
-    param.degree             = degree;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -911,10 +909,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & grid_data) final
+  create_grid_structure() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->structure_param.grid, this->mpi_comm);
 
     create_triangulation_structure(*grid->triangulation);
 
@@ -994,7 +992,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
 
     return grid;
   }

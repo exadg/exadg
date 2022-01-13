@@ -46,6 +46,7 @@ Parameters::Parameters()
     end_time(1.0),
     time_step_size(1.0),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
+    n_refine_time(0),
     gen_alpha_type(GenAlphaType::GenAlpha),
     spectral_radius(1.0),
     solver_info_data(SolverInfoData()),
@@ -58,8 +59,7 @@ Parameters::Parameters()
     desired_newton_iterations(10),
 
     // SPATIAL DISCRETIZATION
-    triangulation_type(TriangulationType::Distributed),
-    mapping(MappingType::Affine),
+    grid(GridData()),
     degree(1),
 
     // SOLVER
@@ -92,6 +92,8 @@ Parameters::check() const
   }
 
   // SPATIAL DISCRETIZATION
+  grid.check();
+
   AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   // SOLVER
@@ -165,6 +167,7 @@ Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream 
     print_parameter(pcout, "Start time", start_time);
     print_parameter(pcout, "End time", end_time);
     print_parameter(pcout, "Max. number of time steps", max_number_of_time_steps);
+    print_parameter(pcout, "Temporal refinements", n_refine_time);
     print_parameter(pcout, "Time integration type", enum_to_string(gen_alpha_type));
     print_parameter(pcout, "Spectral radius", spectral_radius);
     solver_info_data.print(pcout);
@@ -178,8 +181,8 @@ Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream c
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
-  print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
-  print_parameter(pcout, "Mapping", enum_to_string(mapping));
+  grid.print(pcout);
+
   print_parameter(pcout, "Polynomial degree", degree);
 }
 

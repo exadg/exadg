@@ -115,8 +115,14 @@ public:
   // ALE
 
   // Poisson type mesh motion
+  void
+  set_parameters_ale_poisson(unsigned int const degree)
+  {
+    this->ale_poisson_param.degree = degree;
+  }
+
   virtual void
-  set_parameters_ale_poisson(unsigned int const degree) = 0;
+  set_parameters_ale_poisson() = 0;
 
   virtual void
   set_boundary_descriptor_ale_poisson() = 0;
@@ -125,8 +131,14 @@ public:
   set_field_functions_ale_poisson() = 0;
 
   // elasticity type mesh motion
+  void
+  set_parameters_ale_elasticity(unsigned int const degree)
+  {
+    this->ale_elasticity_param.degree = degree;
+  }
+
   virtual void
-  set_parameters_ale_elasticity(unsigned int const degree) = 0;
+  set_parameters_ale_elasticity() = 0;
 
   virtual void
   set_boundary_descriptor_ale_elasticity() = 0;
@@ -138,11 +150,21 @@ public:
   set_field_functions_ale_elasticity() = 0;
 
   // Structure
+  void
+  set_parameters_structure(unsigned int const degree, unsigned int const refine_space)
+  {
+    this->structure_param.degree = degree;
+
+    this->structure_param.grid.n_refine_global = refine_space;
+
+    this->set_parameters_structure();
+  }
+
   virtual void
-  set_parameters_structure(unsigned int const degree) = 0;
+  set_parameters_structure() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & grid_data) = 0;
+  create_grid_structure() = 0;
 
   virtual void
   set_boundary_descriptor_structure() = 0;

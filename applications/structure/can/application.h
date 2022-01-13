@@ -153,7 +153,7 @@ public:
   double area_force   = 1.0; // "Neumann"
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     this->param.problem_type         = ProblemType::QuasiStatic; // Steady;
     this->param.body_force           = use_volume_force;
@@ -161,9 +161,8 @@ public:
     this->param.pull_back_body_force = false;
     this->param.pull_back_traction   = false;
 
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping            = MappingType::Affine;
-    this->param.degree             = degree;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 1;
 
     this->param.load_increment            = 0.01;
     this->param.adjust_load_increment     = false; // true;
@@ -183,10 +182,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     AssertThrow(dim == 3, ExcMessage("This application only makes sense for dim=3."));
 
@@ -220,7 +219,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

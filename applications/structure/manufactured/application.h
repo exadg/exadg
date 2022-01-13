@@ -324,7 +324,7 @@ public:
   double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     this->param.problem_type         = unsteady ? ProblemType::Unsteady : ProblemType::Steady;
     this->param.body_force           = true;
@@ -341,9 +341,8 @@ public:
     this->param.spectral_radius                      = 0.8;
     this->param.solver_info_data.interval_time_steps = 1e4;
 
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping            = MappingType::Affine;
-    this->param.degree             = degree;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 1;
 
     this->param.newton_solver_data  = Newton::SolverData(1e4, 1.e-10, 1.e-10);
     this->param.solver              = Solver::CG;
@@ -357,10 +356,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     // left-bottom-front and right-top-back point
     Point<dim> p1, p2;
@@ -374,14 +373,14 @@ public:
       p2[2] = this->width;
 
     std::vector<unsigned int> repetitions(dim);
-    repetitions[0] = grid_data.n_subdivisions_1d_hypercube;
-    repetitions[1] = grid_data.n_subdivisions_1d_hypercube;
+    repetitions[0] = this->param.grid.n_subdivisions_1d_hypercube;
+    repetitions[1] = this->param.grid.n_subdivisions_1d_hypercube;
     if(dim == 3)
-      repetitions[2] = grid_data.n_subdivisions_1d_hypercube;
+      repetitions[2] = this->param.grid.n_subdivisions_1d_hypercube;
 
     GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }
