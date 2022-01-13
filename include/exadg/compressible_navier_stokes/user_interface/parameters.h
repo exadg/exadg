@@ -23,6 +23,7 @@
 
 #include <exadg/compressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/time_integration/restart_data.h>
 #include <exadg/time_integration/solver_info_data.h>
 #include <exadg/utilities/print_functions.h>
@@ -134,6 +135,9 @@ public:
   // maximum number of time steps
   unsigned int max_number_of_time_steps;
 
+  // number of refinements for temporal discretization
+  unsigned int n_refine_time;
+
   // maximum velocity needed when calculating the time step according to cfl-condition
   double max_velocity;
 
@@ -165,11 +169,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // triangulation type
-  TriangulationType triangulation_type;
-
-  // Type of mapping (polynomial degree) use for geometry approximation
-  MappingType mapping;
+  // Grid data
+  GridData grid;
 
   // polynomial degree of shape functions
   unsigned int degree;

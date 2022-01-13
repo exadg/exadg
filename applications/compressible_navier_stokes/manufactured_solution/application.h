@@ -370,7 +370,7 @@ public:
   double const end_time   = 0.75;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.equation_type   = EquationType::NavierStokes;
@@ -408,11 +408,10 @@ public:
     this->param.solver_info_data.interval_time = (end_time - start_time) / 10;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type    = TriangulationType::Distributed;
-    this->param.mapping               = MappingType::Isoparametric;
-    this->param.degree                = degree;
-    this->param.n_q_points_convective = QuadratureRule::Standard;
-    this->param.n_q_points_viscous    = QuadratureRule::Standard;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree;
+    this->param.n_q_points_convective   = QuadratureRule::Standard;
+    this->param.n_q_points_viscous      = QuadratureRule::Standard;
 
     // viscous term
     this->param.IP_factor = 1.0;
@@ -423,10 +422,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     // hypercube volume is [left,right]^dim
     double const left = -1.0, right = 0.5;
@@ -451,7 +450,7 @@ public:
     GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 1, grid->periodic_faces);
     grid->triangulation->add_periodicity(grid->periodic_faces);
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

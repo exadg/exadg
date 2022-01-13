@@ -145,7 +145,7 @@ public:
   double const end_time   = 20.0 * CHARACTERISTIC_TIME;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.equation_type   = EquationType::NavierStokes;
@@ -207,11 +207,10 @@ public:
     this->param.restart_data.filename = this->output_directory + this->output_name + "_restart";
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type    = TriangulationType::Distributed;
-    this->param.mapping               = MappingType::Affine;
-    this->param.degree                = degree;
-    this->param.n_q_points_convective = QuadratureRule::Overintegration32k;
-    this->param.n_q_points_viscous    = QuadratureRule::Overintegration32k;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 1;
+    this->param.n_q_points_convective   = QuadratureRule::Overintegration32k;
+    this->param.n_q_points_viscous      = QuadratureRule::Overintegration32k;
 
     // viscous term
     this->param.IP_factor = 1.0;
@@ -221,10 +220,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     double const pi   = numbers::PI;
     double const left = -pi * L, right = pi * L;
@@ -245,15 +244,15 @@ public:
     }
 
     create_periodic_box(grid->triangulation,
-                        grid_data.n_refine_global,
+                        this->param.grid.n_refine_global,
                         grid->periodic_faces,
-                        grid_data.n_subdivisions_1d_hypercube,
+                        this->param.grid.n_subdivisions_1d_hypercube,
                         left,
                         right,
                         curvilinear_mesh,
                         deformation);
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }
