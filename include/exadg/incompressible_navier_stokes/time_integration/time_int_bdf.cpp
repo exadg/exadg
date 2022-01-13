@@ -36,7 +36,6 @@ template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<OperatorBase>                   operator_in,
   Parameters const &                              param_in,
-  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
@@ -50,9 +49,9 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
                            mpi_comm_in,
                            is_test_in),
     param(param_in),
-    refine_steps_time(refine_steps_time_in),
-    cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
-    cfl_oif(param_in.cfl_oif / std::pow(2.0, refine_steps_time_in)),
+    refine_steps_time(param_in.n_refine_time),
+    cfl(param.cfl / std::pow(2.0, refine_steps_time)),
+    cfl_oif(param_in.cfl_oif / std::pow(2.0, refine_steps_time)),
     operator_base(operator_in),
     vec_convective_term(this->order),
     use_extrapolation(true),

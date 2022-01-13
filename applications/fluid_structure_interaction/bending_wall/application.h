@@ -131,7 +131,7 @@ public:
   }
 
   void
-  set_parameters_fluid(unsigned int const degree) final
+  set_parameters_fluid() final
   {
     using namespace IncNS;
 
@@ -183,10 +183,9 @@ public:
 
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type = TriangulationType::Distributed;
-    param.degree_u           = degree;
-    param.degree_p           = DegreePressure::MixedOrder;
-    param.mapping            = MappingType::Isoparametric;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree_u;
+    param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     param.upwind_factor = 1.0;
@@ -416,10 +415,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & grid_data) final
+  create_grid_fluid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->fluid_param.grid, this->mpi_comm);
 
     create_triangulation(*grid->triangulation);
 
@@ -463,7 +462,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
 
     return grid;
   }

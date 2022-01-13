@@ -67,19 +67,15 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->set_parameters(degree_velocity);
+  application->set_parameters(degree_velocity,
+                              refine_space,
+                              n_subdivisions_1d_hypercube,
+                              refine_time);
   application->get_parameters().check(pcout);
   application->get_parameters().print(pcout, "List of parameters:");
 
   // grid
-  GridData grid_data;
-  grid_data.triangulation_type          = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global             = refine_space;
-  grid_data.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
-  grid_data.mapping_degree              = get_mapping_degree(application->get_parameters().mapping,
-                                                application->get_parameters().degree_u);
-
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   if(application->get_parameters().ale_formulation) // moving mesh
@@ -90,7 +86,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
         grid->mapping,
-        grid_data.mapping_degree,
+        application->get_parameters().grid.mapping_degree,
         *grid->triangulation,
         mesh_motion,
         application->get_parameters().start_time);
@@ -99,7 +95,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       // Note that the grid parameters in Poisson::Parameters are ignored since
       // the grid is created using the parameters specified in IncNS::Parameters
-      application->set_parameters_poisson(grid_data.mapping_degree);
+      application->set_parameters_poisson(application->get_parameters().grid.mapping_degree);
       application->get_parameters_poisson().check();
       application->get_parameters_poisson().print(
         pcout, "List of parameters for Poisson solver (moving mesh):");
@@ -208,7 +204,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, application->get_parameters(), refine_time, mpi_comm, is_test, postprocessor);
+        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {

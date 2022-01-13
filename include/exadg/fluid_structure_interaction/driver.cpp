@@ -128,15 +128,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     application->get_parameters_structure().print(pcout, "List of parameters for structure:");
 
     // grid
-    // TODO
-    //    GridData structure_grid_data;
-    //    structure_grid_data.triangulation_type =
-    //      application->get_parameters_structure().triangulation_type;
-    //    structure_grid_data.n_refine_global = refine_space_structure;
-    //    structure_grid_data.mapping_degree =
-    //      get_mapping_degree(application->get_parameters_structure().mapping,
-    //                         application->get_parameters_structure().degree);
-
     structure_grid = application->create_grid_structure();
     print_grid_info(pcout, *structure_grid);
 
@@ -190,7 +181,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // parameters fluid
-    application->set_parameters_fluid(degree_fluid);
+    application->set_parameters_fluid(degree_fluid, refine_space_fluid);
     application->get_parameters_fluid().check(pcout);
     application->get_parameters_fluid().print(pcout,
                                               "List of parameters for incompressible flow solver:");
@@ -202,14 +193,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    GridData fluid_grid_data;
-    fluid_grid_data.triangulation_type = application->get_parameters_fluid().triangulation_type;
-    fluid_grid_data.n_refine_global    = refine_space_fluid;
-    fluid_grid_data.mapping_degree =
-      get_mapping_degree(application->get_parameters_fluid().mapping,
-                         application->get_parameters_fluid().degree_u);
-
-    fluid_grid = application->create_grid_fluid(fluid_grid_data);
+    fluid_grid = application->create_grid_fluid();
     print_grid_info(pcout, *fluid_grid);
 
     // field functions and boundary conditions
@@ -224,14 +208,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // ALE
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      application->set_parameters_ale_poisson(fluid_grid_data.mapping_degree);
+      application->set_parameters_ale_poisson(
+        application->get_parameters_fluid().grid.mapping_degree);
       application->get_parameters_ale_poisson().check();
       AssertThrow(application->get_parameters_ale_poisson().right_hand_side == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
-      // TODO
-      //      AssertThrow(application->get_parameters_ale_poisson().mapping ==
-      //                    application->get_parameters_fluid().mapping,
-      //                  ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_poisson().print(
         pcout, "List of parameters for ALE solver (Poisson):");
 
@@ -252,14 +233,11 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      application->set_parameters_ale_elasticity(fluid_grid_data.mapping_degree);
+      application->set_parameters_ale_elasticity(
+        application->get_parameters_fluid().grid.mapping_degree);
       application->get_parameters_ale_elasticity().check();
       AssertThrow(application->get_parameters_ale_elasticity().body_force == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
-      // TODO
-      //      AssertThrow(application->get_parameters_ale_elasticity().mapping ==
-      //                    application->get_parameters_fluid().mapping,
-      //                  ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_elasticity().print(
         pcout, "List of parameters for ALE solver (elasticity):");
 
@@ -526,13 +504,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // initialize fluid_time_integrator
-    fluid_time_integrator =
-      IncNS::create_time_integrator<dim, Number>(fluid_operator,
-                                                 application->get_parameters_fluid(),
-                                                 0 /* refine_time */,
-                                                 mpi_comm,
-                                                 is_test,
-                                                 fluid_postprocessor);
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
+      fluid_operator, application->get_parameters_fluid(), mpi_comm, is_test, fluid_postprocessor);
 
     fluid_time_integrator->setup(application->get_parameters_fluid().restarted_simulation);
 

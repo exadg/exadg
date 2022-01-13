@@ -35,7 +35,6 @@
 // grid
 #include <exadg/grid/grid_motion_elasticity.h>
 #include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 
 // IncNS

@@ -29,7 +29,6 @@
 // ExaDG
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/calculate_maximum_aspect_ratio.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/poisson/spatial_discretization/operator.h>

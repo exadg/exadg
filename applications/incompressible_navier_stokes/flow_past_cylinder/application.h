@@ -293,7 +293,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type                = problem_type;
@@ -336,10 +336,9 @@ public:
     this->param.rel_tol_steady = 1.e-8;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.degree_u           = degree;
-    this->param.degree_p           = DegreePressure::MixedOrder;
-    this->param.mapping            = MappingType::Isoparametric;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -470,12 +469,12 @@ public:
 
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
-    this->refine_level = grid_data.n_refine_global;
+    this->refine_level = this->param.grid.n_refine_global;
 
     if(auto tria_fully_dist =
          dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*grid->triangulation))
@@ -485,7 +484,7 @@ public:
                                                                                              dim>(
           [&](dealii::Triangulation<dim, dim> & tria) mutable {
             create_cylinder_grid<dim>(tria,
-                                      grid_data.n_refine_global,
+                                      this->param.grid.n_refine_global,
                                       grid->periodic_faces,
                                       cylinder_type_string);
           },
@@ -506,7 +505,7 @@ public:
               dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*grid->triangulation))
     {
       create_cylinder_grid<dim>(*tria,
-                                grid_data.n_refine_global,
+                                this->param.grid.n_refine_global,
                                 grid->periodic_faces,
                                 cylinder_type_string);
     }

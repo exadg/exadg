@@ -27,7 +27,6 @@
 #include <deal.II/distributed/tria.h>
 
 // ExaDG
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/grid/mapping_dof_vector.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/structure/spatial_discretization/operator.h>

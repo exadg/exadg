@@ -42,40 +42,38 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
-    this->param.degree_u = degree;
   }
 
   void
-  set_parameters_precursor(unsigned int const degree) final
+  set_parameters_precursor() final
   {
-    this->param_pre.degree_u = degree;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }
 
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor(GridData const & grid_data) final
+  create_grid_precursor() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param_pre.grid, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param_pre.grid.n_refine_global);
 
     return grid;
   }

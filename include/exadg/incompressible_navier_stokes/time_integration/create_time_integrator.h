@@ -38,7 +38,6 @@ template<int dim, typename Number>
 std::shared_ptr<TimeIntBDF<dim, Number>>
 create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_operator,
                        Parameters const &                                parameters,
-                       unsigned int const                                refine_time,
                        MPI_Comm const &                                  mpi_comm,
                        bool const                                        is_test,
                        std::shared_ptr<PostProcessorInterface<Number>>   postprocessor)
@@ -51,7 +50,7 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
       std::dynamic_pointer_cast<OperatorCoupled<dim, Number>>(pde_operator);
 
     time_integrator = std::make_shared<IncNS::TimeIntBDFCoupled<dim, Number>>(
-      operator_coupled, parameters, refine_time, mpi_comm, is_test, postprocessor);
+      operator_coupled, parameters, mpi_comm, is_test, postprocessor);
   }
   else if(parameters.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -59,7 +58,7 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
       std::dynamic_pointer_cast<OperatorDualSplitting<dim, Number>>(pde_operator);
 
     time_integrator = std::make_shared<IncNS::TimeIntBDFDualSplitting<dim, Number>>(
-      operator_dual_splitting, parameters, refine_time, mpi_comm, is_test, postprocessor);
+      operator_dual_splitting, parameters, mpi_comm, is_test, postprocessor);
   }
   else if(parameters.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -67,7 +66,7 @@ create_time_integrator(std::shared_ptr<SpatialOperatorBase<dim, Number>> pde_ope
       std::dynamic_pointer_cast<OperatorPressureCorrection<dim, Number>>(pde_operator);
 
     time_integrator = std::make_shared<IncNS::TimeIntBDFPressureCorrection<dim, Number>>(
-      operator_pressure_correction, parameters, refine_time, mpi_comm, is_test, postprocessor);
+      operator_pressure_correction, parameters, mpi_comm, is_test, postprocessor);
   }
   else
   {

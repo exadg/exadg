@@ -69,7 +69,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
-  application->set_parameters(degree);
+  application->set_parameters(degree, refine_space, 0 /* unused */, 0 /* unused */);
   application->get_parameters().check(pcout);
 
   application->get_parameters().print(pcout, "List of parameters for fluid solver:");
@@ -88,40 +88,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                   Utilities::to_string(i) + ":");
   }
 
-  // triangulation
-  if(application->get_parameters().triangulation_type == TriangulationType::Distributed)
-  {
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      AssertThrow(application->get_parameters_scalar(i).grid.triangulation_type ==
-                    TriangulationType::Distributed,
-                  ExcMessage(
-                    "Parameter triangulation_type is different for fluid field and scalar field"));
-    }
-  }
-  else if(application->get_parameters().triangulation_type == TriangulationType::FullyDistributed)
-  {
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      AssertThrow(application->get_parameters_scalar(i).grid.triangulation_type ==
-                    TriangulationType::FullyDistributed,
-                  ExcMessage(
-                    "Parameter triangulation_type is different for fluid field and scalar field"));
-    }
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
-
   // grid
-  GridData grid_data;
-  grid_data.triangulation_type = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(application->get_parameters().mapping,
-                                                application->get_parameters().degree_u);
-
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   if(application->get_parameters().ale_formulation) // moving mesh
@@ -264,13 +232,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // depends on quantities such as the time_step_size or gamma0!!!)
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_time_integrator =
-      IncNS::create_time_integrator<dim, Number>(fluid_operator,
-                                                 application->get_parameters(),
-                                                 0 /* refine_time */,
-                                                 mpi_comm,
-                                                 is_test,
-                                                 fluid_postprocessor);
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
+      fluid_operator, application->get_parameters(), mpi_comm, is_test, fluid_postprocessor);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {

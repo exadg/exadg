@@ -97,11 +97,20 @@ public:
   }
 
   // fluid
+  void
+  set_parameters_fluid(unsigned int const degree, unsigned int const refine_space)
+  {
+    this->fluid_param.degree_u             = degree;
+    this->fluid_param.grid.n_refine_global = refine_space;
+
+    this->set_parameters_fluid();
+  }
+
   virtual void
-  set_parameters_fluid(unsigned int const degree) = 0;
+  set_parameters_fluid() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & grid_data) = 0;
+  create_grid_fluid() = 0;
 
   virtual void
   set_boundary_descriptor_fluid() = 0;
