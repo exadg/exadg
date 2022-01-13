@@ -565,10 +565,10 @@ public:
     param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type     = TriangulationType::Distributed;
-    param.mapping                = MappingType::Isoparametric;
-    param.degree                 = degree;
-    param.spatial_discretization = SpatialDiscretization::CG;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = degree;
+    param.degree                  = degree;
+    param.spatial_discretization  = SpatialDiscretization::CG;
 
     // SOLVER
     param.solver         = Poisson::Solver::FGMRES;

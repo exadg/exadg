@@ -68,7 +68,7 @@ Parameters::Parameters()
     // SPATIAL DISCRETIZATION
 
     // triangulation
-    triangulation_type(TriangulationType::Undefined),
+    triangulation_type(TriangulationType::Distributed),
     mapping(MappingType::Affine),
     degree(1),
     n_q_points_convective(QuadratureRule::Standard),
@@ -124,9 +124,6 @@ Parameters::check() const
 
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("parameter must be defined"));
-
   AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   if(use_combined_operator)

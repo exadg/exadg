@@ -97,6 +97,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     }
     else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
+      // Note that the grid parameters in Poisson::Parameters are ignored since
+      // the grid is created using the parameters specified in IncNS::Parameters
       application->set_parameters_poisson(grid_data.mapping_degree);
       application->get_parameters_poisson().check();
       application->get_parameters_poisson().print(
@@ -110,11 +112,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(application->get_parameters_poisson().right_hand_side == false,
                   ExcMessage("Poisson problem is used for mesh movement. Hence, "
                              "the right-hand side has to be zero for the Poisson problem."));
-
-      AssertThrow(application->get_parameters_poisson().mapping ==
-                    application->get_parameters().mapping,
-                  ExcMessage("Use the same mapping degree for Poisson mesh motion problem "
-                             "as for actual application problem."));
 
       // initialize Poisson operator
       poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(

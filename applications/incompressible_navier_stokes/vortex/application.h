@@ -691,7 +691,7 @@ public:
   }
 
   void
-  set_parameters_poisson(unsigned int const degree) final
+  set_parameters_poisson() final
   {
     using namespace Poisson;
 
@@ -699,9 +699,6 @@ public:
     this->poisson_param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->poisson_param.triangulation_type     = TriangulationType::Distributed;
-    this->poisson_param.mapping                = MappingType::Affine; // initial mesh is a hypercube
-    this->poisson_param.degree                 = degree;
     this->poisson_param.spatial_discretization = SpatialDiscretization::CG;
     this->poisson_param.IP_factor              = 1.0e0;
 

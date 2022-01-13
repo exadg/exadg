@@ -68,7 +68,7 @@ Parameters::Parameters()
     restart_data(RestartData()),
 
     // SPATIAL DISCRETIZATION
-    triangulation_type(TriangulationType::Undefined),
+    triangulation_type(TriangulationType::Distributed),
     mapping(MappingType::Affine),
     degree(1),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
@@ -259,9 +259,6 @@ Parameters::check() const
   }
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("parameter must be defined"));
-
   AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   if(equation_type == EquationType::Convection ||

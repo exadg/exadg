@@ -58,7 +58,7 @@ Parameters::Parameters()
     desired_newton_iterations(10),
 
     // SPATIAL DISCRETIZATION
-    triangulation_type(TriangulationType::Undefined),
+    triangulation_type(TriangulationType::Distributed),
     mapping(MappingType::Affine),
     degree(1),
 
@@ -92,9 +92,6 @@ Parameters::check() const
   }
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("Parameter must be defined."));
-
   AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   // SOLVER

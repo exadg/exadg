@@ -227,9 +227,10 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       application->get_parameters_ale_poisson().check();
       AssertThrow(application->get_parameters_ale_poisson().right_hand_side == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
-      AssertThrow(application->get_parameters_ale_poisson().mapping ==
-                    application->get_parameters_fluid().mapping,
-                  ExcMessage("Fluid and ALE must use the same mapping degree."));
+      // TODO
+      //      AssertThrow(application->get_parameters_ale_poisson().mapping ==
+      //                    application->get_parameters_fluid().mapping,
+      //                  ExcMessage("Fluid and ALE must use the same mapping degree."));
       application->get_parameters_ale_poisson().print(
         pcout, "List of parameters for ALE solver (Poisson):");
 

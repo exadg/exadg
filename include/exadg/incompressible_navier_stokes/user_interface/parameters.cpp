@@ -92,7 +92,7 @@ Parameters::Parameters()
     // SPATIAL DISCRETIZATION
 
     // triangulation
-    triangulation_type(TriangulationType::Undefined),
+    triangulation_type(TriangulationType::Distributed),
 
     // mapping
     mapping(MappingType::Affine),
@@ -344,8 +344,6 @@ Parameters::check(ConditionalOStream const & pcout) const
   }
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("parameter must be defined"));
 
   // For the coupled solution approach, degree_p = 0 is allowed in principle.
   // For projection-type methods, degree_p > 0 has to be fulfilled (the SIPG discretization

@@ -45,17 +45,16 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type     = TriangulationType::Distributed;
-    this->param.mapping                = MappingType::Isoparametric;
-    this->param.degree                 = degree;
-    this->param.spatial_discretization = SpatialDiscretization::DG;
-    this->param.IP_factor              = 1.0e0;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree;
+    this->param.spatial_discretization  = SpatialDiscretization::DG;
+    this->param.IP_factor               = 1.0e0;
 
     // SOLVER
     this->param.solver                      = Poisson::Solver::CG;
@@ -77,17 +76,17 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     double const length = 1.0;
     double const left = -length, right = length;
 
     GridGenerator::hyper_cube_slit(*grid->triangulation, left, right);
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

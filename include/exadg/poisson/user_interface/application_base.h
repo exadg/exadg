@@ -74,11 +74,24 @@ public:
   {
   }
 
+  void
+  set_parameters(unsigned int const degree,
+                 unsigned int const refine_space,
+                 unsigned int const n_subdivisions_1d_hypercube)
+  {
+    this->param.degree = degree;
+
+    this->param.grid.n_refine_global             = refine_space;
+    this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+
+    this->set_parameters();
+  }
+
   virtual void
-  set_parameters(unsigned int const degree) = 0;
+  set_parameters() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) = 0;
+  create_grid() = 0;
 
   virtual void
   set_boundary_descriptor() = 0;

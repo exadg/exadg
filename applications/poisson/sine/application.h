@@ -146,17 +146,16 @@ public:
   MeshType    mesh_type        = MeshType::Cartesian;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type     = TriangulationType::Distributed;
-    this->param.mapping                = MappingType::Cubic; // Isoparametric;
-    this->param.degree                 = degree;
-    this->param.spatial_discretization = SpatialDiscretization::DG;
-    this->param.IP_factor              = 1.0e0;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 3;
+    this->param.spatial_discretization  = SpatialDiscretization::DG;
+    this->param.IP_factor               = 1.0e0;
 
     // SOLVER
     this->param.solver                      = Solver::CG;
@@ -179,15 +178,16 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     double const length = 1.0;
     double const left = -length, right = length;
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
-    unsigned int n_cells_1d = std::max((unsigned int)2, grid_data.n_subdivisions_1d_hypercube);
+    unsigned int n_cells_1d =
+      std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
     GridGenerator::subdivided_hyper_cube(*grid->triangulation, n_cells_1d, left, right);
 
     if(mesh_type == MeshType::Cartesian)
@@ -237,7 +237,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

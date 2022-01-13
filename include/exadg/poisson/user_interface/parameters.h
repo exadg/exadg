@@ -23,6 +23,7 @@
 #define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/poisson/user_interface/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -75,11 +76,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // triangulation type
-  TriangulationType triangulation_type;
-
-  // Type of mapping (polynomial degree) use for geometry approximation
-  MappingType mapping;
+  // Grid data
+  GridData grid;
 
   // type of spatial discretization approach
   SpatialDiscretization spatial_discretization;

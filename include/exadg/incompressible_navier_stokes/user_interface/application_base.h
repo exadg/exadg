@@ -105,11 +105,17 @@ public:
   }
 
   // Moving mesh (Poisson problem)
-  virtual void
+  void
   set_parameters_poisson(unsigned int const degree)
   {
-    (void)degree;
+    poisson_param.degree = degree;
 
+    this->set_parameters_poisson();
+  }
+
+  virtual void
+  set_parameters_poisson()
+  {
     AssertThrow(false,
                 ExcMessage("Has to be overwritten by derived classes in order "
                            "to use Poisson solver for mesh movement."));

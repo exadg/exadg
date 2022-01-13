@@ -54,6 +54,8 @@ types::boundary_id const BOUNDARY_ID_WALLS   = 3;
 
 unsigned int MANIFOLD_ID_CYLINDER = 1;
 
+unsigned int const MAPPING_DEGREE = 1; // 2;
+// TODO (remove this reducancy later once all modules have removed MappingType
 MappingType const MAPPING_TYPE = MappingType::Affine; // Quadratic;
 
 double const TIME_PRESSURE  = 3.0e-3;
@@ -450,10 +452,10 @@ public:
     param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type     = TriangulationType::Distributed;
-    param.mapping                = MAPPING_TYPE;
-    param.degree                 = degree;
-    param.spatial_discretization = SpatialDiscretization::CG;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = MAPPING_DEGREE;
+    param.degree                  = degree;
+    param.spatial_discretization  = SpatialDiscretization::CG;
 
     // SOLVER
     param.solver         = Poisson::Solver::FGMRES;

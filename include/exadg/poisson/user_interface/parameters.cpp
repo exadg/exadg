@@ -36,8 +36,7 @@ Parameters::Parameters()
     right_hand_side(false),
 
     // SPATIAL DISCRETIZATION
-    triangulation_type(TriangulationType::Undefined),
-    mapping(MappingType::Affine),
+    grid(GridData()),
     spatial_discretization(SpatialDiscretization::Undefined),
     degree(1),
     IP_factor(1.0),
@@ -58,8 +57,7 @@ Parameters::check() const
   // MATHEMATICAL MODEL
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("parameter must be defined."));
+  grid.check();
 
   AssertThrow(spatial_discretization != SpatialDiscretization::Undefined,
               ExcMessage("parameter must be defined."));
@@ -103,9 +101,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
-  print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
-
-  print_parameter(pcout, "Mapping", enum_to_string(mapping));
+  grid.print(pcout);
 
   print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
 
