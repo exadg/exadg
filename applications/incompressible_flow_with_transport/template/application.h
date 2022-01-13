@@ -73,14 +73,13 @@ public:
   }
 
   void
-  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 
-    // Here, set all parameters differing from their default values as initialized in
-    // ConvDiff::Parameters::Parameters()
-
-    this->scalar_param[scalar_index].degree = degree;
+    // Set parameters here
+    Parameters & param = this->scalar_param[scalar_index];
+    (void)param;
   }
 
   std::shared_ptr<Grid<dim, Number>>

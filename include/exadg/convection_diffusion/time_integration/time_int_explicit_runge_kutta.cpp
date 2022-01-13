@@ -37,7 +37,6 @@ template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Interface::Operator<Number>>    operator_in,
   Parameters const &                              param_in,
-  unsigned int const                              refine_steps_time_in,
   MPI_Comm const &                                mpi_comm_in,
   bool const                                      is_test_in,
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
@@ -50,10 +49,10 @@ TimeIntExplRK<Number>::TimeIntExplRK(
                               is_test_in),
     pde_operator(operator_in),
     param(param_in),
-    refine_steps_time(refine_steps_time_in),
+    refine_steps_time(param_in.n_refine_time),
     time_step_diff(1.0),
-    cfl(param.cfl / std::pow(2.0, refine_steps_time_in)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, refine_steps_time_in)),
+    cfl(param.cfl / std::pow(2.0, refine_steps_time)),
+    diffusion_number(param.diffusion_number / std::pow(2.0, refine_steps_time)),
     postprocessor(postprocessor_in)
 {
 }

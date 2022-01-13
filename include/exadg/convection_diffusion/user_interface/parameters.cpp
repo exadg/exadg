@@ -56,6 +56,7 @@ Parameters::Parameters()
     adaptive_time_stepping_cfl_type(CFLConditionType::VelocityNorm),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
+    n_refine_time(0),
     cfl(-1.),
     max_velocity(std::numeric_limits<double>::min()),
     time_integrator_oif(TimeIntegratorRK::Undefined),
@@ -68,8 +69,7 @@ Parameters::Parameters()
     restart_data(RestartData()),
 
     // SPATIAL DISCRETIZATION
-    triangulation_type(TriangulationType::Distributed),
-    mapping(MappingType::Affine),
+    grid(GridData()),
     degree(1),
     numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
     IP_factor(1.0),
@@ -259,6 +259,8 @@ Parameters::check() const
   }
 
   // SPATIAL DISCRETIZATION
+  grid.check();
+
   AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
   if(equation_type == EquationType::Convection ||
@@ -457,8 +459,9 @@ Parameters::print_parameters_temporal_discretization(ConditionalOStream const & 
     print_parameter(pcout, "Explicit time integrator", enum_to_string(time_integrator_rk));
   }
 
-  // maximum number of time steps
   print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
+
+  print_parameter(pcout, "Temporal refinements", n_refine_time);
 
   if(temporal_discretization == TemporalDiscretization::BDF)
   {
@@ -510,9 +513,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
-  print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
-
-  print_parameter(pcout, "Mapping", enum_to_string(mapping));
+  grid.print(pcout);
 
   print_parameter(pcout, "Polynomial degree", degree);
 

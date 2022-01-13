@@ -93,16 +93,17 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   {
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      AssertThrow(
-        application->get_parameters_scalar(i).triangulation_type == TriangulationType::Distributed,
-        ExcMessage("Parameter triangulation_type is different for fluid field and scalar field"));
+      AssertThrow(application->get_parameters_scalar(i).grid.triangulation_type ==
+                    TriangulationType::Distributed,
+                  ExcMessage(
+                    "Parameter triangulation_type is different for fluid field and scalar field"));
     }
   }
   else if(application->get_parameters().triangulation_type == TriangulationType::FullyDistributed)
   {
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      AssertThrow(application->get_parameters_scalar(i).triangulation_type ==
+      AssertThrow(application->get_parameters_scalar(i).grid.triangulation_type ==
                     TriangulationType::FullyDistributed,
                   ExcMessage(
                     "Parameter triangulation_type is different for fluid field and scalar field"));
@@ -313,7 +314,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     scalar_time_integrator[i] =
       ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
                                                     application->get_parameters_scalar(i),
-                                                    0 /* refine_time */,
                                                     mpi_comm,
                                                     is_test,
                                                     scalar_postprocessor[i]);

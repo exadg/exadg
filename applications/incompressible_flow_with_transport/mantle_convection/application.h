@@ -268,7 +268,7 @@ public:
   }
 
   void
-  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 
@@ -304,9 +304,8 @@ public:
     param.solver_info_data.interval_time = output_interval_time;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type = TriangulationType::Distributed;
-    param.mapping            = MappingType::Isoparametric;
-    param.degree             = degree;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree;
 
     // convective term
     param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
