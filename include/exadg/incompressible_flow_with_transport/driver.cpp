@@ -52,7 +52,7 @@ Driver<dim, Number>::setup()
   Timer timer;
   timer.restart();
 
-  pcout << "Setting up incompressible flow with scalar transport solver:" << std::endl;
+  pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
 
   unsigned int const n_scalars = application->get_n_scalars();
 

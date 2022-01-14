@@ -57,7 +57,7 @@ Driver<dim, Number>::setup()
   Timer timer;
   timer.restart();
 
-  pcout << "Setting up scalar convection-diffusion solver:" << std::endl;
+  pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
 
   application->set_parameters();
   application->get_parameters().check();

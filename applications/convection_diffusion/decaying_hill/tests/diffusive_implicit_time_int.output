@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up scalar convection-diffusion solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up scalar convection-diffusion solver:
 
 List of parameters:
 
@@ -33,6 +34,7 @@ Physical quantities:
 Temporal discretization:
   Temporal discretization method:            BDF
   Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
   Order of time integrator:                  3
   Start with low order method:               false
   Treatment of convective term:              Implicit
@@ -44,7 +46,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        4
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         5
   IP factor viscous term:                    1.0000e+00
 
@@ -137,34 +141,34 @@ Calculate error for all fields at time t = 3.5000e-01:
   Relative error (L2-norm): 5.30230e-11
 
 Calculate error for all fields at time t = 4.0000e-01:
-  Relative error (L2-norm): 5.31012e-11
+  Relative error (L2-norm): 5.31013e-11
 
 Calculate error for all fields at time t = 4.5000e-01:
-  Relative error (L2-norm): 5.31898e-11
+  Relative error (L2-norm): 5.31899e-11
 
 Calculate error for all fields at time t = 5.0000e-01:
-  Relative error (L2-norm): 5.32886e-11
+  Relative error (L2-norm): 5.32887e-11
 
 Calculate error for all fields at time t = 5.5000e-01:
-  Relative error (L2-norm): 5.33976e-11
+  Relative error (L2-norm): 5.33977e-11
 
 Calculate error for all fields at time t = 6.0000e-01:
-  Relative error (L2-norm): 5.35168e-11
+  Relative error (L2-norm): 5.35169e-11
 
 Calculate error for all fields at time t = 6.5000e-01:
-  Relative error (L2-norm): 5.36460e-11
+  Relative error (L2-norm): 5.36461e-11
 
 Calculate error for all fields at time t = 7.0000e-01:
-  Relative error (L2-norm): 5.37852e-11
+  Relative error (L2-norm): 5.37853e-11
 
 Calculate error for all fields at time t = 7.5000e-01:
   Relative error (L2-norm): 5.39345e-11
 
 Calculate error for all fields at time t = 8.0000e-01:
-  Relative error (L2-norm): 5.40934e-11
+  Relative error (L2-norm): 5.40935e-11
 
 Calculate error for all fields at time t = 8.5000e-01:
-  Relative error (L2-norm): 5.42621e-11
+  Relative error (L2-norm): 5.42622e-11
 
 Calculate error for all fields at time t = 9.0000e-01:
   Relative error (L2-norm): 5.44405e-11
@@ -173,4 +177,4 @@ Calculate error for all fields at time t = 9.5000e-01:
   Relative error (L2-norm): 5.46285e-11
 
 Calculate error for all fields at time t = 1.0000e+00:
-  Relative error (L2-norm): 5.48258e-11
+  Relative error (L2-norm): 5.48259e-11

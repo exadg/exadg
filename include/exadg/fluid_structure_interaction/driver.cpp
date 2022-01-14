@@ -103,7 +103,7 @@ Driver<dim, Number>::setup()
   Timer timer;
   timer.restart();
 
-  pcout << "Setting up fluid-structure interaction solver:" << std::endl;
+  pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
   /**************************************** STRUCTURE *****************************************/
   {

@@ -112,7 +112,7 @@ DriverPrecursor<dim, Number>::setup()
   Timer timer;
   timer.restart();
 
-  pcout << "Setting up incompressible Navier-Stokes solver:" << std::endl;
+  pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
   application->set_parameters_precursor();
   application->get_parameters_precursor().check(pcout);
