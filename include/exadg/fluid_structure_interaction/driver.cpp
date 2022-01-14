@@ -93,11 +93,7 @@ Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedD
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree_fluid,
-                           unsigned int const                            degree_structure,
-                           unsigned int const                            refine_space_fluid,
-                           unsigned int const                            refine_space_structure)
+Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
 
 {
   Timer timer;
@@ -120,7 +116,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     Timer timer_local;
     timer_local.restart();
 
-    application->set_parameters_structure(degree_structure, refine_space_structure);
+    application->set_parameters_structure();
     application->get_parameters_structure().check();
     // Some FSI specific Asserts
     AssertThrow(application->get_parameters_structure().pull_back_traction == true,
@@ -181,7 +177,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     timer_local.restart();
 
     // parameters fluid
-    application->set_parameters_fluid(degree_fluid, refine_space_fluid);
+    application->set_parameters_fluid();
     application->get_parameters_fluid().check(pcout);
     application->get_parameters_fluid().print(pcout,
                                               "List of parameters for incompressible flow solver:");
@@ -208,8 +204,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     // ALE
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      application->set_parameters_ale_poisson(
-        application->get_parameters_fluid().grid.mapping_degree);
+      application->set_parameters_ale_poisson();
       application->get_parameters_ale_poisson().check();
       AssertThrow(application->get_parameters_ale_poisson().right_hand_side == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));
@@ -233,8 +228,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      application->set_parameters_ale_elasticity(
-        application->get_parameters_fluid().grid.mapping_degree);
+      application->set_parameters_ale_elasticity();
       application->get_parameters_ale_elasticity().check();
       AssertThrow(application->get_parameters_ale_elasticity().body_force == false,
                   ExcMessage("Parameter does not make sense in context of FSI."));

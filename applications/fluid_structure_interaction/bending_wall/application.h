@@ -564,9 +564,8 @@ public:
     param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.grid.mapping_degree     = param.degree;
-    param.spatial_discretization  = SpatialDiscretization::CG;
+    param.degree                 = this->fluid_param.grid.mapping_degree;
+    param.spatial_discretization = SpatialDiscretization::CG;
 
     // SOLVER
     param.solver         = Poisson::Solver::FGMRES;
@@ -639,8 +638,7 @@ public:
     param.large_deformation    = false;
     param.pull_back_traction   = false;
 
-    param.grid.triangulation_type = TriangulationType::Distributed;
-    param.grid.mapping_degree     = param.degree;
+    param.degree = this->fluid_param.grid.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;

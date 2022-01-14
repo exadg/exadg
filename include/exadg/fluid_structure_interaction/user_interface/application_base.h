@@ -96,16 +96,22 @@ public:
   {
   }
 
-  // fluid
   void
-  set_parameters_fluid(unsigned int const degree, unsigned int const refine_space)
+  set_parameters_convergence_study(unsigned int const degree_fluid,
+                                   unsigned int const degree_structure,
+                                   unsigned int const refine_space_fluid,
+                                   unsigned int const refine_space_structure)
   {
-    this->fluid_param.degree_u             = degree;
-    this->fluid_param.grid.n_refine_global = refine_space;
+    // fluid
+    this->fluid_param.degree_u             = degree_fluid;
+    this->fluid_param.grid.n_refine_global = refine_space_fluid;
 
-    this->set_parameters_fluid();
+    // structure
+    this->structure_param.degree               = degree_structure;
+    this->structure_param.grid.n_refine_global = refine_space_structure;
   }
 
+  // fluid
   virtual void
   set_parameters_fluid() = 0;
 
@@ -124,12 +130,6 @@ public:
   // ALE
 
   // Poisson type mesh motion
-  void
-  set_parameters_ale_poisson(unsigned int const degree)
-  {
-    this->ale_poisson_param.degree = degree;
-  }
-
   virtual void
   set_parameters_ale_poisson() = 0;
 
@@ -140,12 +140,6 @@ public:
   set_field_functions_ale_poisson() = 0;
 
   // elasticity type mesh motion
-  void
-  set_parameters_ale_elasticity(unsigned int const degree)
-  {
-    this->ale_elasticity_param.degree = degree;
-  }
-
   virtual void
   set_parameters_ale_elasticity() = 0;
 
@@ -159,16 +153,6 @@ public:
   set_field_functions_ale_elasticity() = 0;
 
   // Structure
-  void
-  set_parameters_structure(unsigned int const degree, unsigned int const refine_space)
-  {
-    this->structure_param.degree = degree;
-
-    this->structure_param.grid.n_refine_global = refine_space;
-
-    this->set_parameters_structure();
-  }
-
   virtual void
   set_parameters_structure() = 0;
 

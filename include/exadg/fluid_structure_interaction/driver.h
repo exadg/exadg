@@ -248,11 +248,7 @@ public:
   add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree_fluid,
-        unsigned int const                            degree_structure,
-        unsigned int const                            refine_space_fluid,
-        unsigned int const                            refine_space_structure);
+  setup(std::shared_ptr<ApplicationBase<dim, Number>> application);
 
   void
   solve() const;
