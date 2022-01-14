@@ -46,6 +46,7 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm,
     iterations(0),
     solve_time(0.0)
 {
+  print_general_info<Number>(pcout, mpi_comm, is_test);
 }
 
 template<int dim, typename Number>
@@ -55,15 +56,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
   Timer timer;
   timer.restart();
 
-  print_exadg_header(pcout);
   pcout << "Setting up Poisson solver:" << std::endl;
-
-  if(not(is_test))
-  {
-    print_dealii_info(pcout);
-    print_matrixfree_info<Number>(pcout);
-  }
-  print_MPI_info(pcout, mpi_comm);
 
   application = app;
 

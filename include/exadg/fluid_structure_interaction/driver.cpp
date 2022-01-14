@@ -39,6 +39,8 @@ Driver<dim, Number>::Driver(std::string const & input_file,
     is_test(is_test),
     partitioned_iterations({0, 0})
 {
+  print_general_info<Number>(pcout, mpi_comm, is_test);
+
   dealii::ParameterHandler prm;
 
   add_parameters(prm, fsi_data);
@@ -99,15 +101,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
   Timer timer;
   timer.restart();
 
-  print_exadg_header(pcout);
   pcout << "Setting up fluid-structure interaction solver:" << std::endl;
-
-  if(not(is_test))
-  {
-    print_dealii_info(pcout);
-    print_matrixfree_info<Number>(pcout);
-  }
-  print_MPI_info(pcout, mpi_comm);
 
   application = app;
 
