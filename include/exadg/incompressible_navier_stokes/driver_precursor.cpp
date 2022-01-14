@@ -102,9 +102,7 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
-                                    unsigned int const degree_velocity,
-                                    unsigned int const refine_space)
+DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app)
 {
   Timer timer;
   timer.restart();
@@ -121,11 +119,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
 
   application = app;
 
-  application->set_parameters_precursor(degree_velocity, refine_space);
+  application->set_parameters_precursor();
   application->get_parameters_precursor().check(pcout);
   application->get_parameters_precursor().print(pcout, "List of parameters for precursor domain:");
 
-  application->set_parameters(degree_velocity, refine_space, 0 /* unused */, 0 /* unused */);
+  application->set_parameters();
   application->get_parameters().check(pcout);
   application->get_parameters().print(pcout, "List of parameters for actual domain:");
 

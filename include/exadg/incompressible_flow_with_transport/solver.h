@@ -108,11 +108,7 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(std::string const & input_file,
-    unsigned int const  degree,
-    unsigned int const  refine_space,
-    MPI_Comm const &    mpi_comm,
-    bool const          is_test)
+run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_test)
 {
   Timer timer;
   timer.restart();
@@ -123,7 +119,10 @@ run(std::string const & input_file,
   std::shared_ptr<FTI::ApplicationBase<dim, Number>> application =
     FTI::get_application<dim, Number>(input_file, mpi_comm);
 
-  driver->setup(application, degree, refine_space);
+  ExaDG::ResolutionParameters resolution(input_file);
+  application->set_parameters_convergence_study(resolution.degree, resolution.refine_space);
+
+  driver->setup(application);
 
   driver->solve();
 
@@ -166,21 +165,17 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters    general(input_file);
-  ExaDG::ResolutionParameters resolution(input_file);
-
-  unsigned int const degree       = resolution.degree;
-  unsigned int const refine_space = resolution.refine_space;
+  ExaDG::GeneralParameters general(input_file);
 
   // run the simulation
   if(general.dim == 2 && general.precision == "float")
-    ExaDG::run<2, float>(input_file, degree, refine_space, mpi_comm, general.is_test);
+    ExaDG::run<2, float>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 2 && general.precision == "double")
-    ExaDG::run<2, double>(input_file, degree, refine_space, mpi_comm, general.is_test);
+    ExaDG::run<2, double>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "float")
-    ExaDG::run<3, float>(input_file, degree, refine_space, mpi_comm, general.is_test);
+    ExaDG::run<3, float>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "double")
-    ExaDG::run<3, double>(input_file, degree, refine_space, mpi_comm, general.is_test);
+    ExaDG::run<3, double>(input_file, mpi_comm, general.is_test);
   else
     AssertThrow(false,
                 dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));

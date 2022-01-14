@@ -38,19 +38,19 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
-  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0), is_test(is_test)
+Driver<dim, Number>::Driver(MPI_Comm const & comm,
+                            bool const       is_test,
+                            bool const       is_throughput_study)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    is_test(is_test),
+    is_throughput_study(is_throughput_study)
 {
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree_velocity,
-                           unsigned int const                            refine_space,
-                           unsigned int const n_subdivisions_1d_hypercube,
-                           unsigned int const refine_time,
-                           bool const         is_throughput_study)
+Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
 {
   Timer timer;
   timer.restart();
@@ -67,10 +67,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->set_parameters(degree_velocity,
-                              refine_space,
-                              n_subdivisions_1d_hypercube,
-                              refine_time);
+  application->set_parameters();
   application->get_parameters().check(pcout);
   application->get_parameters().print(pcout, "List of parameters:");
 
@@ -95,7 +92,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     {
       // Note that the grid parameters in Poisson::Parameters are ignored since
       // the grid is created using the parameters specified in IncNS::Parameters
-      application->set_parameters_poisson(application->get_parameters().grid.mapping_degree);
+      application->set_parameters_poisson();
       application->get_parameters_poisson().check();
       application->get_parameters_poisson().print(
         pcout, "List of parameters for Poisson solver (moving mesh):");

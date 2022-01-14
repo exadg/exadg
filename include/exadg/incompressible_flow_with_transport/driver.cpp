@@ -43,9 +43,7 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree,
-                           unsigned int const                            refine_space)
+Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
 {
   Timer timer;
   timer.restart();
@@ -69,7 +67,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
-  application->set_parameters(degree, refine_space, 0 /* unused */, 0 /* unused */);
+  application->set_parameters();
   application->get_parameters().check(pcout);
 
   application->get_parameters().print(pcout, "List of parameters for fluid solver:");
@@ -77,7 +75,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // parameters scalar
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    application->set_parameters_scalar(degree, i);
+    application->set_parameters_scalar(i);
     application->get_parameters_scalar(i).check();
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,

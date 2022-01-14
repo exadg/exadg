@@ -698,6 +698,8 @@ public:
     this->poisson_param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
+    this->poisson_param.degree = this->param.grid.mapping_degree;
+
     this->poisson_param.spatial_discretization = SpatialDiscretization::CG;
     this->poisson_param.IP_factor              = 1.0e0;
 

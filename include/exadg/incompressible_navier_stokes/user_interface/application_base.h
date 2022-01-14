@@ -80,19 +80,23 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree,
-                 unsigned int const refine_space,
-                 unsigned int const n_subdivisions_1d_hypercube,
-                 unsigned int const refine_time)
+  set_parameters_throughput_study(unsigned int const degree,
+                                  unsigned int const refine_space,
+                                  unsigned int const n_subdivisions_1d_hypercube)
   {
-    this->param.degree_u = degree;
-
+    this->param.degree_u                         = degree;
     this->param.grid.n_refine_global             = refine_space;
     this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+  }
 
-    this->param.n_refine_time = refine_time;
-
-    this->set_parameters();
+  void
+  set_parameters_convergence_study(unsigned int const degree,
+                                   unsigned int const refine_space,
+                                   unsigned int const refine_time)
+  {
+    this->param.degree_u             = degree;
+    this->param.grid.n_refine_global = refine_space;
+    this->param.n_refine_time        = refine_time;
   }
 
   virtual void
@@ -121,14 +125,6 @@ public:
   }
 
   // Moving mesh (Poisson problem)
-  void
-  set_parameters_poisson(unsigned int const degree)
-  {
-    poisson_param.degree = degree;
-
-    this->set_parameters_poisson();
-  }
-
   virtual void
   set_parameters_poisson()
   {
@@ -223,12 +219,13 @@ public:
   }
 
   void
-  set_parameters_precursor(unsigned int const degree, unsigned int const refine_space)
+  set_parameters_precursor_study(unsigned int const degree, unsigned int const refine_space)
   {
+    this->param.degree_u             = degree;
+    this->param.grid.n_refine_global = refine_space;
+
     this->param_pre.degree_u             = degree;
     this->param_pre.grid.n_refine_global = refine_space;
-
-    this->set_parameters_precursor();
   }
 
   virtual void

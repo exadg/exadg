@@ -47,9 +47,7 @@ public:
   DriverPrecursor(MPI_Comm const & mpi_comm, bool const is_test);
 
   void
-  setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
-        unsigned int const                                     degree,
-        unsigned int const                                     refine_space);
+  setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application);
 
   void
   solve() const;

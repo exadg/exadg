@@ -75,16 +75,22 @@ public:
   {
   }
 
+  void
+  set_parameters_convergence_study(unsigned int const degree, unsigned int const refine_space)
+  {
+    // fluid
+    this->param.degree_u             = degree;
+    this->param.grid.n_refine_global = refine_space;
+
+    // scalar transport
+    for(unsigned int i = 0; i < scalar_param.size(); ++i)
+      this->scalar_param[i].degree = degree;
+  }
+
   unsigned int
   get_n_scalars()
   {
     return this->n_scalars;
-  }
-
-  void
-  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index = 0)
-  {
-    this->scalar_param[scalar_index].degree = degree;
   }
 
   virtual void
