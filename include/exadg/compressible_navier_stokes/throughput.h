@@ -81,16 +81,15 @@ run(ThroughputParameters const & throughput,
     MPI_Comm const &             mpi_comm,
     bool const                   is_test)
 {
-  std::shared_ptr<CompNS::Driver<dim, Number>> driver =
-    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, is_test, true);
-
   std::shared_ptr<CompNS::ApplicationBase<dim, Number>> application =
     CompNS::get_application<dim, Number>(input_file, mpi_comm);
 
   application->set_parameters_throughput_study(degree, refine_space, n_cells_1d);
 
-  driver->setup(application);
+  std::shared_ptr<CompNS::Driver<dim, Number>> driver =
+    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, is_test, true);
 
+  driver->setup(application);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,

@@ -119,9 +119,6 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<FSI::Driver<dim, Number>> driver =
-    std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, is_test);
-
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     FSI::get_application<dim, Number>(input_file, mpi_comm);
 
@@ -130,6 +127,9 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
                                                 resolution.degree_structure,
                                                 resolution.refine_fluid,
                                                 resolution.refine_structure);
+
+  std::shared_ptr<FSI::Driver<dim, Number>> driver =
+    std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, is_test);
 
   driver->setup(application);
 

@@ -113,14 +113,14 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
-    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, is_test);
-
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
     IncNS::get_application<dim, Number>(input_file, mpi_comm);
 
   ExaDG::ResolutionParameters resolution(input_file);
   application->set_parameters_precursor_study(resolution.degree, resolution.refine_space);
+
+  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
+    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, is_test);
 
   driver->setup(application);
 

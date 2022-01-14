@@ -88,13 +88,13 @@ run(ThroughputParameters const & throughput,
     MPI_Comm const &             mpi_comm,
     bool const                   is_test)
 {
-  std::shared_ptr<ConvDiff::Driver<dim, Number>> driver =
-    std::make_shared<ConvDiff::Driver<dim, Number>>(mpi_comm, is_test, true);
-
   std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> application =
     ConvDiff::get_application<dim, Number>(input_file, mpi_comm);
 
   application->set_parameters_throughput_study(degree, refine_space, n_cells_1d);
+
+  std::shared_ptr<ConvDiff::Driver<dim, Number>> driver =
+    std::make_shared<ConvDiff::Driver<dim, Number>>(mpi_comm, is_test, true);
 
   driver->setup(application);
 

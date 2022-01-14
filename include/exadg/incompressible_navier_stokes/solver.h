@@ -77,13 +77,13 @@ run(std::string const & input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::Driver<dim, Number>> driver =
-    std::make_shared<IncNS::Driver<dim, Number>>(mpi_comm, is_test, false);
-
   std::shared_ptr<IncNS::ApplicationBase<dim, Number>> application =
     IncNS::get_application<dim, Number>(input_file, mpi_comm);
 
   application->set_parameters_convergence_study(degree, refine_space, refine_time);
+
+  std::shared_ptr<IncNS::Driver<dim, Number>> driver =
+    std::make_shared<IncNS::Driver<dim, Number>>(mpi_comm, is_test, false);
 
   driver->setup(application);
 

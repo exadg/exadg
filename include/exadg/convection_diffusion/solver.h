@@ -83,20 +83,20 @@ run(std::string const & input_file,
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<ConvDiff::Driver<dim, Number>> solver =
-    std::make_shared<ConvDiff::Driver<dim, Number>>(mpi_comm, is_test, false);
-
   std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> application =
     ConvDiff::get_application<dim, Number>(input_file, mpi_comm);
 
   application->set_parameters_convergence_study(degree, refine_space, refine_time);
 
-  solver->setup(application);
+  std::shared_ptr<ConvDiff::Driver<dim, Number>> driver =
+    std::make_shared<ConvDiff::Driver<dim, Number>>(mpi_comm, is_test, false);
 
-  solver->solve();
+  driver->setup(application);
+
+  driver->solve();
 
   if(not(is_test))
-    solver->print_performance_results(timer.wall_time());
+    driver->print_performance_results(timer.wall_time());
 }
 
 } // namespace ExaDG

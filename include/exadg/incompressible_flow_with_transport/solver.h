@@ -113,14 +113,14 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<FTI::Driver<dim, Number>> driver =
-    std::make_shared<FTI::Driver<dim, Number>>(mpi_comm, is_test);
-
   std::shared_ptr<FTI::ApplicationBase<dim, Number>> application =
     FTI::get_application<dim, Number>(input_file, mpi_comm);
 
   ExaDG::ResolutionParameters resolution(input_file);
   application->set_parameters_convergence_study(resolution.degree, resolution.refine_space);
+
+  std::shared_ptr<FTI::Driver<dim, Number>> driver =
+    std::make_shared<FTI::Driver<dim, Number>>(mpi_comm, is_test);
 
   driver->setup(application);
 
