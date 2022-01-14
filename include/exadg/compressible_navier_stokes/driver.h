@@ -108,15 +108,10 @@ class Driver
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  Driver(MPI_Comm const & comm, bool const is_test);
+  Driver(MPI_Comm const & comm, bool const is_test, bool const is_throughput_study);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree,
-        unsigned int const                            refine_space,
-        unsigned int const                            n_subdivisions_1d_hypercube,
-        unsigned int const                            refine_time,
-        bool const                                    is_throughput_study);
+  setup(std::shared_ptr<ApplicationBase<dim, Number>> application);
 
   void
   solve();
@@ -124,6 +119,9 @@ public:
   void
   print_performance_results(double const total_time) const;
 
+  /*
+   * Throughput study
+   */
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
@@ -136,6 +134,9 @@ private:
 
   // do not print wall times if is_test
   bool const is_test;
+
+  // do not set up certain data structures (solver, postprocessor) in case of throughput study
+  bool const is_throughput_study;
 
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
