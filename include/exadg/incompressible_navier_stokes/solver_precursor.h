@@ -35,49 +35,13 @@
 
 // utilities
 #include <exadg/utilities/general_parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/incompressible_navier_stokes/user_interface/declare_get_application_precursor.h>
 
 namespace ExaDG
 {
-struct ResolutionParameters
-{
-  ResolutionParameters()
-  {
-  }
-
-  ResolutionParameters(const std::string & input_file)
-  {
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("SpatialResolution");
-      prm.add_parameter("Degree",
-                        degree,
-                        "Polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
-                        true);
-      prm.add_parameter("RefineSpace",
-                        refine_space,
-                        "Number of global, uniform mesh refinements.",
-                        Patterns::Integer(0,20),
-                        true);
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  unsigned int degree = 3;
-
-  unsigned int refine_space = 0;
-};
-
 void
 create_input_file(std::string const & input_file)
 {
