@@ -75,16 +75,14 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree,
-                 unsigned int const refine_space,
-                 unsigned int const n_subdivisions_1d_hypercube)
+  set_parameters_refinement_study(unsigned int const degree,
+                                  unsigned int const refine_space,
+                                  unsigned int const n_subdivisions_1d_hypercube)
   {
     this->param.degree = degree;
 
     this->param.grid.n_refine_global             = refine_space;
     this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
-
-    this->set_parameters();
   }
 
   virtual void

@@ -36,10 +36,13 @@ namespace Poisson
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
+Driver<dim, Number>::Driver(MPI_Comm const & comm,
+                            bool const       is_test,
+                            bool const       is_throughput_study)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
+    is_throughput_study(is_throughput_study),
     iterations(0),
     solve_time(0.0)
 {
@@ -47,11 +50,7 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree,
-                           unsigned int const                            refine_space,
-                           unsigned int const n_subdivisions_1d_hypercube,
-                           bool const         is_throughput_study)
+Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
 {
   Timer timer;
   timer.restart();
@@ -68,7 +67,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
   application = app;
 
-  application->set_parameters(degree, refine_space, n_subdivisions_1d_hypercube);
+  application->set_parameters();
   application->get_parameters().check();
   application->get_parameters().print(pcout, "List of parameters:");
 
