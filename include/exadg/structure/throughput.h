@@ -88,12 +88,14 @@ run(ThroughputParameters const & throughput,
     bool const                   is_test)
 {
   std::shared_ptr<Structure::Driver<dim, Number>> driver =
-    std::make_shared<Structure::Driver<dim, Number>>(mpi_comm, is_test);
+    std::make_shared<Structure::Driver<dim, Number>>(mpi_comm, is_test, true);
 
   std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
     Structure::get_application<dim, Number>(input_file, mpi_comm);
 
-  driver->setup(application, degree, refine_space, n_cells_1d, 0 /* refine time */, true);
+  application->set_parameters_throughput_study(degree, refine_space, n_cells_1d);
+
+  driver->setup(application);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,
