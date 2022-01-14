@@ -31,12 +31,14 @@ namespace FSI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(std::string const & input_file,
-                            MPI_Comm const &    comm,
-                            bool const          is_test)
+Driver<dim, Number>::Driver(std::string const &                           input_file,
+                            MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
     is_test(is_test),
+    application(app),
     partitioned_iterations({0, 0})
 {
   print_general_info<Number>(pcout, mpi_comm, is_test);
@@ -95,15 +97,13 @@ Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedD
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
+Driver<dim, Number>::setup()
 
 {
   Timer timer;
   timer.restart();
 
   pcout << "Setting up fluid-structure interaction solver:" << std::endl;
-
-  application = app;
 
   /**************************************** STRUCTURE *****************************************/
   {

@@ -87,9 +87,9 @@ run(ThroughputParameters const & throughput,
   application->set_parameters_throughput_study(degree, refine_space, n_cells_1d);
 
   std::shared_ptr<CompNS::Driver<dim, Number>> driver =
-    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, is_test, true);
+    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, application, is_test, true);
 
-  driver->setup(application);
+  driver->setup();
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,

@@ -83,9 +83,9 @@ run(std::string const & input_file,
   application->set_parameters_convergence_study(degree, refine_space, refine_time);
 
   std::shared_ptr<CompNS::Driver<dim, Number>> driver =
-    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, is_test, false);
+    std::make_shared<CompNS::Driver<dim, Number>>(mpi_comm, application, is_test, false);
 
-  driver->setup(application);
+  driver->setup();
 
   driver->solve();
 

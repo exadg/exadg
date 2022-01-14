@@ -44,10 +44,12 @@ template<int dim, typename Number>
 class DriverPrecursor
 {
 public:
-  DriverPrecursor(MPI_Comm const & mpi_comm, bool const is_test);
+  DriverPrecursor(MPI_Comm const &                                       mpi_comm,
+                  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
+                  bool const                                             is_test);
 
   void
-  setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application);
+  setup();
 
   void
   solve() const;

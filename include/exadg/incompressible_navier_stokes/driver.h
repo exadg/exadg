@@ -171,10 +171,13 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & comm, bool const is_test, bool const is_throughput_study);
+  Driver(MPI_Comm const &                              comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test,
+         bool const                                    is_throughput_study);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application);
+  setup();
 
   void
   solve() const;

@@ -120,9 +120,9 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   application->set_parameters_precursor_study(resolution.degree, resolution.refine_space);
 
   std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
-    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, is_test);
+    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, application, is_test);
 
-  driver->setup(application);
+  driver->setup();
 
   driver->solve();
 

@@ -36,13 +36,15 @@ namespace Poisson
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm,
-                            bool const       is_test,
-                            bool const       is_throughput_study)
+Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test,
+                            bool const                                    is_throughput_study)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
     is_throughput_study(is_throughput_study),
+    application(app),
     iterations(0),
     solve_time(0.0)
 {
@@ -51,14 +53,12 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm,
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
+Driver<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
   pcout << "Setting up Poisson solver:" << std::endl;
-
-  application = app;
 
   application->set_parameters();
   application->get_parameters().check();

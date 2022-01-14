@@ -83,9 +83,9 @@ run(std::vector<SolverResult> & results,
   application->set_parameters_refinement_study(degree, refine_space, n_cells_1d);
 
   std::shared_ptr<Poisson::Driver<dim, Number>> driver =
-    std::make_shared<Poisson::Driver<dim, Number>>(mpi_comm, is_test, false);
+    std::make_shared<Poisson::Driver<dim, Number>>(mpi_comm, application, is_test, false);
 
-  driver->setup(application);
+  driver->setup();
 
   driver->solve();
 

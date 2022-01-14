@@ -32,10 +32,13 @@ namespace FTI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
+Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
+    application(app),
     use_adaptive_time_stepping(false),
     N_time_steps(0)
 {
@@ -44,14 +47,12 @@ Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app)
+Driver<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
   pcout << "Setting up incompressible flow with scalar transport solver:" << std::endl;
-
-  application = app;
 
   unsigned int const n_scalars = application->get_n_scalars();
 

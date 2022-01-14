@@ -32,10 +32,14 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm, bool const is_test)
+DriverPrecursor<dim, Number>::DriverPrecursor(
+  MPI_Comm const &                                       comm,
+  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
+  bool const                                             is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
+    application(app),
     use_adaptive_time_stepping(false)
 {
   print_general_info<Number>(pcout, mpi_comm, is_test);
@@ -103,14 +107,12 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app)
+DriverPrecursor<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
   pcout << "Setting up incompressible Navier-Stokes solver:" << std::endl;
-
-  application = app;
 
   application->set_parameters_precursor();
   application->get_parameters_precursor().check(pcout);

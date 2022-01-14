@@ -242,13 +242,16 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Driver(std::string const & input_file, MPI_Comm const & comm, bool const is_test);
+  Driver(std::string const &                           input_file,
+         MPI_Comm const &                              comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test);
 
   static void
   add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application);
+  setup();
 
   void
   solve() const;

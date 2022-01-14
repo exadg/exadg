@@ -57,10 +57,12 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & mpi_comm, bool const is_test);
+  Driver(MPI_Comm const &                              mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application);
+  setup();
 
   void
   solve() const;
