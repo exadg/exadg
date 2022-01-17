@@ -82,12 +82,18 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter
 <tr class="memitem:a5f28d05f08966db8eda95beec8a14816"><td class="memItemLeft" align="right" valign="top"><a id="a5f28d05f08966db8eda95beec8a14816" name="a5f28d05f08966db8eda95beec8a14816"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBase</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a5f28d05f08966db8eda95beec8a14816"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8894aa74c27b1855ce32de327e430640"><td class="memItemLeft" align="right" valign="top"><a id="a8894aa74c27b1855ce32de327e430640" name="a8894aa74c27b1855ce32de327e430640"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters</b> (unsigned int const degree)=0</td></tr>
-<tr class="separator:a8894aa74c27b1855ce32de327e430640"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae797790f310623bcf4897e97f44c2582"><td class="memItemLeft" align="right" valign="top"><a id="ae797790f310623bcf4897e97f44c2582" name="ae797790f310623bcf4897e97f44c2582"></a>
-virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid</b> (<a class="el" href="structExaDG_1_1GridData.html">GridData</a> const &amp;grid_data)=0</td></tr>
-<tr class="separator:ae797790f310623bcf4897e97f44c2582"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d1a63eddffe74a6526f78af8ced393c"><td class="memItemLeft" align="right" valign="top"><a id="a6d1a63eddffe74a6526f78af8ced393c" name="a6d1a63eddffe74a6526f78af8ced393c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_throughput_study</b> (unsigned int const degree, unsigned int const refine_space, unsigned int const n_subdivisions_1d_hypercube)</td></tr>
+<tr class="separator:a6d1a63eddffe74a6526f78af8ced393c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e46cfc518de0c6e386ccc999b132fca"><td class="memItemLeft" align="right" valign="top"><a id="a8e46cfc518de0c6e386ccc999b132fca" name="a8e46cfc518de0c6e386ccc999b132fca"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_convergence_study</b> (unsigned int const degree, unsigned int const refine_space, unsigned int const refine_time)</td></tr>
+<tr class="separator:a8e46cfc518de0c6e386ccc999b132fca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb43733f5b6aa05c14dae5f267dfa0b3"><td class="memItemLeft" align="right" valign="top"><a id="afb43733f5b6aa05c14dae5f267dfa0b3" name="afb43733f5b6aa05c14dae5f267dfa0b3"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters</b> ()=0</td></tr>
+<tr class="separator:afb43733f5b6aa05c14dae5f267dfa0b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ff6abf77c774adbbeef4bec37cfac8c"><td class="memItemLeft" align="right" valign="top"><a id="a2ff6abf77c774adbbeef4bec37cfac8c" name="a2ff6abf77c774adbbeef4bec37cfac8c"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid</b> ()=0</td></tr>
+<tr class="separator:a2ff6abf77c774adbbeef4bec37cfac8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a41f334d4e93a3b96c6fdb09ee317533a"><td class="memItemLeft" align="right" valign="top"><a id="a41f334d4e93a3b96c6fdb09ee317533a" name="a41f334d4e93a3b96c6fdb09ee317533a"></a>
 virtual std::shared_ptr&lt; Function&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_mesh_movement_function</b> ()</td></tr>
 <tr class="separator:a41f334d4e93a3b96c6fdb09ee317533a"><td class="memSeparator" colspan="2">&#160;</td></tr>
