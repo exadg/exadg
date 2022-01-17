@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -25,7 +26,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Element type:                              DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
@@ -103,11 +106,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -116,7 +120,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            2
   Element type:                              DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
@@ -194,11 +200,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -207,7 +214,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
@@ -285,11 +294,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -298,7 +308,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            4
   Element type:                              DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
@@ -376,11 +388,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -389,7 +402,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            5
   Element type:                              DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
@@ -467,11 +482,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -480,7 +496,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            6
   Element type:                              DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
@@ -558,11 +576,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -571,7 +590,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            7
   Element type:                              DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00
@@ -649,11 +670,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -662,7 +684,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            8
   Element type:                              DG
   Polynomial degree:                         8
   IP factor:                                 1.0000e+00
@@ -740,11 +764,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -753,7 +778,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            9
   Element type:                              DG
   Polynomial degree:                         9
   IP factor:                                 1.0000e+00
@@ -831,11 +858,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -844,7 +872,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            10
   Element type:                              DG
   Polynomial degree:                         10
   IP factor:                                 1.0000e+00
@@ -922,11 +952,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -935,7 +966,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            11
   Element type:                              DG
   Polynomial degree:                         11
   IP factor:                                 1.0000e+00
@@ -1013,11 +1046,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -1026,7 +1060,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            12
   Element type:                              DG
   Polynomial degree:                         12
   IP factor:                                 1.0000e+00
@@ -1089,7 +1125,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.58639e-11
+  Relative error (L2-norm): 4.59370e-11
 
 
 
@@ -1104,11 +1140,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -1117,7 +1154,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            13
   Element type:                              DG
   Polynomial degree:                         13
   IP factor:                                 1.0000e+00
@@ -1180,7 +1219,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 4.25089e-11
+  Relative error (L2-norm): 4.20570e-11
 
 
 
@@ -1195,11 +1234,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -1208,7 +1248,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            14
   Element type:                              DG
   Polynomial degree:                         14
   IP factor:                                 1.0000e+00
@@ -1271,7 +1313,7 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 2.45105e-12
+  Relative error (L2-norm): 2.25851e-12
 
 
 
@@ -1286,11 +1328,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -1299,7 +1342,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            15
   Element type:                              DG
   Polynomial degree:                         15
   IP factor:                                 1.0000e+00
@@ -1362,4 +1407,4 @@ Calculate error for all fields for initial data:
   Relative error (L2-norm): 1.00000e+00
 
 Calculate error for all fields for solution data:
-  Relative error (L2-norm): 1.66421e-12
+  Relative error (L2-norm): 1.52274e-12

@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -34,6 +35,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      0
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -43,7 +45,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -129,11 +133,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -151,6 +156,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      1
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -160,7 +166,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -246,11 +254,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -268,6 +277,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      2
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -277,7 +287,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -363,11 +375,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -385,6 +398,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      3
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -394,7 +408,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -480,11 +496,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -502,6 +519,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      4
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -511,7 +529,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -597,11 +617,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -619,6 +640,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      5
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -628,7 +650,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -714,11 +738,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -736,6 +761,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      6
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -745,7 +771,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -831,11 +859,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -853,6 +882,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      7
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -862,7 +892,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:
@@ -948,11 +980,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up elasticity solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up elasticity solver:
 
 List of parameters:
 
@@ -970,6 +1003,7 @@ Temporal discretization:
   Start time:                                0.0000e+00
   End time:                                  1.0000e+00
   Max. number of time steps:                 4294967295
+  Temporal refinements:                      8
   Time integration type:                     BossakAlpha
   Spectral radius:                           8.0000e-01
   Solver information:
@@ -979,7 +1013,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         3
 
 Solver:

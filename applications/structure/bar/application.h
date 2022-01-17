@@ -210,7 +210,7 @@ public:
   double const density = 0.001;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     this->param.problem_type         = ProblemType::Steady;
     this->param.body_force           = use_volume_force;
@@ -227,9 +227,8 @@ public:
     this->param.spectral_radius                      = 0.8;
     this->param.solver_info_data.interval_time_steps = 2;
 
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping            = MappingType::Affine;
-    this->param.degree             = degree;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 1;
 
     this->param.load_increment            = 0.1;
     this->param.adjust_load_increment     = false;
@@ -250,10 +249,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     // left-bottom-front and right-top-back point
     Point<dim> p1, p2;
@@ -292,7 +291,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

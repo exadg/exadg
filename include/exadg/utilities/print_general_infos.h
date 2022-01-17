@@ -132,6 +132,22 @@ print_grid_info(ConditionalOStream const & pcout, Grid<dim, Number> const & grid
   if(mapping_q_generic.get() != 0)
     print_parameter(pcout, "Mapping degree", mapping_q_generic->get_degree());
 }
+
+template<typename Number>
+inline void
+print_general_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm, bool const is_test)
+{
+  print_exadg_header(pcout);
+
+  if(not(is_test))
+  {
+    print_dealii_info(pcout);
+    print_matrixfree_info<Number>(pcout);
+  }
+
+  print_MPI_info(pcout, mpi_comm);
+}
+
 } // namespace ExaDG
 
 #endif /* INCLUDE_EXADG_UTILITIES_PRINT_GENERAL_INFOS_H_ */

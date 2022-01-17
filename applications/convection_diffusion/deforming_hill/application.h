@@ -100,7 +100,7 @@ public:
   double const end_time   = 1.0; // increase end_time for larger deformations of the hill
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type              = ProblemType::Unsteady;
@@ -127,9 +127,8 @@ public:
     this->param.exponent_fe_degree_convection = 1.5;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.mapping            = MappingType::Affine;
-    this->param.degree             = degree;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = 1;
 
     // convective term
     this->param.numerical_flux_convective_operator =
@@ -151,14 +150,14 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     GridGenerator::hyper_cube(*grid->triangulation, left, right);
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

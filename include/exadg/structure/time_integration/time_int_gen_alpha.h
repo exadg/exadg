@@ -58,7 +58,6 @@ private:
 public:
   TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_,
                   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-                  unsigned int const                           refine_time_,
                   Parameters const &                           param_,
                   MPI_Comm const &                             mpi_comm_,
                   bool const                                   is_test_);

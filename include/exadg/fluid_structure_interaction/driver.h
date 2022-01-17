@@ -35,7 +35,6 @@
 // grid
 #include <exadg/grid/grid_motion_elasticity.h>
 #include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 
 // IncNS
@@ -243,17 +242,16 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  Driver(std::string const & input_file, MPI_Comm const & comm, bool const is_test);
+  Driver(std::string const &                           input_file,
+         MPI_Comm const &                              comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test);
 
   static void
   add_parameters(dealii::ParameterHandler & prm, PartitionedData & fsi_data);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree_fluid,
-        unsigned int const                            degree_structure,
-        unsigned int const                            refine_space_fluid,
-        unsigned int const                            refine_space_structure);
+  setup();
 
   void
   solve() const;

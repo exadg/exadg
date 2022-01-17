@@ -29,34 +29,12 @@
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/grid/grid_motion_interface.h>
 
 namespace ExaDG
 {
 using namespace dealii;
-
-struct GridData
-{
-  GridData()
-    : triangulation_type(TriangulationType::Distributed),
-      n_refine_global(0),
-      n_subdivisions_1d_hypercube(1),
-      mapping_degree(1)
-  {
-  }
-
-  TriangulationType triangulation_type;
-
-  unsigned int n_refine_global;
-
-  // only relevant for hypercube geometry/mesh
-  unsigned int n_subdivisions_1d_hypercube;
-
-  unsigned int mapping_degree;
-
-  // TODO: path to a grid file
-  // std::string grid_file;
-};
 
 template<int dim, typename Number>
 class Grid

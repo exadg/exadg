@@ -79,11 +79,31 @@ public:
   {
   }
 
+  void
+  set_parameters_throughput_study(unsigned int const degree,
+                                  unsigned int const refine_space,
+                                  unsigned int const n_subdivisions_1d_hypercube)
+  {
+    this->param.degree_u                         = degree;
+    this->param.grid.n_refine_global             = refine_space;
+    this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
+  }
+
+  void
+  set_parameters_convergence_study(unsigned int const degree,
+                                   unsigned int const refine_space,
+                                   unsigned int const refine_time)
+  {
+    this->param.degree_u             = degree;
+    this->param.grid.n_refine_global = refine_space;
+    this->param.n_refine_time        = refine_time;
+  }
+
   virtual void
-  set_parameters(unsigned int const degree) = 0;
+  set_parameters() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) = 0;
+  create_grid() = 0;
 
   virtual void
   set_boundary_descriptor() = 0;
@@ -106,10 +126,8 @@ public:
 
   // Moving mesh (Poisson problem)
   virtual void
-  set_parameters_poisson(unsigned int const degree)
+  set_parameters_poisson()
   {
-    (void)degree;
-
     AssertThrow(false,
                 ExcMessage("Has to be overwritten by derived classes in order "
                            "to use Poisson solver for mesh movement."));
@@ -200,11 +218,21 @@ public:
   {
   }
 
+  void
+  set_parameters_precursor_study(unsigned int const degree, unsigned int const refine_space)
+  {
+    this->param.degree_u             = degree;
+    this->param.grid.n_refine_global = refine_space;
+
+    this->param_pre.degree_u             = degree;
+    this->param_pre.grid.n_refine_global = refine_space;
+  }
+
   virtual void
-  set_parameters_precursor(unsigned int const degree) = 0;
+  set_parameters_precursor() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor(GridData const & grid_data) = 0;
+  create_grid_precursor() = 0;
 
   virtual void
   set_boundary_descriptor_precursor() = 0;

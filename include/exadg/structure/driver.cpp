@@ -37,48 +37,33 @@ namespace Structure
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
-  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0), is_test(is_test)
+Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test,
+                            bool const                                    is_throughput_study)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    is_test(is_test),
+    is_throughput_study(is_throughput_study),
+    application(app)
 {
+  print_general_info<Number>(pcout, mpi_comm, is_test);
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree,
-                           unsigned int const                            refine_space,
-                           unsigned int const n_subdivisions_1d_hypercube,
-                           unsigned int const refine_time,
-                           bool const         is_throughput_study)
+Driver<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
-  print_exadg_header(pcout);
-  pcout << "Setting up elasticity solver:" << std::endl;
+  pcout << std::endl << "Setting up elasticity solver:" << std::endl;
 
-  if(not(is_test))
-  {
-    print_dealii_info(pcout);
-    print_matrixfree_info<Number>(pcout);
-  }
-  print_MPI_info(pcout, mpi_comm);
-
-  application = app;
-
-  application->set_parameters(degree);
+  application->set_parameters();
   application->get_parameters().check();
   application->get_parameters().print(pcout, "List of parameters:");
 
-  // grid
-  GridData grid_data;
-  grid_data.triangulation_type          = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global             = refine_space;
-  grid_data.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
-  grid_data.mapping_degree =
-    get_mapping_degree(application->get_parameters().mapping, application->get_parameters().degree);
-
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   // boundary conditions
@@ -123,7 +108,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
       time_integrator = std::make_shared<TimeIntGenAlpha<dim, Number>>(
-        pde_operator, postprocessor, refine_time, application->get_parameters(), mpi_comm, is_test);
+        pde_operator, postprocessor, application->get_parameters(), mpi_comm, is_test);
       time_integrator->setup(application->get_parameters().restarted_simulation);
     }
     else if(application->get_parameters().problem_type == ProblemType::Steady)

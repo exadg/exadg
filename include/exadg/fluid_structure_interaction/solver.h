@@ -114,25 +114,24 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(std::string const &          input_file,
-    ResolutionParameters const & resolution,
-    MPI_Comm const &             mpi_comm,
-    bool const                   is_test)
+run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_test)
 {
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<FSI::Driver<dim, Number>> driver =
-    std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, is_test);
-
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
     FSI::get_application<dim, Number>(input_file, mpi_comm);
 
-  driver->setup(application,
-                resolution.degree_fluid,
-                resolution.degree_structure,
-                resolution.refine_fluid,
-                resolution.refine_structure);
+  ExaDG::ResolutionParameters resolution(input_file);
+  application->set_parameters_convergence_study(resolution.degree_fluid,
+                                                resolution.degree_structure,
+                                                resolution.refine_fluid,
+                                                resolution.refine_structure);
+
+  std::shared_ptr<FSI::Driver<dim, Number>> driver =
+    std::make_shared<FSI::Driver<dim, Number>>(input_file, mpi_comm, application, is_test);
+
+  driver->setup();
 
   driver->solve();
 
@@ -175,18 +174,17 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters    general(input_file);
-  ExaDG::ResolutionParameters resolution(input_file);
+  ExaDG::GeneralParameters general(input_file);
 
   // run the simulation
   if(general.dim == 2 && general.precision == "float")
-    ExaDG::run<2, float>(input_file, resolution, mpi_comm, general.is_test);
+    ExaDG::run<2, float>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 2 && general.precision == "double")
-    ExaDG::run<2, double>(input_file, resolution, mpi_comm, general.is_test);
+    ExaDG::run<2, double>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "float")
-    ExaDG::run<3, float>(input_file, resolution, mpi_comm, general.is_test);
+    ExaDG::run<3, float>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "double")
-    ExaDG::run<3, double>(input_file, resolution, mpi_comm, general.is_test);
+    ExaDG::run<3, double>(input_file, mpi_comm, general.is_test);
   else
     AssertThrow(false,
                 dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));

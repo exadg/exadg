@@ -62,27 +62,25 @@ public:
   }
 
   void
-  set_parameters_fluid(unsigned int const degree) final
+  set_parameters_fluid() final
   {
     using namespace IncNS;
 
     Parameters & param = this->fluid_param;
 
-    // Here, set all parameters differing from their default values as initialized in
-    // IncNS::Parameters::Parameters()
-
-    param.degree_u = degree;
+    // Set parameters here
+    (void)param;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & grid_data) final
+  create_grid_fluid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->fluid_param.grid, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
 
     return grid;
   }
@@ -135,16 +133,14 @@ public:
   }
 
   void
-  set_parameters_ale_poisson(unsigned int const degree) final
+  set_parameters_ale_poisson() final
   {
     using namespace Poisson;
 
     Parameters & param = this->ale_poisson_param;
 
-    // Here, set all parameters differing from their default values as initialized in
-    // Poisson::Parameters::Parameters()
-
-    param.degree = degree;
+    // Set parameters here
+    (void)param;
   }
 
   void
@@ -172,13 +168,14 @@ public:
   }
 
   void
-  set_parameters_ale_elasticity(unsigned int const degree) final
+  set_parameters_ale_elasticity() final
   {
     using namespace Structure;
 
     Parameters & param = this->ale_elasticity_param;
 
-    param.degree = degree;
+    // Set parameters here
+    (void)param;
   }
 
   void
@@ -198,24 +195,25 @@ public:
 
   // Structure
   void
-  set_parameters_structure(unsigned int const degree) final
+  set_parameters_structure() final
   {
     using namespace Structure;
 
     Parameters & param = this->structure_param;
 
-    param.degree = degree;
+    // Set parameters here
+    (void)param;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & grid_data) final
+  create_grid_structure() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->structure_param.grid, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
 
     return grid;
   }

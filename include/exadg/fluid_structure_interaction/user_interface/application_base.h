@@ -96,12 +96,27 @@ public:
   {
   }
 
+  void
+  set_parameters_convergence_study(unsigned int const degree_fluid,
+                                   unsigned int const degree_structure,
+                                   unsigned int const refine_space_fluid,
+                                   unsigned int const refine_space_structure)
+  {
+    // fluid
+    this->fluid_param.degree_u             = degree_fluid;
+    this->fluid_param.grid.n_refine_global = refine_space_fluid;
+
+    // structure
+    this->structure_param.degree               = degree_structure;
+    this->structure_param.grid.n_refine_global = refine_space_structure;
+  }
+
   // fluid
   virtual void
-  set_parameters_fluid(unsigned int const degree) = 0;
+  set_parameters_fluid() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & grid_data) = 0;
+  create_grid_fluid() = 0;
 
   virtual void
   set_boundary_descriptor_fluid() = 0;
@@ -116,7 +131,7 @@ public:
 
   // Poisson type mesh motion
   virtual void
-  set_parameters_ale_poisson(unsigned int const degree) = 0;
+  set_parameters_ale_poisson() = 0;
 
   virtual void
   set_boundary_descriptor_ale_poisson() = 0;
@@ -126,7 +141,7 @@ public:
 
   // elasticity type mesh motion
   virtual void
-  set_parameters_ale_elasticity(unsigned int const degree) = 0;
+  set_parameters_ale_elasticity() = 0;
 
   virtual void
   set_boundary_descriptor_ale_elasticity() = 0;
@@ -139,10 +154,10 @@ public:
 
   // Structure
   virtual void
-  set_parameters_structure(unsigned int const degree) = 0;
+  set_parameters_structure() = 0;
 
   virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & grid_data) = 0;
+  create_grid_structure() = 0;
 
   virtual void
   set_boundary_descriptor_structure() = 0;

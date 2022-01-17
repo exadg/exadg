@@ -47,7 +47,6 @@ private:
 public:
   TimeIntBDFDualSplitting(std::shared_ptr<Operator>                       pde_operator_in,
                           Parameters const &                              param_in,
-                          unsigned int const                              refine_steps_time_in,
                           MPI_Comm const &                                mpi_comm_in,
                           bool const                                      is_test_in,
                           std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);

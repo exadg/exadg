@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -25,7 +26,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         1
   IP factor:                                 1.0000e+00
@@ -103,11 +106,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -116,7 +120,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         2
   IP factor:                                 1.0000e+00
@@ -194,11 +200,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -207,7 +214,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         3
   IP factor:                                 1.0000e+00
@@ -285,11 +294,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -298,7 +308,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         4
   IP factor:                                 1.0000e+00
@@ -376,11 +388,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -389,7 +402,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         5
   IP factor:                                 1.0000e+00
@@ -467,11 +482,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -480,7 +496,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         6
   IP factor:                                 1.0000e+00
@@ -558,11 +576,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up Poisson solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up Poisson solver:
 
 List of parameters:
 
@@ -571,7 +590,9 @@ Mathematical model:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Cubic
+  Global refinements:                        2
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Element type:                              DG
   Polynomial degree:                         7
   IP factor:                                 1.0000e+00

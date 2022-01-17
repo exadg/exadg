@@ -55,6 +55,7 @@ Parameters::Parameters()
     calculation_of_time_step_size(TimeStepCalculation::Undefined),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
+    n_refine_time(0),
     max_velocity(-1.),
     cfl_number(-1.),
     diffusion_number(-1.),
@@ -68,8 +69,7 @@ Parameters::Parameters()
     // SPATIAL DISCRETIZATION
 
     // triangulation
-    triangulation_type(TriangulationType::Undefined),
-    mapping(MappingType::Affine),
+    grid(GridData()),
     degree(1),
     n_q_points_convective(QuadratureRule::Standard),
     n_q_points_viscous(QuadratureRule::Standard),
@@ -124,8 +124,7 @@ Parameters::check() const
 
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("parameter must be defined"));
+  grid.check();
 
   AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
 
@@ -215,6 +214,8 @@ Parameters::print_parameters_temporal_discretization(ConditionalOStream const & 
   // maximum number of time steps
   print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
 
+  print_parameter(pcout, "Temporal refinements", n_refine_time);
+
 
   // here we do not print quantities such as cfl_number, diffusion_number, time_step_size
   // because this is done by the time integration scheme (or the functions that
@@ -232,9 +233,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
-  print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
-
-  print_parameter(pcout, "Mapping", enum_to_string(mapping));
+  grid.print(pcout);
 
   print_parameter(pcout, "Polynomial degree", degree);
 

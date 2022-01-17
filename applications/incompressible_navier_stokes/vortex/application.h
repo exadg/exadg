@@ -290,7 +290,7 @@ public:
   bool const ALE = true;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type                = ProblemType::Unsteady;
@@ -340,10 +340,9 @@ public:
 
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.degree_u           = degree;
-    this->param.degree_p           = DegreePressure::MixedOrder;
-    this->param.mapping            = MappingType::Isoparametric;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     this->param.upwind_factor = 1.0;
@@ -482,10 +481,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     if(ALE)
     {
@@ -631,7 +630,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }
@@ -691,7 +690,7 @@ public:
   }
 
   void
-  set_parameters_poisson(unsigned int const degree) final
+  set_parameters_poisson() final
   {
     using namespace Poisson;
 
@@ -699,9 +698,8 @@ public:
     this->poisson_param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    this->poisson_param.triangulation_type     = TriangulationType::Distributed;
-    this->poisson_param.mapping                = MappingType::Affine; // initial mesh is a hypercube
-    this->poisson_param.degree                 = degree;
+    this->poisson_param.degree = this->param.grid.mapping_degree;
+
     this->poisson_param.spatial_discretization = SpatialDiscretization::CG;
     this->poisson_param.IP_factor              = 1.0e0;
 

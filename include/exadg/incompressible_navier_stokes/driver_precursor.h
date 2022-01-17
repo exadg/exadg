@@ -23,7 +23,6 @@
 #define INCLUDE_EXADG_INCOMPRESSIBLE_NAVIER_STOKES_DRIVER_PRECURSOR_H_
 
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
@@ -45,12 +44,12 @@ template<int dim, typename Number>
 class DriverPrecursor
 {
 public:
-  DriverPrecursor(MPI_Comm const & mpi_comm, bool const is_test);
+  DriverPrecursor(MPI_Comm const &                                       mpi_comm,
+                  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
+                  bool const                                             is_test);
 
   void
-  setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application,
-        unsigned int const                                     degree,
-        unsigned int const                                     refine_space);
+  setup();
 
   void
   solve() const;

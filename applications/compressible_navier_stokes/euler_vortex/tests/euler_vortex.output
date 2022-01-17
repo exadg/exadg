@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up compressible Navier-Stokes solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up compressible Navier-Stokes solver:
 
 List of parameters:
 
@@ -37,6 +38,7 @@ Temporal discretization:
   Temporal discretization method:            ExplRK3Stage7Reg2
   Calculation of time step size:             CFL
   Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
   Restarted simulation:                      false
   Restart:
   Write restart:                             false
@@ -47,7 +49,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        4
+  Subdivisions hypercube:                    1
+  Mapping degree:                            7
   Polynomial degree:                         7
   Quadrature rule convective term:           Standard
   Quadrature rule viscous term:              Standard

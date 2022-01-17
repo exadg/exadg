@@ -27,6 +27,7 @@
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/incompressible_navier_stokes/user_interface/enum_types.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
@@ -244,6 +245,9 @@ public:
   // maximum number of time steps
   unsigned int max_number_of_time_steps;
 
+  // number of refinements for temporal discretization
+  unsigned int n_refine_time;
+
   // order of BDF time integration scheme and extrapolation scheme
   unsigned int order_time_integrator;
 
@@ -282,11 +286,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // triangulation type
-  TriangulationType triangulation_type;
-
-  // Type of mapping (polynomial degree) use for geometry approximation
-  MappingType mapping;
+  // Grid data
+  GridData grid;
 
   // Polynomial degree of velocity shape functions
   unsigned int degree_u;

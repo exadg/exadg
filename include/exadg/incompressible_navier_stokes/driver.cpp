@@ -38,48 +38,34 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
-  : mpi_comm(comm), pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0), is_test(is_test)
+Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test,
+                            bool const                                    is_throughput_study)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    is_test(is_test),
+    is_throughput_study(is_throughput_study),
+    application(app)
 {
+  print_general_info<Number>(pcout, mpi_comm, is_test);
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree_velocity,
-                           unsigned int const                            refine_space,
-                           unsigned int const n_subdivisions_1d_hypercube,
-                           unsigned int const refine_time,
-                           bool const         is_throughput_study)
+Driver<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
-  print_exadg_header(pcout);
-  pcout << "Setting up incompressible Navier-Stokes solver:" << std::endl;
+  pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  if(not(is_test))
-  {
-    print_dealii_info(pcout);
-    print_matrixfree_info<Number>(pcout);
-  }
-  print_MPI_info(pcout, mpi_comm);
-
-  application = app;
-
-  application->set_parameters(degree_velocity);
+  application->set_parameters();
   application->get_parameters().check(pcout);
   application->get_parameters().print(pcout, "List of parameters:");
 
   // grid
-  GridData grid_data;
-  grid_data.triangulation_type          = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global             = refine_space;
-  grid_data.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
-  grid_data.mapping_degree              = get_mapping_degree(application->get_parameters().mapping,
-                                                application->get_parameters().degree_u);
-
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   if(application->get_parameters().ale_formulation) // moving mesh
@@ -90,14 +76,16 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
 
       grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
         grid->mapping,
-        grid_data.mapping_degree,
+        application->get_parameters().grid.mapping_degree,
         *grid->triangulation,
         mesh_motion,
         application->get_parameters().start_time);
     }
     else if(application->get_parameters().mesh_movement_type == MeshMovementType::Poisson)
     {
-      application->set_parameters_poisson(grid_data.mapping_degree);
+      // Note that the grid parameters in Poisson::Parameters are ignored since
+      // the grid is created using the parameters specified in IncNS::Parameters
+      application->set_parameters_poisson();
       application->get_parameters_poisson().check();
       application->get_parameters_poisson().print(
         pcout, "List of parameters for Poisson solver (moving mesh):");
@@ -110,11 +98,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
       AssertThrow(application->get_parameters_poisson().right_hand_side == false,
                   ExcMessage("Poisson problem is used for mesh movement. Hence, "
                              "the right-hand side has to be zero for the Poisson problem."));
-
-      AssertThrow(application->get_parameters_poisson().mapping ==
-                    application->get_parameters().mapping,
-                  ExcMessage("Use the same mapping degree for Poisson mesh motion problem "
-                             "as for actual application problem."));
 
       // initialize Poisson operator
       poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(
@@ -211,7 +194,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     if(application->get_parameters().solver_type == SolverType::Unsteady)
     {
       time_integrator = create_time_integrator<dim, Number>(
-        pde_operator, application->get_parameters(), refine_time, mpi_comm, is_test, postprocessor);
+        pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
     }
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {

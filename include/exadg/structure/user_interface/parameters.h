@@ -24,6 +24,7 @@
 
 // ExaDG
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/newton/newton_solver_data.h>
 #include <exadg/solvers_and_preconditioners/solvers/solver_data.h>
@@ -137,6 +138,9 @@ public:
   double       time_step_size;
   unsigned int max_number_of_time_steps;
 
+  // number of refinements for temporal discretization
+  unsigned int n_refine_time;
+
   GenAlphaType gen_alpha_type;
 
   // spectral radius rho_infty for generalized alpha time integration scheme
@@ -170,11 +174,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // triangulation type
-  TriangulationType triangulation_type;
-
-  // Type of mapping (polynomial degree) use for geometry approximation
-  MappingType mapping;
+  // Grid data
+  GridData grid;
 
   // polynomial degree of shape functions
   unsigned int degree;

@@ -37,7 +37,6 @@ namespace ExaDG
  */
 enum class TriangulationType
 {
-  Undefined,
   Serial,
   Distributed,
   FullyDistributed

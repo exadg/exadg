@@ -28,6 +28,7 @@
 // ExaDG
 #include <exadg/convection_diffusion/user_interface/enum_types.h>
 #include <exadg/grid/enum_types.h>
+#include <exadg/grid/grid_data.h>
 #include <exadg/solvers_and_preconditioners/multigrid/multigrid_parameters.h>
 #include <exadg/solvers_and_preconditioners/preconditioners/enum_types.h>
 #include <exadg/solvers_and_preconditioners/solvers/enum_types.h>
@@ -185,6 +186,9 @@ public:
   // maximum number of time steps
   unsigned int max_number_of_time_steps;
 
+  // number of refinements for temporal discretization
+  unsigned int n_refine_time;
+
   // cfl number ("global" CFL number, can be larger than critical CFL in case
   // of operator-integration-factor splitting)
   double cfl;
@@ -227,11 +231,8 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // triangulation type
-  TriangulationType triangulation_type;
-
-  // Type of mapping (polynomial degree) use for geometry approximation
-  MappingType mapping;
+  // Grid data
+  GridData grid;
 
   // polynomial degree of shape functions
   unsigned int degree;

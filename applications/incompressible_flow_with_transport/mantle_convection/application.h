@@ -133,7 +133,7 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     using namespace IncNS;
 
@@ -171,10 +171,9 @@ public:
     this->param.solver_info_data.interval_time = output_interval_time;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.degree_u           = degree;
-    this->param.degree_p           = DegreePressure::MixedOrder;
-    this->param.mapping            = MappingType::Isoparametric;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -268,7 +267,7 @@ public:
   }
 
   void
-  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 
@@ -304,9 +303,8 @@ public:
     param.solver_info_data.interval_time = output_interval_time;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type = TriangulationType::Distributed;
-    param.mapping            = MappingType::Isoparametric;
-    param.degree             = degree;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree;
 
     // convective term
     param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
@@ -334,10 +332,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     GridGenerator::hyper_shell(*grid->triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
 
@@ -359,7 +357,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

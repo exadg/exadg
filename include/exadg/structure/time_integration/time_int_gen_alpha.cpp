@@ -35,7 +35,6 @@ template<int dim, typename Number>
 TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
   std::shared_ptr<Interface::Operator<Number>> operator_,
   std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
-  unsigned int const                           refine_steps_time_,
   Parameters const &                           param_,
   MPI_Comm const &                             mpi_comm_,
   bool const                                   is_test_)
@@ -49,7 +48,7 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
                                 is_test_),
     pde_operator(operator_),
     postprocessor(postprocessor_),
-    refine_steps_time(refine_steps_time_),
+    refine_steps_time(param_.n_refine_time),
     param(param_),
     mpi_comm(mpi_comm_),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),

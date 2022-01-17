@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up scalar convection-diffusion solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up scalar convection-diffusion solver:
 
 List of parameters:
 
@@ -35,6 +36,7 @@ Physical quantities:
 Temporal discretization:
   Temporal discretization method:            BDF
   Maximum number of time steps:              4294967295
+  Temporal refinements:                      0
   Order of time integrator:                  2
   Start with low order method:               false
   Treatment of convective term:              Implicit
@@ -46,7 +48,9 @@ Temporal discretization:
 
 Spatial Discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Affine
+  Global refinements:                        3
+  Subdivisions hypercube:                    1
+  Mapping degree:                            1
   Polynomial degree:                         4
   Numerical flux convective term:            LaxFriedrichsFlux
 

@@ -25,7 +25,6 @@
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/grid_motion_analytical.h>
 #include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/incompressible_navier_stokes/postprocessor/postprocessor_base.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_coupled.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/operator_dual_splitting.h>
@@ -172,15 +171,13 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & comm, bool const is_test);
+  Driver(MPI_Comm const &                              comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test,
+         bool const                                    is_throughput_study);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree,
-        unsigned int const                            refine_space,
-        unsigned int const                            n_subdivisions_1d_hypercube,
-        unsigned int const                            refine_time,
-        bool const                                    is_throughput_study);
+  setup();
 
   void
   solve() const;
@@ -188,6 +185,9 @@ public:
   void
   print_performance_results(double const total_time) const;
 
+  /*
+   * Throughput study
+   */
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
@@ -205,6 +205,9 @@ private:
 
   // do not print wall times if is_test
   bool const is_test;
+
+  // do not set up certain data structures (solver, postprocessor) in case of throughput study
+  bool const is_throughput_study;
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;

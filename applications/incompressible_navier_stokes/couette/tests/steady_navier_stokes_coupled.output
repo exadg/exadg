@@ -12,11 +12,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up incompressible Navier-Stokes solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
 
 List of parameters:
 
@@ -37,7 +38,9 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            2
   Polynomial degree velocity:                2
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -162,10 +165,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 7.86914e-13
+  Absolute error (L2-norm): 7.85775e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.13094e-11
+  Absolute error (L2-norm): 2.12728e-11
 
 
 
@@ -180,11 +183,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up incompressible Navier-Stokes solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
 
 List of parameters:
 
@@ -205,7 +209,9 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            3
   Polynomial degree velocity:                3
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -330,10 +336,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 5.91330e-13
+  Absolute error (L2-norm): 6.04320e-13
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 1.15169e-11
+  Absolute error (L2-norm): 1.17284e-11
 
 
 
@@ -348,11 +354,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up incompressible Navier-Stokes solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
 
 List of parameters:
 
@@ -373,7 +380,9 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            4
   Polynomial degree velocity:                4
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -498,10 +507,10 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 3.21295e-14
+  Absolute error (L2-norm): 3.26383e-14
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 8.70634e-13
+  Absolute error (L2-norm): 8.78936e-13
 
 
 
@@ -516,11 +525,12 @@ ________________________________________________________________________________
                High-Order Discontinuous Galerkin for the Exa-Scale              
 ________________________________________________________________________________
 
-Setting up incompressible Navier-Stokes solver:
 
 MPI info:
 
   Number of processes:                       1
+
+Setting up incompressible Navier-Stokes solver:
 
 List of parameters:
 
@@ -541,7 +551,9 @@ Physical quantities:
 
 Spatial discretization:
   Triangulation type:                        Distributed
-  Mapping:                                   Isoparametric
+  Global refinements:                        1
+  Subdivisions hypercube:                    1
+  Mapping degree:                            5
   Polynomial degree velocity:                5
   Polynomial degree pressure:                Mixed-order
   Convective term - Upwind factor:           1.0000e+00
@@ -666,7 +678,7 @@ Calculate error for pressure for initial data:
 Solve steady state problem:
 
 Calculate error for velocity for solution data:
-  Absolute error (L2-norm): 9.27360e-12
+  Absolute error (L2-norm): 5.80612e-12
 
 Calculate error for pressure for solution data:
-  Absolute error (L2-norm): 2.29763e-10
+  Absolute error (L2-norm): 1.47690e-10

@@ -272,7 +272,7 @@ public:
    *  for the precursor by passing an additional parameter is_precursor.
    */
   void
-  do_set_parameters(Parameters & param, unsigned int const degree, bool const is_precursor = false)
+  do_set_parameters(Parameters & param, bool const is_precursor = false)
   {
     // MATHEMATICAL MODEL
     param.problem_type                   = ProblemType::Unsteady;
@@ -315,10 +315,9 @@ public:
 
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type = TriangulationType::Distributed;
-    param.degree_u           = degree;
-    param.degree_p           = DegreePressure::MixedOrder;
-    param.mapping            = MappingType::Isoparametric;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree_u;
+    param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     param.upwind_factor = 1.0;
@@ -428,35 +427,35 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
-    do_set_parameters(this->param, degree);
+    do_set_parameters(this->param);
   }
 
   void
-  set_parameters_precursor(unsigned int const degree) final
+  set_parameters_precursor() final
   {
-    do_set_parameters(this->param_pre, degree, true);
+    do_set_parameters(this->param_pre, true);
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
-                                                       grid_data.n_refine_global,
+                                                       this->param.grid.n_refine_global,
                                                        grid->periodic_faces);
 
     return grid;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor(GridData const & grid_data) final
+  create_grid_precursor() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param_pre.grid, this->mpi_comm);
 
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
@@ -542,7 +541,7 @@ public:
     grid->triangulation->add_periodicity(grid->periodic_faces);
 
     // perform global refinements
-    grid->triangulation->refine_global(grid_data.n_refine_global +
+    grid->triangulation->refine_global(this->param_pre.grid.n_refine_global +
                                        additional_refinements_precursor);
 
     return grid;

@@ -62,23 +62,20 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
-    // Here, set all parameters differing from their default values as initialized in
-    // IncNS::Parameters::Parameters()
-
-    this->param.degree_u = degree;
+    // Set paramters here
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

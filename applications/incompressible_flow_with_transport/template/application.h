@@ -62,36 +62,32 @@ public:
   }
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     using namespace IncNS;
 
-    // Here, set all parameters differing from their default values as initialized in
-    // IncNS::Parameters::Parameters()
-
-    this->param.degree_u = degree;
+    // Set parameters here
   }
 
   void
-  set_parameters_scalar(unsigned int const degree, unsigned int const scalar_index) final
+  set_parameters_scalar(unsigned int const scalar_index) final
   {
     using namespace ConvDiff;
 
-    // Here, set all parameters differing from their default values as initialized in
-    // ConvDiff::Parameters::Parameters()
-
-    this->scalar_param[scalar_index].degree = degree;
+    // Set parameters here
+    Parameters & param = this->scalar_param[scalar_index];
+    (void)param;
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     // create triangulation
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

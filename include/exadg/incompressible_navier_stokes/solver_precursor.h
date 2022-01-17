@@ -35,49 +35,13 @@
 
 // utilities
 #include <exadg/utilities/general_parameters.h>
+#include <exadg/utilities/resolution_parameters.h>
 
 // application
 #include <exadg/incompressible_navier_stokes/user_interface/declare_get_application_precursor.h>
 
 namespace ExaDG
 {
-struct ResolutionParameters
-{
-  ResolutionParameters()
-  {
-  }
-
-  ResolutionParameters(const std::string & input_file)
-  {
-    dealii::ParameterHandler prm;
-    add_parameters(prm);
-    prm.parse_input(input_file, "", true, true);
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("SpatialResolution");
-      prm.add_parameter("Degree",
-                        degree,
-                        "Polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
-                        true);
-      prm.add_parameter("RefineSpace",
-                        refine_space,
-                        "Number of global, uniform mesh refinements.",
-                        Patterns::Integer(0,20),
-                        true);
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  unsigned int degree = 3;
-
-  unsigned int refine_space = 0;
-};
-
 void
 create_input_file(std::string const & input_file)
 {
@@ -108,22 +72,21 @@ create_input_file(std::string const & input_file)
 
 template<int dim, typename Number>
 void
-run(std::string const & input_file,
-    unsigned int const  degree,
-    unsigned int const  refine_space,
-    MPI_Comm const &    mpi_comm,
-    bool const          is_test)
+run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_test)
 {
   Timer timer;
   timer.restart();
 
-  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
-    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, is_test);
-
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =
     IncNS::get_application<dim, Number>(input_file, mpi_comm);
 
-  driver->setup(application, degree, refine_space);
+  ExaDG::ResolutionParameters resolution(input_file);
+  application->set_parameters_precursor_study(resolution.degree, resolution.refine_space);
+
+  std::shared_ptr<IncNS::DriverPrecursor<dim, Number>> driver =
+    std::make_shared<IncNS::DriverPrecursor<dim, Number>>(mpi_comm, application, is_test);
+
+  driver->setup();
 
   driver->solve();
 
@@ -166,25 +129,20 @@ main(int argc, char ** argv)
     }
   }
 
-  ExaDG::GeneralParameters    general(input_file);
-  ExaDG::ResolutionParameters resolution(input_file);
+  ExaDG::GeneralParameters general(input_file);
 
   // run the simulation
   if(general.dim == 2 && general.precision == "float")
-    ExaDG::run<2, float>(
-      input_file, resolution.degree, resolution.refine_space, mpi_comm, general.is_test);
+    ExaDG::run<2, float>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 2 && general.precision == "double")
-    ExaDG::run<2, double>(
-      input_file, resolution.degree, resolution.refine_space, mpi_comm, general.is_test);
+    ExaDG::run<2, double>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "float")
-    ExaDG::run<3, float>(
-      input_file, resolution.degree, resolution.refine_space, mpi_comm, general.is_test);
+    ExaDG::run<3, float>(input_file, mpi_comm, general.is_test);
   else if(general.dim == 3 && general.precision == "double")
-    ExaDG::run<3, double>(
-      input_file, resolution.degree, resolution.refine_space, mpi_comm, general.is_test);
+    ExaDG::run<3, double>(input_file, mpi_comm, general.is_test);
   else
     AssertThrow(false,
-                dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+                dealii::ExcMessage("Only dim = 2|3 and precision = float|double implemented."));
 
   return 0;
 }

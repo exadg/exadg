@@ -19,46 +19,58 @@
  *  ______________________________________________________________________
  */
 
-#ifndef INCLUDE_FUNCTIONALITIES_MAPPING_DEGREE_H_
-#define INCLUDE_FUNCTIONALITIES_MAPPING_DEGREE_H_
+#ifndef INCLUDE_EXADG_GRID_GRID_DATA_H_
+#define INCLUDE_EXADG_GRID_GRID_DATA_H_
 
-// deal.II
-#include <deal.II/base/exceptions.h>
-
-// ExaDG
 #include <exadg/grid/enum_types.h>
+#include <exadg/utilities/print_functions.h>
 
 namespace ExaDG
 {
 using namespace dealii;
 
-inline unsigned int
-get_mapping_degree(MappingType const & mapping_type, unsigned int const degree_shape_functions)
+struct GridData
 {
-  unsigned int degree = 0;
-
-  switch(mapping_type)
+  GridData()
+    : triangulation_type(TriangulationType::Distributed),
+      n_refine_global(0),
+      n_subdivisions_1d_hypercube(1),
+      mapping_degree(1)
   {
-    case MappingType::Affine:
-      degree = 1;
-      break;
-    case MappingType::Quadratic:
-      degree = 2;
-      break;
-    case MappingType::Cubic:
-      degree = 3;
-      break;
-    case MappingType::Isoparametric:
-      degree = degree_shape_functions;
-      break;
-    default:
-      AssertThrow(false, ExcMessage("Not implemented."));
-      break;
   }
 
-  return degree;
-}
+  void
+  check() const
+  {
+  }
+
+  void
+  print(ConditionalOStream const & pcout) const
+  {
+    print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
+
+    print_parameter(pcout, "Global refinements", n_refine_global);
+
+    print_parameter(pcout, "Subdivisions hypercube", n_subdivisions_1d_hypercube);
+
+    print_parameter(pcout, "Mapping degree", mapping_degree);
+  }
+
+  TriangulationType triangulation_type;
+
+  unsigned int n_refine_global;
+
+  // only relevant for hypercube geometry/mesh
+  unsigned int n_subdivisions_1d_hypercube;
+
+  unsigned int mapping_degree;
+
+  // TODO: path to a grid file
+  // std::string grid_file;
+};
 
 } // namespace ExaDG
 
-#endif /* INCLUDE_FUNCTIONALITIES_MAPPING_DEGREE_H_ */
+
+
+#endif /* INCLUDE_EXADG_GRID_GRID_DATA_H_ */

@@ -74,6 +74,7 @@ Parameters::Parameters()
     c_eff(-1.),
     time_step_size(-1.),
     max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
+    n_refine_time(0),
     order_time_integrator(1),
     start_with_low_order(true),
 
@@ -91,11 +92,8 @@ Parameters::Parameters()
 
     // SPATIAL DISCRETIZATION
 
-    // triangulation
-    triangulation_type(TriangulationType::Undefined),
-
-    // mapping
-    mapping(MappingType::Affine),
+    // grid
+    grid(GridData()),
 
     // polynomial degrees
     degree_u(2),
@@ -344,8 +342,8 @@ Parameters::check(ConditionalOStream const & pcout) const
   }
 
   // SPATIAL DISCRETIZATION
-  AssertThrow(triangulation_type != TriangulationType::Undefined,
-              ExcMessage("parameter must be defined"));
+
+  grid.check();
 
   // For the coupled solution approach, degree_p = 0 is allowed in principle.
   // For projection-type methods, degree_p > 0 has to be fulfilled (the SIPG discretization
@@ -705,6 +703,7 @@ Parameters::print_parameters_temporal_discretization(ConditionalOStream const & 
   // calculate the time step size)
 
   print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
+  print_parameter(pcout, "Temporal refinements", n_refine_time);
   print_parameter(pcout, "Order of time integration scheme", order_time_integrator);
   print_parameter(pcout, "Start with low order method", start_with_low_order);
 
@@ -731,9 +730,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 {
   pcout << std::endl << "Spatial discretization:" << std::endl;
 
-  print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
-
-  print_parameter(pcout, "Mapping", enum_to_string(mapping));
+  grid.print(pcout);
 
   print_parameter(pcout, "Polynomial degree velocity", degree_u);
   print_parameter(pcout, "Polynomial degree pressure", enum_to_string(degree_p));

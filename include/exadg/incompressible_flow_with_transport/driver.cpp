@@ -32,35 +32,27 @@ namespace FTI
 using namespace dealii;
 
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm const & comm, bool const is_test)
+Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
+                            std::shared_ptr<ApplicationBase<dim, Number>> app,
+                            bool const                                    is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
+    application(app),
     use_adaptive_time_stepping(false),
     N_time_steps(0)
 {
+  print_general_info<Number>(pcout, mpi_comm, is_test);
 }
 
 template<int dim, typename Number>
 void
-Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
-                           unsigned int const                            degree,
-                           unsigned int const                            refine_space)
+Driver<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
-  print_exadg_header(pcout);
-  pcout << "Setting up incompressible flow with scalar transport solver:" << std::endl;
-
-  if(not(is_test))
-  {
-    print_dealii_info(pcout);
-    print_matrixfree_info<Number>(pcout);
-  }
-  print_MPI_info(pcout, mpi_comm);
-
-  application = app;
+  pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
 
   unsigned int const n_scalars = application->get_n_scalars();
 
@@ -69,7 +61,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   scalar_time_integrator.resize(n_scalars);
 
   // parameters fluid
-  application->set_parameters(degree);
+  application->set_parameters();
   application->get_parameters().check(pcout);
 
   application->get_parameters().print(pcout, "List of parameters for fluid solver:");
@@ -77,7 +69,7 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // parameters scalar
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    application->set_parameters_scalar(degree, i);
+    application->set_parameters_scalar(i);
     application->get_parameters_scalar(i).check();
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,
@@ -88,39 +80,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
                                                   Utilities::to_string(i) + ":");
   }
 
-  // triangulation
-  if(application->get_parameters().triangulation_type == TriangulationType::Distributed)
-  {
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      AssertThrow(
-        application->get_parameters_scalar(i).triangulation_type == TriangulationType::Distributed,
-        ExcMessage("Parameter triangulation_type is different for fluid field and scalar field"));
-    }
-  }
-  else if(application->get_parameters().triangulation_type == TriangulationType::FullyDistributed)
-  {
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      AssertThrow(application->get_parameters_scalar(i).triangulation_type ==
-                    TriangulationType::FullyDistributed,
-                  ExcMessage(
-                    "Parameter triangulation_type is different for fluid field and scalar field"));
-    }
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
-
   // grid
-  GridData grid_data;
-  grid_data.triangulation_type = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(application->get_parameters().mapping,
-                                                application->get_parameters().degree_u);
-
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   if(application->get_parameters().ale_formulation) // moving mesh
@@ -263,13 +224,8 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
   // depends on quantities such as the time_step_size or gamma0!!!)
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
-    fluid_time_integrator =
-      IncNS::create_time_integrator<dim, Number>(fluid_operator,
-                                                 application->get_parameters(),
-                                                 0 /* refine_time */,
-                                                 mpi_comm,
-                                                 is_test,
-                                                 fluid_postprocessor);
+    fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
+      fluid_operator, application->get_parameters(), mpi_comm, is_test, fluid_postprocessor);
   }
   else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
   {
@@ -313,7 +269,6 @@ Driver<dim, Number>::setup(std::shared_ptr<ApplicationBase<dim, Number>> app,
     scalar_time_integrator[i] =
       ConvDiff::create_time_integrator<dim, Number>(scalar_operator[i],
                                                     application->get_parameters_scalar(i),
-                                                    0 /* refine_time */,
                                                     mpi_comm,
                                                     is_test,
                                                     scalar_postprocessor[i]);

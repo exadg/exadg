@@ -44,7 +44,6 @@
 #include <exadg/convection_diffusion/user_interface/parameters.h>
 #include <exadg/functions_and_boundary_conditions/verify_boundary_conditions.h>
 #include <exadg/grid/grid_motion_analytical.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/matrix_free/matrix_free_data.h>
 #include <exadg/utilities/print_functions.h>
 #include <exadg/utilities/print_general_infos.h>
@@ -110,26 +109,27 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
-  Driver(MPI_Comm const & mpi_comm, bool const is_test);
+  Driver(MPI_Comm const &                              mpi_comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> application,
+         bool const                                    is_test,
+         bool const                                    is_throughput_study);
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree,
-        unsigned int const                            refine_space,
-        unsigned int const                            n_subdivisions_1d_hypercube,
-        unsigned int const                            refine_time,
-        bool const                                    is_throughput_study);
+  setup();
 
   void
   solve();
 
+  void
+  print_performance_results(double const total_time) const;
+
+  /*
+   * Throughput study
+   */
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
                  unsigned int const  n_repetitions_outer) const;
-
-  void
-  print_performance_results(double const total_time) const;
 
 private:
   void
@@ -143,6 +143,9 @@ private:
 
   // do not print wall times if is_test
   bool const is_test;
+
+  // do not set up certain data structures (solver, postprocessor) in case of throughput study
+  bool const is_throughput_study;
 
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;

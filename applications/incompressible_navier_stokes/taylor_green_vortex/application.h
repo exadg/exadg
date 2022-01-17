@@ -170,8 +170,6 @@ public:
   // viscosity
   double viscosity = inviscid ? 0.0 : V_0 * L / Re;
 
-  unsigned int refine_level = 0;
-
   // solver tolerances
   double const ABS_TOL = 1.e-12;
   double const REL_TOL = 1.e-6;
@@ -180,7 +178,7 @@ public:
   double const REL_TOL_LINEAR = 1.e-2;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type = ProblemType::Unsteady;
@@ -234,18 +232,18 @@ public:
     this->param.use_cell_based_face_loops                           = false;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.degree_u           = degree;
-    this->param.degree_p           = DegreePressure::MixedOrder;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.degree_p                = DegreePressure::MixedOrder;
 
     // mapping
     if(mesh_type == MeshType::Cartesian)
-      this->param.mapping = MappingType::Affine;
+      this->param.grid.mapping_degree = 1;
     else
-      this->param.mapping = MappingType::Isoparametric;
+      this->param.grid.mapping_degree = this->param.degree_u;
 
     if(this->param.ale_formulation)
-      this->param.mapping = MappingType::Isoparametric;
+      this->param.grid.mapping_degree = this->param.degree_u;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -350,12 +348,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
-
-    this->refine_level = grid_data.n_refine_global;
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     double const deformation = 0.5;
 
@@ -382,7 +378,7 @@ public:
     if(exploit_symmetry == false) // periodic box
     {
       create_periodic_box(grid->triangulation,
-                          grid_data.n_refine_global,
+                          this->param.grid.n_refine_global,
                           grid->periodic_faces,
                           n_subdivisions_1d_hypercube,
                           left,
@@ -422,7 +418,7 @@ public:
       }
 
       // perform global refinements
-      grid->triangulation->refine_global(grid_data.n_refine_global);
+      grid->triangulation->refine_global(this->param.grid.n_refine_global);
     }
 
     return grid;
@@ -485,8 +481,8 @@ public:
   {
     PostProcessorData<dim> pp_data;
 
-    std::string name = this->output_name + "_l" + std::to_string(this->refine_level) + "_k" +
-                       std::to_string(this->param.degree_u);
+    std::string name = this->output_name + "_l" + std::to_string(this->param.grid.n_refine_global) +
+                       "_k" + std::to_string(this->param.degree_u);
 
     // write output for visualization of results
     pp_data.output_data.write_output              = this->write_output;
@@ -532,7 +528,7 @@ public:
     pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell    = (this->param.degree_u + 1);
     pp_data.kinetic_energy_spectrum_data.exploit_symmetry              = exploit_symmetry;
     pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid  = n_subdivisions_1d_hypercube;
-    pp_data.kinetic_energy_spectrum_data.refine_level            = this->refine_level;
+    pp_data.kinetic_energy_spectrum_data.refine_level            = this->param.grid.n_refine_global;
     pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = right;
     pp_data.kinetic_energy_spectrum_data.clear_file              = !read_restart;
 

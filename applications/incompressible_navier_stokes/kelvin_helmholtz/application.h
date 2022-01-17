@@ -95,7 +95,7 @@ public:
   double const end_time   = 400.0 * T;
 
   void
-  set_parameters(unsigned int const degree) final
+  set_parameters() final
   {
     // MATHEMATICAL MODEL
     this->param.problem_type             = ProblemType::Unsteady;
@@ -128,10 +128,9 @@ public:
       (this->param.end_time - this->param.start_time) / 200;
 
     // SPATIAL DISCRETIZATION
-    this->param.triangulation_type = TriangulationType::Distributed;
-    this->param.degree_u           = degree;
-    this->param.degree_p           = DegreePressure::MixedOrder;
-    this->param.mapping            = MappingType::Isoparametric;
+    this->param.grid.triangulation_type = TriangulationType::Distributed;
+    this->param.grid.mapping_degree     = this->param.degree_u;
+    this->param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     if(this->param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -212,10 +211,10 @@ public:
   }
 
   std::shared_ptr<Grid<dim, Number>>
-  create_grid(GridData const & grid_data) final
+  create_grid() final
   {
     std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
 
     AssertThrow(dim == 2, ExcMessage("This application is only implemented for dim=2."));
 
@@ -239,7 +238,7 @@ public:
     GridTools::collect_periodic_faces(*tria, 1, 2, 0, grid->periodic_faces);
     grid->triangulation->add_periodicity(grid->periodic_faces);
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
+    grid->triangulation->refine_global(this->param.grid.n_refine_global);
 
     return grid;
   }

@@ -32,12 +32,17 @@ namespace IncNS
 using namespace dealii;
 
 template<int dim, typename Number>
-DriverPrecursor<dim, Number>::DriverPrecursor(MPI_Comm const & comm, bool const is_test)
+DriverPrecursor<dim, Number>::DriverPrecursor(
+  MPI_Comm const &                                       comm,
+  std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
+  bool const                                             is_test)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
+    application(app),
     use_adaptive_time_stepping(false)
 {
+  print_general_info<Number>(pcout, mpi_comm, is_test);
 }
 
 template<int dim, typename Number>
@@ -102,30 +107,18 @@ DriverPrecursor<dim, Number>::synchronize_time_step_size() const
 
 template<int dim, typename Number>
 void
-DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
-                                    unsigned int const degree_velocity,
-                                    unsigned int const refine_space)
+DriverPrecursor<dim, Number>::setup()
 {
   Timer timer;
   timer.restart();
 
-  print_exadg_header(pcout);
-  pcout << "Setting up incompressible Navier-Stokes solver:" << std::endl;
+  pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  if(not(is_test))
-  {
-    print_dealii_info(pcout);
-    print_matrixfree_info<Number>(pcout);
-  }
-  print_MPI_info(pcout, mpi_comm);
-
-  application = app;
-
-  application->set_parameters_precursor(degree_velocity);
+  application->set_parameters_precursor();
   application->get_parameters_precursor().check(pcout);
   application->get_parameters_precursor().print(pcout, "List of parameters for precursor domain:");
 
-  application->set_parameters(degree_velocity);
+  application->set_parameters();
   application->get_parameters().check(pcout);
   application->get_parameters().print(pcout, "List of parameters for actual domain:");
 
@@ -135,24 +128,11 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
               ExcMessage("not implemented."));
 
   // grid_pre
-  GridData grid_data_pre;
-  grid_data_pre.triangulation_type = application->get_parameters_precursor().triangulation_type;
-  grid_data_pre.n_refine_global    = refine_space;
-  grid_data_pre.mapping_degree =
-    get_mapping_degree(application->get_parameters_precursor().mapping,
-                       application->get_parameters_precursor().degree_u);
-
-  grid_pre = application->create_grid_precursor(grid_data_pre);
+  grid_pre = application->create_grid_precursor();
   print_grid_info(pcout, *grid_pre);
 
   // grid
-  GridData grid_data;
-  grid_data.triangulation_type = application->get_parameters().triangulation_type;
-  grid_data.n_refine_global    = refine_space;
-  grid_data.mapping_degree     = get_mapping_degree(application->get_parameters().mapping,
-                                                application->get_parameters().degree_u);
-
-  grid = application->create_grid(grid_data);
+  grid = application->create_grid();
   print_grid_info(pcout, *grid);
 
   application->set_boundary_descriptor_precursor();
@@ -239,17 +219,12 @@ DriverPrecursor<dim, Number>::setup(std::shared_ptr<ApplicationBasePrecursor<dim
   // Setup time integrator
   time_integrator_pre = create_time_integrator<dim, Number>(pde_operator_pre,
                                                             application->get_parameters_precursor(),
-                                                            0 /* refine_time */,
                                                             mpi_comm,
                                                             is_test,
                                                             postprocessor_pre);
 
-  time_integrator = create_time_integrator<dim, Number>(pde_operator,
-                                                        application->get_parameters(),
-                                                        0 /* refine_time */,
-                                                        mpi_comm,
-                                                        is_test,
-                                                        postprocessor);
+  time_integrator = create_time_integrator<dim, Number>(
+    pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
 
 
   // For the two-domain solver the parameter start_with_low_order has to be true.
