@@ -86,7 +86,6 @@ Operator<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(fe);
-  dof_handler.distribute_mg_dofs();
 
   // affine constraints
   affine_constraints.clear();
