@@ -242,15 +242,12 @@ public:
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const length = 1.0;
     double const left = -length, right = length;
-    GridGenerator::subdivided_hyper_cube(*grid->triangulation,
+    GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
                                          this->param.grid.n_subdivisions_1d_hypercube,
                                          left,
                                          right);
@@ -264,12 +261,12 @@ public:
       double const              deformation = 0.1;
       unsigned int const        frequency   = 2;
       DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      grid->triangulation->set_all_manifold_ids(1);
-      grid->triangulation->set_manifold(1, manifold);
+      this->grid->triangulation->set_all_manifold_ids(1);
+      this->grid->triangulation->set_manifold(1, manifold);
 
-      std::vector<bool> vertex_touched(grid->triangulation->n_vertices(), false);
+      std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
 
-      for(auto cell : *grid->triangulation)
+      for(auto cell : *this->grid->triangulation)
       {
         for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
         {
@@ -288,9 +285,7 @@ public:
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

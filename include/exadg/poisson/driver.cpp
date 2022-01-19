@@ -62,21 +62,6 @@ Driver<dim, Number>::setup()
 
   application->setup();
 
-  // compute aspect ratio
-  if(false)
-  {
-    // this variant is only for comparison
-    double AR =
-      calculate_aspect_ratio_vertex_distance(*application->get_grid()->triangulation, mpi_comm);
-    pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
-
-    QGauss<dim> quadrature(application->get_parameters().degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*application->get_grid()->mapping,
-                                                 *application->get_grid()->triangulation,
-                                                 quadrature);
-    pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
-  }
-
   // initialize Poisson operator
   pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
                                                          application->get_boundary_descriptor(),

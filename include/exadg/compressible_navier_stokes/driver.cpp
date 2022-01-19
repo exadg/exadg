@@ -58,21 +58,10 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up compressible Navier-Stokes solver:" << std::endl;
 
-  application->set_parameters();
-  application->get_parameters().check();
-  application->get_parameters().print(pcout, "List of parameters:");
-
-  // grid
-  grid = application->create_grid();
-  print_grid_info(pcout, *grid);
-
-  application->set_boundary_descriptor();
-  CompNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
-
-  application->set_field_functions();
+  application->setup();
 
   // initialize compressible Navier-Stokes operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_parameters(),
@@ -84,7 +73,7 @@ Driver<dim, Number>::setup()
   matrix_free_data->append(pde_operator);
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-  matrix_free->reinit(*grid->mapping,
+  matrix_free->reinit(*application->get_grid()->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),

@@ -421,17 +421,14 @@ public:
     this->param.use_combined_operator = false;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     // hypercube volume is [left,right]^dim
     double const left = -1.0, right = 0.5;
-    GridGenerator::hyper_cube(*grid->triangulation, left, right);
+    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
-    for(auto cell : *grid->triangulation)
+    for(auto cell : *this->grid->triangulation)
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -446,13 +443,11 @@ public:
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 1, grid->periodic_faces);
-    grid->triangulation->add_periodicity(grid->periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*this->grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 1, this->grid->periodic_faces);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

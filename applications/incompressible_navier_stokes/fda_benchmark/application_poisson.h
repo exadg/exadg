@@ -74,17 +74,12 @@ public:
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
-    FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
+    FDANozzle::create_grid_and_set_boundary_ids_nozzle(this->grid->triangulation,
                                                        this->param.grid.n_refine_global,
-                                                       grid->periodic_faces);
-
-    return grid;
+                                                       this->grid->periodic_faces);
   }
 
   void
