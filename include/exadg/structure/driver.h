@@ -133,9 +133,6 @@ private:
   // user parameters
   Parameters param;
 
-  // grid
-  std::shared_ptr<Grid<dim, Number>> grid;
-
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
