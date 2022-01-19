@@ -72,17 +72,12 @@ public:
     (void)param;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_fluid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->fluid_param.grid, this->mpi_comm);
-
     // create triangulation
 
-    grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
-
-    return grid;
+    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
   }
 
   void
@@ -205,17 +200,12 @@ public:
     (void)param;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_structure() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->structure_param.grid, this->mpi_comm);
-
     // create triangulation
 
-    grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
-
-    return grid;
+    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
   }
 
   void

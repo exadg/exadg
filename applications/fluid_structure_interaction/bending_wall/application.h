@@ -414,15 +414,12 @@ public:
     GridGenerator::merge_triangulations(tria_vec_ptr, tria, 1.e-10);
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_fluid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->fluid_param.grid, this->mpi_comm);
+    create_triangulation(*this->fluid_grid->triangulation);
 
-    create_triangulation(*grid->triangulation);
-
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -462,9 +459,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
-
-    return grid;
+    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
   }
 
   void
@@ -765,12 +760,9 @@ public:
     param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_structure() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->structure_param.grid, this->mpi_comm);
-
     Point<dim> p1, p2;
 
     p1[0] = L_IN;
@@ -786,9 +778,12 @@ public:
     repetitions[1] = N_CELLS_STRUCTURE_Y;
     repetitions[2] = N_CELLS_STRUCTURE_Z;
 
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
+    GridGenerator::subdivided_hyper_rectangle(*this->structure_grid->triangulation,
+                                              repetitions,
+                                              p1,
+                                              p2);
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -810,9 +805,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
-
-    return grid;
+    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
   }
 
   void

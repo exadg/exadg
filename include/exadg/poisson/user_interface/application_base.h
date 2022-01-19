@@ -98,7 +98,7 @@ public:
     create_grid();
     print_grid_info(pcout, *grid);
 
-    // compute aspect ratio
+    // compute aspect ratio (TODO: shift this code to Grid class)
     if(false)
     {
       // this variant is only for comparison

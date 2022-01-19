@@ -105,35 +105,25 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
+  /************************************** APPLICATION *****************************************/
+  {
+    Timer timer_local;
+    timer_local.restart();
+
+    application->setup();
+
+    timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
+  }
+  /************************************** APPLICATION *****************************************/
+
   /**************************************** STRUCTURE *****************************************/
   {
     Timer timer_local;
     timer_local.restart();
 
-    application->set_parameters_structure();
-    application->get_parameters_structure().check();
-    // Some FSI specific Asserts
-    AssertThrow(application->get_parameters_structure().pull_back_traction == true,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    application->get_parameters_structure().print(pcout, "List of parameters for structure:");
-
-    // grid
-    structure_grid = application->create_grid_structure();
-    print_grid_info(pcout, *structure_grid);
-
-    // boundary conditions
-    application->set_boundary_descriptor_structure();
-    verify_boundary_conditions(*application->get_boundary_descriptor_structure(), *structure_grid);
-
-    // material_descriptor
-    application->set_material_descriptor_structure();
-
-    // field functions
-    application->set_field_functions_structure();
-
     // setup spatial operator
     structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-      structure_grid,
+      application->get_grid_structure(),
       application->get_boundary_descriptor_structure(),
       application->get_field_functions_structure(),
       application->get_material_descriptor_structure(),
@@ -146,7 +136,7 @@ Driver<dim, Number>::setup()
     structure_matrix_free_data->append(structure_operator);
 
     structure_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-    structure_matrix_free->reinit(*structure_grid->mapping,
+    structure_matrix_free->reinit(*application->get_grid_structure()->mapping,
                                   structure_matrix_free_data->get_dof_handler_vector(),
                                   structure_matrix_free_data->get_constraint_vector(),
                                   structure_matrix_free_data->get_quadrature_vector(),
@@ -156,63 +146,23 @@ Driver<dim, Number>::setup()
 
     // initialize postprocessor
     structure_postprocessor = application->create_postprocessor_structure();
-    structure_postprocessor->setup(structure_operator->get_dof_handler(), *structure_grid->mapping);
+    structure_postprocessor->setup(structure_operator->get_dof_handler(),
+                                   *application->get_grid_structure()->mapping);
 
     timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
   }
-
   /**************************************** STRUCTURE *****************************************/
 
-
-  /****************************************** FLUID *******************************************/
-
+  /******************************************* ALE ********************************************/
   {
     Timer timer_local;
     timer_local.restart();
 
-    // parameters fluid
-    application->set_parameters_fluid();
-    application->get_parameters_fluid().check(pcout);
-    application->get_parameters_fluid().print(pcout,
-                                              "List of parameters for incompressible flow solver:");
-
-    // Some FSI specific Asserts
-    AssertThrow(application->get_parameters_fluid().problem_type == IncNS::ProblemType::Unsteady,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-    AssertThrow(application->get_parameters_fluid().ale_formulation == true,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-
-    // grid
-    fluid_grid = application->create_grid_fluid();
-    print_grid_info(pcout, *fluid_grid);
-
-    // field functions and boundary conditions
-
-    // fluid
-    application->set_boundary_descriptor_fluid();
-    IncNS::verify_boundary_conditions<dim>(*application->get_boundary_descriptor_fluid(),
-                                           *fluid_grid);
-
-    application->set_field_functions_fluid();
-
-    // ALE
+    // ALE: initialize PDE operator
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
-      application->set_parameters_ale_poisson();
-      application->get_parameters_ale_poisson().check();
-      AssertThrow(application->get_parameters_ale_poisson().right_hand_side == false,
-                  ExcMessage("Parameter does not make sense in context of FSI."));
-      application->get_parameters_ale_poisson().print(
-        pcout, "List of parameters for ALE solver (Poisson):");
-
-      application->set_boundary_descriptor_ale_poisson();
-      verify_boundary_conditions(*application->get_boundary_descriptor_ale_poisson(), *fluid_grid);
-
-      application->set_field_functions_ale_poisson();
-
-      // initialize Poisson operator
       ale_poisson_operator = std::make_shared<Poisson::Operator<dim, Number, dim>>(
-        fluid_grid,
+        application->get_grid_fluid(),
         application->get_boundary_descriptor_ale_poisson(),
         application->get_field_functions_ale_poisson(),
         application->get_parameters_ale_poisson(),
@@ -222,27 +172,8 @@ Driver<dim, Number>::setup()
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
-      application->set_parameters_ale_elasticity();
-      application->get_parameters_ale_elasticity().check();
-      AssertThrow(application->get_parameters_ale_elasticity().body_force == false,
-                  ExcMessage("Parameter does not make sense in context of FSI."));
-      application->get_parameters_ale_elasticity().print(
-        pcout, "List of parameters for ALE solver (elasticity):");
-
-      // boundary conditions
-      application->set_boundary_descriptor_ale_elasticity();
-      verify_boundary_conditions(*application->get_boundary_descriptor_ale_elasticity(),
-                                 *fluid_grid);
-
-      // material_descriptor
-      application->set_material_descriptor_ale_elasticity();
-
-      // field functions
-      application->set_field_functions_ale_elasticity();
-
-      // setup spatial operator
       ale_elasticity_operator = std::make_shared<Structure::Operator<dim, Number>>(
-        fluid_grid,
+        application->get_grid_fluid(),
         application->get_boundary_descriptor_ale_elasticity(),
         application->get_field_functions_ale_elasticity(),
         application->get_material_descriptor_ale_elasticity(),
@@ -255,13 +186,14 @@ Driver<dim, Number>::setup()
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    // initialize matrix_free_data
+    // ALE: initialize matrix_free_data
     ale_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
 
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       if(application->get_parameters_ale_poisson().enable_cell_based_face_loops)
-        Categorization::do_cell_based_loops(*fluid_grid->triangulation, ale_matrix_free_data->data);
+        Categorization::do_cell_based_loops(*application->get_grid_fluid()->triangulation,
+                                            ale_matrix_free_data->data);
 
       ale_matrix_free_data->append(ale_poisson_operator);
     }
@@ -275,14 +207,15 @@ Driver<dim, Number>::setup()
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    // initialize matrix_free
+    // ALE: initialize matrix_free
     ale_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-    ale_matrix_free->reinit(*fluid_grid->mapping,
+    ale_matrix_free->reinit(*application->get_grid_fluid()->mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
                             ale_matrix_free_data->get_constraint_vector(),
                             ale_matrix_free_data->get_quadrature_vector(),
                             ale_matrix_free_data->data);
 
+    // ALE: setup PDE operator and solver
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       ale_poisson_operator->setup(ale_matrix_free, ale_matrix_free_data);
@@ -299,26 +232,38 @@ Driver<dim, Number>::setup()
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    // mapping for fluid problem (moving mesh)
+    // ALE: create grid motion object
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       fluid_grid_motion =
-        std::make_shared<GridMotionPoisson<dim, Number>>(fluid_grid->mapping, ale_poisson_operator);
+        std::make_shared<GridMotionPoisson<dim, Number>>(application->get_grid_fluid()->mapping,
+                                                         ale_poisson_operator);
     }
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
       fluid_grid_motion = std::make_shared<GridMotionElasticity<dim, Number>>(
-        fluid_grid->mapping, ale_elasticity_operator, application->get_parameters_ale_elasticity());
+        application->get_grid_fluid()->mapping,
+        ale_elasticity_operator,
+        application->get_parameters_ale_elasticity());
     }
     else
     {
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
+    timer_tree.insert({"FSI", "Setup", "ALE"}, timer_local.wall_time());
+  }
+  /******************************************* ALE ********************************************/
+
+  /****************************************** FLUID *******************************************/
+  {
+    Timer timer_local;
+    timer_local.restart();
+
     // initialize fluid_operator
     fluid_operator =
-      IncNS::create_operator<dim, Number>(fluid_grid,
+      IncNS::create_operator<dim, Number>(application->get_grid_fluid(),
                                           fluid_grid_motion,
                                           application->get_boundary_descriptor_fluid(),
                                           application->get_field_functions_fluid(),
@@ -332,9 +277,10 @@ Driver<dim, Number>::setup()
 
     fluid_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
     if(application->get_parameters_fluid().use_cell_based_face_loops)
-      Categorization::do_cell_based_loops(*fluid_grid->triangulation, fluid_matrix_free_data->data);
+      Categorization::do_cell_based_loops(*application->get_grid_fluid()->triangulation,
+                                          fluid_matrix_free_data->data);
     std::shared_ptr<Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(fluid_grid, fluid_grid_motion);
+      get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
     fluid_matrix_free->reinit(*mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
                               fluid_matrix_free_data->get_constraint_vector(),
@@ -350,7 +296,6 @@ Driver<dim, Number>::setup()
 
     timer_tree.insert({"FSI", "Setup", "Fluid"}, timer_local.wall_time());
   }
-
   /****************************************** FLUID *******************************************/
 
 
@@ -384,7 +329,7 @@ Driver<dim, Number>::setup()
         quad_indices,
         application->get_boundary_descriptor_ale_poisson()->dirichlet_mortar_bc,
         structure_operator->get_dof_handler(),
-        *structure_grid->mapping,
+        *application->get_grid_structure()->mapping,
         displacement_structure,
         fsi_data.geometric_tolerance);
     }
@@ -403,7 +348,7 @@ Driver<dim, Number>::setup()
         quad_indices,
         application->get_boundary_descriptor_ale_elasticity()->dirichlet_mortar_bc,
         structure_operator->get_dof_handler(),
-        *structure_grid->mapping,
+        *application->get_grid_structure()->mapping,
         displacement_structure,
         fsi_data.geometric_tolerance);
     }
@@ -438,7 +383,7 @@ Driver<dim, Number>::setup()
       quad_indices,
       application->get_boundary_descriptor_fluid()->velocity->dirichlet_mortar_bc,
       structure_operator->get_dof_handler(),
-      *structure_grid->mapping,
+      *application->get_grid_structure()->mapping,
       velocity_structure,
       fsi_data.geometric_tolerance);
 
@@ -461,7 +406,7 @@ Driver<dim, Number>::setup()
     fluid_operator->initialize_vector_velocity(stress_fluid);
     fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
     std::shared_ptr<Mapping<dim> const> mapping =
-      get_dynamic_mapping<dim, Number>(fluid_grid, fluid_grid_motion);
+      get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
     fluid_to_structure->setup(structure_matrix_free,
                               structure_operator->get_dof_index(),
                               quad_indices,
@@ -563,7 +508,7 @@ Driver<dim, Number>::solve_ale() const
 
   sub_timer.restart();
   std::shared_ptr<Mapping<dim> const> mapping =
-    get_dynamic_mapping<dim, Number>(fluid_grid, fluid_grid_motion);
+    get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
   fluid_matrix_free->update_mapping(*mapping);
   timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 

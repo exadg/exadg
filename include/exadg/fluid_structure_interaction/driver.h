@@ -312,9 +312,6 @@ private:
 
   /**************************************** STRUCTURE *****************************************/
 
-  // grid
-  std::shared_ptr<Grid<dim, Number>> structure_grid;
-
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> structure_matrix_free_data;
   std::shared_ptr<MatrixFree<dim, Number>>     structure_matrix_free;
@@ -332,9 +329,6 @@ private:
 
 
   /****************************************** FLUID *******************************************/
-
-  // grid
-  std::shared_ptr<Grid<dim, Number>> fluid_grid;
 
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
