@@ -60,35 +60,25 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up Poisson solver:" << std::endl;
 
-  application->set_parameters();
-  application->get_parameters().check();
-  application->get_parameters().print(pcout, "List of parameters:");
-
-  // grid
-  grid = application->create_grid();
-  print_grid_info(pcout, *grid);
-
-  // boundary conditions
-  application->set_boundary_descriptor();
-  verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
-
-  // field functions
-  application->set_field_functions();
+  application->setup();
 
   // compute aspect ratio
   if(false)
   {
     // this variant is only for comparison
-    double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
+    double AR =
+      calculate_aspect_ratio_vertex_distance(*application->get_grid()->triangulation, mpi_comm);
     pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(application->get_parameters().degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quadrature);
+    AR = GridTools::compute_maximum_aspect_ratio(*application->get_grid()->mapping,
+                                                 *application->get_grid()->triangulation,
+                                                 quadrature);
     pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   // initialize Poisson operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_parameters(),
@@ -101,8 +91,9 @@ Driver<dim, Number>::setup()
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(application->get_parameters().enable_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*grid->mapping,
+    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+                                        matrix_free_data->data);
+  matrix_free->reinit(*application->get_grid()->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -120,7 +111,7 @@ Driver<dim, Number>::setup()
   if(not(is_throughput_study))
   {
     postprocessor = application->create_postprocessor();
-    postprocessor->setup(pde_operator->get_dof_handler(), *grid->mapping);
+    postprocessor->setup(pde_operator->get_dof_handler(), *application->get_grid()->mapping);
   }
 
   timer_tree.insert({"Poisson", "Setup"}, timer.wall_time());
