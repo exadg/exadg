@@ -59,16 +59,6 @@ public:
     : IncNS::ApplicationBase<dim, Number>(parameter_file, comm)
   {
     n_scalars = n_scalar_fields;
-
-    scalar_param.resize(n_scalars);
-    scalar_boundary_descriptor.resize(n_scalars);
-    scalar_field_functions.resize(n_scalars);
-
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      scalar_boundary_descriptor[i] = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
-      scalar_field_functions[i]     = std::make_shared<ConvDiff::FieldFunctions<dim>>();
-    }
   }
 
   virtual ~ApplicationBase()
@@ -87,20 +77,51 @@ public:
       this->scalar_param[i].degree = degree;
   }
 
+  void
+  setup() final
+  {
+    IncNS::ApplicationBase<dim, Number>::setup();
+
+    scalar_param.resize(n_scalars);
+    scalar_boundary_descriptor.resize(n_scalars);
+    scalar_field_functions.resize(n_scalars);
+
+    // parameters scalar
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
+      set_parameters_scalar(i);
+      scalar_param[i].check();
+
+      // some additional parameter checks
+      AssertThrow(scalar_param[i].ale_formulation == this->param.ale_formulation,
+                  ExcMessage(
+                    "Parameter ale_formulation is different for fluid field and scalar field"));
+
+      AssertThrow(
+        scalar_param[i].adaptive_time_stepping == this->param.adaptive_time_stepping,
+        ExcMessage(
+          "The option adaptive_time_stepping has to be consistent for fluid and scalar transport solvers."));
+
+      scalar_param[i].print(this->pcout,
+                            "List of parameters for scalar quantity " + Utilities::to_string(i) +
+                              ":");
+
+      // boundary conditions
+      scalar_boundary_descriptor[i] = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();
+      set_boundary_descriptor_scalar(i);
+      verify_boundary_conditions(*scalar_boundary_descriptor[i], *this->grid);
+
+      // field functions
+      scalar_field_functions[i] = std::make_shared<ConvDiff::FieldFunctions<dim>>();
+      set_field_functions_scalar(i);
+    }
+  }
+
   unsigned int
   get_n_scalars()
   {
     return this->n_scalars;
   }
-
-  virtual void
-  set_parameters_scalar(unsigned int const scalar_index = 0) = 0;
-
-  virtual void
-  set_boundary_descriptor_scalar(unsigned int const scalar_index = 0) = 0;
-
-  virtual void
-  set_field_functions_scalar(unsigned int const scalar_index = 0) = 0;
 
   virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
   create_postprocessor_scalar(unsigned int const scalar_index = 0) = 0;
@@ -131,6 +152,16 @@ protected:
   std::string  output_directory = "output/", output_name = "output";
   bool         write_output = false;
   unsigned int n_scalars    = 1;
+
+private:
+  virtual void
+  set_parameters_scalar(unsigned int const scalar_index = 0) = 0;
+
+  virtual void
+  set_boundary_descriptor_scalar(unsigned int const scalar_index = 0) = 0;
+
+  virtual void
+  set_field_functions_scalar(unsigned int const scalar_index = 0) = 0;
 };
 
 } // namespace FTI

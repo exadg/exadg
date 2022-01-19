@@ -41,14 +41,16 @@ using namespace dealii;
 
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
-  std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             param_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim, Number> const>          grid_in,
+  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
+  Parameters const &                                param_in,
+  std::string const &                               field_in,
+  MPI_Comm const &                                  mpi_comm_in)
   : dealii::Subscriptor(),
     grid(grid_in),
+    grid_motion(grid_motion_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
@@ -469,7 +471,7 @@ Operator<dim, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   &dof_handler.get_triangulation(),
                                   dof_handler.get_fe(),
-                                  grid->get_dynamic_mapping(),
+                                  get_dynamic_mapping<dim, Number>(grid, grid_motion),
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,
@@ -821,15 +823,15 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::move_grid(double const & time) const
 {
-  grid->grid_motion->update(time, false);
+  grid_motion->update(time, false);
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::move_grid_and_update_dependent_data_structures(double const & time)
 {
-  grid->grid_motion->update(time, false);
-  matrix_free->update_mapping(*grid->get_dynamic_mapping());
+  grid_motion->update(time, false);
+  matrix_free->update_mapping(*get_dynamic_mapping<dim, Number>(grid, grid_motion));
   update_after_grid_motion();
 }
 
@@ -837,7 +839,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::fill_grid_coordinates_vector(VectorType & vector) const
 {
-  grid->grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
+  grid_motion->fill_grid_coordinates_vector(vector, this->get_dof_handler_velocity());
 }
 
 template<int dim, typename Number>

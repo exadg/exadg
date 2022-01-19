@@ -216,17 +216,14 @@ public:
     this->param.solver_data_pressure_block          = SolverData(1e4, 1.e-12, 1.e-6, 100);
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const left = 0.0, right = L;
-    GridGenerator::hyper_cube(*grid->triangulation, left, right);
+    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary indicator
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -235,9 +232,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

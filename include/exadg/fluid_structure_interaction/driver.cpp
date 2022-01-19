@@ -190,7 +190,7 @@ Driver<dim, Number>::setup()
 
     // fluid
     application->set_boundary_descriptor_fluid();
-    IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_fluid(),
+    IncNS::verify_boundary_conditions<dim>(*application->get_boundary_descriptor_fluid(),
                                            *fluid_grid);
 
     application->set_field_functions_fluid();
@@ -303,27 +303,23 @@ Driver<dim, Number>::setup()
     if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
     {
       fluid_grid_motion =
-        std::make_shared<GridMotionPoisson<dim, Number>>(fluid_grid->get_static_mapping(),
-                                                         ale_poisson_operator);
+        std::make_shared<GridMotionPoisson<dim, Number>>(fluid_grid->mapping, ale_poisson_operator);
     }
     else if(application->get_parameters_fluid().mesh_movement_type ==
             IncNS::MeshMovementType::Elasticity)
     {
       fluid_grid_motion = std::make_shared<GridMotionElasticity<dim, Number>>(
-        fluid_grid->get_static_mapping(),
-        ale_elasticity_operator,
-        application->get_parameters_ale_elasticity());
+        fluid_grid->mapping, ale_elasticity_operator, application->get_parameters_ale_elasticity());
     }
     else
     {
       AssertThrow(false, ExcMessage("not implemented."));
     }
 
-    fluid_grid->attach_grid_motion(fluid_grid_motion);
-
     // initialize fluid_operator
     fluid_operator =
       IncNS::create_operator<dim, Number>(fluid_grid,
+                                          fluid_grid_motion,
                                           application->get_boundary_descriptor_fluid(),
                                           application->get_field_functions_fluid(),
                                           application->get_parameters_fluid(),
@@ -337,7 +333,9 @@ Driver<dim, Number>::setup()
     fluid_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
     if(application->get_parameters_fluid().use_cell_based_face_loops)
       Categorization::do_cell_based_loops(*fluid_grid->triangulation, fluid_matrix_free_data->data);
-    fluid_matrix_free->reinit(*fluid_grid->get_dynamic_mapping(),
+    std::shared_ptr<Mapping<dim> const> mapping =
+      get_dynamic_mapping<dim, Number>(fluid_grid, fluid_grid_motion);
+    fluid_matrix_free->reinit(*mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
                               fluid_matrix_free_data->get_constraint_vector(),
                               fluid_matrix_free_data->get_quadrature_vector(),
@@ -462,12 +460,14 @@ Driver<dim, Number>::setup()
     VectorType stress_fluid;
     fluid_operator->initialize_vector_velocity(stress_fluid);
     fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
+    std::shared_ptr<Mapping<dim> const> mapping =
+      get_dynamic_mapping<dim, Number>(fluid_grid, fluid_grid_motion);
     fluid_to_structure->setup(structure_matrix_free,
                               structure_operator->get_dof_index(),
                               quad_indices,
                               application->get_boundary_descriptor_structure()->neumann_mortar_bc,
                               fluid_operator->get_dof_handler_u(),
-                              *fluid_grid->get_dynamic_mapping(),
+                              *mapping,
                               stress_fluid,
                               fsi_data.geometric_tolerance);
 
@@ -562,7 +562,9 @@ Driver<dim, Number>::solve_ale() const
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  fluid_matrix_free->update_mapping(*fluid_grid->get_dynamic_mapping());
+  std::shared_ptr<Mapping<dim> const> mapping =
+    get_dynamic_mapping<dim, Number>(fluid_grid, fluid_grid_motion);
+  fluid_matrix_free->update_mapping(*mapping);
   timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

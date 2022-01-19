@@ -55,12 +55,13 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim, Number> const>       grid,
-           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim> const>     field_functions,
-           Parameters const &                             param,
-           std::string const &                            field,
-           MPI_Comm const &                               mpi_comm);
+  Operator(std::shared_ptr<Grid<dim, Number> const>          grid,
+           std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion,
+           std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim> const>        field_functions,
+           Parameters const &                                param,
+           std::string const &                               field,
+           MPI_Comm const &                                  mpi_comm);
 
 
   void
@@ -352,6 +353,11 @@ private:
    * Grid
    */
   std::shared_ptr<Grid<dim, Number> const> grid;
+
+  /*
+   * Grid motion for ALE formulations
+   */
+  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion;
 
   /*
    * User interface: Boundary conditions and field functions.

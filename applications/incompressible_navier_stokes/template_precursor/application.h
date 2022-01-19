@@ -51,33 +51,21 @@ public:
   {
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     // create triangulation
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
-
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_precursor() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param_pre.grid, this->mpi_comm);
-
     // create triangulation
 
-    grid->triangulation->refine_global(this->param_pre.grid.n_refine_global);
-
-    return grid;
+    this->grid_pre->triangulation->refine_global(this->param_pre.grid.n_refine_global);
   }
-
 
   void
   set_boundary_descriptor() final

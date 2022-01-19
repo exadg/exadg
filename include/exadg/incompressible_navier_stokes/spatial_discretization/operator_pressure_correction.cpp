@@ -33,13 +33,15 @@ using namespace dealii;
 
 template<int dim, typename Number>
 OperatorPressureCorrection<dim, Number>::OperatorPressureCorrection(
-  std::shared_ptr<Grid<dim, Number> const>       grid_in,
-  std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
-  Parameters const &                             parameters_in,
-  std::string const &                            field_in,
-  MPI_Comm const &                               mpi_comm_in)
+  std::shared_ptr<Grid<dim, Number> const>          grid_in,
+  std::shared_ptr<GridMotionInterface<dim, Number>> grid_motion_in,
+  std::shared_ptr<BoundaryDescriptor<dim> const>    boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim> const>        field_functions_in,
+  Parameters const &                                parameters_in,
+  std::string const &                               field_in,
+  MPI_Comm const &                                  mpi_comm_in)
   : ProjectionBase(grid_in,
+                   grid_motion_in,
                    boundary_descriptor_in,
                    field_functions_in,
                    parameters_in,

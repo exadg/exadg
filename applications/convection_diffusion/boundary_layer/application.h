@@ -137,17 +137,14 @@ public:
     this->param.use_combined_operator = true;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     // hypercube volume is [left,right]^dim
-    GridGenerator::hyper_cube(*grid->triangulation, left, right);
+    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary indicator
-    for(auto cell : *grid->triangulation)
+    for(auto cell : *this->grid->triangulation)
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -161,9 +158,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

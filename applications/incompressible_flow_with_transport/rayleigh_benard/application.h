@@ -307,23 +307,26 @@ public:
     this->scalar_param[scalar_index] = param;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     if(dim == 2)
     {
       std::vector<unsigned int> repetitions({8, 1});
       Point<dim>                point1(-L / 2., 0.0), point2(L / 2., H);
-      GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+      GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                repetitions,
+                                                point1,
+                                                point2);
     }
     else if(dim == 3)
     {
       std::vector<unsigned int> repetitions({8, 1, 8});
       Point<dim>                point1(-L / 2., 0.0, -L / 2.), point2(L / 2., H, L / 2.);
-      GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+      GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                repetitions,
+                                                point1,
+                                                point2);
     }
     else
     {
@@ -331,7 +334,7 @@ public:
     }
 
     // set boundary IDs: 0 by default, set left boundary to 1
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -355,16 +358,14 @@ public:
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 10, 11, 0, grid->periodic_faces);
+    auto tria = dynamic_cast<Triangulation<dim> *>(&*this->grid->triangulation);
+    GridTools::collect_periodic_faces(*tria, 10, 11, 0, this->grid->periodic_faces);
     if(dim == 3)
-      GridTools::collect_periodic_faces(*tria, 12, 13, 2, grid->periodic_faces);
+      GridTools::collect_periodic_faces(*tria, 12, 13, 2, this->grid->periodic_faces);
 
-    grid->triangulation->add_periodicity(grid->periodic_faces);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

@@ -318,31 +318,29 @@ public:
     param.use_overintegration   = true;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     if(dim == 2)
     {
       double const left = 0.0, right = L;
-      GridGenerator::hyper_cube(*grid->triangulation, left, right);
+      GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
     }
     else if(dim == 3)
     {
       std::vector<unsigned int> repetitions({1, 1, 1});
       Point<dim>                point1(0.0, 0.0, 0.0), point2(L, 1.5 * L, L);
-      GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+      GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                repetitions,
+                                                point1,
+                                                point2);
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

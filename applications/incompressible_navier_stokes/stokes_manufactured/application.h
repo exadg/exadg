@@ -287,18 +287,13 @@ public:
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const left = -1.0, right = 1.0;
-    GridGenerator::hyper_cube(*grid->triangulation, left, right);
+    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
