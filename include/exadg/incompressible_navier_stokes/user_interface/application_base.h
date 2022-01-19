@@ -104,7 +104,7 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid = std::make_shared<Grid<dim, Number>>(param.grid, mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -127,7 +127,7 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim, Number> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid() const
   {
     return grid;
@@ -202,7 +202,7 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<Grid<dim, Number>> grid;
+  std::shared_ptr<Grid<dim>> grid;
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
@@ -315,7 +315,7 @@ public:
                 ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
     // grid
-    grid_pre = std::make_shared<Grid<dim, Number>>(param_pre.grid, this->mpi_comm);
+    grid_pre = std::make_shared<Grid<dim>>(param_pre.grid, this->mpi_comm);
     create_grid_precursor();
     print_grid_info(this->pcout, *grid_pre);
 
@@ -338,7 +338,7 @@ public:
     return param_pre;
   }
 
-  std::shared_ptr<Grid<dim, Number> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid_precursor() const
   {
     return grid_pre;
@@ -359,7 +359,7 @@ public:
 protected:
   Parameters param_pre;
 
-  std::shared_ptr<Grid<dim, Number>> grid_pre;
+  std::shared_ptr<Grid<dim>> grid_pre;
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;

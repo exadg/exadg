@@ -173,7 +173,7 @@ public:
   /*
    * Constructor.
    */
-  Operator(std::shared_ptr<Grid<dim, Number> const>       grid_in,
+  Operator(std::shared_ptr<Grid<dim> const>               grid_in,
            std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor_in,
            std::shared_ptr<FieldFunctions<dim> const>     field_functions_in,
            std::shared_ptr<MaterialDescriptor const>      material_descriptor_in,
@@ -347,7 +347,7 @@ private:
   /*
    * Grid
    */
-  std::shared_ptr<Grid<dim, Number> const> grid;
+  std::shared_ptr<Grid<dim> const> grid;
 
   /*
    * User interface.

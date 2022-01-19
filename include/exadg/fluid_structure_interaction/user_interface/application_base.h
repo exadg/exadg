@@ -115,7 +115,7 @@ public:
     structure_param.print(pcout, "List of parameters for structure:");
 
     // grid
-    structure_grid = std::make_shared<Grid<dim, Number>>(structure_param.grid, mpi_comm);
+    structure_grid = std::make_shared<Grid<dim>>(structure_param.grid, mpi_comm);
     create_grid_structure();
     print_grid_info(pcout, *structure_grid);
 
@@ -148,7 +148,7 @@ public:
                 ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
-    fluid_grid = std::make_shared<Grid<dim, Number>>(fluid_param.grid, mpi_comm);
+    fluid_grid = std::make_shared<Grid<dim>>(fluid_param.grid, mpi_comm);
     create_grid_fluid();
     print_grid_info(pcout, *fluid_grid);
 
@@ -222,7 +222,7 @@ public:
     return fluid_param;
   }
 
-  std::shared_ptr<Grid<dim, Number> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid_fluid() const
   {
     return fluid_grid;
@@ -246,7 +246,7 @@ public:
     return structure_param;
   }
 
-  std::shared_ptr<Grid<dim, Number> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid_structure() const
   {
     return structure_grid;
@@ -319,7 +319,7 @@ protected:
 
   // fluid
   IncNS::Parameters                               fluid_param;
-  std::shared_ptr<Grid<dim, Number>>              fluid_grid;
+  std::shared_ptr<Grid<dim>>                      fluid_grid;
   std::shared_ptr<IncNS::FieldFunctions<dim>>     fluid_field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptor<dim>> fluid_boundary_descriptor;
 
@@ -338,7 +338,7 @@ protected:
 
   // structure
   Structure::Parameters                               structure_param;
-  std::shared_ptr<Grid<dim, Number>>                  structure_grid;
+  std::shared_ptr<Grid<dim>>                          structure_grid;
   std::shared_ptr<Structure::MaterialDescriptor>      structure_material_descriptor;
   std::shared_ptr<Structure::BoundaryDescriptor<dim>> structure_boundary_descriptor;
   std::shared_ptr<Structure::FieldFunctions<dim>>     structure_field_functions;

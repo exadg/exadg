@@ -100,7 +100,7 @@ public:
     param.print(pcout, "List of parameters:");
 
     // grid
-    grid = std::make_shared<Grid<dim, Number>>(param.grid, mpi_comm);
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
     create_grid();
     print_grid_info(pcout, *grid);
 
@@ -123,7 +123,7 @@ public:
     return param;
   }
 
-  std::shared_ptr<Grid<dim, Number> const>
+  std::shared_ptr<Grid<dim> const>
   get_grid() const
   {
     return grid;
@@ -148,7 +148,7 @@ protected:
 
   Parameters param;
 
-  std::shared_ptr<Grid<dim, Number>> grid;
+  std::shared_ptr<Grid<dim>> grid;
 
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;

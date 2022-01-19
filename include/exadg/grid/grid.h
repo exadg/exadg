@@ -36,7 +36,7 @@ namespace ExaDG
 {
 using namespace dealii;
 
-template<int dim, typename Number>
+template<int dim>
 class Grid
 {
 public:
@@ -97,13 +97,19 @@ public:
  */
 template<int dim, typename Number>
 std::shared_ptr<Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<Grid<dim, Number> const>                grid,
+get_dynamic_mapping(std::shared_ptr<Grid<dim> const>                        grid,
                     std::shared_ptr<GridMotionInterface<dim, Number> const> grid_motion)
 {
   if(grid_motion.get() != 0)
+  {
     return grid_motion->get_mapping();
+  }
   else
+  {
+    AssertThrow(grid->mapping.get() != 0, ExcMessage("Uninitialized mapping object detected."));
+
     return grid->mapping;
+  }
 }
 
 } // namespace ExaDG

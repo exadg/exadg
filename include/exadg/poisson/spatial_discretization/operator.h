@@ -52,7 +52,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
 public:
-  Operator(std::shared_ptr<Grid<dim, Number> const>             grid,
+  Operator(std::shared_ptr<Grid<dim> const>                     grid,
            std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor,
            std::shared_ptr<FieldFunctions<dim> const>           field_functions,
            Parameters const &                                   param,
@@ -158,7 +158,7 @@ private:
   /*
    * Grid
    */
-  std::shared_ptr<Grid<dim, Number> const> grid;
+  std::shared_ptr<Grid<dim> const> grid;
 
   /*
    * User interface: Boundary conditions and field functions.
