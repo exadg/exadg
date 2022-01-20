@@ -151,7 +151,7 @@ TimeIntBDFCoupled<dim, Number>::set_pressure(VectorType const & pressure_in, uns
 
 template<int dim, typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::solve_timestep()
+TimeIntBDFCoupled<dim, Number>::do_timestep_solve()
 {
   Timer timer;
   timer.restart();
@@ -463,7 +463,7 @@ TimeIntBDFCoupled<dim, Number>::postprocessing_stability_analysis()
     solution[0].block(0).local_element(j) = 1.0;
 
     // solve time step
-    this->solve_timestep();
+    this->do_timestep_solve();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)

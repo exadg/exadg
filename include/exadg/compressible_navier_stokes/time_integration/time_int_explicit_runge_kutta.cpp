@@ -236,7 +236,7 @@ TimeIntExplRK<Number>::postprocessing() const
 
 template<typename Number>
 void
-TimeIntExplRK<Number>::solve_timestep()
+TimeIntExplRK<Number>::do_timestep_solve()
 {
   Timer timer;
   timer.restart();

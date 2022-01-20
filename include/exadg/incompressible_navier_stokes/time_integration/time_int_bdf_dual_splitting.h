@@ -78,7 +78,7 @@ private:
   write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
 
   void
-  solve_timestep() final;
+  do_timestep_solve() final;
 
   void
   allocate_vectors() final;

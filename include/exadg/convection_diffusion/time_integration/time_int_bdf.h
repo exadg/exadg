@@ -98,7 +98,7 @@ private:
   prepare_vectors_for_next_timestep();
 
   void
-  solve_timestep();
+  do_timestep_solve() final;
 
   void
   initialize_oif();

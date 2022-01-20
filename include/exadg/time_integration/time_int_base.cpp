@@ -68,6 +68,16 @@ TimeIntBase::timeloop()
 }
 
 void
+TimeIntBase::advance_one_timestep()
+{
+  advance_one_timestep_pre_solve(true);
+
+  advance_one_timestep_solve();
+
+  advance_one_timestep_post_solve();
+}
+
+void
 TimeIntBase::advance_one_timestep_pre_solve(bool const print_header)
 {
   Timer timer;
@@ -98,7 +108,7 @@ TimeIntBase::advance_one_timestep_solve()
 
   if(started() && !finished())
   {
-    solve_timestep();
+    do_timestep_solve();
   }
 
   timer_tree->insert({"Timeloop"}, timer.wall_time());
@@ -123,16 +133,6 @@ TimeIntBase::advance_one_timestep_post_solve()
   }
 
   timer_tree->insert({"Timeloop"}, timer.wall_time());
-}
-
-void
-TimeIntBase::advance_one_timestep()
-{
-  advance_one_timestep_pre_solve(true);
-
-  advance_one_timestep_solve();
-
-  advance_one_timestep_post_solve();
 }
 
 void
@@ -175,7 +175,7 @@ TimeIntBase::do_timestep()
 {
   do_timestep_pre_solve(true);
 
-  solve_timestep();
+  do_timestep_solve();
 
   do_timestep_post_solve();
 }

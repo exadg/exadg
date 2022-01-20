@@ -83,7 +83,7 @@ private:
   initialize_former_solutions() final;
 
   void
-  solve_timestep() final;
+  do_timestep_solve() final;
 
   void
   solve_steady_problem() final;

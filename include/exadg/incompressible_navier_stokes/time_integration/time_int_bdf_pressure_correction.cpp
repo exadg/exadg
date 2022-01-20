@@ -284,7 +284,7 @@ TimeIntBDFPressureCorrection<dim, Number>::postprocessing_stability_analysis()
     velocity[0].local_element(j) = 1.0;
 
     // solve time step
-    this->solve_timestep();
+    this->do_timestep_solve();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -319,7 +319,7 @@ TimeIntBDFPressureCorrection<dim, Number>::postprocessing_stability_analysis()
 
 template<int dim, typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::solve_timestep()
+TimeIntBDFPressureCorrection<dim, Number>::do_timestep_solve()
 {
   // perform the sub-steps of the pressure-correction scheme
 
