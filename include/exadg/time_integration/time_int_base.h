@@ -141,8 +141,12 @@ public:
 
 protected:
   /*
-   * Do one time step including different updates before and after the actual solution of the
-   * current time step.
+   * Do one time step including pre and post routines done before and after the actual solution of
+   * the current time step. Compared to the function advance_one_timestep(), do_timestep() is a raw
+   * version that does not call postprocessing routines, does not write output to pcout, and does
+   * not perform timer measurements within its sub-routines. The typical use case of do_timestep()
+   * is when using pseudo-timestepping to obtain the solution of a steady-state problem with a
+   * transient solver.
    */
   void
   do_timestep();
