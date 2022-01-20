@@ -98,17 +98,15 @@ public:
     create_grid();
     print_grid_info(pcout, *grid);
 
-    // compute aspect ratio (TODO: shift this code to Grid class)
-    if(false)
+    if(compute_aspect_ratio)
     {
       // this variant is only for comparison
       double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
-      pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
+      pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
 
-      QGauss<dim> quadrature(param.degree + 1);
-      AR =
-        GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quadrature);
-      pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
+      QGauss<dim> quad(param.degree + 1);
+      AR = GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quad);
+      pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
     }
 
     // boundary conditions
@@ -164,6 +162,8 @@ protected:
 
   std::string output_directory = "output/", output_name = "output";
   bool        write_output = false;
+
+  bool compute_aspect_ratio = false;
 
 private:
   virtual void
