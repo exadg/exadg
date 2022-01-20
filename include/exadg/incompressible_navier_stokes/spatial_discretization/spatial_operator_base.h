@@ -31,6 +31,7 @@
 
 // ExaDG
 #include <exadg/grid/grid.h>
+#include <exadg/grid/grid_motion_interface.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h>

@@ -30,7 +30,6 @@
 // ExaDG
 #include <exadg/grid/enum_types.h>
 #include <exadg/grid/grid_data.h>
-#include <exadg/grid/grid_motion_interface.h>
 
 namespace ExaDG
 {
@@ -90,27 +89,6 @@ public:
    */
   std::shared_ptr<Mapping<dim>> mapping;
 };
-
-/**
- * Return pointer to dynamic mapping (and redirect to static mapping if dynamic mapping is not
- * initialized).
- */
-template<int dim, typename Number>
-std::shared_ptr<Mapping<dim> const>
-get_dynamic_mapping(std::shared_ptr<Grid<dim> const>                        grid,
-                    std::shared_ptr<GridMotionInterface<dim, Number> const> grid_motion)
-{
-  if(grid_motion.get() != 0)
-  {
-    return grid_motion->get_mapping();
-  }
-  else
-  {
-    AssertThrow(grid->mapping.get() != 0, ExcMessage("Uninitialized mapping object detected."));
-
-    return grid->mapping;
-  }
-}
 
 } // namespace ExaDG
 

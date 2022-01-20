@@ -19,7 +19,9 @@
  *  ______________________________________________________________________
  */
 
+// ExaDG
 #include <exadg/fluid_structure_interaction/driver.h>
+#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
 #include <exadg/utilities/print_solver_results.h>
