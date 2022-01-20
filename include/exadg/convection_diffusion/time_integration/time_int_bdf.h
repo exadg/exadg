@@ -77,65 +77,65 @@ public:
 
 private:
   void
-  allocate_vectors();
+  allocate_vectors() final;
 
   void
-  initialize_current_solution();
+  initialize_current_solution() final;
 
   void
-  initialize_former_solutions();
+  initialize_former_solutions() final;
 
   void
   initialize_vec_convective_term();
 
   double
-  calculate_time_step_size();
+  calculate_time_step_size() final;
 
   double
-  recalculate_time_step_size() const;
+  recalculate_time_step_size() const final;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() final;
 
   void
   do_timestep_solve() final;
 
   void
-  initialize_oif();
+  initialize_oif() final;
 
   void
-  setup_derived();
+  setup_derived() final;
 
   void
   calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
                                           double const cfl,
-                                          double const cfl_oif);
+                                          double const cfl_oif) final;
 
   void
-  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i);
+  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i) final;
 
   void
   update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
                                        VectorType const & u_tilde_i,
-                                       unsigned int       i);
+                                       unsigned int       i) final;
 
   void
   do_timestep_oif_substepping(VectorType & solution_tilde_mp,
                               VectorType & solution_tilde_m,
                               double const start_time,
-                              double const time_step_size);
+                              double const time_step_size) final;
 
   bool
-  print_solver_info() const;
+  print_solver_info() const final;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
+  read_restart_vectors(boost::archive::binary_iarchive & ia) final;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
 
   void
-  postprocessing() const;
+  postprocessing() const final;
 
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

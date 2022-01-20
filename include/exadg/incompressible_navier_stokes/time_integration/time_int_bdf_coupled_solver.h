@@ -71,10 +71,10 @@ public:
 
 private:
   void
-  setup_derived() final;
+  allocate_vectors() final;
 
   void
-  allocate_vectors() final;
+  setup_derived() final;
 
   void
   initialize_current_solution() final;

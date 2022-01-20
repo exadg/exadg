@@ -69,6 +69,9 @@ public:
 
 private:
   void
+  allocate_vectors() final;
+
+  void
   setup_derived() final;
 
   void
@@ -79,9 +82,6 @@ private:
 
   void
   do_timestep_solve() final;
-
-  void
-  allocate_vectors() final;
 
   void
   prepare_vectors_for_next_timestep() final;

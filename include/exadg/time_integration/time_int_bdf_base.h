@@ -65,7 +65,7 @@ public:
    * setup_derived() in which the setup of derived classes can be performed.
    */
   void
-  setup(bool const do_restart) override;
+  setup(bool const do_restart) final;
 
   /*
    * Pseudo-time-stepping for steady-state problems.
@@ -83,7 +83,7 @@ public:
    * Get the time step size.
    */
   double
-  get_time_step_size() const override;
+  get_time_step_size() const final;
 
   double
   get_time_step_size(int const index) const;
@@ -95,7 +95,7 @@ public:
    * size.
    */
   void
-  set_current_time_step_size(double const & time_step_size) override;
+  set_current_time_step_size(double const & time_step_size) final;
 
   /*
    * Get time at the end of the current time step.
@@ -109,10 +109,10 @@ protected:
    * current time step.
    */
   void
-  do_timestep_pre_solve(bool const print_header) override;
+  do_timestep_pre_solve(bool const print_header) final;
 
   void
-  do_timestep_post_solve() override;
+  do_timestep_post_solve() final;
 
   /*
    * Update the time integrator constants.
@@ -236,7 +236,7 @@ private:
    * Restart: read solution vectors (has to be implemented in derived classes).
    */
   void
-  do_read_restart(std::ifstream & in) override;
+  do_read_restart(std::ifstream & in) final;
 
   void
   read_restart_preamble(boost::archive::binary_iarchive & ia);
@@ -249,7 +249,7 @@ private:
    * state.
    */
   void
-  do_write_restart(std::string const & filename) const override;
+  do_write_restart(std::string const & filename) const final;
 
   void
   write_restart_preamble(boost::archive::binary_oarchive & oa) const;
