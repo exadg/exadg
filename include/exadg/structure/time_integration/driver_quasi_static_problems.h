@@ -64,7 +64,7 @@ public:
   setup();
 
   void
-  solve_problem();
+  solve();
 
   void
   print_iterations() const;
@@ -80,7 +80,7 @@ private:
   initialize_solution();
 
   void
-  solve();
+  do_solve();
 
   void
   output_solver_info_header(double const load_factor);

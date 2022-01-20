@@ -605,8 +605,7 @@ Driver<dim, Number>::solve() const
     }
     else if(application->get_parameters().solver_type == IncNS::SolverType::Steady)
     {
-      fluid_driver_steady->solve_steady_problem(scalar_time_integrator[0]->get_next_time(),
-                                                true /*unsteady*/);
+      fluid_driver_steady->solve(scalar_time_integrator[0]->get_next_time(), true /*unsteady*/);
     }
     else
     {

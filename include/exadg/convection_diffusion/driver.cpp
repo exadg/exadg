@@ -225,7 +225,7 @@ Driver<dim, Number>::solve()
   }
   else if(application->get_parameters().problem_type == ProblemType::Steady)
   {
-    driver_steady->solve_problem();
+    driver_steady->solve();
   }
   else
   {

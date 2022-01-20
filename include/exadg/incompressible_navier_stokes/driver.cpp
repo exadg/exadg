@@ -299,7 +299,7 @@ Driver<dim, Number>::solve() const
     else if(application->get_parameters().solver_type == SolverType::Steady)
     {
       // solve steady problem
-      driver_steady->solve_steady_problem();
+      driver_steady->solve();
     }
     else
     {
