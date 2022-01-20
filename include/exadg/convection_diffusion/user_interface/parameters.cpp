@@ -124,6 +124,9 @@ Parameters::check() const
   // moving mesh
   if(ale_formulation)
   {
+    AssertThrow(problem_type == ProblemType::Unsteady,
+                ExcMessage("Problem type has to be Unsteady when using ALE formulation."));
+
     AssertThrow(
       temporal_discretization == TemporalDiscretization::BDF &&
         (treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit ||
