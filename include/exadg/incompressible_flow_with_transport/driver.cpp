@@ -587,9 +587,8 @@ Driver<dim, Number>::solve() const
     /*
      * ALE: move the mesh and update dependent data structures
      */
-    if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
-      if(application->get_parameters().ale_formulation) // moving mesh
-        ale_update();
+    if(application->get_parameters().ale_formulation)
+      ale_update();
 
     /*
      *  solve
