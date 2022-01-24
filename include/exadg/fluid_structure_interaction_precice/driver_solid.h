@@ -167,11 +167,13 @@ public:
 
       // VectorType stress_fluid;
       communicator = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+      VectorType displacement_structure;
+      structure_operator->initialize_dof_vector(displacement_structure);
       communicator->setup(structure_matrix_free,
                           structure_operator->get_dof_index(),
                           quad_indices,
                           this->application->get_boundary_descriptor_structure()->neumann_mortar_bc,
-                          structure_time_integrator->get_displacement_np());
+                          displacement_structure);
     }
 
     /*********************************** INTERFACE COUPLING *************************************/
@@ -204,14 +206,18 @@ public:
   {
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
            ExcNotImplemented());
+    VectorType d_old;
+    structure_operator->initialize_dof_vector(d_old);
+    structure_time_integrator->advance_one_timestep_pre_solve(true);
 
-    // The fluid domain is the master that dictates when the time loop is finished
+    // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
-      // TODO
-      structure_time_integrator->advance_one_timestep_pre_solve(false);
+      structure_time_integrator->advance_one_timestep_pre_solve(
+        this->precice->is_time_window_complete());
 
-      // solve (using strongly-coupled partitioned scheme)
+      this->precice->save_current_state_if_required(
+        [&]() { d_old = structure_time_integrator->get_displacement_np(); });
 
       // update stress boundary condition for solid
       coupling_fluid_to_structure();
@@ -229,8 +235,12 @@ public:
 
       this->precice->advance(structure_time_integrator->get_time_step_size());
 
-      // TODO
-      structure_time_integrator->advance_one_timestep_post_solve();
+      // Needs to be called before the swaps in post_solve
+      this->precice->reload_old_state_if_required(
+        [&]() { structure_time_integrator->set_displacement(d_old); });
+
+      if(this->precice->is_time_window_complete())
+        structure_time_integrator->advance_one_timestep_post_solve();
     }
   }
 
