@@ -65,14 +65,14 @@ DriverQuasiStatic<dim, Number>::setup()
 
 template<int dim, typename Number>
 void
-DriverQuasiStatic<dim, Number>::solve_problem()
+DriverQuasiStatic<dim, Number>::solve()
 {
   Timer timer;
   timer.restart();
 
   postprocessing();
 
-  solve();
+  do_solve();
 
   postprocessing();
 
@@ -119,7 +119,7 @@ DriverQuasiStatic<dim, Number>::get_timings() const
 
 template<int dim, typename Number>
 void
-DriverQuasiStatic<dim, Number>::solve()
+DriverQuasiStatic<dim, Number>::do_solve()
 {
   Timer timer;
   timer.restart();

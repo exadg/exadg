@@ -64,7 +64,7 @@ public:
   setup();
 
   void
-  solve_steady_problem(double const time = 0.0, bool unsteady_problem = false);
+  solve(double const time = 0.0, bool unsteady_problem = false);
 
   VectorType const &
   get_velocity() const;
@@ -83,7 +83,7 @@ private:
   initialize_solution();
 
   void
-  solve(double const time = 0.0, bool unsteady_problem = false);
+  do_solve(double const time = 0.0, bool unsteady_problem = false);
 
   bool
   print_solver_info(double const time, bool unsteady_problem = false) const;

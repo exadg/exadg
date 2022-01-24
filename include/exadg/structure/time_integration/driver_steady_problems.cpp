@@ -60,14 +60,14 @@ DriverSteady<dim, Number>::setup()
 
 template<int dim, typename Number>
 void
-DriverSteady<dim, Number>::solve_problem()
+DriverSteady<dim, Number>::solve()
 {
   Timer timer;
   timer.restart();
 
   postprocessing();
 
-  solve();
+  do_solve();
 
   postprocessing();
 
@@ -99,7 +99,7 @@ DriverSteady<dim, Number>::initialize_solution()
 
 template<int dim, typename Number>
 void
-DriverSteady<dim, Number>::solve()
+DriverSteady<dim, Number>::do_solve()
 {
   Timer timer;
   timer.restart();

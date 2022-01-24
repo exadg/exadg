@@ -65,7 +65,7 @@ public:
   setup();
 
   void
-  solve_problem();
+  solve();
 
   std::shared_ptr<TimerTree>
   get_timings() const;
@@ -78,7 +78,7 @@ private:
   initialize_solution();
 
   void
-  solve();
+  do_solve();
 
   void
   postprocessing() const;

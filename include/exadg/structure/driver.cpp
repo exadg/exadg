@@ -144,11 +144,11 @@ Driver<dim, Number>::solve() const
   }
   else if(application->get_parameters().problem_type == ProblemType::Steady)
   {
-    driver_steady->solve_problem();
+    driver_steady->solve();
   }
   else if(application->get_parameters().problem_type == ProblemType::QuasiStatic)
   {
-    driver_quasi_static->solve_problem();
+    driver_quasi_static->solve();
   }
   else
   {

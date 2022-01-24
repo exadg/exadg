@@ -101,14 +101,14 @@ DriverSteadyProblems<dim, Number>::initialize_solution()
 
 template<int dim, typename Number>
 void
-DriverSteadyProblems<dim, Number>::solve_steady_problem(double const time, bool unsteady_problem)
+DriverSteadyProblems<dim, Number>::solve(double const time, bool unsteady_problem)
 {
   Timer timer;
   timer.restart();
 
   postprocessing(time, unsteady_problem);
 
-  solve(time, unsteady_problem);
+  do_solve(time, unsteady_problem);
 
   postprocessing(time, unsteady_problem);
 
@@ -117,7 +117,7 @@ DriverSteadyProblems<dim, Number>::solve_steady_problem(double const time, bool 
 
 template<int dim, typename Number>
 void
-DriverSteadyProblems<dim, Number>::solve(double const time, bool unsteady_problem)
+DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_problem)
 {
   if(iterations.first == 0)
     global_timer.restart();

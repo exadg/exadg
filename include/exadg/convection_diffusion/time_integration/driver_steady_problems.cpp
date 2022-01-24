@@ -61,14 +61,14 @@ DriverSteadyProblems<Number>::setup()
 
 template<typename Number>
 void
-DriverSteadyProblems<Number>::solve_problem()
+DriverSteadyProblems<Number>::solve()
 {
   Timer timer;
   timer.restart();
 
   postprocessing();
 
-  solve();
+  do_solve();
 
   postprocessing();
 
@@ -103,7 +103,7 @@ DriverSteadyProblems<Number>::initialize_solution()
 
 template<typename Number>
 void
-DriverSteadyProblems<Number>::solve()
+DriverSteadyProblems<Number>::do_solve()
 {
   Timer timer;
   timer.restart();
