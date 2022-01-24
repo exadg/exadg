@@ -68,7 +68,10 @@ public:
   }
 
   void
-  solve_timestep(VectorType & dst, VectorType & src, double const time, double const time_step)
+  solve_timestep(VectorType & dst,
+                 VectorType & src,
+                 double const time,
+                 double const time_step) final
   {
     if(order == 1) // explicit Euler method
     {
@@ -180,7 +183,7 @@ public:
   }
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return order;
   }
@@ -238,7 +241,10 @@ public:
   }
 
   void
-  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np,
+                 VectorType & vec_n,
+                 double const time,
+                 double const time_step) final
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -295,7 +301,7 @@ public:
   }
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return 3;
   }
@@ -320,7 +326,10 @@ public:
   }
 
   void
-  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np,
+                 VectorType & vec_n,
+                 double const time,
+                 double const time_step) final
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -388,7 +397,7 @@ public:
   }
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return 4;
   }
@@ -412,7 +421,10 @@ public:
   }
 
   void
-  solve_timestep(VectorType & vec_np, VectorType & vec_n, double const time, double const time_step)
+  solve_timestep(VectorType & vec_np,
+                 VectorType & vec_n,
+                 double const time,
+                 double const time_step) final
   {
     if(!vec_tmp1.partitioners_are_globally_compatible(*vec_n.get_partitioner()))
     {
@@ -497,7 +509,7 @@ public:
   }
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return 4;
   }
@@ -629,7 +641,7 @@ public:
   }
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return 5;
   }
@@ -748,7 +760,7 @@ public:
   }
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return order;
   }

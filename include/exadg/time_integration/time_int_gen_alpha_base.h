@@ -49,10 +49,10 @@ public:
                       bool const           is_test_);
 
   double
-  get_time_step_size() const override;
+  get_time_step_size() const final;
 
   void
-  set_current_time_step_size(double const & time_step_size) override;
+  set_current_time_step_size(double const & time_step_size) final;
 
 protected:
   double
@@ -86,10 +86,10 @@ protected:
 
 private:
   void
-  do_timestep_pre_solve(bool const print_header) override;
+  do_timestep_pre_solve(bool const print_header) final;
 
   void
-  do_timestep_post_solve() override;
+  do_timestep_post_solve() final;
 
   virtual void
   prepare_vectors_for_next_timestep() = 0;

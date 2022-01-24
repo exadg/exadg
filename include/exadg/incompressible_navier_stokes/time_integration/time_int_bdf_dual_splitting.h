@@ -69,6 +69,9 @@ public:
 
 private:
   void
+  allocate_vectors() final;
+
+  void
   setup_derived() final;
 
   void
@@ -78,10 +81,7 @@ private:
   write_restart_vectors(boost::archive::binary_oarchive & oa) const final;
 
   void
-  solve_timestep() final;
-
-  void
-  allocate_vectors() final;
+  do_timestep_solve() final;
 
   void
   prepare_vectors_for_next_timestep() final;

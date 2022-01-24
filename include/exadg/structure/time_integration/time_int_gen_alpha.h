@@ -91,7 +91,7 @@ public:
 
 private:
   void
-  solve_timestep() final;
+  do_timestep_solve() final;
 
   void
   prepare_vectors_for_next_timestep() final;

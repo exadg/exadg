@@ -47,13 +47,13 @@ public:
                     bool const          is_test_);
 
   void
-  setup(bool const do_restart) override;
+  setup(bool const do_restart) final;
 
   double
-  get_time_step_size() const override;
+  get_time_step_size() const final;
 
   void
-  set_current_time_step_size(double const & time_step_size) override;
+  set_current_time_step_size(double const & time_step_size) final;
 
 protected:
   // solution vectors
@@ -67,10 +67,10 @@ protected:
 
 private:
   void
-  do_timestep_pre_solve(bool const print_header) override;
+  do_timestep_pre_solve(bool const print_header) final;
 
   void
-  do_timestep_post_solve() override;
+  do_timestep_post_solve() final;
 
   void
   prepare_vectors_for_next_timestep();
@@ -97,10 +97,10 @@ private:
   print_solver_info() const = 0;
 
   void
-  do_write_restart(std::string const & filename) const override;
+  do_write_restart(std::string const & filename) const final;
 
   void
-  do_read_restart(std::ifstream & in) override;
+  do_read_restart(std::ifstream & in) final;
 };
 
 } // namespace ExaDG

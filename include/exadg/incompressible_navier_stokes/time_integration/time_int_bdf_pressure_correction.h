@@ -69,19 +69,19 @@ public:
 
 private:
   void
-  update_time_integrator_constants() final;
+  allocate_vectors() final;
 
   void
-  allocate_vectors() final;
+  setup_derived() final;
+
+  void
+  update_time_integrator_constants() final;
 
   void
   initialize_current_solution() final;
 
   void
   initialize_former_solutions() final;
-
-  void
-  setup_derived() final;
 
   void
   read_restart_vectors(boost::archive::binary_iarchive & ia) final;
@@ -93,7 +93,7 @@ private:
   initialize_pressure_on_boundary();
 
   void
-  solve_timestep() final;
+  do_timestep_solve() final;
 
   void
   solve_steady_problem() final;

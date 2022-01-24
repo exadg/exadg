@@ -517,7 +517,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::solve_timestep()
+TimeIntBDF<dim, Number>::do_timestep_solve()
 {
   Timer timer;
   timer.restart();

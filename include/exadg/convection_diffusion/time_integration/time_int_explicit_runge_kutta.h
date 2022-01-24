@@ -84,7 +84,7 @@ private:
   print_solver_info() const;
 
   void
-  solve_timestep();
+  do_timestep_solve() final;
 
   void
   calculate_time_step_size();

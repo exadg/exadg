@@ -57,10 +57,10 @@ public:
   solve_timestep(VectorType & vec_np,
                  VectorType & vec_n,
                  double const time,
-                 double const time_step);
+                 double const time_step) final;
 
   unsigned int
-  get_order() const
+  get_order() const final
   {
     return order;
   }

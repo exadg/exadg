@@ -110,7 +110,7 @@ TimeIntGenAlpha<dim, Number>::advance_one_timestep_partitioned_solve(bool const 
 
 template<int dim, typename Number>
 void
-TimeIntGenAlpha<dim, Number>::solve_timestep()
+TimeIntGenAlpha<dim, Number>::do_timestep_solve()
 {
   // compute right-hand side in case of linear problems or "constant vector"
   // in case of nonlinear problems

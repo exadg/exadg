@@ -277,7 +277,7 @@ TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
     velocity[0].local_element(j) = 1.0;
 
     // solve time step
-    this->solve_timestep();
+    this->do_timestep_solve();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -312,7 +312,7 @@ TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::solve_timestep()
+TimeIntBDFDualSplitting<dim, Number>::do_timestep_solve()
 {
   // pre-computations
   if(this->param.store_previous_boundary_values)

@@ -71,10 +71,10 @@ public:
 
 private:
   void
-  setup_derived() final;
+  allocate_vectors() final;
 
   void
-  allocate_vectors() final;
+  setup_derived() final;
 
   void
   initialize_current_solution() final;
@@ -83,7 +83,7 @@ private:
   initialize_former_solutions() final;
 
   void
-  solve_timestep() final;
+  do_timestep_solve() final;
 
   void
   solve_steady_problem() final;

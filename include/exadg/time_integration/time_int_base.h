@@ -76,13 +76,20 @@ public:
   finished() const;
 
   /*
-   * Performs the time loop from start_time to end_time.
+   * Performs the time loop from start_time to end_time by repeatingly calling
+   * advance_one_timestep().
    */
   void
   timeloop();
 
   /*
    * Perform only one time step (which is used when coupling different solvers, equations, etc.).
+   */
+  void
+  advance_one_timestep();
+
+  /*
+   * The main sub-routines of advance_one_timestep()
    */
   void
   advance_one_timestep_pre_solve(bool const print_header);
@@ -92,9 +99,6 @@ public:
 
   void
   advance_one_timestep_post_solve();
-
-  void
-  advance_one_timestep();
 
   /*
    * Reset the current time.
@@ -137,8 +141,12 @@ public:
 
 protected:
   /*
-   * Do one time step including different updates before and after the actual solution of the
-   * current time step.
+   * Do one time step including pre and post routines done before and after the actual solution of
+   * the current time step. Compared to the function advance_one_timestep(), do_timestep() is a raw
+   * version that does not call postprocessing routines, does not write output to pcout, and does
+   * not perform timer measurements within its sub-routines. The typical use case of do_timestep()
+   * is when using pseudo-timestepping to obtain the solution of a steady-state problem with a
+   * transient solver.
    */
   void
   do_timestep();
@@ -149,8 +157,11 @@ protected:
   virtual void
   do_timestep_pre_solve(bool const print_header) = 0;
 
+  /*
+   * The actual solution of the current time step
+   */
   virtual void
-  solve_timestep() = 0;
+  do_timestep_solve() = 0;
 
   /*
    * e.g., update of DoF vectors, increment time, adjust time step size, etc.
