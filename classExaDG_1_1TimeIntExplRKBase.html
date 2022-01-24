@@ -97,12 +97,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a63fb48018177c00a1cd67c8020451c21"><td class="memItemLeft" align="right" valign="top"><a id="a63fb48018177c00a1cd67c8020451c21" name="a63fb48018177c00a1cd67c8020451c21"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntExplRKBase</b> (double const &amp;start_time_, double const &amp;end_time_, unsigned int const max_number_of_time_steps_, <a class="el" href="structExaDG_1_1RestartData.html">RestartData</a> const &amp;restart_data_, bool const adaptive_time_stepping_, MPI_Comm const &amp;mpi_comm_, bool const is_test_)</td></tr>
 <tr class="separator:a63fb48018177c00a1cd67c8020451c21"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a3ae5a48ea380693114263249ff5eec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntExplRKBase.html#a1a3ae5a48ea380693114263249ff5eec">setup</a> (bool const do_restart) override</td></tr>
-<tr class="separator:a1a3ae5a48ea380693114263249ff5eec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbe68682d103fe3ba79ba89dfdabdecf"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntExplRKBase.html#abbe68682d103fe3ba79ba89dfdabdecf">get_time_step_size</a> () const override</td></tr>
-<tr class="separator:abbe68682d103fe3ba79ba89dfdabdecf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abfa3a6619683a54da21d05d2bdac5535"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntExplRKBase.html#abfa3a6619683a54da21d05d2bdac5535">set_current_time_step_size</a> (double const &amp;time_step_size) override</td></tr>
-<tr class="separator:abfa3a6619683a54da21d05d2bdac5535"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64b1f167e56031e9114f085e23b43206"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntExplRKBase.html#a64b1f167e56031e9114f085e23b43206">setup</a> (bool const do_restart) final</td></tr>
+<tr class="separator:a64b1f167e56031e9114f085e23b43206"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78bb5908243917dd1669737082d265ab"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntExplRKBase.html#a78bb5908243917dd1669737082d265ab">get_time_step_size</a> () const final</td></tr>
+<tr class="separator:a78bb5908243917dd1669737082d265ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3a7f317c49f454e4edb43c6af6b44aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1TimeIntExplRKBase.html#af3a7f317c49f454e4edb43c6af6b44aa">set_current_time_step_size</a> (double const &amp;time_step_size) final</td></tr>
+<tr class="separator:af3a7f317c49f454e4edb43c6af6b44aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1TimeIntBase"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1TimeIntBase')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1TimeIntBase.html">ExaDG::TimeIntBase</a></td></tr>
 <tr class="memitem:aaf470ff8f2bb3d7b6b0c634d4e84e005 inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="aaf470ff8f2bb3d7b6b0c634d4e84e005" name="aaf470ff8f2bb3d7b6b0c634d4e84e005"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>TimeIntBase</b> (double const &amp;start_time_, double const &amp;end_time_, unsigned int const max_number_of_time_steps_, <a class="el" href="structExaDG_1_1RestartData.html">RestartData</a> const &amp;restart_data_, MPI_Comm const &amp;mpi_comm_, bool const is_test_)</td></tr>
@@ -116,6 +116,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>finished</b> () const
 <tr class="memitem:ad60030884bc30e96e192da7dfc91dee6 inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="ad60030884bc30e96e192da7dfc91dee6" name="ad60030884bc30e96e192da7dfc91dee6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>timeloop</b> ()</td></tr>
 <tr class="separator:ad60030884bc30e96e192da7dfc91dee6 inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6275926478856f365b3215cf286a80a inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="ae6275926478856f365b3215cf286a80a" name="ae6275926478856f365b3215cf286a80a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep</b> ()</td></tr>
+<tr class="separator:ae6275926478856f365b3215cf286a80a inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa19f54b02f6e7a406d54f56d8f97b9f1 inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="aa19f54b02f6e7a406d54f56d8f97b9f1" name="aa19f54b02f6e7a406d54f56d8f97b9f1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_pre_solve</b> (bool const print_header)</td></tr>
 <tr class="separator:aa19f54b02f6e7a406d54f56d8f97b9f1 inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,9 +128,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_
 <tr class="memitem:a56237bf2a1dfb3d73b8c493f11eda89f inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="a56237bf2a1dfb3d73b8c493f11eda89f" name="a56237bf2a1dfb3d73b8c493f11eda89f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_post_solve</b> ()</td></tr>
 <tr class="separator:a56237bf2a1dfb3d73b8c493f11eda89f inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6275926478856f365b3215cf286a80a inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="ae6275926478856f365b3215cf286a80a" name="ae6275926478856f365b3215cf286a80a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep</b> ()</td></tr>
-<tr class="separator:ae6275926478856f365b3215cf286a80a inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25ad5cc3a8d7a0b3999efb68ee7c649c inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="a25ad5cc3a8d7a0b3999efb68ee7c649c" name="a25ad5cc3a8d7a0b3999efb68ee7c649c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reset_time</b> (double const &amp;current_time)</td></tr>
 <tr class="separator:a25ad5cc3a8d7a0b3999efb68ee7c649c inherit pub_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -202,9 +202,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:ac2177503910a3bf6367cab21d20561ea inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="ac2177503910a3bf6367cab21d20561ea" name="ac2177503910a3bf6367cab21d20561ea"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep</b> ()</td></tr>
 <tr class="separator:ac2177503910a3bf6367cab21d20561ea inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b3107aad577908c86d642ca0d9306e2 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="a4b3107aad577908c86d642ca0d9306e2" name="a4b3107aad577908c86d642ca0d9306e2"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>solve_timestep</b> ()=0</td></tr>
-<tr class="separator:a4b3107aad577908c86d642ca0d9306e2 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85241fd58727fa6cee13f17f6eb5a7a6 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="a85241fd58727fa6cee13f17f6eb5a7a6" name="a85241fd58727fa6cee13f17f6eb5a7a6"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_solve</b> ()=0</td></tr>
+<tr class="separator:a85241fd58727fa6cee13f17f6eb5a7a6 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba45e7b9dfa068c5cfe320f450ac1169 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memItemLeft" align="right" valign="top"><a id="aba45e7b9dfa068c5cfe320f450ac1169" name="aba45e7b9dfa068c5cfe320f450ac1169"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>postprocessing</b> () const =0</td></tr>
 <tr class="separator:aba45e7b9dfa068c5cfe320f450ac1169 inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -225,8 +225,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>output_remaining_time
 <tr class="separator:a0a081df91448f6664268f47b3f8bd58f inherit pro_methods_classExaDG_1_1TimeIntBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="abbe68682d103fe3ba79ba89dfdabdecf" name="abbe68682d103fe3ba79ba89dfdabdecf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abbe68682d103fe3ba79ba89dfdabdecf">&#9670;&nbsp;</a></span>get_time_step_size()</h2>
+<a id="a78bb5908243917dd1669737082d265ab" name="a78bb5908243917dd1669737082d265ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78bb5908243917dd1669737082d265ab">&#9670;&nbsp;</a></span>get_time_step_size()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -242,7 +242,7 @@ template&lt;typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -251,8 +251,8 @@ template&lt;typename Number &gt; </div>
 
 </div>
 </div>
-<a id="abfa3a6619683a54da21d05d2bdac5535" name="abfa3a6619683a54da21d05d2bdac5535"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abfa3a6619683a54da21d05d2bdac5535">&#9670;&nbsp;</a></span>set_current_time_step_size()</h2>
+<a id="af3a7f317c49f454e4edb43c6af6b44aa" name="af3a7f317c49f454e4edb43c6af6b44aa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af3a7f317c49f454e4edb43c6af6b44aa">&#9670;&nbsp;</a></span>set_current_time_step_size()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -272,7 +272,7 @@ template&lt;typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -281,8 +281,8 @@ template&lt;typename Number &gt; </div>
 
 </div>
 </div>
-<a id="a1a3ae5a48ea380693114263249ff5eec" name="a1a3ae5a48ea380693114263249ff5eec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1a3ae5a48ea380693114263249ff5eec">&#9670;&nbsp;</a></span>setup()</h2>
+<a id="a64b1f167e56031e9114f085e23b43206" name="a64b1f167e56031e9114f085e23b43206"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64b1f167e56031e9114f085e23b43206">&#9670;&nbsp;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -302,7 +302,7 @@ template&lt;typename Number &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

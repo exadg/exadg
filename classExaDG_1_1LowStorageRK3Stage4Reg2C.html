@@ -87,10 +87,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8f4f78c14d2a7ca7875d6d543d29f56c"><td class="memItemLeft" align="right" valign="top"><a id="a8f4f78c14d2a7ca7875d6d543d29f56c" name="a8f4f78c14d2a7ca7875d6d543d29f56c"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>LowStorageRK3Stage4Reg2C</b> (std::shared_ptr&lt; Operator &gt; const operator_in)</td></tr>
 <tr class="separator:a8f4f78c14d2a7ca7875d6d543d29f56c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af64d595b6d711aac62e8743dae515cb7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1LowStorageRK3Stage4Reg2C.html#af64d595b6d711aac62e8743dae515cb7">solve_timestep</a> (VectorType &amp;vec_np, VectorType &amp;vec_n, double const time, double const time_step)</td></tr>
-<tr class="separator:af64d595b6d711aac62e8743dae515cb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46a9a0e20f7e2506e170c84b9d1edf12"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1LowStorageRK3Stage4Reg2C.html#a46a9a0e20f7e2506e170c84b9d1edf12">get_order</a> () const</td></tr>
-<tr class="separator:a46a9a0e20f7e2506e170c84b9d1edf12"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f481616aad930879ea7efee37f3dec0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1LowStorageRK3Stage4Reg2C.html#a6f481616aad930879ea7efee37f3dec0">solve_timestep</a> (VectorType &amp;vec_np, VectorType &amp;vec_n, double const time, double const time_step) final</td></tr>
+<tr class="separator:a6f481616aad930879ea7efee37f3dec0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc5d83ec1368294eb330d02d27fc4deb"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1LowStorageRK3Stage4Reg2C.html#afc5d83ec1368294eb330d02d27fc4deb">get_order</a> () const final</td></tr>
+<tr class="separator:afc5d83ec1368294eb330d02d27fc4deb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classExaDG_1_1ExplicitTimeIntegrator"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1ExplicitTimeIntegrator')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1ExplicitTimeIntegrator.html">ExaDG::ExplicitTimeIntegrator&lt; Operator, VectorType &gt;</a></td></tr>
 <tr class="memitem:ae586e25b8f9c41274db4a50968270280 inherit pub_methods_classExaDG_1_1ExplicitTimeIntegrator"><td class="memItemLeft" align="right" valign="top"><a id="ae586e25b8f9c41274db4a50968270280" name="ae586e25b8f9c41274db4a50968270280"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ExplicitTimeIntegrator</b> (std::shared_ptr&lt; Operator &gt; operator_in)</td></tr>
@@ -104,8 +104,8 @@ std::shared_ptr&lt; Operator &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="separator:adac800766256f61262c382cd7d88ec53 inherit pro_attribs_classExaDG_1_1ExplicitTimeIntegrator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a46a9a0e20f7e2506e170c84b9d1edf12" name="a46a9a0e20f7e2506e170c84b9d1edf12"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a46a9a0e20f7e2506e170c84b9d1edf12">&#9670;&nbsp;</a></span>get_order()</h2>
+<a id="afc5d83ec1368294eb330d02d27fc4deb" name="afc5d83ec1368294eb330d02d27fc4deb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc5d83ec1368294eb330d02d27fc4deb">&#9670;&nbsp;</a></span>get_order()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -124,7 +124,7 @@ template&lt;typename Operator , typename VectorType &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -133,8 +133,8 @@ template&lt;typename Operator , typename VectorType &gt; </div>
 
 </div>
 </div>
-<a id="af64d595b6d711aac62e8743dae515cb7" name="af64d595b6d711aac62e8743dae515cb7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af64d595b6d711aac62e8743dae515cb7">&#9670;&nbsp;</a></span>solve_timestep()</h2>
+<a id="a6f481616aad930879ea7efee37f3dec0" name="a6f481616aad930879ea7efee37f3dec0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f481616aad930879ea7efee37f3dec0">&#9670;&nbsp;</a></span>solve_timestep()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -176,7 +176,7 @@ template&lt;typename Operator , typename VectorType &gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">final</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

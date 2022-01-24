@@ -120,10 +120,10 @@ $(function() {
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>                      <span class="keywordtype">bool</span> <span class="keyword">const</span>           is_test_);</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordtype">double</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  get_time_step_size() <span class="keyword">const override</span>;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  get_time_step_size() <span class="keyword">const</span> <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  set_current_time_step_size(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time_step_size) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  set_current_time_step_size(<span class="keywordtype">double</span> <span class="keyword">const</span> &amp; time_step_size) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">protected</span>:</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">double</span></div>
@@ -157,10 +157,10 @@ $(function() {
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  do_timestep_pre_solve(<span class="keywordtype">bool</span> <span class="keyword">const</span> print_header) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  do_timestep_pre_solve(<span class="keywordtype">bool</span> <span class="keyword">const</span> print_header) <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  do_timestep_post_solve() <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  do_timestep_post_solve() <span class="keyword">final</span>;</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  prepare_vectors_for_next_timestep() = 0;</div>

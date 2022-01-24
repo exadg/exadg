@@ -111,6 +111,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>finished</b> () const
 <tr class="memitem:ad60030884bc30e96e192da7dfc91dee6"><td class="memItemLeft" align="right" valign="top"><a id="ad60030884bc30e96e192da7dfc91dee6" name="ad60030884bc30e96e192da7dfc91dee6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>timeloop</b> ()</td></tr>
 <tr class="separator:ad60030884bc30e96e192da7dfc91dee6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6275926478856f365b3215cf286a80a"><td class="memItemLeft" align="right" valign="top"><a id="ae6275926478856f365b3215cf286a80a" name="ae6275926478856f365b3215cf286a80a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep</b> ()</td></tr>
+<tr class="separator:ae6275926478856f365b3215cf286a80a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa19f54b02f6e7a406d54f56d8f97b9f1"><td class="memItemLeft" align="right" valign="top"><a id="aa19f54b02f6e7a406d54f56d8f97b9f1" name="aa19f54b02f6e7a406d54f56d8f97b9f1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_pre_solve</b> (bool const print_header)</td></tr>
 <tr class="separator:aa19f54b02f6e7a406d54f56d8f97b9f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -120,9 +123,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_
 <tr class="memitem:a56237bf2a1dfb3d73b8c493f11eda89f"><td class="memItemLeft" align="right" valign="top"><a id="a56237bf2a1dfb3d73b8c493f11eda89f" name="a56237bf2a1dfb3d73b8c493f11eda89f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep_post_solve</b> ()</td></tr>
 <tr class="separator:a56237bf2a1dfb3d73b8c493f11eda89f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6275926478856f365b3215cf286a80a"><td class="memItemLeft" align="right" valign="top"><a id="ae6275926478856f365b3215cf286a80a" name="ae6275926478856f365b3215cf286a80a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>advance_one_timestep</b> ()</td></tr>
-<tr class="separator:ae6275926478856f365b3215cf286a80a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25ad5cc3a8d7a0b3999efb68ee7c649c"><td class="memItemLeft" align="right" valign="top"><a id="a25ad5cc3a8d7a0b3999efb68ee7c649c" name="a25ad5cc3a8d7a0b3999efb68ee7c649c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reset_time</b> (double const &amp;current_time)</td></tr>
 <tr class="separator:a25ad5cc3a8d7a0b3999efb68ee7c649c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -153,9 +153,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep</b> ()</t
 <tr class="memitem:ad430ef11c80f5c3024472aa074e44a61"><td class="memItemLeft" align="right" valign="top"><a id="ad430ef11c80f5c3024472aa074e44a61" name="ad430ef11c80f5c3024472aa074e44a61"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_pre_solve</b> (bool const print_header)=0</td></tr>
 <tr class="separator:ad430ef11c80f5c3024472aa074e44a61"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b3107aad577908c86d642ca0d9306e2"><td class="memItemLeft" align="right" valign="top"><a id="a4b3107aad577908c86d642ca0d9306e2" name="a4b3107aad577908c86d642ca0d9306e2"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>solve_timestep</b> ()=0</td></tr>
-<tr class="separator:a4b3107aad577908c86d642ca0d9306e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85241fd58727fa6cee13f17f6eb5a7a6"><td class="memItemLeft" align="right" valign="top"><a id="a85241fd58727fa6cee13f17f6eb5a7a6" name="a85241fd58727fa6cee13f17f6eb5a7a6"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_solve</b> ()=0</td></tr>
+<tr class="separator:a85241fd58727fa6cee13f17f6eb5a7a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2733ce942df6be79438e2e5a343d4fb4"><td class="memItemLeft" align="right" valign="top"><a id="a2733ce942df6be79438e2e5a343d4fb4" name="a2733ce942df6be79438e2e5a343d4fb4"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>do_timestep_post_solve</b> ()=0</td></tr>
 <tr class="separator:a2733ce942df6be79438e2e5a343d4fb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
