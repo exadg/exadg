@@ -135,7 +135,7 @@ $(function() {
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  setup();</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  solve_steady_problem(<span class="keywordtype">double</span> <span class="keyword">const</span> time = 0.0, <span class="keywordtype">bool</span> unsteady_problem = <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  solve(<span class="keywordtype">double</span> <span class="keyword">const</span> time = 0.0, <span class="keywordtype">bool</span> unsteady_problem = <span class="keyword">false</span>);</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  VectorType <span class="keyword">const</span> &amp;</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  get_velocity() <span class="keyword">const</span>;</div>
@@ -154,7 +154,7 @@ $(function() {
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  initialize_solution();</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  solve(<span class="keywordtype">double</span> <span class="keyword">const</span> time = 0.0, <span class="keywordtype">bool</span> unsteady_problem = <span class="keyword">false</span>);</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  do_solve(<span class="keywordtype">double</span> <span class="keyword">const</span> time = 0.0, <span class="keywordtype">bool</span> unsteady_problem = <span class="keyword">false</span>);</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordtype">bool</span></div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  print_solver_info(<span class="keywordtype">double</span> <span class="keyword">const</span> time, <span class="keywordtype">bool</span> unsteady_problem = <span class="keyword">false</span>) <span class="keyword">const</span>;</div>
