@@ -244,6 +244,55 @@ public:
     }
   }
 
+  void
+  print_performance_results(double const total_time) const override
+  {
+    this->pcout
+      << std::endl
+      << "_________________________________________________________________________________"
+      << std::endl
+      << std::endl;
+
+    this->pcout << "Performance results for fluid-structure interaction solver:" << std::endl;
+
+    this->pcout << std::endl << "Structure:" << std::endl;
+    structure_time_integrator->print_iterations();
+
+    // wall times
+    this->pcout << std::endl << "Wall times:" << std::endl;
+
+    this->timer_tree.insert({"FSI"}, total_time);
+
+    this->timer_tree.insert({"FSI"}, structure_time_integrator->get_timings(), "Structure");
+
+    this->pcout << std::endl << "Timings for level 1:" << std::endl;
+    this->timer_tree.print_level(this->pcout, 1);
+
+    this->pcout << std::endl << "Timings for level 2:" << std::endl;
+    this->timer_tree.print_level(this->pcout, 2);
+
+    // Throughput in DoFs/s per time step per core
+    types::global_dof_index DoFs = structure_operator->get_number_of_dofs();
+
+    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(this->mpi_comm);
+
+    Utilities::MPI::MinMaxAvg total_time_data =
+      Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
+    double const total_time_avg = total_time_data.avg;
+
+    unsigned int N_time_steps = structure_time_integrator->get_number_of_time_steps();
+
+    print_throughput_unsteady(this->pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
+
+    // computational costs in CPUh
+    print_costs(this->pcout, total_time_avg, N_mpi_processes);
+
+    this->pcout
+      << "_________________________________________________________________________________"
+      << std::endl
+      << std::endl;
+  }
+
 private:
   void
   coupling_structure_to_ale(VectorType const & displacement_structure,

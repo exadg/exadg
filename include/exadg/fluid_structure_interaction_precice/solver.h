@@ -150,6 +150,9 @@ run(std::string const &          input_file,
                 resolution.refine_structure);
 
   driver->solve();
+
+  if(!is_test)
+    driver->print_performance_results(timer.wall_time());
 }
 } // namespace ExaDG
 

@@ -71,6 +71,9 @@ public:
   virtual void
   solve() const = 0;
 
+  virtual void
+  print_performance_results(double const total_time) const = 0;
+
 protected:
   // MPI communicator
   MPI_Comm const mpi_comm;
@@ -85,8 +88,12 @@ protected:
   std::shared_ptr<ApplicationBase<dim, Number>>           application;
   std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
   Parameters::PreciceAdapterConfiguration                 precice_parameters;
-};
 
+  /*
+   * Computation time (wall clock time).
+   */
+  mutable TimerTree timer_tree;
+};
 } // namespace FSI
 } // namespace ExaDG
 

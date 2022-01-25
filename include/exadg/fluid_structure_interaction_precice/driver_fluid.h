@@ -374,6 +374,12 @@ public:
     }
   }
 
+  void
+  print_performance_results(double const total_time) const override
+  {
+    (void)total_time;
+  }
+
 private:
   void
   coupling_structure_to_ale() const
