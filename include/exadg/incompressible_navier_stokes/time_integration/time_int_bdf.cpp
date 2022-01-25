@@ -607,9 +607,10 @@ TimeIntBDF<dim, Number>::postprocessing() const
   Timer timer;
   timer.restart();
 
-  // the mesh has to be at the correct position to allow a computation of
-  // errors at start_time
-  if(this->param.ale_formulation && this->get_time_step_number() == 1)
+  // To allow a computation of errors at start_time (= if time step number is 1 and if the
+  // simulation is not a restarted one), the mesh has to be at the correct position
+  if(this->param.ale_formulation && this->get_time_step_number() == 1 &&
+     !this->param.restarted_simulation)
   {
     operator_base->move_grid_and_update_dependent_data_structures(this->get_time());
   }
