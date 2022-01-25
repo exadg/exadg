@@ -9,10 +9,10 @@ namespace FSI
 {
 using namespace dealii;
 
-// FSI 3
-double const U_MEAN          = 2.0;
-double const FLUID_VISCOSITY = 1.0e-3;
-double const FLUID_DENSITY   = 1.0e3;
+// Perpendicular flap
+double const U_MEAN          = 10;
+double const FLUID_VISCOSITY = 1;
+double const FLUID_DENSITY   = 1;
 
 double const DENSITY_STRUCTURE       = 3.0e3;
 double const POISSON_RATIO_STRUCTURE = 0.3;
@@ -20,20 +20,13 @@ double const POISSON_RATIO_STRUCTURE = 0.3;
 double const E_STRUCTURE = 1538462 * 2.0 * (1.0 + POISSON_RATIO_STRUCTURE);
 
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
-double const X_0    = 0.0;  // origin (x-coordinate)
-double const Y_0    = 0.0;  // origin (y-coordinate)
-double const L      = 2.5;  // x-coordinate of outflow boundary
-double const H      = 0.41; // height of channel
-double const X_C    = 0.2;  // center of cylinder (x-coordinate)
-double const Y_C    = 0.2;  // center of cylinder (y-coordinate)
-double const X_2    = 2.0 * X_C;
-double const D      = 0.1;                    // cylinder diameter
-double const R      = D / 2.0;                // cylinder radius
-double const T      = 0.02;                   // thickness of flag
-double const L_FLAG = 0.35;                   // length of flag
-double const X_3    = X_C + R + L_FLAG * 1.6; // only relevant for mesh
-double const Y_3    = H / 3.0;                // only relevant for mesh
-
+double const X_0         = -3.0; // origin (x-coordinate)
+double const Y_0         = 0.0;  // origin (y-coordinate)
+double const L           = 3.0;  // x-coordinate of outflow boundary
+double const H           = 4.0;  // height of channel
+double const CENTER_S    = 0;    // Center of the flap
+double const THICKNESS_S = 0.1;  // Thickness of the flap
+double const HEIGHT_S    = 1.0;  // Height of the flap
 // boundary conditions
 types::boundary_id const BOUNDARY_ID_WALLS       = 0;
 types::boundary_id const BOUNDARY_ID_INFLOW      = 1;
@@ -45,9 +38,8 @@ bool STRUCTURE_COVERS_FLAG_ONLY = true;
 
 unsigned int N_CELLS_FLAG_Y = 5;
 
-double const U_X_MAX  = 1.5 * U_MEAN;
-double const END_TIME = 5;
-
+double const       END_TIME                            = 5;
+double const       DELTA_T                             = 0.01;
 double const       OUTPUT_INTERVAL_TIME                = 0.01;
 unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS = 1;
 
@@ -71,14 +63,8 @@ public:
     (void)p;
     double result = 0.0;
 
-    double const t = this->get_time();
-    double const T = 2.0;
-
-    double const y = p[1];
-
     if(component == 0)
-      result = U_X_MAX * (y * (H - y) / std::pow(H / 2.0, 2.0)) *
-               ((t < T) ? 0.5 * (1.0 - std::cos(t * numbers::PI / T)) : 1.0);
+      result = U_MEAN;
 
     return result;
   }
@@ -97,11 +83,12 @@ public:
   {
     (void)component;
 
+    double const length_scale = 2.0 * THICKNESS_S;
+    double const x            = p[0];
     double const value =
-      (std::abs(p[1] - H / 2.) < H / 8.) ? std::cos(4.0 * p[1] / H * numbers::PI) : 0.0;
-    double result = 1. + 100. * value * value;
+      (std::abs(x) < length_scale) ? std::cos(x / length_scale * 0.5 * numbers::PI) : 0.0;
 
-    return result;
+    return 1. + 100. * value * value;
   }
 };
 
@@ -151,9 +138,9 @@ public:
     param.order_time_integrator           = 2;
     param.start_with_low_order            = true;
     param.adaptive_time_stepping          = false;
-    param.calculation_of_time_step_size   = TimeStepCalculation::CFL;
-    param.time_step_size                  = END_TIME;
-    param.max_velocity                    = U_X_MAX;
+    param.calculation_of_time_step_size   = TimeStepCalculation::UserSpecified;
+    param.time_step_size                  = DELTA_T;
+    param.max_velocity                    = U_MEAN;
     param.cfl                             = 0.5;
     param.cfl_exponent_fe_degree_velocity = 1.5;
 
@@ -285,72 +272,32 @@ public:
   create_triangulation_fluid(Triangulation<2> & tria)
   {
     std::vector<Triangulation<2>> tria_vec;
-    tria_vec.resize(11);
+    tria_vec.resize(5);
 
-    GridGenerator::general_cell(tria_vec[0],
-                                {Point<2>(X_0, 0.0),
-                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                 Point<2>(X_0, H),
-                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
+    GridGenerator::subdivided_hyper_rectangle(tria_vec[0],
+                                              {16, 1} /* subdivisions x,y */,
+                                              Point<2>(X_0, Y_0),
+                                              Point<2>(CENTER_S - (0.5 * THICKNESS_S), HEIGHT_S));
 
-    GridGenerator::general_cell(tria_vec[1],
-                                {Point<2>(X_0, 0.0),
-                                 Point<2>(X_2, 0.0),
-                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0))});
+    GridGenerator::subdivided_hyper_rectangle(tria_vec[1],
+                                              {16, 3} /* subdivisions x,y */,
+                                              Point<2>(X_0, HEIGHT_S),
+                                              Point<2>(CENTER_S - (0.5 * THICKNESS_S), H));
 
-    GridGenerator::general_cell(tria_vec[2],
-                                {Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                 Point<2>(X_0, H),
-                                 Point<2>(X_2, H)});
+    GridGenerator::subdivided_hyper_rectangle(tria_vec[2],
+                                              {1, 3} /* subdivisions x,y */,
+                                              Point<2>(CENTER_S - (0.5 * THICKNESS_S), HEIGHT_S),
+                                              Point<2>(CENTER_S + (0.5 * THICKNESS_S), H));
 
-    GridGenerator::general_cell(tria_vec[3],
-                                {Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                 Point<2>(X_2, 0.0),
-                                 Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))),
-                                          Y_C - T / 2.0),
-                                 Point<2>(X_2, Y_C - T / 2.0)});
-
-    GridGenerator::general_cell(tria_vec[4],
-                                {Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))),
-                                          Y_C + T / 2.0),
-                                 Point<2>(X_2, Y_C + T / 2.0),
-                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                 Point<2>(X_2, H)});
-
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[5],
-                                              {1, 1} /* subdivisions x,y */,
-                                              Point<2>(X_2, 0.0),
-                                              Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[6],
-                                              {1, 1} /* subdivisions x,y */,
-                                              Point<2>(X_2, Y_C + T / 2.0),
-                                              Point<2>(X_C + R + L_FLAG, H));
-
-    GridGenerator::general_cell(tria_vec[7],
-                                {Point<2>(X_C + R + L_FLAG, 0.0),
-                                 Point<2>(X_3, 0.0),
-                                 Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0),
-                                 Point<2>(X_3, Y_3)});
-
-    GridGenerator::general_cell(tria_vec[8],
-                                {Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0),
-                                 Point<2>(X_3, 2.0 * Y_3),
-                                 Point<2>(X_C + R + L_FLAG, H),
-                                 Point<2>(X_3, H)});
-
-    GridGenerator::general_cell(tria_vec[9],
-                                {Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0),
-                                 Point<2>(X_3, Y_3),
-                                 Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0),
-                                 Point<2>(X_3, 2.0 * Y_3)});
-
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[10],
-                                              {8, 3} /* subdivisions x,y */,
-                                              Point<2>(X_3, 0.0),
+    GridGenerator::subdivided_hyper_rectangle(tria_vec[3],
+                                              {16, 3} /* subdivisions x,y */,
+                                              Point<2>(CENTER_S + (0.5 * THICKNESS_S), HEIGHT_S),
                                               Point<2>(L, H));
+
+    GridGenerator::subdivided_hyper_rectangle(tria_vec[4],
+                                              {16, 1} /* subdivisions x,y */,
+                                              Point<2>(CENTER_S + (0.5 * THICKNESS_S), Y_0),
+                                              Point<2>(L, HEIGHT_S));
 
     std::vector<Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
     for(unsigned int i = 0; i < tria_vec.size(); ++i)
@@ -377,88 +324,40 @@ public:
 
     grid->triangulation->set_all_manifold_ids(0);
 
-    // vectors of manifold_ids and face_ids
-    unsigned int const        manifold_id_start = 10;
-    std::vector<unsigned int> manifold_ids;
-    std::vector<unsigned int> face_ids;
-
-    Point<dim> center;
-    center[0] = X_C;
-    center[1] = Y_C;
-
     for(auto cell : grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
-        double const x   = cell->face(f)->center()(0);
-        double const y   = cell->face(f)->center()(1);
-        double const TOL = 1.e-12;
-
-        if(std::fabs(y - Y_0) < TOL || std::fabs(y - H) < TOL)
+        if(cell->face(f)->at_boundary())
         {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
-        }
+          double const x   = cell->face(f)->center()(0);
+          double const y   = cell->face(f)->center()(1);
+          double const TOL = 1.e-12;
 
-        if(std::fabs(x - X_0) < TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
-        }
-
-        if(std::fabs(x - L) < TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
-        }
-
-        if(std::fabs(cell->face(f)->center().distance(center)) < R + TOL)
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_BOTTOM_WALL);
-        }
-
-        if(std::fabs(y - (Y_C - T / 2.0)) < TOL || std::fabs(y - (Y_C + T / 2.0)) < TOL ||
-           (std::fabs(y - Y_C) < T / 2.0 + TOL && std::fabs(x - (X_C + R + L_FLAG)) < TOL))
-        {
-          cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
-        }
-
-        // manifold IDs
-        for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
-        {
-          bool face_at_sphere_boundary = cell->face(f)->at_boundary();
-          for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          if(std::fabs(x - X_0) < TOL)
           {
-            if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
-              face_at_sphere_boundary = false;
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_INFLOW);
           }
-          if(face_at_sphere_boundary)
+          else if(std::fabs(y - Y_0) < TOL || std::fabs(y - H) < TOL)
           {
-            face_ids.push_back(f);
-            unsigned int manifold_id = manifold_id_start + manifold_ids.size() + 1;
-            cell->set_all_manifold_ids(manifold_id);
-            manifold_ids.push_back(manifold_id);
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_WALLS);
+          }
+          else if(std::fabs(x - L) < TOL)
+          {
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_OUTFLOW);
+          }
+          else if(std::fabs(x - CENTER_S) < (THICKNESS_S * 0.5) + TOL && y < HEIGHT_S + TOL)
+          {
+            cell->face(f)->set_boundary_id(BOUNDARY_ID_FLAG);
+          }
+          else
+          {
+            AssertThrow(false, ExcNotImplemented());
           }
         }
       }
     }
-
-    // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
-    manifold_vec.resize(manifold_ids.size());
-
-    for(unsigned int i = 0; i < manifold_ids.size(); ++i)
-    {
-      for(auto cell : grid->triangulation->active_cell_iterators())
-      {
-        if(cell->manifold_id() == manifold_ids[i])
-        {
-          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
-        }
-      }
-    }
-
     grid->triangulation->refine_global(grid_data.n_refine_global);
-
     return grid;
   }
 
@@ -503,7 +402,7 @@ public:
   {
     std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->fluid_field_functions;
 
-    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_solution_velocity.reset(new InflowBC<dim>());
     field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
@@ -516,7 +415,7 @@ public:
 
     // write output for visualization of results
     pp_data.output_data.write_output       = true;
-    pp_data.output_data.directory          = this->output_directory + "vtu/";
+    pp_data.output_data.directory          = this->output_directory;
     pp_data.output_data.filename           = this->output_name + "_fluid";
     pp_data.output_data.write_boundary_IDs = true;
     pp_data.output_data.write_processor_id = true;
@@ -710,7 +609,7 @@ public:
 
     param.start_time                           = 0.0;
     param.end_time                             = END_TIME;
-    param.time_step_size                       = 0.01;
+    param.time_step_size                       = DELTA_T;
     param.gen_alpha_type                       = GenAlphaType::Newmark;
     param.spectral_radius                      = 1;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
@@ -742,8 +641,8 @@ public:
     {
       GridGenerator::subdivided_hyper_rectangle(tria,
                                                 {1, N_CELLS_FLAG_Y} /* subdivisions x,y */,
-                                                Point<2>(-0.05, 0),
-                                                Point<2>(0.05, 1));
+                                                Point<2>(CENTER_S - (THICKNESS_S * 0.5), 0),
+                                                Point<2>(CENTER_S + (THICKNESS_S * 0.5), HEIGHT_S));
     }
     else
     {
@@ -768,11 +667,6 @@ public:
     create_triangulation_structure(*grid->triangulation);
 
     grid->triangulation->set_all_manifold_ids(0);
-
-
-    Point<dim> center;
-    center[0] = X_C;
-    center[1] = Y_C;
 
     for(auto cell : grid->triangulation->active_cell_iterators())
     {
