@@ -300,11 +300,80 @@ public:
 
     /*********************************** INTERFACE COUPLING *************************************/
 
+    // writing
+    this->precice = std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(
+      this->precice_parameters,
+      this->application->get_boundary_descriptor_ale_poisson()->dirichlet_mortar_bc.begin()->first,
+      fluid_matrix_free,
+      fluid_operator->get_dof_index_pressure(),
+      0 /*dummy*/,
+      /*unused(dummy)*/ false);
+
     // structure to ALE
+    {
+      if(this->application->get_parameters_fluid().mesh_movement_type ==
+         IncNS::MeshMovementType::Poisson)
+      {
+        std::vector<unsigned int> quad_indices;
+        if(this->application->get_parameters_ale_poisson().spatial_discretization ==
+           Poisson::SpatialDiscretization::DG)
+          quad_indices.emplace_back(ale_poisson_operator->get_quad_index());
+        else if(this->application->get_parameters_ale_poisson().spatial_discretization ==
+                Poisson::SpatialDiscretization::CG)
+          quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
+        else
+          AssertThrow(false, ExcNotImplemented());
+
+        // VectorType stress_fluid;
+        communicator_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+        VectorType displacement_structure;
+        ale_poisson_operator->initialize_dof_vector(displacement_structure);
+        communicator_ale->setup(
+          ale_matrix_free,
+          ale_poisson_operator->get_dof_index(),
+          quad_indices,
+          this->application->get_boundary_descriptor_ale_poisson()->dirichlet_mortar_bc,
+          displacement_structure);
+      }
+      else if(this->application->get_parameters_fluid().mesh_movement_type ==
+              IncNS::MeshMovementType::Elasticity)
+      {
+        std::vector<unsigned int> quad_indices;
+        quad_indices.emplace_back(ale_elasticity_operator->get_quad_index_gauss_lobatto());
+
+        VectorType displacement_structure;
+        ale_elasticity_operator->initialize_dof_vector(displacement_structure);
+        communicator_ale = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+        communicator_ale->setup(
+          ale_matrix_free,
+          ale_elasticity_operator->get_dof_index(),
+          quad_indices,
+          this->application->get_boundary_descriptor_ale_elasticity()->dirichlet_mortar_bc,
+          displacement_structure);
+      }
+      else
+      {
+        AssertThrow(false, ExcNotImplemented());
+      }
+    }
 
     // structure to fluid
+    {
+      std::vector<unsigned int> quad_indices;
+      quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_linear());
+      quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_nonlinear());
+      quad_indices.emplace_back(fluid_operator->get_quad_index_velocity_gauss_lobatto());
 
-    // fluid to structure
+      VectorType velocity_structure;
+      fluid_operator->initialize_vector_velocity(velocity_structure);
+      communicator_fluid = std::make_shared<InterfaceCoupling<dim, dim, Number>>(this->precice);
+      communicator_fluid->setup(
+        fluid_matrix_free,
+        fluid_operator->get_dof_index_velocity(),
+        quad_indices,
+        this->application->get_boundary_descriptor_fluid()->velocity->dirichlet_mortar_bc,
+        velocity_structure);
+    }
 
     /*********************************** INTERFACE COUPLING *************************************/
 
@@ -344,11 +413,17 @@ public:
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
            ExcNotImplemented());
 
-    // The fluid domain is the master that dictates when the time loop is finished
-    while(!fluid_time_integrator->finished())
+    // initial true
+    fluid_time_integrator->advance_one_timestep_pre_solve(true);
+
+    // preCICE dictates when the time loop is finished
+    while(this->precice->is_coupling_ongoing())
     {
       // pre-solve
-      fluid_time_integrator->advance_one_timestep_pre_solve(true);
+      fluid_time_integrator->advance_one_timestep_pre_solve(
+        this->precice->is_time_window_complete());
+
+      this->precice->save_current_state_if_required([&]() { /*TODO*/ });
 
       // solve (using strongly-coupled partitioned scheme)
       {
@@ -361,23 +436,88 @@ public:
         coupling_structure_to_fluid();
 
         // solve fluid problem
-        fluid_time_integrator->advance_one_timestep_partitioned_solve(/*iteration ==*/0, true);
+        fluid_time_integrator->advance_one_timestep_partitioned_solve(false, true);
 
         // update stress boundary condition for solid
         coupling_fluid_to_structure();
 
-        // solve structural problem
+        this->precice->advance(fluid_time_integrator->get_time_step_size());
       }
 
+      // Needs to be called before the swaps in post_solve
+      this->precice->reload_old_state_if_required([&]() { /*TODO*/ });
+
       // post-solve
-      fluid_time_integrator->advance_one_timestep_post_solve();
+      if(this->precice->is_time_window_complete())
+        fluid_time_integrator->advance_one_timestep_post_solve();
     }
   }
 
   void
   print_performance_results(double const total_time) const override
   {
-    (void)total_time;
+    this->pcout
+      << std::endl
+      << "_________________________________________________________________________________"
+      << std::endl
+      << std::endl;
+
+    this->pcout << "Performance results for fluid-structure interaction solver:" << std::endl;
+
+    this->pcout << std::endl << "Fluid:" << std::endl;
+    fluid_time_integrator->print_iterations();
+
+    this->pcout << std::endl << "ALE:" << std::endl;
+    fluid_grid_motion->print_iterations();
+
+    // wall times
+    this->pcout << std::endl << "Wall times:" << std::endl;
+
+    this->timer_tree.insert({"FSI"}, total_time);
+
+    this->timer_tree.insert({"FSI"}, fluid_time_integrator->get_timings(), "Fluid");
+
+    this->pcout << std::endl << "Timings for level 1:" << std::endl;
+    this->timer_tree.print_level(this->pcout, 1);
+
+    this->pcout << std::endl << "Timings for level 2:" << std::endl;
+    this->timer_tree.print_level(this->pcout, 2);
+
+    // Throughput in DoFs/s per time step per core
+    types::global_dof_index DoFs = fluid_operator->get_number_of_dofs();
+
+    if(this->application->get_parameters_fluid().mesh_movement_type ==
+       IncNS::MeshMovementType::Poisson)
+    {
+      DoFs += ale_poisson_operator->get_number_of_dofs();
+    }
+    else if(this->application->get_parameters_fluid().mesh_movement_type ==
+            IncNS::MeshMovementType::Elasticity)
+    {
+      DoFs += ale_elasticity_operator->get_number_of_dofs();
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(this->mpi_comm);
+
+    Utilities::MPI::MinMaxAvg total_time_data =
+      Utilities::MPI::min_max_avg(total_time, this->mpi_comm);
+    double const total_time_avg = total_time_data.avg;
+
+    unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
+
+    print_throughput_unsteady(this->pcout, DoFs, total_time_avg, N_time_steps, N_mpi_processes);
+
+    // computational costs in CPUh
+    print_costs(this->pcout, total_time_avg, N_mpi_processes);
+
+    this->pcout
+      << "_________________________________________________________________________________"
+      << std::endl
+      << std::endl;
   }
 
 private:
