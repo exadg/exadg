@@ -51,7 +51,32 @@ LinePlotCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_veloc
   data                 = line_plot_data_in;
 
   if(data.calculate)
+  {
     create_directories(data.line_data.directory, mpi_comm);
+
+    // Set up data to be requested on rank 0
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    {
+      // collect all points to be evaluated
+      evaluation_points.clear();
+      for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
+            data.line_data.lines.begin();
+          line != data.line_data.lines.end();
+          ++line)
+      {
+        unsigned int n_points = (*line)->n_points;
+        // we consider straight lines with an equidistant distribution of points along the line
+        for(unsigned int i = 0; i < n_points; ++i)
+          evaluation_points.push_back((*line)->begin + double(i) / double(n_points - 1) *
+                                                         ((*line)->end - (*line)->begin));
+      }
+      evaluation_cache->reinit(evaluation_points,
+                               dof_handler_velocity->get_triangulation(),
+                               mapping_in);
+    }
+    else
+      evaluation_cache->reinit({}, dof_handler_pressure->get_triangulation(), mapping_in);
+  }
 }
 
 template<int dim, typename Number>
@@ -64,45 +89,43 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
     // precision
     unsigned int const precision = data.line_data.precision;
 
-    // loop over all lines
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
-          data.line_data.lines.begin();
-        line != data.line_data.lines.end();
-        ++line)
+    LinearAlgebra::distributed::Vector<double> ghosted_pressure(pressure.get_partitioner());
+    ghosted_pressure.copy_locally_owned_data_from(pressure);
+    ghosted_pressure.update_ghost_values();
+
+    std::vector<double> pressure_values =
+      VectorTools::point_values<1>(*evaluation_cache, *dof_handler_pressure, ghosted_pressure);
+
+    LinearAlgebra::distributed::Vector<double> ghosted_velocity(velocity.get_partitioner());
+    ghosted_velocity.copy_locally_owned_data_from(velocity);
+    ghosted_velocity.update_ghost_values();
+
+    std::vector<Tensor<1, dim>> velocity_values =
+      VectorTools::point_values<dim>(*evaluation_cache, *dof_handler_velocity, ghosted_velocity);
+
+    // write output to file on rank 0
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      // store all points along current line in a vector
-      unsigned int            n_points = (*line)->n_points;
-      std::vector<Point<dim>> points(n_points);
-
-      // we consider straight lines with an equidistant distribution of points along the line
-      for(unsigned int i = 0; i < n_points; ++i)
-        points[i] =
-          (*line)->begin + double(i) / double(n_points - 1) * ((*line)->end - (*line)->begin);
-
-      // filename prefix for current line
-      std::string filename_prefix = data.line_data.directory + (*line)->name;
-
-      // write output for all specified quantities
-      for(std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
-            (*line)->quantities.begin();
-          quantity != (*line)->quantities.end();
-          ++quantity)
+      std::size_t point_offset = 0;
+      // evaluate by looping over all lines
+      for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
+            data.line_data.lines.begin();
+          line != data.line_data.lines.end();
+          ++line)
       {
-        if((*quantity)->type == QuantityType::Velocity)
+        // store all points along current line in a vector
+        unsigned int n_points = (*line)->n_points;
+
+        // filename prefix for current line
+        std::string filename_prefix = data.line_data.directory + (*line)->name;
+
+        // write output for all specified quantities
+        for(std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+              (*line)->quantities.begin();
+            quantity != (*line)->quantities.end();
+            ++quantity)
         {
-          std::vector<Tensor<1, dim, Number>> solution_vector(n_points);
-
-          // calculate velocity for all points along line
-          for(unsigned int i = 0; i < n_points; ++i)
-          {
-            Tensor<1, dim, Number> u;
-            evaluate_vectorial_quantity_in_point(
-              u, *dof_handler_velocity, *mapping, velocity, points[i], mpi_comm);
-            solution_vector[i] = u;
-          }
-
-          // write output to file
-          if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+          if((*quantity)->type == QuantityType::Velocity)
           {
             std::string filename = filename_prefix + "_velocity" + ".txt";
 
@@ -130,29 +153,15 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
 
               // write data
               for(unsigned int d = 0; d < dim; ++d)
-                f << std::setw(precision + 8) << std::left << points[i][d];
+                f << std::setw(precision + 8) << std::left
+                  << evaluation_points[point_offset + i][d];
               for(unsigned int d = 0; d < dim; ++d)
-                f << std::setw(precision + 8) << std::left << solution_vector[i][d];
+                f << std::setw(precision + 8) << std::left << velocity_values[point_offset + i][d];
               f << std::endl;
             }
             f.close();
           }
-        }
-        else if((*quantity)->type == QuantityType::Pressure)
-        {
-          std::vector<Number> solution_vector(n_points);
-
-          // calculate pressure for all points along line
-          for(unsigned int i = 0; i < n_points; ++i)
-          {
-            Number p;
-            evaluate_scalar_quantity_in_point(
-              p, *dof_handler_pressure, *mapping, pressure, points[i], mpi_comm);
-            solution_vector[i] = p;
-          }
-
-          // write output to file
-          if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+          else if((*quantity)->type == QuantityType::Pressure)
           {
             std::string filename = filename_prefix + "_pressure" + ".txt";
 
@@ -179,16 +188,19 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
 
               // write data
               for(unsigned int d = 0; d < dim; ++d)
-                f << std::setw(precision + 8) << std::left << points[i][d];
-              f << std::setw(precision + 8) << std::left << solution_vector[i];
+                f << std::setw(precision + 8) << std::left
+                  << evaluation_points[point_offset + i][d];
+              f << std::setw(precision + 8) << std::left << pressure_values[point_offset + i];
               f << std::endl;
             }
             f.close();
           }
         }
-      } // loop over quantities
-    }   // loop over lines
-  }     // write_output == true
+
+        point_offset += n_points;
+      }
+    }
+  }
 }
 
 template class LinePlotCalculator<2, float>;

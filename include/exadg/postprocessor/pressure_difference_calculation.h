@@ -27,6 +27,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/numerics/vector_tools_evaluate.h>
 
 namespace ExaDG
 {
@@ -83,6 +84,8 @@ private:
   SmartPointer<Mapping<dim> const>    mapping;
 
   PressureDifferenceData<dim> data;
+
+  std::shared_ptr<Utilities::MPI::RemotePointEvaluation<dim>> evaluation_cache;
 };
 
 } // namespace ExaDG
