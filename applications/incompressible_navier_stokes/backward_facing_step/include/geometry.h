@@ -232,8 +232,7 @@ create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
   }
 
   // periodicity in z-direction
-  auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, periodic_faces);
+  GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
   triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements
@@ -297,9 +296,8 @@ create_grid_precursor(
     }
   }
 
-  auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, periodic_faces);
+  GridTools::collect_periodic_faces(*triangulation, 0 + 10, 1 + 10, 0, periodic_faces);
+  GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
   triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements: use one level finer for the channel
