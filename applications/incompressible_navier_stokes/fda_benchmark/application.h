@@ -528,8 +528,8 @@ public:
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*this->grid_pre->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
     this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_faces);
 
     // perform global refinements

@@ -358,10 +358,11 @@ public:
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*this->grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 10, 11, 0, this->grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 10, 11, 0, this->grid->periodic_faces);
     if(dim == 3)
-      GridTools::collect_periodic_faces(*tria, 12, 13, 2, this->grid->periodic_faces);
+      GridTools::collect_periodic_faces(
+        *this->grid->triangulation, 12, 13, 2, this->grid->periodic_faces);
 
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 

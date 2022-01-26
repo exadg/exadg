@@ -189,9 +189,10 @@ public:
     this->grid->triangulation->begin()->face(2)->set_all_boundary_ids(2);
     this->grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*this->grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0, 1, 0, this->grid->periodic_faces);
-    GridTools::collect_periodic_faces(*tria, 2, 3, 1, this->grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_faces);
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
