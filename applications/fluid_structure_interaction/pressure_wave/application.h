@@ -273,17 +273,17 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_fluid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->fluid_param.grid, this->mpi_comm);
-
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), R_INNER);
-    GridGenerator::extrude_triangulation(tria_2d, N_CELLS_AXIAL / 4 + 1, L, *grid->triangulation);
+    GridGenerator::extrude_triangulation(tria_2d,
+                                         N_CELLS_AXIAL / 4 + 1,
+                                         L,
+                                         *this->fluid_grid->triangulation);
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -309,13 +309,13 @@ public:
     /*
      *  MANIFOLDS
      */
-    grid->triangulation->set_all_manifold_ids(0);
+    this->fluid_grid->triangulation->set_all_manifold_ids(0);
 
     // first fill vectors of manifold_ids and face_ids
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -344,20 +344,18 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : grid->triangulation->active_cell_iterators())
+      for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], Point<dim>())));
-          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          this->fluid_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global + 2);
-
-    return grid;
+    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global + 2);
   }
 
   void
@@ -636,20 +634,20 @@ public:
     param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_structure() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->structure_param.grid, this->mpi_comm);
-
     Triangulation<2> tria_2d;
     GridGenerator::hyper_shell(tria_2d, Point<2>(), R_INNER, R_OUTER, N_CELLS_AXIAL, true);
     GridTools::rotate(numbers::PI / 4, tria_2d);
 
     // extrude in z-direction
-    GridGenerator::extrude_triangulation(tria_2d, N_CELLS_AXIAL + 1, L, *grid->triangulation);
+    GridGenerator::extrude_triangulation(tria_2d,
+                                         N_CELLS_AXIAL + 1,
+                                         L,
+                                         *this->structure_grid->triangulation);
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -692,11 +690,9 @@ public:
     static std::shared_ptr<Manifold<dim>> cylinder_manifold;
     cylinder_manifold = std::shared_ptr<Manifold<dim>>(
       static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(Point<dim>())));
-    grid->triangulation->set_manifold(MANIFOLD_ID_CYLINDER, *cylinder_manifold);
+    this->structure_grid->triangulation->set_manifold(MANIFOLD_ID_CYLINDER, *cylinder_manifold);
 
-    grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
-
-    return grid;
+    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
   }
 
   void

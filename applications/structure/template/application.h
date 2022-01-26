@@ -59,17 +59,12 @@ public:
     // Set parameters here
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     // create triangulation
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

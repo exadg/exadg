@@ -174,18 +174,18 @@ public:
     this->param.use_combined_operator = false;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     std::vector<unsigned int> repetitions({2, 1});
     Point<dim>                point1(0.0, -H / 2.), point2(L, H / 2.);
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                              repetitions,
+                                              point1,
+                                              point2);
 
     // set boundary indicator
-    for(auto cell : *grid->triangulation)
+    for(auto cell : *this->grid->triangulation)
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -194,9 +194,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

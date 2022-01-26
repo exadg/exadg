@@ -212,11 +212,6 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  /*
-   * Grid
-   */
-  std::shared_ptr<Grid<dim, Number>> grid;
-
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 

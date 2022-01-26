@@ -355,12 +355,9 @@ public:
     this->param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     // left-bottom-front and right-top-back point
     Point<dim> p1, p2;
 
@@ -378,11 +375,9 @@ public:
     if(dim == 3)
       repetitions[2] = this->param.grid.n_subdivisions_1d_hypercube;
 
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
+    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, repetitions, p1, p2);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

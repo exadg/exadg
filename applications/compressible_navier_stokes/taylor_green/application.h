@@ -219,12 +219,9 @@ public:
     this->param.use_combined_operator = true;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const pi   = numbers::PI;
     double const left = -pi * L, right = pi * L;
     double const deformation = 0.1;
@@ -243,18 +240,16 @@ public:
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    create_periodic_box(grid->triangulation,
+    create_periodic_box(this->grid->triangulation,
                         this->param.grid.n_refine_global,
-                        grid->periodic_faces,
+                        this->grid->periodic_faces,
                         this->param.grid.n_subdivisions_1d_hypercube,
                         left,
                         right,
                         curvilinear_mesh,
                         deformation);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

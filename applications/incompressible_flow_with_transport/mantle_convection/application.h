@@ -331,17 +331,15 @@ public:
     this->scalar_param[scalar_index] = param;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
-    GridGenerator::hyper_shell(*grid->triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
+    GridGenerator::hyper_shell(
+      *this->grid->triangulation, Point<dim>(), R0, R1, (dim == 3) ? 48 : 12);
 
     Point<dim> center = dim == 2 ? Point<dim>(0., 0.) : Point<dim>(0., 0., 0.);
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -357,9 +355,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

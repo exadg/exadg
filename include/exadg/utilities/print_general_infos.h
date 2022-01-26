@@ -116,9 +116,9 @@ print_matrixfree_info(ConditionalOStream const & pcout)
   // clang-format on
 }
 
-template<int dim, typename Number>
+template<int dim>
 inline void
-print_grid_info(ConditionalOStream const & pcout, Grid<dim, Number> const & grid)
+print_grid_info(ConditionalOStream const & pcout, Grid<dim> const & grid)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl

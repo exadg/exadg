@@ -114,54 +114,14 @@ DriverPrecursor<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
 
-  application->set_parameters_precursor();
-  application->get_parameters_precursor().check(pcout);
-  application->get_parameters_precursor().print(pcout, "List of parameters for precursor domain:");
-
-  application->set_parameters();
-  application->get_parameters().check(pcout);
-  application->get_parameters().print(pcout, "List of parameters for actual domain:");
-
-  AssertThrow(application->get_parameters_precursor().ale_formulation == false,
-              ExcMessage("not implemented."));
-  AssertThrow(application->get_parameters().ale_formulation == false,
-              ExcMessage("not implemented."));
-
-  // grid_pre
-  grid_pre = application->create_grid_precursor();
-  print_grid_info(pcout, *grid_pre);
-
-  // grid
-  grid = application->create_grid();
-  print_grid_info(pcout, *grid);
-
-  application->set_boundary_descriptor_precursor();
-  IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor_precursor(),
-                                         *grid_pre);
-
-  application->set_boundary_descriptor();
-  IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
-
-  application->set_field_functions_precursor();
-  application->set_field_functions();
+  application->setup();
 
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = application->get_parameters_precursor().adaptive_time_stepping;
 
-  AssertThrow(application->get_parameters_precursor().calculation_of_time_step_size ==
-                application->get_parameters().calculation_of_time_step_size,
-              ExcMessage("Type of time step calculation has to be the same for both domains."));
-
-  AssertThrow(application->get_parameters_precursor().adaptive_time_stepping ==
-                application->get_parameters().adaptive_time_stepping,
-              ExcMessage("Type of time step calculation has to be the same for both domains."));
-
-  AssertThrow(application->get_parameters_precursor().solver_type == SolverType::Unsteady &&
-                application->get_parameters().solver_type == SolverType::Unsteady,
-              ExcMessage("This is an unsteady solver. Check parameters."));
-
   // initialize pde_operator_pre (precursor domain)
-  pde_operator_pre = create_operator<dim, Number>(grid_pre,
+  pde_operator_pre = create_operator<dim, Number>(application->get_grid_precursor(),
+                                                  nullptr /* grid motion */,
                                                   application->get_boundary_descriptor_precursor(),
                                                   application->get_field_functions_precursor(),
                                                   application->get_parameters_precursor(),
@@ -169,7 +129,8 @@ DriverPrecursor<dim, Number>::setup()
                                                   mpi_comm);
 
   // initialize operator_base (actual domain)
-  pde_operator = create_operator<dim, Number>(grid,
+  pde_operator = create_operator<dim, Number>(application->get_grid(),
+                                              nullptr /* grid motion */,
                                               application->get_boundary_descriptor(),
                                               application->get_field_functions(),
                                               application->get_parameters(),
@@ -183,8 +144,9 @@ DriverPrecursor<dim, Number>::setup()
 
   matrix_free_pre = std::make_shared<MatrixFree<dim, Number>>();
   if(application->get_parameters_precursor().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*grid_pre->triangulation, matrix_free_data_pre->data);
-  matrix_free_pre->reinit(*grid_pre->mapping,
+    Categorization::do_cell_based_loops(*application->get_grid_precursor()->triangulation,
+                                        matrix_free_data_pre->data);
+  matrix_free_pre->reinit(*application->get_grid_precursor()->mapping,
                           matrix_free_data_pre->get_dof_handler_vector(),
                           matrix_free_data_pre->get_constraint_vector(),
                           matrix_free_data_pre->get_quadrature_vector(),
@@ -196,8 +158,9 @@ DriverPrecursor<dim, Number>::setup()
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*grid->mapping,
+    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+                                        matrix_free_data->data);
+  matrix_free->reinit(*application->get_grid()->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -226,25 +189,12 @@ DriverPrecursor<dim, Number>::setup()
   time_integrator = create_time_integrator<dim, Number>(
     pde_operator, application->get_parameters(), mpi_comm, is_test, postprocessor);
 
-
-  // For the two-domain solver the parameter start_with_low_order has to be true.
-  // This is due to the fact that the setup function of the time integrator initializes
-  // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-  // start_with_low_order == false. However, the combined time step size
-  // is not known at this point since the two domains have to first communicate with each other
-  // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
-  // inconsistencies is to preclude the case start_with_low_order == false.
-  AssertThrow(application->get_parameters_precursor().start_with_low_order == true &&
-                application->get_parameters().start_with_low_order == true,
-              ExcMessage("start_with_low_order has to be true for two-domain solver."));
-
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
   // solvers depends on quantities such as the time_step_size or gamma0!!!)
   time_integrator_pre->setup(application->get_parameters_precursor().restarted_simulation);
   time_integrator->setup(application->get_parameters().restarted_simulation);
 
   // setup solvers
-
   pde_operator_pre->setup_solvers(time_integrator_pre->get_scaling_factor_time_derivative_term(),
                                   time_integrator_pre->get_velocity());
 

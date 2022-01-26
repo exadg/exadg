@@ -352,19 +352,19 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const              y_upper = apply_symmetry_bc ? 0.0 : H / 2.;
     Point<dim>                point1(0.0, -H / 2.), point2(L, y_upper);
     std::vector<unsigned int> repetitions({2, 1});
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                              repetitions,
+                                              point1,
+                                              point2);
 
     // set boundary indicator
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -381,14 +381,12 @@ public:
 
     if(boundary_condition == BoundaryCondition::Periodic)
     {
-      auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-      GridTools::collect_periodic_faces(*tria, 1, 2, 0, grid->periodic_faces);
-      grid->triangulation->add_periodicity(grid->periodic_faces);
+      GridTools::collect_periodic_faces(
+        *this->grid->triangulation, 1, 2, 0, this->grid->periodic_faces);
+      this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

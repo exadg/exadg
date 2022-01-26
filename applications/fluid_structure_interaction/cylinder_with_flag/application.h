@@ -407,15 +407,12 @@ public:
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_fluid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->fluid_param.grid, this->mpi_comm);
+    create_triangulation_fluid(*this->fluid_grid->triangulation);
 
-    create_triangulation_fluid(*grid->triangulation);
-
-    grid->triangulation->set_all_manifold_ids(0);
+    this->fluid_grid->triangulation->set_all_manifold_ids(0);
 
     // vectors of manifold_ids and face_ids
     unsigned int const        manifold_id_start = 10;
@@ -426,7 +423,7 @@ public:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -486,20 +483,18 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : grid->triangulation->active_cell_iterators())
+      for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          this->fluid_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
-
-    return grid;
+    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
   }
 
   void
@@ -905,15 +900,12 @@ public:
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_structure() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->structure_param.grid, this->mpi_comm);
+    create_triangulation_structure(*this->structure_grid->triangulation);
 
-    create_triangulation_structure(*grid->triangulation);
-
-    grid->triangulation->set_all_manifold_ids(0);
+    this->structure_grid->triangulation->set_all_manifold_ids(0);
 
     // vectors of manifold_ids and face_ids
     unsigned int const        manifold_id_start = 10;
@@ -924,7 +916,7 @@ public:
     center[0] = X_C;
     center[1] = Y_C;
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -978,20 +970,18 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : grid->triangulation->active_cell_iterators())
+      for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
-          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          this->structure_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
 
-    grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
-
-    return grid;
+    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
   }
 
   void

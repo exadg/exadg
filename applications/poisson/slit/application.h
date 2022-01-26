@@ -75,20 +75,15 @@ public:
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const length = 1.0;
     double const left = -length, right = length;
 
-    GridGenerator::hyper_cube_slit(*grid->triangulation, left, right);
+    GridGenerator::hyper_cube_slit(*this->grid->triangulation, left, right);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

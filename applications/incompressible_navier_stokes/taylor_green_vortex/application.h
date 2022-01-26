@@ -347,12 +347,9 @@ public:
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const deformation = 0.5;
 
     if(ALE)
@@ -377,9 +374,9 @@ public:
 
     if(exploit_symmetry == false) // periodic box
     {
-      create_periodic_box(grid->triangulation,
+      create_periodic_box(this->grid->triangulation,
                           this->param.grid.n_refine_global,
-                          grid->periodic_faces,
+                          this->grid->periodic_faces,
                           n_subdivisions_1d_hypercube,
                           left,
                           right,
@@ -388,7 +385,7 @@ public:
     }
     else // symmetric box
     {
-      GridGenerator::subdivided_hyper_cube(*grid->triangulation,
+      GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
                                            n_subdivisions_1d_hypercube,
                                            0.0,
                                            right);
@@ -397,12 +394,12 @@ public:
       {
         unsigned int const               frequency = 2;
         static DeformedCubeManifold<dim> manifold(0.0, right, deformation, frequency);
-        grid->triangulation->set_all_manifold_ids(1);
-        grid->triangulation->set_manifold(1, manifold);
+        this->grid->triangulation->set_all_manifold_ids(1);
+        this->grid->triangulation->set_manifold(1, manifold);
 
-        std::vector<bool> vertex_touched(grid->triangulation->n_vertices(), false);
+        std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
 
-        for(auto cell : grid->triangulation->active_cell_iterators())
+        for(auto cell : this->grid->triangulation->active_cell_iterators())
         {
           for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
           {
@@ -418,10 +415,8 @@ public:
       }
 
       // perform global refinements
-      grid->triangulation->refine_global(this->param.grid.n_refine_global);
+      this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
     }
-
-    return grid;
   }
 
   std::shared_ptr<Function<dim>>

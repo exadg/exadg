@@ -46,7 +46,7 @@ using namespace dealii;
 
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
-  std::shared_ptr<Grid<dim, Number> const>             grid_in,
+  std::shared_ptr<Grid<dim> const>                     grid_in,
   std::shared_ptr<BoundaryDescriptor<rank, dim> const> boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim> const>           field_functions_in,
   Parameters const &                                   param_in,

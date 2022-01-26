@@ -101,7 +101,7 @@ private:
   /*
    * Grid
    */
-  std::shared_ptr<Grid<dim, Number>> grid;
+  std::shared_ptr<Grid<dim>> grid;
 
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;

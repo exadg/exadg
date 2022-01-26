@@ -27,6 +27,7 @@
 // ExaDG
 #include <exadg/convection_diffusion/driver.h>
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
+#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/utilities/print_solver_results.h>
 #include <exadg/utilities/throughput_parameters.h>
 
@@ -59,36 +60,22 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
 
-  application->set_parameters();
-  application->get_parameters().check();
-  application->get_parameters().print(pcout, "List of parameters:");
-
-  // grid
-  grid = application->create_grid();
-  print_grid_info(pcout, *grid);
-
-  // boundary conditions
-  application->set_boundary_descriptor();
-  verify_boundary_conditions(*application->get_boundary_descriptor(), *grid);
-
-  // field functions
-  application->set_field_functions();
+  application->setup();
 
   if(application->get_parameters().ale_formulation) // moving mesh
   {
     std::shared_ptr<Function<dim>> mesh_motion = application->create_mesh_movement_function();
     grid_motion =
-      std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
+      std::make_shared<GridMotionAnalytical<dim, Number>>(application->get_grid()->mapping,
                                                           application->get_parameters().degree,
-                                                          *grid->triangulation,
+                                                          *application->get_grid()->triangulation,
                                                           mesh_motion,
                                                           application->get_parameters().start_time);
-
-    grid->attach_grid_motion(grid_motion);
   }
 
   // initialize convection-diffusion operator
-  pde_operator = std::make_shared<Operator<dim, Number>>(grid,
+  pde_operator = std::make_shared<Operator<dim, Number>>(application->get_grid(),
+                                                         grid_motion,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_parameters(),
@@ -101,8 +88,11 @@ Driver<dim, Number>::setup()
 
   matrix_free = std::make_shared<MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
-    Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
-  matrix_free->reinit(*grid->get_dynamic_mapping(),
+    Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
+                                        matrix_free_data->data);
+  std::shared_ptr<Mapping<dim> const> mapping =
+    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+  matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
                       matrix_free_data->get_quadrature_vector(),
@@ -115,7 +105,7 @@ Driver<dim, Number>::setup()
   {
     // initialize postprocessor
     postprocessor = application->create_postprocessor();
-    postprocessor->setup(*pde_operator, *grid->get_dynamic_mapping());
+    postprocessor->setup(*pde_operator, *mapping);
 
     // initialize time integrator or driver for steady problems
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
@@ -192,7 +182,9 @@ Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
   grid_motion->update(time_integrator->get_next_time(), false);
-  matrix_free->update_mapping(*grid->get_dynamic_mapping());
+  std::shared_ptr<Mapping<dim> const> mapping =
+    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+  matrix_free->update_mapping(*mapping);
   pde_operator->update_after_grid_motion();
   std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
     std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);

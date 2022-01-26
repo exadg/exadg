@@ -177,18 +177,15 @@ public:
     this->param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const length = 1.0;
     double const left = -length, right = length;
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
-    GridGenerator::subdivided_hyper_cube(*grid->triangulation, n_cells_1d, left, right);
+    GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, n_cells_1d, left, right);
 
     if(mesh_type == MeshType::Cartesian)
     {
@@ -199,12 +196,12 @@ public:
       double const              deformation = 0.15;
       unsigned int const        frequency   = 2;
       DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-      grid->triangulation->set_all_manifold_ids(1);
-      grid->triangulation->set_manifold(1, manifold);
+      this->grid->triangulation->set_all_manifold_ids(1);
+      this->grid->triangulation->set_manifold(1, manifold);
 
-      std::vector<bool> vertex_touched(grid->triangulation->n_vertices(), false);
+      std::vector<bool> vertex_touched(this->grid->triangulation->n_vertices(), false);
 
-      for(auto cell : *grid->triangulation)
+      for(auto cell : *this->grid->triangulation)
       {
         for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
         {
@@ -225,7 +222,7 @@ public:
 
     if(USE_NEUMANN_BOUNDARY)
     {
-      for(auto cell : *grid->triangulation)
+      for(auto cell : *this->grid->triangulation)
       {
         for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
         {
@@ -237,9 +234,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
 

@@ -99,11 +99,10 @@ create_periodic_box(
     }
   }
 
-  auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
   if(dim == 3)
-    GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
+    GridTools::collect_periodic_faces(*triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
 
   triangulation->add_periodicity(periodic_faces);
 

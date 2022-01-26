@@ -190,12 +190,9 @@ public:
       MultigridCoarseGridPreconditioner::AMG;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     Point<dim> p1, p2;
     p1[0] = 0;
     p1[1] = -(this->height / 2);
@@ -213,12 +210,12 @@ public:
     if(dim == 3)
       repetitions[2] = this->repetitions2;
 
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, p1, p2);
+    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, repetitions, p1, p2);
 
     element_length = this->length / (this->repetitions0 * pow(2, this->param.grid.n_refine_global));
 
     double const tol = 1.e-8;
-    for(auto cell : *grid->triangulation)
+    for(auto cell : *this->grid->triangulation)
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -248,9 +245,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

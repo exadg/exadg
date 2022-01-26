@@ -64,10 +64,10 @@ public:
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
-    : mpi_comm(comm), parameter_file(parameter_file)
+    : mpi_comm(comm),
+      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      parameter_file(parameter_file)
   {
-    boundary_descriptor = std::make_shared<BoundaryDescriptor<0, dim>>();
-    field_functions     = std::make_shared<FieldFunctions<dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -85,17 +85,39 @@ public:
     this->param.grid.n_subdivisions_1d_hypercube = n_subdivisions_1d_hypercube;
   }
 
-  virtual void
-  set_parameters() = 0;
+  void
+  setup()
+  {
+    // parameters
+    set_parameters();
+    param.check();
+    param.print(pcout, "List of parameters:");
 
-  virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid() = 0;
+    // grid
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    create_grid();
+    print_grid_info(pcout, *grid);
 
-  virtual void
-  set_boundary_descriptor() = 0;
+    if(compute_aspect_ratio)
+    {
+      // this variant is only for comparison
+      double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
+      pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
 
-  virtual void
-  set_field_functions() = 0;
+      QGauss<dim> quad(param.degree + 1);
+      AR = GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quad);
+      pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
+    }
+
+    // boundary conditions
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<0, dim>>();
+    set_boundary_descriptor();
+    verify_boundary_conditions(*boundary_descriptor, *grid);
+
+    // field functions
+    field_functions = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions();
+  }
 
   virtual std::shared_ptr<Poisson::PostProcessorBase<dim, Number>>
   create_postprocessor() = 0;
@@ -104,6 +126,12 @@ public:
   get_parameters() const
   {
     return param;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid() const
+  {
+    return grid;
   }
 
   std::shared_ptr<BoundaryDescriptor<0, dim> const>
@@ -121,7 +149,12 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  Parameters                                  param;
+  ConditionalOStream pcout;
+
+  Parameters param;
+
+  std::shared_ptr<Grid<dim>> grid;
+
   std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>        field_functions;
 
@@ -129,6 +162,21 @@ protected:
 
   std::string output_directory = "output/", output_name = "output";
   bool        write_output = false;
+
+  bool compute_aspect_ratio = false;
+
+private:
+  virtual void
+  set_parameters() = 0;
+
+  virtual void
+  create_grid() = 0;
+
+  virtual void
+  set_boundary_descriptor() = 0;
+
+  virtual void
+  set_field_functions() = 0;
 };
 
 } // namespace Poisson

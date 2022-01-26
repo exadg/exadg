@@ -77,11 +77,6 @@ private:
   std::shared_ptr<ApplicationBasePrecursor<dim, Number>> application;
 
   /*
-   * Grid
-   */
-  std::shared_ptr<Grid<dim, Number>> grid_pre, grid;
-
-  /*
    * MatrixFree
    */
   std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_pre, matrix_free_data;

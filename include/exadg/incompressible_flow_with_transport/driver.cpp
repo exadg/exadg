@@ -20,6 +20,7 @@
  */
 
 #include <exadg/convection_diffusion/time_integration/create_time_integrator.h>
+#include <exadg/grid/get_dynamic_mapping.h>
 #include <exadg/incompressible_flow_with_transport/driver.h>
 #include <exadg/incompressible_navier_stokes/spatial_discretization/create_operator.h>
 #include <exadg/incompressible_navier_stokes/time_integration/create_time_integrator.h>
@@ -54,45 +55,22 @@ Driver<dim, Number>::setup()
 
   pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
 
-  unsigned int const n_scalars = application->get_n_scalars();
+  application->setup();
 
-  scalar_operator.resize(n_scalars);
-  scalar_postprocessor.resize(n_scalars);
-  scalar_time_integrator.resize(n_scalars);
-
-  // parameters fluid
-  application->set_parameters();
-  application->get_parameters().check(pcout);
-
-  application->get_parameters().print(pcout, "List of parameters for fluid solver:");
-
-  // parameters scalar
-  for(unsigned int i = 0; i < n_scalars; ++i)
+  // additional parameter check: This driver does not implement steady
+  // flow-transport problems. Note, however, that ProblemType and
+  // SolverType might be Steady for the fluid problem in order to be able
+  // to neglect the inertial term in the fluid equations. The overall coupled
+  // flow-transport problem is then still a transient/unsteady problem.
+  for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
   {
-    application->set_parameters_scalar(i);
-    application->get_parameters_scalar(i).check();
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,
                 ExcMessage("ProblemType must be unsteady!"));
-
-    application->get_parameters_scalar(i).print(pcout,
-                                                "List of parameters for scalar quantity " +
-                                                  Utilities::to_string(i) + ":");
   }
-
-  // grid
-  grid = application->create_grid();
-  print_grid_info(pcout, *grid);
 
   if(application->get_parameters().ale_formulation) // moving mesh
   {
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      AssertThrow(application->get_parameters_scalar(i).ale_formulation == true,
-                  ExcMessage(
-                    "Parameter ale_formulation is different for fluid field and scalar field"));
-    }
-
     AssertThrow(application->get_parameters().mesh_movement_type ==
                   IncNS::MeshMovementType::Analytical,
                 ExcMessage("not implemented."));
@@ -105,32 +83,13 @@ Driver<dim, Number>::setup()
                                                           *grid->triangulation,
                                                           mesh_motion,
                                                           application->get_parameters().start_time);
-
-    grid->attach_grid_motion(grid_motion);
   }
-
-  // boundary conditions
-  application->set_boundary_descriptor();
-  IncNS::verify_boundary_conditions<dim>(application->get_boundary_descriptor(), *grid);
-
-  // field functions
-  application->set_field_functions();
-
-  for(unsigned int i = 0; i < n_scalars; ++i)
-  {
-    // boundary conditions
-    application->set_boundary_descriptor_scalar(i);
-    verify_boundary_conditions(*application->get_boundary_descriptor_scalar(i), *grid);
-
-    // field functions
-    application->set_field_functions_scalar(i);
-  }
-
 
   // initialize fluid_operator
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
     fluid_operator = IncNS::create_operator<dim, Number>(grid,
+                                                         grid_motion,
                                                          application->get_boundary_descriptor(),
                                                          application->get_field_functions(),
                                                          application->get_parameters(),
@@ -141,6 +100,7 @@ Driver<dim, Number>::setup()
   {
     fluid_operator =
       std::make_shared<IncNS::OperatorCoupled<dim, Number>>(grid,
+                                                            grid_motion,
                                                             application->get_boundary_descriptor(),
                                                             application->get_field_functions(),
                                                             application->get_parameters(),
@@ -152,11 +112,18 @@ Driver<dim, Number>::setup()
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  unsigned int const n_scalars = application->get_n_scalars();
+
+  scalar_operator.resize(n_scalars);
+  scalar_postprocessor.resize(n_scalars);
+  scalar_time_integrator.resize(n_scalars);
+
   // initialize convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_operator[i] =
       std::make_shared<ConvDiff::Operator<dim, Number>>(grid,
+                                                        grid_motion,
                                                         application->get_boundary_descriptor_scalar(
                                                           i),
                                                         application->get_field_functions_scalar(i),
@@ -216,7 +183,9 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_postprocessor[i] = application->create_postprocessor_scalar(i);
-    scalar_postprocessor[i]->setup(*scalar_operator[i], *grid->get_dynamic_mapping());
+    std::shared_ptr<Mapping<dim> const> mapping =
+      get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+    scalar_postprocessor[i]->setup(*scalar_operator[i], *mapping);
   }
 
   // setup time integrator before calling setup_solvers
@@ -246,6 +215,24 @@ Driver<dim, Number>::setup()
 
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
+    if(application->get_parameters().restarted_simulation == false)
+    {
+      // The parameter start_with_low_order for BDF time integration has to be true.
+      // This is due to the fact that the setup function of the time integrator initializes
+      // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+      // start_with_low_order == false. However, the combined time step size
+      // is not known at this point since we have to first communicate the time step size
+      // in order to find the minimum time step size. Overwriting the time step size would
+      // imply that the time step sizes are non constant for a time integrator, but the
+      // time integration constants are initialized based on the assumption of constant
+      // time step size. Hence, the easiest way to avoid this kind of
+      // inconsistency is to preclude the case start_with_low_order == false.
+      // In case of a restart, start_with_low_order = false is possible since it has been
+      // enforced that all previous time steps are identical for fluid and scalar transport.
+      AssertThrow(application->get_parameters().start_with_low_order == true,
+                  ExcMessage("start_with_low_order has to be true for this solver."));
+    }
+
     fluid_time_integrator->setup(application->get_parameters().restarted_simulation);
 
     // setup solvers once time integrator has been initialized
@@ -273,22 +260,12 @@ Driver<dim, Number>::setup()
                                                     is_test,
                                                     scalar_postprocessor[i]);
 
-    if(application->get_parameters_scalar(i).restarted_simulation == false)
+    if(application->get_parameters_scalar(i).restarted_simulation == false &&
+       application->get_parameters_scalar(i).temporal_discretization ==
+         ConvDiff::TemporalDiscretization::BDF)
     {
-      // The parameter start_with_low_order has to be true.
-      // This is due to the fact that the setup function of the time integrator initializes
-      // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-      // start_with_low_order == false. However, the combined time step size
-      // is not known at this point since we have to first communicate the time step size
-      // in order to find the minimum time step size. Overwriting the time step size would
-      // imply that the time step sizes are non constant for a time integrator, but the
-      // time integration constants are initialized based on the assumption of constant
-      // time step size. Hence, the easiest way to avoid these kind of
-      // inconsistencies is to preclude the case start_with_low_order == false.
-      // In case of a restart, start_with_low_order = false is possible since it has been
-      // enforced that all previous time steps are identical for fluid and scalar transport.
-      AssertThrow(application->get_parameters().start_with_low_order == true &&
-                    application->get_parameters_scalar(i).start_with_low_order == true,
+      // See comment above for fluid field.
+      AssertThrow(application->get_parameters_scalar(i).start_with_low_order == true,
                   ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
@@ -297,11 +274,6 @@ Driver<dim, Number>::setup()
     // adaptive time stepping
     if(application->get_parameters().adaptive_time_stepping == true)
     {
-      AssertThrow(
-        application->get_parameters_scalar(i).adaptive_time_stepping == true,
-        ExcMessage(
-          "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
-
       use_adaptive_time_stepping = true;
     }
   }
@@ -540,7 +512,9 @@ Driver<dim, Number>::ale_update() const
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  matrix_free->update_mapping(*grid->get_dynamic_mapping());
+  std::shared_ptr<Mapping<dim> const> mapping =
+    get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
+  matrix_free->update_mapping(*mapping);
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
 
   sub_timer.restart();

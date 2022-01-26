@@ -438,45 +438,37 @@ public:
     do_set_parameters(this->param_pre, true);
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
-    FDANozzle::create_grid_and_set_boundary_ids_nozzle(grid->triangulation,
+    FDANozzle::create_grid_and_set_boundary_ids_nozzle(this->grid->triangulation,
                                                        this->param.grid.n_refine_global,
-                                                       grid->periodic_faces);
-
-    return grid;
+                                                       this->grid->periodic_faces);
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_precursor() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param_pre.grid, this->mpi_comm);
-
     Triangulation<2> tria_2d;
     GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
     GridGenerator::extrude_triangulation(tria_2d,
                                          FDANozzle::N_CELLS_AXIAL_PRECURSOR + 1,
                                          FDANozzle::LENGTH_PRECURSOR,
-                                         *grid->triangulation);
+                                         *this->grid_pre->triangulation);
     Tensor<1, dim> offset = Tensor<1, dim>();
     offset[2]             = FDANozzle::Z1_PRECURSOR;
-    GridTools::shift(offset, *grid->triangulation);
+    GridTools::shift(offset, *this->grid_pre->triangulation);
 
     /*
      *  MANIFOLDS
      */
-    grid->triangulation->set_all_manifold_ids(0);
+    this->grid_pre->triangulation->set_all_manifold_ids(0);
 
     // first fill vectors of manifold_ids and face_ids
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -504,13 +496,13 @@ public:
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
     {
-      for(auto cell : grid->triangulation->active_cell_iterators())
+      for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
             new OneSidedCylindricalManifold<dim>(cell, face_ids[i], Point<dim>())));
-          grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
+          this->grid_pre->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
     }
@@ -518,7 +510,7 @@ public:
     /*
      *  BOUNDARY ID's
      */
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
     {
       for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
       {
@@ -536,15 +528,13 @@ public:
       }
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 2, grid->periodic_faces);
-    grid->triangulation->add_periodicity(grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
+    this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_faces);
 
     // perform global refinements
-    grid->triangulation->refine_global(this->param_pre.grid.n_refine_global +
-                                       additional_refinements_precursor);
-
-    return grid;
+    this->grid_pre->triangulation->refine_global(this->param_pre.grid.n_refine_global +
+                                                 additional_refinements_precursor);
   }
 
   void

@@ -379,31 +379,21 @@ public:
     do_set_parameters(this->param_pre, true);
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
-    Geometry::create_grid(grid->triangulation,
+    Geometry::create_grid(this->grid->triangulation,
                           this->param.grid.n_refine_global,
-                          grid->periodic_faces);
-
-    return grid;
+                          this->grid->periodic_faces);
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid_precursor() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param_pre.grid, this->mpi_comm);
-
-    Geometry::create_grid_precursor(grid->triangulation,
+    Geometry::create_grid_precursor(this->grid_pre->triangulation,
                                     this->param_pre.grid.n_refine_global +
                                       additional_refinements_precursor,
-                                    grid->periodic_faces);
-
-    return grid;
+                                    this->grid_pre->periodic_faces);
   }
 
   void

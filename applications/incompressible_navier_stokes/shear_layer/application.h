@@ -175,31 +175,27 @@ public:
     this->param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const left = 0.0, right = 1.0;
-    GridGenerator::hyper_cube(*grid->triangulation, left, right);
+    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // use periodic boundary conditions
     // x-direction
-    grid->triangulation->begin()->face(0)->set_all_boundary_ids(0);
-    grid->triangulation->begin()->face(1)->set_all_boundary_ids(1);
+    this->grid->triangulation->begin()->face(0)->set_all_boundary_ids(0);
+    this->grid->triangulation->begin()->face(1)->set_all_boundary_ids(1);
     // y-direction
-    grid->triangulation->begin()->face(2)->set_all_boundary_ids(2);
-    grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
+    this->grid->triangulation->begin()->face(2)->set_all_boundary_ids(2);
+    this->grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0, 1, 0, grid->periodic_faces);
-    GridTools::collect_periodic_faces(*tria, 2, 3, 1, grid->periodic_faces);
-    grid->triangulation->add_periodicity(grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 0, 1, 0, this->grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 2, 3, 1, this->grid->periodic_faces);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

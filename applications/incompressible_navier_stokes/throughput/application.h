@@ -169,12 +169,9 @@ public:
     this->param.preconditioner_pressure_block = SchurComplementPreconditioner::None;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     double const left = -1.0, right = 1.0;
     double const deformation = 0.1;
 
@@ -192,16 +189,14 @@ public:
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    create_periodic_box(grid->triangulation,
+    create_periodic_box(this->grid->triangulation,
                         this->param.grid.n_refine_global,
-                        grid->periodic_faces,
+                        this->grid->periodic_faces,
                         this->param.grid.n_subdivisions_1d_hypercube,
                         left,
                         right,
                         curvilinear_mesh,
                         deformation);
-
-    return grid;
   }
 
   void

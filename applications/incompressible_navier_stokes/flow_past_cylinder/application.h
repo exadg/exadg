@@ -468,16 +468,13 @@ public:
   }
 
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     this->refine_level = this->param.grid.n_refine_global;
 
-    if(auto tria_fully_dist =
-         dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*grid->triangulation))
+    if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(
+         this->grid->triangulation.get()))
     {
       auto const construction_data =
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
@@ -485,7 +482,7 @@ public:
           [&](dealii::Triangulation<dim, dim> & tria) mutable {
             create_cylinder_grid<dim>(tria,
                                       this->param.grid.n_refine_global,
-                                      grid->periodic_faces,
+                                      this->grid->periodic_faces,
                                       cylinder_type_string);
           },
           [](dealii::Triangulation<dim, dim> & tria,
@@ -501,20 +498,18 @@ public:
           1 /* group size */);
       tria_fully_dist->create_triangulation(construction_data);
     }
-    else if(auto tria =
-              dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*grid->triangulation))
+    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(
+              this->grid->triangulation.get()))
     {
       create_cylinder_grid<dim>(*tria,
                                 this->param.grid.n_refine_global,
-                                grid->periodic_faces,
+                                this->grid->periodic_faces,
                                 cylinder_type_string);
     }
     else
     {
       AssertThrow(false, ExcMessage("Unknown triangulation!"));
     }
-
-    return grid;
   }
 
   void

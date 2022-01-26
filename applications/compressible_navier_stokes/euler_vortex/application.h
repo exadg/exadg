@@ -259,19 +259,17 @@ public:
     this->param.use_combined_operator = false;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     std::vector<unsigned int> repetitions({1, 1});
     Point<dim> point1(X_0 - L / 2.0, Y_0 - H / 2.0), point2(X_0 + L / 2.0, Y_0 + H / 2.0);
-    GridGenerator::subdivided_hyper_rectangle(*grid->triangulation, repetitions, point1, point2);
+    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                              repetitions,
+                                              point1,
+                                              point2);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void

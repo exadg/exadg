@@ -66,13 +66,10 @@ public:
   }
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
-    : mpi_comm(comm), parameter_file(parameter_file)
+    : mpi_comm(comm),
+      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      parameter_file(parameter_file)
   {
-    field_functions     = std::make_shared<FieldFunctions<dim>>();
-    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
-
-    poisson_field_functions     = std::make_shared<Poisson::FieldFunctions<dim>>();
-    poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
   }
 
   virtual ~ApplicationBase()
@@ -100,59 +97,40 @@ public:
   }
 
   virtual void
-  set_parameters() = 0;
+  setup()
+  {
+    set_parameters();
+    param.check(pcout);
+    param.print(pcout, "List of parameters:");
 
-  virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid() = 0;
+    // grid
+    grid = std::make_shared<Grid<dim>>(param.grid, mpi_comm);
+    create_grid();
+    print_grid_info(pcout, *grid);
 
-  virtual void
-  set_boundary_descriptor() = 0;
+    // boundary conditions
+    boundary_descriptor = std::make_shared<BoundaryDescriptor<dim>>();
+    set_boundary_descriptor();
+    verify_boundary_conditions<dim, Number>(*boundary_descriptor, *grid);
 
-  virtual void
-  set_field_functions() = 0;
+    // field functions
+    field_functions = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions();
+  }
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   create_postprocessor() = 0;
-
-  // Moving mesh (analytical function)
-  virtual std::shared_ptr<Function<dim>>
-  create_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion =
-      std::make_shared<Functions::ZeroFunction<dim>>(dim);
-
-    return mesh_motion;
-  }
-
-  // Moving mesh (Poisson problem)
-  virtual void
-  set_parameters_poisson()
-  {
-    AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
-  }
-
-  virtual void
-  set_boundary_descriptor_poisson()
-  {
-    AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
-  }
-
-  virtual void
-  set_field_functions_poisson()
-  {
-    AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
-  }
 
   Parameters const &
   get_parameters() const
   {
     return param;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid() const
+  {
+    return grid;
   }
 
   std::shared_ptr<BoundaryDescriptor<dim> const>
@@ -165,6 +143,38 @@ public:
   get_field_functions() const
   {
     return field_functions;
+  }
+
+  // Analytical mesh motion
+  virtual std::shared_ptr<Function<dim>>
+  create_mesh_movement_function()
+  {
+    std::shared_ptr<Function<dim>> mesh_motion =
+      std::make_shared<Functions::ZeroFunction<dim>>(dim);
+
+    return mesh_motion;
+  }
+
+  // Poisson-type mesh motion (solve PDE problem)
+  void
+  setup_poisson()
+  {
+    // Note that the grid parameters in Poisson::Parameters are ignored since
+    // the grid is created using the parameters specified in IncNS::Parameters
+    set_parameters_poisson();
+    poisson_param.check();
+    poisson_param.print(pcout, "List of parameters for Poisson solver (moving mesh):");
+
+    poisson_boundary_descriptor = std::make_shared<Poisson::BoundaryDescriptor<1, dim>>();
+    set_boundary_descriptor_poisson();
+    verify_boundary_conditions(*poisson_boundary_descriptor, *grid);
+
+    poisson_field_functions = std::make_shared<Poisson::FieldFunctions<dim>>();
+    set_field_functions_poisson();
+
+    AssertThrow(poisson_param.right_hand_side == false,
+                ExcMessage("Poisson problem is used for mesh movement. Hence, "
+                           "the right-hand side has to be zero for the Poisson problem."));
   }
 
   Poisson::Parameters const &
@@ -188,7 +198,12 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  Parameters                               param;
+  ConditionalOStream pcout;
+
+  Parameters param;
+
+  std::shared_ptr<Grid<dim>> grid;
+
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
@@ -201,6 +216,44 @@ protected:
 
   std::string output_directory = "output/", output_name = "output";
   bool        write_output = false;
+
+private:
+  virtual void
+  set_parameters() = 0;
+
+  virtual void
+  create_grid() = 0;
+
+  virtual void
+  set_boundary_descriptor() = 0;
+
+  virtual void
+  set_field_functions() = 0;
+
+  // Poisson-type mesh motion
+  virtual void
+  set_parameters_poisson()
+  {
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
+
+  virtual void
+  set_boundary_descriptor_poisson()
+  {
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
+
+  virtual void
+  set_field_functions_poisson()
+  {
+    AssertThrow(false,
+                ExcMessage("Has to be overwritten by derived classes in order "
+                           "to use Poisson solver for mesh movement."));
+  }
 };
 
 template<int dim, typename Number>
@@ -210,8 +263,6 @@ public:
   ApplicationBasePrecursor(std::string parameter_file, MPI_Comm const & comm)
     : ApplicationBase<dim, Number>(parameter_file, comm)
   {
-    field_functions_pre     = std::make_shared<FieldFunctions<dim>>();
-    boundary_descriptor_pre = std::make_shared<BoundaryDescriptor<dim>>();
   }
 
   virtual ~ApplicationBasePrecursor()
@@ -228,17 +279,55 @@ public:
     this->param_pre.grid.n_refine_global = refine_space;
   }
 
-  virtual void
-  set_parameters_precursor() = 0;
+  void
+  setup() final
+  {
+    ApplicationBase<dim, Number>::setup();
 
-  virtual std::shared_ptr<Grid<dim, Number>>
-  create_grid_precursor() = 0;
+    // parameters
+    set_parameters_precursor();
+    param_pre.check(this->pcout);
+    param_pre.print(this->pcout, "List of parameters for precursor domain:");
 
-  virtual void
-  set_boundary_descriptor_precursor() = 0;
+    // make some additional parameter checks
+    AssertThrow(param_pre.ale_formulation == false, ExcMessage("not implemented."));
+    AssertThrow(this->param.ale_formulation == false, ExcMessage("not implemented."));
 
-  virtual void
-  set_field_functions_precursor() = 0;
+    AssertThrow(param_pre.calculation_of_time_step_size ==
+                  this->param.calculation_of_time_step_size,
+                ExcMessage("Type of time step calculation has to be the same for both domains."));
+
+    AssertThrow(param_pre.adaptive_time_stepping == this->param.adaptive_time_stepping,
+                ExcMessage("Type of time step calculation has to be the same for both domains."));
+
+    AssertThrow(param_pre.solver_type == SolverType::Unsteady &&
+                  this->param.solver_type == SolverType::Unsteady,
+                ExcMessage("This is an unsteady solver. Check parameters."));
+
+    // For the two-domain solver the parameter start_with_low_order has to be true.
+    // This is due to the fact that the setup function of the time integrator initializes
+    // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+    // start_with_low_order == false. However, the combined time step size
+    // is not known at this point since the two domains have to first communicate with each other
+    // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
+    // inconsistencies is to preclude the case start_with_low_order == false.
+    AssertThrow(param_pre.start_with_low_order == true && this->param.start_with_low_order == true,
+                ExcMessage("start_with_low_order has to be true for two-domain solver."));
+
+    // grid
+    grid_pre = std::make_shared<Grid<dim>>(param_pre.grid, this->mpi_comm);
+    create_grid_precursor();
+    print_grid_info(this->pcout, *grid_pre);
+
+    // boundary conditions
+    boundary_descriptor_pre = std::make_shared<BoundaryDescriptor<dim>>();
+    set_boundary_descriptor_precursor();
+    verify_boundary_conditions<dim, Number>(*boundary_descriptor_pre, *grid_pre);
+
+    // field functions
+    field_functions_pre = std::make_shared<FieldFunctions<dim>>();
+    set_field_functions_precursor();
+  }
 
   virtual std::shared_ptr<PostProcessorBase<dim, Number>>
   create_postprocessor_precursor() = 0;
@@ -247,6 +336,12 @@ public:
   get_parameters_precursor() const
   {
     return param_pre;
+  }
+
+  std::shared_ptr<Grid<dim> const>
+  get_grid_precursor() const
+  {
+    return grid_pre;
   }
 
   std::shared_ptr<BoundaryDescriptor<dim> const>
@@ -262,9 +357,25 @@ public:
   }
 
 protected:
-  Parameters                               param_pre;
+  Parameters param_pre;
+
+  std::shared_ptr<Grid<dim>> grid_pre;
+
   std::shared_ptr<FieldFunctions<dim>>     field_functions_pre;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_pre;
+
+private:
+  virtual void
+  set_parameters_precursor() = 0;
+
+  virtual void
+  create_grid_precursor() = 0;
+
+  virtual void
+  set_boundary_descriptor_precursor() = 0;
+
+  virtual void
+  set_field_functions_precursor() = 0;
 };
 
 

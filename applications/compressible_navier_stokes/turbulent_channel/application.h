@@ -313,54 +313,50 @@ public:
     this->param.use_combined_operator = true;
   }
 
-  std::shared_ptr<Grid<dim, Number>>
+  void
   create_grid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(this->param.grid, this->mpi_comm);
-
     Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;
     dimensions[1] = DIMENSIONS_X2;
     if(dim == 3)
       dimensions[2] = DIMENSIONS_X3;
 
-    GridGenerator::hyper_rectangle(*grid->triangulation,
+    GridGenerator::hyper_rectangle(*this->grid->triangulation,
                                    Point<dim>(-dimensions / 2.0),
                                    Point<dim>(dimensions / 2.0));
 
     // manifold
     unsigned int manifold_id = 1;
-    for(auto cell : *grid->triangulation)
+    for(auto cell : *this->grid->triangulation)
     {
       cell.set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-    grid->triangulation->set_manifold(manifold_id, manifold);
+    this->grid->triangulation->set_manifold(manifold_id, manifold);
 
     // periodicity in x- and z-direction
     // add 10 to avoid conflicts with dirichlet boundary, which is 0
-    grid->triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
-    grid->triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
+    this->grid->triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
+    this->grid->triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
     // periodicity in z-direction
     if(dim == 3)
     {
-      grid->triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
-      grid->triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
+      this->grid->triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
+      this->grid->triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
     }
 
-    auto tria = dynamic_cast<Triangulation<dim> *>(&*grid->triangulation);
-    GridTools::collect_periodic_faces(*tria, 0 + 10, 1 + 10, 0, grid->periodic_faces);
+    GridTools::collect_periodic_faces(
+      *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
     if(dim == 3)
-      GridTools::collect_periodic_faces(*tria, 2 + 10, 3 + 10, 2, grid->periodic_faces);
+      GridTools::collect_periodic_faces(
+        *this->grid->triangulation, 2 + 10, 3 + 10, 2, this->grid->periodic_faces);
 
-    grid->triangulation->add_periodicity(grid->periodic_faces);
+    this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
-    grid->triangulation->refine_global(this->param.grid.n_refine_global);
-
-    return grid;
+    this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
   void
