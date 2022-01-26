@@ -474,7 +474,7 @@ public:
     this->refine_level = this->param.grid.n_refine_global;
 
     if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(
-         &*this->grid->triangulation))
+         this->grid->triangulation.get()))
     {
       auto const construction_data =
         TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
@@ -499,7 +499,7 @@ public:
       tria_fully_dist->create_triangulation(construction_data);
     }
     else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(
-              &*this->grid->triangulation))
+              this->grid->triangulation.get()))
     {
       create_cylinder_grid<dim>(*tria,
                                 this->param.grid.n_refine_global,
