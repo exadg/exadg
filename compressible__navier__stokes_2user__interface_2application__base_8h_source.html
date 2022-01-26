@@ -132,10 +132,10 @@ $(function() {
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  }</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ApplicationBase</a>(std::string parameter_file, MPI_Comm <span class="keyword">const</span> &amp; comm)</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    : mpi_comm(comm), parameter_file(parameter_file)</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  {</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;dim&gt;&gt;();</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    field_functions     = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    : mpi_comm(comm),</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      parameter_file(parameter_file)</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  {</div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">virtual</span> <a class="code hl_class" href="classExaDG_1_1CompNS_1_1ApplicationBase.html">~ApplicationBase</a>()</div>
@@ -162,57 +162,92 @@ $(function() {
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    this-&gt;param.n_refine_time        = refine_time;</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  }</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  set_parameters() = 0;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;Grid&lt;dim, Number&gt;&gt;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  create_grid() = 0;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  set_boundary_descriptor() = 0;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  set_field_functions() = 0;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt;</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  create_postprocessor() = 0;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  get_parameters()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keywordflow">return</span> param;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  }</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  get_boundary_descriptor()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keywordflow">return</span> boundary_descriptor;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  }</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  get_field_functions()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordflow">return</span> field_functions;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  }</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span> </div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a>                               param;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; boundary_descriptor;</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;     field_functions;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  std::string parameter_file;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  std::string output_directory = <span class="stringliteral">&quot;output/&quot;</span>, output_name = <span class="stringliteral">&quot;output&quot;</span>;</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keywordtype">bool</span>        write_output = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>};</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>} <span class="comment">// namespace CompNS</span></div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  setup()</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="comment">// parameters</span></div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    set_parameters();</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    param.check();</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    param.print(pcout, <span class="stringliteral">&quot;List of parameters:&quot;</span>);</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="comment">// grid</span></div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    grid = std::make_shared&lt;Grid&lt;dim&gt;&gt;(param.grid, mpi_comm);</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    create_grid();</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    print_grid_info(pcout, *grid);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="comment">// boundary conditions</span></div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    boundary_descriptor = std::make_shared&lt;BoundaryDescriptor&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    set_boundary_descriptor();</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    verify_boundary_conditions&lt;dim, Number&gt;(*boundary_descriptor, *grid);</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="comment">// field functions</span></div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    field_functions = std::make_shared&lt;FieldFunctions&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    set_field_functions();</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  }</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">virtual</span> std::shared_ptr&lt;PostProcessorBase&lt;dim, Number&gt;&gt;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  create_postprocessor() = 0;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a> <span class="keyword">const</span> &amp;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  get_parameters()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="keywordflow">return</span> param;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  }</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  std::shared_ptr&lt;Grid&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  get_grid()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    <span class="keywordflow">return</span> grid;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  }</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  get_boundary_descriptor()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    <span class="keywordflow">return</span> boundary_descriptor;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  }</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  get_field_functions()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    <span class="keywordflow">return</span> field_functions;</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  }</div>
 <div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span> </div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  MPI_Comm <span class="keyword">const</span> &amp; mpi_comm;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  ConditionalOStream pcout;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <a class="code hl_class" href="classExaDG_1_1CompNS_1_1Parameters.html">Parameters</a> param;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  std::shared_ptr&lt;Grid&lt;dim&gt;&gt; grid;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span> </div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  std::shared_ptr&lt;BoundaryDescriptor&lt;dim&gt;&gt; boundary_descriptor;</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  std::shared_ptr&lt;FieldFunctions&lt;dim&gt;&gt;     field_functions;</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span> </div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  std::string parameter_file;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  std::string output_directory = <span class="stringliteral">&quot;output/&quot;</span>, output_name = <span class="stringliteral">&quot;output&quot;</span>;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  <span class="keywordtype">bool</span>        write_output = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  set_parameters() = 0;</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  create_grid() = 0;</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  set_boundary_descriptor() = 0;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>  set_field_functions() = 0;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>};</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span> </div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>} <span class="comment">// namespace CompNS</span></div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_APPLICATION_BASE_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1ApplicationBase_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1ApplicationBase.html">ExaDG::CompNS::ApplicationBase</a></div><div class="ttdef"><b>Definition:</b> application_base.h:49</div></div>
 <div class="ttc" id="aclassExaDG_1_1CompNS_1_1Parameters_html"><div class="ttname"><a href="classExaDG_1_1CompNS_1_1Parameters.html">ExaDG::CompNS::Parameters</a></div><div class="ttdef"><b>Definition:</b> parameters.h:38</div></div>
 </div><!-- fragment --></div><!-- contents -->

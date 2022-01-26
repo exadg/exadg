@@ -170,21 +170,20 @@ $(function() {
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    }</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  }</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <span class="keyword">auto</span> tria = <span class="keyword">dynamic_cast&lt;</span>Triangulation&lt;dim&gt; *<span class="keyword">&gt;</span>(&amp;*triangulation);</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  GridTools::collect_periodic_faces(*tria, 0, 1, 0 <span class="comment">/*x-direction*/</span>, periodic_faces);</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  GridTools::collect_periodic_faces(*tria, 2, 3, 1 <span class="comment">/*y-direction*/</span>, periodic_faces);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <span class="keywordflow">if</span>(dim == 3)</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    GridTools::collect_periodic_faces(*tria, 4, 5, 2 <span class="comment">/*z-direction*/</span>, periodic_faces);</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  triangulation-&gt;add_periodicity(periodic_faces);</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="comment">// perform global refinements</span></div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  triangulation-&gt;refine_global(n_refine_space);</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>}</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span><span class="preprocessor">#endif </span><span class="comment">/* APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  GridTools::collect_periodic_faces(*triangulation, 0, 1, 0 <span class="comment">/*x-direction*/</span>, periodic_faces);</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  GridTools::collect_periodic_faces(*triangulation, 2, 3, 1 <span class="comment">/*y-direction*/</span>, periodic_faces);</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordflow">if</span>(dim == 3)</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    GridTools::collect_periodic_faces(*triangulation, 4, 5, 2 <span class="comment">/*z-direction*/</span>, periodic_faces);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  triangulation-&gt;add_periodicity(periodic_faces);</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="comment">// perform global refinements</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  triangulation-&gt;refine_global(n_refine_space);</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>}</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span><span class="preprocessor">#endif </span><span class="comment">/* APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_ */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

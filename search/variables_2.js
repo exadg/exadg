@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['periodic_5ffaces_0',['periodic_faces',['../classExaDG_1_1Grid.html#a984073b91b0706dd93e164693c7c3900',1,'ExaDG::Grid']]]
+  ['triangulation_0',['triangulation',['../classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d',1,'ExaDG::Grid']]]
 ];

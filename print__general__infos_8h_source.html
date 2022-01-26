@@ -187,9 +187,9 @@ $(function() {
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="comment">// clang-format on</span></div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>}</div>
 <div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span> </div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span><span class="keyword">inline</span> <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>print_grid_info(ConditionalOStream <span class="keyword">const</span> &amp; pcout, Grid&lt;dim, Number&gt; <span class="keyword">const</span> &amp; grid)</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>print_grid_info(ConditionalOStream <span class="keyword">const</span> &amp; pcout, Grid&lt;dim&gt; <span class="keyword">const</span> &amp; grid)</div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>{</div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  pcout &lt;&lt; std::endl</div>
 <div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>        &lt;&lt; <span class="stringliteral">&quot;Generating grid for &quot;</span> &lt;&lt; dim &lt;&lt; <span class="stringliteral">&quot;-dimensional problem:&quot;</span> &lt;&lt; std::endl</div>

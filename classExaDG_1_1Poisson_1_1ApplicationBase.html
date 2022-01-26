@@ -92,24 +92,18 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter
 <tr class="memitem:acebfe68ca8d64fb98c11eba64f1e51ca"><td class="memItemLeft" align="right" valign="top"><a id="acebfe68ca8d64fb98c11eba64f1e51ca" name="acebfe68ca8d64fb98c11eba64f1e51ca"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_refinement_study</b> (unsigned int const degree, unsigned int const refine_space, unsigned int const n_subdivisions_1d_hypercube)</td></tr>
 <tr class="separator:acebfe68ca8d64fb98c11eba64f1e51ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a695a7c0902a8fa15d3bd9502df038677"><td class="memItemLeft" align="right" valign="top"><a id="a695a7c0902a8fa15d3bd9502df038677" name="a695a7c0902a8fa15d3bd9502df038677"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters</b> ()=0</td></tr>
-<tr class="separator:a695a7c0902a8fa15d3bd9502df038677"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a81a8b8b67577cdfebb0c41e427854b2e"><td class="memItemLeft" align="right" valign="top"><a id="a81a8b8b67577cdfebb0c41e427854b2e" name="a81a8b8b67577cdfebb0c41e427854b2e"></a>
-virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_grid</b> ()=0</td></tr>
-<tr class="separator:a81a8b8b67577cdfebb0c41e427854b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acbad74b20822bd56dc640fddec25ca1e"><td class="memItemLeft" align="right" valign="top"><a id="acbad74b20822bd56dc640fddec25ca1e" name="acbad74b20822bd56dc640fddec25ca1e"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_boundary_descriptor</b> ()=0</td></tr>
-<tr class="separator:acbad74b20822bd56dc640fddec25ca1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f31cca4cec5fa51816348d7e123bcc3"><td class="memItemLeft" align="right" valign="top"><a id="a1f31cca4cec5fa51816348d7e123bcc3" name="a1f31cca4cec5fa51816348d7e123bcc3"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>set_field_functions</b> ()=0</td></tr>
-<tr class="separator:a1f31cca4cec5fa51816348d7e123bcc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22afa49fe804bba45a1fdba9918b717d"><td class="memItemLeft" align="right" valign="top"><a id="a22afa49fe804bba45a1fdba9918b717d" name="a22afa49fe804bba45a1fdba9918b717d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> ()</td></tr>
+<tr class="separator:a22afa49fe804bba45a1fdba9918b717d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed51a50ead8e72bf946995a0162820b0"><td class="memItemLeft" align="right" valign="top"><a id="aed51a50ead8e72bf946995a0162820b0" name="aed51a50ead8e72bf946995a0162820b0"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Poisson_1_1PostProcessorBase.html">Poisson::PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> ()=0</td></tr>
 <tr class="separator:aed51a50ead8e72bf946995a0162820b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab4d3b6e1fa0d34bc8814e788673de65d"><td class="memItemLeft" align="right" valign="top"><a id="ab4d3b6e1fa0d34bc8814e788673de65d" name="ab4d3b6e1fa0d34bc8814e788673de65d"></a>
 <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameters</b> () const</td></tr>
 <tr class="separator:ab4d3b6e1fa0d34bc8814e788673de65d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0eea86450ec7a981fe010c9728888877"><td class="memItemLeft" align="right" valign="top"><a id="a0eea86450ec7a981fe010c9728888877" name="a0eea86450ec7a981fe010c9728888877"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_grid</b> () const</td></tr>
+<tr class="separator:a0eea86450ec7a981fe010c9728888877"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad35bfb9d3f3c781ba8c5b86fa59d5378"><td class="memItemLeft" align="right" valign="top"><a id="ad35bfb9d3f3c781ba8c5b86fa59d5378" name="ad35bfb9d3f3c781ba8c5b86fa59d5378"></a>
 std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; 0, dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_descriptor</b> () const</td></tr>
 <tr class="separator:ad35bfb9d3f3c781ba8c5b86fa59d5378"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,9 +116,15 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:aacb246403d9a9e4c5de6b7fcf6fc0681"><td class="memItemLeft" align="right" valign="top"><a id="aacb246403d9a9e4c5de6b7fcf6fc0681" name="aacb246403d9a9e4c5de6b7fcf6fc0681"></a>
 MPI_Comm const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
 <tr class="separator:aacb246403d9a9e4c5de6b7fcf6fc0681"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c3e6cb2ba4caa119e00fc56e3226889"><td class="memItemLeft" align="right" valign="top"><a id="a5c3e6cb2ba4caa119e00fc56e3226889" name="a5c3e6cb2ba4caa119e00fc56e3226889"></a>
+ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
+<tr class="separator:a5c3e6cb2ba4caa119e00fc56e3226889"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95be0d2506df2039040c82e71a640167"><td class="memItemLeft" align="right" valign="top"><a id="a95be0d2506df2039040c82e71a640167" name="a95be0d2506df2039040c82e71a640167"></a>
 <a class="el" href="classExaDG_1_1Poisson_1_1Parameters.html">Parameters</a>&#160;</td><td class="memItemRight" valign="bottom"><b>param</b></td></tr>
 <tr class="separator:a95be0d2506df2039040c82e71a640167"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca1b23cac9eb7e821bc4775313075f52"><td class="memItemLeft" align="right" valign="top"><a id="aca1b23cac9eb7e821bc4775313075f52" name="aca1b23cac9eb7e821bc4775313075f52"></a>
+std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Grid.html">Grid</a>&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>grid</b></td></tr>
+<tr class="separator:aca1b23cac9eb7e821bc4775313075f52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afacb74c5d9a0d663cc86decda7c53235"><td class="memItemLeft" align="right" valign="top"><a id="afacb74c5d9a0d663cc86decda7c53235" name="afacb74c5d9a0d663cc86decda7c53235"></a>
 std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">BoundaryDescriptor</a>&lt; 0, dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>boundary_descriptor</b></td></tr>
 <tr class="separator:afacb74c5d9a0d663cc86decda7c53235"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -143,6 +143,9 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>output_name</b
 <tr class="memitem:ae3e55486cf731a4827f8cccf4c09addd"><td class="memItemLeft" align="right" valign="top"><a id="ae3e55486cf731a4827f8cccf4c09addd" name="ae3e55486cf731a4827f8cccf4c09addd"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>write_output</b> = false</td></tr>
 <tr class="separator:ae3e55486cf731a4827f8cccf4c09addd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e3e9ed260f4686c16e63621d14521ce"><td class="memItemLeft" align="right" valign="top"><a id="a0e3e9ed260f4686c16e63621d14521ce" name="a0e3e9ed260f4686c16e63621d14521ce"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>compute_aspect_ratio</b> = false</td></tr>
+<tr class="separator:a0e3e9ed260f4686c16e63621d14521ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/poisson/user_interface/<a class="el" href="poisson_2user__interface_2application__base_8h_source.html">application_base.h</a></li>
