@@ -517,8 +517,8 @@ create_geometric_coarsening_sequence(
     {
       // extract relevant information from distributed triangulation
       auto const construction_data =
-        dealii::TriangulationDescriptionUtilities::create_description_from_triangulation(tria_copy,
-                                                                                         mpi_comm);
+        dealii::TriangulationDescription::Utilities::create_description_from_triangulation(
+          tria_copy, mpi_comm);
 
       // create fully distributed triangulation
       auto level_tria =
@@ -565,7 +565,7 @@ create_geometric_coarsening_sequence(
                  std::max<unsigned int>(1U, serial_tria.n_active_cells() / n_cells_per_process)));
 
       // extract relevant information from distributed triangulation
-      auto const construction_data = dealii::TriangulationDescriptionUtilities::
+      auto const construction_data = dealii::TriangulationDescription::Utilities::
         create_description_from_triangulation_in_groups<dim, dim>(
           [&](auto & tria) { tria.copy_triangulation(serial_tria); },
           [&](auto & tria, auto const &, auto const) {
