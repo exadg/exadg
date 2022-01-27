@@ -380,7 +380,7 @@ gather_distributed_triangulation_by_node(
     auto [points, cell_data, sub_cell_data] =
       dealii::GridTools::get_coarse_mesh_description(distributed_tria);
 
-    std::vector<std::pair<unsigned int, CellData<dim>>> cell_data_sorted;
+    std::vector<std::pair<unsigned int, dealii::CellData<dim>>> cell_data_sorted;
 
     unsigned int counter = 0;
 
@@ -405,11 +405,11 @@ gather_distributed_triangulation_by_node(
   {
     // collect refinement flags from the complete distributed triangulation on
     // global rank 0 by an MPI_Gather step
-    std::vector<std::vector<std::vector<CellId>>> refinement_flags(n_levels - 1);
+    std::vector<std::vector<std::vector<dealii::CellId>>> refinement_flags(n_levels - 1);
     {
       for(unsigned int l = 0; l < n_levels - 1; ++l)
       {
-        std::vector<CellId> local_refinement_flags;
+        std::vector<dealii::CellId> local_refinement_flags;
 
         for(auto const & cell : distributed_tria.cell_iterators_on_level(l))
           if(cell->has_children())
@@ -517,8 +517,8 @@ create_geometric_coarsening_sequence(
     {
       // extract relevant information from distributed triangulation
       auto const construction_data =
-        TriangulationDescriptionUtilities::create_description_from_triangulation(tria_copy,
-                                                                                 mpi_comm);
+        dealii::TriangulationDescriptionUtilities::create_description_from_triangulation(tria_copy,
+                                                                                         mpi_comm);
 
       // create fully distributed triangulation
       auto level_tria =
@@ -565,9 +565,8 @@ create_geometric_coarsening_sequence(
                  std::max<unsigned int>(1U, serial_tria.n_active_cells() / n_cells_per_process)));
 
       // extract relevant information from distributed triangulation
-      auto const construction_data =
-        TriangulationDescriptionUtilities::create_description_from_triangulation_in_groups<dim,
-                                                                                           dim>(
+      auto const construction_data = dealii::TriangulationDescriptionUtilities::
+        create_description_from_triangulation_in_groups<dim, dim>(
           [&](auto & tria) { tria.copy_triangulation(serial_tria); },
           [&](auto & tria, auto const &, auto const) {
 #  ifdef DEAL_II_WITH_METIS
