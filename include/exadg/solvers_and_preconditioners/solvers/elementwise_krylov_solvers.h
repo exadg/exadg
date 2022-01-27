@@ -677,7 +677,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
   //    // the solution x: r = b - A*x
   //
   //    //temp2 = A*x
-  //    dealii::AlignedVector<value_type> temp2 = AlignedVector<value_type>(M);
+  //    dealii::AlignedVector<value_type> temp2 = dealii::AlignedVector<value_type>(M);
   //    A->vmult(temp2.begin(),x);
   //    // temp = b - temp2 = b - A*x = r
   //    equ(temp.begin(),one,b,-one,temp2.begin());

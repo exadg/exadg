@@ -803,7 +803,7 @@ MultigridPreconditionerBase<dim, Number>::do_initialize_dof_handler_and_constrai
 
     unsigned int const n_components = fe.n_components();
 
-    // temporal storage for new dealii::DoFHandlers and constraints on each p-level
+    // temporal storage for new DoFHandlers and constraints on each p-level
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::DoFHandler<dim> const>>
       map_dofhandlers;
     std::map<MGDoFHandlerIdentifier, std::shared_ptr<dealii::MGConstrainedDoFs>>

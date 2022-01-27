@@ -286,7 +286,7 @@ private:
   // ... for spectral analysis
   SpectralAnalysis fftw;
 
-  // dealii::Timer
+  // Timer
   DealSpectrumTimer timer;
 
   std::shared_ptr<dealii::Utilities::MPI::NoncontiguousPartitioner> nonconti;
