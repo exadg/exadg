@@ -41,18 +41,16 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class ApplicationBase
 {
 public:
-  typedef
-    typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      PeriodicFaces;
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+    PeriodicFaces;
 
   virtual void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
     prm.enter_subsection("Output");
@@ -65,7 +63,7 @@ public:
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
   }
@@ -104,8 +102,9 @@ public:
       double AR = calculate_aspect_ratio_vertex_distance(*grid->triangulation, mpi_comm);
       pcout << std::endl << "Maximum aspect ratio (vertex distance) = " << AR << std::endl;
 
-      QGauss<dim> quad(param.degree + 1);
-      AR = GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quad);
+      dealii::QGauss<dim> quad(param.degree + 1);
+      AR =
+        dealii::GridTools::compute_maximum_aspect_ratio(*grid->mapping, *grid->triangulation, quad);
       pcout << std::endl << "Maximum aspect ratio (Jacobian) = " << AR << std::endl;
     }
 
@@ -149,7 +148,7 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   Parameters param;
 

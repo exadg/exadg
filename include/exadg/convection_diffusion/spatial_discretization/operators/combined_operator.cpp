@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 CombinedOperator<dim, Number>::CombinedOperator() : scaling_factor_mass(1.0)
 {
@@ -35,9 +33,10 @@ CombinedOperator<dim, Number>::CombinedOperator() : scaling_factor_mass(1.0)
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                          AffineConstraints<Number> const & affine_constraints,
-                                          CombinedOperatorData<dim> const & data)
+CombinedOperator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  CombinedOperatorData<dim> const &         data)
 {
   operator_data = data;
 
@@ -77,8 +76,8 @@ CombinedOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matr
 template<int dim, typename Number>
 void
 CombinedOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         affine_constraints,
+  dealii::MatrixFree<dim, Number> const &                   matrix_free,
+  dealii::AffineConstraints<Number> const &                 affine_constraints,
   CombinedOperatorData<dim> const &                         data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel_in,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel_in)
@@ -123,7 +122,7 @@ CombinedOperator<dim, Number>::update_after_grid_motion()
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 CombinedOperator<dim, Number>::get_velocity() const
 {
   return convective_kernel->get_velocity();
@@ -195,9 +194,10 @@ CombinedOperator<dim, Number>::reinit_boundary_face(unsigned int const face) con
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                      unsigned int const       face,
-                                                      types::boundary_id const boundary_id) const
+CombinedOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -214,9 +214,9 @@ CombinedOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector gradient_flux;
-    scalar value_flux = make_vectorized_array<Number>(0.0);
+    scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
-    scalar value = make_vectorized_array<Number>(0.0);
+    scalar value = dealii::make_vectorized_array<Number>(0.0);
     if(this->integrator_flags.cell_evaluate.value)
       value = integrator.get_value(q);
 
@@ -245,7 +245,7 @@ CombinedOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
     }
 
@@ -273,8 +273,8 @@ CombinedOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    scalar value_flux_m = make_vectorized_array<Number>(0.0);
-    scalar value_flux_p = make_vectorized_array<Number>(0.0);
+    scalar value_flux_m = dealii::make_vectorized_array<Number>(0.0);
+    scalar value_flux_p = dealii::make_vectorized_array<Number>(0.0);
 
     if(operator_data.convective_problem)
     {
@@ -321,12 +321,12 @@ CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     // set value_p to zero
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    scalar value_flux = make_vectorized_array<Number>(0.0);
+    scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
     if(operator_data.convective_problem)
     {
@@ -338,7 +338,7 @@ CombinedOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
     {
       // set exterior value to zero
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
-      scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
+      scalar normal_gradient_p = dealii::make_vectorized_array<Number>(0.0);
 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
@@ -368,12 +368,12 @@ CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     // set value_p to zero
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    scalar value_flux = make_vectorized_array<Number>(0.0);
+    scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
     if(operator_data.convective_problem)
     {
@@ -393,7 +393,7 @@ CombinedOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
     {
       // set exterior value to zero
       scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
-      scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
+      scalar normal_gradient_p = dealii::make_vectorized_array<Number>(0.0);
 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
@@ -421,13 +421,13 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
   for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
   {
     // set value_m to zero
-    scalar value_m = make_vectorized_array<Number>(0.0);
+    scalar value_m = dealii::make_vectorized_array<Number>(0.0);
     scalar value_p = integrator_p.get_value(q);
 
     // n⁺ = -n⁻
     vector normal_p = -integrator_p.get_normal_vector(q);
 
-    scalar value_flux = make_vectorized_array<Number>(0.0);
+    scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
     if(operator_data.convective_problem)
     {
@@ -438,7 +438,7 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
     if(operator_data.diffusive_problem)
     {
       // set gradient_m to zero
-      scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
+      scalar normal_gradient_m = dealii::make_vectorized_array<Number>(0.0);
       // minus sign to get the correct normal vector n⁺ = -n⁻
       scalar normal_gradient_p = -integrator_p.get_normal_derivative(q);
 
@@ -461,9 +461,10 @@ CombinedOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
 
 template<int dim, typename Number>
 void
-CombinedOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
-                                                    OperatorType const &       operator_type,
-                                                    types::boundary_id const & boundary_id) const
+CombinedOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -481,7 +482,7 @@ CombinedOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    scalar value_flux = make_vectorized_array<Number>(0.0);
+    scalar value_flux = dealii::make_vectorized_array<Number>(0.0);
 
     if(operator_data.convective_problem)
     {

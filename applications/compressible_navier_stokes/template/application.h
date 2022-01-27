@@ -26,20 +26,18 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // Example of a user defined function
 template<int dim>
-class MyFunction : public Function<dim>
+class MyFunction : public dealii::Function<dim>
 {
 public:
   MyFunction(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)p;
     (void)component;
@@ -56,7 +54,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -79,18 +77,19 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                   pair;
+    typedef typename std::pair<dealii::types::boundary_id, EnergyBoundaryVariable> pair_variable;
 
     // these lines show exemplarily how the boundary descriptors are filled
     this->boundary_descriptor->density.dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->velocity.dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->energy.dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     // set energy boundary variable
     this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Energy));
@@ -100,10 +99,14 @@ public:
   set_field_functions() final
   {
     // these lines show exemplarily how the field functions are filled
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim + 2));
-    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim + 2));
+    this->field_functions->right_hand_side_density.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

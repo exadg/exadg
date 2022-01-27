@@ -34,8 +34,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // forward declarations
 class Parameters;
 
@@ -49,8 +47,8 @@ template<int dim, typename Number>
 class DriverSteadyProblems
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef OperatorCoupled<dim, Number> Operator;
 
@@ -99,10 +97,10 @@ private:
 
   bool is_test;
 
-  Timer                      global_timer;
+  dealii::Timer              global_timer;
   std::shared_ptr<TimerTree> timer_tree;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   BlockVectorType solution;
   BlockVectorType rhs_vector;

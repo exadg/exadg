@@ -30,15 +30,14 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 ExtrapolationConstants::ExtrapolationConstants(unsigned int const order_extrapolation_scheme,
                                                bool const         start_with_low_order_method)
   : order(order_extrapolation_scheme),
     start_with_low_order(start_with_low_order_method),
     beta(order)
 {
-  AssertThrow(order <= 4, ExcMessage("Specified order of extrapolation scheme not implemented."));
+  AssertThrow(order <= 4,
+              dealii::ExcMessage("Specified order of extrapolation scheme not implemented."));
 
   // The default case is start_with_low_order = false.
   set_constant_time_step(order);
@@ -48,8 +47,8 @@ double
 ExtrapolationConstants::get_beta(unsigned int const i) const
 {
   AssertThrow(i < order,
-              ExcMessage("In order to access constants of extrapolation scheme, the index "
-                         "has to be smaller than the order of the scheme."));
+              dealii::ExcMessage("In order to access constants of extrapolation scheme, the index "
+                                 "has to be smaller than the order of the scheme."));
 
   return beta[i];
 }
@@ -65,7 +64,7 @@ ExtrapolationConstants::set_constant_time_step(unsigned int const current_order)
 {
   AssertThrow(
     current_order <= order,
-    ExcMessage(
+    dealii::ExcMessage(
       "There is a logical error when updating the constants of the extrapolation scheme."));
 
   if(current_order == 1) // EX 1
@@ -108,12 +107,12 @@ ExtrapolationConstants::set_adaptive_time_step(unsigned int const          curre
 {
   AssertThrow(
     current_order <= order,
-    ExcMessage(
+    dealii::ExcMessage(
       "There is a logical error when updating the constants of the extrapolation scheme."));
 
   AssertThrow(
     order <= time_steps.size(),
-    ExcMessage(
+    dealii::ExcMessage(
       "Length of vector containing time step sizes has to be equal to order of extrapolation scheme."));
 
   if(current_order == 1) // EX 1
@@ -198,7 +197,7 @@ ExtrapolationConstants::update(unsigned int const          current_order,
 }
 
 void
-ExtrapolationConstants::print(ConditionalOStream & pcout) const
+ExtrapolationConstants::print(dealii::ConditionalOStream & pcout) const
 {
   for(unsigned int i = 0; i < order; ++i)
     pcout << "Beta[" << i << "]  = " << beta[i] << std::endl;

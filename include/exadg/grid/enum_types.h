@@ -46,7 +46,7 @@ std::string
 enum_to_string(TriangulationType const enum_type);
 
 /*
- *  Mapping type (polynomial degree)
+ *  dealii::Mapping type (polynomial degree)
  */
 enum class MappingType
 {

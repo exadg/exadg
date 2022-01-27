@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  This function calculates the right-hand side of the Laplace equation that is solved in order to
  * obtain the streamfunction psi
@@ -46,7 +44,7 @@ template<int dim, typename Number>
 class StreamfunctionCalculatorRHSOperator
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -59,22 +57,22 @@ public:
   StreamfunctionCalculatorRHSOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              dof_index_u_in,
-             unsigned int const              dof_index_u_scalar_in,
-             unsigned int const              quad_index_in);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_u_in,
+             unsigned int const                      dof_index_u_scalar_in,
+             unsigned int const                      quad_index_in);
 
   void
   apply(VectorType & dst, VectorType const & src) const;
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index_u;
   unsigned int dof_index_u_scalar;

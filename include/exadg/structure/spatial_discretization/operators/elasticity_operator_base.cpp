@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 ElasticityOperatorBase<dim, Number>::ElasticityOperatorBase() : scaling_factor_mass(1.0)
 {
@@ -59,10 +57,11 @@ ElasticityOperatorBase<dim, Number>::get_mapping_flags()
 {
   MappingFlags flags;
 
-  flags.cells = update_gradients | update_JxW_values | update_quadrature_points;
+  flags.cells =
+    dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points;
 
-  flags.boundary_faces =
-    update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+  flags.boundary_faces = dealii::update_gradients | dealii::update_JxW_values |
+                         dealii::update_normal_vectors | dealii::update_quadrature_points;
 
   return flags;
 }
@@ -70,9 +69,9 @@ ElasticityOperatorBase<dim, Number>::get_mapping_flags()
 template<int dim, typename Number>
 void
 ElasticityOperatorBase<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<Number> const & affine_constraints,
-  OperatorData<dim> const &         data)
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  OperatorData<dim> const &                 data)
 {
   operator_data = data;
 
@@ -105,19 +104,20 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
                                                             double const time) const
 {
   // standard Dirichlet boundary conditions
-  std::map<types::global_dof_index, double> boundary_values;
+  std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)
   {
     dbc.second->set_time(time);
-    ComponentMask mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
+    dealii::ComponentMask mask =
+      operator_data.bc->dirichlet_bc_component_mask.find(dbc.first)->second;
 
-    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
-                                             this->matrix_free->get_dof_handler(
-                                               operator_data.dof_index),
-                                             dbc.first,
-                                             *dbc.second,
-                                             boundary_values,
-                                             mask);
+    dealii::VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                                     this->matrix_free->get_dof_handler(
+                                                       operator_data.dof_index),
+                                                     dbc.first,
+                                                     *dbc.second,
+                                                     boundary_values,
+                                                     mask);
   }
 
   // set Dirichlet values in solution vector
@@ -140,7 +140,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
         this->matrix_free->n_inner_face_batches() + this->matrix_free->n_boundary_face_batches();
         ++face)
     {
-      types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
+      dealii::types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
 
       BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -157,7 +157,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
           unsigned int const index = this->matrix_free->get_shape_info(dof_index, quad_index)
                                        .face_to_cell_index_nodal[local_face_number][q];
 
-          Tensor<1, dim, VectorizedArray<Number>> g;
+          dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
           if(boundary_type == BoundaryType::DirichletMortar)
           {
@@ -167,7 +167,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
           }
           else
           {
-            AssertThrow(false, ExcMessage("Not implemented."));
+            AssertThrow(false, dealii::ExcMessage("Not implemented."));
           }
 
           integrator.submit_dof_value(g, index);
@@ -180,7 +180,7 @@ ElasticityOperatorBase<dim, Number>::set_constrained_values(VectorType & dst,
         AssertThrow(boundary_type == BoundaryType::Dirichlet ||
                       boundary_type == BoundaryType::Neumann ||
                       boundary_type == BoundaryType::NeumannMortar,
-                    ExcMessage("BoundaryType not implemented."));
+                    dealii::ExcMessage("BoundaryType not implemented."));
       }
     }
   }

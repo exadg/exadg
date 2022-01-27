@@ -14,37 +14,37 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/data_out.h>
 
-using namespace dealii;
+
 
 void
 do_test()
 {
-  int const          dim = 2;
-  FESystem           fe(FE_Q<dim>(/*degree=*/7), dim);
-  Triangulation<dim> tria;
-  GridGenerator::hyper_ball(tria);
+  int const                  dim = 2;
+  dealii::FESystem           fe(dealii::FE_Q<dim>(/*degree=*/7), dim);
+  dealii::Triangulation<dim> tria;
+  dealii::GridGenerator::hyper_ball(tria);
   tria.refine_global(2);
 
-  DoFHandler<dim> dof_handler(tria);
+  dealii::DoFHandler<dim> dof_handler(tria);
   dof_handler.distribute_dofs(fe);
 
-  IndexSet relevant_dofs;
-  DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
+  dealii::IndexSet relevant_dofs;
+  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
 
-  LinearAlgebra::distributed::Vector<double> position;
-  LinearAlgebra::distributed::Vector<double> displacement;
-  LinearAlgebra::distributed::Vector<double> vector;
+  dealii::LinearAlgebra::distributed::Vector<double> position;
+  dealii::LinearAlgebra::distributed::Vector<double> displacement;
+  dealii::LinearAlgebra::distributed::Vector<double> vector;
   position.reinit(dof_handler.locally_owned_dofs(), relevant_dofs, MPI_COMM_SELF);
   displacement.reinit(dof_handler.locally_owned_dofs(), relevant_dofs, MPI_COMM_SELF);
   vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs, MPI_COMM_SELF);
 
-  MappingQGeneric<dim> mapping_original(fe.degree);
+  dealii::MappingQGeneric<dim> mapping_original(fe.degree);
   {
-    FEValues<dim>                        fe_values(mapping_original,
-                            fe,
-                            Quadrature<dim>(fe.get_unit_support_points()),
-                            update_quadrature_points);
-    std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+    dealii::FEValues<dim>                        fe_values(mapping_original,
+                                    fe,
+                                    dealii::Quadrature<dim>(fe.get_unit_support_points()),
+                                    dealii::update_quadrature_points);
+    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
     for(auto const & cell : dof_handler.active_cell_iterators())
       if(!cell->is_artificial())
       {
@@ -52,25 +52,25 @@ do_test()
         cell->get_dof_indices(dof_indices);
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
         {
-          unsigned int const coordinate_direction = fe.system_to_component_index(i).first;
-          Point<dim> const   point                = fe_values.quadrature_point(i);
-          double             sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
+          unsigned int const       coordinate_direction = fe.system_to_component_index(i).first;
+          dealii::Point<dim> const point                = fe_values.quadrature_point(i);
+          double                   sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
           for(unsigned int d = 0; d < dim; ++d)
-            sinval *= std::sin(2 * numbers::PI * (point(d) + 1) / (2));
+            sinval *= std::sin(2 * dealii::numbers::PI * (point(d) + 1) / (2));
           position(dof_indices[i])     = point[coordinate_direction];
           displacement(dof_indices[i]) = sinval;
         }
       }
   }
 
-  DataOut<dim> data_out;
+  dealii::DataOut<dim> data_out;
   data_out.add_data_vector(dof_handler, displacement, "displacement");
 
-  DataOutBase::VtkFlags flags;
+  dealii::DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = true;
   data_out.set_flags(flags);
 
-  data_out.build_patches(mapping_original, fe.degree, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping_original, fe.degree, dealii::DataOut<dim>::curved_inner_cells);
 
   std::ofstream file("grid-0.vtu");
   data_out.write_vtu(file);
@@ -78,30 +78,31 @@ do_test()
   vector = position;
   vector += displacement;
 
-  MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<double>> mapping(dof_handler, vector);
+  dealii::MappingFEField<dim, dim, dealii::LinearAlgebra::distributed::Vector<double>> mapping(
+    dof_handler, vector);
 
-  data_out.build_patches(mapping, fe.degree, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping, fe.degree, dealii::DataOut<dim>::curved_inner_cells);
   std::ofstream file1("grid-1.vtu");
   data_out.write_vtu(file1);
 
 
   {
-    FEValues<dim>                        fe_values(mapping_original,
-                            fe,
-                            Quadrature<dim>(fe.get_unit_support_points()),
-                            update_quadrature_points);
-    std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+    dealii::FEValues<dim>                        fe_values(mapping_original,
+                                    fe,
+                                    dealii::Quadrature<dim>(fe.get_unit_support_points()),
+                                    dealii::update_quadrature_points);
+    std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
     for(auto const & cell : dof_handler.active_cell_iterators())
     {
       fe_values.reinit(cell);
       cell->get_dof_indices(dof_indices);
       for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
       {
-        unsigned int const coordinate_direction = fe.system_to_component_index(i).first;
-        Point<dim> const   point                = fe_values.quadrature_point(i);
-        double             sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
+        unsigned int const       coordinate_direction = fe.system_to_component_index(i).first;
+        dealii::Point<dim> const point                = fe_values.quadrature_point(i);
+        double                   sinval               = coordinate_direction == 0 ? 0.25 : 0.1;
         for(unsigned int d = 0; d < dim; ++d)
-          sinval *= std::sin(2 * numbers::PI * (point(d) + 1) / (2));
+          sinval *= std::sin(2 * dealii::numbers::PI * (point(d) + 1) / (2));
         displacement(dof_indices[i]) = -sinval;
       }
     }
@@ -118,7 +119,7 @@ do_test()
     vector += displacement;
   }
 
-  data_out.build_patches(mapping, fe.degree, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping, fe.degree, dealii::DataOut<dim>::curved_inner_cells);
   std::ofstream file2("grid-2.vtu");
   data_out.write_vtu(file2);
 }

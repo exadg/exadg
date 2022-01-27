@@ -35,8 +35,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim> const>               grid_in,
@@ -53,10 +51,10 @@ Operator<dim, Number>::Operator(
     material_descriptor(material_descriptor_in),
     param(param_in),
     field(field_in),
-    fe(FE_Q<dim>(param_in.degree), dim),
+    fe(dealii::FE_Q<dim>(param_in.degree), dim),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct elasticity operator ..." << std::endl;
 
@@ -67,8 +65,8 @@ Operator<dim, Number>::Operator(
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-                             std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
+Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in)
 {
   pcout << std::endl << "Setup elasticity operator ..." << std::endl;
 
@@ -93,17 +91,23 @@ Operator<dim, Number>::distribute_dofs()
   // standard Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_bc)
   {
-    ComponentMask mask =
+    dealii::ComponentMask mask =
       this->boundary_descriptor->dirichlet_bc_component_mask.find(it.first)->second;
 
-    DoFTools::make_zero_boundary_constraints(this->dof_handler, it.first, affine_constraints, mask);
+    dealii::DoFTools::make_zero_boundary_constraints(this->dof_handler,
+                                                     it.first,
+                                                     affine_constraints,
+                                                     mask);
   }
 
   // mortar type Dirichlet boundaries
   for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
   {
-    ComponentMask mask = ComponentMask();
-    DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+    dealii::ComponentMask mask = dealii::ComponentMask();
+    dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
+                                                     it.first,
+                                                     affine_constraints,
+                                                     mask);
   }
 
   affine_constraints.close();
@@ -117,7 +121,7 @@ Operator<dim, Number>::distribute_dofs()
         << std::endl;
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", Utilities::pow(param.degree + 1, dim));
+  print_parameter(pcout, "number of dofs per cell", dealii::Utilities::pow(param.degree + 1, dim));
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
@@ -189,7 +193,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   if(param.body_force)
     matrix_free_data.append_mapping_flags(BodyForceOperator<dim, Number>::get_mapping_flags());
 
-  // DoFHandler, AffineConstraints
+  // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
@@ -199,8 +203,8 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
     matrix_free_data.insert_constraint(&constraints_mass, get_dof_name_mass());
   }
 
-  // Quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
+  // dealii::Quadrature
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
 
   // In order to set constrained degrees of freedom for continuous Galerkin
   // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
@@ -209,7 +213,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   // injected into the DoF vector)
   if(not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree + 1),
+    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
   }
 }
@@ -386,7 +390,7 @@ Operator<dim, Number>::initialize_preconditioner()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified preconditioner is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 }
 
@@ -455,7 +459,7 @@ Operator<dim, Number>::initialize_solver()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified solver is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
 
   // initialize Newton solver
@@ -484,13 +488,13 @@ Operator<dim, Number>::prescribe_initial_displacement(VectorType & displacement,
                                                       double const time) const
 {
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble src_double;
   src_double = displacement;
 
   field_functions->initial_displacement->set_time(time);
-  VectorTools::interpolate(dof_handler, *field_functions->initial_displacement, src_double);
+  dealii::VectorTools::interpolate(dof_handler, *field_functions->initial_displacement, src_double);
 
   displacement = src_double;
 }
@@ -500,13 +504,13 @@ void
 Operator<dim, Number>::prescribe_initial_velocity(VectorType & velocity, double const time) const
 {
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble src_double;
   src_double = velocity;
 
   field_functions->initial_velocity->set_time(time);
-  VectorTools::interpolate(dof_handler, *field_functions->initial_velocity, src_double);
+  dealii::VectorTools::interpolate(dof_handler, *field_functions->initial_velocity, src_double);
 
   velocity = src_double;
 }
@@ -725,28 +729,28 @@ Operator<dim, Number>::solve_linear(VectorType &       sol,
 }
 
 template<int dim, typename Number>
-MatrixFree<dim, Number> const &
+dealii::MatrixFree<dim, Number> const &
 Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
 }
 
 template<int dim, typename Number>
-Mapping<dim> const &
+dealii::Mapping<dim> const &
 Operator<dim, Number>::get_mapping() const
 {
   return *grid->mapping;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number>
-types::global_dof_index
+dealii::types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();

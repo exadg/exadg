@@ -30,18 +30,16 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
-  Solution(double const diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
+  Solution(double const diffusivity) : dealii::Function<dim>(1, 0.0), diffusivity(diffusivity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double phi_l = 1.0, phi_r = 0.0;
     double U = 1.0, L = 2.0;
@@ -65,7 +63,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -141,12 +139,12 @@ public:
   create_grid() final
   {
     // hypercube volume is [left,right]^dim
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary indicator
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if((std::fabs(cell.face(f)->center()(1) - left) < 1e-12) ||
            (std::fabs(cell.face(f)->center()(1) - right) < 1e-12) ||
@@ -164,20 +162,22 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>(diffusivity)));
-    this->boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->neumann_bc.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     std::vector<double> velocity = std::vector<double>(dim, 0.0);
     velocity[0]                  = 1.0;
-    this->field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
+    this->field_functions->velocity.reset(new dealii::Functions::ConstantFunction<dim>(velocity));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

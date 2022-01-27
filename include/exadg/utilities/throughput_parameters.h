@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 inline double
 measure_operator_evaluation_time(std::function<void(void)> const & evaluate_operator,
                                  unsigned int const                degree,
@@ -41,9 +39,9 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
 {
   (void)degree;
 
-  Timer global_timer;
+  dealii::Timer global_timer;
   global_timer.restart();
-  Utilities::MPI::MinMaxAvg global_time;
+  dealii::Utilities::MPI::MinMaxAvg global_time;
 
   double wall_time = std::numeric_limits<double>::max();
 
@@ -51,7 +49,7 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
   {
     for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
     {
-      Timer timer;
+      dealii::Timer timer;
       timer.restart();
 
 #ifdef LIKWID_PERFMON
@@ -69,13 +67,13 @@ measure_operator_evaluation_time(std::function<void(void)> const & evaluate_oper
 #endif
 
       MPI_Barrier(mpi_comm);
-      Utilities::MPI::MinMaxAvg wall_time_inner =
-        Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
+      dealii::Utilities::MPI::MinMaxAvg wall_time_inner =
+        dealii::Utilities::MPI::min_max_avg(timer.wall_time(), mpi_comm);
 
       wall_time = std::min(wall_time, wall_time_inner.avg / (double)n_repetitions_inner);
     }
 
-    global_time = Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
+    global_time = dealii::Utilities::MPI::min_max_avg(global_timer.wall_time(), mpi_comm);
   } while(global_time.avg < 1.0 /*wall time in seconds*/);
 
   return wall_time;
@@ -102,17 +100,17 @@ struct ThroughputParameters
       prm.add_parameter("OperatorType",
                         operator_type,
                         "Type of operator.",
-                        Patterns::Anything(),
+                        dealii::Patterns::Anything(),
                         true);
       prm.add_parameter("RepetitionsInner",
                         n_repetitions_inner,
                         "Number of operator evaluations.",
-                        Patterns::Integer(1),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("RepetitionsOuter",
                         n_repetitions_outer,
                         "Number of runs (taking minimum wall time).",
-                        Patterns::Integer(1,10),
+                        dealii::Patterns::Integer(1,10),
                         true);
     prm.leave_subsection();
     // clang-format on
@@ -132,7 +130,7 @@ struct ThroughputParameters
   unsigned int n_repetitions_outer = 1;   // take the minimum of outer repetitions
 
   // global variable used to store the wall times for different polynomial degrees and problem sizes
-  mutable std::vector<std::tuple<unsigned int, types::global_dof_index, double>> wall_times;
+  mutable std::vector<std::tuple<unsigned int, dealii::types::global_dof_index, double>> wall_times;
 };
 } // namespace ExaDG
 

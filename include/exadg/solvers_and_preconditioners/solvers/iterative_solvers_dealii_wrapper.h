@@ -119,7 +119,7 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
-    Timer timer;
+    dealii::Timer timer;
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
@@ -227,7 +227,7 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
-    Timer timer;
+    dealii::Timer timer;
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
@@ -249,7 +249,7 @@ public:
 
     if(solver_data.use_preconditioner == false)
     {
-      solver.solve(underlying_operator, dst, rhs, PreconditionIdentity());
+      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
     }
     else
     {
@@ -328,7 +328,7 @@ public:
   unsigned int
   solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const override
   {
-    Timer timer;
+    dealii::Timer timer;
 
     dealii::ReductionControl solver_control(solver_data.max_iter,
                                             solver_data.solver_tolerance_abs,
@@ -342,7 +342,7 @@ public:
 
     if(solver_data.use_preconditioner == false)
     {
-      solver.solve(underlying_operator, dst, rhs, PreconditionIdentity());
+      solver.solve(underlying_operator, dst, rhs, dealii::PreconditionIdentity());
     }
     else
     {

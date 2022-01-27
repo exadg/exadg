@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -58,7 +56,7 @@ enum_to_string(ProblemType const enum_type)
       string_type = "Unsteady";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -82,7 +80,7 @@ enum_to_string(Type2D const enum_type)
       string_type = "PlaneStrain";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -103,7 +101,7 @@ enum_to_string(MaterialType const enum_type)
       string_type = "StVenantKirchhoff";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -163,7 +161,7 @@ enum_to_string(Solver const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -190,7 +188,7 @@ enum_to_string(Preconditioner const enum_type)
       string_type = "AMG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

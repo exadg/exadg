@@ -16,8 +16,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 namespace Operators
 {
 template<int dim>
@@ -31,22 +29,22 @@ struct RHSKernelData
   {
   }
 
-  std::shared_ptr<Function<dim>> f;
+  std::shared_ptr<dealii::Function<dim>> f;
 
   // Boussinesq term
-  bool                           boussinesq_term;
-  bool                           boussinesq_dynamic_part_only;
-  double                         thermal_expansion_coefficient;
-  double                         reference_temperature;
-  std::shared_ptr<Function<dim>> gravitational_force;
+  bool                                   boussinesq_term;
+  bool                                   boussinesq_dynamic_part_only;
+  double                                 thermal_expansion_coefficient;
+  double                                 reference_temperature;
+  std::shared_ptr<dealii::Function<dim>> gravitational_force;
 };
 
 template<int dim, typename Number>
 class RHSKernel
 {
 private:
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef CellIntegrator<dim, dim, Number> Integrator;
   typedef CellIntegrator<dim, 1, Number>   IntegratorScalar;
@@ -63,7 +61,8 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_JxW_values | update_quadrature_points; // q-points due to rhs function f
+    flags.cells = dealii::update_JxW_values |
+                  dealii::update_quadrature_points; // q-points due to rhs function f
 
     // no face integrals
 
@@ -80,7 +79,7 @@ public:
                     unsigned int const       q,
                     Number const &           time) const
   {
-    Point<dim, scalar> q_points = integrator.quadrature_point(q);
+    dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
     vector f = FunctionEvaluator<1, dim, Number>::value(data.f, q_points, time);
 
@@ -127,7 +126,7 @@ class RHSOperator
 public:
   typedef RHSOperator<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -138,7 +137,8 @@ public:
   RHSOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+             RHSOperatorData<dim> const &            data);
 
   void
   evaluate(VectorType & dst, Number const evaluation_time) const;
@@ -154,12 +154,12 @@ private:
   do_cell_integral(Integrator & integrator, IntegratorScalar & integrator_temperature) const;
 
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   RHSOperatorData<dim> data;
 

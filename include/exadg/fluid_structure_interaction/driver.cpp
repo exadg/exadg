@@ -30,15 +30,13 @@ namespace ExaDG
 {
 namespace FSI
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(std::string const &                           input_file,
                             MPI_Comm const &                              comm,
                             std::shared_ptr<ApplicationBase<dim, Number>> app,
                             bool const                                    is_test)
   : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(comm) == 0),
     is_test(is_test),
     application(app),
     partitioned_iterations({0, 0})
@@ -61,37 +59,37 @@ Driver<dim, Number>::add_parameters(dealii::ParameterHandler & prm, PartitionedD
     prm.add_parameter("Method",
                       fsi_data.method,
                       "Acceleration method.",
-                      Patterns::Selection("Aitken|IQN-ILS|IQN-IMVLS"),
+                      dealii::Patterns::Selection("Aitken|IQN-ILS|IQN-IMVLS"),
                       true);
     prm.add_parameter("AbsTol",
                       fsi_data.abs_tol,
                       "Absolute solver tolerance.",
-                      Patterns::Double(0.0,1.0),
+                      dealii::Patterns::Double(0.0,1.0),
                       true);
     prm.add_parameter("RelTol",
                       fsi_data.rel_tol,
                       "Relative solver tolerance.",
-                      Patterns::Double(0.0,1.0),
+                      dealii::Patterns::Double(0.0,1.0),
                       true);
     prm.add_parameter("OmegaInit",
                       fsi_data.omega_init,
                       "Initial relaxation parameter.",
-                      Patterns::Double(0.0,1.0),
+                      dealii::Patterns::Double(0.0,1.0),
                       true);
     prm.add_parameter("ReusedTimeSteps",
                       fsi_data.reused_time_steps,
                       "Number of time steps reused for acceleration.",
-                      Patterns::Integer(0, 100),
+                      dealii::Patterns::Integer(0, 100),
                       false);
     prm.add_parameter("PartitionedIterMax",
                       fsi_data.partitioned_iter_max,
                       "Maximum number of fixed-point iterations.",
-                      Patterns::Integer(1,1000),
+                      dealii::Patterns::Integer(1,1000),
                       true);
     prm.add_parameter("GeometricTolerance",
                       fsi_data.geometric_tolerance,
                       "Tolerance used to locate points at FSI interface.",
-                      Patterns::Double(0.0, 1.0),
+                      dealii::Patterns::Double(0.0, 1.0),
                       false);
   prm.leave_subsection();
   // clang-format on
@@ -102,14 +100,14 @@ void
 Driver<dim, Number>::setup()
 
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
   /************************************** APPLICATION *****************************************/
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     application->setup();
@@ -120,7 +118,7 @@ Driver<dim, Number>::setup()
 
   /**************************************** STRUCTURE *****************************************/
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     // setup spatial operator
@@ -137,7 +135,7 @@ Driver<dim, Number>::setup()
     structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     structure_matrix_free_data->append(structure_operator);
 
-    structure_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+    structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
     structure_matrix_free->reinit(*application->get_grid_structure()->mapping,
                                   structure_matrix_free_data->get_dof_handler_vector(),
                                   structure_matrix_free_data->get_constraint_vector(),
@@ -157,7 +155,7 @@ Driver<dim, Number>::setup()
 
   /******************************************* ALE ********************************************/
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     // ALE: initialize PDE operator
@@ -185,7 +183,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     // ALE: initialize matrix_free_data
@@ -206,11 +204,11 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     // ALE: initialize matrix_free
-    ale_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+    ale_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
     ale_matrix_free->reinit(*application->get_grid_fluid()->mapping,
                             ale_matrix_free_data->get_dof_handler_vector(),
                             ale_matrix_free_data->get_constraint_vector(),
@@ -231,7 +229,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     // ALE: create grid motion object
@@ -251,7 +249,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     timer_tree.insert({"FSI", "Setup", "ALE"}, timer_local.wall_time());
@@ -260,7 +258,7 @@ Driver<dim, Number>::setup()
 
   /****************************************** FLUID *******************************************/
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     // initialize fluid_operator
@@ -277,11 +275,11 @@ Driver<dim, Number>::setup()
     fluid_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
     fluid_matrix_free_data->append(fluid_operator);
 
-    fluid_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+    fluid_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
     if(application->get_parameters_fluid().use_cell_based_face_loops)
       Categorization::do_cell_based_loops(*application->get_grid_fluid()->triangulation,
                                           fluid_matrix_free_data->data);
-    std::shared_ptr<Mapping<dim> const> mapping =
+    std::shared_ptr<dealii::Mapping<dim> const> mapping =
       get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
     fluid_matrix_free->reinit(*mapping,
                               fluid_matrix_free_data->get_dof_handler_vector(),
@@ -305,7 +303,7 @@ Driver<dim, Number>::setup()
 
   // structure to ALE
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     pcout << std::endl << "Setup interface coupling structure -> ALE ..." << std::endl;
@@ -320,7 +318,7 @@ Driver<dim, Number>::setup()
               Poisson::SpatialDiscretization::CG)
         quad_indices.emplace_back(ale_poisson_operator->get_quad_index_gauss_lobatto());
       else
-        AssertThrow(false, ExcMessage("not implemented."));
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
 
       VectorType displacement_structure;
       structure_operator->initialize_dof_vector(displacement_structure);
@@ -356,7 +354,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     pcout << std::endl << "... done!" << std::endl;
@@ -366,7 +364,7 @@ Driver<dim, Number>::setup()
 
   // structure to fluid
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     pcout << std::endl << "Setup interface coupling structure -> fluid ..." << std::endl;
@@ -396,7 +394,7 @@ Driver<dim, Number>::setup()
 
   // fluid to structure
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     pcout << std::endl << "Setup interface coupling fluid -> structure ..." << std::endl;
@@ -407,7 +405,7 @@ Driver<dim, Number>::setup()
     VectorType stress_fluid;
     fluid_operator->initialize_vector_velocity(stress_fluid);
     fluid_to_structure = std::make_shared<InterfaceCoupling<dim, dim, Number>>();
-    std::shared_ptr<Mapping<dim> const> mapping =
+    std::shared_ptr<dealii::Mapping<dim> const> mapping =
       get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
     fluid_to_structure->setup(structure_matrix_free,
                               structure_operator->get_dof_index(),
@@ -430,13 +428,13 @@ Driver<dim, Number>::setup()
 
   // fluid
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     // setup time integrator before calling setup_solvers (this is necessary since the setup
     // of the solvers depends on quantities such as the time_step_size or gamma0!!!)
     AssertThrow(application->get_parameters_fluid().solver_type == IncNS::SolverType::Unsteady,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // initialize fluid_time_integrator
     fluid_time_integrator = IncNS::create_time_integrator<dim, Number>(
@@ -452,7 +450,7 @@ Driver<dim, Number>::setup()
 
   // Structure
   {
-    Timer timer_local;
+    dealii::Timer timer_local;
     timer_local.restart();
 
     // initialize time integrator
@@ -497,10 +495,10 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::solve_ale() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
-  Timer sub_timer;
+  dealii::Timer sub_timer;
 
   sub_timer.restart();
   bool const print_solver_info = fluid_time_integrator->print_solver_info();
@@ -509,7 +507,7 @@ Driver<dim, Number>::solve_ale() const
   timer_tree.insert({"FSI", "ALE", "Solve and reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<Mapping<dim> const> mapping =
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid_fluid(), fluid_grid_motion);
   fluid_matrix_free->update_mapping(*mapping);
   timer_tree.insert({"FSI", "ALE", "Update matrix-free"}, sub_timer.wall_time());
@@ -529,7 +527,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::coupling_structure_to_ale(VectorType const & displacement_structure) const
 {
-  Timer sub_timer;
+  dealii::Timer sub_timer;
   sub_timer.restart();
 
   structure_to_ale->update_data(displacement_structure);
@@ -540,7 +538,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::coupling_structure_to_fluid(bool const extrapolate) const
 {
-  Timer sub_timer;
+  dealii::Timer sub_timer;
   sub_timer.restart();
 
   VectorType velocity_structure;
@@ -559,7 +557,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::coupling_fluid_to_structure() const
 {
-  Timer sub_timer;
+  dealii::Timer sub_timer;
   sub_timer.restart();
 
   VectorType stress_fluid;
@@ -676,7 +674,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
       // relaxation
       if(not(converged))
       {
-        Timer timer;
+        dealii::Timer timer;
         timer.restart();
 
         if(k == 0)
@@ -738,7 +736,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
       // relaxation
       if(not(converged))
       {
-        Timer timer;
+        dealii::Timer timer;
         timer.restart();
 
         if(k == 0 and (q == 0 or n == 0))
@@ -769,7 +767,8 @@ Driver<dim, Number>::solve_partitioned_problem() const
             for(auto delta_d : *D_q)
               D_all.push_back(delta_d);
 
-          AssertThrow(D_all.size() == Q.size(), ExcMessage("D, Q vectors must have same size."));
+          AssertThrow(D_all.size() == Q.size(),
+                      dealii::ExcMessage("D, Q vectors must have same size."));
 
           unsigned int const k_all = Q.size();
           if(k_all >= 1)
@@ -809,7 +808,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
       ++k;
     }
 
-    Timer timer;
+    dealii::Timer timer;
     timer.restart();
 
     // Update history
@@ -865,7 +864,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
       // relaxation
       if(not(converged))
       {
-        Timer timer;
+        dealii::Timer timer;
         timer.restart();
 
         // compute b vector
@@ -927,7 +926,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
       ++k;
     }
 
-    Timer timer;
+    dealii::Timer timer;
     timer.restart();
 
     // Update history
@@ -951,7 +950,7 @@ Driver<dim, Number>::solve_partitioned_problem() const
   }
   else
   {
-    AssertThrow(false, ExcMessage("This method is not implemented."));
+    AssertThrow(false, dealii::ExcMessage("This method is not implemented."));
   }
 
   return k;
@@ -1045,7 +1044,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index DoFs =
+  dealii::types::global_dof_index DoFs =
     fluid_operator->get_number_of_dofs() + structure_operator->get_number_of_dofs();
 
   if(application->get_parameters_fluid().mesh_movement_type == IncNS::MeshMovementType::Poisson)
@@ -1059,13 +1058,14 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   }
   else
   {
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              total_time_avg  = total_time_data.avg;
+  dealii::Utilities::MPI::MinMaxAvg total_time_data =
+    dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const total_time_avg = total_time_data.avg;
 
   unsigned int N_time_steps = fluid_time_integrator->get_number_of_time_steps();
 

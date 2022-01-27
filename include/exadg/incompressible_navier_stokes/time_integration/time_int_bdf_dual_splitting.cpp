@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<Operator>                       operator_in,
@@ -252,23 +250,23 @@ void
 TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
-              ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
+              dealii::ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
 
   AssertThrow(this->param.convective_problem() == false,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Stability analysis can not be performed for nonlinear convective problems."));
 
   AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
-              ExcMessage("Solution vector has to be zero for this stability analysis."));
+              dealii::ExcMessage("Solution vector has to be zero for this stability analysis."));
 
-  AssertThrow(Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
-              ExcMessage("Number of MPI processes has to be 1."));
+  AssertThrow(dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
+              dealii::ExcMessage("Number of MPI processes has to be 1."));
 
   std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
 
   unsigned int const size = velocity[0].locally_owned_size();
 
-  LAPACKFullMatrix<Number> propagation_matrix(size, size);
+  dealii::LAPACKFullMatrix<Number> propagation_matrix(size, size);
 
   // loop over all columns of propagation matrix
   for(unsigned int j = 0; j < size; ++j)
@@ -346,7 +344,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::convective_step()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   velocity_np = 0.0;
@@ -414,7 +412,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::evaluate_convective_term()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(this->param.convective_problem() &&
@@ -435,7 +433,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::pressure_step()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // compute right-hand-side vector
@@ -610,7 +608,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::projection_step()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // compute right-hand-side vector
@@ -697,7 +695,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(this->param.viscous_problem())
@@ -706,7 +704,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     // update turbulence model before calculating rhs_viscous
     if(this->param.use_turbulence_model == true)
     {
-      Timer timer_turbulence;
+      dealii::Timer timer_turbulence;
       timer_turbulence.restart();
 
       // extrapolate velocity to time t_n+1 and use this velocity field to
@@ -766,7 +764,8 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
   else // inviscid
   {
     // nothing to do
-    AssertThrow(this->param.equation_type == EquationType::Euler, ExcMessage("Logical error."));
+    AssertThrow(this->param.equation_type == EquationType::Euler,
+                dealii::ExcMessage("Logical error."));
   }
 
   this->timer_tree->insert({"Timeloop", "Viscous step"}, timer.wall_time());
@@ -794,7 +793,7 @@ TimeIntBDFDualSplitting<dim, Number>::penalty_step()
 {
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
-    Timer timer;
+    dealii::Timer timer;
     timer.restart();
 
     // compute right-hand-side vector
@@ -934,18 +933,19 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
   {
     AssertThrow(this->param.convergence_criterion_steady_problem !=
                   ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes,
-                ExcMessage("This option is not available for the dual splitting scheme. "
-                           "Due to splitting errors the solution does not fulfill the "
-                           "residual of the steady, incompressible Navier-Stokes equations."));
+                dealii::ExcMessage(
+                  "This option is not available for the dual splitting scheme. "
+                  "Due to splitting errors the solution does not fulfill the "
+                  "residual of the steady, incompressible Navier-Stokes equations."));
   }
   else
   {
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   AssertThrow(
     converged == true,
-    ExcMessage(
+    dealii::ExcMessage(
       "Maximum number of time steps or end time exceeded! This might be due to the fact that "
       "(i) the maximum number of time steps is simply too small to reach a steady solution, "
       "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "

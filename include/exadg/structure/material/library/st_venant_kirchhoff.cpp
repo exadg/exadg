@@ -26,23 +26,22 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
-StVenantKirchhoff<dim, Number>::StVenantKirchhoff(MatrixFree<dim, Number> const &    matrix_free,
-                                                  unsigned int const                 n_q_points_1d,
-                                                  unsigned int const                 dof_index,
-                                                  unsigned int const                 quad_index,
-                                                  StVenantKirchhoffData<dim> const & data)
+StVenantKirchhoff<dim, Number>::StVenantKirchhoff(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  unsigned int const                      n_q_points_1d,
+  unsigned int const                      dof_index,
+  unsigned int const                      quad_index,
+  StVenantKirchhoffData<dim> const &      data)
   : dof_index(dof_index),
     quad_index(quad_index),
     data(data),
     E_is_variable(data.E_function != nullptr)
 {
   Number const E = data.E;
-  f0             = make_vectorized_array<Number>(get_f0_factor() * E);
-  f1             = make_vectorized_array<Number>(get_f1_factor() * E);
-  f2             = make_vectorized_array<Number>(get_f2_factor() * E);
+  f0             = dealii::make_vectorized_array<Number>(get_f0_factor() * E);
+  f1             = dealii::make_vectorized_array<Number>(get_f1_factor() * E);
+  f2             = dealii::make_vectorized_array<Number>(get_f2_factor() * E);
 
   if(E_is_variable)
   {
@@ -100,7 +99,7 @@ StVenantKirchhoff<dim, Number>::get_f2_factor() const
 template<int dim, typename Number>
 void
 StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
-  MatrixFree<dim, Number> const & matrix_free,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const &,
   Range const & cell_range) const
@@ -115,7 +114,7 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      VectorizedArray<Number> E_vec =
+      dealii::VectorizedArray<Number> E_vec =
         FunctionEvaluator<0, dim, Number>::value(data.E_function,
                                                  integrator.quadrature_point(q),
                                                  0.0 /*time*/);
@@ -129,12 +128,13 @@ StVenantKirchhoff<dim, Number>::cell_loop_set_coefficients(
 }
 
 template<int dim, typename Number>
-Tensor<2, dim, VectorizedArray<Number>>
-  StVenantKirchhoff<dim, Number>::evaluate_stress(Tensor<2, dim, VectorizedArray<Number>> const & E,
-                                                  unsigned int const cell,
-                                                  unsigned int const q) const
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  StVenantKirchhoff<dim, Number>::evaluate_stress(
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+    unsigned int const                                              cell,
+    unsigned int const                                              q) const
 {
-  Tensor<2, dim, VectorizedArray<Number>> S;
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> S;
 
   if(E_is_variable)
   {
@@ -167,10 +167,10 @@ Tensor<2, dim, VectorizedArray<Number>>
 }
 
 template<int dim, typename Number>
-Tensor<2, dim, VectorizedArray<Number>>
-  StVenantKirchhoff<dim, Number>::apply_C(Tensor<2, dim, VectorizedArray<Number>> const & E,
-                                          unsigned int const                              cell,
-                                          unsigned int const                              q) const
+dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> StVenantKirchhoff<dim, Number>::apply_C(
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+  unsigned int const                                              cell,
+  unsigned int const                                              q) const
 {
   return evaluate_stress(E, cell, q);
 }

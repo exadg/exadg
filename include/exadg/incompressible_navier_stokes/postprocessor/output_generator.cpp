@@ -35,32 +35,30 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
-write_output(OutputData const &                                 output_data,
-             DoFHandler<dim> const &                            dof_handler_velocity,
-             DoFHandler<dim> const &                            dof_handler_pressure,
-             Mapping<dim> const &                               mapping,
-             LinearAlgebra::distributed::Vector<Number> const & velocity,
-             LinearAlgebra::distributed::Vector<Number> const & pressure,
-             std::vector<SolutionField<dim, Number>> const &    additional_fields,
-             unsigned int const                                 output_counter,
-             MPI_Comm const &                                   mpi_comm)
+write_output(OutputData const &                                         output_data,
+             dealii::DoFHandler<dim> const &                            dof_handler_velocity,
+             dealii::DoFHandler<dim> const &                            dof_handler_pressure,
+             dealii::Mapping<dim> const &                               mapping,
+             dealii::LinearAlgebra::distributed::Vector<Number> const & velocity,
+             dealii::LinearAlgebra::distributed::Vector<Number> const & pressure,
+             std::vector<SolutionField<dim, Number>> const &            additional_fields,
+             unsigned int const                                         output_counter,
+             MPI_Comm const &                                           mpi_comm)
 {
   std::string folder = output_data.directory, file = output_data.filename;
 
-  DataOutBase::VtkFlags flags;
+  dealii::DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = output_data.write_higher_order;
 
-  DataOut<dim> data_out;
+  dealii::DataOut<dim> data_out;
   data_out.set_flags(flags);
 
   std::vector<std::string> velocity_names(dim, "velocity");
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    velocity_component_interpretation(dim,
-                                      DataComponentInterpretation::component_is_part_of_vector);
+  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+    velocity_component_interpretation(
+      dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
 #if !DEAL_II_VERSION_GTE(10, 0, 0)
   velocity.update_ghost_values();
@@ -78,13 +76,13 @@ write_output(OutputData const &                                 output_data,
   data_out.add_data_vector(dof_handler_pressure, pressure, "p");
 
   // vector needs to survive until build_patches
-  Vector<double> aspect_ratios;
+  dealii::Vector<double> aspect_ratios;
   if(output_data.write_aspect_ratio)
   {
     aspect_ratios =
-      GridTools::compute_aspect_ratio_of_cells(mapping,
-                                               dof_handler_velocity.get_triangulation(),
-                                               QGauss<dim>(4));
+      dealii::GridTools::compute_aspect_ratio_of_cells(mapping,
+                                                       dof_handler_velocity.get_triangulation(),
+                                                       dealii::QGauss<dim>(4));
     data_out.add_data_vector(aspect_ratios, "aspect_ratio");
   }
 
@@ -108,18 +106,19 @@ write_output(OutputData const &                                 output_data,
     else if(it->type == SolutionFieldType::vector)
     {
       std::vector<std::string> names(dim, it->name);
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+        component_interpretation(dim,
+                                 dealii::DataComponentInterpretation::component_is_part_of_vector);
 
       data_out.add_data_vector(*it->dof_handler, *it->vector, names, component_interpretation);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
-  data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
 }
@@ -132,11 +131,11 @@ OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_operator_in,
-                                    DoFHandler<dim> const &      dof_handler_velocity_in,
-                                    DoFHandler<dim> const &      dof_handler_pressure_in,
-                                    Mapping<dim> const &         mapping_in,
-                                    OutputData const &           output_data_in)
+OutputGenerator<dim, Number>::setup(NavierStokesOperator const &    navier_stokes_operator_in,
+                                    dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+                                    dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+                                    dealii::Mapping<dim> const &    mapping_in,
+                                    OutputData const &              output_data_in)
 {
   navier_stokes_operator = &navier_stokes_operator_in;
   dof_handler_velocity   = &dof_handler_velocity_in;
@@ -186,7 +185,7 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
     // processor_id
     if(output_data.write_processor_id)
     {
-      GridOut grid_out;
+      dealii::GridOut grid_out;
 
       grid_out.write_mesh_per_processor_as_vtu(dof_handler_velocity->get_triangulation(),
                                                output_data.directory + output_data.filename +
@@ -204,7 +203,8 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
 {
   if(output_data.write_output == true)
   {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+    dealii::ConditionalOStream pcout(std::cout,
+                                     dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
     if(time_step_number >= 0) // unsteady problem
     {
@@ -424,7 +424,8 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
     if(output_data.write_vorticity_magnitude == true)
     {
       AssertThrow(vorticity_is_up_to_date == true,
-                  ExcMessage("Vorticity vector needs to be updated to compute its magnitude."));
+                  dealii::ExcMessage(
+                    "Vorticity vector needs to be updated to compute its magnitude."));
 
       navier_stokes_operator->compute_vorticity_magnitude(vorticity_magnitude, vorticity);
     }
@@ -432,7 +433,8 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
     if(output_data.write_streamfunction == true)
     {
       AssertThrow(vorticity_is_up_to_date == true,
-                  ExcMessage("Vorticity vector needs to be updated to compute its magnitude."));
+                  dealii::ExcMessage(
+                    "Vorticity vector needs to be updated to compute its magnitude."));
 
       navier_stokes_operator->compute_streamfunction(streamfunction, vorticity);
     }
@@ -447,7 +449,8 @@ OutputGenerator<dim, Number>::calculate_additional_fields(VectorType const & vel
       if(time_step_number >= 0) // unsteady problems
         compute_mean_velocity(mean_velocity, velocity, time, time_step_number);
       else // time_step_number < 0 -> steady problems
-        AssertThrow(false, ExcMessage("Mean velocity can only be computed for unsteady problems."));
+        AssertThrow(
+          false, dealii::ExcMessage("Mean velocity can only be computed for unsteady problems."));
     }
 
     if(output_data.write_cfl)

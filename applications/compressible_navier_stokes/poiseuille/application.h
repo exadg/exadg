@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // problem specific parameters
 double const DYN_VISCOSITY  = 0.1;
 double const GAMMA          = 1.4;
@@ -46,7 +44,7 @@ double const L = 4.0;
 double
 parabolic_velocity_profile(double const y, double const t)
 {
-  double const pi = numbers::PI;
+  double const pi = dealii::numbers::PI;
   double const T  = 10.0;
 
   double result = U_0 * (1.0 - pow(y / (H / 2.0), 2.0)) * (t < T ? std::sin(pi / 2. * t / T) : 1.0);
@@ -55,16 +53,16 @@ parabolic_velocity_profile(double const y, double const t)
 }
 
 template<int dim>
-class InitialSolution : public Function<dim>
+class InitialSolution : public dealii::Function<dim>
 {
 public:
   InitialSolution(unsigned int const n_components = dim + 2, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
 
@@ -89,16 +87,16 @@ public:
  *  zero velocity at the wall boundaries
  */
 template<int dim>
-class VelocityBC : public Function<dim>
+class VelocityBC : public dealii::Function<dim>
 {
 public:
   VelocityBC(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
 
@@ -122,7 +120,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -178,16 +176,16 @@ public:
   create_grid() final
   {
     std::vector<unsigned int> repetitions({2, 1});
-    Point<dim>                point1(0.0, -H / 2.), point2(L, H / 2.);
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::Point<dim>        point1(0.0, -H / 2.), point2(L, H / 2.);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     // set boundary indicator
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         if((std::fabs(cell.face(face)->center()(0) - L) < 1e-12))
           cell.face(face)->set_boundary_id(1);
@@ -200,31 +198,32 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                   pair;
+    typedef typename std::pair<dealii::types::boundary_id, EnergyBoundaryVariable> pair_variable;
 
     // zero function vectorial
-    std::shared_ptr<Function<dim>> zero_function_vectorial;
-    zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
+    std::shared_ptr<dealii::Function<dim>> zero_function_vectorial;
+    zero_function_vectorial.reset(new dealii::Functions::ZeroFunction<dim>(dim));
 
     // density
     // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in
     // equations). Hence the specified function is irrelevant (i.e., it is not used).
     this->boundary_descriptor->density.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->density.neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
 
     // velocity
     this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
     this->boundary_descriptor->velocity.neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // pressure
     this->boundary_descriptor->pressure.dirichlet_bc.insert(
-      pair(1, new Functions::ConstantFunction<dim>(RHO_0 * R * T_0, 1)));
+      pair(1, new dealii::Functions::ConstantFunction<dim>(RHO_0 * R * T_0, 1)));
     this->boundary_descriptor->pressure.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
     this->boundary_descriptor->energy.boundary_variable.insert(
@@ -233,18 +232,21 @@ public:
       pair_variable(1, EnergyBoundaryVariable::Temperature));
 
     this->boundary_descriptor->energy.dirichlet_bc.insert(
-      pair(0, new Functions::ConstantFunction<dim>(T_0, 1)));
+      pair(0, new dealii::Functions::ConstantFunction<dim>(T_0, 1)));
     this->boundary_descriptor->energy.neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
     this->field_functions->initial_solution.reset(new InitialSolution<dim>());
-    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_density.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

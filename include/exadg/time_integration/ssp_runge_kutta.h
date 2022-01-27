@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  Strong-Stability-Preserving Runge-Kutta Methods according to
  *
@@ -69,9 +67,9 @@ private:
   void
   initialize_coeffs(unsigned int const stages);
 
-  FullMatrix<double>  A, B;
-  std::vector<double> c;
-  unsigned int const  order;
+  dealii::FullMatrix<double> A, B;
+  std::vector<double>        c;
+  unsigned int const         order;
 
   std::vector<VectorType> u_vec, F_vec;
 };
@@ -536,7 +534,7 @@ SSPRK<Operator, VectorType>::initialize_coeffs(unsigned int const stages)
     }
     else
     {
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(false, dealii::ExcNotImplemented());
     }
   }
   else if(order == 4)
@@ -915,19 +913,19 @@ SSPRK<Operator, VectorType>::initialize_coeffs(unsigned int const stages)
     }
     else
     {
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(false, dealii::ExcNotImplemented());
     }
   }
   else
   {
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, dealii::ExcNotImplemented());
   }
 
-  AssertThrow(coefficients_are_initialized, ExcNotImplemented());
+  AssertThrow(coefficients_are_initialized, dealii::ExcNotImplemented());
 
   // calculate coefficients c_i for non-autonomous systems, i.e.,
   // systems with explicit time-dependency
-  FullMatrix<double> crk;
+  dealii::FullMatrix<double> crk;
   crk.reinit(stages, stages);
 
   for(unsigned int k = 0; k < stages; ++k)

@@ -26,20 +26,18 @@ namespace ExaDG
 {
 namespace FTI
 {
-using namespace dealii;
-
 // Example of a user defined function
 template<int dim>
-class MyFunction : public Function<dim>
+class MyFunction : public dealii::Function<dim>
 {
 public:
   MyFunction(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)p;
     (void)component;
@@ -56,7 +54,7 @@ public:
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -90,28 +88,32 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
@@ -128,12 +130,13 @@ public:
   void
   set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->scalar_boundary_descriptor[scalar_index]->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
 
@@ -141,10 +144,11 @@ public:
   set_field_functions_scalar(unsigned int scalar_index = 0) final
   {
     this->scalar_field_functions[scalar_index]->initial_solution.reset(
-      new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->scalar_field_functions[scalar_index]->right_hand_side.reset(
-      new Functions::ZeroFunction<dim>(1));
-    this->scalar_field_functions[scalar_index]->velocity.reset(new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->scalar_field_functions[scalar_index]->velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>

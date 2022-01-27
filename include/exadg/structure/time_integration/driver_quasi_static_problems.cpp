@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
   std::shared_ptr<Interface::Operator<Number>> operator_,
@@ -43,7 +41,7 @@ DriverQuasiStatic<dim, Number>::DriverQuasiStatic(
     param(param_),
     mpi_comm(mpi_comm_),
     is_test(is_test_),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     step_number(1),
     timer_tree(new TimerTree()),
     iterations({0, {0, 0}})
@@ -54,7 +52,7 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::setup()
 {
-  AssertThrow(param.large_deformation, ExcMessage("Not implemented."));
+  AssertThrow(param.large_deformation, dealii::ExcMessage("Not implemented."));
 
   // initialize global solution vectors (allocation)
   initialize_vectors();
@@ -67,7 +65,7 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessing();
@@ -104,7 +102,7 @@ DriverQuasiStatic<dim, Number>::print_iterations() const
   }
   else // linear
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   print_list_of_iterations(pcout, names, iterations_avg);
@@ -121,7 +119,7 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::do_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Solving quasi-static problem ..." << std::endl << std::flush;
@@ -223,7 +221,7 @@ template<int dim, typename Number>
 std::tuple<unsigned int, unsigned int>
 DriverQuasiStatic<dim, Number>::solve_step(double const load_factor)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   output_solver_info_header(load_factor);
@@ -247,7 +245,7 @@ template<int dim, typename Number>
 void
 DriverQuasiStatic<dim, Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessor->do_postprocessing(solution);

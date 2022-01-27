@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order_time_integrator,
                                                        bool const start_with_low_order_method)
   : order(order_time_integrator),
@@ -37,7 +35,7 @@ BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order_
     alpha(order)
 {
   AssertThrow(order >= 1 && order <= 4,
-              ExcMessage("Specified order of BDF scheme not implemented."));
+              dealii::ExcMessage("Specified order of BDF scheme not implemented."));
 
   // The default case is start_with_low_order = false.
   set_constant_time_step(order);
@@ -46,7 +44,7 @@ BDFTimeIntegratorConstants::BDFTimeIntegratorConstants(unsigned int const order_
 double
 BDFTimeIntegratorConstants::get_gamma0() const
 {
-  AssertThrow(gamma0 > 0.0, ExcMessage("Constant gamma0 has not been initialized."));
+  AssertThrow(gamma0 > 0.0, dealii::ExcMessage("Constant gamma0 has not been initialized."));
 
   return gamma0;
 }
@@ -55,8 +53,9 @@ double
 BDFTimeIntegratorConstants::get_alpha(unsigned int const i) const
 {
   AssertThrow(i < order,
-              ExcMessage("In order to access BDF time integrator constants, the index "
-                         "has to be smaller than the order of the time integration scheme."));
+              dealii::ExcMessage(
+                "In order to access BDF time integrator constants, the index "
+                "has to be smaller than the order of the time integration scheme."));
 
   return alpha[i];
 }
@@ -66,7 +65,7 @@ void
 BDFTimeIntegratorConstants::set_constant_time_step(unsigned int const current_order)
 {
   AssertThrow(current_order <= order,
-              ExcMessage(
+              dealii::ExcMessage(
                 "There is a logical error when updating the BDF time integrator constants."));
 
   if(current_order == 1) // BDF 1
@@ -116,11 +115,12 @@ BDFTimeIntegratorConstants::set_adaptive_time_step(unsigned int const          c
                                                    std::vector<double> const & time_steps)
 {
   AssertThrow(current_order <= order,
-              ExcMessage("There is a logical error when updating the time integrator constants."));
+              dealii::ExcMessage(
+                "There is a logical error when updating the time integrator constants."));
 
   AssertThrow(
     time_steps.size() == order,
-    ExcMessage(
+    dealii::ExcMessage(
       "Length of vector containing time step sizes has to be equal to order of time integration scheme."));
 
   if(current_order == 1) // BDF 1
@@ -219,7 +219,7 @@ BDFTimeIntegratorConstants::update(unsigned int const          current_order,
 }
 
 void
-BDFTimeIntegratorConstants::print(ConditionalOStream & pcout) const
+BDFTimeIntegratorConstants::print(dealii::ConditionalOStream & pcout) const
 {
   pcout << "Gamma0   = " << gamma0 << std::endl;
 

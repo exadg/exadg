@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Operator, typename VectorType>
 class ExplicitTimeIntegrator
 {
@@ -178,7 +176,8 @@ public:
     else
     {
       AssertThrow(order <= 4,
-                  ExcMessage("Explicit Runge-Kutta method only implemented for order <= 4!"));
+                  dealii::ExcMessage(
+                    "Explicit Runge-Kutta method only implemented for order <= 4!"));
     }
   }
 
@@ -745,7 +744,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     // loop over all stages

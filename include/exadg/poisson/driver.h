@@ -42,8 +42,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 enum class OperatorType
 {
   MatrixFree,
@@ -60,7 +58,7 @@ enum_to_string(OperatorType const enum_type)
     // clang-format off
     case OperatorType::MatrixFree:  string_type = "MatrixFree";  break;
     case OperatorType::MatrixBased: string_type = "MatrixBased"; break;
-    default: AssertThrow(false, ExcMessage("Not implemented.")); break;
+    default: AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
       // clang-format on
   }
 
@@ -73,7 +71,7 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
   // clang-format off
   if     (string_type == "MatrixFree")  enum_type = OperatorType::MatrixFree;
   else if(string_type == "MatrixBased") enum_type = OperatorType::MatrixBased;
-  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
 
@@ -84,12 +82,12 @@ get_dofs_per_element(std::string const & input_file,
 {
   std::string spatial_discretization = "DG";
 
-  ParameterHandler prm;
+  dealii::ParameterHandler prm;
   prm.enter_subsection("Discretization");
   prm.add_parameter("SpatialDiscretization",
                     spatial_discretization,
                     "Spatial discretization (CG vs. DG).",
-                    Patterns::Selection("CG|DG"),
+                    dealii::Patterns::Selection("CG|DG"),
                     true);
   prm.leave_subsection();
 
@@ -98,11 +96,11 @@ get_dofs_per_element(std::string const & input_file,
   unsigned int dofs_per_element = 1;
 
   if(spatial_discretization == "CG")
-    dofs_per_element = Utilities::pow(degree, dim);
+    dofs_per_element = dealii::Utilities::pow(degree, dim);
   else if(spatial_discretization == "DG")
-    dofs_per_element = Utilities::pow(degree + 1, dim);
+    dofs_per_element = dealii::Utilities::pow(degree + 1, dim);
   else
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
   return dofs_per_element;
 }
@@ -128,7 +126,7 @@ public:
   /*
    * Throughput study
    */
-  std::tuple<unsigned int, types::global_dof_index, double>
+  std::tuple<unsigned int, dealii::types::global_dof_index, double>
   apply_operator(std::string const & operator_type_string,
                  unsigned int const  n_repetitions_inner,
                  unsigned int const  n_repetitions_outer) const;
@@ -138,7 +136,7 @@ private:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -149,8 +147,8 @@ private:
   // application
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
 
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */

@@ -33,8 +33,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct RestartData
 {
   RestartData()
@@ -48,7 +46,7 @@ struct RestartData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     pcout << "  Restart:" << std::endl;
     print_parameter(pcout, "Write restart", write_restart);

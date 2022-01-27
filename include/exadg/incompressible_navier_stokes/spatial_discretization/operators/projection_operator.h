@@ -16,8 +16,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  Combined divergence and continuity penalty operator: applies the operation
  *
@@ -67,7 +65,7 @@ class ProjectionOperator : public OperatorBase<dim, Number, dim>
 private:
   typedef OperatorBase<dim, Number, dim> Base;
 
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::IntegratorCell IntegratorCell;
@@ -84,18 +82,18 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &                matrix_free,
-             AffineConstraints<Number> const &              affine_constraints,
+  initialize(dealii::MatrixFree<dim, Number> const &        matrix_free,
+             dealii::AffineConstraints<Number> const &      affine_constraints,
              ProjectionOperatorData<dim> const &            data,
              Operators::DivergencePenaltyKernelData const & div_kernel_data,
              Operators::ContinuityPenaltyKernelData const & conti_kernel_data);
 
   void
-  initialize(MatrixFree<dim, Number> const &     matrix_free,
-             AffineConstraints<Number> const &   affine_constraints,
-             ProjectionOperatorData<dim> const & data,
-             std::shared_ptr<DivKernel>          div_penalty_kernel,
-             std::shared_ptr<ContiKernel>        conti_penalty_kernel);
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             ProjectionOperatorData<dim> const &       data,
+             std::shared_ptr<DivKernel>                div_penalty_kernel,
+             std::shared_ptr<ContiKernel>              conti_penalty_kernel);
 
   ProjectionOperatorData<dim>
   get_data() const;
@@ -109,7 +107,7 @@ public:
   double
   get_time_step_size() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   void
@@ -126,9 +124,9 @@ private:
   reinit_boundary_face(unsigned int const face) const;
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   void
   do_cell_integral(IntegratorCell & integrator) const;
@@ -143,9 +141,9 @@ private:
   do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_boundary_integral(IntegratorFace &           integrator_m,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator_m,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   ProjectionOperatorData<dim> operator_data;
 

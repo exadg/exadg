@@ -41,7 +41,7 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
   // clang-format off
   if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
   else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, ExcMessage("Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
   // clang-format on
 }
 
@@ -53,7 +53,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -61,13 +61,13 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType",  mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("MeshType",  mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
     prm.leave_subsection();
     // clang-format on
   }
@@ -186,7 +186,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     create_periodic_box(this->grid->triangulation,
@@ -209,10 +209,13 @@ public:
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

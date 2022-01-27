@@ -27,8 +27,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 BodyForceOperator<dim, Number>::BodyForceOperator() : matrix_free(nullptr), time(0.0)
 {
@@ -36,8 +34,8 @@ BodyForceOperator<dim, Number>::BodyForceOperator() : matrix_free(nullptr), time
 
 template<int dim, typename Number>
 void
-BodyForceOperator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free,
-                                           BodyForceData<dim> const &      data)
+BodyForceOperator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                           BodyForceData<dim> const &              data)
 {
   this->matrix_free = &matrix_free;
   this->data        = data;
@@ -50,7 +48,8 @@ BodyForceOperator<dim, Number>::get_mapping_flags()
   MappingFlags flags;
 
   // gradients because of potential pull-back of body forces
-  flags.cells = update_gradients | update_JxW_values | update_quadrature_points;
+  flags.cells =
+    dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points;
 
   return flags;
 }
@@ -68,10 +67,10 @@ BodyForceOperator<dim, Number>::evaluate_add(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-BodyForceOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                          VectorType &                    dst,
-                                          VectorType const &              src,
-                                          Range const &                   cell_range) const
+BodyForceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                          VectorType &                            dst,
+                                          VectorType const &                      src,
+                                          Range const &                           cell_range) const
 {
   IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 

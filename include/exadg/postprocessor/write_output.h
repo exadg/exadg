@@ -32,20 +32,18 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 void
-write_surface_mesh(Triangulation<dim> const & triangulation,
-                   Mapping<dim> const &       mapping,
-                   unsigned int               n_subdivisions,
-                   std::string const &        folder,
-                   std::string const &        file,
-                   unsigned int const         counter,
-                   MPI_Comm const &           mpi_comm)
+write_surface_mesh(dealii::Triangulation<dim> const & triangulation,
+                   dealii::Mapping<dim> const &       mapping,
+                   unsigned int                       n_subdivisions,
+                   std::string const &                folder,
+                   std::string const &                file,
+                   unsigned int const                 counter,
+                   MPI_Comm const &                   mpi_comm)
 {
   // write surface mesh only
-  DataOutFaces<dim> data_out_surface(true /*surface only*/);
+  dealii::DataOutFaces<dim> data_out_surface(true /*surface only*/);
   data_out_surface.attach_triangulation(triangulation);
   data_out_surface.build_patches(mapping, n_subdivisions);
   data_out_surface.write_vtu_with_pvtu_record(folder, file + "_surface", counter, mpi_comm, 4);
@@ -53,22 +51,22 @@ write_surface_mesh(Triangulation<dim> const & triangulation,
 
 template<int dim>
 void
-write_boundary_IDs(Triangulation<dim> const & triangulation,
-                   std::string const &        folder,
-                   std::string const &        file,
-                   MPI_Comm const &           mpi_communicator)
+write_boundary_IDs(dealii::Triangulation<dim> const & triangulation,
+                   std::string const &                folder,
+                   std::string const &                file,
+                   MPI_Comm const &                   mpi_communicator)
 {
-  unsigned int const rank    = Utilities::MPI::this_mpi_process(mpi_communicator);
-  unsigned int const n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);
+  unsigned int const rank    = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
+  unsigned int const n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_communicator);
 
   unsigned int const n_digits = static_cast<int>(std::ceil(std::log10(std::fabs(n_ranks))));
 
-  std::string filename =
-    folder + file + "_boundary_IDs" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";
+  std::string filename = folder + file + "_boundary_IDs" + "." +
+                         dealii::Utilities::int_to_string(rank, n_digits) + ".vtk";
   std::ofstream output(filename);
 
-  GridOut           grid_out;
-  GridOutFlags::Vtk flags;
+  dealii::GridOut           grid_out;
+  dealii::GridOutFlags::Vtk flags;
   flags.output_cells         = false;
   flags.output_faces         = true;
   flags.output_edges         = false;
@@ -79,13 +77,13 @@ write_boundary_IDs(Triangulation<dim> const & triangulation,
 
 template<int dim>
 void
-write_grid(Triangulation<dim> const & triangulation,
-           std::string const &        folder,
-           std::string const &        file)
+write_grid(dealii::Triangulation<dim> const & triangulation,
+           std::string const &                folder,
+           std::string const &                file)
 {
   std::string filename = folder + file + "_grid";
 
-  GridOut grid_out;
+  dealii::GridOut grid_out;
   grid_out.write_mesh_per_processor_as_vtu(triangulation, filename);
 }
 

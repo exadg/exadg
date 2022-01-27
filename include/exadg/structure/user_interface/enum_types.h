@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */

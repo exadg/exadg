@@ -29,12 +29,10 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, Number>
 {
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef KineticEnergyCalculator<dim, Number> Base;
 
@@ -44,11 +42,11 @@ public:
   KineticEnergyCalculatorDetailed(MPI_Comm const & comm);
 
   void
-  setup(NavierStokesOperator const &    navier_stokes_operator_in,
-        MatrixFree<dim, Number> const & matrix_free_in,
-        unsigned int const              dof_index_in,
-        unsigned int const              quad_index_in,
-        KineticEnergyData const &       kinetic_energy_data_in);
+  setup(NavierStokesOperator const &            navier_stokes_operator_in,
+        dealii::MatrixFree<dim, Number> const & matrix_free_in,
+        unsigned int const                      dof_index_in,
+        unsigned int const                      quad_index_in,
+        KineticEnergyData const &               kinetic_energy_data_in);
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
@@ -59,7 +57,7 @@ private:
                      double const       time,
                      unsigned int const time_step_number);
 
-  SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+  dealii::SmartPointer<NavierStokesOperator const> navier_stokes_operator;
 };
 
 } // namespace IncNS

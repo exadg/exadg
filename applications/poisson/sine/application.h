@@ -28,22 +28,20 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
-double const FREQUENCY            = 3.0 * numbers::PI;
+double const FREQUENCY            = 3.0 * dealii::numbers::PI;
 bool const   USE_NEUMANN_BOUNDARY = true;
 
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -54,16 +52,16 @@ public:
 };
 
 template<int dim>
-class NeumannBoundary : public Function<dim>
+class NeumannBoundary : public dealii::Function<dim>
 {
 public:
   NeumannBoundary(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double result = 1.0;
     for(unsigned int d = 0; d < dim; ++d)
@@ -80,16 +78,16 @@ public:
 
 
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
   RightHandSide(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /* component */) const
+  value(dealii::Point<dim> const & p, unsigned int const /* component */) const
   {
     double result = FREQUENCY * FREQUENCY * dim;
     for(unsigned int d = 0; d < dim; ++d)
@@ -111,7 +109,7 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
   // clang-format off
   if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
   else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, ExcMessage("Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
   // clang-format on
 }
 
@@ -123,7 +121,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -131,13 +129,13 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
     prm.leave_subsection();
     // clang-format on
   }
@@ -185,7 +183,10 @@ public:
     // choose a coarse grid with at least 2^dim elements to obtain a non-trivial coarse grid problem
     unsigned int n_cells_1d =
       std::max((unsigned int)2, this->param.grid.n_subdivisions_1d_hypercube);
-    GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, n_cells_1d, left, right);
+    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
+                                                 n_cells_1d,
+                                                 left,
+                                                 right);
 
     if(mesh_type == MeshType::Cartesian)
     {
@@ -203,12 +204,12 @@ public:
 
       for(auto cell : *this->grid->triangulation)
       {
-        for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
         {
           if(vertex_touched[cell.vertex_index(v)] == false)
           {
-            Point<dim> & vertex                  = cell.vertex(v);
-            Point<dim>   new_point               = manifold.push_forward(vertex);
+            dealii::Point<dim> & vertex          = cell.vertex(v);
+            dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
             vertex                               = new_point;
             vertex_touched[cell.vertex_index(v)] = true;
           }
@@ -217,14 +218,14 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     if(USE_NEUMANN_BOUNDARY)
     {
       for(auto cell : *this->grid->triangulation)
       {
-        for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
         {
           if(std::fabs(cell.face(f)->center()(0) - right) < 1e-12)
           {
@@ -241,7 +242,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
     this->boundary_descriptor->neumann_bc.insert(pair(1, new NeumannBoundary<dim>()));
@@ -250,7 +252,7 @@ public:
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->right_hand_side.reset(new RightHandSide<dim>());
   }
 

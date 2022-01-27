@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -38,7 +36,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -85,24 +83,27 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // inflow
     this->boundary_descriptor->dirichlet_bc.insert(
-      pair(1, new Functions::ConstantFunction<dim>(1.0, 1)));
+      pair(1, new dealii::Functions::ConstantFunction<dim>(1.0, 1)));
 
     // outflow
-    this->boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
 
     // walls
-    this->boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->neumann_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

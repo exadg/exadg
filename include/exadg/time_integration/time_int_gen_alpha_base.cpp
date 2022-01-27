@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Number>
 TimeIntGenAlphaBase<Number>::TimeIntGenAlphaBase(double const &       start_time_,
                                                  double const &       end_time_,
@@ -75,7 +73,7 @@ TimeIntGenAlphaBase<Number>::TimeIntGenAlphaBase(double const &       start_time
       gamma   = 0.5 - alpha_m;
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 }

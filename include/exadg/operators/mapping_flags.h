@@ -22,16 +22,17 @@
 #ifndef INCLUDE_EXADG_OPERATORS_MAPPING_FLAGS_H_
 #define INCLUDE_EXADG_OPERATORS_MAPPING_FLAGS_H_
 
+// deal.II
 #include <deal.II/fe/fe_update_flags.h>
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct MappingFlags
 {
   MappingFlags()
-    : cells(update_default), inner_faces(update_default), boundary_faces(update_default)
+    : cells(dealii::update_default),
+      inner_faces(dealii::update_default),
+      boundary_faces(dealii::update_default)
   {
   }
 
@@ -47,9 +48,9 @@ struct MappingFlags
     return flags_combined;
   }
 
-  UpdateFlags cells;
-  UpdateFlags inner_faces;
-  UpdateFlags boundary_faces;
+  dealii::UpdateFlags cells;
+  dealii::UpdateFlags inner_faces;
+  dealii::UpdateFlags boundary_faces;
 };
 
 } // namespace ExaDG

@@ -34,8 +34,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct PostProcessorDataBFS
 {

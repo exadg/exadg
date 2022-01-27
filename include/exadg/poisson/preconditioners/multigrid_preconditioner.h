@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 /*
  *  Multigrid preconditioner for Laplace operator.
  */
@@ -46,7 +44,7 @@ public:
 
 private:
   static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
 
   typedef typename Base::Map               Map;
   typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
@@ -60,14 +58,14 @@ public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm);
 
   void
-  initialize(MultigridData const &                  mg_data,
-             Triangulation<dim> const *             tria,
-             FiniteElement<dim> const &             fe,
-             std::shared_ptr<Mapping<dim> const>    mapping,
-             LaplaceOperatorData<rank, dim> const & data_in,
-             bool const                             mesh_is_moving,
-             Map const *                            dirichlet_bc        = nullptr,
-             PeriodicFacePairs const *              periodic_face_pairs = nullptr);
+  initialize(MultigridData const &                       mg_data,
+             dealii::Triangulation<dim> const *          tria,
+             dealii::FiniteElement<dim> const &          fe,
+             std::shared_ptr<dealii::Mapping<dim> const> mapping,
+             LaplaceOperatorData<rank, dim> const &      data_in,
+             bool const                                  mesh_is_moving,
+             Map const *                                 dirichlet_bc        = nullptr,
+             PeriodicFacePairs const *                   periodic_face_pairs = nullptr);
 
   void
   update() override;
@@ -79,12 +77,12 @@ private:
                         unsigned int const                     h_level) override;
 
   /*
-   * Has to be overwritten since we want to use ComponentMask here
+   * Has to be overwritten since we want to use dealii::ComponentMask here
    */
   void
-  initialize_constrained_dofs(DoFHandler<dim> const & dof_handler,
-                              MGConstrainedDoFs &     constrained_dofs,
-                              Map const &             dirichlet_bc) override;
+  initialize_constrained_dofs(dealii::DoFHandler<dim> const & dof_handler,
+                              dealii::MGConstrainedDoFs &     constrained_dofs,
+                              Map const &                     dirichlet_bc) override;
 
 
   std::shared_ptr<MGOperatorBase>

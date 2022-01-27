@@ -26,19 +26,19 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim>
-class BendingMoment : public Function<dim>
+class BendingMoment : public dealii::Function<dim>
 {
 public:
   BendingMoment(double force, double height, bool incremental_loading)
-    : Function<dim>(dim), force_max(force / (height / 2)), incremental_loading(incremental_loading)
+    : dealii::Function<dim>(dim),
+      force_max(force / (height / 2)),
+      incremental_loading(incremental_loading)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     double factor = 1.0;
     if(incremental_loading)
@@ -56,16 +56,18 @@ private:
 };
 
 template<int dim>
-class SingleForce : public Function<dim>
+class SingleForce : public dealii::Function<dim>
 {
 public:
   SingleForce(double force, double length, bool incremental_loading)
-    : Function<dim>(dim), force_per_length(force / length), incremental_loading(incremental_loading)
+    : dealii::Function<dim>(dim),
+      force_per_length(force / length),
+      incremental_loading(incremental_loading)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -85,11 +87,11 @@ private:
 };
 
 template<int dim>
-class SolutionSF : public Function<dim>
+class SolutionSF : public dealii::Function<dim>
 {
 public:
   SolutionSF(double length, double height, double width, double singleforce)
-    : Function<dim>(dim),
+    : dealii::Function<dim>(dim),
       length(length),
       height(height),
       width(width),
@@ -98,7 +100,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
     (void)c;
@@ -129,13 +131,13 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -144,7 +146,7 @@ public:
     prm.add_parameter("Length",           length,           "Length of domain.");
     prm.add_parameter("Height",           height,           "Height of domain.");
     prm.add_parameter("Width",            width,            "Width of domain.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of Neumann BC at right boundary.", Patterns::Selection("SingleForce|BendingMoment"));
+    prm.add_parameter("BoundaryType",     boundary_type,    "Type of Neumann BC at right boundary.", dealii::Patterns::Selection("SingleForce|BendingMoment"));
     prm.add_parameter("Force",            force,            "Value of force on right boundary.");
     prm.leave_subsection();
     // clang-format on
@@ -193,7 +195,7 @@ public:
   void
   create_grid() final
   {
-    Point<dim> p1, p2;
+    dealii::Point<dim> p1, p2;
     p1[0] = 0;
     p1[1] = -(this->height / 2);
     if(dim == 3)
@@ -210,14 +212,17 @@ public:
     if(dim == 3)
       repetitions[2] = this->repetitions2;
 
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, repetitions, p1, p2);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      p1,
+                                                      p2);
 
     element_length = this->length / (this->repetitions0 * pow(2, this->param.grid.n_refine_global));
 
     double const tol = 1.e-8;
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         // left face
         if(std::fabs(cell.face(face)->center()(0) - 0) < tol)
@@ -239,7 +244,7 @@ public:
           }
           else
           {
-            AssertThrow(boundary_type == "BendingMoment", ExcMessage("Not implemented."));
+            AssertThrow(boundary_type == "BendingMoment", dealii::ExcMessage("Not implemented."));
           }
         }
       }
@@ -251,14 +256,18 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    this->boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->neumann_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // left side
-    this->boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
-    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(1, ComponentMask()));
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(1, dealii::ComponentMask()));
 
     // right side
     bool const incremental_loading = (this->param.problem_type == ProblemType::QuasiStatic);
@@ -270,21 +279,22 @@ public:
     }
     else if(boundary_type == "SingleForce")
     {
-      this->boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+      this->boundary_descriptor->neumann_bc.insert(
+        pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
 
       this->boundary_descriptor->neumann_bc.insert(
         pair(3, new SingleForce<dim>(force, element_length, incremental_loading)));
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
   }
 
   void
   set_material_descriptor() final
   {
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type = MaterialType::StVenantKirchhoff;
     // E-Modulus of Steel in unit = [N/mm^2]
@@ -298,9 +308,10 @@ public:
   void
   set_field_functions() final
   {
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_displacement.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>
@@ -322,7 +333,7 @@ public:
     }
     else
     {
-      AssertThrow(boundary_type == "BendingMoment", ExcMessage("Not implemented."));
+      AssertThrow(boundary_type == "BendingMoment", dealii::ExcMessage("Not implemented."));
     }
 
     std::shared_ptr<PostProcessor<dim, Number>> post(

@@ -34,8 +34,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename VectorType>
 class MGTransferGlobalCoarsening : virtual public MGTransfer<VectorType>
 {
@@ -45,9 +43,9 @@ public:
   }
 
   void
-  reinit(MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
-         MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
-         unsigned int const                                          dof_handler_index = 0);
+  reinit(dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
+         dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
+         unsigned int const dof_handler_index = 0);
 
   void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const;
@@ -59,7 +57,7 @@ public:
   prolongate_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const;
 
 private:
-  MGLevelObject<MGTwoLevelTransfer<dim, VectorType>> transfers;
+  dealii::MGLevelObject<dealii::MGTwoLevelTransfer<dim, VectorType>> transfers;
 
   std::unique_ptr<dealii::MGTransferGlobalCoarsening<dim, VectorType>>
     mg_transfer_global_coarsening;

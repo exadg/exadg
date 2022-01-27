@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 std::string
 enum_to_string(MultigridType const enum_type)
 {
@@ -82,7 +80,7 @@ enum_to_string(MultigridType const enum_type)
       string_type = "phc-MG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -109,7 +107,7 @@ enum_to_string(PSequenceType const enum_type)
       string_type = "Manual";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -136,7 +134,7 @@ enum_to_string(MultigridSmoother const enum_type)
       string_type = "Jacobi";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -157,7 +155,7 @@ enum_to_string(AMGType const enum_type)
       string_type = "BoomerAMG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -184,7 +182,7 @@ enum_to_string(MultigridCoarseGridSolver const enum_type)
       string_type = "AMG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -212,7 +210,7 @@ enum_to_string(MultigridCoarseGridPreconditioner const enum_type)
       string_type = "AMG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -236,7 +234,7 @@ enum_to_string(PreconditionerSmoother const enum_type)
       string_type = "BlockJacobi";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 LinePlotCalculator<dim, Number>::LinePlotCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true)
@@ -40,9 +38,9 @@ LinePlotCalculator<dim, Number>::LinePlotCalculator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-LinePlotCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_velocity_in,
-                                       DoFHandler<dim> const & dof_handler_pressure_in,
-                                       Mapping<dim> const &    mapping_in,
+LinePlotCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+                                       dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+                                       dealii::Mapping<dim> const &    mapping_in,
                                        LinePlotDataInstantaneous<dim> const & line_plot_data_in)
 {
   dof_handler_velocity = &dof_handler_velocity_in;
@@ -71,8 +69,8 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
         ++line)
     {
       // store all points along current line in a vector
-      unsigned int            n_points = (*line)->n_points;
-      std::vector<Point<dim>> points(n_points);
+      unsigned int                    n_points = (*line)->n_points;
+      std::vector<dealii::Point<dim>> points(n_points);
 
       // we consider straight lines with an equidistant distribution of points along the line
       for(unsigned int i = 0; i < n_points; ++i)
@@ -90,19 +88,19 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
       {
         if((*quantity)->type == QuantityType::Velocity)
         {
-          std::vector<Tensor<1, dim, Number>> solution_vector(n_points);
+          std::vector<dealii::Tensor<1, dim, Number>> solution_vector(n_points);
 
           // calculate velocity for all points along line
           for(unsigned int i = 0; i < n_points; ++i)
           {
-            Tensor<1, dim, Number> u;
+            dealii::Tensor<1, dim, Number> u;
             evaluate_vectorial_quantity_in_point(
               u, *dof_handler_velocity, *mapping, velocity, points[i], mpi_comm);
             solution_vector[i] = u;
           }
 
           // write output to file
-          if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+          if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
           {
             std::string filename = filename_prefix + "_velocity" + ".txt";
 
@@ -118,9 +116,11 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
 
             // headline
             for(unsigned int d = 0; d < dim; ++d)
-              f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+              f << std::setw(precision + 8) << std::left
+                << "x_" + dealii::Utilities::int_to_string(d + 1);
             for(unsigned int d = 0; d < dim; ++d)
-              f << std::setw(precision + 8) << std::left << "u_" + Utilities::int_to_string(d + 1);
+              f << std::setw(precision + 8) << std::left
+                << "u_" + dealii::Utilities::int_to_string(d + 1);
             f << std::endl;
 
             // loop over all points
@@ -152,7 +152,7 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
           }
 
           // write output to file
-          if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+          if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
           {
             std::string filename = filename_prefix + "_pressure" + ".txt";
 
@@ -168,7 +168,8 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
 
             // headline
             for(unsigned int d = 0; d < dim; ++d)
-              f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+              f << std::setw(precision + 8) << std::left
+                << "x_" + dealii::Utilities::int_to_string(d + 1);
             f << std::setw(precision + 8) << std::left << "p";
             f << std::endl;
 

@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class NonLinearOperator : public ElasticityOperatorBase<dim, Number>
 {
@@ -44,15 +42,15 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
 public:
   void
-  initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &         data) override;
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             OperatorData<dim> const &                 data) override;
 
   /*
    * Evaluates the non-linear operator.
@@ -77,22 +75,22 @@ private:
   reinit_cell_nonlinear(IntegratorCell & integrator, unsigned int const cell) const;
 
   void
-  cell_loop_nonlinear(MatrixFree<dim, Number> const & matrix_free,
-                      VectorType &                    dst,
-                      VectorType const &              src,
-                      Range const &                   range) const;
+  cell_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,
+                      VectorType &                            dst,
+                      VectorType const &                      src,
+                      Range const &                           range) const;
 
   void
-  face_loop_nonlinear(MatrixFree<dim, Number> const & matrix_free,
-                      VectorType &                    dst,
-                      VectorType const &              src,
-                      Range const &                   range) const;
+  face_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,
+                      VectorType &                            dst,
+                      VectorType const &                      src,
+                      Range const &                           range) const;
 
   void
-  boundary_face_loop_nonlinear(MatrixFree<dim, Number> const & matrix_free,
-                               VectorType &                    dst,
-                               VectorType const &              src,
-                               Range const &                   range) const;
+  boundary_face_loop_nonlinear(dealii::MatrixFree<dim, Number> const & matrix_free,
+                               VectorType &                            dst,
+                               VectorType const &                      src,
+                               Range const &                           range) const;
 
   /*
    * Calculates the integral
@@ -136,8 +134,8 @@ private:
    * is necessary.
    */
   void
-  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  types::boundary_id const & boundary_id) const override;
+  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
+                                  dealii::types::boundary_id const & boundary_id) const override;
 
   /*
    * Linearized operator.

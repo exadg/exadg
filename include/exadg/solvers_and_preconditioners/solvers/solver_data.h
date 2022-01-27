@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct SolverData
 {
   SolverData() : max_iter(1e3), abs_tol(1e-20), rel_tol(1e-6), max_krylov_size(30)
@@ -47,7 +45,7 @@ struct SolverData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Maximum number of iterations", max_iter);
     print_parameter(pcout, "Absolute solver tolerance", abs_tol);

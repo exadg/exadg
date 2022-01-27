@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Operator>                       operator_in,
@@ -190,7 +188,8 @@ TimeIntExplRK<Number>::calculate_time_step_size()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Specified type of time step calculation is not implemented."));
   }
 }
 
@@ -198,7 +197,7 @@ template<typename Number>
 double
 TimeIntExplRK<Number>::recalculate_time_step_size() const
 {
-  AssertThrow(false, ExcMessage("Currently no adaptive time stepping implemented."));
+  AssertThrow(false, dealii::ExcMessage("Currently no adaptive time stepping implemented."));
 
   return 1.0;
 }
@@ -213,7 +212,8 @@ TimeIntExplRK<Number>::detect_instabilities() const
     if(l2_norm > 1.e-12)
     {
       AssertThrow(l2_norm_new < 10. * l2_norm,
-                  ExcMessage("Instabilities detected. Norm of solution vector seems to explode."));
+                  dealii::ExcMessage(
+                    "Instabilities detected. Norm of solution vector seems to explode."));
     }
 
     l2_norm = l2_norm_new;
@@ -224,7 +224,7 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   detect_instabilities();
@@ -238,7 +238,7 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::do_timestep_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   rk_time_integrator->solve_timestep(this->solution_np,

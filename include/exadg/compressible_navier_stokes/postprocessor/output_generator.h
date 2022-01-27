@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 struct OutputData : public OutputDataBase
 {
   OutputData()
@@ -48,7 +46,7 @@ struct OutputData : public OutputDataBase
   }
 
   void
-  print(ConditionalOStream & pcout, bool unsteady)
+  print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
     OutputDataBase::print(pcout, unsteady);
 
@@ -84,14 +82,14 @@ template<int dim, typename Number>
 class OutputGenerator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OutputGenerator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const & dof_handler_in,
-        Mapping<dim> const &    mapping_in,
-        OutputData const &      output_data_in);
+  setup(dealii::DoFHandler<dim> const & dof_handler_in,
+        dealii::Mapping<dim> const &    mapping_in,
+        OutputData const &              output_data_in);
 
   void
   evaluate(VectorType const &                              solution_conserved,
@@ -105,9 +103,9 @@ private:
   unsigned int output_counter;
   bool         reset_counter;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler;
-  SmartPointer<Mapping<dim> const>    mapping;
-  OutputData                          output_data;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  OutputData                                          output_data;
 };
 
 } // namespace CompNS

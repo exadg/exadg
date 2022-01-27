@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 VorticityCalculator<dim, Number>::VorticityCalculator()
   : matrix_free(nullptr), dof_index(0), quad_index(0)
@@ -35,9 +33,9 @@ VorticityCalculator<dim, Number>::VorticityCalculator()
 
 template<int dim, typename Number>
 void
-VorticityCalculator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free_in,
-                                             unsigned int const              dof_index_in,
-                                             unsigned int const              quad_index_in)
+VorticityCalculator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                             unsigned int const                      dof_index_in,
+                                             unsigned int const                      quad_index_in)
 {
   matrix_free = &matrix_free_in;
   dof_index   = dof_index_in;
@@ -55,10 +53,10 @@ VorticityCalculator<dim, Number>::compute_vorticity(VectorType & dst, VectorType
 
 template<int dim, typename Number>
 void
-VorticityCalculator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                            VectorType &                    dst,
-                                            VectorType const &              src,
-                                            Range const &                   cell_range) const
+VorticityCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                            VectorType &                            dst,
+                                            VectorType const &                      src,
+                                            Range const & cell_range) const
 {
   Integrator integrator(matrix_free, dof_index, quad_index);
 
@@ -70,7 +68,7 @@ VorticityCalculator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matr
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       // omega is a scalar quantity in 2D and a vector with dim components in 3D
-      Tensor<1, number_vorticity_components, VectorizedArray<Number>> omega =
+      dealii::Tensor<1, number_vorticity_components, dealii::VectorizedArray<Number>> omega =
         integrator.get_curl(q);
 
       // omega_vector is a vector with dim components

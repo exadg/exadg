@@ -26,17 +26,15 @@ namespace ExaDG
 {
 namespace FTI
 {
-using namespace dealii;
-
 template<int dim>
-class TemperatureBC : public Function<dim>
+class TemperatureBC : public dealii::Function<dim>
 {
 public:
   TemperatureBC(double const T_ref,
                 double const delta_T,
                 double const length,
                 double const characteristic_time)
-    : Function<dim>(1, 0.0),
+    : dealii::Function<dim>(1, 0.0),
       T_ref(T_ref),
       delta_T(delta_T),
       length(length),
@@ -45,15 +43,16 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component = 0*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component = 0*/) const
   {
     double       t           = this->get_time();
     double const time_factor = std::max(0.0, 1.0 - t / characteristic_time);
 
     double perturbation = time_factor;
-    perturbation *= 0.25 * delta_T * std::pow(std::sin(numbers::PI * p[0] / (length / 4.)), 2.0);
+    perturbation *=
+      0.25 * delta_T * std::pow(std::sin(dealii::numbers::PI * p[0] / (length / 4.)), 2.0);
     if(dim == 3)
-      perturbation *= std::pow(std::sin(numbers::PI * p[2] / (length / 4.)), 2.0);
+      perturbation *= std::pow(std::sin(dealii::numbers::PI * p[2] / (length / 4.)), 2.0);
 
     return (T_ref + delta_T + perturbation);
   }
@@ -100,7 +99,7 @@ public:
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -313,30 +312,30 @@ public:
     if(dim == 2)
     {
       std::vector<unsigned int> repetitions({8, 1});
-      Point<dim>                point1(-L / 2., 0.0), point2(L / 2., H);
-      GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                repetitions,
-                                                point1,
-                                                point2);
+      dealii::Point<dim>        point1(-L / 2., 0.0), point2(L / 2., H);
+      dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                        repetitions,
+                                                        point1,
+                                                        point2);
     }
     else if(dim == 3)
     {
       std::vector<unsigned int> repetitions({8, 1, 8});
-      Point<dim>                point1(-L / 2., 0.0, -L / 2.), point2(L / 2., H, L / 2.);
-      GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                                repetitions,
-                                                point1,
-                                                point2);
+      dealii::Point<dim>        point1(-L / 2., 0.0, -L / 2.), point2(L / 2., H, L / 2.);
+      dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                        repetitions,
+                                                        point1,
+                                                        point2);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     // set boundary IDs: 0 by default, set left boundary to 1
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if((std::fabs(cell->face(f)->center()(1) - 0.0) < 1e-12))
           cell->face(f)->set_boundary_id(1);
@@ -358,10 +357,10 @@ public:
       }
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 10, 11, 0, this->grid->periodic_faces);
     if(dim == 3)
-      GridTools::collect_periodic_faces(
+      dealii::GridTools::collect_periodic_faces(
         *this->grid->triangulation, 12, 13, 2, this->grid->periodic_faces);
 
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
@@ -372,31 +371,36 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     std::vector<double> gravity = std::vector<double>(dim, 0.0);
     gravity[1]                  = -g;
-    this->field_functions->gravitational_force.reset(new Functions::ConstantFunction<dim>(gravity));
+    this->field_functions->gravitational_force.reset(
+      new dealii::Functions::ConstantFunction<dim>(gravity));
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
@@ -424,10 +428,11 @@ public:
   void
   set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
-      pair(0, new Functions::ConstantFunction<dim>(T_ref)));
+      pair(0, new dealii::Functions::ConstantFunction<dim>(T_ref)));
     this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
       pair(1, new TemperatureBC<dim>(T_ref, delta_T, L, characteristic_time)));
   }
@@ -436,11 +441,11 @@ public:
   set_field_functions_scalar(unsigned int scalar_index = 0) final
   {
     this->scalar_field_functions[scalar_index]->initial_solution.reset(
-      new Functions::ConstantFunction<dim>(T_ref));
+      new dealii::Functions::ConstantFunction<dim>(T_ref));
     this->scalar_field_functions[scalar_index]->right_hand_side.reset(
-      new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->scalar_field_functions[scalar_index]->velocity.reset(
-      new Functions::ZeroFunction<dim>(dim));
+      new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>

@@ -31,62 +31,62 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename VectorType>
 double
-calculate_error(MPI_Comm const &                     mpi_comm,
-                bool const &                         relative_error,
-                DoFHandler<dim> const &              dof_handler,
-                Mapping<dim> const &                 mapping,
-                VectorType const &                   numerical_solution,
-                std::shared_ptr<Function<dim>> const analytical_solution,
-                double const &                       time,
-                VectorTools::NormType const &        norm_type,
-                unsigned int const                   additional_quadrature_points = 3)
+calculate_error(MPI_Comm const &                             mpi_comm,
+                bool const &                                 relative_error,
+                dealii::DoFHandler<dim> const &              dof_handler,
+                dealii::Mapping<dim> const &                 mapping,
+                VectorType const &                           numerical_solution,
+                std::shared_ptr<dealii::Function<dim>> const analytical_solution,
+                double const &                               time,
+                dealii::VectorTools::NormType const &        norm_type,
+                unsigned int const                           additional_quadrature_points = 3)
 {
   double error = 1.0;
   analytical_solution->set_time(time);
 
-  LinearAlgebra::distributed::Vector<double> numerical_solution_double;
+  dealii::LinearAlgebra::distributed::Vector<double> numerical_solution_double;
   numerical_solution_double = numerical_solution;
   numerical_solution_double.update_ghost_values();
 
   // calculate error norm
-  Vector<double> error_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
-  VectorTools::integrate_difference(mapping,
-                                    dof_handler,
-                                    numerical_solution_double,
-                                    *analytical_solution,
-                                    error_norm_per_cell,
-                                    QGauss<dim>(dof_handler.get_fe().degree +
-                                                additional_quadrature_points),
-                                    norm_type);
+  dealii::Vector<double> error_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
+  dealii::VectorTools::integrate_difference(mapping,
+                                            dof_handler,
+                                            numerical_solution_double,
+                                            *analytical_solution,
+                                            error_norm_per_cell,
+                                            dealii::QGauss<dim>(dof_handler.get_fe().degree +
+                                                                additional_quadrature_points),
+                                            norm_type);
 
-  double error_norm = std::sqrt(Utilities::MPI::sum(error_norm_per_cell.norm_sqr(), mpi_comm));
+  double error_norm =
+    std::sqrt(dealii::Utilities::MPI::sum(error_norm_per_cell.norm_sqr(), mpi_comm));
 
   if(relative_error == true)
   {
     // calculate solution norm
-    Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
-    LinearAlgebra::distributed::Vector<double> zero_solution;
+    dealii::Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
+    dealii::LinearAlgebra::distributed::Vector<double> zero_solution;
     zero_solution.reinit(numerical_solution);
     zero_solution.update_ghost_values();
 
-    VectorTools::integrate_difference(mapping,
-                                      dof_handler,
-                                      zero_solution,
-                                      *analytical_solution,
-                                      solution_norm_per_cell,
-                                      QGauss<dim>(dof_handler.get_fe().degree +
-                                                  additional_quadrature_points),
-                                      norm_type);
+    dealii::VectorTools::integrate_difference(mapping,
+                                              dof_handler,
+                                              zero_solution,
+                                              *analytical_solution,
+                                              solution_norm_per_cell,
+                                              dealii::QGauss<dim>(dof_handler.get_fe().degree +
+                                                                  additional_quadrature_points),
+                                              norm_type);
 
     double solution_norm =
-      std::sqrt(Utilities::MPI::sum(solution_norm_per_cell.norm_sqr(), mpi_comm));
+      std::sqrt(dealii::Utilities::MPI::sum(solution_norm_per_cell.norm_sqr(), mpi_comm));
 
     AssertThrow(solution_norm > 1.e-15,
-                ExcMessage("Cannot compute relative error since norm of solution tends to zero."));
+                dealii::ExcMessage(
+                  "Cannot compute relative error since norm of solution tends to zero."));
 
     error = error_norm / solution_norm;
   }
@@ -110,8 +110,8 @@ ErrorCalculator<dim, Number>::ErrorCalculator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-ErrorCalculator<dim, Number>::setup(DoFHandler<dim> const &           dof_handler_in,
-                                    Mapping<dim> const &              mapping_in,
+ErrorCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const &   dof_handler_in,
+                                    dealii::Mapping<dim> const &      mapping_in,
                                     ErrorCalculationData<dim> const & error_data_in)
 {
   dof_handler = &dof_handler_in;
@@ -128,7 +128,8 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
                                        double const &     time,
                                        int const &        time_step_number)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   if(error_data.analytical_solution_available)
   {
@@ -185,16 +186,17 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                             solution_vector,
                                             error_data.analytical_solution,
                                             time,
-                                            VectorTools::L2_norm);
+                                            dealii::VectorTools::L2_norm);
 
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << ((relative == true) ? "  Relative " : "  Absolute ")
         << "error (L2-norm): " << std::scientific << std::setprecision(5) << error << std::endl;
 
   if(error_data.write_errors_to_file)
   {
     // write output file
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename = error_data.directory + error_data.name + "_L2";
 
@@ -228,9 +230,10 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                               solution_vector,
                                               error_data.analytical_solution,
                                               time,
-                                              VectorTools::H1_seminorm);
+                                              dealii::VectorTools::H1_seminorm);
 
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+    dealii::ConditionalOStream pcout(std::cout,
+                                     dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
     pcout << ((relative == true) ? "  Relative " : "  Absolute ")
           << "error (H1-seminorm): " << std::scientific << std::setprecision(5) << error
           << std::endl;
@@ -238,7 +241,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
     if(error_data.write_errors_to_file)
     {
       // write output file
-      if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
         std::string filename = error_data.directory + error_data.name + "_H1_seminorm";
 

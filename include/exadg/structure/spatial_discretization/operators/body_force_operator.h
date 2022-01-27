@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim>
 struct BodyForceData
 {
@@ -42,7 +40,7 @@ struct BodyForceData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  std::shared_ptr<Function<dim>> function;
+  std::shared_ptr<dealii::Function<dim>> function;
 
   bool pull_back_body_force;
 };
@@ -51,7 +49,7 @@ template<int dim, typename Number>
 class BodyForceOperator
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef BodyForceOperator<dim, Number> This;
 
@@ -69,7 +67,7 @@ public:
    * Initialization.
    */
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free, BodyForceData<dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free, BodyForceData<dim> const & data);
 
   static MappingFlags
   get_mapping_flags();
@@ -82,12 +80,12 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   BodyForceData<dim> data;
 

@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 OperatorCoupled<dim, Number>::OperatorCoupled(
   std::shared_ptr<Grid<dim> const>                  grid_in,
@@ -61,7 +59,7 @@ OperatorCoupled<dim, Number>::~OperatorCoupled()
 
 template<int dim, typename Number>
 void
-OperatorCoupled<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
+OperatorCoupled<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
                                     std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
                                     std::string const & dof_index_temperature)
 {
@@ -133,7 +131,8 @@ OperatorCoupled<dim, Number>::initialize_solver_coupled()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified solver for linearized problem is not implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Specified solver for linearized problem is not implemented."));
   }
 
   // setup Newton solver
@@ -287,7 +286,7 @@ OperatorCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &     
   else
     dst.block(0) = 0.0;
 
-  AssertThrow(this->param.convective_problem() == true, ExcMessage("Invalid parameters."));
+  AssertThrow(this->param.convective_problem() == true, dealii::ExcMessage("Invalid parameters."));
 
   this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
 
@@ -443,7 +442,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   }
   else
   {
-    AssertThrow(type == MomentumPreconditioner::None, ExcNotImplemented());
+    AssertThrow(type == MomentumPreconditioner::None, dealii::ExcNotImplemented());
   }
 }
 
@@ -475,7 +474,7 @@ void
 OperatorCoupled<dim, Number>::setup_iterative_solver_momentum()
 {
   AssertThrow(preconditioner_momentum.get() != 0,
-              ExcMessage("preconditioner_momentum is uninitialized"));
+              dealii::ExcMessage("preconditioner_momentum is uninitialized"));
 
   // use FMGRES for "exact" solution of velocity block system
   Krylov::SolverDataFGMRES gmres_data;
@@ -515,7 +514,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   else if(type == SchurComplementPreconditioner::CahouetChabard)
   {
     AssertThrow(this->unsteady_problem_has_to_be_solved() == true,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Cahouet-Chabard preconditioner only makes sense for unsteady problems."));
 
     setup_multigrid_preconditioner_schur_complement();
@@ -561,7 +560,7 @@ OperatorCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   }
   else
   {
-    AssertThrow(type == SchurComplementPreconditioner::None, ExcNotImplemented());
+    AssertThrow(type == SchurComplementPreconditioner::None, dealii::ExcNotImplemented());
   }
 }
 
@@ -601,7 +600,7 @@ OperatorCoupled<dim, Number>::setup_iterative_solver_schur_complement()
 {
   AssertThrow(
     multigrid_preconditioner_schur_complement.get() != 0,
-    ExcMessage(
+    dealii::ExcMessage(
       "Setup of iterative solver for Schur complement preconditioner: Multigrid preconditioner is uninitialized"));
 
   Krylov::SolverDataCG solver_data;
@@ -641,27 +640,31 @@ OperatorCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
 
   // For the pressure convection-diffusion operator the homogeneous operators are applied, so there
   // is no need to specify functions for boundary conditions since they will never be used.
-  std::shared_ptr<Function<dim>> dummy;
+  std::shared_ptr<dealii::Function<dim>> dummy;
 
   // set boundary ID's for pressure convection-diffusion operator
 
   // Dirichlet BC for pressure
-  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
+  for(typename std::map<dealii::types::boundary_id,
+                        std::shared_ptr<dealii::Function<dim>>>::const_iterator it =
         this->boundary_descriptor->pressure->dirichlet_bc.begin();
       it != this->boundary_descriptor->pressure->dirichlet_bc.end();
       ++it)
   {
     boundary_descriptor->dirichlet_bc.insert(
-      std::pair<types::boundary_id, std::shared_ptr<Function<dim>>>(it->first, dummy));
+      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(it->first,
+                                                                                    dummy));
   }
   // Neumann BC for pressure
-  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
+  for(typename std::map<dealii::types::boundary_id,
+                        std::shared_ptr<dealii::Function<dim>>>::const_iterator it =
         this->boundary_descriptor->pressure->neumann_bc.begin();
       it != this->boundary_descriptor->pressure->neumann_bc.end();
       ++it)
   {
     boundary_descriptor->neumann_bc.insert(
-      std::pair<types::boundary_id, std::shared_ptr<Function<dim>>>(it->first, dummy));
+      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(it->first,
+                                                                                    dummy));
   }
 
   // convective operator:
@@ -980,7 +983,7 @@ OperatorCoupled<dim, Number>::apply_block_preconditioner(BlockVectorType &      
   }
   else
   {
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, dealii::ExcNotImplemented());
   }
 }
 
@@ -1042,14 +1045,16 @@ OperatorCoupled<dim, Number>::apply_preconditioner_velocity_block(VectorType &  
       bool const print_iterations = false;
       if(print_iterations)
       {
-        ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(this->mpi_comm) == 0);
+        dealii::ConditionalOStream pcout(std::cout,
+                                         dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) ==
+                                           0);
         pcout << "Number of iterations for inner solver = " << iterations << std::endl;
       }
     }
   }
   else
   {
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, dealii::ExcNotImplemented());
   }
 }
 
@@ -1116,7 +1121,7 @@ OperatorCoupled<dim, Number>::apply_preconditioner_pressure_block(VectorType &  
   }
   else
   {
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, dealii::ExcNotImplemented());
   }
 
   // scaling_factor_continuity: Since the Schur complement includes both the velocity divergence

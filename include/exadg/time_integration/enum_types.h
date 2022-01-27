@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 enum class CFLConditionType
 {
   VelocityNorm,

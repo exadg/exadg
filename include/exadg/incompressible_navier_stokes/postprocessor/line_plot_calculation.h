@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  Evaluate quantities along lines.
  *
@@ -44,14 +42,14 @@ template<int dim, typename Number>
 class LinePlotCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   LinePlotCalculator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const &                dof_handler_velocity_in,
-        DoFHandler<dim> const &                dof_handler_pressure_in,
-        Mapping<dim> const &                   mapping_in,
+  setup(dealii::DoFHandler<dim> const &        dof_handler_velocity_in,
+        dealii::DoFHandler<dim> const &        dof_handler_pressure_in,
+        dealii::Mapping<dim> const &           mapping_in,
         LinePlotDataInstantaneous<dim> const & line_plot_data_in);
 
   void
@@ -62,9 +60,9 @@ private:
 
   mutable bool clear_files;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
-  SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
-  SmartPointer<Mapping<dim> const>    mapping;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
 
   LinePlotDataInstantaneous<dim> data;
 };

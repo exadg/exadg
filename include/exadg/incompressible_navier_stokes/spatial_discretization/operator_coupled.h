@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // forward declaration
 template<int dim, typename Number>
 class OperatorCoupled;
@@ -40,8 +38,8 @@ template<int dim, typename Number>
 class NonlinearOperatorCoupled
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
@@ -87,7 +85,7 @@ template<int dim, typename Number>
 class LinearOperatorCoupled : public dealii::Subscriptor
 {
 private:
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
@@ -141,7 +139,7 @@ template<int dim, typename Number>
 class BlockPreconditioner
 {
 private:
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef OperatorCoupled<dim, Number> PDEOperator;
 
@@ -172,7 +170,8 @@ public:
   get_timings() const
   {
     AssertThrow(false,
-                ExcMessage("Function get_timings() is not implemented for BlockPreconditioner."));
+                dealii::ExcMessage(
+                  "Function get_timings() is not implemented for BlockPreconditioner."));
 
     return std::make_shared<TimerTree>();
   }
@@ -211,9 +210,9 @@ public:
   virtual ~OperatorCoupled();
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-        std::string const &                          dof_index_temperature = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
+        std::string const &                              dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

@@ -23,8 +23,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Number>
 TimeIntExplRKBase<Number>::TimeIntExplRKBase(double const &      start_time_,
                                              double const &      end_time_,
@@ -137,7 +135,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 
   boost::archive::binary_oarchive oa(oss);
 
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(this->mpi_comm);
+  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
   // 1. ranks
   oa & n_ranks;
@@ -166,12 +164,12 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   unsigned int n_old_ranks = 1;
   ia &         n_old_ranks;
 
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(this->mpi_comm);
+  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm);
   AssertThrow(n_old_ranks == n_ranks,
-              ExcMessage("Tried to restart with " + Utilities::to_string(n_ranks) +
-                         " processes, "
-                         "but restart was written on " +
-                         Utilities::to_string(n_old_ranks) + " processes."));
+              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
+                                 " processes, "
+                                 "but restart was written on " +
+                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
 
   // 2. time
   ia & time;

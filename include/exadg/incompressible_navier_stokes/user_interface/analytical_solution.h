@@ -28,20 +28,18 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct AnalyticalSolution
 {
   /*
    *  velocity
    */
-  std::shared_ptr<Function<dim>> velocity;
+  std::shared_ptr<dealii::Function<dim>> velocity;
 
   /*
    *  pressure
    */
-  std::shared_ptr<Function<dim>> pressure;
+  std::shared_ptr<dealii::Function<dim>> pressure;
 };
 
 } // namespace IncNS

@@ -28,13 +28,11 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class VelocityProjection
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef CellIntegrator<dim, dim, Number> IntegratorCell;
 
@@ -45,12 +43,12 @@ public:
    * (v_h, u_h)_Omega^e = (v_h, f)_Omega^e -> M * U = RHS -> U = M^{-1} * RHS
    */
   void
-  apply(MatrixFree<dim, Number> const &      matrix_free,
-        unsigned int const                   dof_index,
-        unsigned int const                   quad_index,
-        std::shared_ptr<Function<dim>> const function,
-        double const &                       time,
-        VectorType &                         vector)
+  apply(dealii::MatrixFree<dim, Number> const &      matrix_free,
+        unsigned int const                           dof_index,
+        unsigned int const                           quad_index,
+        std::shared_ptr<dealii::Function<dim>> const function,
+        double const &                               time,
+        VectorType &                                 vector)
   {
     this->dof_index  = dof_index;
     this->quad_index = quad_index;
@@ -69,10 +67,10 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const
   {
     (void)src;
 
@@ -95,10 +93,10 @@ private:
     }
   }
 
-  unsigned int                   dof_index;
-  unsigned int                   quad_index;
-  std::shared_ptr<Function<dim>> function;
-  double                         time;
+  unsigned int                           dof_index;
+  unsigned int                           quad_index;
+  std::shared_ptr<dealii::Function<dim>> function;
+  double                                 time;
 };
 
 } // namespace ExaDG

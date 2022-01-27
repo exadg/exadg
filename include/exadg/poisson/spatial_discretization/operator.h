@@ -37,19 +37,17 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number, int n_components = 1>
 class Operator : public dealii::Subscriptor
 {
 private:
   static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
 
   typedef LaplaceOperator<dim, Number, n_components> Laplace;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
 public:
   Operator(std::shared_ptr<Grid<dim> const>                     grid,
@@ -63,8 +61,8 @@ public:
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data);
 
   void
   setup_solver();
@@ -87,10 +85,10 @@ public:
   unsigned int
   solve(VectorType & sol, VectorType const & rhs, double const time) const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler() const;
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   get_number_of_dofs() const;
 
   double
@@ -113,30 +111,30 @@ public:
 
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix,
-                     MPI_Comm const &                 mpi_comm) const;
+  init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
+                     MPI_Comm const &                         mpi_comm) const;
 
   void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const;
 
   void
-  vmult_matrix_based(VectorTypeDouble &                     dst,
-                     TrilinosWrappers::SparseMatrix const & system_matrix,
-                     VectorTypeDouble const &               src) const;
+  vmult_matrix_based(VectorTypeDouble &                             dst,
+                     dealii::TrilinosWrappers::SparseMatrix const & system_matrix,
+                     VectorTypeDouble const &                       src) const;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
   void
-  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix,
-                     MPI_Comm const &                   mpi_comm) const;
+  init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
+                     MPI_Comm const &                           mpi_comm) const;
 
   void
-  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
+  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const;
 
   void
-  vmult_matrix_based(VectorTypeDouble &                       dst,
-                     PETScWrappers::MPI::SparseMatrix const & system_matrix,
-                     VectorTypeDouble const &                 src) const;
+  vmult_matrix_based(VectorTypeDouble &                               dst,
+                     dealii::PETScWrappers::MPI::SparseMatrix const & system_matrix,
+                     VectorTypeDouble const &                         src) const;
 #endif
 
 private:
@@ -176,18 +174,18 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  std::shared_ptr<FiniteElement<dim>> fe;
+  std::shared_ptr<dealii::FiniteElement<dim>> fe;
 
-  DoFHandler<dim> dof_handler;
+  dealii::DoFHandler<dim> dof_handler;
 
-  mutable AffineConstraints<Number> affine_constraints;
+  mutable dealii::AffineConstraints<Number> affine_constraints;
 
   std::string const dof_index                = "laplace";
   std::string const quad_index               = "laplace";
   std::string const quad_index_gauss_lobatto = "laplace_gauss_lobatto";
 
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
 
   RHSOperator<dim, Number, n_components> rhs_operator;
 
@@ -204,7 +202,7 @@ private:
   /*
    * Output to screen.
    */
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 };
 } // namespace Poisson
 } // namespace ExaDG

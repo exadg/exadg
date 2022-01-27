@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace Newton
 {
-using namespace dealii;
-
 struct SolverData
 {
   SolverData() : max_iter(100), abs_tol(1.e-12), rel_tol(1.e-12)
@@ -46,7 +44,7 @@ struct SolverData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Maximum number of iterations", max_iter);
     print_parameter(pcout, "Absolute solver tolerance", abs_tol);

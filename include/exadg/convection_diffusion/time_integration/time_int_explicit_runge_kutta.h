@@ -34,8 +34,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 // forward declarations
 class Parameters;
 
@@ -55,7 +53,7 @@ template<typename Number>
 class TimeIntExplRK : public TimeIntExplRKBase<Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   TimeIntExplRK(std::shared_ptr<Interface::Operator<Number>>    operator_in,
                 Parameters const &                              param_in,

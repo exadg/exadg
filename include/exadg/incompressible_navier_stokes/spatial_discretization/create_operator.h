@@ -65,7 +65,7 @@ create_operator(std::shared_ptr<Grid<dim> const>                  grid,
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   return pde_operator;

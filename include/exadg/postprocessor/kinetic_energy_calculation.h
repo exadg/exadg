@@ -32,8 +32,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct KineticEnergyData
 {
   KineticEnergyData()
@@ -48,7 +46,7 @@ struct KineticEnergyData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
@@ -88,19 +86,19 @@ class KineticEnergyCalculator
 public:
   static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   KineticEnergyCalculator(MPI_Comm const & comm);
 
   void
-  setup(MatrixFree<dim, Number> const & matrix_free_in,
-        unsigned int const              dof_index_in,
-        unsigned int const              quad_index_in,
-        KineticEnergyData const &       kinetic_energy_data_in);
+  setup(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+        unsigned int const                      dof_index_in,
+        unsigned int const                      quad_index_in,
+        KineticEnergyData const &               kinetic_energy_data_in);
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
@@ -127,15 +125,15 @@ protected:
    *  for incompressible flows (div(u)=0) and periodic boundary conditions.
    */
   Number
-  integrate(MatrixFree<dim, Number> const & matrix_free_data,
-            VectorType const &              velocity,
-            Number &                        energy,
-            Number &                        enstrophy,
-            Number &                        dissipation,
-            Number &                        max_vorticity);
+  integrate(dealii::MatrixFree<dim, Number> const & matrix_free_data,
+            VectorType const &                      velocity,
+            Number &                                energy,
+            Number &                                enstrophy,
+            Number &                                dissipation,
+            Number &                                max_vorticity);
 
   void
-  cell_loop(MatrixFree<dim, Number> const &               data,
+  cell_loop(dealii::MatrixFree<dim, Number> const &       data,
             std::vector<Number> &                         dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range);
@@ -144,9 +142,9 @@ protected:
 
   bool clear_files;
 
-  MatrixFree<dim, Number> const * matrix_free;
-  unsigned int                    dof_index, quad_index;
-  KineticEnergyData               data;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+  unsigned int                            dof_index, quad_index;
+  KineticEnergyData                       data;
 };
 
 } // namespace ExaDG

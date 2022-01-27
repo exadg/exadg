@@ -129,16 +129,16 @@ struct AMGData
     boomer_data.n_sweeps_coarse = 1;
     boomer_data.max_iter        = 1;
     boomer_data.relaxation_type_down =
-      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+      dealii::PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
     boomer_data.relaxation_type_up =
-      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+      dealii::PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
     boomer_data.relaxation_type_coarse =
-      PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
+      dealii::PETScWrappers::PreconditionBoomerAMG::AdditionalData::RelaxationType::Chebyshev;
 #endif
   };
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "    AMG type", enum_to_string(amg_type));
 
@@ -163,18 +163,18 @@ struct AMGData
     }
     else
     {
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(false, dealii::ExcNotImplemented());
     }
   }
 
   AMGType amg_type;
 
 #ifdef DEAL_II_WITH_TRILINOS
-  TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
+  dealii::TrilinosWrappers::PreconditionAMG::AdditionalData ml_data;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
-  PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
+  dealii::PETScWrappers::PreconditionBoomerAMG::AdditionalData boomer_data;
 #endif
 };
 
@@ -201,7 +201,7 @@ struct SmootherData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Smoother", enum_to_string(smoother));
     print_parameter(pcout, "Preconditioner smoother", enum_to_string(preconditioner));
@@ -249,7 +249,7 @@ struct CoarseGridData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Coarse grid solver", enum_to_string(solver));
     print_parameter(pcout, "Coarse grid preconditioner", enum_to_string(preconditioner));
@@ -289,7 +289,7 @@ struct MultigridData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Multigrid type", enum_to_string(type));
 

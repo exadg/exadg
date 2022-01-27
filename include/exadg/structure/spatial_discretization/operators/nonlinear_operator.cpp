@@ -27,13 +27,12 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                           AffineConstraints<Number> const & affine_constraints,
-                                           OperatorData<dim> const &         data)
+NonLinearOperator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  OperatorData<dim> const &                 data)
 {
   Base::initialize(matrix_free, affine_constraints, data);
 
@@ -82,10 +81,11 @@ NonLinearOperator<dim, Number>::reinit_cell_nonlinear(IntegratorCell &   integra
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::cell_loop_nonlinear(MatrixFree<dim, Number> const & matrix_free,
-                                                    VectorType &                    dst,
-                                                    VectorType const &              src,
-                                                    Range const &                   range) const
+NonLinearOperator<dim, Number>::cell_loop_nonlinear(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   IntegratorCell integrator(matrix_free,
                             this->operator_data.dof_index,
@@ -106,10 +106,11 @@ NonLinearOperator<dim, Number>::cell_loop_nonlinear(MatrixFree<dim, Number> cons
 
 template<int dim, typename Number>
 void
-NonLinearOperator<dim, Number>::face_loop_nonlinear(MatrixFree<dim, Number> const & matrix_free,
-                                                    VectorType &                    dst,
-                                                    VectorType const &              src,
-                                                    Range const &                   range) const
+NonLinearOperator<dim, Number>::face_loop_nonlinear(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -120,10 +121,10 @@ NonLinearOperator<dim, Number>::face_loop_nonlinear(MatrixFree<dim, Number> cons
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::boundary_face_loop_nonlinear(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)src;
 
@@ -187,8 +188,8 @@ NonLinearOperator<dim, Number>::do_cell_integral_nonlinear(IntegratorCell & inte
 template<int dim, typename Number>
 void
 NonLinearOperator<dim, Number>::do_boundary_integral_continuous(
-  IntegratorFace &           integrator_m,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator_m,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 

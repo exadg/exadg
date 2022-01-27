@@ -28,8 +28,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class MassKernel
 {
@@ -54,7 +52,7 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_JxW_values;
+    flags.cells = dealii::update_JxW_values;
 
     // no face integrals
 

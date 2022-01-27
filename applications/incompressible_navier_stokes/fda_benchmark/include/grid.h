@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace FDANozzle
 {
-using namespace dealii;
-
 // radius
 double const R       = 0.002;
 double const R_INNER = R;
@@ -40,10 +38,10 @@ double const D       = 2.0 * R_OUTER;
 // lengths (dimensions in flow direction z)
 double const LENGTH_PRECURSOR = 8.0 * R_OUTER;
 double const LENGTH_INFLOW    = 8.0 * R_OUTER;
-double const LENGTH_CONE      = (R_OUTER - R_INNER) / std::tan(20.0 / 2.0 * numbers::PI / 180.0);
-double const LENGTH_THROAT    = 0.04;
-double const LENGTH_OUTFLOW   = 20.0 * R_OUTER;
-double const OFFSET           = 2.0 * R_OUTER;
+double const LENGTH_CONE = (R_OUTER - R_INNER) / std::tan(20.0 / 2.0 * dealii::numbers::PI / 180.0);
+double const LENGTH_THROAT  = 0.04;
+double const LENGTH_OUTFLOW = 20.0 * R_OUTER;
+double const OFFSET         = 2.0 * R_OUTER;
 
 // mesh parameters
 unsigned int const N_CELLS_AXIAL           = 2;
@@ -98,53 +96,53 @@ radius_function(double const z)
 template<int dim>
 void
 create_grid_and_set_boundary_ids_nozzle(
-  std::shared_ptr<Triangulation<dim>> triangulation,
-  unsigned int const                  n_refine_space,
-  std::vector<
-    GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
+  std::shared_ptr<dealii::Triangulation<dim>> triangulation,
+  unsigned int const                          n_refine_space,
+  std::vector<dealii::GridTools::PeriodicFacePair<
+    typename dealii::Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
 {
   /*
    *   Inflow
    */
-  Triangulation<2>   tria_2d_inflow;
-  Triangulation<dim> tria_inflow;
-  GridGenerator::hyper_ball(tria_2d_inflow, Point<2>(), R_OUTER);
+  dealii::Triangulation<2>   tria_2d_inflow;
+  dealii::Triangulation<dim> tria_inflow;
+  dealii::GridGenerator::hyper_ball(tria_2d_inflow, dealii::Point<2>(), R_OUTER);
 
-  GridGenerator::extrude_triangulation(tria_2d_inflow,
-                                       N_CELLS_AXIAL_INFLOW + 1,
-                                       LENGTH_INFLOW,
-                                       tria_inflow);
-  Tensor<1, dim> offset_inflow;
+  dealii::GridGenerator::extrude_triangulation(tria_2d_inflow,
+                                               N_CELLS_AXIAL_INFLOW + 1,
+                                               LENGTH_INFLOW,
+                                               tria_inflow);
+  dealii::Tensor<1, dim> offset_inflow;
   offset_inflow[2] = Z1_INFLOW;
-  GridTools::shift(offset_inflow, tria_inflow);
+  dealii::GridTools::shift(offset_inflow, tria_inflow);
 
-  Triangulation<dim> * current_tria = &tria_inflow;
+  dealii::Triangulation<dim> * current_tria = &tria_inflow;
 
   /*
    *   Cone
    */
-  Triangulation<2>   tria_2d_cone;
-  Triangulation<dim> tria_cone;
-  GridGenerator::hyper_ball(tria_2d_cone, Point<2>(), R_OUTER);
+  dealii::Triangulation<2>   tria_2d_cone;
+  dealii::Triangulation<dim> tria_cone;
+  dealii::GridGenerator::hyper_ball(tria_2d_cone, dealii::Point<2>(), R_OUTER);
 
-  GridGenerator::extrude_triangulation(tria_2d_cone,
-                                       N_CELLS_AXIAL_CONE + 1,
-                                       LENGTH_CONE,
-                                       tria_cone);
-  Tensor<1, dim> offset_cone;
+  dealii::GridGenerator::extrude_triangulation(tria_2d_cone,
+                                               N_CELLS_AXIAL_CONE + 1,
+                                               LENGTH_CONE,
+                                               tria_cone);
+  dealii::Tensor<1, dim> offset_cone;
   offset_cone[2] = Z1_CONE;
-  GridTools::shift(offset_cone, tria_cone);
+  dealii::GridTools::shift(offset_cone, tria_cone);
 
   // apply conical geometry: stretch vertex positions according to z-coordinate
   for(auto cell : tria_cone.active_cell_iterators())
   {
-    for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+    for(unsigned int v = 0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
     {
       if(cell->vertex(v)[2] > Z1_CONE + 1.e-10)
       {
-        Point<dim>   point_2d;
-        double const z = cell->vertex(v)[2];
-        point_2d[2]    = z;
+        dealii::Point<dim> point_2d;
+        double const       z = cell->vertex(v)[2];
+        point_2d[2]          = z;
 
         // note that this value is onyl valid for the current dealii implementation of hyper_ball!!!
         if(std::abs((cell->vertex(v) - point_2d).norm() - 2.485281374239e-03 / 6.0e-3 * R_OUTER) <
@@ -163,17 +161,17 @@ create_grid_and_set_boundary_ids_nozzle(
   /*
    *   Throat
    */
-  Triangulation<2>   tria_2d_throat;
-  Triangulation<dim> tria_throat;
-  GridGenerator::hyper_ball(tria_2d_throat, Point<2>(), R_INNER);
+  dealii::Triangulation<2>   tria_2d_throat;
+  dealii::Triangulation<dim> tria_throat;
+  dealii::GridGenerator::hyper_ball(tria_2d_throat, dealii::Point<2>(), R_INNER);
 
-  GridGenerator::extrude_triangulation(tria_2d_throat,
-                                       N_CELLS_AXIAL_THROAT + 1,
-                                       LENGTH_THROAT,
-                                       tria_throat);
-  Tensor<1, dim> offset_throat;
+  dealii::GridGenerator::extrude_triangulation(tria_2d_throat,
+                                               N_CELLS_AXIAL_THROAT + 1,
+                                               LENGTH_THROAT,
+                                               tria_throat);
+  dealii::Tensor<1, dim> offset_throat;
   offset_throat[2] = Z1_THROAT;
-  GridTools::shift(offset_throat, tria_throat);
+  dealii::GridTools::shift(offset_throat, tria_throat);
 
   /*
    *   OUTFLOW
@@ -182,39 +180,41 @@ create_grid_and_set_boundary_ids_nozzle(
   double const       R_1            = R_INNER + 1.0 / 3.0 * (R_OUTER - R_INNER);
   double const       R_2            = R_INNER + 2.0 / 3.0 * (R_OUTER - R_INNER);
 
-  Triangulation<2> tria_2d_outflow_inner, circle_1, circle_2, circle_3, tria_tmp_2d_1,
+  dealii::Triangulation<2> tria_2d_outflow_inner, circle_1, circle_2, circle_3, tria_tmp_2d_1,
     tria_tmp_2d_2, tria_2d_outflow;
-  GridGenerator::hyper_ball(tria_2d_outflow_inner, Point<2>(), R_INNER);
+  dealii::GridGenerator::hyper_ball(tria_2d_outflow_inner, dealii::Point<2>(), R_INNER);
 
-  GridGenerator::hyper_shell(circle_1, Point<2>(), R_INNER, R_1, n_cells_circle, true);
-  GridTools::rotate(numbers::PI / 4, circle_1);
-  GridGenerator::hyper_shell(circle_2, Point<2>(), R_1, R_2, n_cells_circle, true);
-  GridTools::rotate(numbers::PI / 4, circle_2);
-  GridGenerator::hyper_shell(circle_3, Point<2>(), R_2, R_OUTER, n_cells_circle, true);
-  GridTools::rotate(numbers::PI / 4, circle_3);
+  dealii::GridGenerator::hyper_shell(
+    circle_1, dealii::Point<2>(), R_INNER, R_1, n_cells_circle, true);
+  dealii::GridTools::rotate(dealii::numbers::PI / 4, circle_1);
+  dealii::GridGenerator::hyper_shell(circle_2, dealii::Point<2>(), R_1, R_2, n_cells_circle, true);
+  dealii::GridTools::rotate(dealii::numbers::PI / 4, circle_2);
+  dealii::GridGenerator::hyper_shell(
+    circle_3, dealii::Point<2>(), R_2, R_OUTER, n_cells_circle, true);
+  dealii::GridTools::rotate(dealii::numbers::PI / 4, circle_3);
 
   // merge 2d triangulations
-  GridGenerator::merge_triangulations(tria_2d_outflow_inner, circle_1, tria_tmp_2d_1);
-  GridGenerator::merge_triangulations(circle_2, circle_3, tria_tmp_2d_2);
-  GridGenerator::merge_triangulations(tria_tmp_2d_1, tria_tmp_2d_2, tria_2d_outflow);
+  dealii::GridGenerator::merge_triangulations(tria_2d_outflow_inner, circle_1, tria_tmp_2d_1);
+  dealii::GridGenerator::merge_triangulations(circle_2, circle_3, tria_tmp_2d_2);
+  dealii::GridGenerator::merge_triangulations(tria_tmp_2d_1, tria_tmp_2d_2, tria_2d_outflow);
 
   // extrude in z-direction
-  Triangulation<dim> tria_outflow;
-  GridGenerator::extrude_triangulation(tria_2d_outflow,
-                                       N_CELLS_AXIAL_OUTFLOW + 1,
-                                       LENGTH_OUTFLOW,
-                                       tria_outflow);
-  Tensor<1, dim> offset_outflow;
+  dealii::Triangulation<dim> tria_outflow;
+  dealii::GridGenerator::extrude_triangulation(tria_2d_outflow,
+                                               N_CELLS_AXIAL_OUTFLOW + 1,
+                                               LENGTH_OUTFLOW,
+                                               tria_outflow);
+  dealii::Tensor<1, dim> offset_outflow;
   offset_outflow[2] = Z1_OUTFLOW;
-  GridTools::shift(offset_outflow, tria_outflow);
+  dealii::GridTools::shift(offset_outflow, tria_outflow);
 
   /*
    *  MERGE TRIANGULATIONS
    */
-  Triangulation<dim> tria_tmp, tria_tmp2;
-  GridGenerator::merge_triangulations(tria_inflow, tria_cone, tria_tmp);
-  GridGenerator::merge_triangulations(tria_tmp, tria_throat, tria_tmp2);
-  GridGenerator::merge_triangulations(tria_tmp2, tria_outflow, *triangulation);
+  dealii::Triangulation<dim> tria_tmp, tria_tmp2;
+  dealii::GridGenerator::merge_triangulations(tria_inflow, tria_cone, tria_tmp);
+  dealii::GridGenerator::merge_triangulations(tria_tmp, tria_throat, tria_tmp2);
+  dealii::GridGenerator::merge_triangulations(tria_tmp2, tria_outflow, *triangulation);
 
   /*
    *  MANIFOLDS
@@ -237,12 +237,12 @@ create_grid_and_set_boundary_ids_nozzle(
     // INFLOW
     if(cell->center()[2] < Z2_INFLOW)
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
         {
-          Point<dim> point = Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
           if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_OUTER) > 1e-12)
           {
             face_at_sphere_boundary = false;
@@ -260,13 +260,13 @@ create_grid_and_set_boundary_ids_nozzle(
     // CONE
     else if(cell->center()[2] > Z1_CONE && cell->center()[2] < Z2_CONE)
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         bool   face_at_sphere_boundary = true;
         double min_z                   = std::numeric_limits<double>::max();
         double max_z                   = -std::numeric_limits<double>::max();
 
-        for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
         {
           double const z = cell->face(f)->vertex(v)[2];
           if(z > max_z)
@@ -274,7 +274,7 @@ create_grid_and_set_boundary_ids_nozzle(
           if(z < min_z)
             min_z = z;
 
-          Point<dim> point = Point<dim>(0, 0, z);
+          dealii::Point<dim> point = dealii::Point<dim>(0, 0, z);
           if(std::abs((cell->face(f)->vertex(v) - point).norm() - radius_function(z)) > 1e-12)
           {
             face_at_sphere_boundary = false;
@@ -294,12 +294,12 @@ create_grid_and_set_boundary_ids_nozzle(
     // THROAT
     else if(cell->center()[2] > Z1_THROAT && cell->center()[2] < Z2_THROAT)
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
         {
-          Point<dim> point = Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
           if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12)
           {
             face_at_sphere_boundary = false;
@@ -317,19 +317,19 @@ create_grid_and_set_boundary_ids_nozzle(
     // OUTFLOW
     else if(cell->center()[2] > Z1_OUTFLOW && cell->center()[2] < Z2_OUTFLOW)
     {
-      Point<dim> point2 = Point<dim>(0, 0, cell->center()[2]);
+      dealii::Point<dim> point2 = dealii::Point<dim>(0, 0, cell->center()[2]);
 
       // cylindrical manifold for outer cell layers
       if((cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
         cell->set_all_manifold_ids(MANIFOLD_ID_CYLINDER);
 
       // one-sided cylindrical manifold for core region
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
         {
-          Point<dim> point = Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
           if(std::abs((cell->face(f)->vertex(v) - point).norm() - R_INNER) > 1e-12 ||
              (cell->center() - point2).norm() > R_INNER / std::sqrt(2.0))
           {
@@ -347,13 +347,13 @@ create_grid_and_set_boundary_ids_nozzle(
     }
     else
     {
-      AssertThrow(false, ExcMessage("Should not arrive here."));
+      AssertThrow(false, dealii::ExcMessage("Should not arrive here."));
     }
   }
 
   // one-sided spherical manifold
   // generate vector of manifolds and apply manifold to all cells that have been marked
-  static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+  static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
   manifold_vec.resize(manifold_ids.size());
 
   for(unsigned int i = 0; i < manifold_ids.size(); ++i)
@@ -362,16 +362,17 @@ create_grid_and_set_boundary_ids_nozzle(
     {
       if(cell->manifold_id() == manifold_ids[i])
       {
-        Point<dim> center = Point<dim>();
-        manifold_vec[i]   = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-          new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+        dealii::Point<dim> center = dealii::Point<dim>();
+        manifold_vec[i] =
+          std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
         current_tria->set_manifold(manifold_ids[i], *(manifold_vec[i]));
       }
     }
   }
 
   // conical manifold
-  static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec_cone;
+  static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec_cone;
   manifold_vec_cone.resize(manifold_ids_cone.size());
 
   for(unsigned int i = 0; i < manifold_ids_cone.size(); ++i)
@@ -380,9 +381,9 @@ create_grid_and_set_boundary_ids_nozzle(
     {
       if(cell->manifold_id() == manifold_ids_cone[i])
       {
-        Point<dim> center    = Point<dim>();
-        manifold_vec_cone[i] = std::shared_ptr<Manifold<dim>>(
-          static_cast<Manifold<dim> *>(new OneSidedConicalManifold<dim>(
+        dealii::Point<dim> center = dealii::Point<dim>();
+        manifold_vec_cone[i]      = std::shared_ptr<dealii::Manifold<dim>>(
+          static_cast<dealii::Manifold<dim> *>(new OneSidedConicalManifold<dim>(
             cell, face_ids_cone[i], center, radius_0_cone[i], radius_1_cone[i])));
         current_tria->set_manifold(manifold_ids_cone[i], *(manifold_vec_cone[i]));
       }
@@ -390,9 +391,9 @@ create_grid_and_set_boundary_ids_nozzle(
   }
 
   // set cylindrical manifold
-  static std::shared_ptr<Manifold<dim>> cylinder_manifold;
-  cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-    static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(Point<dim>())));
+  static std::shared_ptr<dealii::Manifold<dim>> cylinder_manifold;
+  cylinder_manifold = std::shared_ptr<dealii::Manifold<dim>>(
+    static_cast<dealii::Manifold<dim> *>(new MyCylindricalManifold<dim>(dealii::Point<dim>())));
   current_tria->set_manifold(MANIFOLD_ID_CYLINDER, *cylinder_manifold);
 
   /*
@@ -400,7 +401,7 @@ create_grid_and_set_boundary_ids_nozzle(
    */
   for(auto cell : triangulation->active_cell_iterators())
   {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
     {
       // inflow boundary on the left has ID = 1
       if((std::fabs(cell->face(f)->center()[2] - Z1_INFLOW) < 1e-12))

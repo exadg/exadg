@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & mpi_comm)
   : Base(mpi_comm), pde_operator(nullptr), nonlinear(true)
@@ -37,9 +35,9 @@ template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize(
   MultigridData const &                       mg_data,
-  Triangulation<dim> const *                  tria,
-  FiniteElement<dim> const &                  fe,
-  std::shared_ptr<Mapping<dim> const>         mapping,
+  dealii::Triangulation<dim> const *          tria,
+  dealii::FiniteElement<dim> const &          fe,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
   ElasticityOperatorBase<dim, Number> const & pde_operator,
   bool const                                  nonlinear_operator,
   Map const *                                 dirichlet_bc,
@@ -71,7 +69,7 @@ MultigridPreconditioner<dim, Number>::update()
   else
   {
     AssertThrow(false,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Update of multigrid preconditioner is not implemented for linear elasticity."));
   }
 }
@@ -92,16 +90,16 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "elasticity_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "elasticity_dof_handler");
-  matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
                                      "elasticity_quadrature");
 }
 
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_constrained_dofs(
-  DoFHandler<dim> const & dof_handler,
-  MGConstrainedDoFs &     constrained_dofs,
-  Map const &             dirichlet_bc)
+  dealii::DoFHandler<dim> const & dof_handler,
+  dealii::MGConstrainedDoFs &     constrained_dofs,
+  Map const &                     dirichlet_bc)
 {
   // We use data.bc->dirichlet_bc since we also need dirichlet_bc_component_mask,
   // but the argument dirichlet_bc could be used as well
@@ -110,11 +108,11 @@ MultigridPreconditioner<dim, Number>::initialize_constrained_dofs(
   constrained_dofs.initialize(dof_handler);
   for(auto it : data.bc->dirichlet_bc)
   {
-    std::set<types::boundary_id> dirichlet_boundary;
+    std::set<dealii::types::boundary_id> dirichlet_boundary;
     dirichlet_boundary.insert(it.first);
 
-    ComponentMask mask    = ComponentMask();
-    auto          it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
+    dealii::ComponentMask mask    = dealii::ComponentMask();
+    auto                  it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
     if(it_mask != data.bc->dirichlet_bc_component_mask.end())
       mask = it_mask->second;
 

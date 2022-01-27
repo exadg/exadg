@@ -26,22 +26,20 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // perform stability analysis and compute eigenvalue spectrum
 // For this analysis one has to use the BDF1 scheme and homogeneous boundary conditions!!!
 bool const STABILITY_ANALYSIS = false;
 
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
-  AnalyticalSolutionVelocity(double const nu) : Function<dim>(dim, 0.0), viscosity(nu)
+  AnalyticalSolutionVelocity(double const nu) : dealii::Function<dim>(dim, 0.0), viscosity(nu)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -74,15 +72,15 @@ private:
 
 
 template<int dim>
-class AnalyticalSolutionPressure : public Function<dim>
+class AnalyticalSolutionPressure : public dealii::Function<dim>
 {
 public:
-  AnalyticalSolutionPressure(double const nu) : Function<dim>(1, 0.0), viscosity(nu)
+  AnalyticalSolutionPressure(double const nu) : dealii::Function<dim>(1, 0.0), viscosity(nu)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -107,15 +105,15 @@ private:
 };
 
 template<int dim>
-class PressureBC_dudt : public Function<dim>
+class PressureBC_dudt : public dealii::Function<dim>
 {
 public:
-  PressureBC_dudt(double const nu) : Function<dim>(dim, 0.0), viscosity(nu)
+  PressureBC_dudt(double const nu) : dealii::Function<dim>(dim, 0.0), viscosity(nu)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -154,7 +152,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -291,7 +289,7 @@ public:
   create_grid() final
   {
     double const left = -1.0, right = 1.0;
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -302,7 +300,8 @@ public:
     // test case with pure Dirichlet boundary conditions for velocity
     // all boundaries have ID = 0 by default
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -322,7 +321,7 @@ public:
       new AnalyticalSolutionPressure<dim>(viscosity));
     this->field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(viscosity));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

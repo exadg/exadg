@@ -24,17 +24,15 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  Initialize block Jacobi matrices with zeros.
  */
 template<typename Number>
 void
-initialize_block_jacobi_matrices_with_zero(std::vector<LAPACKFullMatrix<Number>> & matrices)
+initialize_block_jacobi_matrices_with_zero(std::vector<dealii::LAPACKFullMatrix<Number>> & matrices)
 {
   // initialize matrices
-  for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+  for(typename std::vector<dealii::LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
       it != matrices.end();
       ++it)
   {
@@ -49,13 +47,13 @@ initialize_block_jacobi_matrices_with_zero(std::vector<LAPACKFullMatrix<Number>>
  */
 template<typename Number>
 void
-calculate_lu_factorization_block_jacobi(std::vector<LAPACKFullMatrix<Number>> & matrices)
+calculate_lu_factorization_block_jacobi(std::vector<dealii::LAPACKFullMatrix<Number>> & matrices)
 {
-  for(typename std::vector<LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
+  for(typename std::vector<dealii::LAPACKFullMatrix<Number>>::iterator it = matrices.begin();
       it != matrices.end();
       ++it)
   {
-    LAPACKFullMatrix<Number> copy(*it);
+    dealii::LAPACKFullMatrix<Number> copy(*it);
     try // the matrix might be singular
     {
       (*it).compute_lu_factorization();

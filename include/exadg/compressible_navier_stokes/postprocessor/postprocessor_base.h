@@ -32,13 +32,11 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<typename Number>
 class PostProcessorInterface
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   virtual ~PostProcessorInterface()
   {

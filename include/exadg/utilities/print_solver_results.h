@@ -22,26 +22,25 @@
 #ifndef INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
 #define INCLUDE_EXADG_UTILITIES_PRINT_SOLVER_RESULTS_H_
 
+// C/C++
+#include <iostream>
+
 // deal.II
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/utilities.h>
 
-#include <iostream>
-
 namespace ExaDG
 {
-using namespace dealii;
-
 inline void
 print_throughput(
-  std::vector<std::tuple<unsigned int, types::global_dof_index, double>> const & wall_times,
-  std::string const &                                                            operator_type,
-  MPI_Comm const &                                                               mpi_comm)
+  std::vector<std::tuple<unsigned int, dealii::types::global_dof_index, double>> const & wall_times,
+  std::string const & operator_type,
+  MPI_Comm const &    mpi_comm)
 {
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // clang-format off
     std::cout << std::endl
@@ -55,7 +54,7 @@ print_throughput(
               << std::setw(15) << std::left << "DoFs/(sec*core)"
               << std::endl << std::flush;
 
-    typedef typename std::vector<std::tuple<unsigned int, types::global_dof_index, double> >::const_iterator ITERATOR;
+    typedef typename std::vector<std::tuple<unsigned int, dealii::types::global_dof_index, double> >::const_iterator ITERATOR;
     for(ITERATOR it = wall_times.begin(); it != wall_times.end(); ++it)
     {
       std::cout << std::setw(5) << std::left << std::get<0>(*it)
@@ -72,10 +71,10 @@ print_throughput(
 }
 
 inline void
-print_throughput_steady(ConditionalOStream const &    pcout,
-                        types::global_dof_index const n_dofs,
-                        double const                  overall_time_avg,
-                        unsigned int const            N_mpi_processes)
+print_throughput_steady(dealii::ConditionalOStream const &    pcout,
+                        dealii::types::global_dof_index const n_dofs,
+                        double const                          overall_time_avg,
+                        unsigned int const                    N_mpi_processes)
 {
   // clang-format off
   pcout << std::endl
@@ -89,10 +88,10 @@ print_throughput_steady(ConditionalOStream const &    pcout,
 }
 
 inline void
-print_throughput_10(ConditionalOStream const &    pcout,
-                    types::global_dof_index const n_dofs,
-                    double const                  t_10,
-                    unsigned int const            N_mpi_processes)
+print_throughput_10(dealii::ConditionalOStream const &    pcout,
+                    dealii::types::global_dof_index const n_dofs,
+                    double const                          t_10,
+                    unsigned int const                    N_mpi_processes)
 {
   double const tau_10 = t_10 * (double)N_mpi_processes / n_dofs;
 
@@ -109,11 +108,11 @@ print_throughput_10(ConditionalOStream const &    pcout,
 }
 
 inline void
-print_throughput_unsteady(ConditionalOStream const &    pcout,
-                          types::global_dof_index const n_dofs,
-                          double const                  overall_time_avg,
-                          unsigned int const            N_time_steps,
-                          unsigned int const            N_mpi_processes)
+print_throughput_unsteady(dealii::ConditionalOStream const &    pcout,
+                          dealii::types::global_dof_index const n_dofs,
+                          double const                          overall_time_avg,
+                          unsigned int const                    N_time_steps,
+                          unsigned int const                    N_mpi_processes)
 {
   double const time_per_timestep = overall_time_avg / (double)N_time_steps;
 
@@ -132,9 +131,9 @@ print_throughput_unsteady(ConditionalOStream const &    pcout,
 
 
 inline void
-print_costs(ConditionalOStream const & pcout,
-            double const               overall_time_avg,
-            unsigned int const         N_mpi_processes)
+print_costs(dealii::ConditionalOStream const & pcout,
+            double const                       overall_time_avg,
+            unsigned int const                 N_mpi_processes)
 
 {
   // clang-format off
@@ -148,10 +147,10 @@ print_costs(ConditionalOStream const & pcout,
 }
 
 inline void
-print_solver_info_nonlinear(ConditionalOStream const & pcout,
-                            unsigned int const         N_iter_nonlinear,
-                            unsigned int const         N_iter_linear,
-                            double const               wall_time)
+print_solver_info_nonlinear(dealii::ConditionalOStream const & pcout,
+                            unsigned int const                 N_iter_nonlinear,
+                            unsigned int const                 N_iter_linear,
+                            double const                       wall_time)
 
 {
   double const N_iter_linear_avg =
@@ -168,9 +167,9 @@ print_solver_info_nonlinear(ConditionalOStream const & pcout,
 }
 
 inline void
-print_solver_info_linear(ConditionalOStream const & pcout,
-                         unsigned int const         N_iter_linear,
-                         double const               wall_time)
+print_solver_info_linear(dealii::ConditionalOStream const & pcout,
+                         unsigned int const                 N_iter_linear,
+                         double const                       wall_time)
 
 {
   // clang-format off
@@ -182,7 +181,7 @@ print_solver_info_linear(ConditionalOStream const & pcout,
 }
 
 inline void
-print_wall_time(ConditionalOStream const & pcout, double const wall_time)
+print_wall_time(dealii::ConditionalOStream const & pcout, double const wall_time)
 
 {
   // clang-format off
@@ -193,9 +192,9 @@ print_wall_time(ConditionalOStream const & pcout, double const wall_time)
 }
 
 inline void
-print_list_of_iterations(ConditionalOStream const &       pcout,
-                         std::vector<std::string> const & names,
-                         std::vector<double> const &      iterations_avg)
+print_list_of_iterations(dealii::ConditionalOStream const & pcout,
+                         std::vector<std::string> const &   names,
+                         std::vector<double> const &        iterations_avg)
 {
   unsigned int length = 1;
   for(unsigned int i = 0; i < names.size(); ++i)

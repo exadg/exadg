@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator(
   MPI_Comm const & comm)
@@ -48,10 +46,11 @@ DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator(
 
 template<int dim, typename Number>
 void
-DivergenceAndMassErrorCalculator<dim, Number>::setup(MatrixFree<dim, Number> const & matrix_free_in,
-                                                     unsigned int const              dof_index_in,
-                                                     unsigned int const              quad_index_in,
-                                                     MassConservationData const &    data_in)
+DivergenceAndMassErrorCalculator<dim, Number>::setup(
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_in,
+  unsigned int const                      quad_index_in,
+  MassConservationData const &            data_in)
 {
   matrix_free = &matrix_free_in;
   dof_index   = dof_index_in;
@@ -80,12 +79,12 @@ DivergenceAndMassErrorCalculator<dim, Number>::evaluate(VectorType const & veloc
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType const &              velocity,
-  Number &                        div_error,
-  Number &                        div_error_reference,
-  Number &                        mass_error,
-  Number &                        mass_error_reference)
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType const &                      velocity,
+  Number &                                div_error,
+  Number &                                div_error_reference,
+  Number &                                mass_error,
+  Number &                                mass_error_reference)
 {
   std::vector<Number> dst(4, 0.0);
   matrix_free.loop(&This::local_compute_div,
@@ -95,16 +94,16 @@ DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
                    dst,
                    velocity);
 
-  div_error            = Utilities::MPI::sum(dst.at(0), mpi_comm);
-  div_error_reference  = Utilities::MPI::sum(dst.at(1), mpi_comm);
-  mass_error           = Utilities::MPI::sum(dst.at(2), mpi_comm);
-  mass_error_reference = Utilities::MPI::sum(dst.at(3), mpi_comm);
+  div_error            = dealii::Utilities::MPI::sum(dst.at(0), mpi_comm);
+  div_error_reference  = dealii::Utilities::MPI::sum(dst.at(1), mpi_comm);
+  mass_error           = dealii::Utilities::MPI::sum(dst.at(2), mpi_comm);
+  mass_error_reference = dealii::Utilities::MPI::sum(dst.at(3), mpi_comm);
 }
 
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
-  MatrixFree<dim, Number> const &               matrix_free,
+  dealii::MatrixFree<dim, Number> const &       matrix_free,
   std::vector<Number> &                         dst,
   VectorType const &                            source,
   const std::pair<unsigned int, unsigned int> & cell_range)
@@ -120,8 +119,8 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
     integrator.read_dof_values(source);
     integrator.evaluate(true, true);
 
-    scalar div_vec = make_vectorized_array<Number>(0.);
-    scalar ref_vec = make_vectorized_array<Number>(0.);
+    scalar div_vec = dealii::make_vectorized_array<Number>(0.);
+    scalar ref_vec = dealii::make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -130,7 +129,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
       div_vec += integrator.JxW(q) * std::abs(integrator.get_divergence(q));
     }
 
-    // sum over entries of VectorizedArray, but only over those that are "active"
+    // sum over entries of dealii::VectorizedArray, but only over those that are "active"
     for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
     {
       div += div_vec[v];
@@ -145,7 +144,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
-  MatrixFree<dim, Number> const &               matrix_free,
+  dealii::MatrixFree<dim, Number> const &       matrix_free,
   std::vector<Number> &                         dst,
   VectorType const &                            source,
   const std::pair<unsigned int, unsigned int> & face_range)
@@ -165,8 +164,8 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
     integrator_p.read_dof_values(source);
     integrator_p.evaluate(true, false);
 
-    scalar diff_mass_flux_vec = make_vectorized_array<Number>(0.);
-    scalar mean_mass_flux_vec = make_vectorized_array<Number>(0.);
+    scalar diff_mass_flux_vec = dealii::make_vectorized_array<Number>(0.);
+    scalar mean_mass_flux_vec = dealii::make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
@@ -178,7 +177,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
                                      integrator_m.get_normal_vector(q));
     }
 
-    // sum over entries of VectorizedArray, but only over those that are "active"
+    // sum over entries of dealii::VectorizedArray, but only over those that are "active"
     for(unsigned int v = 0; v < matrix_free.n_active_entries_per_face_batch(face); ++v)
     {
       diff_mass_flux += diff_mass_flux_vec[v];
@@ -193,7 +192,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
 template<int dim, typename Number>
 void
 DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_boundary_face(
-  MatrixFree<dim, Number> const &,
+  dealii::MatrixFree<dim, Number> const &,
   std::vector<Number> &,
   VectorType const &,
   const std::pair<unsigned int, unsigned int> &)
@@ -223,7 +222,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
       mass_error_normalized = mass_error;
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename = data.directory + data.filename + ".div_mass_error_timeseries";
 
@@ -260,7 +259,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
       mass_sample += mass_error_normalized;
 
       // write output file
-      if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
         std::string filename = data.directory + data.filename + ".div_mass_error_average";
 
@@ -298,7 +297,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_steady
     mass_error_normalized = mass_error;
 
   // write output file
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::string filename = data.directory + data.filename + ".div_mass_error";
 

@@ -35,11 +35,9 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, int spacedim>
 std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)>
-create_subcommunicator(DoFHandler<dim, spacedim> const & dof_handler)
+create_subcommunicator(dealii::DoFHandler<dim, spacedim> const & dof_handler)
 {
   unsigned int n_locally_owned_cells = 0;
   for(const auto & cell : dof_handler.active_cell_iterators())
@@ -54,7 +52,7 @@ create_subcommunicator(DoFHandler<dim, spacedim> const & dof_handler)
   // operations. Note that we have to free the communicator again, which is
   // done by a custom deleter of the unique pointer that is run when it goes
   // out of scope.
-  if(Utilities::MPI::min(n_locally_owned_cells, mpi_comm) == 0)
+  if(dealii::Utilities::MPI::min(n_locally_owned_cells, mpi_comm) == 0)
   {
     std::unique_ptr<MPI_Comm, void (*)(MPI_Comm *)> subcommunicator(new MPI_Comm,
                                                                     [](MPI_Comm * comm) {
@@ -63,7 +61,7 @@ create_subcommunicator(DoFHandler<dim, spacedim> const & dof_handler)
                                                                     });
     MPI_Comm_split(mpi_comm,
                    n_locally_owned_cells > 0,
-                   Utilities::MPI::this_mpi_process(mpi_comm),
+                   dealii::Utilities::MPI::this_mpi_process(mpi_comm),
                    subcommunicator.get());
 
     return subcommunicator;
@@ -84,16 +82,16 @@ template<typename Operator, typename Number>
 class PreconditionerML : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef TrilinosWrappers::PreconditionAMG::AdditionalData MLData;
+  typedef dealii::TrilinosWrappers::PreconditionAMG::AdditionalData MLData;
 
 public:
   // distributed sparse system matrix
-  TrilinosWrappers::SparseMatrix system_matrix;
+  dealii::TrilinosWrappers::SparseMatrix system_matrix;
 
 private:
-  TrilinosWrappers::PreconditionAMG amg;
+  dealii::TrilinosWrappers::PreconditionAMG amg;
 
 public:
   PreconditionerML(Operator const & op, MLData ml_data = MLData())
@@ -110,7 +108,7 @@ public:
     amg.initialize(system_matrix, ml_data);
   }
 
-  TrilinosWrappers::SparseMatrix const &
+  dealii::TrilinosWrappers::SparseMatrix const &
   get_system_matrix()
   {
     return system_matrix;
@@ -151,9 +149,9 @@ template<typename Operator, typename Number>
 class PreconditionerBoomerAMG : public PreconditionerBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef PETScWrappers::PreconditionBoomerAMG::AdditionalData BoomerData;
+  typedef dealii::PETScWrappers::PreconditionBoomerAMG::AdditionalData BoomerData;
 
   // subcommunicator; declared before the matrix to ensure that it gets
   // deleted after the matrix and preconditioner depending on it
@@ -161,10 +159,10 @@ private:
 
 public:
   // distributed sparse system matrix
-  PETScWrappers::MPI::SparseMatrix system_matrix;
+  dealii::PETScWrappers::MPI::SparseMatrix system_matrix;
 
   // amg preconditioner for access by PETSc solver
-  PETScWrappers::PreconditionBoomerAMG amg;
+  dealii::PETScWrappers::PreconditionBoomerAMG amg;
 
   PreconditionerBoomerAMG(Operator const & op, BoomerData boomer_data = BoomerData())
     : subcommunicator(
@@ -183,13 +181,13 @@ public:
     if(system_matrix.m() > 0)
     {
       PetscErrorCode ierr = VecDestroy(&petsc_vector_dst);
-      AssertThrow(ierr == 0, ExcPETScError(ierr));
+      AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
       ierr = VecDestroy(&petsc_vector_src);
-      AssertThrow(ierr == 0, ExcPETScError(ierr));
+      AssertThrow(ierr == 0, dealii::ExcPETScError(ierr));
     }
   }
 
-  PETScWrappers::MPI::SparseMatrix const &
+  dealii::PETScWrappers::MPI::SparseMatrix const &
   get_system_matrix()
   {
     return system_matrix;
@@ -216,8 +214,8 @@ public:
                             src,
                             petsc_vector_dst,
                             petsc_vector_src,
-                            [&](PETScWrappers::VectorBase &       petsc_dst,
-                                PETScWrappers::VectorBase const & petsc_src) {
+                            [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
+                                dealii::PETScWrappers::VectorBase const & petsc_src) {
                               amg.vmult(petsc_dst, petsc_src);
                             });
   }
@@ -234,7 +232,7 @@ private:
       amg.initialize(system_matrix, boomer_data);
 
       // get vector partitioner
-      LinearAlgebra::distributed::Vector<typename Operator::value_type> vector;
+      dealii::LinearAlgebra::distributed::Vector<typename Operator::value_type> vector;
       pde_operator.initialize_dof_vector(vector);
       VecCreateMPI(system_matrix.get_mpi_communicator(),
                    vector.get_partitioner()->locally_owned_size(),

@@ -28,14 +28,12 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 namespace Operators
 {
 template<int dim>
 struct RHSKernelData
 {
-  std::shared_ptr<Function<dim>> f;
+  std::shared_ptr<dealii::Function<dim>> f;
 };
 
 template<int dim, typename Number, int n_components = 1>
@@ -45,10 +43,10 @@ private:
   typedef CellIntegrator<dim, n_components, Number> IntegratorCell;
 
   static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
 
-  typedef VectorizedArray<Number>   scalar;
-  typedef Tensor<rank, dim, scalar> value;
+  typedef dealii::VectorizedArray<Number>   scalar;
+  typedef dealii::Tensor<rank, dim, scalar> value;
 
 public:
   void
@@ -62,7 +60,8 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_JxW_values | update_quadrature_points; // q-points due to rhs function f
+    flags.cells = dealii::update_JxW_values |
+                  dealii::update_quadrature_points; // q-points due to rhs function f
 
     // no face integrals
 
@@ -78,7 +77,7 @@ public:
                     unsigned int const     q,
                     Number const &         time) const
   {
-    Point<dim, scalar> q_points = integrator.quadrature_point(q);
+    dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
     return FunctionEvaluator<rank, dim, Number>::value(data.f, q_points, time);
   }
@@ -107,7 +106,7 @@ template<int dim, typename Number, int n_components = 1>
 class RHSOperator
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef RHSOperator<dim, Number, n_components> This;
 
@@ -125,7 +124,8 @@ public:
    * Initialization.
    */
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+             RHSOperatorData<dim> const &            data);
 
   /*
    * Evaluate operator and overwrite dst-vector.
@@ -148,12 +148,12 @@ private:
    * over all cells and computing the cell integrals.
    */
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   RHSOperatorData<dim> data;
 

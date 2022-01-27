@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */

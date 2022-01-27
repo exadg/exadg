@@ -42,13 +42,11 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
   Operator(std::shared_ptr<Grid<dim> const>               grid,
@@ -62,10 +60,10 @@ public:
   fill_matrix_free_data(MatrixFreeData<dim, Number> & matrix_free_data) const;
 
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data);
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   get_number_of_dofs() const;
 
   // initialization of DoF vectors
@@ -107,22 +105,22 @@ public:
   apply_inverse_mass(VectorType & dst, VectorType const & src) const;
 
   // getters
-  MatrixFree<dim, Number> const &
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
-  Mapping<dim> const &
+  dealii::Mapping<dim> const &
   get_mapping() const;
 
-  FESystem<dim> const &
+  dealii::FESystem<dim> const &
   get_fe() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler_scalar() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler_vector() const;
 
   unsigned int
@@ -209,18 +207,18 @@ private:
    * Basic finite element ingredients.
    */
 
-  std::shared_ptr<FESystem<dim>> fe;        // all (dim+2) components: (rho, rho u, rho E)
-  std::shared_ptr<FESystem<dim>> fe_vector; // e.g. velocity
-  FE_DGQ<dim>                    fe_scalar; // scalar quantity, e.g, pressure
+  std::shared_ptr<dealii::FESystem<dim>> fe;        // all (dim+2) components: (rho, rho u, rho E)
+  std::shared_ptr<dealii::FESystem<dim>> fe_vector; // e.g. velocity
+  dealii::FE_DGQ<dim>                    fe_scalar; // scalar quantity, e.g, pressure
 
-  // Quadrature points
+  // dealii::Quadrature points
   unsigned int n_q_points_conv;
   unsigned int n_q_points_visc;
 
-  // DoFHandler
-  DoFHandler<dim> dof_handler;        // all (dim+2) components: (rho, rho u, rho E)
-  DoFHandler<dim> dof_handler_vector; // e.g. velocity
-  DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
+  // dealii::DoFHandler
+  dealii::DoFHandler<dim> dof_handler;        // all (dim+2) components: (rho, rho u, rho E)
+  dealii::DoFHandler<dim> dof_handler_vector; // e.g. velocity
+  dealii::DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
 
   std::string const dof_index_all    = "all_fields";
   std::string const dof_index_vector = "vector";
@@ -237,13 +235,13 @@ private:
   /*
    * Constraints.
    */
-  AffineConstraints<Number> constraint;
+  dealii::AffineConstraints<Number> constraint;
 
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   /*
    * Basic operators.
@@ -275,7 +273,7 @@ private:
   /*
    * Output to screen.
    */
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // wall time for operator evaluation
   mutable double wall_time_operator_evaluation;

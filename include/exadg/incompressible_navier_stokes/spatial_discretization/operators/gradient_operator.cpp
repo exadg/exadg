@@ -11,8 +11,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 GradientOperator<dim, Number>::GradientOperator()
   : matrix_free(nullptr), time(0.0), inverse_scaling_factor_pressure(1.0), pressure_bc(nullptr)
@@ -21,8 +19,8 @@ GradientOperator<dim, Number>::GradientOperator()
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free_in,
-                                          GradientOperatorData<dim> const & data_in)
+GradientOperator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                          GradientOperatorData<dim> const &       data_in)
 {
   matrix_free = &matrix_free_in;
   data        = data_in;
@@ -230,17 +228,18 @@ GradientOperator<dim, Number>::do_face_integral(FaceIntegratorP & pressure_m,
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          pressure,
-                                                    FaceIntegratorU &          velocity,
-                                                    OperatorType const &       operator_type,
-                                                    types::boundary_id const & boundary_id) const
+GradientOperator<dim, Number>::do_boundary_integral(
+  FaceIntegratorP &                  pressure,
+  FaceIntegratorU &                  velocity,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeP boundary_type = data.bc->get_boundary_type(boundary_id);
 
@@ -248,7 +247,7 @@ GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          p
   {
     scalar value_m = calculate_interior_value(q, pressure, operator_type);
 
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     if(data.use_boundary_data == true)
     {
       value_p = calculate_exterior_value(value_m,
@@ -278,7 +277,7 @@ GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          p
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -286,11 +285,11 @@ GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          p
 template<int dim, typename Number>
 void
 GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
-  FaceIntegratorP &          pressure,
-  FaceIntegratorP &          pressure_bc,
-  FaceIntegratorU &          velocity,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+  FaceIntegratorP &                  pressure,
+  FaceIntegratorP &                  pressure_bc,
+  FaceIntegratorU &                  velocity,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeP boundary_type = data.bc->get_boundary_type(boundary_id);
 
@@ -298,7 +297,7 @@ GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
   {
     scalar value_m = calculate_interior_value(q, pressure, operator_type);
 
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     if(data.use_boundary_data == true)
     {
       value_p = calculate_exterior_value_from_dof_vector(
@@ -321,17 +320,17 @@ GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                         VectorType &                    dst,
-                                         VectorType const &              src,
-                                         Range const &                   cell_range) const
+GradientOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                         VectorType &                            dst,
+                                         VectorType const &                      src,
+                                         Range const &                           cell_range) const
 {
   CellIntegratorU velocity(matrix_free, data.dof_index_velocity, data.quad_index);
   CellIntegratorP pressure(matrix_free, data.dof_index_pressure, data.quad_index);
@@ -363,10 +362,10 @@ GradientOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::face_loop(MatrixFree<dim, Number> const & matrix_free,
-                                         VectorType &                    dst,
-                                         VectorType const &              src,
-                                         Range const &                   face_range) const
+GradientOperator<dim, Number>::face_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                         VectorType &                            dst,
+                                         VectorType const &                      src,
+                                         Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {
@@ -398,10 +397,10 @@ GradientOperator<dim, Number>::face_loop(MatrixFree<dim, Number> const & matrix_
 template<int dim, typename Number>
 void
 GradientOperator<dim, Number>::boundary_face_loop_hom_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {
@@ -428,10 +427,10 @@ GradientOperator<dim, Number>::boundary_face_loop_hom_operator(
 template<int dim, typename Number>
 void
 GradientOperator<dim, Number>::boundary_face_loop_full_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {
@@ -457,7 +456,7 @@ GradientOperator<dim, Number>::boundary_face_loop_full_operator(
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::cell_loop_inhom_operator(MatrixFree<dim, Number> const &,
+GradientOperator<dim, Number>::cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
                                                         VectorType &,
                                                         VectorType const &,
                                                         Range const &) const
@@ -466,7 +465,7 @@ GradientOperator<dim, Number>::cell_loop_inhom_operator(MatrixFree<dim, Number> 
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::face_loop_inhom_operator(MatrixFree<dim, Number> const &,
+GradientOperator<dim, Number>::face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
                                                         VectorType &,
                                                         VectorType const &,
                                                         Range const &) const
@@ -476,10 +475,10 @@ GradientOperator<dim, Number>::face_loop_inhom_operator(MatrixFree<dim, Number> 
 template<int dim, typename Number>
 void
 GradientOperator<dim, Number>::boundary_face_loop_inhom_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   (void)src;
 
@@ -506,8 +505,8 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator(
 template<int dim, typename Number>
 void
 GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vector(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
   VectorType const &,
   Range const & face_range) const
 {
@@ -540,10 +539,10 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vec
 template<int dim, typename Number>
 void
 GradientOperator<dim, Number>::boundary_face_loop_full_operator_bc_from_dof_vector(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {

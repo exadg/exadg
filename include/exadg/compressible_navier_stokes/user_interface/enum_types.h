@@ -28,9 +28,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */

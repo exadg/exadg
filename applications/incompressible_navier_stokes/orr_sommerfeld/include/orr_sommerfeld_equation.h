@@ -60,8 +60,6 @@ extern "C" void zgetrf_(int*,int*,std::complex<double>*,int*,int*,int*);
 
 namespace ExaDG
 {
-using namespace dealii;
-
 // clang-format off
 /*
  *  Orr-Sommerfeld equation:
@@ -89,9 +87,10 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
                     std::complex<double> &              omega,
                     double const &                      Reynolds_number,
                     double const &                      wave_number,
-                    FE_DGQ<dim> &                       fe)
+                    dealii::FE_DGQ<dim> &               fe)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
   pcout << std::endl
         << "Solution of Orr-Sommerfeld equation for Poiseuille flow" << std::endl
@@ -101,28 +100,29 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
   double const       alpha     = wave_number;
   double const       Re        = Reynolds_number;
 
-  AssertThrow(dim == 1, ExcNotImplemented());
-  AssertThrow(fe_degree > 3, ExcNotImplemented());
+  AssertThrow(dim == 1, dealii::ExcNotImplemented());
+  AssertThrow(fe_degree > 3, dealii::ExcNotImplemented());
 
-  Triangulation<dim> tria;
-  GridGenerator::hyper_cube(tria, -1, 1);
+  dealii::Triangulation<dim> tria;
+  dealii::GridGenerator::hyper_cube(tria, -1, 1);
 
-  DoFHandler<dim> dof_handler(tria);
+  dealii::DoFHandler<dim> dof_handler(tria);
   dof_handler.distribute_dofs(fe);
 
-  Table<2, std::complex<double>> A(dof_handler.n_dofs(), dof_handler.n_dofs());
-  Table<2, std::complex<double>> B(dof_handler.n_dofs(), dof_handler.n_dofs());
+  dealii::Table<2, std::complex<double>> A(dof_handler.n_dofs(), dof_handler.n_dofs());
+  dealii::Table<2, std::complex<double>> B(dof_handler.n_dofs(), dof_handler.n_dofs());
 
   // ensures correct integration of (1-y^2) terms
-  unsigned int const n_q_points = fe_degree + 2;
-  QGauss<dim>        quadrature(n_q_points);
+  unsigned int const  n_q_points = fe_degree + 2;
+  dealii::QGauss<dim> quadrature(n_q_points);
 
-  FEValues<dim> fe_values(fe,
-                          quadrature,
-                          update_values | update_gradients | update_JxW_values |
-                            update_quadrature_points | update_hessians);
+  dealii::FEValues<dim> fe_values(fe,
+                                  quadrature,
+                                  dealii::update_values | dealii::update_gradients |
+                                    dealii::update_JxW_values | dealii::update_quadrature_points |
+                                    dealii::update_hessians);
 
-  std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+  std::vector<dealii::types::global_dof_index> dof_indices(fe.dofs_per_cell);
 
   fe_values.reinit(dof_handler.begin_active());
   dof_handler.begin_active()->get_dof_indices(dof_indices);
@@ -155,10 +155,10 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
         // alpha * (phi,psi''-alpha^2*psi)
         sum_b += phi * (ddpsi - alpha * alpha * psi) * fe_values.JxW(q);
       }
-      const types::global_dof_index ii = dof_indices[i];
-      const types::global_dof_index jj = dof_indices[j];
-      A(jj, ii)                        = std::complex<double>(sum_a, sum_a_imag);
-      B(jj, ii)                        = std::complex<double>(sum_b, 0);
+      const dealii::types::global_dof_index ii = dof_indices[i];
+      const dealii::types::global_dof_index jj = dof_indices[j];
+      A(jj, ii)                                = std::complex<double>(sum_a, sum_a_imag);
+      B(jj, ii)                                = std::complex<double>(sum_b, 0);
     }
   }
 
@@ -173,23 +173,23 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
   // TRANSFORMATION AS PART OF A DIRECT STIFFNESS ASSEMBLY PROCESS, IJNME 20.
   // we reformulate eq (2) by inverting the matrix G_i and add that into the
   // matrix G_j as in eq (3)
-  int const                m = A.n_rows();
-  LAPACKFullMatrix<double> constraints(4, m - 4);
+  int const                        m = A.n_rows();
+  dealii::LAPACKFullMatrix<double> constraints(4, m - 4);
   for(int i = 0; i < m - 4; ++i)
-    constraints(2, i) = fe.shape_grad(i + 2, Point<dim>(0.))[0];
+    constraints(2, i) = fe.shape_grad(i + 2, dealii::Point<dim>(0.))[0];
   for(int i = 0; i < m - 4; ++i)
-    constraints(3, i) = fe.shape_grad(i + 2, Point<dim>(1.))[0];
-  LAPACKFullMatrix<double> Gmat(4, 4);
+    constraints(3, i) = fe.shape_grad(i + 2, dealii::Point<dim>(1.))[0];
+  dealii::LAPACKFullMatrix<double> Gmat(4, 4);
   Gmat(0, 0) = -1;
   Gmat(1, 1) = -1;
-  Gmat(2, 0) = -fe.shape_grad(0, Point<dim>(0.))[0];
-  Gmat(2, 1) = -fe.shape_grad(m - 1, Point<dim>(0.))[0];
-  Gmat(2, 2) = -fe.shape_grad(1, Point<dim>(0.))[0];
-  Gmat(2, 3) = -fe.shape_grad(m - 2, Point<dim>(0.))[0];
-  Gmat(3, 0) = -fe.shape_grad(0, Point<dim>(1.))[0];
-  Gmat(3, 1) = -fe.shape_grad(m - 1, Point<dim>(1.))[0];
-  Gmat(3, 2) = -fe.shape_grad(1, Point<dim>(1.))[0];
-  Gmat(3, 3) = -fe.shape_grad(m - 2, Point<dim>(1.))[0];
+  Gmat(2, 0) = -fe.shape_grad(0, dealii::Point<dim>(0.))[0];
+  Gmat(2, 1) = -fe.shape_grad(m - 1, dealii::Point<dim>(0.))[0];
+  Gmat(2, 2) = -fe.shape_grad(1, dealii::Point<dim>(0.))[0];
+  Gmat(2, 3) = -fe.shape_grad(m - 2, dealii::Point<dim>(0.))[0];
+  Gmat(3, 0) = -fe.shape_grad(0, dealii::Point<dim>(1.))[0];
+  Gmat(3, 1) = -fe.shape_grad(m - 1, dealii::Point<dim>(1.))[0];
+  Gmat(3, 2) = -fe.shape_grad(1, dealii::Point<dim>(1.))[0];
+  Gmat(3, 3) = -fe.shape_grad(m - 2, dealii::Point<dim>(1.))[0];
   Gmat.compute_lu_factorization();
   Gmat.solve(constraints, false);
 
@@ -202,14 +202,14 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
     }
   */
 
-  Table<2, std::complex<double>> AA(m - 4, m - 4);
-  Table<2, std::complex<double>> BB(m - 4, m - 4);
+  dealii::Table<2, std::complex<double>> AA(m - 4, m - 4);
+  dealii::Table<2, std::complex<double>> BB(m - 4, m - 4);
 
   // create a lambda that eliminates the columns
-  auto eliminate_constraints = [](const Table<2, std::complex<double>> & M,
-                                  unsigned int const                     m,
-                                  const LAPACKFullMatrix<double> &       constraints,
-                                  Table<2, std::complex<double>> &       MM) -> void {
+  auto eliminate_constraints = [](const dealii::Table<2, std::complex<double>> & M,
+                                  unsigned int const                             m,
+                                  const dealii::LAPACKFullMatrix<double> &       constraints,
+                                  dealii::Table<2, std::complex<double>> &       MM) -> void {
     for(unsigned int i = 0; i < m - 4; ++i)
     {
       for(unsigned int j = 0; j < m - 4; ++j)
@@ -245,16 +245,16 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
     }
   */
 
-  int                               n     = AA.n_rows();
-  char                              left  = 'N';
-  char                              right = 'V';
-  std::vector<std::complex<double>> eigval_alpha(AA.n_rows());
-  std::vector<std::complex<double>> eigval_beta(AA.n_rows());
-  Table<2, std::complex<double>>    eigvec(AA.n_rows(), AA.n_rows());
-  std::vector<std::complex<double>> work(1);
-  int                               lwork = -1;
-  std::vector<double>               dwork(8 * AA.n_rows());
-  int                               info = 0;
+  int                                    n     = AA.n_rows();
+  char                                   left  = 'N';
+  char                                   right = 'V';
+  std::vector<std::complex<double>>      eigval_alpha(AA.n_rows());
+  std::vector<std::complex<double>>      eigval_beta(AA.n_rows());
+  dealii::Table<2, std::complex<double>> eigvec(AA.n_rows(), AA.n_rows());
+  std::vector<std::complex<double>>      work(1);
+  int                                    lwork = -1;
+  std::vector<double>                    dwork(8 * AA.n_rows());
+  int                                    info = 0;
   zggev_(&left,
          &right,
          &n,
@@ -361,7 +361,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
       double const y_unit = (double)i/n_output;
       std::complex<double> evaluated = 0;
       for (int j=0; j<m; ++j)
-        evaluated += eigenvector[j] * fe.shape_value(j,Point<dim>(y_unit));
+        evaluated += eigenvector[j] * fe.shape_value(j,dealii::Point<dim>(y_unit));
 
       pcout << std::scientific << std::setprecision(precision)
                 << std::setw(precision+8) << std::right << (-1+2.*y_unit)
@@ -376,7 +376,7 @@ compute_eigenvector(std::vector<std::complex<double>> & eigenvector,
     // ensure correctness of constraint psi'(-1)=0 on the left
     std::complex<double> derivative = 0;
     for (int i=0; i<m; ++i)
-      derivative += eigenvector[i] * fe.shape_grad(i,Point<dim>(0.))[0];
+      derivative += eigenvector[i] * fe.shape_grad(i,dealii::Point<dim>(0.))[0];
     pcout << "Correctness of constraint: " << derivative << std::endl;
     */
   }

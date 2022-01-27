@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 enum class QuantityType
 {
   Undefined,
@@ -64,11 +62,11 @@ struct Quantity
 template<int dim>
 struct QuantityPressureCoefficient : Quantity
 {
-  QuantityPressureCoefficient() : Quantity(), reference_point(Point<dim>())
+  QuantityPressureCoefficient() : Quantity(), reference_point(dealii::Point<dim>())
   {
   }
 
-  Point<dim> reference_point;
+  dealii::Point<dim> reference_point;
 };
 
 template<int dim>
@@ -77,14 +75,14 @@ struct QuantitySkinFriction : Quantity
   QuantitySkinFriction()
     : Quantity(),
       viscosity(1.0),
-      normal_vector(Tensor<1, dim, double>()),
-      tangent_vector(Tensor<1, dim, double>())
+      normal_vector(dealii::Tensor<1, dim, double>()),
+      tangent_vector(dealii::Tensor<1, dim, double>())
   {
   }
 
-  double                 viscosity;
-  Tensor<1, dim, double> normal_vector;
-  Tensor<1, dim, double> tangent_vector;
+  double                         viscosity;
+  dealii::Tensor<1, dim, double> normal_vector;
+  dealii::Tensor<1, dim, double> tangent_vector;
 };
 
 template<int dim>
@@ -101,8 +99,8 @@ struct Line
   /*
    *  begin and end points of line
    */
-  Point<dim> begin;
-  Point<dim> end;
+  dealii::Point<dim> begin;
+  dealii::Point<dim> end;
 
   /*
    *  number of data points written along a line
@@ -134,7 +132,7 @@ struct LineCircumferentialAveraging : Line<dim>
     : Line<dim>(),
       average_circumferential(false),
       n_points_circumferential(4),
-      normal_vector(Tensor<1, dim>())
+      normal_vector(dealii::Tensor<1, dim>())
   {
   }
 
@@ -148,7 +146,7 @@ struct LineCircumferentialAveraging : Line<dim>
   // defines the averaging plane along with the begin and end points
   // of the line. Has to be specified if averaging in circumferential
   // direction is activated.
-  Tensor<1, dim> normal_vector;
+  dealii::Tensor<1, dim> normal_vector;
 };
 
 /*
@@ -182,7 +180,7 @@ struct StatisticsData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate)
     {
@@ -221,7 +219,7 @@ struct LinePlotData
   }
 
   void
-  print(ConditionalOStream &)
+  print(dealii::ConditionalOStream &)
   {
     // TODO: add output for basic line plot data
   }
@@ -251,7 +249,7 @@ struct LinePlotDataInstantaneous
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     line_data.print(pcout);
   }
@@ -272,7 +270,7 @@ struct LinePlotDataStatistics
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     line_data.print(pcout);
 

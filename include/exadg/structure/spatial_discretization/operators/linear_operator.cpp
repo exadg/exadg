@@ -27,8 +27,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
 LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
@@ -56,8 +54,8 @@ LinearOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 template<int dim, typename Number>
 void
 LinearOperator<dim, Number>::do_boundary_integral_continuous(
-  IntegratorFace &           integrator_m,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator_m,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 

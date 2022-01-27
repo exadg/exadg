@@ -29,22 +29,20 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct MeanVelocityCalculatorData
 {
   MeanVelocityCalculatorData()
     : calculate(false),
       write_to_file(false),
-      direction(Tensor<1, dim, double>()),
+      direction(dealii::Tensor<1, dim, double>()),
       directory("output/"),
       filename("mean_velocity")
   {
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
@@ -66,14 +64,14 @@ struct MeanVelocityCalculatorData
   // Set containing boundary ID's of the surface area
   // for which we want to calculate the mean velocity.
   // This parameter is only relevant for area-based computation.
-  std::set<types::boundary_id> boundary_IDs;
+  std::set<dealii::types::boundary_id> boundary_IDs;
 
   // write results to file?
   bool write_to_file;
 
   // Direction in which we want to compute the flow rate
   // This parameter is only relevant for volume-based computation.
-  Tensor<1, dim, double> direction;
+  dealii::Tensor<1, dim, double> direction;
 
   // directory and filename
   std::string directory;
@@ -84,16 +82,16 @@ template<int dim, typename Number>
 class MeanVelocityCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
   typedef MeanVelocityCalculator<dim, Number> This;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
-  MeanVelocityCalculator(MatrixFree<dim, Number> const &         matrix_free_in,
+  MeanVelocityCalculator(dealii::MatrixFree<dim, Number> const & matrix_free_in,
                          unsigned int const                      dof_index_in,
                          unsigned int const                      quad_index_in,
                          MeanVelocityCalculatorData<dim> const & data_in,
@@ -142,8 +140,8 @@ private:
   calculate_volume() const;
 
   void
-  local_calculate_volume(MatrixFree<dim, Number> const & data,
-                         std::vector<Number> &           dst,
+  local_calculate_volume(dealii::MatrixFree<dim, Number> const & data,
+                         std::vector<Number> &                   dst,
                          VectorType const &,
                          std::pair<unsigned int, unsigned int> const & cell_range) const;
 
@@ -157,13 +155,13 @@ private:
   do_calculate_flow_rate_volume(VectorType const & velocity) const;
 
   void
-  local_calculate_flow_rate_volume(MatrixFree<dim, Number> const &               data,
+  local_calculate_flow_rate_volume(dealii::MatrixFree<dim, Number> const &       data,
                                    std::vector<Number> &                         dst,
                                    VectorType const &                            src,
                                    std::pair<unsigned int, unsigned int> const & cell_range) const;
 
   MeanVelocityCalculatorData<dim> const & data;
-  MatrixFree<dim, Number> const &         matrix_free;
+  dealii::MatrixFree<dim, Number> const & matrix_free;
   unsigned int                            dof_index, quad_index;
   bool                                    area_has_been_initialized, volume_has_been_initialized;
   double                                  area, volume;

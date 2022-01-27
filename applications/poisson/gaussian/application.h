@@ -29,29 +29,27 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim>
-class CoefficientFunction : public Function<dim>
+class CoefficientFunction : public dealii::Function<dim>
 {
 public:
-  CoefficientFunction() : Function<dim>(1)
+  CoefficientFunction() : dealii::Function<dim>(1)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const c = 0) const
   {
     (void)c;
     return value<double>(p);
   }
 
-  Tensor<1, dim>
-  gradient(Point<dim> const & p, unsigned int const c = 0) const
+  dealii::Tensor<1, dim>
+  gradient(dealii::Point<dim> const & p, unsigned int const c = 0) const
   {
     (void)c;
     (void)p;
-    Tensor<1, dim> grad;
+    dealii::Tensor<1, dim> grad;
 
     return grad;
   }
@@ -72,84 +70,88 @@ template<int dim>
 class SolutionBase
 {
 protected:
-  static unsigned int const n_source_centers = 3;
-  static Point<dim> const   source_centers[n_source_centers];
-  static double const       width;
+  static unsigned int const       n_source_centers = 3;
+  static dealii::Point<dim> const source_centers[n_source_centers];
+  static double const             width;
 };
 
 
 template<>
-const Point<1> SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers] =
-  {Point<1>(-1.0 / 3.0), Point<1>(0.0), Point<1>(+1.0 / 3.0)};
+const dealii::Point<1> SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers] =
+  {dealii::Point<1>(-1.0 / 3.0), dealii::Point<1>(0.0), dealii::Point<1>(+1.0 / 3.0)};
 
 template<>
-Point<2> const SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers] =
-  {Point<2>(-0.5, +0.5), Point<2>(-0.5, -0.5), Point<2>(+0.5, -0.5)};
+dealii::Point<2> const SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers] =
+  {dealii::Point<2>(-0.5, +0.5), dealii::Point<2>(-0.5, -0.5), dealii::Point<2>(+0.5, -0.5)};
 
 template<>
-Point<3> const SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers] =
-  {Point<3>(-0.5, +0.5, 0.25), Point<3>(-0.6, -0.5, -0.125), Point<3>(+0.5, -0.5, 0.5)};
+dealii::Point<3> const SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers] = {
+  dealii::Point<3>(-0.5, +0.5, 0.25),
+  dealii::Point<3>(-0.6, -0.5, -0.125),
+  dealii::Point<3>(+0.5, -0.5, 0.5)};
 
 template<int dim>
 double const SolutionBase<dim>::width = 1. / 5.;
 
 template<int dim>
-class Solution : public Function<dim>, protected SolutionBase<dim>
+class Solution : public dealii::Function<dim>, protected SolutionBase<dim>
 {
 public:
-  Solution() : Function<dim>()
+  Solution() : dealii::Function<dim>()
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/ = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const
   {
     double return_value = 0;
     for(unsigned int i = 0; i < this->n_source_centers; ++i)
     {
-      const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
+      const dealii::Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
       return_value += std::exp(-x_minus_xi.norm_square() / (this->width * this->width));
     }
 
-    return return_value / Utilities::fixed_power<dim>(std::sqrt(2. * numbers::PI) * this->width);
+    return return_value /
+           dealii::Utilities::fixed_power<dim>(std::sqrt(2. * dealii::numbers::PI) * this->width);
   }
 
-  Tensor<1, dim>
-  gradient(Point<dim> const & p, unsigned int const /*component*/ = 0) const
+  dealii::Tensor<1, dim>
+  gradient(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const
   {
-    Tensor<1, dim> return_value;
+    dealii::Tensor<1, dim> return_value;
 
     for(unsigned int i = 0; i < this->n_source_centers; ++i)
     {
-      const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
+      const dealii::Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
 
       return_value +=
         (-2 / (this->width * this->width) *
          std::exp(-x_minus_xi.norm_square() / (this->width * this->width)) * x_minus_xi);
     }
 
-    return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
+    return return_value /
+           dealii::Utilities::fixed_power<dim>(std::sqrt(2 * dealii::numbers::PI) * this->width);
   }
 };
 
 template<int dim>
-class RightHandSide : public Function<dim>, protected SolutionBase<dim>
+class RightHandSide : public dealii::Function<dim>, protected SolutionBase<dim>
 {
 public:
-  RightHandSide() : Function<dim>()
+  RightHandSide() : dealii::Function<dim>()
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/ = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/ = 0) const
   {
-    CoefficientFunction<dim> coefficient;
-    double const             coef         = coefficient.value(p);
-    const Tensor<1, dim>     coef_grad    = coefficient.gradient(p);
-    double                   return_value = 0;
+    CoefficientFunction<dim>     coefficient;
+    double const                 coef         = coefficient.value(p);
+    const dealii::Tensor<1, dim> coef_grad    = coefficient.gradient(p);
+    double                       return_value = 0;
     for(unsigned int i = 0; i < this->n_source_centers; ++i)
     {
-      const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
+      const dealii::Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
 
       return_value += ((2 * dim * coef + 2 * (coef_grad)*x_minus_xi -
                         4 * coef * x_minus_xi.norm_square() / (this->width * this->width)) /
@@ -157,7 +159,8 @@ public:
                        std::exp(-x_minus_xi.norm_square() / (this->width * this->width)));
     }
 
-    return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
+    return return_value /
+           dealii::Utilities::fixed_power<dim>(std::sqrt(2 * dealii::numbers::PI) * this->width);
   }
 };
 
@@ -173,7 +176,7 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
   // clang-format off
   if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
   else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, ExcMessage("Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
   // clang-format on
 }
 
@@ -185,7 +188,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -193,14 +196,14 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
-      prm.add_parameter("GlobalCoarsening", global_coarsening, "Use Global Coarsening", Patterns::Bool());
+      prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("GlobalCoarsening", global_coarsening, "Use Global Coarsening", dealii::Patterns::Bool());
     prm.leave_subsection();
     // clang-format on
   }
@@ -247,10 +250,10 @@ public:
   {
     double const length = 1.0;
     double const left = -length, right = length;
-    GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                         this->param.grid.n_subdivisions_1d_hypercube,
-                                         left,
-                                         right);
+    dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
+                                                 this->param.grid.n_subdivisions_1d_hypercube,
+                                                 left,
+                                                 right);
 
     if(mesh_type == MeshType::Cartesian)
     {
@@ -268,12 +271,12 @@ public:
 
       for(auto cell : *this->grid->triangulation)
       {
-        for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
         {
           if(vertex_touched[cell.vertex_index(v)] == false)
           {
-            Point<dim> & vertex                  = cell.vertex(v);
-            Point<dim>   new_point               = manifold.push_forward(vertex);
+            dealii::Point<dim> & vertex          = cell.vertex(v);
+            dealii::Point<dim>   new_point       = manifold.push_forward(vertex);
             vertex                               = new_point;
             vertex_touched[cell.vertex_index(v)] = true;
           }
@@ -282,7 +285,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
@@ -291,17 +294,19 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
 
-    // this->boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    // this->boundary_descriptor->neumann_bc.insert(pair(1, new
+    // dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->right_hand_side.reset(new RightHandSide<dim>());
   }
 

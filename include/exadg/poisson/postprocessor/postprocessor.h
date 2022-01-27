@@ -35,8 +35,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim>
 struct PostProcessorData
 {
@@ -60,7 +58,8 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data, MPI_Comm const & mpi_comm);
 
   void
-  setup(DoFHandler<dim, dim> const & dof_handler, Mapping<dim> const & mapping) override;
+  setup(dealii::DoFHandler<dim, dim> const & dof_handler,
+        dealii::Mapping<dim> const &         mapping) override;
 
   void
   do_postprocessing(VectorType const & solution,

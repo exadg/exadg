@@ -12,13 +12,11 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
 ProjectionOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                matrix_free,
-  AffineConstraints<Number> const &              affine_constraints,
+  dealii::MatrixFree<dim, Number> const &        matrix_free,
+  dealii::AffineConstraints<Number> const &      affine_constraints,
   ProjectionOperatorData<dim> const &            data,
   Operators::DivergencePenaltyKernelData const & div_kernel_data,
   Operators::ContinuityPenaltyKernelData const & conti_kernel_data)
@@ -60,11 +58,12 @@ ProjectionOperator<dim, Number>::initialize(
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &     matrix_free,
-                                            AffineConstraints<Number> const &   affine_constraints,
-                                            ProjectionOperatorData<dim> const & data,
-                                            std::shared_ptr<DivKernel>          div_penalty_kernel,
-                                            std::shared_ptr<ContiKernel> conti_penalty_kernel)
+ProjectionOperator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  ProjectionOperatorData<dim> const &       data,
+  std::shared_ptr<DivKernel>                div_penalty_kernel,
+  std::shared_ptr<ContiKernel>              conti_penalty_kernel)
 {
   operator_data = data;
 
@@ -121,11 +120,11 @@ ProjectionOperator<dim, Number>::get_time_step_size() const
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 ProjectionOperator<dim, Number>::get_velocity() const
 {
   AssertThrow(velocity != nullptr,
-              ExcMessage("Velocity ptr is not initialized in ProjectionOperator."));
+              dealii::ExcMessage("Velocity ptr is not initialized in ProjectionOperator."));
 
   return *velocity;
 }
@@ -175,9 +174,10 @@ ProjectionOperator<dim, Number>::reinit_boundary_face(unsigned int const face) c
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                        unsigned int const       face,
-                                                        types::boundary_id const boundary_id) const
+ProjectionOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -256,9 +256,10 @@ ProjectionOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
-                                                      OperatorType const &       operator_type,
-                                                      types::boundary_id const & boundary_id) const
+ProjectionOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   if(operator_data.use_boundary_data == true)
   {

@@ -37,14 +37,12 @@ class Mesh;
 
 namespace FTI
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class ApplicationBase : public IncNS::ApplicationBase<dim, Number>
 {
 public:
   virtual void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
     prm.enter_subsection("Output");
@@ -94,17 +92,17 @@ public:
 
       // some additional parameter checks
       AssertThrow(scalar_param[i].ale_formulation == this->param.ale_formulation,
-                  ExcMessage(
+                  dealii::ExcMessage(
                     "Parameter ale_formulation is different for fluid field and scalar field"));
 
       AssertThrow(
         scalar_param[i].adaptive_time_stepping == this->param.adaptive_time_stepping,
-        ExcMessage(
+        dealii::ExcMessage(
           "The option adaptive_time_stepping has to be consistent for fluid and scalar transport solvers."));
 
       scalar_param[i].print(this->pcout,
-                            "List of parameters for scalar quantity " + Utilities::to_string(i) +
-                              ":");
+                            "List of parameters for scalar quantity " +
+                              dealii::Utilities::to_string(i) + ":");
 
       // boundary conditions
       scalar_boundary_descriptor[i] = std::make_shared<ConvDiff::BoundaryDescriptor<dim>>();

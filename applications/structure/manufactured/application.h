@@ -46,8 +46,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 /*
  * Different formulations of function f(t).
  */
@@ -81,7 +79,7 @@ time_function(double const time, double const frequency)
   else if(function_type_time == FunctionTypeTime::SineSquared)
     time_factor = std::pow(std::sin(time * frequency), 2.0);
   else
-    AssertThrow(false, ExcMessage("not implemented"));
+    AssertThrow(false, dealii::ExcMessage("not implemented"));
 
   return time_factor;
 }
@@ -96,7 +94,7 @@ time_derivative(double const time, double const frequency)
   else if(function_type_time == FunctionTypeTime::SineSquared)
     time_factor = 2.0 * std::sin(time * frequency) * frequency * std::cos(time * frequency);
   else
-    AssertThrow(false, ExcMessage("not implemented"));
+    AssertThrow(false, dealii::ExcMessage("not implemented"));
 
   return time_factor;
 }
@@ -113,7 +111,7 @@ time_2nd_derivative(double const time, double const frequency)
       2.0 * frequency * frequency *
       (std::pow(std::cos(time * frequency), 2.0) - std::pow(std::sin(time * frequency), 2.0));
   else
-    AssertThrow(false, ExcMessage("not implemented"));
+    AssertThrow(false, dealii::ExcMessage("not implemented"));
 
   return time_factor;
 }
@@ -126,11 +124,11 @@ space_function(double const x, double const length, double const max_displacemen
   if(function_type_space == FunctionTypeSpace::Linear)
     space_factor = max_displacement * x / length;
   else if(function_type_space == FunctionTypeSpace::Sine)
-    space_factor = max_displacement * std::sin(x * length * 2.0 * numbers::PI);
+    space_factor = max_displacement * std::sin(x * length * 2.0 * dealii::numbers::PI);
   else if(function_type_space == FunctionTypeSpace::Exponential)
     space_factor = max_displacement * (std::exp(x / length) - 1.0) / (std::exp(1.0) - 1.0);
   else
-    AssertThrow(false, ExcMessage("not implemented"));
+    AssertThrow(false, dealii::ExcMessage("not implemented"));
 
   return space_factor;
 }
@@ -143,12 +141,12 @@ space_derivative(double const x, double const length, double const max_displacem
   if(function_type_space == FunctionTypeSpace::Linear)
     space_factor = max_displacement / length;
   else if(function_type_space == FunctionTypeSpace::Sine)
-    space_factor =
-      max_displacement * 2.0 * numbers::PI / length * std::cos(x / length * 2.0 * numbers::PI);
+    space_factor = max_displacement * 2.0 * dealii::numbers::PI / length *
+                   std::cos(x / length * 2.0 * dealii::numbers::PI);
   else if(function_type_space == FunctionTypeSpace::Exponential)
     space_factor = max_displacement / length * (std::exp(x / length)) / (std::exp(1.0) - 1.0);
   else
-    AssertThrow(false, ExcMessage("not implemented"));
+    AssertThrow(false, dealii::ExcMessage("not implemented"));
 
   return space_factor;
 }
@@ -161,26 +159,26 @@ space_2nd_derivative(double const x, double const length, double const max_displ
   if(function_type_space == FunctionTypeSpace::Linear)
     space_factor = 0.0;
   else if(function_type_space == FunctionTypeSpace::Sine)
-    space_factor = -max_displacement * std::pow(2.0 * numbers::PI / length, 2.0) *
-                   std::sin(x / length * 2.0 * numbers::PI);
+    space_factor = -max_displacement * std::pow(2.0 * dealii::numbers::PI / length, 2.0) *
+                   std::sin(x / length * 2.0 * dealii::numbers::PI);
   else if(function_type_space == FunctionTypeSpace::Exponential)
     space_factor =
       max_displacement / (length * length) * (std::exp(x / length)) / (std::exp(1.0) - 1.0);
   else
-    AssertThrow(false, ExcMessage("not implemented"));
+    AssertThrow(false, dealii::ExcMessage("not implemented"));
 
   return space_factor;
 }
 
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(double const max_displacement,
            double const length,
            bool const   unsteady,
            double const frequency)
-    : Function<dim>(dim),
+    : dealii::Function<dim>(dim),
       max_displacement(max_displacement),
       length(length),
       unsteady(unsteady),
@@ -189,7 +187,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     if(c == 0)
     {
@@ -208,14 +206,14 @@ private:
 };
 
 template<int dim>
-class InitialVelocity : public Function<dim>
+class InitialVelocity : public dealii::Function<dim>
 {
 public:
   InitialVelocity(double const max_displacement,
                   double const length,
                   bool const   unsteady,
                   double const frequency)
-    : Function<dim>(dim),
+    : dealii::Function<dim>(dim),
       max_displacement(max_displacement),
       length(length),
       unsteady(unsteady),
@@ -224,7 +222,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     if(c == 0)
     {
@@ -245,7 +243,7 @@ private:
 };
 
 template<int dim>
-class VolumeForce : public Function<dim>
+class VolumeForce : public dealii::Function<dim>
 {
 public:
   VolumeForce(double const max_displacement,
@@ -254,7 +252,7 @@ public:
               bool const   unsteady,
               double const frequency,
               double const f0)
-    : Function<dim>(dim),
+    : dealii::Function<dim>(dim),
       max_displacement(max_displacement),
       length(length),
       density(density),
@@ -265,7 +263,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     if(c == 0)
     {
@@ -304,7 +302,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -321,7 +319,7 @@ public:
   double const max_displacement = 0.1 * length;
   double const start_time       = 0.0;
   double const end_time         = 1.0;
-  double const frequency        = 3.0 / 2.0 * numbers::PI / end_time;
+  double const frequency        = 3.0 / 2.0 * dealii::numbers::PI / end_time;
 
   void
   set_parameters() final
@@ -359,7 +357,7 @@ public:
   create_grid() final
   {
     // left-bottom-front and right-top-back point
-    Point<dim> p1, p2;
+    dealii::Point<dim> p1, p2;
 
     for(unsigned d = 0; d < dim; d++)
       p1[d] = 0.0;
@@ -375,7 +373,10 @@ public:
     if(dim == 3)
       repetitions[2] = this->param.grid.n_subdivisions_1d_hypercube;
 
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, repetitions, p1, p2);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      p1,
+                                                      p2);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -383,18 +384,20 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
     this->boundary_descriptor->dirichlet_bc.insert(
       pair(0, new Solution<dim>(max_displacement, length, unsteady, frequency)));
-    this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, ComponentMask()));
+    this->boundary_descriptor->dirichlet_bc_component_mask.insert(
+      pair_mask(0, dealii::ComponentMask()));
   }
 
   void
   set_material_descriptor() final
   {
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
@@ -408,7 +411,8 @@ public:
   {
     this->field_functions->right_hand_side.reset(
       new VolumeForce<dim>(max_displacement, length, density, unsteady, frequency, f0));
-    this->field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_displacement.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
     this->field_functions->initial_velocity.reset(
       new InitialVelocity<dim>(max_displacement, length, unsteady, frequency));
   }

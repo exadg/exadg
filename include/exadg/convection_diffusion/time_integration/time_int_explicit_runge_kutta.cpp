@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(
   std::shared_ptr<Interface::Operator<Number>>    operator_in,
@@ -206,7 +204,8 @@ TimeIntExplRK<Number>::calculate_time_step_size()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Specified type of time step calculation is not implemented."));
   }
 }
 
@@ -216,7 +215,7 @@ TimeIntExplRK<Number>::recalculate_time_step_size() const
 {
   AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL ||
                 param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
   double new_time_step_size = std::numeric_limits<double>::max();
@@ -228,7 +227,8 @@ TimeIntExplRK<Number>::recalculate_time_step_size() const
   }
   else
   {
-    AssertThrow(velocities[0] != nullptr, ExcMessage("Pointer velocities[0] is not initialized."));
+    AssertThrow(velocities[0] != nullptr,
+                dealii::ExcMessage("Pointer velocities[0] is not initialized."));
 
     new_time_step_size = pde_operator->calculate_time_step_cfl_numerical_velocity(*velocities[0]);
     new_time_step_size *= cfl;
@@ -326,7 +326,7 @@ TimeIntExplRK<Number>::initialize_time_integrator()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 }
 
@@ -343,7 +343,7 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::do_timestep_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(param.convective_problem())
@@ -372,7 +372,7 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessor->do_postprocessing(this->solution_n, this->time, this->time_step_number);

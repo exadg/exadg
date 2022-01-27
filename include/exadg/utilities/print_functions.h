@@ -30,33 +30,33 @@
 
 namespace ExaDG
 {
-using namespace dealii;
+template<typename ParameterType>
+void
+print_parameter(dealii::ConditionalOStream const & pcout,
+                std::string const                  name,
+                ParameterType const                value);
+
+void
+print_name(dealii::ConditionalOStream const & pcout, std::string const name);
 
 template<typename ParameterType>
 void
-print_parameter(ConditionalOStream const & pcout,
-                std::string const          name,
-                ParameterType const        value);
-
-void
-print_name(ConditionalOStream const & pcout, std::string const name);
-
-template<typename ParameterType>
-void
-print_value(ConditionalOStream const & pcout, ParameterType const value);
+print_value(dealii::ConditionalOStream const & pcout, ParameterType const value);
 
 template<>
 void
-print_value(ConditionalOStream const & pcout, bool const value);
+print_value(dealii::ConditionalOStream const & pcout, bool const value);
 
 template<>
 void
-print_value(ConditionalOStream const & pcout, double const value);
+print_value(dealii::ConditionalOStream const & pcout, double const value);
 
 // print a parameter (which has a name and a value)
 template<typename ParameterType>
 void
-print_parameter(ConditionalOStream const & pcout, std::string const name, ParameterType const value)
+print_parameter(dealii::ConditionalOStream const & pcout,
+                std::string const                  name,
+                ParameterType const                value)
 {
   print_name(pcout, name);
   print_value(pcout, value);
@@ -65,7 +65,7 @@ print_parameter(ConditionalOStream const & pcout, std::string const name, Parame
 // print name and insert spaces so that the output is aligned
 // needs inline because this function has no template
 inline void
-print_name(ConditionalOStream const & pcout, std::string const name)
+print_name(dealii::ConditionalOStream const & pcout, std::string const name)
 {
   unsigned int const max_length_name = 45;
 
@@ -79,7 +79,7 @@ print_name(ConditionalOStream const & pcout, std::string const name)
 // print value for general parameter data type
 template<typename ParameterType>
 void
-print_value(ConditionalOStream const & pcout, ParameterType const value)
+print_value(dealii::ConditionalOStream const & pcout, ParameterType const value)
 {
   pcout << value << std::endl;
 }
@@ -87,7 +87,7 @@ print_value(ConditionalOStream const & pcout, ParameterType const value)
 // specialization of template function for parameters of type bool
 template<>
 inline void
-print_value(ConditionalOStream const & pcout, bool const value)
+print_value(dealii::ConditionalOStream const & pcout, bool const value)
 {
   std::string value_string = "default";
   value_string             = (value == true) ? "true" : "false";
@@ -97,7 +97,7 @@ print_value(ConditionalOStream const & pcout, bool const value)
 // specialization of template function for parameters of type double
 template<>
 inline void
-print_value(ConditionalOStream const & pcout, double const value)
+print_value(dealii::ConditionalOStream const & pcout, double const value)
 {
   pcout << std::scientific << std::setprecision(4) << value << std::endl;
 }

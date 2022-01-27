@@ -37,8 +37,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 //clang-format off
 /*
  *
@@ -82,23 +80,23 @@ template<int dim>
 struct BoundaryDescriptorU
 {
   // Dirichlet: prescribe all components of the velocity
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
 
   // another type of Dirichlet boundary condition where the Dirichlet value comes
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>> dirichlet_mortar_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
   // Symmetry: For this boundary condition, the velocity normal to boundary is set to zero
   // (u*n=0) as well as the normal velocity gradient in tangential directions
   // (grad(u)*n - [(grad(u)*n)*n] n = 0). This is done automatically by the code. The user does not
   // have to prescribe a boundary condition, simply use ZeroFunction<dim>, it is not relevant
   // because this function will not be evaluated by the code.
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> symmetry_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> symmetry_bc;
 
   // add more types of boundary conditions
 
@@ -106,7 +104,7 @@ struct BoundaryDescriptorU
   // return the boundary type
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryTypeU
-    get_boundary_type(types::boundary_id const & boundary_id) const
+    get_boundary_type(dealii::types::boundary_id const & boundary_id) const
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryTypeU::Dirichlet;
@@ -117,15 +115,16 @@ struct BoundaryDescriptorU
     else if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())
       return BoundaryTypeU::Symmetry;
 
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
 
     return BoundaryTypeU::Undefined;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
     void
-    verify_boundary_conditions(types::boundary_id const             boundary_id,
-                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+    verify_boundary_conditions(
+      dealii::types::boundary_id const             boundary_id,
+      std::set<dealii::types::boundary_id> const & periodic_boundary_ids) const
   {
     unsigned int counter = 0;
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
@@ -143,7 +142,8 @@ struct BoundaryDescriptorU
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
       counter++;
 
-    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
+    AssertThrow(counter == 1,
+                dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
 
@@ -151,7 +151,7 @@ template<int dim>
 struct BoundaryDescriptorP
 {
   // Dirichlet: prescribe pressure value
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
 
   // Neumann: It depends on the chosen Navier-Stokes solver how this map has to be filled
   //
@@ -161,12 +161,13 @@ struct BoundaryDescriptorP
   //  - pressure-correction: this solver always prescribes homogeneous Neumann BCs in the
   //                         pressure Poisson equation. Hence, no function has to be specified.
   //
-  //  - dual splitting: Specify a Function<dim> with dim components for the boundary condition
+  //  - dual splitting: Specify a dealii::Function<dim> with dim components for the boundary
+  //  condition
   //                    dg_u/dt that has to be evaluated for the dual splitting scheme. But this
   //                    is only necessary if the parameter store_previous_boundary_values == false.
   //                    Otherwise, the code automatically determines the time derivative dg_u/dt
   //                    numerically and no boundary condition has to be set by the user.
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
   // add more types of boundary conditions
 
@@ -174,22 +175,23 @@ struct BoundaryDescriptorP
   // return the boundary type
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryTypeP
-    get_boundary_type(types::boundary_id const & boundary_id) const
+    get_boundary_type(dealii::types::boundary_id const & boundary_id) const
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryTypeP::Dirichlet;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryTypeP::Neumann;
 
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
 
     return BoundaryTypeP::Undefined;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
     void
-    verify_boundary_conditions(types::boundary_id const             boundary_id,
-                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+    verify_boundary_conditions(
+      dealii::types::boundary_id const             boundary_id,
+      std::set<dealii::types::boundary_id> const & periodic_boundary_ids) const
   {
     unsigned int counter = 0;
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
@@ -201,7 +203,8 @@ struct BoundaryDescriptorP
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
       counter++;
 
-    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
+    AssertThrow(counter == 1,
+                dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
 

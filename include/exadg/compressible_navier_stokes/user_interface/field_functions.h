@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim>
 struct FieldFunctions
 {
@@ -35,11 +33,11 @@ struct FieldFunctions
    * The function initial_solution_velocity is used to initialize the velocity field at the
    * beginning of the simulation.
    */
-  std::shared_ptr<Function<dim>> initial_solution;
+  std::shared_ptr<dealii::Function<dim>> initial_solution;
 
-  std::shared_ptr<Function<dim>> right_hand_side_density;
-  std::shared_ptr<Function<dim>> right_hand_side_velocity;
-  std::shared_ptr<Function<dim>> right_hand_side_energy;
+  std::shared_ptr<dealii::Function<dim>> right_hand_side_density;
+  std::shared_ptr<dealii::Function<dim>> right_hand_side_velocity;
+  std::shared_ptr<dealii::Function<dim>> right_hand_side_energy;
 };
 
 } // namespace CompNS

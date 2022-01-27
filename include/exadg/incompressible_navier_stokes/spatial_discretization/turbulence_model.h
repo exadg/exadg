@@ -34,8 +34,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  Turbulence model data.
  */
@@ -75,10 +73,10 @@ class TurbulenceModel
 private:
   typedef TurbulenceModel<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -95,8 +93,8 @@ public:
    * Initialization function.
    */
   void
-  initialize(MatrixFree<dim, Number> const &                        matrix_free_in,
-             Mapping<dim> const &                                   mapping_in,
+  initialize(dealii::MatrixFree<dim, Number> const &                matrix_free_in,
+             dealii::Mapping<dim> const &                           mapping_in,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
              TurbulenceModelData const &                            data_in);
 
@@ -110,23 +108,23 @@ public:
    *  This function calculates the filter width for each cell.
    */
   void
-  calculate_filter_width(Mapping<dim> const & mapping);
+  calculate_filter_width(dealii::Mapping<dim> const & mapping);
 
 private:
   void
-  cell_loop_set_coefficients(MatrixFree<dim, Number> const & data,
+  cell_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & data,
                              VectorType &,
                              VectorType const & src,
                              Range const &      cell_range) const;
 
   void
-  face_loop_set_coefficients(MatrixFree<dim, Number> const & data,
+  face_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & data,
                              VectorType &,
                              VectorType const & src,
                              Range const &      face_range) const;
 
   void
-  boundary_face_loop_set_coefficients(MatrixFree<dim, Number> const & data,
+  boundary_face_loop_set_coefficients(dealii::MatrixFree<dim, Number> const & data,
                                       VectorType &,
                                       VectorType const & src,
                                       Range const &      face_range) const;
@@ -248,11 +246,11 @@ private:
 
   TurbulenceModelData turb_model_data;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel;
 
-  AlignedVector<scalar> filter_width_vector;
+  dealii::AlignedVector<scalar> filter_width_vector;
 };
 
 } // namespace IncNS

@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct CellFlags
 {
   CellFlags(bool const value = false, const bool gradient = false, const bool hessian = false)

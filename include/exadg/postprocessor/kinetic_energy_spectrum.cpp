@@ -84,33 +84,33 @@ public:
    */
   template<class Tria>
   void
-  init(types::global_dof_index dim,
-       types::global_dof_index n_cells_1D,
-       types::global_dof_index points_src,
-       types::global_dof_index points_dst,
-       Tria &                  tria)
+  init(dealii::types::global_dof_index dim,
+       dealii::types::global_dof_index n_cells_1D,
+       dealii::types::global_dof_index points_src,
+       dealii::types::global_dof_index points_dst,
+       Tria &                          tria)
   {
     // init setup ...
     s.init(dim, n_cells_1D, points_src, points_dst);
 
-    std::vector<types::global_dof_index> local_cells;
+    std::vector<dealii::types::global_dof_index> local_cells;
     for(auto const & cell : tria.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
-        for(types::global_dof_index i = 0; i < dim; i++)
+        for(dealii::types::global_dof_index i = 0; i < dim; i++)
           c[i] = (c[i] + dealii::numbers::PI) / (2 * dealii::numbers::PI / n_cells_1D);
 
         local_cells.push_back(norm_point_to_lex(c, n_cells_1D));
       }
 
-    types::global_dof_index n_local_cells = local_cells.size();
-    types::global_dof_index global_offset = 0;
+    dealii::types::global_dof_index n_local_cells = local_cells.size();
+    dealii::types::global_dof_index global_offset = 0;
 
     MPI_Exscan(&n_local_cells,
                &global_offset,
                1,
-               Utilities::MPI::internal::mpi_type_id(&global_offset),
+               dealii::Utilities::MPI::internal::mpi_type_id(&global_offset),
                MPI_SUM,
                comm);
 
@@ -131,47 +131,51 @@ public:
     int start_;
     int end_;
     fftw.getLocalRange(start_, end_);
-    const types::global_dof_index start = start_;
-    const types::global_dof_index end   = end_;
+    const dealii::types::global_dof_index start = start_;
+    const dealii::types::global_dof_index end   = end_;
 
-    std::vector<types::global_dof_index> indices_has, indices_want;
+    std::vector<dealii::types::global_dof_index> indices_has, indices_want;
 
     for(auto const & I : local_cells)
-      for(types::global_dof_index i = 0; i < Utilities::pow(points_dst, dim); i++)
-        for(types::global_dof_index d = 0; d < dim; d++)
+      for(dealii::types::global_dof_index i = 0; i < dealii::Utilities::pow(points_dst, dim); i++)
+        for(dealii::types::global_dof_index d = 0; d < dim; d++)
         {
-          types::global_dof_index index =
+          dealii::types::global_dof_index index =
             (I / (n_cells_1D * n_cells_1D) * points_dst + i / (points_dst * points_dst)) *
-              Utilities::pow(n_cells_1D * points_dst, 2) +
+              dealii::Utilities::pow(n_cells_1D * points_dst, 2) +
             (((I / n_cells_1D) % n_cells_1D) * points_dst + ((i / points_dst) % points_dst)) *
-              Utilities::pow(n_cells_1D * points_dst, 1) +
+              dealii::Utilities::pow(n_cells_1D * points_dst, 1) +
             (I % (n_cells_1D)*points_dst + i % (points_dst));
 
-          indices_has.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + index);
+          indices_has.push_back(d * dealii::Utilities::pow(points_dst * n_cells_1D, dim) + index);
         }
 
-    types::global_dof_index N  = s.cells * s.points_dst;
-    types::global_dof_index Nx = (N / 2 + 1) * 2;
+    dealii::types::global_dof_index N  = s.cells * s.points_dst;
+    dealii::types::global_dof_index Nx = (N / 2 + 1) * 2;
 
-    for(types::global_dof_index d = 0; d < static_cast<types::global_dof_index>(s.dim); d++)
+    for(dealii::types::global_dof_index d = 0;
+        d < static_cast<dealii::types::global_dof_index>(s.dim);
+        d++)
     {
-      types::global_dof_index c = 0;
-      for(types::global_dof_index k = 0; k < (end - start); k++)
-        for(types::global_dof_index j = 0; j < N; j++)
-          for(types::global_dof_index i = 0; i < Nx; i++, c++)
+      dealii::types::global_dof_index c = 0;
+      for(dealii::types::global_dof_index k = 0; k < (end - start); k++)
+        for(dealii::types::global_dof_index j = 0; j < N; j++)
+          for(dealii::types::global_dof_index i = 0; i < Nx; i++, c++)
             if(i < N)
-              indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) +
-                                     (k + start) * Utilities::pow(points_dst * n_cells_1D, 2) +
-                                     j * Utilities::pow(points_dst * n_cells_1D, 1) + i);
+              indices_want.push_back(d * dealii::Utilities::pow(points_dst * n_cells_1D, dim) +
+                                     (k + start) *
+                                       dealii::Utilities::pow(points_dst * n_cells_1D, 2) +
+                                     j * dealii::Utilities::pow(points_dst * n_cells_1D, 1) + i);
             else
-              indices_want.push_back(numbers::invalid_dof_index); // x-padding
+              indices_want.push_back(dealii::numbers::invalid_dof_index); // x-padding
 
-      for(; c < static_cast<types::global_dof_index>(fftw.bsize); c++)
-        indices_want.push_back(numbers::invalid_dof_index); // z-padding
+      for(; c < static_cast<dealii::types::global_dof_index>(fftw.bsize); c++)
+        indices_want.push_back(dealii::numbers::invalid_dof_index); // z-padding
     }
 
-    nonconti =
-      std::make_shared<Utilities::MPI::NoncontiguousPartitioner>(indices_has, indices_want, comm);
+    nonconti = std::make_shared<dealii::Utilities::MPI::NoncontiguousPartitioner>(indices_has,
+                                                                                  indices_want,
+                                                                                  comm);
   }
 
   /**
@@ -188,7 +192,7 @@ public:
     if(write)
     {
       // flush flow field to hard drive
-      AssertThrow(file_name != "", ExcMessage("No file name has been provided!"));
+      AssertThrow(file_name != "", dealii::ExcMessage("No file name has been provided!"));
       s.time = time;
       s.writeHeader(file_name.c_str());
       ipol.serialize(file_name.c_str(), src);
@@ -203,10 +207,12 @@ public:
 
       // ... permute
       timer.start("Permutation");
-      types::global_dof_index const size =
-        Utilities::pow(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * s.dim;
-      ArrayView<double>       dst(fftw.u_real, size * 2);
-      ArrayView<double const> src_(ipol.dst, size);
+      dealii::types::global_dof_index const size =
+        dealii::Utilities::pow(static_cast<dealii::types::global_dof_index>(s.cells * s.points_dst),
+                               s.dim) *
+        s.dim;
+      dealii::ArrayView<double>       dst(fftw.u_real, size * 2);
+      dealii::ArrayView<double const> src_(ipol.dst, size);
       nonconti->export_to_ghosted_array(src_, dst);
 
       timer.append("Permutation");
@@ -249,7 +255,7 @@ public:
 private:
   template<int dim>
   std::size_t
-  norm_point_to_lex(Point<dim> const & c, unsigned int const & n_cells_1D)
+  norm_point_to_lex(dealii::Point<dim> const & c, unsigned int const & n_cells_1D)
   {
     // convert normalized point [0, 1] to lex
     if(dim == 2)
@@ -258,7 +264,7 @@ private:
       return static_cast<std::size_t>(std::floor(c[0]) + n_cells_1D * std::floor(c[1]) +
                                       n_cells_1D * n_cells_1D * std::floor(c[2]));
     else
-      Assert(false, ExcMessage("not implemented"));
+      Assert(false, dealii::ExcMessage("not implemented"));
 
     return 0;
   }
@@ -280,10 +286,10 @@ private:
   // ... for spectral analysis
   SpectralAnalysis fftw;
 
-  // Timer
+  // dealii::Timer
   DealSpectrumTimer timer;
 
-  std::shared_ptr<Utilities::MPI::NoncontiguousPartitioner> nonconti;
+  std::shared_ptr<dealii::Utilities::MPI::NoncontiguousPartitioner> nonconti;
 };
 } // namespace ExaDG
 #else
@@ -331,9 +337,9 @@ KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MP
 template<int dim, typename Number>
 void
 KineticEnergySpectrumCalculator<dim, Number>::setup(
-  MatrixFree<dim, Number> const &   matrix_free_data_in,
-  DoFHandler<dim> const &           dof_handler_in,
-  KineticEnergySpectrumData const & data_in)
+  dealii::MatrixFree<dim, Number> const & matrix_free_data_in,
+  dealii::DoFHandler<dim> const &         dof_handler_in,
+  KineticEnergySpectrumData const &       data_in)
 {
   data        = data_in;
   dof_handler = &dof_handler_in;
@@ -345,7 +351,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
     if(data.write_raw_data_to_files)
     {
       AssertThrow(data.n_cells_1d_coarse_grid == 1,
-                  ExcMessage(
+                  dealii::ExcMessage(
                     "Choosing write_raw_data_to_files = true requires n_cells_1d_coarse_grid == 1. "
                     "If you want to use n_cells_1d_coarse_grid != 1 (subdivided hypercube), set "
                     "do_fftw = true and write_raw_data_to_files = false."));
@@ -362,18 +368,18 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
     // create data structures for full system
     if(data.exploit_symmetry)
     {
-      tria_full = std::make_shared<parallel::distributed::Triangulation<dim>>(
+      tria_full = std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(
         mpi_comm,
-        Triangulation<dim>::limit_level_difference_at_vertices,
-        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
-      GridGenerator::subdivided_hyper_cube(*tria_full,
-                                           data.n_cells_1d_coarse_grid,
-                                           -data.length_symmetric_domain,
-                                           +data.length_symmetric_domain);
+        dealii::Triangulation<dim>::limit_level_difference_at_vertices,
+        dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
+      dealii::GridGenerator::subdivided_hyper_cube(*tria_full,
+                                                   data.n_cells_1d_coarse_grid,
+                                                   -data.length_symmetric_domain,
+                                                   +data.length_symmetric_domain);
       tria_full->refine_global(data.refine_level + 1);
 
-      fe_full          = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(data.degree), dim);
-      dof_handler_full = std::make_shared<DoFHandler<dim>>(*tria_full);
+      fe_full = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(data.degree), dim);
+      dof_handler_full = std::make_shared<dealii::DoFHandler<dim>>(*tria_full);
       dof_handler_full->distribute_dofs(*fe_full);
 
       int cells = tria_full->n_global_active_cells();
@@ -409,7 +415,7 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
         if(data.exploit_symmetry)
         {
           unsigned int n_cells_1d =
-            data.n_cells_1d_coarse_grid * Utilities::pow(2, data.refine_level);
+            data.n_cells_1d_coarse_grid * dealii::Utilities::pow(2, data.refine_level);
 
           velocity_full = std::make_shared<VectorType>();
           initialize_dof_vector(*velocity_full, *dof_handler_full);
@@ -434,7 +440,7 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
     {
       AssertThrow(
         false,
-        ExcMessage(
+        dealii::ExcMessage(
           "Calculation of kinetic energy spectrum only implemented for unsteady problems."));
     }
   }
@@ -456,7 +462,7 @@ KineticEnergySpectrumCalculator<dim, Number>::needs_to_be_evaluated(
     }
 
     AssertThrow(data.calculate_every_time_interval < 0.0,
-                ExcMessage("Input parameters are in conflict."));
+                dealii::ExcMessage("Input parameters are in conflict."));
   }
   else if(data.calculate_every_time_interval > 0.0)
   {
@@ -478,12 +484,12 @@ KineticEnergySpectrumCalculator<dim, Number>::needs_to_be_evaluated(
     }
 
     AssertThrow(data.calculate_every_time_steps < 0,
-                ExcMessage("Input parameters are in conflict."));
+                dealii::ExcMessage("Input parameters are in conflict."));
   }
   else
   {
     AssertThrow(false,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Invalid parameters specified. Use either "
                   "calculate_every_time_interval > 0.0 or calculate_every_time_steps > 0."));
   }
@@ -499,14 +505,14 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
   // extract beginning of vector...
   Number const * temp = velocity.begin();
 
-  const std::string file_name = data.filename + "_" + Utilities::int_to_string(counter, 4);
+  const std::string file_name = data.filename + "_" + dealii::Utilities::int_to_string(counter, 4);
 
   deal_spectrum_wrapper->execute((double *)temp, file_name, time);
 
   if(data.do_fftw)
   {
     // write output file
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::cout << std::endl
                 << "Write kinetic energy spectrum at time t = " << time << ":" << std::endl;

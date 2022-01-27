@@ -17,8 +17,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 namespace Operators
 {
 struct ConvectiveKernelData
@@ -51,22 +49,22 @@ public:
 
 
 private:
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef CellIntegrator<dim, dim, Number> IntegratorCell;
   typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free,
-         ConvectiveKernelData const &    data,
-         unsigned int const              dof_index,
-         unsigned int const              quad_index_linearized,
-         bool const                      is_mg)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
+         ConvectiveKernelData const &            data,
+         unsigned int const                      dof_index,
+         unsigned int const                      quad_index_linearized,
+         bool const                              is_mg)
   {
     this->data = data;
 
@@ -98,7 +96,7 @@ public:
       matrix_free.initialize_dof_vector(grid_velocity, dof_index);
 
       AssertThrow(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation,
-                  ExcMessage(
+                  dealii::ExcMessage(
                     "ALE formulation can only be used in combination with ConvectiveFormulation"));
     }
   }
@@ -108,9 +106,9 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells          = update_JxW_values | update_gradients;
-    flags.inner_faces    = update_JxW_values | update_normal_vectors;
-    flags.boundary_faces = update_JxW_values | update_normal_vectors;
+    flags.cells          = dealii::update_JxW_values | dealii::update_gradients;
+    flags.inner_faces    = dealii::update_JxW_values | dealii::update_normal_vectors;
+    flags.boundary_faces = dealii::update_JxW_values | dealii::update_normal_vectors;
 
     return flags;
   }
@@ -142,7 +140,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return flags;
@@ -257,7 +255,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -291,9 +289,9 @@ public:
   }
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const
   {
     integrator_velocity_m->reinit(cell, face);
     integrator_velocity_m->gather_evaluate(*velocity, true, false);
@@ -304,7 +302,7 @@ public:
       integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
     }
 
-    if(boundary_id == numbers::internal_face_boundary_id) // internal face
+    if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
       // TODO: Matrix-free implementation in deal.II does currently not allow to access data of
       // the neighboring element in case of cell-based face loops.
@@ -389,7 +387,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return std::make_tuple(flux_m, flux_p);
@@ -439,7 +437,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return flux;
@@ -481,7 +479,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return std::make_tuple(fluxM, fluxP);
@@ -525,7 +523,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return flux;
@@ -575,7 +573,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return std::make_tuple(fluxM, fluxP);
@@ -621,7 +619,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return flux;
@@ -675,7 +673,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return flux;
@@ -706,7 +704,8 @@ public:
     scalar uM_n = uM * normalM;
     scalar uP_n = uP * normalM;
 
-    vector average_normal_flux = make_vectorized_array<Number>(0.5) * (uM * uM_n + uP * uP_n);
+    vector average_normal_flux =
+      dealii::make_vectorized_array<Number>(0.5) * (uM * uM_n + uP * uP_n);
 
     vector jump_value = uM - uP;
 
@@ -729,7 +728,8 @@ public:
     scalar wM_n = wM * normalM;
     scalar wP_n = wP * normalM;
 
-    vector average_normal_flux = make_vectorized_array<Number>(0.5) * (uM * wM_n + uP * wP_n);
+    vector average_normal_flux =
+      dealii::make_vectorized_array<Number>(0.5) * (uM * wM_n + uP * wP_n);
 
     vector jump_value = uM - uP;
 
@@ -756,7 +756,7 @@ public:
     scalar delta_uP_n = delta_uP * normalM;
 
     vector average_normal_flux =
-      make_vectorized_array<Number>(0.5) *
+      dealii::make_vectorized_array<Number>(0.5) *
       (uM * delta_uM_n + delta_uM * uM_n + uP * delta_uP_n + delta_uP * uP_n);
 
     vector jump_value = delta_uM - delta_uP;
@@ -815,9 +815,9 @@ public:
     // on the Neumann part of the boundary.
     // outflow: factor = 1.0 (do nothing, neutral element of multiplication)
     // inflow:  factor = 0.0 (set convective flux to zero)
-    scalar outflow_indicator = make_vectorized_array<Number>(1.0);
+    scalar outflow_indicator = dealii::make_vectorized_array<Number>(1.0);
 
-    for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
+    for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
     {
       if(uM_n[v] < 0.0) // backflow at outflow boundary
         outflow_indicator[v] = 0.0;
@@ -864,14 +864,15 @@ public:
    *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
    */
   inline DEAL_II_ALWAYS_INLINE //
-      Tensor<1, dim, VectorizedArray<Number>>
-      calculate_exterior_value_linearized(Tensor<1, dim, VectorizedArray<Number>> & delta_uM,
-                                          unsigned int const                        q,
-                                          FaceIntegrator<dim, dim, Number> &        integrator,
-                                          BoundaryTypeU const & boundary_type) const
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+      calculate_exterior_value_linearized(
+        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> & delta_uM,
+        unsigned int const                                        q,
+        FaceIntegrator<dim, dim, Number> &                        integrator,
+        BoundaryTypeU const &                                     boundary_type) const
   {
     // element e⁺
-    Tensor<1, dim, VectorizedArray<Number>> delta_uP;
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> delta_uP;
 
     if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
     {
@@ -888,7 +889,7 @@ public:
       {
         AssertThrow(
           false,
-          ExcMessage(
+          dealii::ExcMessage(
             "Type of imposition of Dirichlet BC's for convective term is not implemented."));
       }
     }
@@ -898,12 +899,14 @@ public:
     }
     else if(boundary_type == BoundaryTypeU::Symmetry)
     {
-      Tensor<1, dim, VectorizedArray<Number>> normalM = integrator.get_normal_vector(q);
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normalM =
+        integrator.get_normal_vector(q);
       delta_uP = delta_uM - 2. * (delta_uM * normalM) * normalM;
     }
     else
     {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
     }
 
     return delta_uP;
@@ -956,9 +959,9 @@ template<int dim, typename Number>
 class ConvectiveOperator : public OperatorBase<dim, Number, dim>
 {
 public:
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   typedef ConvectiveOperator<dim, Number> This;
 
@@ -979,12 +982,12 @@ public:
   void
   set_velocity_ptr(VectorType const & src) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   void
-  initialize(MatrixFree<dim, Number> const &                           matrix_free,
-             AffineConstraints<Number> const &                         affine_constraints,
+  initialize(dealii::MatrixFree<dim, Number> const &                   matrix_free,
+             dealii::AffineConstraints<Number> const &                 affine_constraints,
              ConvectiveOperatorData<dim> const &                       data,
              std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
@@ -1026,22 +1029,22 @@ private:
    *  Evaluation of nonlinear operator.
    */
   void
-  cell_loop_nonlinear_operator(MatrixFree<dim, Number> const & matrix_free,
-                               VectorType &                    dst,
-                               VectorType const &              src,
-                               Range const &                   cell_range) const;
+  cell_loop_nonlinear_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                               VectorType &                            dst,
+                               VectorType const &                      src,
+                               Range const &                           cell_range) const;
 
   void
-  face_loop_nonlinear_operator(MatrixFree<dim, Number> const & matrix_free,
-                               VectorType &                    dst,
-                               VectorType const &              src,
-                               Range const &                   face_range) const;
+  face_loop_nonlinear_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                               VectorType &                            dst,
+                               VectorType const &                      src,
+                               Range const &                           face_range) const;
 
   void
-  boundary_face_loop_nonlinear_operator(MatrixFree<dim, Number> const & matrix_free,
-                                        VectorType &                    dst,
-                                        VectorType const &              src,
-                                        Range const &                   face_range) const;
+  boundary_face_loop_nonlinear_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                        VectorType &                            dst,
+                                        VectorType const &                      src,
+                                        Range const &                           face_range) const;
 
   void
   do_cell_integral_nonlinear_operator(IntegratorCell & integrator,
@@ -1053,9 +1056,9 @@ private:
                                       IntegratorFace & integrator_grid_velocity) const;
 
   void
-  do_boundary_integral_nonlinear_operator(IntegratorFace &           integrator,
-                                          IntegratorFace &           integrator_grid_velocity,
-                                          types::boundary_id const & boundary_id) const;
+  do_boundary_integral_nonlinear_operator(IntegratorFace & integrator,
+                                          IntegratorFace & integrator_grid_velocity,
+                                          dealii::types::boundary_id const & boundary_id) const;
 
   /*
    *  OIF splitting: evaluation of convective operator (linear transport).
@@ -1067,22 +1070,22 @@ private:
   set_velocity_linear_transport(VectorType const & src) const;
 
   void
-  cell_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
-                             VectorType &                    dst,
-                             VectorType const &              src,
-                             Range const &                   cell_range) const;
+  cell_loop_linear_transport(dealii::MatrixFree<dim, Number> const & matrix_free,
+                             VectorType &                            dst,
+                             VectorType const &                      src,
+                             Range const &                           cell_range) const;
 
   void
-  face_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
-                             VectorType &                    dst,
-                             VectorType const &              src,
-                             Range const &                   face_range) const;
+  face_loop_linear_transport(dealii::MatrixFree<dim, Number> const & matrix_free,
+                             VectorType &                            dst,
+                             VectorType const &                      src,
+                             Range const &                           face_range) const;
 
   void
-  boundary_face_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
-                                      VectorType &                    dst,
-                                      VectorType const &              src,
-                                      Range const &                   face_range) const;
+  boundary_face_loop_linear_transport(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                      VectorType &                            dst,
+                                      VectorType const &                      src,
+                                      Range const &                           face_range) const;
 
   void
   do_cell_integral_linear_transport(IntegratorCell & integrator, IntegratorCell & velocity) const;
@@ -1094,9 +1097,9 @@ private:
                                     IntegratorFace & velocity_p) const;
 
   void
-  do_boundary_integral_linear_transport(IntegratorFace &           integrator,
-                                        IntegratorFace &           velocity,
-                                        types::boundary_id const & boundary_id) const;
+  do_boundary_integral_linear_transport(IntegratorFace &                   integrator,
+                                        IntegratorFace &                   velocity,
+                                        dealii::types::boundary_id const & boundary_id) const;
 
 
   /*
@@ -1117,9 +1120,9 @@ private:
 
   // Note: this function can only be used for the linearized operator.
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   // linearized operator
   void
@@ -1149,9 +1152,9 @@ private:
 
   // linearized operator
   void
-  do_boundary_integral(IntegratorFace &           integrator,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   ConvectiveOperatorData<dim> operator_data;
 

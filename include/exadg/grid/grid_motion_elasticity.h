@@ -32,8 +32,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /**
  * Class for moving grid problems based on a pseudo-solid grid motion technique.
  */
@@ -41,12 +39,12 @@ template<int dim, typename Number>
 class GridMotionElasticity : public GridMotionBase<dim, Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   /**
    * Constructor.
    */
-  GridMotionElasticity(std::shared_ptr<Mapping<dim> const>               mapping_undeformed,
+  GridMotionElasticity(std::shared_ptr<dealii::Mapping<dim> const>       mapping_undeformed,
                        std::shared_ptr<Structure::Operator<dim, Number>> structure_operator,
                        Structure::Parameters const &                     structure_parameters)
     : GridMotionBase<dim, Number>(mapping_undeformed,
@@ -56,7 +54,7 @@ public:
       pde_operator(structure_operator),
       param(structure_parameters),
       pcout(std::cout,
-            Utilities::MPI::this_mpi_process(
+            dealii::Utilities::MPI::this_mpi_process(
               structure_operator->get_dof_handler().get_communicator()) == 0),
       iterations({0, {0, 0}})
   {
@@ -69,7 +67,7 @@ public:
   void
   update(double const time, bool const print_solver_info) override
   {
-    Timer timer;
+    dealii::Timer timer;
     timer.restart();
 
     if(param.large_deformation) // nonlinear problem
@@ -159,7 +157,7 @@ private:
   // costs by allowing larger tolerances
   VectorType displacement;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   std::pair<
     unsigned int /* calls */,

@@ -30,16 +30,14 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 namespace
 {
 template<typename Number>
 void
-convert_to_eo(AlignedVector<VectorizedArray<Number>> & shape_values,
-              AlignedVector<VectorizedArray<Number>> & shape_values_eo,
-              unsigned int                             fe_degree,
-              unsigned int                             n_q_points_1d)
+convert_to_eo(dealii::AlignedVector<dealii::VectorizedArray<Number>> & shape_values,
+              dealii::AlignedVector<dealii::VectorizedArray<Number>> & shape_values_eo,
+              unsigned int                                             fe_degree,
+              unsigned int                                             n_q_points_1d)
 {
   unsigned int const stride = (n_q_points_1d + 1) / 2;
   shape_values_eo.resize((fe_degree + 1) * stride);
@@ -67,26 +65,30 @@ convert_to_eo(AlignedVector<VectorizedArray<Number>> & shape_values,
 
 template<typename Number>
 void
-fill_shape_values(AlignedVector<VectorizedArray<Number>> & shape_values,
-                  unsigned int                             fe_degree_src,
-                  unsigned int                             fe_degree_dst,
-                  bool                                     do_transpose)
+fill_shape_values(dealii::AlignedVector<dealii::VectorizedArray<Number>> & shape_values,
+                  unsigned int                                             fe_degree_src,
+                  unsigned int                                             fe_degree_dst,
+                  bool                                                     do_transpose)
 {
-  FullMatrix<double> matrix(fe_degree_dst + 1, fe_degree_src + 1);
+  dealii::FullMatrix<double> matrix(fe_degree_dst + 1, fe_degree_src + 1);
 
   if(do_transpose)
   {
-    FullMatrix<double> matrix_temp(fe_degree_src + 1, fe_degree_dst + 1);
-    FETools::get_projection_matrix(FE_DGQ<1>(fe_degree_dst), FE_DGQ<1>(fe_degree_src), matrix_temp);
+    dealii::FullMatrix<double> matrix_temp(fe_degree_src + 1, fe_degree_dst + 1);
+    dealii::FETools::get_projection_matrix(dealii::FE_DGQ<1>(fe_degree_dst),
+                                           dealii::FE_DGQ<1>(fe_degree_src),
+                                           matrix_temp);
     matrix.copy_transposed(matrix_temp);
   }
   else
   {
-    FETools::get_projection_matrix(FE_DGQ<1>(fe_degree_src), FE_DGQ<1>(fe_degree_dst), matrix);
+    dealii::FETools::get_projection_matrix(dealii::FE_DGQ<1>(fe_degree_src),
+                                           dealii::FE_DGQ<1>(fe_degree_dst),
+                                           matrix);
   }
 
   // ... and convert to linearized format
-  AlignedVector<VectorizedArray<Number>> shape_values_temp;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> shape_values_temp;
   shape_values_temp.resize((fe_degree_src + 1) * (fe_degree_dst + 1));
   for(unsigned int i = 0; i < fe_degree_src + 1; ++i)
     for(unsigned int q = 0; q < fe_degree_dst + 1; ++q)
@@ -103,12 +105,12 @@ loop_over_face_points(Number values, Number2 w)
   int const s = surface % 2; // left or right surface
 
   // collapsed iteration
-  for(unsigned int i = 0; i < Utilities::pow(points, dim - d - 1); i++)
+  for(unsigned int i = 0; i < dealii::Utilities::pow(points, dim - d - 1); i++)
   {
-    for(unsigned int j = 0; j < Utilities::pow(points, d); j++)
+    for(unsigned int j = 0; j < dealii::Utilities::pow(points, d); j++)
     {
-      unsigned int index = (i * Utilities::pow(points, d + 1) +
-                            (s == 0 ? 0 : (points - 1)) * Utilities::pow(points, d) + j);
+      unsigned int index = (i * dealii::Utilities::pow(points, d + 1) +
+                            (s == 0 ? 0 : (points - 1)) * dealii::Utilities::pow(points, d) + j);
       values[index]      = values[index] * w;
     }
   }
@@ -116,10 +118,10 @@ loop_over_face_points(Number values, Number2 w)
 
 template<int dim, int fe_degree_1, typename Number, typename MatrixFree, typename FEEval>
 void
-weight_residuum(MatrixFree &                                   data_1,
-                FEEval &                                       fe_eval1,
-                unsigned int                                   cell,
-                AlignedVector<VectorizedArray<Number>> const & weights)
+weight_residuum(MatrixFree &                                                   data_1,
+                FEEval &                                                       fe_eval1,
+                unsigned int                                                   cell,
+                dealii::AlignedVector<dealii::VectorizedArray<Number>> const & weights)
 {
 #if false
   (void) weights;
@@ -127,7 +129,7 @@ weight_residuum(MatrixFree &                                   data_1,
   unsigned int const n_filled_lanes = data_1.n_active_entries_per_cell_batch(cell);
   for(int surface = 0; surface < 2 * dim; surface++)
   {
-    VectorizedArray<Number> weights;
+    dealii::VectorizedArray<Number> weights;
     weights          = 1.0;
     bool do_not_loop = true;
     for(unsigned int v = 0; v < n_filled_lanes; v++)
@@ -184,12 +186,10 @@ void
 MGTransferP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
                                                                  VectorType const & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
-                                                                               dof_handler_index,
-                                                                               quad_index);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*matrixfree_2,
-                                                                               dof_handler_index,
-                                                                               quad_index);
+  dealii::FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(
+    *matrixfree_1, dof_handler_index, quad_index);
+  dealii::FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(
+    *matrixfree_2, dof_handler_index, quad_index);
 
   for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
   {
@@ -198,18 +198,18 @@ MGTransferP<dim, Number, VectorType, components>::do_interpolate(VectorType &   
 
     fe_eval1.read_dof_values(src);
 
-    internal::FEEvaluationImplBasisChange<
-      internal::evaluate_evenodd,
-      internal::EvaluatorQuantity::value,
+    dealii::internal::FEEvaluationImplBasisChange<
+      dealii::internal::evaluate_evenodd,
+      dealii::internal::EvaluatorQuantity::value,
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
-      VectorizedArray<Number>,
-      VectorizedArray<Number>>::do_backward(components,
-                                            interpolation_matrix_1d,
-                                            false,
-                                            fe_eval1.begin_dof_values(),
-                                            fe_eval1.begin_dof_values());
+      dealii::VectorizedArray<Number>,
+      dealii::VectorizedArray<Number>>::do_backward(components,
+                                                    interpolation_matrix_1d,
+                                                    false,
+                                                    fe_eval1.begin_dof_values(),
+                                                    fe_eval1.begin_dof_values());
 
     for(unsigned int q = 0; q < fe_eval2.dofs_per_cell; ++q)
       fe_eval2.begin_dof_values()[q] = fe_eval1.begin_dof_values()[q];
@@ -224,12 +224,10 @@ void
 MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType &       dst,
                                                                       VectorType const & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
-                                                                               dof_handler_index,
-                                                                               quad_index);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*matrixfree_2,
-                                                                               dof_handler_index,
-                                                                               quad_index);
+  dealii::FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(
+    *matrixfree_1, dof_handler_index, quad_index);
+  dealii::FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(
+    *matrixfree_2, dof_handler_index, quad_index);
 
   for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
   {
@@ -241,18 +239,18 @@ MGTransferP<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
     if(!is_dg)
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
 
-    internal::FEEvaluationImplBasisChange<
-      internal::evaluate_evenodd,
-      internal::EvaluatorQuantity::value,
+    dealii::internal::FEEvaluationImplBasisChange<
+      dealii::internal::evaluate_evenodd,
+      dealii::internal::EvaluatorQuantity::value,
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
-      VectorizedArray<Number>,
-      VectorizedArray<Number>>::do_backward(components,
-                                            prolongation_matrix_1d,
-                                            false,
-                                            fe_eval1.begin_dof_values(),
-                                            fe_eval1.begin_dof_values());
+      dealii::VectorizedArray<Number>,
+      dealii::VectorizedArray<Number>>::do_backward(components,
+                                                    prolongation_matrix_1d,
+                                                    false,
+                                                    fe_eval1.begin_dof_values(),
+                                                    fe_eval1.begin_dof_values());
 
     for(unsigned int q = 0; q < fe_eval2.dofs_per_cell; ++q)
       fe_eval2.begin_dof_values()[q] = fe_eval1.begin_dof_values()[q];
@@ -267,12 +265,10 @@ void
 MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
                                                                 VectorType const & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*matrixfree_1,
-                                                                               dof_handler_index,
-                                                                               quad_index);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*matrixfree_2,
-                                                                               dof_handler_index,
-                                                                               quad_index);
+  dealii::FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(
+    *matrixfree_1, dof_handler_index, quad_index);
+  dealii::FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(
+    *matrixfree_2, dof_handler_index, quad_index);
 
   for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
   {
@@ -281,17 +277,17 @@ MGTransferP<dim, Number, VectorType, components>::do_prolongate(VectorType &    
 
     fe_eval2.read_dof_values(src);
 
-    internal::FEEvaluationImplBasisChange<
-      internal::evaluate_evenodd,
-      internal::EvaluatorQuantity::value,
+    dealii::internal::FEEvaluationImplBasisChange<
+      dealii::internal::evaluate_evenodd,
+      dealii::internal::EvaluatorQuantity::value,
       dim,
       fe_degree_2 + 1,
       fe_degree_1 + 1,
-      VectorizedArray<Number>,
-      VectorizedArray<Number>>::do_forward(components,
-                                           prolongation_matrix_1d,
-                                           fe_eval2.begin_dof_values(),
-                                           fe_eval1.begin_dof_values());
+      dealii::VectorizedArray<Number>,
+      dealii::VectorizedArray<Number>>::do_forward(components,
+                                                   prolongation_matrix_1d,
+                                                   fe_eval2.begin_dof_values(),
+                                                   fe_eval1.begin_dof_values());
 
     if(!is_dg)
       weight_residuum<dim, fe_degree_1, Number>(*matrixfree_1, fe_eval1, cell, this->weights);
@@ -314,11 +310,11 @@ MGTransferP<dim, Number, VectorType, components>::MGTransferP()
 
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferP<dim, Number, VectorType, components>::MGTransferP(
-  MatrixFree<dim, value_type> const * matrixfree_1,
-  MatrixFree<dim, value_type> const * matrixfree_2,
-  int                                 degree_1,
-  int                                 degree_2,
-  int                                 dof_handler_index)
+  dealii::MatrixFree<dim, value_type> const * matrixfree_1,
+  dealii::MatrixFree<dim, value_type> const * matrixfree_2,
+  int                                         degree_1,
+  int                                         degree_2,
+  int                                         dof_handler_index)
 {
   reinit(matrixfree_1, matrixfree_2, degree_1, degree_2, dof_handler_index);
 }
@@ -326,11 +322,11 @@ MGTransferP<dim, Number, VectorType, components>::MGTransferP(
 template<int dim, typename Number, typename VectorType, int components>
 void
 MGTransferP<dim, Number, VectorType, components>::reinit(
-  MatrixFree<dim, value_type> const * matrixfree_1,
-  MatrixFree<dim, value_type> const * matrixfree_2,
-  int                                 degree_1,
-  int                                 degree_2,
-  int                                 dof_handler_index)
+  dealii::MatrixFree<dim, value_type> const * matrixfree_1,
+  dealii::MatrixFree<dim, value_type> const * matrixfree_2,
+  int                                         degree_1,
+  int                                         degree_2,
+  int                                         dof_handler_index)
 {
   this->matrixfree_1 = matrixfree_1;
   this->matrixfree_2 = matrixfree_2;
@@ -340,9 +336,9 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
 
   this->dof_handler_index = dof_handler_index;
 
-  this->quad_index                 = numbers::invalid_unsigned_int;
+  this->quad_index                 = dealii::numbers::invalid_unsigned_int;
   unsigned int const n_q_points_1d = degree_1 + 1;
-  unsigned int const n_q_points    = Utilities::pow(n_q_points_1d, dim);
+  unsigned int const n_q_points    = dealii::Utilities::pow(n_q_points_1d, dim);
 
   for(unsigned int quad_index = 0; quad_index < matrixfree_1->get_mapping_info().cell_data.size();
       quad_index++)
@@ -355,8 +351,8 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
     }
   }
 
-  AssertThrow(this->quad_index != numbers::invalid_unsigned_int,
-              ExcMessage("You need for p-transfer quadrature of type k+1"));
+  AssertThrow(this->quad_index != dealii::numbers::invalid_unsigned_int,
+              dealii::ExcMessage("You need for p-transfer quadrature of type k+1"));
 
   this->is_dg = matrixfree_1->get_dof_handler().get_fe().dofs_per_vertex == 0;
 
@@ -365,18 +361,19 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
 
   if(!is_dg)
   {
-    LinearAlgebra::distributed::Vector<Number> vec;
-    IndexSet                                   relevant_dofs;
-    DoFTools::extract_locally_relevant_level_dofs(matrixfree_1->get_dof_handler(dof_handler_index),
-                                                  matrixfree_1->get_mg_level(),
-                                                  relevant_dofs);
+    dealii::LinearAlgebra::distributed::Vector<Number> vec;
+    dealii::IndexSet                                   relevant_dofs;
+    dealii::DoFTools::extract_locally_relevant_level_dofs(matrixfree_1->get_dof_handler(
+                                                            dof_handler_index),
+                                                          matrixfree_1->get_mg_level(),
+                                                          relevant_dofs);
     vec.reinit(matrixfree_1->get_dof_handler(dof_handler_index)
                  .locally_owned_mg_dofs(matrixfree_1->get_mg_level()),
                relevant_dofs,
                matrixfree_1->get_vector_partitioner()->get_mpi_communicator());
 
-    std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1 + 1, dim) *
-                                                     components);
+    std::vector<dealii::types::global_dof_index> dof_indices(
+      dealii::Utilities::pow(this->degree_1 + 1, dim) * components);
     for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
     {
       for(unsigned int v = 0; v < matrixfree_1->n_active_entries_per_cell_batch(cell); v++)
@@ -388,11 +385,11 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
       }
     }
 
-    vec.compress(VectorOperation::add);
+    vec.compress(dealii::VectorOperation::add);
     vec.update_ghost_values();
 
-    weights.resize(matrixfree_1->n_cell_batches() * Utilities::pow(this->degree_1 + 1, dim) *
-                   components);
+    weights.resize(matrixfree_1->n_cell_batches() *
+                   dealii::Utilities::pow(this->degree_1 + 1, dim) * components);
 
     for(unsigned int cell = 0; cell < matrixfree_1->n_cell_batches(); ++cell)
     {
@@ -401,8 +398,9 @@ MGTransferP<dim, Number, VectorType, components>::reinit(
         auto cell_v = matrixfree_1->get_cell_iterator(cell, v, dof_handler_index);
         cell_v->get_mg_dof_indices(dof_indices);
 
-        for(unsigned int i = 0; i < Utilities::pow(this->degree_1 + 1, dim) * components; i++)
-          weights[cell * Utilities::pow(this->degree_1 + 1, dim) * components + i][v] =
+        for(unsigned int i = 0; i < dealii::Utilities::pow(this->degree_1 + 1, dim) * components;
+            i++)
+          weights[cell * dealii::Utilities::pow(this->degree_1 + 1, dim) * components + i][v] =
             1.0 / vec[dof_indices[matrixfree_1->get_shape_info(dof_handler_index)
                                     .lexicographic_numbering[i]]];
       }
@@ -483,7 +481,7 @@ MGTransferP<dim, Number, VectorType, components>::interpolate(unsigned int const
     case 1514: do_interpolate<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
   }
   // clang-format on
 }
@@ -555,13 +553,13 @@ MGTransferP<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
     case 1514: do_restrict_and_add<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferP::restrict_and_add() not implemented for this degree combination!"));
   }
   // clang-format on
 
   if(!this->is_dg) // only if CG
   {
-    dst.compress(VectorOperation::add);
+    dst.compress(dealii::VectorOperation::add);
     src.zero_out_ghost_values();
   }
 }
@@ -635,13 +633,13 @@ MGTransferP<dim, Number, VectorType, components>::prolongate_and_add(unsigned in
     case 1514: do_prolongate<15,14>(dst, src); break;
     // error:
     default:
-      AssertThrow(false, ExcMessage("MGTransferP::prolongate() not implemented for this degree combination!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferP::prolongate() not implemented for this degree combination!"));
   }
   // clang-format on
 
   if(!this->is_dg) // only if CG
   {
-    dst.compress(VectorOperation::add);
+    dst.compress(dealii::VectorOperation::add);
     src.zero_out_ghost_values();
   }
 }

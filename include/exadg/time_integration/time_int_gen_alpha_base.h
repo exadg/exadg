@@ -31,8 +31,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Number>
 class TimeIntGenAlphaBase : public TimeIntBase
 {

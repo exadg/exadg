@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 class Parameters;
 
 template<int dim, typename Number>
@@ -50,9 +48,9 @@ template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
-  typedef TimeIntBDFBase<Number>                          Base;
-  typedef typename Base::VectorType                       VectorType;
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef TimeIntBDFBase<Number>                                  Base;
+  typedef typename Base::VectorType                               VectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef SpatialOperatorBase<dim, Number> OperatorBase;
 

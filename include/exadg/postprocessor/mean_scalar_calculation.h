@@ -25,30 +25,28 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class MeanScalarCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef FaceIntegrator<dim, 1, Number> FaceIntegratorScalar;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
-  MeanScalarCalculator(MatrixFree<dim, Number> const & matrix_free_in,
-                       unsigned int                    dof_index_in,
-                       unsigned int                    quad_index_in,
-                       MPI_Comm const &                mpi_comm_in);
+  MeanScalarCalculator(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                       unsigned int                            dof_index_in,
+                       unsigned int                            quad_index_in,
+                       MPI_Comm const &                        mpi_comm_in);
 
   Number
-  calculate_mean_scalar(VectorType const &                     solution,
-                        std::map<types::boundary_id, Number> & mean_scalar);
+  calculate_mean_scalar(VectorType const &                             solution,
+                        std::map<dealii::types::boundary_id, Number> & mean_scalar);
 
 private:
-  MatrixFree<dim, Number> const & matrix_free;
-  unsigned int                    dof_index, quad_index;
+  dealii::MatrixFree<dim, Number> const & matrix_free;
+  unsigned int                            dof_index, quad_index;
 
   MPI_Comm const mpi_comm;
 };

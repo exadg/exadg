@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<Operator>                       operator_in,
@@ -259,23 +257,23 @@ void
 TimeIntBDFPressureCorrection<dim, Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
-              ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
+              dealii::ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
 
   AssertThrow(this->param.convective_problem() == false,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Stability analysis can not be performed for nonlinear convective problems."));
 
   AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
-              ExcMessage("Solution vector has to be zero for this stability analysis."));
+              dealii::ExcMessage("Solution vector has to be zero for this stability analysis."));
 
-  AssertThrow(Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
-              ExcMessage("Number of MPI processes has to be 1."));
+  AssertThrow(dealii::Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
+              dealii::ExcMessage("Number of MPI processes has to be 1."));
 
   std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
 
   unsigned int const size = velocity[0].locally_owned_size();
 
-  LAPACKFullMatrix<Number> propagation_matrix(size, size);
+  dealii::LAPACKFullMatrix<Number> propagation_matrix(size, size);
 
   // loop over all columns of propagation matrix
   for(unsigned int j = 0; j < size; ++j)
@@ -341,7 +339,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // Extrapolate old solutionsto get a good initial estimate for the solver.
@@ -364,7 +362,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
    */
   if(this->param.use_turbulence_model == true)
   {
-    Timer timer_turbulence;
+    dealii::Timer timer_turbulence;
     timer_turbulence.restart();
 
     pde_operator->update_turbulence_model(velocity_np);
@@ -426,7 +424,8 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   }
   else // nonlinear problem
   {
-    AssertThrow(this->param.nonlinear_problem_has_to_be_solved(), ExcMessage("Logical error."));
+    AssertThrow(this->param.nonlinear_problem_has_to_be_solved(),
+                dealii::ExcMessage("Logical error."));
 
     // solve non-linear system of equations
     auto const iter = pde_operator->solve_nonlinear_momentum_equation(
@@ -560,7 +559,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::pressure_step(VectorType & pressure_increment)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // compute right-hand side vector
@@ -650,7 +649,7 @@ TimeIntBDFPressureCorrection<dim, Number>::calculate_chi(double & chi) const
                     FormulationViscousTerm::LaplaceFormulation &&
                   this->param.formulation_viscous_term ==
                     FormulationViscousTerm::DivergenceFormulation,
-                ExcMessage("Not implemented!"));
+                dealii::ExcMessage("Not implemented!"));
   }
 }
 
@@ -794,7 +793,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::projection_step(VectorType const & pressure_increment)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // compute right-hand-side vector
@@ -870,7 +869,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFPressureCorrection<dim, Number>::evaluate_convective_term()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // evaluate convective term once solution_np is known
@@ -998,12 +997,12 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
   }
   else
   {
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   AssertThrow(
     converged == true,
-    ExcMessage(
+    dealii::ExcMessage(
       "Maximum number of time steps or end time exceeded! This might be due to the fact that "
       "(i) the maximum number of time steps is simply too small to reach a steady solution, "
       "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "

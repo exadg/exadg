@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 namespace Operators
 {
 struct DiffusiveKernelData
@@ -50,38 +48,38 @@ template<int dim, typename Number>
 class DiffusiveKernel
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef CellIntegrator<dim, 1, Number> IntegratorCell;
   typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
 
 public:
-  DiffusiveKernel() : degree(1), tau(make_vectorized_array<Number>(0.0))
+  DiffusiveKernel() : degree(1), tau(dealii::make_vectorized_array<Number>(0.0))
   {
   }
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free,
-         DiffusiveKernelData const &     data_in,
-         unsigned int const              dof_index)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
+         DiffusiveKernelData const &             data_in,
+         unsigned int const                      dof_index)
   {
     data = data_in;
 
-    FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
-    degree                        = fe.degree;
+    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+    degree                                = fe.degree;
 
     calculate_penalty_parameter(matrix_free, dof_index);
 
     AssertThrow(data.diffusivity > (0.0 - std::numeric_limits<double>::epsilon()),
-                ExcMessage("Diffusivity is not set!"));
+                dealii::ExcMessage("Diffusivity is not set!"));
   }
 
   void
-  calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const              dof_index)
+  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
+                              unsigned int const                      dof_index)
   {
     IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter, matrix_free, dof_index);
   }
@@ -106,12 +104,13 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_gradients | update_JxW_values;
+    flags.cells = dealii::update_gradients | dealii::update_JxW_values;
     if(compute_interior_face_integrals)
-      flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+      flags.inner_faces =
+        dealii::update_gradients | dealii::update_JxW_values | dealii::update_normal_vectors;
     if(compute_boundary_face_integrals)
-      flags.boundary_faces =
-        update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+      flags.boundary_faces = dealii::update_gradients | dealii::update_JxW_values |
+                             dealii::update_normal_vectors | dealii::update_quadrature_points;
 
     return flags;
   }
@@ -132,11 +131,11 @@ public:
   }
 
   void
-  reinit_face_cell_based(types::boundary_id const boundary_id,
-                         IntegratorFace &         integrator_m,
-                         IntegratorFace &         integrator_p) const
+  reinit_face_cell_based(dealii::types::boundary_id const boundary_id,
+                         IntegratorFace &                 integrator_m,
+                         IntegratorFace &                 integrator_p) const
   {
-    if(boundary_id == numbers::internal_face_boundary_id) // internal face
+    if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
       tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                      integrator_p.read_cell_data(array_penalty_parameter)) *
@@ -188,7 +187,7 @@ private:
 
   unsigned int degree;
 
-  AlignedVector<scalar> array_penalty_parameter;
+  dealii::AlignedVector<scalar> array_penalty_parameter;
 
   mutable scalar tau;
 };
@@ -218,13 +217,13 @@ private:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
 public:
   void
-  initialize(MatrixFree<dim, Number> const &                          matrix_free,
-             AffineConstraints<Number> const &                        affine_constraints,
+  initialize(dealii::MatrixFree<dim, Number> const &                  matrix_free,
+             dealii::AffineConstraints<Number> const &                affine_constraints,
              DiffusiveOperatorData<dim> const &                       data,
              std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel);
 
@@ -239,9 +238,9 @@ private:
   reinit_boundary_face(unsigned int const face) const;
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   void
   do_cell_integral(IntegratorCell & integrator) const;
@@ -256,9 +255,9 @@ private:
   do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_boundary_integral(IntegratorFace &           integrator_m,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator_m,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   DiffusiveOperatorData<dim> operator_data;
 

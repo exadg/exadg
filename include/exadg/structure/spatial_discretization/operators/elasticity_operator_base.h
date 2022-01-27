@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim>
 struct OperatorData : public OperatorBaseData
 {
@@ -94,9 +92,9 @@ public:
   get_mapping_flags();
 
   virtual void
-  initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<Number> const & affine_constraints,
-             OperatorData<dim> const &         data);
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             OperatorData<dim> const &                 data);
 
   OperatorData<dim> const &
   get_data() const;

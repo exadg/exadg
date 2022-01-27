@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 enum class InitializeSolutionWith
 {
   ZeroFunction,
@@ -35,17 +33,17 @@ enum class InitializeSolutionWith
 };
 
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
-  AnalyticalSolutionVelocity(double const lambda) : Function<dim>(dim, 0.0), lambda(lambda)
+  AnalyticalSolutionVelocity(double const lambda) : dealii::Function<dim>(dim, 0.0), lambda(lambda)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double result = 0.0;
     if(component == 0)
@@ -61,16 +59,16 @@ private:
 };
 
 template<int dim>
-class AnalyticalSolutionPressure : public Function<dim>
+class AnalyticalSolutionPressure : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionPressure(double const lambda)
-    : Function<dim>(1 /*n_components*/, 0.0), lambda(lambda)
+    : dealii::Function<dim>(1 /*n_components*/, 0.0), lambda(lambda)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const result = 0.5 * (1.0 - std::exp(2.0 * lambda * p[0]));
 
@@ -82,18 +80,18 @@ private:
 };
 
 template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
+class NeumannBoundaryVelocity : public dealii::Function<dim>
 {
 public:
   NeumannBoundaryVelocity(FormulationViscousTerm const & formulation_viscous, double const lambda)
-    : Function<dim>(dim, 0.0), formulation_viscous(formulation_viscous), lambda(lambda)
+    : dealii::Function<dim>(dim, 0.0), formulation_viscous(formulation_viscous), lambda(lambda)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double result = 0.0;
     if(formulation_viscous == FormulationViscousTerm::LaplaceFormulation)
@@ -115,7 +113,7 @@ public:
     {
       AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation ||
                     formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
-                  ExcMessage("Specified formulation of viscous term is not implemented!"));
+                  dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
 
     return result;
@@ -134,7 +132,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -147,7 +145,7 @@ public:
   double const viscosity = 2.5e-2;
   double const lambda =
     0.5 / viscosity -
-    std::pow(0.25 / std::pow(viscosity, 2.0) + 4.0 * std::pow(numbers::PI, 2.0), 0.5);
+    std::pow(0.25 / std::pow(viscosity, 2.0) + 4.0 * std::pow(dealii::numbers::PI, 2.0), 0.5);
 
   double const start_time = 0.0;
   double const end_time   = 1.0;
@@ -270,12 +268,12 @@ public:
   create_grid() final
   {
     double const left = -1.0, right = 1.0;
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary indicator
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if((std::fabs(cell->face(f)->center()(0) - right) < 1e-12))
           cell->face(f)->set_boundary_id(1);
@@ -288,7 +286,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -298,7 +297,7 @@ public:
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
       pair(1, new AnalyticalSolutionPressure<dim>(lambda)));
   }
@@ -306,12 +305,12 @@ public:
   void
   set_field_functions() final
   {
-    std::shared_ptr<Function<dim>> initial_solution_velocity;
-    std::shared_ptr<Function<dim>> initial_solution_pressure;
+    std::shared_ptr<dealii::Function<dim>> initial_solution_velocity;
+    std::shared_ptr<dealii::Function<dim>> initial_solution_pressure;
     if(initialize_solution_with == InitializeSolutionWith::ZeroFunction)
     {
-      initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-      initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+      initial_solution_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+      initial_solution_pressure.reset(new dealii::Functions::ZeroFunction<dim>(1));
     }
     else if(initialize_solution_with == InitializeSolutionWith::AnalyticalSolution)
     {
@@ -323,7 +322,7 @@ public:
     this->field_functions->initial_solution_pressure = initial_solution_pressure;
     this->field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(lambda));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

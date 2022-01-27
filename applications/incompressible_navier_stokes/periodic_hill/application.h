@@ -31,19 +31,17 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
   InitialSolutionVelocity(double const bulk_velocity, double const H, double const height)
-    : Function<dim>(dim, 0.0), bulk_velocity(bulk_velocity), H(H), height(height)
+    : dealii::Function<dim>(dim, 0.0), bulk_velocity(bulk_velocity), H(H), height(height)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     // x-velocity
     double result = 0.0;
@@ -65,16 +63,16 @@ private:
 };
 
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
   RightHandSide(FlowRateController const & flow_rate_controller)
-    : Function<dim>(dim, 0.0), flow_rate_controller(flow_rate_controller)
+    : dealii::Function<dim>(dim, 0.0), flow_rate_controller(flow_rate_controller)
   {
   }
 
   double
-  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -99,7 +97,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -119,7 +117,7 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -127,12 +125,12 @@ public:
     prm.enter_subsection("Application");
       prm.add_parameter("Inviscid",             inviscid,                     "Is this an inviscid simulation?");
       prm.add_parameter("ReynoldsNumber",       Re,                           "Reynolds number (ignored if Inviscid = true)");
-      prm.add_parameter("EndTime",              end_time_multiples,           "End time in multiples of flow through time.", Patterns::Integer(0.0,1000.0));
+      prm.add_parameter("EndTime",              end_time_multiples,           "End time in multiples of flow through time.", dealii::Patterns::Integer(0.0,1000.0));
       prm.add_parameter("GridStretchFactor",    grid_stretch_factor,          "Factor describing grid stretching in vertical direction.");
       prm.add_parameter("CalculateStatistics",  calculate_statistics,         "Decides whether statistics are calculated.");
-      prm.add_parameter("SampleStartTime",      sample_start_time_multiples,  "Start time of sampling in multiples of flow through time.", Patterns::Integer(0.0,1000.0));
-      prm.add_parameter("SampleEveryTimeSteps", sample_every_timesteps,       "Sample every ... time steps.", Patterns::Integer(1,1000));
-      prm.add_parameter("PointsPerLine",        points_per_line,              "Points per line in vertical direction.", Patterns::Integer(1,10000));
+      prm.add_parameter("SampleStartTime",      sample_start_time_multiples,  "Start time of sampling in multiples of flow through time.", dealii::Patterns::Integer(0.0,1000.0));
+      prm.add_parameter("SampleEveryTimeSteps", sample_every_timesteps,       "Sample every ... time steps.", dealii::Patterns::Integer(1,1000));
+      prm.add_parameter("PointsPerLine",        points_per_line,              "Points per line in vertical direction.", dealii::Patterns::Integer(1,10000));
     prm.leave_subsection();
     // clang-format on
   }
@@ -265,13 +263,13 @@ public:
   void
   create_grid() final
   {
-    Point<dim> p_1;
+    dealii::Point<dim> p_1;
     p_1[0] = 0.;
     p_1[1] = H;
     if(dim == 3)
       p_1[2] = -width / 2.0;
 
-    Point<dim> p_2;
+    dealii::Point<dim> p_2;
     p_2[0] = length;
     p_2[1] = H + height;
     if(dim == 3)
@@ -280,7 +278,10 @@ public:
     // use 2 cells in x-direction on coarsest grid and 1 cell in y- and z-directions
     std::vector<unsigned int> refinements(dim, 1);
     refinements[0] = 2;
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation, refinements, p_1, p_2);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      refinements,
+                                                      p_1,
+                                                      p_2);
 
     // create hill by shifting y-coordinates of middle vertices by -H in y-direction
     this->grid->triangulation->last()->vertex(0)[1] = 0.;
@@ -306,13 +307,13 @@ public:
       this->grid->triangulation->last()->face(5)->set_all_boundary_ids(5 + 10);
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
     if(dim == 3)
     {
-      GridTools::collect_periodic_faces(
+      dealii::GridTools::collect_periodic_faces(
         *this->grid->triangulation, 2 + 10, 3 + 10, 2, this->grid->periodic_faces);
-      GridTools::collect_periodic_faces(
+      dealii::GridTools::collect_periodic_faces(
         *this->grid->triangulation, 4 + 10, 5 + 10, 2, this->grid->periodic_faces);
     }
 
@@ -333,15 +334,16 @@ public:
   set_boundary_descriptor() final
   {
     // set boundary conditions
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -349,8 +351,10 @@ public:
   {
     this->field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(bulk_velocity, H, height));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->right_hand_side.reset(new RightHandSide<dim>(*flow_rate_controller));
   }
 
@@ -423,24 +427,24 @@ public:
 
     // begin and end points of all lines
     double const eps = 1.e-10;
-    vel_0->begin     = Point<dim>(0 * H, H + f(0 * H, H, length) + eps, 0);
-    vel_0->end       = Point<dim>(0 * H, H + height - eps, 0);
-    vel_1->begin     = Point<dim>(1 * H, H + f(1 * H, H, length) + eps, 0);
-    vel_1->end       = Point<dim>(1 * H, H + height - eps, 0);
-    vel_2->begin     = Point<dim>(2 * H, H + f(2 * H, H, length) + eps, 0);
-    vel_2->end       = Point<dim>(2 * H, H + height - eps, 0);
-    vel_3->begin     = Point<dim>(3 * H, H + f(3 * H, H, length) + eps, 0);
-    vel_3->end       = Point<dim>(3 * H, H + height - eps, 0);
-    vel_4->begin     = Point<dim>(4 * H, H + f(4 * H, H, length) + eps, 0);
-    vel_4->end       = Point<dim>(4 * H, H + height - eps, 0);
-    vel_5->begin     = Point<dim>(5 * H, H + f(5 * H, H, length) + eps, 0);
-    vel_5->end       = Point<dim>(5 * H, H + height - eps, 0);
-    vel_6->begin     = Point<dim>(6 * H, H + f(6 * H, H, length) + eps, 0);
-    vel_6->end       = Point<dim>(6 * H, H + height - eps, 0);
-    vel_7->begin     = Point<dim>(7 * H, H + f(7 * H, H, length) + eps, 0);
-    vel_7->end       = Point<dim>(7 * H, H + height - eps, 0);
-    vel_8->begin     = Point<dim>(8 * H, H + f(8 * H, H, length) + eps, 0);
-    vel_8->end       = Point<dim>(8 * H, H + height - eps, 0);
+    vel_0->begin     = dealii::Point<dim>(0 * H, H + f(0 * H, H, length) + eps, 0);
+    vel_0->end       = dealii::Point<dim>(0 * H, H + height - eps, 0);
+    vel_1->begin     = dealii::Point<dim>(1 * H, H + f(1 * H, H, length) + eps, 0);
+    vel_1->end       = dealii::Point<dim>(1 * H, H + height - eps, 0);
+    vel_2->begin     = dealii::Point<dim>(2 * H, H + f(2 * H, H, length) + eps, 0);
+    vel_2->end       = dealii::Point<dim>(2 * H, H + height - eps, 0);
+    vel_3->begin     = dealii::Point<dim>(3 * H, H + f(3 * H, H, length) + eps, 0);
+    vel_3->end       = dealii::Point<dim>(3 * H, H + height - eps, 0);
+    vel_4->begin     = dealii::Point<dim>(4 * H, H + f(4 * H, H, length) + eps, 0);
+    vel_4->end       = dealii::Point<dim>(4 * H, H + height - eps, 0);
+    vel_5->begin     = dealii::Point<dim>(5 * H, H + f(5 * H, H, length) + eps, 0);
+    vel_5->end       = dealii::Point<dim>(5 * H, H + height - eps, 0);
+    vel_6->begin     = dealii::Point<dim>(6 * H, H + f(6 * H, H, length) + eps, 0);
+    vel_6->end       = dealii::Point<dim>(6 * H, H + height - eps, 0);
+    vel_7->begin     = dealii::Point<dim>(7 * H, H + f(7 * H, H, length) + eps, 0);
+    vel_7->end       = dealii::Point<dim>(7 * H, H + height - eps, 0);
+    vel_8->begin     = dealii::Point<dim>(8 * H, H + f(8 * H, H, length) + eps, 0);
+    vel_8->end       = dealii::Point<dim>(8 * H, H + height - eps, 0);
 
     // set the number of points along the lines
     vel_0->n_points = points_per_line;
@@ -506,7 +510,7 @@ public:
     my_pp_data.mean_velocity_data.calculate = true;
     my_pp_data.mean_velocity_data.directory = this->output_directory;
     my_pp_data.mean_velocity_data.filename  = "flow_rate";
-    Tensor<1, dim, double> direction;
+    dealii::Tensor<1, dim, double> direction;
     direction[0]                                = 1.0;
     my_pp_data.mean_velocity_data.direction     = direction;
     my_pp_data.mean_velocity_data.write_to_file = true;

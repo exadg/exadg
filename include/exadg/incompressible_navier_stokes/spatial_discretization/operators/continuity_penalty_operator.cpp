@@ -12,8 +12,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator()
   : matrix_free(nullptr), time(0.0)
@@ -22,9 +20,10 @@ ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator()
 
 template<int dim, typename Number>
 void
-ContinuityPenaltyOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &    matrix_free,
-                                                   ContinuityPenaltyData<dim> const & data,
-                                                   std::shared_ptr<Kernel> const      kernel)
+ContinuityPenaltyOperator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  ContinuityPenaltyData<dim> const &      data,
+  std::shared_ptr<Kernel> const           kernel)
 {
   this->matrix_free = &matrix_free;
   this->data        = data;
@@ -49,8 +48,8 @@ ContinuityPenaltyOperator<dim, Number>::apply(VectorType & dst, VectorType const
                     dst,
                     src,
                     true,
-                    MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                    MatrixFree<dim, Number>::DataAccessOnFaces::values);
+                    dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                    dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
 }
 
 template<int dim, typename Number>
@@ -64,8 +63,8 @@ ContinuityPenaltyOperator<dim, Number>::apply_add(VectorType & dst, VectorType c
                     dst,
                     src,
                     false,
-                    MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                    MatrixFree<dim, Number>::DataAccessOnFaces::values);
+                    dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                    dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
 }
 
 template<int dim, typename Number>
@@ -134,10 +133,11 @@ ContinuityPenaltyOperator<dim, Number>::evaluate_add(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-ContinuityPenaltyOperator<dim, Number>::cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                                                        VectorType &                    dst,
-                                                        VectorType const &              src,
-                                                        Range const &                   range) const
+ContinuityPenaltyOperator<dim, Number>::cell_loop_empty(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -147,10 +147,11 @@ ContinuityPenaltyOperator<dim, Number>::cell_loop_empty(MatrixFree<dim, Number> 
 
 template<int dim, typename Number>
 void
-ContinuityPenaltyOperator<dim, Number>::face_loop(MatrixFree<dim, Number> const & matrix_free,
-                                                  VectorType &                    dst,
-                                                  VectorType const &              src,
-                                                  Range const &                   face_range) const
+ContinuityPenaltyOperator<dim, Number>::face_loop(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   IntegratorFace integrator_m(matrix_free, true, data.dof_index, data.quad_index);
   IntegratorFace integrator_p(matrix_free, false, data.dof_index, data.quad_index);
@@ -174,10 +175,11 @@ ContinuityPenaltyOperator<dim, Number>::face_loop(MatrixFree<dim, Number> const 
 
 template<int dim, typename Number>
 void
-ContinuityPenaltyOperator<dim, Number>::face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                                                        VectorType &                    dst,
-                                                        VectorType const &              src,
-                                                        Range const & face_range) const
+ContinuityPenaltyOperator<dim, Number>::face_loop_empty(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -188,10 +190,10 @@ ContinuityPenaltyOperator<dim, Number>::face_loop_empty(MatrixFree<dim, Number> 
 template<int dim, typename Number>
 void
 ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_hom(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.use_boundary_data)
   {
@@ -217,10 +219,10 @@ ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_hom(
 template<int dim, typename Number>
 void
 ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_full(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.use_boundary_data)
   {
@@ -244,10 +246,10 @@ ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_full(
 template<int dim, typename Number>
 void
 ContinuityPenaltyOperator<dim, Number>::boundary_face_loop_inhom(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   (void)src;
 
@@ -291,9 +293,9 @@ ContinuityPenaltyOperator<dim, Number>::do_face_integral(IntegratorFace & integr
 template<int dim, typename Number>
 void
 ContinuityPenaltyOperator<dim, Number>::do_boundary_integral(
-  IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = data.bc->get_boundary_type(boundary_id);
 

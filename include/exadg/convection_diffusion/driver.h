@@ -52,8 +52,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 enum class OperatorType
 {
   MassOperator,
@@ -74,7 +72,7 @@ enum_to_string(OperatorType const enum_type)
     case OperatorType::ConvectiveOperator:              string_type = "ConvectiveOperator";              break;
     case OperatorType::DiffusiveOperator:               string_type = "DiffusiveOperator";               break;
     case OperatorType::MassConvectionDiffusionOperator: string_type = "MassConvectionDiffusionOperator"; break;
-    default: AssertThrow(false, ExcMessage("Not implemented.")); break;
+    default: AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
       // clang-format on
   }
 
@@ -89,7 +87,7 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
   else if(string_type == "ConvectiveOperator")              enum_type = OperatorType::ConvectiveOperator;
   else if(string_type == "DiffusiveOperator")               enum_type = OperatorType::DiffusiveOperator;
   else if(string_type == "MassConvectionDiffusionOperator") enum_type = OperatorType::MassConvectionDiffusionOperator;
-  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
 
@@ -100,7 +98,7 @@ get_dofs_per_element(std::string const & input_file,
 {
   (void)input_file;
 
-  unsigned int const dofs_per_element = Utilities::pow(degree + 1, dim);
+  unsigned int const dofs_per_element = dealii::Utilities::pow(degree + 1, dim);
 
   return dofs_per_element;
 }
@@ -126,7 +124,7 @@ public:
   /*
    * Throughput study
    */
-  std::tuple<unsigned int, types::global_dof_index, double>
+  std::tuple<unsigned int, dealii::types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
                  unsigned int const  n_repetitions_outer) const;
@@ -139,7 +137,7 @@ private:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -153,8 +151,8 @@ private:
   // moving mapping (ALE)
   std::shared_ptr<GridMotionBase<dim, Number>> grid_motion;
 
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

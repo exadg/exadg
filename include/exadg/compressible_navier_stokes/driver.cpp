@@ -33,15 +33,13 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
                             std::shared_ptr<ApplicationBase<dim, Number>> app,
                             bool const                                    is_test,
                             bool const                                    is_throughput_study)
   : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
     is_throughput_study(is_throughput_study),
     application(app)
@@ -53,7 +51,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up compressible Navier-Stokes solver:" << std::endl;
@@ -72,7 +70,7 @@ Driver<dim, Number>::setup()
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   matrix_free->reinit(*application->get_grid()->mapping,
                       matrix_free_data->get_dof_handler_vector(),
                       matrix_free_data->get_constraint_vector(),
@@ -127,12 +125,13 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
-  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-  unsigned int const            N_time_steps    = time_integrator->get_number_of_time_steps();
+  dealii::types::global_dof_index const DoFs = pde_operator->get_number_of_dofs();
+  unsigned int const N_mpi_processes         = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_time_steps            = time_integrator->get_number_of_time_steps();
 
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+  dealii::Utilities::MPI::MinMaxAvg overall_time_data =
+    dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const overall_time_avg = overall_time_data.avg;
 
   print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
 
@@ -145,7 +144,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 }
 
 template<int dim, typename Number>
-std::tuple<unsigned int, types::global_dof_index, double>
+std::tuple<unsigned int, dealii::types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
@@ -180,7 +179,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
     else if(operator_type == OperatorType::EvaluateOperatorExplicit)
       pde_operator->evaluate(dst, src, 0.0);
     else
-      AssertThrow(false, ExcMessage("Specified operator type not implemented"));
+      AssertThrow(false, dealii::ExcMessage("Specified operator type not implemented"));
   };
 
   // do the measurements
@@ -191,11 +190,11 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                                             mpi_comm);
 
   // calculate throughput
-  types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
+  dealii::types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
 
   double const throughput = (double)dofs / wall_time;
 
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
   if(not(is_test))
   {
@@ -209,7 +208,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(
+  return std::tuple<unsigned int, dealii::types::global_dof_index, double>(
     application->get_parameters().degree, dofs, throughput);
 }
 

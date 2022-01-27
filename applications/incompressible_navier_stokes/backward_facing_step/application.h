@@ -34,17 +34,15 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
   InitialSolutionVelocity(double const max_velocity,
                           double const length,
                           double const height,
                           double const width)
-    : Function<dim>(dim, 0.0),
+    : dealii::Function<dim>(dim, 0.0),
       max_velocity(max_velocity),
       length(length),
       height(height),
@@ -53,9 +51,9 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
-    AssertThrow(dim == 3, ExcMessage("Dimension has to be dim==3."));
+    AssertThrow(dim == 3, dealii::ExcMessage("Dimension has to be dim==3."));
 
     double const x = p[0] / length;
     double const y = (p[1] - height / 2.0) / (height / 2.0);
@@ -99,16 +97,16 @@ private:
 };
 
 template<int dim>
-class InflowProfile : public Function<dim>
+class InflowProfile : public dealii::Function<dim>
 {
 public:
   InflowProfile(InflowDataStorage<dim> const & inflow_data_storage)
-    : Function<dim>(dim, 0.0), data(inflow_data_storage)
+    : dealii::Function<dim>(dim, 0.0), data(inflow_data_storage)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = linear_interpolation_2d_cartesian(
       p, data.y_values, data.z_values, data.velocity_values, component);
@@ -121,15 +119,15 @@ private:
 };
 
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
-  RightHandSide() : Function<dim>(dim, 0.0)
+  RightHandSide() : dealii::Function<dim>(dim, 0.0)
   {
   }
 
   double
-  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -153,7 +151,7 @@ public:
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -399,12 +397,13 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     // no slip boundaries at the upper and lower wall with ID=0
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=2: prescribe velocity profile which
     // is obtained as the results of the precursor simulation
@@ -413,38 +412,39 @@ public:
 
     // outflow boundary condition at right boundary with ID=1
     this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at the upper and lower wall with ID=0
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=2
     // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
     // we assume that this is negligible when using the dual splitting scheme
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(dim)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // outflow boundary condition at right boundary with ID=1: set pressure to zero
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_boundary_descriptor_precursor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     // no slip boundaries at lower and upper wall with ID=0
     this->boundary_descriptor_pre->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at lower and upper wall with ID=0
     this->boundary_descriptor_pre->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -456,10 +456,12 @@ public:
                                        Geometry::HEIGHT_CHANNEL,
                                        Geometry::WIDTH_CHANNEL));
     //  this->field_functions->initial_solution_velocity.reset(new
-    //  Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    //  dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -470,9 +472,10 @@ public:
                                        Geometry::LENGTH_CHANNEL,
                                        Geometry::HEIGHT_CHANNEL,
                                        Geometry::WIDTH_CHANNEL));
-    this->field_functions_pre->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions_pre->analytical_solution_pressure.reset(
-      new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions_pre->right_hand_side.reset(new RightHandSide<dim>());
   }
 
@@ -518,9 +521,9 @@ public:
     quantity_reynolds->type = QuantityType::ReynoldsStresses;
 
     // skin friction
-    Tensor<1, dim, double> normal;
+    dealii::Tensor<1, dim, double> normal;
     normal[1] = 1.0;
-    Tensor<1, dim, double> tangent;
+    dealii::Tensor<1, dim, double> tangent;
     tangent[0] = 1.0;
     std::shared_ptr<QuantitySkinFriction<dim>> quantity_skin_friction;
     quantity_skin_friction.reset(new QuantitySkinFriction<dim>());
@@ -537,8 +540,9 @@ public:
     // mean pressure coefficient
     std::shared_ptr<QuantityPressureCoefficient<dim>> quantity_pressure_coeff;
     quantity_pressure_coeff.reset(new QuantityPressureCoefficient<dim>());
-    quantity_pressure_coeff->type            = QuantityType::PressureCoefficient;
-    quantity_pressure_coeff->reference_point = Point<dim>(Geometry::X1_COORDINATE_INFLOW, 0, 0);
+    quantity_pressure_coeff->type = QuantityType::PressureCoefficient;
+    quantity_pressure_coeff->reference_point =
+      dealii::Point<dim>(Geometry::X1_COORDINATE_INFLOW, 0, 0);
 
     // lines
     std::shared_ptr<LineHomogeneousAveraging<dim>> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6,
@@ -594,36 +598,36 @@ public:
     // begin and end points of all lines
     double const H   = Geometry::H;
     double const eps = 1.e-8;
-    vel_0->begin     = Point<dim>(Geometry::X1_COORDINATE_INFLOW + eps, 0, 0);
-    vel_0->end       = Point<dim>(Geometry::X1_COORDINATE_INFLOW + eps, 2 * H, 0);
-    vel_1->begin     = Point<dim>(0 * H, 0, 0);
-    vel_1->end       = Point<dim>(0 * H, 2 * H, 0);
-    vel_2->begin     = Point<dim>(1 * H, -1 * H, 0);
-    vel_2->end       = Point<dim>(1 * H, 2 * H, 0);
-    vel_3->begin     = Point<dim>(2 * H, -1 * H, 0);
-    vel_3->end       = Point<dim>(2 * H, 2 * H, 0);
-    vel_4->begin     = Point<dim>(3 * H, -1 * H, 0);
-    vel_4->end       = Point<dim>(3 * H, 2 * H, 0);
-    vel_5->begin     = Point<dim>(4 * H, -1 * H, 0);
-    vel_5->end       = Point<dim>(4 * H, 2 * H, 0);
-    vel_6->begin     = Point<dim>(5 * H, -1 * H, 0);
-    vel_6->end       = Point<dim>(5 * H, 2 * H, 0);
-    vel_7->begin     = Point<dim>(6 * H, -1 * H, 0);
-    vel_7->end       = Point<dim>(6 * H, 2 * H, 0);
-    vel_8->begin     = Point<dim>(7 * H, -1 * H, 0);
-    vel_8->end       = Point<dim>(7 * H, 2 * H, 0);
-    vel_9->begin     = Point<dim>(8 * H, -1 * H, 0);
-    vel_9->end       = Point<dim>(8 * H, 2 * H, 0);
-    vel_10->begin    = Point<dim>(9 * H, -1 * H, 0);
-    vel_10->end      = Point<dim>(9 * H, 2 * H, 0);
-    vel_11->begin    = Point<dim>(10 * H, -1 * H, 0);
-    vel_11->end      = Point<dim>(10 * H, 2 * H, 0);
-    Cp_1->begin      = Point<dim>(Geometry::X1_COORDINATE_INFLOW, 0, 0);
-    Cp_1->end        = Point<dim>(0, 0, 0);
-    Cp_2->begin      = Point<dim>(0, -H, 0);
-    Cp_2->end        = Point<dim>(Geometry::X1_COORDINATE_OUTFLOW, -H, 0);
-    Cf->begin        = Point<dim>(0, -H, 0);
-    Cf->end          = Point<dim>(Geometry::X1_COORDINATE_OUTFLOW, -H, 0);
+    vel_0->begin     = dealii::Point<dim>(Geometry::X1_COORDINATE_INFLOW + eps, 0, 0);
+    vel_0->end       = dealii::Point<dim>(Geometry::X1_COORDINATE_INFLOW + eps, 2 * H, 0);
+    vel_1->begin     = dealii::Point<dim>(0 * H, 0, 0);
+    vel_1->end       = dealii::Point<dim>(0 * H, 2 * H, 0);
+    vel_2->begin     = dealii::Point<dim>(1 * H, -1 * H, 0);
+    vel_2->end       = dealii::Point<dim>(1 * H, 2 * H, 0);
+    vel_3->begin     = dealii::Point<dim>(2 * H, -1 * H, 0);
+    vel_3->end       = dealii::Point<dim>(2 * H, 2 * H, 0);
+    vel_4->begin     = dealii::Point<dim>(3 * H, -1 * H, 0);
+    vel_4->end       = dealii::Point<dim>(3 * H, 2 * H, 0);
+    vel_5->begin     = dealii::Point<dim>(4 * H, -1 * H, 0);
+    vel_5->end       = dealii::Point<dim>(4 * H, 2 * H, 0);
+    vel_6->begin     = dealii::Point<dim>(5 * H, -1 * H, 0);
+    vel_6->end       = dealii::Point<dim>(5 * H, 2 * H, 0);
+    vel_7->begin     = dealii::Point<dim>(6 * H, -1 * H, 0);
+    vel_7->end       = dealii::Point<dim>(6 * H, 2 * H, 0);
+    vel_8->begin     = dealii::Point<dim>(7 * H, -1 * H, 0);
+    vel_8->end       = dealii::Point<dim>(7 * H, 2 * H, 0);
+    vel_9->begin     = dealii::Point<dim>(8 * H, -1 * H, 0);
+    vel_9->end       = dealii::Point<dim>(8 * H, 2 * H, 0);
+    vel_10->begin    = dealii::Point<dim>(9 * H, -1 * H, 0);
+    vel_10->end      = dealii::Point<dim>(9 * H, 2 * H, 0);
+    vel_11->begin    = dealii::Point<dim>(10 * H, -1 * H, 0);
+    vel_11->end      = dealii::Point<dim>(10 * H, 2 * H, 0);
+    Cp_1->begin      = dealii::Point<dim>(Geometry::X1_COORDINATE_INFLOW, 0, 0);
+    Cp_1->end        = dealii::Point<dim>(0, 0, 0);
+    Cp_2->begin      = dealii::Point<dim>(0, -H, 0);
+    Cp_2->end        = dealii::Point<dim>(Geometry::X1_COORDINATE_OUTFLOW, -H, 0);
+    Cf->begin        = dealii::Point<dim>(0, -H, 0);
+    Cf->end          = dealii::Point<dim>(Geometry::X1_COORDINATE_OUTFLOW, -H, 0);
 
     // set the number of points along the lines
     vel_0->n_points  = n_points_per_line;

@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 namespace FlowPastCylinder
 {
 // physical dimensions (diameter D and center coordinate Y_C can be varied)
@@ -96,17 +94,18 @@ std::vector<unsigned int> face_ids;
 
 template<int dim>
 void
-set_boundary_ids(Triangulation<dim> & tria, bool compute_in_2d)
+set_boundary_ids(dealii::Triangulation<dim> & tria, bool compute_in_2d)
 {
   // Set the cylinder boundary to 2, outflow to 1, the rest to 0.
-  for(typename Triangulation<dim>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+  for(typename dealii::Triangulation<dim>::active_cell_iterator cell = tria.begin();
+      cell != tria.end();
       ++cell)
   {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
+    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
     {
       if(cell->face(f)->at_boundary())
       {
-        Point<dim> point_on_centerline;
+        dealii::Point<dim> point_on_centerline;
         point_on_centerline[0] = X_C;
         point_on_centerline[1] = Y_C;
         if(dim == 3)
@@ -125,77 +124,77 @@ set_boundary_ids(Triangulation<dim> & tria, bool compute_in_2d)
   }
 }
 
-void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = true)
+void create_triangulation(dealii::Triangulation<2> & tria, bool const compute_in_2d = true)
 {
   AssertThrow(std::abs((X_2 - X_1) - 2.0 * (X_C - X_1)) < 1.0e-12,
-              ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
+              dealii::ExcMessage("Geometry parameters X_1, X_2, X_C invalid!"));
 
-  Point<2> center = Point<2>(X_C, Y_C);
+  dealii::Point<2> center = dealii::Point<2>(X_C, Y_C);
 
   if(MESH_TYPE == MeshType::Type1)
   {
-    Triangulation<2> left, middle, right, tmp, tmp2;
+    dealii::Triangulation<2> left, middle, right, tmp, tmp2;
 
     // left part (only needed for 3D problem)
     std::vector<unsigned int> ref_1(2, 2);
     ref_1[1] = 2;
-    GridGenerator::subdivided_hyper_rectangle(
-      left, ref_1, Point<2>(X_0, Y_0), Point<2>(X_1, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      left, ref_1, dealii::Point<2>(X_0, Y_0), dealii::Point<2>(X_1, H), false);
 
     // right part (2D and 3D)
     std::vector<unsigned int> ref_2(2, 9);
     ref_2[1] = 2;
-    GridGenerator::subdivided_hyper_rectangle(
-      right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      right, ref_2, dealii::Point<2>(X_2, Y_0), dealii::Point<2>(L2, H), false);
 
     // create middle part first as a hyper shell
     double const       outer_radius   = (X_2 - X_1) / 2.0;
     unsigned int const n_cells        = 4;
-    Point<2>           current_center = Point<2>((X_1 + X_2) / 2.0, outer_radius);
-    GridGenerator::hyper_shell(middle, current_center, R, outer_radius, n_cells, true);
+    dealii::Point<2>   current_center = dealii::Point<2>((X_1 + X_2) / 2.0, outer_radius);
+    dealii::GridGenerator::hyper_shell(middle, current_center, R, outer_radius, n_cells, true);
     MyCylindricalManifold<2> boundary(current_center);
     middle.set_manifold(0, boundary);
     middle.refine_global(1);
 
     // then move the vertices to the points where we want them to be to create a slightly asymmetric
     // cube with a hole
-    for(Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
-        Point<2> & vertex = cell->vertex(v);
+        dealii::Point<2> & vertex = cell->vertex(v);
         if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - current_center[1]) < 1e-10)
-          vertex = Point<2>(X_2, H / 2.0);
+          vertex = dealii::Point<2>(X_2, H / 2.0);
         else if(std::abs(vertex[0] - (current_center[0] + outer_radius / std::sqrt(2.0))) < 1e-10 &&
                 std::abs(vertex[1] - (current_center[1] + outer_radius / std::sqrt(2.0))) < 1e-10)
-          vertex = Point<2>(X_2, H);
+          vertex = dealii::Point<2>(X_2, H);
         else if(std::abs(vertex[0] - (current_center[0] + outer_radius / std::sqrt(2.0))) < 1e-10 &&
                 std::abs(vertex[1] - (current_center[1] - outer_radius / std::sqrt(2.0))) < 1e-10)
-          vertex = Point<2>(X_2, Y_0);
+          vertex = dealii::Point<2>(X_2, Y_0);
         else if(std::abs(vertex[0] - current_center[0]) < 1e-10 &&
                 std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
-          vertex = Point<2>(current_center[0], H);
+          vertex = dealii::Point<2>(current_center[0], H);
         else if(std::abs(vertex[0] - current_center[0]) < 1e-10 &&
                 std::abs(vertex[1] - X_0) < 1e-10)
-          vertex = Point<2>(current_center[0], X_0);
+          vertex = dealii::Point<2>(current_center[0], X_0);
         else if(std::abs(vertex[0] - (current_center[0] - outer_radius / std::sqrt(2.0))) < 1e-10 &&
                 std::abs(vertex[1] - (current_center[1] + outer_radius / std::sqrt(2.0))) < 1e-10)
-          vertex = Point<2>(X_1, H);
+          vertex = dealii::Point<2>(X_1, H);
         else if(std::abs(vertex[0] - (current_center[0] - outer_radius / std::sqrt(2.0))) < 1e-10 &&
                 std::abs(vertex[1] - (current_center[1] - outer_radius / std::sqrt(2.0))) < 1e-10)
-          vertex = Point<2>(X_1, Y_0);
+          vertex = dealii::Point<2>(X_1, Y_0);
         else if(std::abs(vertex[0] - X_1) < 1e-10 &&
                 std::abs(vertex[1] - current_center[1]) < 1e-10)
-          vertex = Point<2>(X_1, H / 2.0);
+          vertex = dealii::Point<2>(X_1, H / 2.0);
       }
     }
 
     // the same for the inner circle
-    for(Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
-        Point<2> & vertex = cell->vertex(v);
+        dealii::Point<2> & vertex = cell->vertex(v);
 
         // allow to shift cylinder center
         if(std::abs(vertex.distance(current_center) - R) < 1.e-10 ||
@@ -208,16 +207,16 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
     }
 
     // we have to copy the triangulation because we cannot merge triangulations with refinement ...
-    GridGenerator::flatten_triangulation(middle, tmp2);
+    dealii::GridGenerator::flatten_triangulation(middle, tmp2);
 
     if(compute_in_2d)
     {
-      GridGenerator::merge_triangulations(tmp2, right, tria);
+      dealii::GridGenerator::merge_triangulations(tmp2, right, tria);
     }
     else
     {
-      GridGenerator::merge_triangulations(left, tmp2, tmp);
-      GridGenerator::merge_triangulations(tmp, right, tria);
+      dealii::GridGenerator::merge_triangulations(left, tmp2, tmp);
+      dealii::GridGenerator::merge_triangulations(tmp, right, tria);
     }
 
     if(compute_in_2d)
@@ -225,11 +224,12 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
-          for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+          for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
           {
             if(cell->face(f)->at_boundary() && center.distance(cell->face(f)->center()) <= R)
             {
@@ -239,10 +239,10 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
         }
         else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
-          for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+          for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
           {
             bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+            for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
             {
               if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
                 face_at_sphere_boundary = false;
@@ -260,7 +260,7 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
         {
           AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
                         MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                      ExcMessage("Specified manifold type not implemented"));
+                      dealii::ExcMessage("Specified manifold type not implemented"));
         }
       }
     }
@@ -269,96 +269,96 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
   {
     MyCylindricalManifold<2> cylinder_manifold(center);
 
-    Triangulation<2> left, circle_1, circle_2, circle_tmp, middle, middle_tmp, middle_tmp2, right,
-      tmp_3D;
+    dealii::Triangulation<2> left, circle_1, circle_2, circle_tmp, middle, middle_tmp, middle_tmp2,
+      right, tmp_3D;
 
     // left part (only needed for 3D problem)
     std::vector<unsigned int> ref_1(2, 2);
     ref_1[1] = 2;
-    GridGenerator::subdivided_hyper_rectangle(
-      left, ref_1, Point<2>(X_0, Y_0), Point<2>(X_1, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      left, ref_1, dealii::Point<2>(X_0, Y_0), dealii::Point<2>(X_1, H), false);
 
     // right part (2D and 3D)
     std::vector<unsigned int> ref_2(2, 9);
     ref_2[1] = 2;
-    GridGenerator::subdivided_hyper_rectangle(
-      right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      right, ref_2, dealii::Point<2>(X_2, Y_0), dealii::Point<2>(L2, H), false);
 
     // create middle part first as a hyper shell
     double const       outer_radius = (X_2 - X_1) / 2.0;
     unsigned int const n_cells      = 4;
-    GridGenerator::hyper_shell(middle, center, R_2, outer_radius, n_cells, true);
+    dealii::GridGenerator::hyper_shell(middle, center, R_2, outer_radius, n_cells, true);
     middle.set_all_manifold_ids(MANIFOLD_ID);
     middle.set_manifold(MANIFOLD_ID, cylinder_manifold);
     middle.refine_global(1);
 
     // two inner circles in order to refine towards the cylinder surface
     unsigned int const n_cells_circle = 8;
-    GridGenerator::hyper_shell(circle_1, center, R, R_1, n_cells_circle, true);
-    GridGenerator::hyper_shell(circle_2, center, R_1, R_2, n_cells_circle, true);
+    dealii::GridGenerator::hyper_shell(circle_1, center, R, R_1, n_cells_circle, true);
+    dealii::GridGenerator::hyper_shell(circle_2, center, R_1, R_2, n_cells_circle, true);
 
     // then move the vertices to the points where we want them to be to create a slightly asymmetric
     // cube with a hole
-    for(Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
-        Point<2> & vertex = cell->vertex(v);
+        dealii::Point<2> & vertex = cell->vertex(v);
         if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
         {
-          vertex = Point<2>(X_2, H / 2.0);
+          vertex = dealii::Point<2>(X_2, H / 2.0);
         }
         else if(std::abs(vertex[0] - (X_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
                 std::abs(vertex[1] - (Y_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
-          vertex = Point<2>(X_2, H);
+          vertex = dealii::Point<2>(X_2, H);
         }
         else if(std::abs(vertex[0] - (X_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
                 std::abs(vertex[1] - (Y_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
-          vertex = Point<2>(X_2, Y_0);
+          vertex = dealii::Point<2>(X_2, Y_0);
         }
         else if(std::abs(vertex[0] - X_C) < 1e-10 &&
                 std::abs(vertex[1] - (Y_C + (X_2 - X_1) / 2.0)) < 1e-10)
         {
-          vertex = Point<2>(X_C, H);
+          vertex = dealii::Point<2>(X_C, H);
         }
         else if(std::abs(vertex[0] - X_C) < 1e-10 &&
                 std::abs(vertex[1] - (Y_C - (X_2 - X_1) / 2.0)) < 1e-10)
         {
-          vertex = Point<2>(X_C, Y_0);
+          vertex = dealii::Point<2>(X_C, Y_0);
         }
         else if(std::abs(vertex[0] - (X_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
                 std::abs(vertex[1] - (Y_C + (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
-          vertex = Point<2>(X_1, H);
+          vertex = dealii::Point<2>(X_1, H);
         }
         else if(std::abs(vertex[0] - (X_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10 &&
                 std::abs(vertex[1] - (Y_C - (X_2 - X_1) / 2.0 / std::sqrt(2))) < 1e-10)
         {
-          vertex = Point<2>(X_1, Y_0);
+          vertex = dealii::Point<2>(X_1, Y_0);
         }
         else if(std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - Y_C) < 1e-10)
         {
-          vertex = Point<2>(X_1, H / 2.0);
+          vertex = dealii::Point<2>(X_1, H / 2.0);
         }
       }
     }
 
     // we have to copy the triangulation because we cannot merge triangulations with refinement ...
-    GridGenerator::flatten_triangulation(middle, middle_tmp);
+    dealii::GridGenerator::flatten_triangulation(middle, middle_tmp);
 
-    GridGenerator::merge_triangulations(circle_1, circle_2, circle_tmp);
-    GridGenerator::merge_triangulations(middle_tmp, circle_tmp, middle_tmp2);
+    dealii::GridGenerator::merge_triangulations(circle_1, circle_2, circle_tmp);
+    dealii::GridGenerator::merge_triangulations(middle_tmp, circle_tmp, middle_tmp2);
 
     if(compute_in_2d)
     {
-      GridGenerator::merge_triangulations(middle_tmp2, right, tria);
+      dealii::GridGenerator::merge_triangulations(middle_tmp2, right, tria);
     }
     else // 3D
     {
-      GridGenerator::merge_triangulations(left, middle_tmp2, tmp_3D);
-      GridGenerator::merge_triangulations(tmp_3D, right, tria);
+      dealii::GridGenerator::merge_triangulations(left, middle_tmp2, tmp_3D);
+      dealii::GridGenerator::merge_triangulations(tmp_3D, right, tria);
     }
 
     if(compute_in_2d)
@@ -366,7 +366,8 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
         if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
         {
@@ -379,10 +380,10 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
             cell->set_all_manifold_ids(MANIFOLD_ID);
           else
           {
-            for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+            for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
             {
               bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
               {
                 if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_2) > 1e-12)
                   face_at_sphere_boundary = false;
@@ -402,53 +403,54 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
   }
   else if(MESH_TYPE == MeshType::Type3)
   {
-    Triangulation<2> left, middle, circle, middle_tmp, right, tmp_3D;
+    dealii::Triangulation<2> left, middle, circle, middle_tmp, right, tmp_3D;
 
     // left part (only needed for 3D problem)
     std::vector<unsigned int> ref_1(2, 1);
-    GridGenerator::subdivided_hyper_rectangle(
-      left, ref_1, Point<2>(X_0, Y_0), Point<2>(X_1, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      left, ref_1, dealii::Point<2>(X_0, Y_0), dealii::Point<2>(X_1, H), false);
 
     // right part (2D and 3D)
     std::vector<unsigned int> ref_2(2, 4);
     ref_2[1] = 1;
-    GridGenerator::subdivided_hyper_rectangle(
-      right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      right, ref_2, dealii::Point<2>(X_2, Y_0), dealii::Point<2>(L2, H), false);
 
     // middle part
     double const       outer_radius = (X_2 - X_1) / 2.0;
     unsigned int const n_cells      = 4;
-    Point<2>           origin;
+    dealii::Point<2>   origin;
 
     // inner circle around cylinder
-    GridGenerator::hyper_shell(circle, origin, R, R_3, n_cells, true);
-    GridTools::rotate(numbers::PI / 4, circle);
-    GridTools::shift(Point<2>(outer_radius + X_1, outer_radius), circle);
+    dealii::GridGenerator::hyper_shell(circle, origin, R, R_3, n_cells, true);
+    dealii::GridTools::rotate(dealii::numbers::PI / 4, circle);
+    dealii::GridTools::shift(dealii::Point<2>(outer_radius + X_1, outer_radius), circle);
 
     // create middle part first as a hyper shell
-    GridGenerator::hyper_shell(middle, origin, R_3, outer_radius * std::sqrt(2.0), n_cells, true);
-    GridTools::rotate(numbers::PI / 4, middle);
-    GridTools::shift(Point<2>(outer_radius + X_1, outer_radius), middle);
+    dealii::GridGenerator::hyper_shell(
+      middle, origin, R_3, outer_radius * std::sqrt(2.0), n_cells, true);
+    dealii::GridTools::rotate(dealii::numbers::PI / 4, middle);
+    dealii::GridTools::shift(dealii::Point<2>(outer_radius + X_1, outer_radius), middle);
 
     // then move the vertices to the points where we want them to be
-    for(Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
-        Point<2> & vertex = cell->vertex(v);
+        dealii::Point<2> & vertex = cell->vertex(v);
 
         // shift two points at the top to a height of H
         if(std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
-          vertex = Point<2>(X_1, H);
+          vertex = dealii::Point<2>(X_1, H);
         }
         else if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
-          vertex = Point<2>(X_2, H);
+          vertex = dealii::Point<2>(X_2, H);
         }
 
         // allow to shift cylinder center
-        Point<2> current_center = Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
+        dealii::Point<2> current_center = dealii::Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
         if(std::abs(vertex.distance(current_center) - R_3) < 1.e-10)
         {
           vertex[0] += center[0] - current_center[0];
@@ -458,14 +460,14 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
     }
 
     // the same for the inner circle
-    for(Triangulation<2>::cell_iterator cell = circle.begin(); cell != circle.end(); ++cell)
+    for(dealii::Triangulation<2>::cell_iterator cell = circle.begin(); cell != circle.end(); ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
-        Point<2> & vertex = cell->vertex(v);
+        dealii::Point<2> & vertex = cell->vertex(v);
 
         // allow to shift cylinder center
-        Point<2> current_center = Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
+        dealii::Point<2> current_center = dealii::Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
         if(std::abs(vertex.distance(current_center) - R) < 1.e-10 ||
            std::abs(vertex.distance(current_center) - R_3) < 1.e-10)
         {
@@ -475,16 +477,16 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
       }
     }
 
-    GridGenerator::merge_triangulations(circle, middle, middle_tmp);
+    dealii::GridGenerator::merge_triangulations(circle, middle, middle_tmp);
 
     if(compute_in_2d)
     {
-      GridGenerator::merge_triangulations(middle_tmp, right, tria);
+      dealii::GridGenerator::merge_triangulations(middle_tmp, right, tria);
     }
     else // 3D
     {
-      GridGenerator::merge_triangulations(left, middle_tmp, tmp_3D);
-      GridGenerator::merge_triangulations(tmp_3D, right, tria);
+      dealii::GridGenerator::merge_triangulations(left, middle_tmp, tmp_3D);
+      dealii::GridGenerator::merge_triangulations(tmp_3D, right, tria);
     }
 
     if(compute_in_2d)
@@ -492,7 +494,8 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
@@ -502,10 +505,10 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
           }
           else
           {
-            for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+            for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
             {
               bool face_at_sphere_boundary = true;
-              for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+              for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
               {
                 if(std::abs(center.distance(cell->face(f)->vertex(v)) - R_3) > 1e-12)
                   face_at_sphere_boundary = false;
@@ -523,55 +526,56 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
         else
         {
           AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                      ExcMessage("Specified manifold type not implemented."));
+                      dealii::ExcMessage("Specified manifold type not implemented."));
         }
       }
     }
   }
   else if(MESH_TYPE == MeshType::Type4)
   {
-    Triangulation<2> left, middle, circle, right, tmp_3D;
+    dealii::Triangulation<2> left, middle, circle, right, tmp_3D;
 
     // left part (only needed for 3D problem)
     std::vector<unsigned int> ref_1(2, 1);
-    GridGenerator::subdivided_hyper_rectangle(
-      left, ref_1, Point<2>(X_0, Y_0), Point<2>(X_1, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      left, ref_1, dealii::Point<2>(X_0, Y_0), dealii::Point<2>(X_1, H), false);
 
     // right part (2D and 3D)
     std::vector<unsigned int> ref_2(2, 4);
     ref_2[1] = 1; // only one cell over channel height
-    GridGenerator::subdivided_hyper_rectangle(
-      right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(
+      right, ref_2, dealii::Point<2>(X_2, Y_0), dealii::Point<2>(L2, H), false);
 
     // middle part
     double const       outer_radius = (X_2 - X_1) / 2.0;
     unsigned int const n_cells      = 4;
-    Point<2>           origin;
+    dealii::Point<2>   origin;
 
     // create middle part first as a hyper shell
-    GridGenerator::hyper_shell(middle, origin, R, outer_radius * std::sqrt(2.0), n_cells, true);
-    GridTools::rotate(numbers::PI / 4, middle);
-    GridTools::shift(Point<2>(outer_radius + X_1, outer_radius), middle);
+    dealii::GridGenerator::hyper_shell(
+      middle, origin, R, outer_radius * std::sqrt(2.0), n_cells, true);
+    dealii::GridTools::rotate(dealii::numbers::PI / 4, middle);
+    dealii::GridTools::shift(dealii::Point<2>(outer_radius + X_1, outer_radius), middle);
 
     // then move the vertices to the points where we want them to be
-    for(Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+    for(dealii::Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
     {
-      for(unsigned int v = 0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+      for(unsigned int v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
       {
-        Point<2> & vertex = cell->vertex(v);
+        dealii::Point<2> & vertex = cell->vertex(v);
 
         // shift two points at the top to a height of H
         if(std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
-          vertex = Point<2>(X_1, H);
+          vertex = dealii::Point<2>(X_1, H);
         }
         else if(std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2 - X_1)) < 1e-10)
         {
-          vertex = Point<2>(X_2, H);
+          vertex = dealii::Point<2>(X_2, H);
         }
 
         // allow to shift cylinder center
-        Point<2> current_center = Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
+        dealii::Point<2> current_center = dealii::Point<2>((X_1 + X_2) / 2.0, (X_2 - X_1) / 2.0);
         if(std::abs(vertex.distance(current_center) - R) < 1.e-10)
         {
           vertex[0] += center[0] - current_center[0];
@@ -583,12 +587,12 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
 
     if(compute_in_2d)
     {
-      GridGenerator::merge_triangulations(middle, right, tria);
+      dealii::GridGenerator::merge_triangulations(middle, right, tria);
     }
     else // 3D
     {
-      GridGenerator::merge_triangulations(left, middle, tmp_3D);
-      GridGenerator::merge_triangulations(tmp_3D, right, tria);
+      dealii::GridGenerator::merge_triangulations(left, middle, tmp_3D);
+      dealii::GridGenerator::merge_triangulations(tmp_3D, right, tria);
     }
 
     if(compute_in_2d)
@@ -596,14 +600,15 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
       // set manifold ID's
       tria.set_all_manifold_ids(0);
 
-      for(Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<2>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
         if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
         {
-          for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+          for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
           {
             bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+            for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
             {
               if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > 1e-12)
                 face_at_sphere_boundary = false;
@@ -620,7 +625,7 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
         else
         {
           AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                      ExcMessage("Specified manifold type not implemented."));
+                      dealii::ExcMessage("Specified manifold type not implemented."));
         }
       }
     }
@@ -629,7 +634,7 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
   {
     AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 ||
                   MESH_TYPE == MeshType::Type3 || MESH_TYPE == MeshType::Type4,
-                ExcMessage("Specified mesh type not implemented"));
+                dealii::ExcMessage("Specified mesh type not implemented"));
   }
 
   if(compute_in_2d == true)
@@ -640,26 +645,27 @@ void create_triangulation(Triangulation<2> & tria, bool const compute_in_2d = tr
 }
 
 
-void create_triangulation(Triangulation<3> & tria)
+void create_triangulation(dealii::Triangulation<3> & tria)
 {
-  Triangulation<2> tria_2d;
+  dealii::Triangulation<2> tria_2d;
   create_triangulation(tria_2d, false);
 
   if(MESH_TYPE == MeshType::Type1)
   {
-    GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
+    dealii::GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
 
     // set manifold ID's
     tria.set_all_manifold_ids(0);
 
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
-      for(Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
-        for(unsigned int f = 0; f < GeometryInfo<3>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
         {
-          if(cell->face(f)->at_boundary() &&
-             Point<3>(X_C, Y_C, cell->face(f)->center()[2]).distance(cell->face(f)->center()) <= R)
+          if(cell->face(f)->at_boundary() && dealii::Point<3>(X_C, Y_C, cell->face(f)->center()[2])
+                                                 .distance(cell->face(f)->center()) <= R)
           {
             cell->face(f)->set_all_manifold_ids(MANIFOLD_ID);
           }
@@ -668,14 +674,15 @@ void create_triangulation(Triangulation<3> & tria)
     }
     else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
-        for(unsigned int f = 0; f < GeometryInfo<3>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
           {
-            if(std::abs(Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+            if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                           .distance(cell->face(f)->vertex(v)) -
                         R) > 1e-12)
               face_at_sphere_boundary = false;
@@ -694,38 +701,40 @@ void create_triangulation(Triangulation<3> & tria)
     {
       AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
                     MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                  ExcMessage("Specified manifold type not implemented"));
+                  dealii::ExcMessage("Specified manifold type not implemented"));
     }
   }
   else if(MESH_TYPE == MeshType::Type2)
   {
-    GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
+    dealii::GridGenerator::extrude_triangulation(tria_2d, 3, H, tria);
 
     // set manifold ID's
     tria.set_all_manifold_ids(0);
 
     if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
     {
-      for(Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
-        if(Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
+        if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
           cell->set_all_manifold_ids(MANIFOLD_ID);
       }
     }
     else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
-        if(Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
+        if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_2)
           cell->set_all_manifold_ids(MANIFOLD_ID);
         else
         {
-          for(unsigned int f = 0; f < GeometryInfo<3>::faces_per_cell; ++f)
+          for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
           {
             bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
             {
-              if(std::abs(Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+              if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                             .distance(cell->face(f)->vertex(v)) -
                           R_2) > 1e-12)
                 face_at_sphere_boundary = false;
@@ -745,30 +754,31 @@ void create_triangulation(Triangulation<3> & tria)
     {
       AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
                     MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                  ExcMessage("Specified manifold type not implemented"));
+                  dealii::ExcMessage("Specified manifold type not implemented"));
     }
   }
   else if(MESH_TYPE == MeshType::Type3)
   {
-    GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
+    dealii::GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
 
     // set manifold ID's
     tria.set_all_manifold_ids(0);
 
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
-        if(Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_3)
+        if(dealii::Point<3>(X_C, Y_C, cell->center()[2]).distance(cell->center()) <= R_3)
           cell->set_all_manifold_ids(MANIFOLD_ID);
         else
         {
-          for(unsigned int f = 0; f < GeometryInfo<3>::faces_per_cell; ++f)
+          for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
           {
             bool face_at_sphere_boundary = true;
-            for(unsigned int v = 0; v < GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+            for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
             {
-              if(std::abs(Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+              if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                             .distance(cell->face(f)->vertex(v)) -
                           R_3) > 1e-12)
                 face_at_sphere_boundary = false;
@@ -787,26 +797,27 @@ void create_triangulation(Triangulation<3> & tria)
     else
     {
       AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                  ExcMessage("Specified manifold type not implemented"));
+                  dealii::ExcMessage("Specified manifold type not implemented"));
     }
   }
   else if(MESH_TYPE == MeshType::Type4)
   {
-    GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
+    dealii::GridGenerator::extrude_triangulation(tria_2d, 2, H, tria);
 
     // set manifold ID's
     tria.set_all_manifold_ids(0);
 
     if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
     {
-      for(Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
+      for(dealii::Triangulation<3>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+          ++cell)
       {
-        for(unsigned int f = 0; f < GeometryInfo<3>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<3>::faces_per_cell; ++f)
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < GeometryInfo<3 - 1>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<3 - 1>::vertices_per_cell; ++v)
           {
-            if(std::abs(Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
+            if(std::abs(dealii::Point<3>(X_C, Y_C, cell->face(f)->vertex(v)[2])
                           .distance(cell->face(f)->vertex(v)) -
                         R) > 1e-12)
               face_at_sphere_boundary = false;
@@ -824,14 +835,14 @@ void create_triangulation(Triangulation<3> & tria)
     else
     {
       AssertThrow(MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                  ExcMessage("Specified manifold type not implemented"));
+                  dealii::ExcMessage("Specified manifold type not implemented"));
     }
   }
   else
   {
     AssertThrow(MESH_TYPE == MeshType::Type1 || MESH_TYPE == MeshType::Type2 ||
                   MESH_TYPE == MeshType::Type3 || MESH_TYPE == MeshType::Type4,
-                ExcMessage("Specified mesh type not implemented"));
+                dealii::ExcMessage("Specified mesh type not implemented"));
   }
 
   // Set boundary ID's
@@ -840,64 +851,64 @@ void create_triangulation(Triangulation<3> & tria)
 
 template<int dim>
 void
-do_create_grid(
-  Triangulation<dim> & triangulation,
-  unsigned int const   n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-    periodic_faces)
+do_create_grid(dealii::Triangulation<dim> &                             triangulation,
+               unsigned int const                                       n_refine_space,
+               std::vector<dealii::GridTools::PeriodicFacePair<
+                 typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
 {
   (void)periodic_faces;
 
-  Point<dim> center;
+  dealii::Point<dim> center;
   center[0] = X_C;
   center[1] = Y_C;
 
-  Point<3> center_cyl_manifold;
+  dealii::Point<3> center_cyl_manifold;
   center_cyl_manifold[0] = center[0];
   center_cyl_manifold[1] = center[1];
 
   // apply this manifold for all mesh types
-  Point<3> direction;
+  dealii::Point<3> direction;
   direction[2] = 1.;
 
-  static std::shared_ptr<Manifold<dim>> cylinder_manifold;
+  static std::shared_ptr<dealii::Manifold<dim>> cylinder_manifold;
 
   if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
   {
-    cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-      dim == 2 ? static_cast<Manifold<dim> *>(new SphericalManifold<dim>(center)) :
-                 reinterpret_cast<Manifold<dim> *>(
-                   new CylindricalManifold<3>(direction, center_cyl_manifold)));
+    cylinder_manifold = std::shared_ptr<dealii::Manifold<dim>>(
+      dim == 2 ? static_cast<dealii::Manifold<dim> *>(new dealii::SphericalManifold<dim>(center)) :
+                 reinterpret_cast<dealii::Manifold<dim> *>(
+                   new dealii::CylindricalManifold<3>(direction, center_cyl_manifold)));
   }
   else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
   {
-    cylinder_manifold = std::shared_ptr<Manifold<dim>>(
-      static_cast<Manifold<dim> *>(new MyCylindricalManifold<dim>(center)));
+    cylinder_manifold = std::shared_ptr<dealii::Manifold<dim>>(
+      static_cast<dealii::Manifold<dim> *>(new MyCylindricalManifold<dim>(center)));
   }
   else
   {
     AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold ||
                   MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-                ExcMessage("Specified manifold type not implemented"));
+                dealii::ExcMessage("Specified manifold type not implemented"));
   }
 
   create_triangulation(triangulation);
   triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
 
   // generate vector of manifolds and apply manifold to all cells that have been marked
-  static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+  static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
   manifold_vec.resize(manifold_ids.size());
 
   for(unsigned int i = 0; i < manifold_ids.size(); ++i)
   {
-    for(typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
+    for(typename dealii::Triangulation<dim>::cell_iterator cell = triangulation.begin();
         cell != triangulation.end();
         ++cell)
     {
       if(cell->manifold_id() == manifold_ids[i])
       {
-        manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-          new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+        manifold_vec[i] =
+          std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
         triangulation.set_manifold(manifold_ids[i], *(manifold_vec[i]));
       }
     }
@@ -954,32 +965,33 @@ double const h_x_2 = (L - X_2) / nele_x_right;
 double const h_x_1 = D / nele_x_middle_middle;
 double const h_x_0 = (X_1 - X_0) / nele_x_left;
 
-void create_trapezoid(Triangulation<2> &        tria,
-                      std::vector<unsigned int> ref,
-                      Point<2> const            x_0,
-                      double const              length,
-                      double const              height,
-                      double const              max_shift,
-                      double const              min_shift)
+void create_trapezoid(dealii::Triangulation<2> & tria,
+                      std::vector<unsigned int>  ref,
+                      dealii::Point<2> const     x_0,
+                      double const               length,
+                      double const               height,
+                      double const               max_shift,
+                      double const               min_shift)
 {
-  Triangulation<2> tmp;
+  dealii::Triangulation<2> tmp;
 
-  Point<2> x_1 = x_0 + Point<2>(length, height);
+  dealii::Point<2> x_1 = x_0 + dealii::Point<2>(length, height);
 
-  GridGenerator::subdivided_hyper_rectangle(tmp, ref, x_0, x_1, false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(tmp, ref, x_0, x_1, false);
 
-  for(Triangulation<2>::vertex_iterator v = tmp.begin_vertex(); v != tmp.end_vertex(); ++v)
+  for(dealii::Triangulation<2>::vertex_iterator v = tmp.begin_vertex(); v != tmp.end_vertex(); ++v)
   {
-    Point<2> & vertex = v->vertex();
+    dealii::Point<2> & vertex = v->vertex();
 
     if(0 < vertex[0] && vertex[0] < length)
-      vertex = Point<2>(vertex[0] + 0.75 * length / ref[0] * vertex[0] / length, vertex[1]);
+      vertex = dealii::Point<2>(vertex[0] + 0.75 * length / ref[0] * vertex[0] / length, vertex[1]);
 
     double const m = (max_shift - min_shift) / height;
 
     double const b = max_shift - m * x_1[1];
 
-    vertex = Point<2>(vertex[0], vertex[1] + (m * vertex[1] + b) * (length - vertex[0]) / length);
+    vertex =
+      dealii::Point<2>(vertex[0], vertex[1] + (m * vertex[1] + b) * (length - vertex[0]) / length);
   }
 
   tria.copy_triangulation(tmp);
@@ -988,17 +1000,18 @@ void create_trapezoid(Triangulation<2> &        tria,
 
 template<int dim>
 void
-set_boundary_ids(Triangulation<dim> & tria)
+set_boundary_ids(dealii::Triangulation<dim> & tria)
 {
   // Set the wall boundary and inflow to 0, cylinder boundary to 2, outflow to 1
-  for(typename Triangulation<dim>::active_cell_iterator cell = tria.begin(); cell != tria.end();
+  for(typename dealii::Triangulation<dim>::active_cell_iterator cell = tria.begin();
+      cell != tria.end();
       ++cell)
   {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
+    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f) // loop over cells
     {
       if(cell->face(f)->at_boundary())
       {
-        Point<dim> point_on_centerline;
+        dealii::Point<dim> point_on_centerline;
         point_on_centerline[0] = X_C;
         point_on_centerline[1] = Y_C;
         if(dim == 3)
@@ -1022,10 +1035,10 @@ set_boundary_ids(Triangulation<dim> & tria)
 }
 
 template<unsigned int dim>
-void create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
+void create_triangulation(dealii::Triangulation<2> & triangulation, bool is_2d = true)
 {
-  Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top, middle_bottom,
-    middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
+  dealii::Triangulation<2> left, left_bottom, left_middle, left_top, middle, middle_top,
+    middle_bottom, middle_left, middle_right, middle_left_top, middle_left_bottom, middle_right_top,
     middle_right_bottom, right, right_bottom, right_middle, right_top, tmp;
 
   // left
@@ -1051,79 +1064,91 @@ void create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
   std::vector<unsigned int> ref_middle_left  = {nele_x_middle_left, nele_y_middle};
 
   // left part
-  GridGenerator::subdivided_hyper_rectangle(
-    left_bottom, ref_left_bottom, Point<2>(X_0, Y_0), Point<2>(X_1, Y_1), false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    left_bottom, ref_left_bottom, dealii::Point<2>(X_0, Y_0), dealii::Point<2>(X_1, Y_1), false);
 
-  GridGenerator::subdivided_hyper_rectangle(
-    left_middle, ref_left_middle, Point<2>(X_0, Y_1), Point<2>(X_1, Y_2), false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    left_middle, ref_left_middle, dealii::Point<2>(X_0, Y_1), dealii::Point<2>(X_1, Y_2), false);
 
-  GridGenerator::subdivided_hyper_rectangle(
-    left_top, ref_left_top, Point<2>(X_0, Y_2), Point<2>(X_1, H), false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    left_top, ref_left_top, dealii::Point<2>(X_0, Y_2), dealii::Point<2>(X_1, H), false);
 
   // merge left triangulations
-  GridGenerator::merge_triangulations(left_bottom, left_middle, tmp);
-  GridGenerator::merge_triangulations(tmp, left_top, left);
+  dealii::GridGenerator::merge_triangulations(left_bottom, left_middle, tmp);
+  dealii::GridGenerator::merge_triangulations(tmp, left_top, left);
 
   // right part
-  GridGenerator::subdivided_hyper_rectangle(
-    right_bottom, ref_right_bottom, Point<2>(X_2, Y_0), Point<2>(L, Y_1), false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    right_bottom, ref_right_bottom, dealii::Point<2>(X_2, Y_0), dealii::Point<2>(L, Y_1), false);
 
-  GridGenerator::subdivided_hyper_rectangle(
-    right_middle, ref_right_middle, Point<2>(X_2, Y_1), Point<2>(L, Y_2), false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    right_middle, ref_right_middle, dealii::Point<2>(X_2, Y_1), dealii::Point<2>(L, Y_2), false);
 
-  GridGenerator::subdivided_hyper_rectangle(
-    right_top, ref_right_top, Point<2>(X_2, Y_2), Point<2>(L, H), false);
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    right_top, ref_right_top, dealii::Point<2>(X_2, Y_2), dealii::Point<2>(L, H), false);
 
   // merge right triangulations
-  GridGenerator::merge_triangulations(right_bottom, right_middle, tmp);
-  GridGenerator::merge_triangulations(tmp, right_top, right);
+  dealii::GridGenerator::merge_triangulations(right_bottom, right_middle, tmp);
+  dealii::GridGenerator::merge_triangulations(tmp, right_top, right);
 
   // middle part
   if(!adaptive_mesh_shift)
   {
     // create middle bottom part
-    GridGenerator::subdivided_hyper_rectangle(middle_bottom,
-                                              ref_middle_bottom,
-                                              Point<2>(X_0 + I_x, Y_0),
-                                              Point<2>(X_0 + I_x + D, Y_1),
-                                              false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_bottom,
+                                                      ref_middle_bottom,
+                                                      dealii::Point<2>(X_0 + I_x, Y_0),
+                                                      dealii::Point<2>(X_0 + I_x + D, Y_1),
+                                                      false);
 
     // create middle top part
-    GridGenerator::subdivided_hyper_rectangle(
-      middle_top, ref_middle_top, Point<2>(X_0 + I_x, Y_2), Point<2>(X_0 + I_x + D, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_top,
+                                                      ref_middle_top,
+                                                      dealii::Point<2>(X_0 + I_x, Y_2),
+                                                      dealii::Point<2>(X_0 + I_x + D, H),
+                                                      false);
 
     // create middle left part
-    GridGenerator::subdivided_hyper_rectangle(
-      middle_left, ref_middle_left, Point<2>(X_1, Y_1), Point<2>(X_0 + I_x, Y_2), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_left,
+                                                      ref_middle_left,
+                                                      dealii::Point<2>(X_1, Y_1),
+                                                      dealii::Point<2>(X_0 + I_x, Y_2),
+                                                      false);
 
-    GridGenerator::subdivided_hyper_rectangle(
-      middle_left_top, ref_middle_top_left, Point<2>(X_1, Y_2), Point<2>(X_0 + I_x, H), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_left_top,
+                                                      ref_middle_top_left,
+                                                      dealii::Point<2>(X_1, Y_2),
+                                                      dealii::Point<2>(X_0 + I_x, H),
+                                                      false);
 
-    GridGenerator::subdivided_hyper_rectangle(middle_left_bottom,
-                                              ref_middle_bottom_left,
-                                              Point<2>(X_1, Y_0),
-                                              Point<2>(X_0 + I_x, Y_1),
-                                              false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_left_bottom,
+                                                      ref_middle_bottom_left,
+                                                      dealii::Point<2>(X_1, Y_0),
+                                                      dealii::Point<2>(X_0 + I_x, Y_1),
+                                                      false);
 
     // create middle right part
-    GridGenerator::subdivided_hyper_rectangle(
-      middle_right, ref_middle_right, Point<2>(X_0 + I_x + D, Y_1), Point<2>(X_2, Y_2), false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_right,
+                                                      ref_middle_right,
+                                                      dealii::Point<2>(X_0 + I_x + D, Y_1),
+                                                      dealii::Point<2>(X_2, Y_2),
+                                                      false);
 
-    GridGenerator::subdivided_hyper_rectangle(middle_right_top,
-                                              ref_middle_top_right,
-                                              Point<2>(X_0 + I_x + D, Y_2),
-                                              Point<2>(X_2, H),
-                                              false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_right_top,
+                                                      ref_middle_top_right,
+                                                      dealii::Point<2>(X_0 + I_x + D, Y_2),
+                                                      dealii::Point<2>(X_2, H),
+                                                      false);
 
-    GridGenerator::subdivided_hyper_rectangle(middle_right_bottom,
-                                              ref_middle_bottom_right,
-                                              Point<2>(X_0 + I_x + D, Y_0),
-                                              Point<2>(X_2, Y_1),
-                                              false);
+    dealii::GridGenerator::subdivided_hyper_rectangle(middle_right_bottom,
+                                                      ref_middle_bottom_right,
+                                                      dealii::Point<2>(X_0 + I_x + D, Y_0),
+                                                      dealii::Point<2>(X_2, Y_1),
+                                                      false);
   }
   else
   {
-    Triangulation<2> middle_right_right;
+    dealii::Triangulation<2> middle_right_right;
 
     unsigned int nele_trapezoid = 4;
 
@@ -1141,131 +1166,142 @@ void create_triangulation(Triangulation<2> & triangulation, bool is_2d = true)
     // create middle left trapez
     create_trapezoid(middle_left_top,
                      ref_trapezoid_left_top,
-                     Point<2>(0, 0),
+                     dealii::Point<2>(0, 0),
                      I_x - X_1,
                      3.0 * D / 8.0,
                      H - Y_2,
                      3.0 * D / 8.0);
 
-    Tensor<1, 2> shift_middle_left_top;
+    dealii::Tensor<1, 2> shift_middle_left_top;
     shift_middle_left_top[0] = X_1;
     shift_middle_left_top[1] = Y_1 + D / 2 + D / 8;
-    GridTools::shift(shift_middle_left_top, middle_left_top);
+    dealii::GridTools::shift(shift_middle_left_top, middle_left_top);
 
     create_trapezoid(middle_left,
                      ref_trapezoid_left_middle,
-                     Point<2>(0, 0),
+                     dealii::Point<2>(0, 0),
                      I_x - X_1,
                      1.0 * D / 8.0,
                      3.0 * D / 8.0,
                      0);
 
-    Tensor<1, 2> shift_middle_left;
+    dealii::Tensor<1, 2> shift_middle_left;
     shift_middle_left[0] = X_1;
     shift_middle_left[1] = Y_1 + D / 2;
-    GridTools::shift(shift_middle_left, middle_left);
+    dealii::GridTools::shift(shift_middle_left, middle_left);
 
-    create_trapezoid(
-      middle_left_bottom, ref_trapezoid_left_bottom, Point<2>(0, 0), I_x - X_1, D / 2.0, 0, -Y_1);
+    create_trapezoid(middle_left_bottom,
+                     ref_trapezoid_left_bottom,
+                     dealii::Point<2>(0, 0),
+                     I_x - X_1,
+                     D / 2.0,
+                     0,
+                     -Y_1);
 
-    Tensor<1, 2> shift_middle_left_bottom;
+    dealii::Tensor<1, 2> shift_middle_left_bottom;
     shift_middle_left_bottom[0] = X_1;
     shift_middle_left_bottom[1] = Y_1;
-    GridTools::shift(shift_middle_left_bottom, middle_left_bottom);
+    dealii::GridTools::shift(shift_middle_left_bottom, middle_left_bottom);
 
     // middle right trapez
     create_trapezoid(middle_right_top,
                      ref_trapezoid_right_top,
-                     Point<2>(0, 0),
+                     dealii::Point<2>(0, 0),
                      I_y,
                      3.0 * D / 8.0,
                      -3.0 * D / 8.0,
                      -(H - Y_2));
 
-    Tensor<1, 2> shift_middle_right_top;
+    dealii::Tensor<1, 2> shift_middle_right_top;
     shift_middle_right_top[0] = I_x + D + I_y;
     shift_middle_right_top[1] = Y_2;
-    GridTools::rotate(M_PI, middle_right_top);
-    GridTools::shift(shift_middle_right_top, middle_right_top);
+    dealii::GridTools::rotate(M_PI, middle_right_top);
+    dealii::GridTools::shift(shift_middle_right_top, middle_right_top);
 
     create_trapezoid(middle_right,
                      ref_trapezoid_right_middle,
-                     Point<2>(0, 0),
+                     dealii::Point<2>(0, 0),
                      I_y,
                      1.0 * D / 8.0,
                      0,
                      -3.0 * D / 8.0);
 
-    Tensor<1, 2> shift_middle_right;
+    dealii::Tensor<1, 2> shift_middle_right;
     shift_middle_right[0] = I_x + D + I_y;
     shift_middle_right[1] = Y_1 + D / 2 + D / 8;
-    GridTools::rotate(M_PI, middle_right);
-    GridTools::shift(shift_middle_right, middle_right);
+    dealii::GridTools::rotate(M_PI, middle_right);
+    dealii::GridTools::shift(shift_middle_right, middle_right);
 
-    create_trapezoid(
-      middle_right_bottom, ref_trapezoid_right_bottom, Point<2>(0, 0), I_y, D / 2.0, Y_1, 0);
+    create_trapezoid(middle_right_bottom,
+                     ref_trapezoid_right_bottom,
+                     dealii::Point<2>(0, 0),
+                     I_y,
+                     D / 2.0,
+                     Y_1,
+                     0);
 
-    Tensor<1, 2> shift_middle_right_bottom;
+    dealii::Tensor<1, 2> shift_middle_right_bottom;
     shift_middle_right_bottom[0] = I_x + D + I_y;
     shift_middle_right_bottom[1] = Y_1 + D / 2;
-    GridTools::rotate(M_PI, middle_right_bottom);
-    GridTools::shift(shift_middle_right_bottom, middle_right_bottom);
+    dealii::GridTools::rotate(M_PI, middle_right_bottom);
+    dealii::GridTools::shift(shift_middle_right_bottom, middle_right_bottom);
 
     // create top trapez
-    create_trapezoid(middle_top, ref_trapezoid_top, Point<2>(0, 0), H - Y_2, D, I_y, -(I_x - X_1));
+    create_trapezoid(
+      middle_top, ref_trapezoid_top, dealii::Point<2>(0, 0), H - Y_2, D, I_y, -(I_x - X_1));
 
-    Tensor<1, 2> shift_middle_top;
+    dealii::Tensor<1, 2> shift_middle_top;
     shift_middle_top[0] = I_x;
     shift_middle_top[1] = H;
-    GridTools::rotate(-M_PI / 2.0, middle_top);
-    GridTools::shift(shift_middle_top, middle_top);
+    dealii::GridTools::rotate(-M_PI / 2.0, middle_top);
+    dealii::GridTools::shift(shift_middle_top, middle_top);
 
     // create bottom trapez
     create_trapezoid(
-      middle_bottom, ref_trapezoid_bottom, Point<2>(0, 0), Y_1, D, I_y, -(I_x - X_1));
+      middle_bottom, ref_trapezoid_bottom, dealii::Point<2>(0, 0), Y_1, D, I_y, -(I_x - X_1));
 
-    Tensor<1, 2> shift_middle_bottom;
+    dealii::Tensor<1, 2> shift_middle_bottom;
     shift_middle_bottom[0] = I_x + D;
     shift_middle_bottom[1] = 0;
-    GridTools::rotate(M_PI / 2.0, middle_bottom);
-    GridTools::shift(shift_middle_bottom, middle_bottom);
+    dealii::GridTools::rotate(M_PI / 2.0, middle_bottom);
+    dealii::GridTools::shift(shift_middle_bottom, middle_bottom);
   }
 
   // merge middle left triangulations
-  GridGenerator::merge_triangulations(middle_left, middle_left_top, tmp);
-  GridGenerator::merge_triangulations(tmp, middle_left_bottom, middle_left);
+  dealii::GridGenerator::merge_triangulations(middle_left, middle_left_top, tmp);
+  dealii::GridGenerator::merge_triangulations(tmp, middle_left_bottom, middle_left);
 
   // merge middle right triangulations
-  GridGenerator::merge_triangulations(middle_right, middle_right_top, tmp);
-  GridGenerator::merge_triangulations(tmp, middle_right_bottom, middle_right);
+  dealii::GridGenerator::merge_triangulations(middle_right, middle_right_top, tmp);
+  dealii::GridGenerator::merge_triangulations(tmp, middle_right_bottom, middle_right);
 
 
   // merge middle triangulations
-  GridGenerator::merge_triangulations({&middle_bottom, &middle_left, &middle_top, &middle_right},
-                                      middle);
+  dealii::GridGenerator::merge_triangulations(
+    {&middle_bottom, &middle_left, &middle_top, &middle_right}, middle);
 
   // merge middle and right together
-  GridGenerator::merge_triangulations(right, middle, tmp);
+  dealii::GridGenerator::merge_triangulations(right, middle, tmp);
 
   // merge left to middle and right in 3D case
   if(is_2d)
     triangulation.copy_triangulation(tmp);
   else
-    GridGenerator::merge_triangulations(tmp, left, triangulation);
+    dealii::GridGenerator::merge_triangulations(tmp, left, triangulation);
 }
 
 template<unsigned int dim>
-void create_triangulation(Triangulation<3> & triangulation)
+void create_triangulation(dealii::Triangulation<3> & triangulation)
 {
-  Triangulation<2> tria_2D;
+  dealii::Triangulation<2> tria_2D;
   create_triangulation<2>(tria_2D, false);
 
-  GridGenerator::extrude_triangulation(tria_2D, nele_z, H, triangulation);
+  dealii::GridGenerator::extrude_triangulation(tria_2D, nele_z, H, triangulation);
 }
 
 template<unsigned int dim>
 void
-do_create_grid(Triangulation<dim> & triangulation, unsigned int n_global_refinements)
+do_create_grid(dealii::Triangulation<dim> & triangulation, unsigned int n_global_refinements)
 {
   create_triangulation<dim>(triangulation);
 
@@ -1291,17 +1327,16 @@ select_cylinder_type(std::string cylinder_type_string)
   else if(cylinder_type_string == "square")
     cylinder_type = square;
   else
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, dealii::ExcNotImplemented());
 }
 
 template<unsigned int dim>
 void
-create_cylinder_grid(
-  Triangulation<dim> & triangulation,
-  unsigned int const   n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-              periodic_faces,
-  std::string cylinder_type_string)
+create_cylinder_grid(dealii::Triangulation<dim> &                             triangulation,
+                     unsigned int const                                       n_refine_space,
+                     std::vector<dealii::GridTools::PeriodicFacePair<
+                       typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
+                     std::string                                              cylinder_type_string)
 {
   select_cylinder_type(cylinder_type_string);
 
@@ -1314,7 +1349,7 @@ create_cylinder_grid(
       SquareCylinder::do_create_grid<dim>(triangulation, n_refine_space);
       break;
     default:
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(false, dealii::ExcNotImplemented());
   }
 }
 

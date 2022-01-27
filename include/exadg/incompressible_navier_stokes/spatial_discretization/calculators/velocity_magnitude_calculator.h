@@ -32,17 +32,15 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class VelocityMagnitudeCalculator
 {
 private:
   typedef VelocityMagnitudeCalculator<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -53,22 +51,22 @@ public:
   VelocityMagnitudeCalculator();
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              dof_index_u_in,
-             unsigned int const              dof_index_u_scalar_in,
-             unsigned int const              quad_index_in);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_u_in,
+             unsigned int const                      dof_index_u_scalar_in,
+             unsigned int const                      quad_index_in);
 
   void
   compute(VectorType & dst, VectorType const & src) const;
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index_u;
   unsigned int dof_index_u_scalar;

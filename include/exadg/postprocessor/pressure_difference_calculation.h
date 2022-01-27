@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 struct PressureDifferenceData
 {
@@ -48,8 +46,8 @@ struct PressureDifferenceData
    *  Points:
    *  calculation of pressure difference: p(point_1) - p(point_2)
    */
-  Point<dim> point_1;
-  Point<dim> point_2;
+  dealii::Point<dim> point_1;
+  dealii::Point<dim> point_2;
 
   /*
    *  directory and filename
@@ -62,13 +60,13 @@ template<int dim, typename Number>
 class PressureDifferenceCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   PressureDifferenceCalculator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const &             dof_handler_pressure_in,
-        Mapping<dim> const &                mapping_in,
+  setup(dealii::DoFHandler<dim> const &     dof_handler_pressure_in,
+        dealii::Mapping<dim> const &        mapping_in,
         PressureDifferenceData<dim> const & pressure_difference_data_in);
 
   void
@@ -79,8 +77,8 @@ private:
 
   mutable bool clear_files;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
-  SmartPointer<Mapping<dim> const>    mapping;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
 
   PressureDifferenceData<dim> data;
 };

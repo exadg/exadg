@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & comm)
   : Base(comm),
@@ -38,15 +36,16 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & c
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::initialize(MultigridData const &               mg_data,
-                                                 Triangulation<dim> const *          tria,
-                                                 FiniteElement<dim> const &          fe,
-                                                 std::shared_ptr<Mapping<dim> const> mapping,
-                                                 PDEOperator const &                 pde_operator,
-                                                 MultigridOperatorType const & mg_operator_type,
-                                                 bool const                    mesh_is_moving,
-                                                 Map const *                   dirichlet_bc,
-                                                 PeriodicFacePairs const *     periodic_face_pairs)
+MultigridPreconditioner<dim, Number>::initialize(
+  MultigridData const &                       mg_data,
+  dealii::Triangulation<dim> const *          tria,
+  dealii::FiniteElement<dim> const &          fe,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  PDEOperator const &                         pde_operator,
+  MultigridOperatorType const &               mg_operator_type,
+  bool const                                  mesh_is_moving,
+  Map const *                                 dirichlet_bc,
+  PeriodicFacePairs const *                   periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 
@@ -63,7 +62,7 @@ MultigridPreconditioner<dim, Number>::initialize(MultigridData const &          
   // operators should be "active" for the multigrid preconditioner, independently of
   // the actual equation type that is solved.
   AssertThrow(this->mg_operator_type != MultigridOperatorType::Undefined,
-              ExcMessage("Invalid parameter mg_operator_type."));
+              dealii::ExcMessage("Invalid parameter mg_operator_type."));
 
   if(this->mg_operator_type == MultigridOperatorType::ReactionDiffusion)
   {
@@ -72,11 +71,11 @@ MultigridPreconditioner<dim, Number>::initialize(MultigridData const &          
   }
   else if(this->mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
   {
-    AssertThrow(data.convective_problem == true, ExcMessage("Invalid parameter."));
+    AssertThrow(data.convective_problem == true, dealii::ExcMessage("Invalid parameter."));
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   Base::initialize(
@@ -124,14 +123,14 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops && this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
                                      "std_quadrature");
 }
 

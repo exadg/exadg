@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number = double>
 class OperatorDualSplitting : public OperatorProjectionMethods<dim, Number>
 {
@@ -150,7 +148,7 @@ private:
    */
 
   void
-  cell_loop_empty(MatrixFree<dim, Number> const &,
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
                   VectorType &,
                   VectorType const &,
                   Range const &) const
@@ -158,7 +156,7 @@ private:
   }
 
   void
-  face_loop_empty(MatrixFree<dim, Number> const &,
+  face_loop_empty(dealii::MatrixFree<dim, Number> const &,
                   VectorType &,
                   VectorType const &,
                   Range const &) const
@@ -169,56 +167,60 @@ private:
 
   // convective term
   void
-  local_rhs_ppe_div_term_convective_term_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                       VectorType &                    dst,
-                                                       VectorType const &              src,
-                                                       Range const & face_range) const;
+  local_rhs_ppe_div_term_convective_term_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   // body force term
   void
-  local_rhs_ppe_div_term_body_forces_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                   VectorType &                    dst,
-                                                   VectorType const &              src,
-                                                   Range const & face_range) const;
+  local_rhs_ppe_div_term_body_forces_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   // Neumann boundary condition term
 
   // dg_u/dt term with analytical derivative
   void
   local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   face_range) const;
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   // dg_u/dt with numerical time derivative
   void
   local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   face_range) const;
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   // body force term
   void
-  local_rhs_ppe_nbc_body_force_term_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                      VectorType &                    dst,
-                                                      VectorType const &              src,
-                                                      Range const & face_range) const;
+  local_rhs_ppe_nbc_body_force_term_add_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   // convective term
   void
-  local_rhs_ppe_nbc_convective_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                 VectorType &                    dst,
-                                                 VectorType const &              src,
-                                                 Range const &                   face_range) const;
+  local_rhs_ppe_nbc_convective_add_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   // viscous term
   void
-  local_rhs_ppe_nbc_viscous_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                              VectorType &                    dst,
-                                              VectorType const &              src,
-                                              Range const &                   face_range) const;
+  local_rhs_ppe_nbc_viscous_add_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                              VectorType &                            dst,
+                                              VectorType const &                      src,
+                                              Range const & face_range) const;
 
 
   /*

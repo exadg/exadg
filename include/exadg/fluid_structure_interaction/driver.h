@@ -54,8 +54,6 @@ namespace ExaDG
 {
 namespace FSI
 {
-using namespace dealii;
-
 /*
  * Own implementation of matrix class.
  */
@@ -82,7 +80,7 @@ public:
   Number
   get(unsigned int const i, unsigned int const j) const
   {
-    AssertThrow(i < M && j < M, ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M && j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     return data[i * M + j];
   }
@@ -90,7 +88,7 @@ public:
   void
   set(Number const value, unsigned int const i, unsigned int const j)
   {
-    AssertThrow(i < M && j < M, ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M && j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     data[i * M + j] = value;
   }
@@ -239,7 +237,7 @@ template<int dim, typename Number>
 class Driver
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
   Driver(std::string const &                           input_file,
@@ -302,7 +300,7 @@ private:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -313,8 +311,8 @@ private:
   /**************************************** STRUCTURE *****************************************/
 
   // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>> structure_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     structure_matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     structure_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> structure_matrix_free;
 
   // spatial discretization
   std::shared_ptr<Structure::Operator<dim, Number>> structure_operator;
@@ -334,8 +332,8 @@ private:
   std::shared_ptr<GridMotionBase<dim, Number>> fluid_grid_motion;
 
   // matrix-free
-  std::shared_ptr<MatrixFreeData<dim, Number>> fluid_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     fluid_matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     fluid_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> fluid_matrix_free;
 
   // spatial discretization
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
@@ -352,8 +350,8 @@ private:
   /************************************ ALE - MOVING MESH *************************************/
 
   // use a PDE solver for moving mesh problem
-  std::shared_ptr<MatrixFreeData<dim, Number>> ale_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     ale_matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     ale_matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> ale_matrix_free;
 
   // Poisson-type mesh motion
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> ale_poisson_operator;

@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename VectorType, int components = 1>
 class MGTransferP : virtual public MGTransfer<VectorType>
 {
@@ -40,18 +38,18 @@ public:
 
   MGTransferP();
 
-  MGTransferP(MatrixFree<dim, value_type> const * matrixfree_1,
-              MatrixFree<dim, value_type> const * matrixfree_2,
-              int                                 degree_1,
-              int                                 degree_2,
-              int                                 dof_handler_index = 0);
+  MGTransferP(dealii::MatrixFree<dim, value_type> const * matrixfree_1,
+              dealii::MatrixFree<dim, value_type> const * matrixfree_2,
+              int                                         degree_1,
+              int                                         degree_2,
+              int                                         dof_handler_index = 0);
 
   void
-  reinit(MatrixFree<dim, value_type> const * matrixfree_1,
-         MatrixFree<dim, value_type> const * matrixfree_2,
-         int                                 degree_1,
-         int                                 degree_2,
-         int                                 dof_handler_index = 0);
+  reinit(dealii::MatrixFree<dim, value_type> const * matrixfree_1,
+         dealii::MatrixFree<dim, value_type> const * matrixfree_2,
+         int                                         degree_1,
+         int                                         degree_2,
+         int                                         dof_handler_index = 0);
 
   virtual ~MGTransferP();
 
@@ -77,17 +75,17 @@ private:
   void
   do_prolongate(VectorType & dst, VectorType const & src) const;
 
-  MatrixFree<dim, value_type> const *    matrixfree_1;
-  MatrixFree<dim, value_type> const *    matrixfree_2;
-  AlignedVector<VectorizedArray<Number>> prolongation_matrix_1d;
-  AlignedVector<VectorizedArray<Number>> interpolation_matrix_1d;
+  dealii::MatrixFree<dim, value_type> const *            matrixfree_1;
+  dealii::MatrixFree<dim, value_type> const *            matrixfree_2;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> prolongation_matrix_1d;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> interpolation_matrix_1d;
 
   unsigned int degree_1;
   unsigned int degree_2;
   unsigned int dof_handler_index;
   unsigned int quad_index;
 
-  AlignedVector<VectorizedArray<Number>> weights;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> weights;
 
   bool is_dg;
 };

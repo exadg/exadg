@@ -22,20 +22,20 @@
 #ifndef OPERATOR_PRECONDITIONABLE_H
 #define OPERATOR_PRECONDITIONABLE_H
 
+#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class MultigridOperatorBase : public dealii::Subscriptor
 {
 public:
-  typedef Number                                     value_type;
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef Number                                             value_type;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   MultigridOperatorBase() : dealii::Subscriptor()
   {
@@ -45,19 +45,19 @@ public:
   {
   }
 
-  virtual AffineConstraints<Number> const &
+  virtual dealii::AffineConstraints<Number> const &
   get_affine_constraints() const = 0;
 
-  virtual MatrixFree<dim, Number> const &
+  virtual dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const = 0;
 
   virtual unsigned int
   get_dof_index() const = 0;
 
-  virtual types::global_dof_index
+  virtual dealii::types::global_dof_index
   m() const = 0;
 
-  virtual types::global_dof_index
+  virtual dealii::types::global_dof_index
   n() const = 0;
 
   virtual Number
@@ -89,20 +89,20 @@ public:
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix,
-                     MPI_Comm const &                 mpi_comm) const = 0;
+  init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
+                     MPI_Comm const &                         mpi_comm) const = 0;
 
   virtual void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const = 0;
+  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const = 0;
 #endif
 
 #ifdef DEAL_II_WITH_PETSC
   virtual void
-  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix,
-                     MPI_Comm const &                   mpi_comm) const = 0;
+  init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
+                     MPI_Comm const &                           mpi_comm) const = 0;
 
   virtual void
-  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const = 0;
+  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const = 0;
 #endif
 };
 

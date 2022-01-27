@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in,
                                                         MPI_Comm const &        comm)
@@ -40,8 +38,8 @@ InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & 
 
 template<int dim, typename Number>
 void
-InflowDataCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_velocity_in,
-                                         Mapping<dim> const &    mapping_in)
+InflowDataCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+                                         dealii::Mapping<dim> const &    mapping_in)
 {
   dof_handler_velocity = &dof_handler_velocity_in;
   mapping              = &mapping_in;
@@ -53,7 +51,7 @@ InflowDataCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_vel
 template<int dim, typename Number>
 void
 InflowDataCalculator<dim, Number>::calculate(
-  LinearAlgebra::distributed::Vector<Number> const & velocity)
+  dealii::LinearAlgebra::distributed::Vector<Number> const & velocity)
 {
   if(inflow_data.write_inflow_data == true)
   {
@@ -64,32 +62,32 @@ InflowDataCalculator<dim, Number>::calculate(
       {
         for(unsigned int iz = 0; iz < inflow_data.n_points_z; ++iz)
         {
-          Point<dim> point;
+          dealii::Point<dim> point;
 
           if(inflow_data.inflow_geometry == InflowGeometry::Cartesian)
           {
-            AssertThrow(inflow_data.normal_direction == 0, ExcMessage("Not implemented."));
+            AssertThrow(inflow_data.normal_direction == 0, dealii::ExcMessage("Not implemented."));
 
-            point = Point<dim>(inflow_data.normal_coordinate,
-                               (*inflow_data.y_values)[iy],
-                               (*inflow_data.z_values)[iz]);
+            point = dealii::Point<dim>(inflow_data.normal_coordinate,
+                                       (*inflow_data.y_values)[iy],
+                                       (*inflow_data.z_values)[iz]);
           }
           else if(inflow_data.inflow_geometry == InflowGeometry::Cylindrical)
           {
-            AssertThrow(inflow_data.normal_direction == 2, ExcMessage("Not implemented."));
+            AssertThrow(inflow_data.normal_direction == 2, dealii::ExcMessage("Not implemented."));
 
             Number const x = (*inflow_data.y_values)[iy] * std::cos((*inflow_data.z_values)[iz]);
             Number const y = (*inflow_data.y_values)[iy] * std::sin((*inflow_data.z_values)[iz]);
-            point          = Point<dim>(x, y, inflow_data.normal_coordinate);
+            point          = dealii::Point<dim>(x, y, inflow_data.normal_coordinate);
           }
           else
           {
-            AssertThrow(false, ExcMessage("Not implemented."));
+            AssertThrow(false, dealii::ExcMessage("Not implemented."));
           }
 
           unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
-          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+          auto adjacent_cells = dealii::GridTools::find_all_active_cells_around_point(
             *mapping, dof_handler_velocity->get_triangulation(), point, 1.e-10);
 
           array_dof_indices_and_shape_values[array_index] = get_dof_indices_and_shape_values(
@@ -121,7 +119,7 @@ InflowDataCalculator<dim, Number>::calculate(
           array_counter[array_index] += 1;
 
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
+          dealii::Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
             *dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity inflow data
@@ -131,11 +129,11 @@ InflowDataCalculator<dim, Number>::calculate(
     }
 
     // sum over all processors
-    Utilities::MPI::sum(array_counter, mpi_comm, array_counter);
-    Utilities::MPI::sum(
-      ArrayView<double const>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()),
+    dealii::Utilities::MPI::sum(array_counter, mpi_comm, array_counter);
+    dealii::Utilities::MPI::sum(
+      dealii::ArrayView<double const>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()),
       mpi_comm,
-      ArrayView<double>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()));
+      dealii::ArrayView<double>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()));
 
     // divide by counter in order to get the mean value (averaged over all
     // adjacent cells for a given point)

@@ -26,24 +26,22 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t = this->get_time();
 
     double radius   = 0.5;
-    double omega    = 2.0 * numbers::PI;
+    double omega    = 2.0 * dealii::numbers::PI;
     double center_x = -radius * std::sin(omega * t);
     double center_y = +radius * std::cos(omega * t);
     double result   = std::exp(-50 * pow(p[0] - center_x, 2.0) - 50 * pow(p[1] - center_y, 2.0));
@@ -53,23 +51,23 @@ public:
 };
 
 template<int dim>
-class VelocityField : public Function<dim>
+class VelocityField : public dealii::Function<dim>
 {
 public:
   VelocityField(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & point, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & point, unsigned int const component = 0) const
   {
     double value = 0.0;
 
     if(component == 0)
-      value = -point[1] * 2.0 * numbers::PI;
+      value = -point[1] * 2.0 * dealii::numbers::PI;
     else if(component == 1)
-      value = point[0] * 2.0 * numbers::PI;
+      value = point[0] * 2.0 * dealii::numbers::PI;
 
     return value;
   }
@@ -83,7 +81,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -181,7 +179,7 @@ public:
   void
   create_grid() final
   {
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -190,7 +188,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // problem with pure Dirichlet boundary conditions
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
@@ -200,7 +199,7 @@ public:
   set_field_functions() final
   {
     this->field_functions->initial_solution.reset(new Solution<dim>());
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->velocity.reset(new VelocityField<dim>());
   }
 

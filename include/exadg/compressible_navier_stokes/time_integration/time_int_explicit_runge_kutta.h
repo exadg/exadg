@@ -35,8 +35,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // forward declarations
 class Parameters;
 
@@ -53,7 +51,7 @@ template<typename Number>
 class TimeIntExplRK : public TimeIntExplRKBase<Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef Interface::Operator<Number> Operator;
 

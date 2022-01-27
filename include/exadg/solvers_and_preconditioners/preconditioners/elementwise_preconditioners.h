@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace Elementwise
 {
-using namespace dealii;
-
 /*
  * Preconditioners
  */
@@ -90,18 +88,19 @@ private:
 };
 
 template<int dim, int n_components, typename Number>
-class InverseMassPreconditioner : public Elementwise::PreconditionerBase<VectorizedArray<Number>>
+class InverseMassPreconditioner
+  : public Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
 {
 public:
   typedef CellIntegrator<dim, n_components, Number> Integrator;
 
   // use a template parameter of -1 to select the precompiled version of this operator
-  typedef MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
+  typedef dealii::MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
     CellwiseInverseMass;
 
-  InverseMassPreconditioner(MatrixFree<dim, Number> const & matrix_free,
-                            unsigned int const              dof_index,
-                            unsigned int const              quad_index)
+  InverseMassPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
+                            unsigned int const                      dof_index,
+                            unsigned int const                      quad_index)
   {
     integrator = std::make_shared<Integrator>(matrix_free, dof_index, quad_index);
     inverse    = std::make_shared<CellwiseInverseMass>(*integrator);
@@ -114,7 +113,7 @@ public:
   }
 
   void
-  vmult(VectorizedArray<Number> * dst, VectorizedArray<Number> const * src) const
+  vmult(dealii::VectorizedArray<Number> * dst, dealii::VectorizedArray<Number> const * src) const
   {
     inverse->apply(src, dst);
   }

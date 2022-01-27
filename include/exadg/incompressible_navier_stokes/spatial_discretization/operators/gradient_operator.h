@@ -17,8 +17,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 namespace Operators
 {
 template<int dim, typename Number>
@@ -27,8 +25,8 @@ class GradientKernel
 private:
   typedef CellIntegrator<dim, 1, Number> CellIntegratorP;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
 public:
   static MappingFlags
@@ -36,9 +34,10 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells          = update_JxW_values | update_gradients;
-    flags.inner_faces    = update_JxW_values | update_normal_vectors;
-    flags.boundary_faces = update_JxW_values | update_quadrature_points | update_normal_vectors;
+    flags.cells       = dealii::update_JxW_values | dealii::update_gradients;
+    flags.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;
+    flags.boundary_faces =
+      dealii::update_JxW_values | dealii::update_quadrature_points | dealii::update_normal_vectors;
 
     return flags;
   }
@@ -110,10 +109,10 @@ class GradientOperator
 public:
   typedef GradientOperator<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -126,8 +125,8 @@ public:
   GradientOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &   matrix_free_in,
-             GradientOperatorData<dim> const & data_in);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             GradientOperatorData<dim> const &       data_in);
 
   void
   set_scaling_factor_pressure(double const & scaling_factor);
@@ -178,73 +177,75 @@ private:
                    FaceIntegratorU & velocity_p) const;
 
   void
-  do_boundary_integral(FaceIntegratorP &          pressure,
-                       FaceIntegratorU &          velocity,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(FaceIntegratorP &                  pressure,
+                       FaceIntegratorU &                  velocity,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   void
-  do_boundary_integral_from_dof_vector(FaceIntegratorP &          pressure,
-                                       FaceIntegratorP &          pressure_exterior,
-                                       FaceIntegratorU &          velocity,
-                                       OperatorType const &       operator_type,
-                                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral_from_dof_vector(FaceIntegratorP &                  pressure,
+                                       FaceIntegratorP &                  pressure_exterior,
+                                       FaceIntegratorU &                  velocity,
+                                       OperatorType const &               operator_type,
+                                       dealii::types::boundary_id const & boundary_id) const;
 
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
   void
-  face_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   face_range) const;
+  face_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           face_range) const;
 
   void
-  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & matrix_free,
-                                  VectorType &                    dst,
-                                  VectorType const &              src,
-                                  Range const &                   face_range) const;
+  boundary_face_loop_hom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                  VectorType &                            dst,
+                                  VectorType const &                      src,
+                                  Range const &                           face_range) const;
 
   void
-  boundary_face_loop_full_operator(MatrixFree<dim, Number> const & matrix_free,
-                                   VectorType &                    dst,
-                                   VectorType const &              src,
-                                   Range const &                   face_range) const;
+  boundary_face_loop_full_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                   VectorType &                            dst,
+                                   VectorType const &                      src,
+                                   Range const &                           face_range) const;
 
   void
-  cell_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                    dst,
-                           VectorType const &              src,
-                           Range const &                   cell_range) const;
+  cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           cell_range) const;
 
   void
-  face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                    dst,
-                           VectorType const &              src,
-                           Range const &                   face_range) const;
+  face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           face_range) const;
 
   void
-  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                                    VectorType &                    dst,
-                                    VectorType const &              src,
-                                    Range const &                   face_range) const;
+  boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    VectorType &                            dst,
+                                    VectorType const &                      src,
+                                    Range const &                           face_range) const;
 
   void
-  boundary_face_loop_inhom_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
-                                                       VectorType &                    dst,
-                                                       VectorType const &              src,
-                                                       Range const & face_range) const;
+  boundary_face_loop_inhom_operator_bc_from_dof_vector(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   void
-  boundary_face_loop_full_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
-                                                      VectorType &                    dst,
-                                                      VectorType const &              src,
-                                                      Range const & face_range) const;
+  boundary_face_loop_full_operator_bc_from_dof_vector(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   GradientOperatorData<dim> data;
 

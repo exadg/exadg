@@ -33,7 +33,7 @@ namespace ExaDG
 inline void
 create_directories(std::string const & directory, MPI_Comm const & mpi_comm)
 {
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     std::filesystem::create_directories(directory);
 }
 

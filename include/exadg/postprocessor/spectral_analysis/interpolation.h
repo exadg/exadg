@@ -38,7 +38,7 @@
 // ExaDG
 #include <exadg/postprocessor/spectral_analysis/setup.h>
 
-using namespace dealii;
+
 
 namespace dealspectrum
 {
@@ -59,7 +59,7 @@ public:
   // destination vector (interpolated values)
   double * dst = NULL;
   // shape function (gauss lobatto to equidistant)
-  AlignedVector<double> shape_values;
+  dealii::AlignedVector<double> shape_values;
   // number of cells in each direction
   int cells;
   // dimensions
@@ -161,12 +161,12 @@ public:
    * @params shape_values     data structure to be filled
    */
   void
-  fill_shape_values(AlignedVector<double> & shape_values)
+  fill_shape_values(dealii::AlignedVector<double> & shape_values)
   {
     // determine coefficients with deal.II functions
-    FE_DGQ<1>          fe(points_source - 1);
-    FullMatrix<double> matrix(points_target, points_source);
-    FE_DGQArbitraryNodes<1>(Quadrature<1>(get_equidistant_inner(points_target)))
+    dealii::FE_DGQ<1>          fe(points_source - 1);
+    dealii::FullMatrix<double> matrix(points_target, points_source);
+    dealii::FE_DGQArbitraryNodes<1>(dealii::Quadrature<1>(get_equidistant_inner(points_target)))
       .get_interpolation_matrix(fe, matrix);
 
     // ... and convert to linearized format
@@ -198,8 +198,8 @@ public:
   interpolate(double const *& src)
   {
     // allocate dst- and src-vector
-    AlignedVector<double> temp1(MAX(dofs_source, dofs_target));
-    AlignedVector<double> temp2(MAX(dofs_source, dofs_target));
+    dealii::AlignedVector<double> temp1(MAX(dofs_source, dofs_target));
+    dealii::AlignedVector<double> temp2(MAX(dofs_source, dofs_target));
 
     // get start point of arrays
     double const * src_ = src;

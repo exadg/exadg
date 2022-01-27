@@ -12,8 +12,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::set_velocity_copy(VectorType const & src) const
@@ -29,7 +27,7 @@ ConvectiveOperator<dim, Number>::set_velocity_ptr(VectorType const & src) const
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 ConvectiveOperator<dim, Number>::get_velocity() const
 {
   return kernel->get_velocity();
@@ -38,8 +36,8 @@ ConvectiveOperator<dim, Number>::get_velocity() const
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         affine_constraints,
+  dealii::MatrixFree<dim, Number> const &                   matrix_free,
+  dealii::AffineConstraints<Number> const &                 affine_constraints,
   ConvectiveOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
 {
@@ -67,8 +65,8 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator(VectorType &       
                           dst,
                           src,
                           true /*zero_dst_vector = true*/,
-                          MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                          MatrixFree<dim, Number>::DataAccessOnFaces::values);
+                          dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                          dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
 }
 
 template<int dim, typename Number>
@@ -86,8 +84,8 @@ ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator_add(VectorType &   
                           dst,
                           src,
                           false /*zero_dst_vector = false*/,
-                          MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                          MatrixFree<dim, Number>::DataAccessOnFaces::values);
+                          dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                          dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
 }
 
 template<int dim, typename Number>
@@ -109,8 +107,8 @@ ConvectiveOperator<dim, Number>::evaluate_linear_transport(
                           dst,
                           src,
                           true /*zero_dst_vector = true*/,
-                          MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                          MatrixFree<dim, Number>::DataAccessOnFaces::values);
+                          dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                          dealii::MatrixFree<dim, Number>::DataAccessOnFaces::values);
 }
 
 template<int dim, typename Number>
@@ -120,7 +118,8 @@ ConvectiveOperator<dim, Number>::rhs(VectorType & dst) const
   (void)dst;
 
   AssertThrow(false,
-              ExcMessage("The function rhs() does not make sense for the convective operator."));
+              dealii::ExcMessage(
+                "The function rhs() does not make sense for the convective operator."));
 }
 
 template<int dim, typename Number>
@@ -129,8 +128,9 @@ ConvectiveOperator<dim, Number>::rhs_add(VectorType & dst) const
 {
   (void)dst;
 
-  AssertThrow(
-    false, ExcMessage("The function rhs_add() does not make sense for the convective operator."));
+  AssertThrow(false,
+              dealii::ExcMessage(
+                "The function rhs_add() does not make sense for the convective operator."));
 }
 
 template<int dim, typename Number>
@@ -140,8 +140,9 @@ ConvectiveOperator<dim, Number>::evaluate(VectorType & dst, VectorType const & s
   (void)dst;
   (void)src;
 
-  AssertThrow(
-    false, ExcMessage("The function evaluate() does not make sense for the convective operator."));
+  AssertThrow(false,
+              dealii::ExcMessage(
+                "The function evaluate() does not make sense for the convective operator."));
 }
 
 template<int dim, typename Number>
@@ -152,17 +153,17 @@ ConvectiveOperator<dim, Number>::evaluate_add(VectorType & dst, VectorType const
   (void)src;
 
   AssertThrow(false,
-              ExcMessage(
+              dealii::ExcMessage(
                 "The function evaluate_add() does not make sense for the convective operator."));
 }
 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   cell_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           cell_range) const
 {
   IntegratorCell integrator(matrix_free,
                             operator_data.dof_index,
@@ -199,10 +200,10 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::face_loop_nonlinear_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
@@ -254,10 +255,10 @@ ConvectiveOperator<dim, Number>::face_loop_nonlinear_operator(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
@@ -328,7 +329,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -361,9 +362,9 @@ ConvectiveOperator<dim, Number>::do_face_integral_nonlinear_operator(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
-  IntegratorFace &           integrator,
-  IntegratorFace &           integrator_grid_velocity,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator,
+  IntegratorFace &                   integrator_grid_velocity,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -416,7 +417,7 @@ ConvectiveOperator<dim, Number>::get_integrator_flags_linear_transport() const
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   return flags;
@@ -433,10 +434,10 @@ ConvectiveOperator<dim, Number>::set_velocity_linear_transport(VectorType const 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::cell_loop_linear_transport(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   cell_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           cell_range) const
 {
   IntegratorCell integrator(matrix_free,
                             operator_data.dof_index,
@@ -471,10 +472,10 @@ ConvectiveOperator<dim, Number>::cell_loop_linear_transport(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::face_loop_linear_transport(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
@@ -528,10 +529,10 @@ ConvectiveOperator<dim, Number>::face_loop_linear_transport(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::boundary_face_loop_linear_transport(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   IntegratorFace integrator_m(matrix_free,
                               true,
@@ -591,7 +592,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral_linear_transport(IntegratorCel
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -625,9 +626,9 @@ ConvectiveOperator<dim, Number>::do_face_integral_linear_transport(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_boundary_integral_linear_transport(
-  IntegratorFace &           integrator,
-  IntegratorFace &           velocity,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator,
+  IntegratorFace &                   velocity,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -685,9 +686,10 @@ ConvectiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) c
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                        unsigned int const       face,
-                                                        types::boundary_id const boundary_id) const
+ConvectiveOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -720,7 +722,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -827,14 +829,15 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator,
-                                                      OperatorType const &       operator_type,
-                                                      types::boundary_id const & boundary_id) const
+ConvectiveOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   // make sure that this function is only accessed for OperatorType::homogeneous
   AssertThrow(
     operator_type == OperatorType::homogeneous,
-    ExcMessage(
+    dealii::ExcMessage(
       "For the linearized convective operator, only OperatorType::homogeneous makes sense."));
 
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);

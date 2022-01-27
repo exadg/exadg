@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct SpatialResolutionParameters
 {
   SpatialResolutionParameters()
@@ -53,22 +51,22 @@ struct SpatialResolutionParameters
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("DegreeMax",
                         degree_max,
                         "Maximal polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,
                         "Minimal number of mesh refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
       prm.add_parameter("RefineSpaceMax",
                         refine_space_max,
                         "Maximal number of mesh refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
     prm.leave_subsection();
     // clang-format on
@@ -102,12 +100,12 @@ struct TemporalResolutionParameters
       prm.add_parameter("RefineTimeMin",
                         refine_time_min,
                         "Minimal number of time refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
       prm.add_parameter("RefineTimeMax",
                         refine_time_max,
                         "Maximal number of time refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
     prm.leave_subsection();
     // clang-format on
@@ -138,12 +136,12 @@ struct ResolutionParameters
       prm.add_parameter("Degree",
                         degree,
                         "Polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineSpace",
                         refine_space,
                         "Number of global, uniform mesh refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
     prm.leave_subsection();
     // clang-format on

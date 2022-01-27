@@ -31,8 +31,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 // turbulent channel data
 
 struct TurbulentChannelData
@@ -51,7 +49,7 @@ struct TurbulentChannelData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate)
     {
@@ -98,9 +96,10 @@ template<int dim, typename Number>
 class StatisticsManager
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  StatisticsManager(DoFHandler<dim> const & dof_handler_velocity, Mapping<dim> const & mapping);
+  StatisticsManager(dealii::DoFHandler<dim> const & dof_handler_velocity,
+                    dealii::Mapping<dim> const &    mapping);
 
   // The argument grid_transform indicates how the y-direction that is initially distributed from
   // [0,1] is mapped to the actual grid. This must match the transformation applied to the
@@ -131,9 +130,9 @@ private:
   void
   do_evaluate(const std::vector<VectorType const *> & velocity);
 
-  DoFHandler<dim> const & dof_handler;
-  Mapping<dim> const &    mapping;
-  MPI_Comm                mpi_comm;
+  dealii::DoFHandler<dim> const & dof_handler;
+  dealii::Mapping<dim> const &    mapping;
+  MPI_Comm                        mpi_comm;
 
   // vector of y-coordinates at which statistical quantities are computed
   std::vector<double> y_glob;

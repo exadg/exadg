@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 class FlowRateController
 {
 public:

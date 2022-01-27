@@ -17,8 +17,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct MomentumOperatorData : public OperatorBaseData
 {
@@ -41,9 +39,9 @@ template<int dim, typename Number>
 class MomentumOperator : public OperatorBase<dim, Number, dim>
 {
 private:
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   typedef OperatorBase<dim, Number, dim> Base;
 
@@ -58,13 +56,13 @@ public:
   MomentumOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<Number> const & affine_constraints,
-             MomentumOperatorData<dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             MomentumOperatorData<dim> const &         data);
 
   void
-  initialize(MatrixFree<dim, Number> const &                           matrix_free,
-             AffineConstraints<Number> const &                         affine_constraints,
+  initialize(dealii::MatrixFree<dim, Number> const &                   matrix_free,
+             dealii::AffineConstraints<Number> const &                 affine_constraints,
              MomentumOperatorData<dim> const &                         data,
              std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
              std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel);
@@ -78,7 +76,7 @@ public:
   Operators::ViscousKernelData
   get_viscous_kernel_data() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   /*
@@ -131,9 +129,9 @@ private:
   reinit_boundary_face(unsigned int const face) const;
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   // linearized operator
   void
@@ -163,9 +161,9 @@ private:
 
   // linearized operator
   void
-  do_boundary_integral(IntegratorFace &           integrator,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   MomentumOperatorData<dim> operator_data;
 

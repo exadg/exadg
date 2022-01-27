@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<Operator<dim, Number>>          operator_in,
@@ -109,7 +107,7 @@ TimeIntBDF<dim, Number>::initialize_oif()
   // Operator-integration-factor splitting
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    AssertThrow(param.convective_problem(), ExcMessage("Invalid parameters"));
+    AssertThrow(param.convective_problem(), dealii::ExcMessage("Invalid parameters"));
 
     bool numerical_velocity_field =
       (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
@@ -181,7 +179,7 @@ TimeIntBDF<dim, Number>::initialize_oif()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -282,7 +280,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
     AssertThrow(param.convective_problem(),
-                ExcMessage("Specified type of time step calculation does not make sense!"));
+                dealii::ExcMessage("Specified type of time step calculation does not make sense!"));
 
     double time_step_global = pde_operator->calculate_time_step_cfl_global(this->get_time());
     time_step_global *= cfl;
@@ -346,7 +344,8 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Specified type of time step calculation is not implemented."));
   }
 
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
@@ -355,7 +354,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
     AssertThrow(
       param.calculation_of_time_step_size == TimeStepCalculation::CFL,
-      ExcMessage(
+      dealii::ExcMessage(
         "Specified type of time step calculation is not compatible with OIF splitting approach!"));
 
     this->pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
@@ -370,7 +369,7 @@ double
 TimeIntBDF<dim, Number>::recalculate_time_step_size() const
 {
   AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
   double new_time_step_size = std::numeric_limits<double>::max();
@@ -382,7 +381,8 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
   }
   else // numerical velocity field
   {
-    AssertThrow(velocities[0] != nullptr, ExcMessage("Pointer velocities[0] is not initialized."));
+    AssertThrow(velocities[0] != nullptr,
+                dealii::ExcMessage("Pointer velocities[0] is not initialized."));
 
     VectorType u_relative = *velocities[0];
     if(param.ale_formulation == true)
@@ -519,7 +519,7 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::do_timestep_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // transport velocity
@@ -538,9 +538,9 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
       else
       {
         AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12 * param.end_time,
-                    ExcMessage("Invalid assumption."));
+                    dealii::ExcMessage("Invalid assumption."));
         AssertThrow(velocities[0] != nullptr,
-                    ExcMessage("Pointer velocities[0] is not correctly initialized."));
+                    dealii::ExcMessage("Pointer velocities[0] is not correctly initialized."));
 
         velocity_np = *velocities[0];
       }
@@ -552,7 +552,7 @@ TimeIntBDF<dim, Number>::do_timestep_solve()
     }
     else
     {
-      AssertThrow(param.ale_formulation == false, ExcMessage("not implemented."));
+      AssertThrow(param.ale_formulation == false, dealii::ExcMessage("not implemented."));
     }
   }
 
@@ -711,7 +711,7 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // To allow a computation of errors at start_time (= if time step number is 1 and if the

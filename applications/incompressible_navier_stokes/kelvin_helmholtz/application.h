@@ -26,23 +26,21 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
   InitialSolutionVelocity(double const DELTA_0, double const U_INF, double const C_N)
-    : Function<dim>(dim, 0.0), DELTA_0(DELTA_0), U_INF(U_INF), C_N(C_N)
+    : dealii::Function<dim>(dim, 0.0), DELTA_0(DELTA_0), U_INF(U_INF), C_N(C_N)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const x1 = p[0];
     double const x2 = p[1];
-    double const PI = numbers::PI;
+    double const PI = dealii::numbers::PI;
 
     // clang-format off
     double result = 0.0;
@@ -77,7 +75,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -213,19 +211,19 @@ public:
   void
   create_grid() final
   {
-    AssertThrow(dim == 2, ExcMessage("This application is only implemented for dim=2."));
+    AssertThrow(dim == 2, dealii::ExcMessage("This application is only implemented for dim=2."));
 
     std::vector<unsigned int> repetitions({1, 1});
-    Point<dim>                point1(0.0, 0.0), point2(L, L);
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::Point<dim>        point1(0.0, 0.0), point2(L, L);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     // periodicity in x-direction
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if(std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12)
           cell->face(f)->set_boundary_id(1);
@@ -234,7 +232,7 @@ public:
       }
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 1, 2, 0, this->grid->periodic_faces);
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
@@ -244,13 +242,14 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->velocity->symmetry_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
 
@@ -259,9 +258,11 @@ public:
   {
     this->field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(DELTA_0, U_INF, C_N));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

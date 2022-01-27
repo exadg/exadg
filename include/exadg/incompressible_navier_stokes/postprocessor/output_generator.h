@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  Average velocity field over time for statistically steady, turbulent
  *  flow problems in order to visualize the time-averaged velocity field.
@@ -45,7 +43,7 @@ struct OutputDataMeanVelocity
   }
 
   void
-  print(ConditionalOStream & pcout, bool unsteady)
+  print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
     if(unsteady)
     {
@@ -81,7 +79,7 @@ struct OutputData : public OutputDataBase
   }
 
   void
-  print(ConditionalOStream & pcout, bool unsteady)
+  print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
     OutputDataBase::print(pcout, unsteady);
 
@@ -136,18 +134,18 @@ template<int dim, typename Number>
 class OutputGenerator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef SpatialOperatorBase<dim, Number> NavierStokesOperator;
 
   OutputGenerator(MPI_Comm const & comm);
 
   void
-  setup(NavierStokesOperator const & navier_stokes_operator_in,
-        DoFHandler<dim> const &      dof_handler_velocity_in,
-        DoFHandler<dim> const &      dof_handler_pressure_in,
-        Mapping<dim> const &         mapping_in,
-        OutputData const &           output_data_in);
+  setup(NavierStokesOperator const &    navier_stokes_operator_in,
+        dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+        dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+        dealii::Mapping<dim> const &    mapping_in,
+        OutputData const &              output_data_in);
 
   void
   evaluate(VectorType const & velocity,
@@ -177,10 +175,10 @@ private:
 
   OutputData output_data;
 
-  SmartPointer<DoFHandler<dim> const>      dof_handler_velocity;
-  SmartPointer<DoFHandler<dim> const>      dof_handler_pressure;
-  SmartPointer<Mapping<dim> const>         mapping;
-  SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_pressure;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  dealii::SmartPointer<NavierStokesOperator const>    navier_stokes_operator;
 
   // additional fields
   VectorType   vorticity;

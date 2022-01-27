@@ -29,15 +29,13 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DriverPrecursor<dim, Number>::DriverPrecursor(
   MPI_Comm const &                                       comm,
   std::shared_ptr<ApplicationBasePrecursor<dim, Number>> app,
   bool const                                             is_test)
   : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
     application(app),
     use_adaptive_time_stepping(false)
@@ -109,7 +107,7 @@ template<int dim, typename Number>
 void
 DriverPrecursor<dim, Number>::setup()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
@@ -142,7 +140,7 @@ DriverPrecursor<dim, Number>::setup()
   matrix_free_data_pre = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data_pre->append(pde_operator_pre);
 
-  matrix_free_pre = std::make_shared<MatrixFree<dim, Number>>();
+  matrix_free_pre = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->get_parameters_precursor().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid_precursor()->triangulation,
                                         matrix_free_data_pre->data);
@@ -156,7 +154,7 @@ DriverPrecursor<dim, Number>::setup()
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
@@ -273,10 +271,11 @@ DriverPrecursor<dim, Number>::print_performance_results(double const total_time)
   timer_tree.print_level(pcout, 2);
 
   // Computational costs in CPUh
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg total_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              total_time_avg  = total_time_data.avg;
+  dealii::Utilities::MPI::MinMaxAvg total_time_data =
+    dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const total_time_avg = total_time_data.avg;
 
   print_costs(pcout, total_time_avg, N_mpi_processes);
 

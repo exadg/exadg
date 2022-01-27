@@ -54,8 +54,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct OperatorBaseData
 {
   OperatorBaseData()
@@ -93,16 +91,16 @@ class OperatorBase : public dealii::Subscriptor
 public:
   typedef OperatorBase<dim, Number, n_components> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  typedef std::pair<unsigned int, unsigned int>      Range;
-  typedef CellIntegrator<dim, n_components, Number>  IntegratorCell;
-  typedef FaceIntegrator<dim, n_components, Number>  IntegratorFace;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef std::pair<unsigned int, unsigned int>              Range;
+  typedef CellIntegrator<dim, n_components, Number>          IntegratorCell;
+  typedef FaceIntegrator<dim, n_components, Number>          IntegratorFace;
 
-  static unsigned int const vectorization_length = VectorizedArray<Number>::size();
+  static unsigned int const vectorization_length = dealii::VectorizedArray<Number>::size();
 
-  typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
+  typedef std::vector<dealii::LAPACKFullMatrix<Number>> BlockMatrix;
 
-  typedef FullMatrix<TrilinosScalar> FullMatrix_;
+  typedef dealii::FullMatrix<dealii::TrilinosScalar> FullMatrix_;
 
   OperatorBase();
 
@@ -122,10 +120,10 @@ public:
   unsigned int
   get_level() const;
 
-  AffineConstraints<Number> const &
+  dealii::AffineConstraints<Number> const &
   get_affine_constraints() const;
 
-  MatrixFree<dim, Number> const &
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
   unsigned int
@@ -153,10 +151,10 @@ public:
   void
   vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   m() const;
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   n() const;
 
   Number
@@ -193,11 +191,11 @@ public:
    */
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix,
-                     MPI_Comm const &                 mpi_comm) const;
+  init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
+                     MPI_Comm const &                         mpi_comm) const;
 
   void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const;
 #endif
 
   /*
@@ -205,11 +203,11 @@ public:
    */
 #ifdef DEAL_II_WITH_PETSC
   void
-  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix,
-                     MPI_Comm const &                   mpi_comm) const;
+  init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
+                     MPI_Comm const &                           mpi_comm) const;
 
   void
-  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const;
+  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const;
 #endif
 
   /*
@@ -287,16 +285,16 @@ public:
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
   void
-  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src,
-                                       unsigned int const                    problem_size) const;
+  apply_add_block_diagonal_elementwise(unsigned int const                            cell,
+                                       dealii::VectorizedArray<Number> * const       dst,
+                                       dealii::VectorizedArray<Number> const * const src,
+                                       unsigned int const problem_size) const;
 
 protected:
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<Number> const & constraints,
-         OperatorBaseData const &          data);
+  reinit(dealii::MatrixFree<dim, Number> const &   matrix_free,
+         dealii::AffineConstraints<Number> const & constraints,
+         OperatorBaseData const &                  data);
 
   /*
    * These methods have to be overwritten by derived classes because these functions are
@@ -319,13 +317,13 @@ protected:
   do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   virtual void
-  do_boundary_integral(IntegratorFace &           integrator,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   virtual void
-  do_boundary_integral_continuous(IntegratorFace &           integrator,
-                                  types::boundary_id const & boundary_id) const;
+  do_boundary_integral_continuous(IntegratorFace &                   integrator,
+                                  dealii::types::boundary_id const & boundary_id) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)
@@ -337,9 +335,9 @@ protected:
 
   // cell-based computation of both cell and face integrals
   virtual void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   // This function is currently only needed due to limitations of deal.II which do
   // currently not allow to access neighboring data in case of cell-based face loops.
@@ -355,7 +353,7 @@ protected:
   /*
    * Matrix-free object.
    */
-  mutable lazy_ptr<MatrixFree<dim, Number>> matrix_free;
+  mutable lazy_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   /*
    * Physical time (required for time-dependent problems).
@@ -365,9 +363,9 @@ protected:
   /*
    * Constraint matrix.
    */
-  mutable lazy_ptr<AffineConstraints<Number>> constraint;
+  mutable lazy_ptr<dealii::AffineConstraints<Number>> constraint;
 
-  mutable AffineConstraints<double> constraint_double;
+  mutable dealii::AffineConstraints<double> constraint_double;
 
   /*
    * Cell and face integrator flags.
@@ -391,8 +389,9 @@ protected:
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
    */
-  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
-  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
+  typedef Elementwise::OperatorBase<dim, Number, This> ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
+    ELEMENTWISE_PRECONDITIONER;
   typedef Elementwise::
     IterativeSolver<dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER>
       ELEMENTWISE_SOLVER;
@@ -424,28 +423,28 @@ private:
    * This function applies Dirichlet BCs for continuous Galerkin discretizations.
    */
   void
-  cell_loop_dbc(MatrixFree<dim, Number> const & matrix_free,
-                VectorType &                    dst,
-                VectorType const &              src,
-                Range const &                   range) const;
+  cell_loop_dbc(dealii::MatrixFree<dim, Number> const & matrix_free,
+                VectorType &                            dst,
+                VectorType const &                      src,
+                Range const &                           range) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.
    */
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           range) const;
 
   /*
    * This function loops over all interior faces and calculates face integrals.
    */
   void
-  face_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   range) const;
+  face_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           range) const;
 
   /*
    * The following functions loop over all boundary faces and calculate boundary face integrals.
@@ -455,24 +454,24 @@ private:
 
   // homogeneous operator
   void
-  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & matrix_free,
-                                  VectorType &                    dst,
-                                  VectorType const &              src,
-                                  Range const &                   range) const;
+  boundary_face_loop_hom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                  VectorType &                            dst,
+                                  VectorType const &                      src,
+                                  Range const &                           range) const;
 
   // inhomogeneous operator
   void
-  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                                    VectorType &                    dst,
-                                    VectorType const &              src,
-                                    Range const &                   range) const;
+  boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    VectorType &                            dst,
+                                    VectorType const &                      src,
+                                    Range const &                           range) const;
 
   // full operator
   void
-  boundary_face_loop_full_operator(MatrixFree<dim, Number> const & matrix_free,
-                                   VectorType &                    dst,
-                                   VectorType const &              src,
-                                   Range const &                   range) const;
+  boundary_face_loop_full_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                   VectorType &                            dst,
+                                   VectorType const &                      src,
+                                   Range const &                           range) const;
 
   /*
    * inhomogeneous operator: For the inhomogeneous operator, we only have to calculate boundary face
@@ -480,80 +479,80 @@ private:
    * integrals only. Hence we have to provide empty functions for cell and interior face integrals.
    */
   void
-  cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                  VectorType &                    dst,
-                  VectorType const &              src,
-                  Range const &                   range) const;
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           range) const;
 
   void
-  face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                  VectorType &                    dst,
-                  VectorType const &              src,
-                  Range const &                   range) const;
+  face_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           range) const;
 
   /*
    * Calculate diagonal.
    */
   void
-  cell_loop_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                     VectorType &                    dst,
-                     VectorType const &              src,
-                     Range const &                   range) const;
+  cell_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                     VectorType &                            dst,
+                     VectorType const &                      src,
+                     Range const &                           range) const;
 
   void
-  face_loop_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                     VectorType &                    dst,
-                     VectorType const &              src,
-                     Range const &                   range) const;
+  face_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                     VectorType &                            dst,
+                     VectorType const &                      src,
+                     Range const &                           range) const;
 
   void
-  boundary_face_loop_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                              VectorType &                    dst,
-                              VectorType const &              src,
-                              Range const &                   range) const;
+  boundary_face_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                              VectorType &                            dst,
+                              VectorType const &                      src,
+                              Range const &                           range) const;
 
   void
-  cell_based_loop_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                    dst,
-                           VectorType const &              src,
-                           Range const &                   range) const;
+  cell_based_loop_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           range) const;
 
   /*
    * Calculate (assemble) block diagonal.
    */
   void
-  cell_loop_block_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                   matrices,
-                           BlockMatrix const &             src,
-                           Range const &                   range) const;
+  cell_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           BlockMatrix &                           matrices,
+                           BlockMatrix const &                     src,
+                           Range const &                           range) const;
 
   void
-  face_loop_block_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                           BlockMatrix &                   matrices,
-                           BlockMatrix const &             src,
-                           Range const &                   range) const;
+  face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           BlockMatrix &                           matrices,
+                           BlockMatrix const &                     src,
+                           Range const &                           range) const;
 
   void
-  boundary_face_loop_block_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                                    BlockMatrix &                   matrices,
-                                    BlockMatrix const &             src,
-                                    Range const &                   range) const;
+  boundary_face_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    BlockMatrix &                           matrices,
+                                    BlockMatrix const &                     src,
+                                    Range const &                           range) const;
 
   // cell-based variant for computation of both cell and face integrals
   void
-  cell_based_loop_block_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                                 BlockMatrix &                   matrices,
-                                 BlockMatrix const &             src,
-                                 Range const &                   range) const;
+  cell_based_loop_block_diagonal(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                 BlockMatrix &                           matrices,
+                                 BlockMatrix const &                     src,
+                                 Range const &                           range) const;
 
   /*
    * Apply block diagonal.
    */
   void
-  cell_loop_apply_block_diagonal_matrix_based(MatrixFree<dim, Number> const & matrix_free,
-                                              VectorType &                    dst,
-                                              VectorType const &              src,
-                                              Range const &                   range) const;
+  cell_loop_apply_block_diagonal_matrix_based(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                              VectorType &                            dst,
+                                              VectorType const &                      src,
+                                              Range const &                           range) const;
 
   /*
    * Apply inverse block diagonal:
@@ -562,10 +561,11 @@ private:
    * should have already been performed with the method update_inverse_block_diagonal())
    */
   void
-  cell_loop_apply_inverse_block_diagonal_matrix_based(MatrixFree<dim, Number> const & matrix_free,
-                                                      VectorType &                    dst,
-                                                      VectorType const &              src,
-                                                      Range const &                   range) const;
+  cell_loop_apply_inverse_block_diagonal_matrix_based(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           range) const;
 
   /*
    * Set up sparse matrix internally for templated matrix type (Trilinos or
@@ -584,24 +584,24 @@ private:
    */
   template<typename SparseMatrix>
   void
-  cell_loop_calculate_system_matrix(MatrixFree<dim, Number> const & matrix_free,
-                                    SparseMatrix &                  dst,
-                                    SparseMatrix const &            src,
-                                    Range const &                   range) const;
+  cell_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    SparseMatrix &                          dst,
+                                    SparseMatrix const &                    src,
+                                    Range const &                           range) const;
 
   template<typename SparseMatrix>
   void
-  face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & matrix_free,
-                                    SparseMatrix &                  dst,
-                                    SparseMatrix const &            src,
-                                    Range const &                   range) const;
+  face_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    SparseMatrix &                          dst,
+                                    SparseMatrix const &                    src,
+                                    Range const &                           range) const;
 
   template<typename SparseMatrix>
   void
-  boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & matrix_free,
-                                             SparseMatrix &                  dst,
-                                             SparseMatrix const &            src,
-                                             Range const &                   range) const;
+  boundary_face_loop_calculate_system_matrix(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                             SparseMatrix &                          dst,
+                                             SparseMatrix const &                    src,
+                                             Range const &                           range) const;
 
   /*
    * This function sets entries in the diagonal corresponding to constraint DoFs to one.
@@ -623,14 +623,14 @@ private:
 
   /*
    * Multigrid level: 0 <= level <= max_level. If the operator is not used as a multigrid
-   * level operator, this variable takes a value of numbers::invalid_unsigned_int.
+   * level operator, this variable takes a value of dealii::numbers::invalid_unsigned_int.
    */
   unsigned int level;
 
   /*
    * Vector of matrices for block-diagonal preconditioners.
    */
-  mutable std::vector<LAPACKFullMatrix<Number>> matrices;
+  mutable std::vector<dealii::LAPACKFullMatrix<Number>> matrices;
 
   /*
    * We want to initialize the block diagonal preconditioner (block diagonal matrices or elementwise

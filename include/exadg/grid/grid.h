@@ -33,15 +33,13 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 class Grid
 {
 public:
-  typedef
-    typename std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-      PeriodicFaces;
+  typedef typename std::vector<
+    dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<dim>::cell_iterator>>
+    PeriodicFaces;
 
   /**
    * Constructor.
@@ -51,33 +49,34 @@ public:
     // triangulation
     if(data.triangulation_type == TriangulationType::Serial)
     {
-      AssertDimension(Utilities::MPI::n_mpi_processes(mpi_comm), 1);
-      triangulation = std::make_shared<Triangulation<dim>>();
+      AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);
+      triangulation = std::make_shared<dealii::Triangulation<dim>>();
     }
     else if(data.triangulation_type == TriangulationType::Distributed)
     {
-      triangulation = std::make_shared<parallel::distributed::Triangulation<dim>>(
+      triangulation = std::make_shared<dealii::parallel::distributed::Triangulation<dim>>(
         mpi_comm,
         dealii::Triangulation<dim>::none,
-        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
+        dealii::parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
     }
     else if(data.triangulation_type == TriangulationType::FullyDistributed)
     {
-      triangulation = std::make_shared<parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
+      triangulation =
+        std::make_shared<dealii::parallel::fullydistributed::Triangulation<dim>>(mpi_comm);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+      AssertThrow(false, dealii::ExcMessage("Invalid parameter triangulation_type."));
     }
 
     // mapping
-    mapping = std::make_shared<MappingQGeneric<dim>>(data.mapping_degree);
+    mapping = std::make_shared<dealii::MappingQGeneric<dim>>(data.mapping_degree);
   }
 
   /**
    * dealii::Triangulation.
    */
-  std::shared_ptr<Triangulation<dim>> triangulation;
+  std::shared_ptr<dealii::Triangulation<dim>> triangulation;
 
   /**
    * dealii::GridTools::PeriodicFacePair's.
@@ -87,7 +86,7 @@ public:
   /**
    * dealii::Mapping.
    */
-  std::shared_ptr<Mapping<dim>> mapping;
+  std::shared_ptr<dealii::Mapping<dim>> mapping;
 };
 
 } // namespace ExaDG

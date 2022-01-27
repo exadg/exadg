@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 OperatorProjectionMethods<dim, Number>::OperatorProjectionMethods(
   std::shared_ptr<Grid<dim> const>                  grid_in,
@@ -57,9 +55,9 @@ OperatorProjectionMethods<dim, Number>::~OperatorProjectionMethods()
 template<int dim, typename Number>
 void
 OperatorProjectionMethods<dim, Number>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-  std::string const &                          dof_index_temperature)
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
+  std::string const &                              dof_index_temperature)
 {
   Base::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
@@ -186,8 +184,9 @@ OperatorProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poiss
   }
   else
   {
-    AssertThrow(
-      false, ExcMessage("Specified preconditioner for pressure Poisson equation not implemented"));
+    AssertThrow(false,
+                dealii::ExcMessage(
+                  "Specified preconditioner for pressure Poisson equation not implemented"));
   }
 }
 
@@ -241,7 +240,8 @@ OperatorProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
   else
   {
     AssertThrow(false,
-                ExcMessage("Specified solver for pressure Poisson equation is not implemented."));
+                dealii::ExcMessage(
+                  "Specified solver for pressure Poisson equation is not implemented."));
   }
 }
 
@@ -304,7 +304,7 @@ OperatorProjectionMethods<dim, Number>::apply_projection_operator(VectorType &  
                                                                   VectorType const & src) const
 {
   AssertThrow(this->projection_operator.get() != 0,
-              ExcMessage("Projection operator is not initialized correctly."));
+              dealii::ExcMessage("Projection operator is not initialized correctly."));
 
   this->projection_operator->vmult(dst, src);
 }

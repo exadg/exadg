@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
                                           MPI_Comm const &               mpi_comm_in)
@@ -39,7 +37,8 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(DoFHandler<dim> const & dof_handler, Mapping<dim> const & mapping)
+PostProcessor<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler,
+                                  dealii::Mapping<dim> const &    mapping)
 {
   output_generator.setup(dof_handler, mapping, pp_data.output_data);
 

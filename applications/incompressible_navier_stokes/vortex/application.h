@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 enum class MeshType
 {
   UniformCartesian,
@@ -42,19 +40,19 @@ enum class MeshType
 };
 
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionVelocity(double const u_x_max, double const viscosity)
-    : Function<dim>(dim, 0.0), u_x_max(u_x_max), viscosity(viscosity)
+    : dealii::Function<dim>(dim, 0.0), u_x_max(u_x_max), viscosity(viscosity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double result = 0.0;
     if(component == 0)
@@ -70,19 +68,19 @@ private:
 };
 
 template<int dim>
-class AnalyticalSolutionPressure : public Function<dim>
+class AnalyticalSolutionPressure : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionPressure(double const u_x_max, double const viscosity)
-    : Function<dim>(1 /*n_components*/, 0.0), u_x_max(u_x_max), viscosity(viscosity)
+    : dealii::Function<dim>(1 /*n_components*/, 0.0), u_x_max(u_x_max), viscosity(viscosity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const t  = this->get_time();
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double const result = -u_x_max * std::cos(2 * pi * p[0]) * std::cos(2 * pi * p[1]) *
                           std::exp(-8.0 * pi * pi * viscosity * t);
@@ -95,13 +93,13 @@ private:
 };
 
 template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
+class NeumannBoundaryVelocity : public dealii::Function<dim>
 {
 public:
   NeumannBoundaryVelocity(double const                 u_x_max,
                           double const                 viscosity,
                           FormulationViscousTerm const formulation_viscous)
-    : Function<dim>(dim, 0.0),
+    : dealii::Function<dim>(dim, 0.0),
       u_x_max(u_x_max),
       viscosity(viscosity),
       formulation_viscous(formulation_viscous)
@@ -109,10 +107,10 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double result = 0.0;
     // clang-format off
@@ -156,7 +154,7 @@ public:
     {
       AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation ||
                   formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
-                  ExcMessage("Specified formulation of viscous term is not implemented!"));
+                  dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
     // clang-format on
 
@@ -183,12 +181,12 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
-    Tensor<1, dim> const n = this->get_normal_vector();
+    dealii::Tensor<1, dim> const n = this->get_normal_vector();
 
     double result = 0.0;
     // prescribe F_nu(u) / nu = grad(u)
@@ -218,7 +216,7 @@ public:
     {
       AssertThrow(formulation_viscous == FormulationViscousTerm::LaplaceFormulation ||
                     formulation_viscous == FormulationViscousTerm::DivergenceFormulation,
-                  ExcMessage("Specified formulation of viscous term is not implemented!"));
+                  dealii::ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
 
     return result;
@@ -231,19 +229,19 @@ private:
 
 
 template<int dim>
-class PressureBC_dudt : public Function<dim>
+class PressureBC_dudt : public dealii::Function<dim>
 {
 public:
   PressureBC_dudt(double const u_x_max, double const viscosity)
-    : Function<dim>(dim, 0.0), u_x_max(u_x_max), viscosity(viscosity)
+    : dealii::Function<dim>(dim, 0.0), u_x_max(u_x_max), viscosity(viscosity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t  = this->get_time();
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double result = 0.0;
     if(component == 0)
@@ -268,7 +266,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -486,37 +484,38 @@ public:
     if(ALE)
     {
       AssertThrow(mesh_type == MeshType::UniformCartesian,
-                  ExcMessage("Taylor vortex problem: Parameter mesh_type is invalid for ALE."));
+                  dealii::ExcMessage(
+                    "Taylor vortex problem: Parameter mesh_type is invalid for ALE."));
     }
 
     if(mesh_type == MeshType::UniformCartesian)
     {
       // Uniform Cartesian grid
-      GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 2, left, right);
+      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 2, left, right);
     }
     else if(mesh_type == MeshType::ComplexSurfaceManifold)
     {
       // Complex Geometry
-      Triangulation<dim> tria1, tria2;
-      double const       radius = (right - left) * 0.25;
-      double const       width  = right - left;
-      GridGenerator::hyper_shell(
-        tria1, Point<dim>(), radius, 0.5 * width * std::sqrt(dim), 2 * dim);
+      dealii::Triangulation<dim> tria1, tria2;
+      double const               radius = (right - left) * 0.25;
+      double const               width  = right - left;
+      dealii::GridGenerator::hyper_shell(
+        tria1, dealii::Point<dim>(), radius, 0.5 * width * std::sqrt(dim), 2 * dim);
       tria1.reset_all_manifolds();
       if(dim == 2)
       {
-        GridTools::rotate(numbers::PI / 4, tria1);
+        dealii::GridTools::rotate(dealii::numbers::PI / 4, tria1);
       }
-      GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-      GridGenerator::merge_triangulations(tria1, tria2, *this->grid->triangulation);
+      dealii::GridGenerator::hyper_ball(tria2, dealii::Point<dim>(), radius);
+      dealii::GridGenerator::merge_triangulations(tria1, tria2, *this->grid->triangulation);
 
       this->grid->triangulation->set_all_manifold_ids(0);
       for(auto cell : this->grid->triangulation->active_cell_iterators())
       {
-        for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
             if(std::abs(cell->face(f)->vertex(v).norm() - radius) > 1e-12)
               face_at_sphere_boundary = false;
@@ -527,7 +526,7 @@ public:
           }
         }
       }
-      static const SphericalManifold<dim> spherical_manifold;
+      static const dealii::SphericalManifold<dim> spherical_manifold;
       this->grid->triangulation->set_manifold(1, spherical_manifold);
 
       // refine globally due to boundary conditions for vortex problem
@@ -536,20 +535,20 @@ public:
     else if(mesh_type == MeshType::ComplexVolumeManifold)
     {
       // Complex Geometry
-      Triangulation<dim> tria1, tria2;
-      double const       radius = (right - left) * 0.25;
-      double const       width  = right - left;
-      Point<dim>         center = Point<dim>();
+      dealii::Triangulation<dim> tria1, tria2;
+      double const               radius = (right - left) * 0.25;
+      double const               width  = right - left;
+      dealii::Point<dim>         center = dealii::Point<dim>();
 
-      GridGenerator::hyper_shell(
-        tria1, Point<dim>(), radius, 0.5 * width * std::sqrt(dim), 2 * dim);
+      dealii::GridGenerator::hyper_shell(
+        tria1, dealii::Point<dim>(), radius, 0.5 * width * std::sqrt(dim), 2 * dim);
       tria1.reset_all_manifolds();
       if(dim == 2)
       {
-        GridTools::rotate(numbers::PI / 4, tria1);
+        dealii::GridTools::rotate(dealii::numbers::PI / 4, tria1);
       }
-      GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-      GridGenerator::merge_triangulations(tria1, tria2, *this->grid->triangulation);
+      dealii::GridGenerator::hyper_ball(tria2, dealii::Point<dim>(), radius);
+      dealii::GridGenerator::merge_triangulations(tria1, tria2, *this->grid->triangulation);
 
       // manifolds
       this->grid->triangulation->set_all_manifold_ids(0);
@@ -560,10 +559,10 @@ public:
 
       for(auto cell : this->grid->triangulation->active_cell_iterators())
       {
-        for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
         {
           bool face_at_sphere_boundary = true;
-          for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
           {
             if(std::abs(cell->face(f)->vertex(v).norm() - radius) > 1e-12)
               face_at_sphere_boundary = false;
@@ -579,7 +578,7 @@ public:
       }
 
       // generate vector of manifolds and apply manifold to all cells that have been marked
-      static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+      static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
       manifold_vec.resize(manifold_ids.size());
 
       for(unsigned int i = 0; i < manifold_ids.size(); ++i)
@@ -588,8 +587,9 @@ public:
         {
           if(cell->manifold_id() == manifold_ids[i])
           {
-            manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+            manifold_vec[i] =
+              std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+                new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
             this->grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
           }
         }
@@ -600,7 +600,7 @@ public:
     }
     else if(mesh_type == MeshType::Curvilinear)
     {
-      GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 2, left, right);
+      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation, 2, left, right);
 
       this->grid->triangulation->set_all_manifold_ids(1);
       double const                     deformation = 0.1;
@@ -611,7 +611,7 @@ public:
 
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if(((std::fabs(cell->face(f)->center()(0) - right) < 1e-12) &&
             (cell->face(f)->center()(1) < 0)) ||
@@ -633,7 +633,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -661,13 +662,13 @@ public:
       new AnalyticalSolutionPressure<dim>(u_x_max, viscosity));
     this->field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(u_x_max, viscosity));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
-  std::shared_ptr<Function<dim>>
+  std::shared_ptr<dealii::Function<dim>>
   create_mesh_movement_function() final
   {
-    std::shared_ptr<Function<dim>> mesh_motion;
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
     data.temporal                       = MeshMovementAdvanceInTime::Sin;
@@ -720,9 +721,10 @@ public:
   void
   set_boundary_descriptor_poisson() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
-    std::shared_ptr<Function<dim>> bc = this->create_mesh_movement_function();
+    std::shared_ptr<dealii::Function<dim>> bc = this->create_mesh_movement_function();
     this->poisson_boundary_descriptor->dirichlet_bc.insert(pair(0, bc));
     this->poisson_boundary_descriptor->dirichlet_bc.insert(pair(1, bc));
   }
@@ -730,8 +732,10 @@ public:
   void
   set_field_functions_poisson() final
   {
-    this->poisson_field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    this->poisson_field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->poisson_field_functions->initial_solution.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->poisson_field_functions->right_hand_side.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

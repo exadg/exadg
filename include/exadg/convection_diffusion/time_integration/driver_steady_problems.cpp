@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_,
@@ -42,7 +40,7 @@ DriverSteadyProblems<Number>::DriverSteadyProblems(
     param(param_),
     mpi_comm(mpi_comm_),
     is_test(is_test_),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     timer_tree(new TimerTree()),
     postprocessor(postprocessor_)
 {
@@ -63,7 +61,7 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessing();
@@ -105,7 +103,7 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::do_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Solving steady state problem ..." << std::endl;
@@ -127,7 +125,7 @@ DriverSteadyProblems<Number>::do_solve()
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
     }
   }
@@ -155,7 +153,7 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessor->do_postprocessing(solution);

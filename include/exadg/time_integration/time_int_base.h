@@ -41,8 +41,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 class TimeIntBase
 {
 public:
@@ -225,7 +223,7 @@ protected:
   /*
    * Output to screen.
    */
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   /*
    * The number of the current time step starting with time_step_number = 1.
@@ -250,7 +248,7 @@ protected:
   /*
    * Computation time (wall clock time).
    */
-  Timer                      global_timer;
+  dealii::Timer              global_timer;
   std::shared_ptr<TimerTree> timer_tree;
   bool                       is_test;
 

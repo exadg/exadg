@@ -26,13 +26,11 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         affine_constraints,
+  dealii::MatrixFree<dim, Number> const &                   matrix_free,
+  dealii::AffineConstraints<Number> const &                 affine_constraints,
   ConvectiveOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel)
 {
@@ -60,7 +58,7 @@ ConvectiveOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity_in
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 ConvectiveOperator<dim, Number>::get_velocity() const
 {
   return kernel->get_velocity();
@@ -95,9 +93,10 @@ ConvectiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) c
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                        unsigned int const       face,
-                                                        types::boundary_id const boundary_id) const
+ConvectiveOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -125,7 +124,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -160,7 +159,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     // set value_p to zero
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
     vector normal_m = integrator_m.get_normal_vector(q);
@@ -185,7 +184,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     // set value_p to zero
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
     vector normal_m = integrator_m.get_normal_vector(q);
@@ -214,7 +213,7 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
   for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
   {
     // set value_m to zero
-    scalar value_m = make_vectorized_array<Number>(0.0);
+    scalar value_m = dealii::make_vectorized_array<Number>(0.0);
     scalar value_p = integrator_p.get_value(q);
 
     // n⁺ = -n⁻
@@ -229,9 +228,10 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
-                                                      OperatorType const &       operator_type,
-                                                      types::boundary_id const & boundary_id) const
+ConvectiveOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 

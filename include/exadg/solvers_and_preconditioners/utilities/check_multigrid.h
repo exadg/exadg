@@ -31,15 +31,14 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename Operator, typename Preconditioner>
 class CheckMultigrid
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef LinearAlgebra::distributed::Vector<typename Preconditioner::MultigridNumber> VectorTypeMG;
+  typedef dealii::LinearAlgebra::distributed::Vector<typename Preconditioner::MultigridNumber>
+    VectorTypeMG;
 
   CheckMultigrid(Operator const &                underlying_operator_in,
                  std::shared_ptr<Preconditioner> preconditioner_in,
@@ -114,8 +113,8 @@ public:
                VectorType const &   solution_after_mg_cylce,
                VectorTypeMG const & solution_after_smoothing) const
   {
-    DataOut<dim>          data_out;
-    DataOutBase::VtkFlags flags;
+    dealii::DataOut<dim>          data_out;
+    dealii::DataOutBase::VtkFlags flags;
     flags.write_higher_order_cells = true;
     data_out.set_flags(flags);
 
@@ -141,9 +140,9 @@ public:
     {
       // velocity
       std::vector<std::string> initial(dim, "initial");
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        initial_component_interpretation(dim,
-                                         DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+        initial_component_interpretation(
+          dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
       data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                initial_solution,
@@ -151,9 +150,9 @@ public:
                                initial_component_interpretation);
 
       std::vector<std::string> mg_cycle(dim, "mg_cycle");
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        mg_cylce_component_interpretation(dim,
-                                          DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+        mg_cylce_component_interpretation(
+          dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
       data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                solution_after_mg_cylce,
@@ -161,9 +160,9 @@ public:
                                mg_cylce_component_interpretation);
 
       std::vector<std::string> smoother(dim, "smoother");
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        smoother_component_interpretation(dim,
-                                          DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+        smoother_component_interpretation(
+          dim, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
       data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                solution_after_smoothing,
@@ -176,15 +175,15 @@ public:
 
     std::ostringstream filename;
     std::string        name = "smoothing";
-    filename << name << "_Proc" << Utilities::MPI::this_mpi_process(mpi_comm) << ".vtu";
+    filename << name << "_Proc" << dealii::Utilities::MPI::this_mpi_process(mpi_comm) << ".vtu";
 
     std::ofstream output(filename.str().c_str());
     data_out.write_vtu(output);
 
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::vector<std::string> filenames;
-      for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(mpi_comm); ++i)
+      for(unsigned int i = 0; i < dealii::Utilities::MPI::n_mpi_processes(mpi_comm); ++i)
       {
         std::ostringstream filename;
         filename << name << "_Proc" << i << ".vtu";

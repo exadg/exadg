@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 namespace ConvDiff
 {
 namespace Interface
@@ -40,7 +38,7 @@ template<typename Number>
 class Operator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   Operator()
   {
@@ -130,7 +128,7 @@ template<typename Number>
 class OperatorExplRK
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OperatorExplRK(std::shared_ptr<ConvDiff::Interface::Operator<Number>> operator_in,
                  bool const                                             numerical_velocity_field_in)
@@ -188,7 +186,7 @@ template<typename Number>
 class OperatorOIF
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OperatorOIF(std::shared_ptr<ConvDiff::Interface::Operator<Number>> operator_in,
               bool const                                             numerical_velocity_field_in)

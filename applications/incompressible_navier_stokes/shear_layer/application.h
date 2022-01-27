@@ -32,25 +32,23 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
   InitialSolutionVelocity(double const rho, double const delta)
-    : Function<dim>(dim, 0.0), rho(rho), delta(delta)
+    : dealii::Function<dim>(dim, 0.0), rho(rho), delta(delta)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
     if(component == 0)
       result = std::tanh(rho * (0.25 - std::abs(0.5 - p[1])));
     else if(component == 1)
-      result = delta * std::sin(2.0 * numbers::PI * p[0]);
+      result = delta * std::sin(2.0 * dealii::numbers::PI * p[0]);
 
     return result;
   }
@@ -67,7 +65,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -179,7 +177,7 @@ public:
   create_grid() final
   {
     double const left = 0.0, right = 1.0;
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // use periodic boundary conditions
     // x-direction
@@ -189,9 +187,9 @@ public:
     this->grid->triangulation->begin()->face(2)->set_all_boundary_ids(2);
     this->grid->triangulation->begin()->face(3)->set_all_boundary_ids(3);
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0, 1, 0, this->grid->periodic_faces);
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 2, 3, 1, this->grid->periodic_faces);
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
@@ -209,9 +207,11 @@ public:
   {
     this->field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(rho, delta));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

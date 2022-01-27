@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // set parameters according to Wiart et al. ("Assessment of discontinuous Galerkin method
 // for the simulation of vortical flows at high Reynolds number"):
 
@@ -57,16 +55,16 @@ double const MAX_VELOCITY        = V_0;
 double const CHARACTERISTIC_TIME = L / V_0;
 
 template<int dim>
-class InitialSolution : public Function<dim>
+class InitialSolution : public dealii::Function<dim>
 {
 public:
   InitialSolution(unsigned int const n_components = dim + 2, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & x, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & x, unsigned int const component = 0) const
   {
     double const u1 = V_0 * std::sin(x[0] / L) * std::cos(x[1] / L) * std::cos(x[2] / L);
     double const u2 = -V_0 * std::cos(x[0] / L) * std::sin(x[1] / L) * std::cos(x[2] / L);
@@ -107,7 +105,7 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
   // clang-format off
   if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
   else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, ExcMessage("Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
   // clang-format on
 }
 
@@ -119,7 +117,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -127,13 +125,13 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
      prm.enter_subsection("Application");
-       prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
+       prm.add_parameter("MeshType", mesh_type_string, "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
      prm.leave_subsection();
     // clang-format on
   }
@@ -222,7 +220,7 @@ public:
   void
   create_grid() final
   {
-    double const pi   = numbers::PI;
+    double const pi   = dealii::numbers::PI;
     double const left = -pi * L, right = pi * L;
     double const deformation = 0.1;
 
@@ -237,7 +235,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     create_periodic_box(this->grid->triangulation,
@@ -262,9 +260,12 @@ public:
   set_field_functions() final
   {
     this->field_functions->initial_solution.reset(new InitialSolution<dim>());
-    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_density.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

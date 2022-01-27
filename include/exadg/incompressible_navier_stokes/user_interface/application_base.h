@@ -47,14 +47,12 @@ class Mesh;
 
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class ApplicationBase
 {
 public:
   virtual void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
     prm.enter_subsection("Output");
@@ -67,7 +65,7 @@ public:
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
   }
@@ -146,11 +144,11 @@ public:
   }
 
   // Analytical mesh motion
-  virtual std::shared_ptr<Function<dim>>
+  virtual std::shared_ptr<dealii::Function<dim>>
   create_mesh_movement_function()
   {
-    std::shared_ptr<Function<dim>> mesh_motion =
-      std::make_shared<Functions::ZeroFunction<dim>>(dim);
+    std::shared_ptr<dealii::Function<dim>> mesh_motion =
+      std::make_shared<dealii::Functions::ZeroFunction<dim>>(dim);
 
     return mesh_motion;
   }
@@ -173,8 +171,8 @@ public:
     set_field_functions_poisson();
 
     AssertThrow(poisson_param.right_hand_side == false,
-                ExcMessage("Poisson problem is used for mesh movement. Hence, "
-                           "the right-hand side has to be zero for the Poisson problem."));
+                dealii::ExcMessage("Poisson problem is used for mesh movement. Hence, "
+                                   "the right-hand side has to be zero for the Poisson problem."));
   }
 
   Poisson::Parameters const &
@@ -198,7 +196,7 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   Parameters param;
 
@@ -235,24 +233,24 @@ private:
   set_parameters_poisson()
   {
     AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
+                dealii::ExcMessage("Has to be overwritten by derived classes in order "
+                                   "to use Poisson solver for mesh movement."));
   }
 
   virtual void
   set_boundary_descriptor_poisson()
   {
     AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
+                dealii::ExcMessage("Has to be overwritten by derived classes in order "
+                                   "to use Poisson solver for mesh movement."));
   }
 
   virtual void
   set_field_functions_poisson()
   {
     AssertThrow(false,
-                ExcMessage("Has to be overwritten by derived classes in order "
-                           "to use Poisson solver for mesh movement."));
+                dealii::ExcMessage("Has to be overwritten by derived classes in order "
+                                   "to use Poisson solver for mesh movement."));
   }
 };
 
@@ -290,19 +288,20 @@ public:
     param_pre.print(this->pcout, "List of parameters for precursor domain:");
 
     // make some additional parameter checks
-    AssertThrow(param_pre.ale_formulation == false, ExcMessage("not implemented."));
-    AssertThrow(this->param.ale_formulation == false, ExcMessage("not implemented."));
+    AssertThrow(param_pre.ale_formulation == false, dealii::ExcMessage("not implemented."));
+    AssertThrow(this->param.ale_formulation == false, dealii::ExcMessage("not implemented."));
 
-    AssertThrow(param_pre.calculation_of_time_step_size ==
-                  this->param.calculation_of_time_step_size,
-                ExcMessage("Type of time step calculation has to be the same for both domains."));
+    AssertThrow(
+      param_pre.calculation_of_time_step_size == this->param.calculation_of_time_step_size,
+      dealii::ExcMessage("Type of time step calculation has to be the same for both domains."));
 
     AssertThrow(param_pre.adaptive_time_stepping == this->param.adaptive_time_stepping,
-                ExcMessage("Type of time step calculation has to be the same for both domains."));
+                dealii::ExcMessage(
+                  "Type of time step calculation has to be the same for both domains."));
 
     AssertThrow(param_pre.solver_type == SolverType::Unsteady &&
                   this->param.solver_type == SolverType::Unsteady,
-                ExcMessage("This is an unsteady solver. Check parameters."));
+                dealii::ExcMessage("This is an unsteady solver. Check parameters."));
 
     // For the two-domain solver the parameter start_with_low_order has to be true.
     // This is due to the fact that the setup function of the time integrator initializes
@@ -312,7 +311,7 @@ public:
     // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
     // inconsistencies is to preclude the case start_with_low_order == false.
     AssertThrow(param_pre.start_with_low_order == true && this->param.start_with_low_order == true,
-                ExcMessage("start_with_low_order has to be true for two-domain solver."));
+                dealii::ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
     // grid
     grid_pre = std::make_shared<Grid<dim>>(param_pre.grid, this->mpi_comm);

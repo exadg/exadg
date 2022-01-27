@@ -28,12 +28,10 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim>
 struct AnalyticalSolution
 {
-  std::shared_ptr<Function<dim>> solution;
+  std::shared_ptr<dealii::Function<dim>> solution;
 };
 
 } // namespace CompNS

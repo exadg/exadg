@@ -25,8 +25,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalCoarsening<dim, Number, VectorType>::restrict_and_add(unsigned int const level,
@@ -49,15 +47,15 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::prolongate_and_add(
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
-  MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
-  MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
-  unsigned int const                                          dof_handler_index)
+  dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
+  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
+  unsigned int const                                                          dof_handler_index)
 {
   std::vector<MGLevelInfo>            global_levels;
   std::vector<MGDoFHandlerIdentifier> p_levels;
 
   unsigned int const min_level = mg_matrixfree.min_level();
-  AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
+  AssertThrow(min_level == 0, dealii::ExcMessage("Currently, we expect min_level==0!"));
 
   unsigned int const max_level = mg_matrixfree.max_level();
 
@@ -110,7 +108,7 @@ MGTransferGlobalCoarsening<dim, Number, VectorType>::reinit(
     }
     else
     {
-      AssertThrow(false, ExcMessage("Cannot create MGTransfer!"));
+      AssertThrow(false, dealii::ExcMessage("Cannot create MGTransfer!"));
     }
   }
 

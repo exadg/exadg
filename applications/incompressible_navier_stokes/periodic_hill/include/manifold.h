@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 double
 m_to_mm(double coordinate)
 {
@@ -51,7 +49,7 @@ f(double x_m, double const H, double const LENGTH)
   double x = m_to_mm(x_m);
   double y = 0.0;
 
-  AssertThrow(x_m <= LENGTH / 2.0 + 1.e-12, ExcMessage("Parameter out of bounds."));
+  AssertThrow(x_m <= LENGTH / 2.0 + 1.e-12, dealii::ExcMessage("Parameter out of bounds."));
 
   if(x <= 9.0)
     y =
@@ -76,27 +74,31 @@ f(double x_m, double const H, double const LENGTH)
   else if(x > 54.0)
     y = -m_to_mm(H);
   else
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
   return mm_to_m(y);
 }
 
 template<int dim>
-class PeriodicHillManifold : public ChartManifold<dim>
+class PeriodicHillManifold : public dealii::ChartManifold<dim>
 {
 public:
   PeriodicHillManifold(double const H,
                        double const LENGTH,
                        double const HEIGHT,
                        double const GRID_STRETCH_FAC)
-    : ChartManifold<dim>(), H(H), LENGTH(LENGTH), HEIGHT(HEIGHT), GRID_STRETCH_FAC(GRID_STRETCH_FAC)
+    : dealii::ChartManifold<dim>(),
+      H(H),
+      LENGTH(LENGTH),
+      HEIGHT(HEIGHT),
+      GRID_STRETCH_FAC(GRID_STRETCH_FAC)
   {
   }
 
-  Point<dim>
-  push_forward(Point<dim> const & xi) const final
+  dealii::Point<dim>
+  push_forward(dealii::Point<dim> const & xi) const final
   {
-    Point<dim> x = xi;
+    dealii::Point<dim> x = xi;
 
     // transform y-coordinate only
     double const gamma           = GRID_STRETCH_FAC;
@@ -107,10 +109,10 @@ public:
     return x;
   }
 
-  Point<dim>
-  pull_back(Point<dim> const & x) const final
+  dealii::Point<dim>
+  pull_back(dealii::Point<dim> const & x) const final
   {
-    Point<dim> xi = x;
+    dealii::Point<dim> xi = x;
 
     // transform y-coordinate only
     double const f_x      = f(x[0], H, LENGTH);
@@ -121,7 +123,7 @@ public:
     return xi;
   }
 
-  std::unique_ptr<Manifold<dim>>
+  std::unique_ptr<dealii::Manifold<dim>>
   clone() const final
   {
     return std::make_unique<PeriodicHillManifold<dim>>(H, LENGTH, HEIGHT, GRID_STRETCH_FAC);

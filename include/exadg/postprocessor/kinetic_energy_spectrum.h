@@ -32,8 +32,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 // forward declaration
 class DealSpectrumWrapper;
 
@@ -54,12 +52,12 @@ struct KineticEnergySpectrumData
       exploit_symmetry(false),
       n_cells_1d_coarse_grid(1),
       refine_level(0),
-      length_symmetric_domain(numbers::PI)
+      length_symmetric_domain(dealii::numbers::PI)
   {
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
@@ -114,14 +112,14 @@ template<int dim, typename Number>
 class KineticEnergySpectrumCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   KineticEnergySpectrumCalculator(MPI_Comm const & mpi_comm);
 
   void
-  setup(MatrixFree<dim, Number> const &   matrix_free_data_in,
-        DoFHandler<dim> const &           dof_handler_in,
-        KineticEnergySpectrumData const & data_in);
+  setup(dealii::MatrixFree<dim, Number> const & matrix_free_data_in,
+        dealii::DoFHandler<dim> const &         dof_handler_in,
+        KineticEnergySpectrumData const &       data_in);
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
@@ -143,12 +141,12 @@ private:
 
   std::shared_ptr<DealSpectrumWrapper> deal_spectrum_wrapper;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
 
-  std::shared_ptr<VectorType>         velocity_full;
-  std::shared_ptr<Triangulation<dim>> tria_full;
-  std::shared_ptr<FESystem<dim>>      fe_full;
-  std::shared_ptr<DoFHandler<dim>>    dof_handler_full;
+  std::shared_ptr<VectorType>                 velocity_full;
+  std::shared_ptr<dealii::Triangulation<dim>> tria_full;
+  std::shared_ptr<dealii::FESystem<dim>>      fe_full;
+  std::shared_ptr<dealii::DoFHandler<dim>>    dof_handler_full;
 };
 } // namespace ExaDG
 

@@ -25,22 +25,21 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 StreamfunctionCalculatorRHSOperator<dim, Number>::StreamfunctionCalculatorRHSOperator()
   : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
 {
-  AssertThrow(dim == 2, ExcMessage("Calculation of streamfunction can only be used for dim==2."));
+  AssertThrow(dim == 2,
+              dealii::ExcMessage("Calculation of streamfunction can only be used for dim==2."));
 }
 
 template<int dim, typename Number>
 void
 StreamfunctionCalculatorRHSOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const & matrix_free_in,
-  unsigned int const              dof_index_u_in,
-  unsigned int const              dof_index_u_scalar_in,
-  unsigned int const              quad_index_in)
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_u_in,
+  unsigned int const                      dof_index_u_scalar_in,
+  unsigned int const                      quad_index_in)
 {
   matrix_free        = &matrix_free_in;
   dof_index_u        = dof_index_u_in;
@@ -61,10 +60,10 @@ StreamfunctionCalculatorRHSOperator<dim, Number>::apply(VectorType &       dst,
 template<int dim, typename Number>
 void
 StreamfunctionCalculatorRHSOperator<dim, Number>::cell_loop(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   cell_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           cell_range) const
 {
   IntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
   IntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);

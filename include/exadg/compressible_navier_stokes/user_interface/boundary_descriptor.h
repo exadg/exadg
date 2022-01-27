@@ -22,7 +22,7 @@
 #ifndef INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 #define INCLUDE_EXADG_COMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_BOUNDARY_DESCRIPTOR_H_
 
-using namespace dealii;
+
 
 // deal.II
 #include <deal.II/base/function.h>
@@ -36,9 +36,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
-
 enum class BoundaryType
 {
   Undefined,
@@ -49,28 +46,29 @@ enum class BoundaryType
 template<int dim>
 struct BoundaryDescriptorStd
 {
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> dirichlet_bc;
+  std::map<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>> neumann_bc;
 
   // return the boundary type
   inline DEAL_II_ALWAYS_INLINE //
     BoundaryType
-    get_boundary_type(types::boundary_id const & boundary_id) const
+    get_boundary_type(dealii::types::boundary_id const & boundary_id) const
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryType::Dirichlet;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryType::Neumann;
 
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
 
     return BoundaryType::Undefined;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
     void
-    verify_boundary_conditions(types::boundary_id const             boundary_id,
-                               std::set<types::boundary_id> const & periodic_boundary_ids) const
+    verify_boundary_conditions(
+      dealii::types::boundary_id const             boundary_id,
+      std::set<dealii::types::boundary_id> const & periodic_boundary_ids) const
   {
     unsigned int counter = 0;
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
@@ -82,24 +80,25 @@ struct BoundaryDescriptorStd
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
       counter++;
 
-    AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
+    AssertThrow(counter == 1,
+                dealii::ExcMessage("Boundary face with non-unique boundary type found."));
   }
 };
 
 template<int dim>
 struct BoundaryDescriptorEnergy : public BoundaryDescriptorStd<dim>
 {
-  std::map<types::boundary_id, EnergyBoundaryVariable> boundary_variable;
+  std::map<dealii::types::boundary_id, EnergyBoundaryVariable> boundary_variable;
 
   // return the boundary variable
   inline DEAL_II_ALWAYS_INLINE //
     EnergyBoundaryVariable
-    get_boundary_variable(types::boundary_id const & boundary_id) const
+    get_boundary_variable(dealii::types::boundary_id const & boundary_id) const
   {
     EnergyBoundaryVariable boundary_variable = this->boundary_variable.find(boundary_id)->second;
 
     AssertThrow(boundary_variable != EnergyBoundaryVariable::Undefined,
-                ExcMessage("Energy boundary variable is undefined!"));
+                dealii::ExcMessage("Energy boundary variable is undefined!"));
 
     return boundary_variable;
   }

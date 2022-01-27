@@ -38,8 +38,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // Select the operator to be applied
 enum class OperatorType
 {
@@ -68,7 +66,7 @@ enum_to_string(OperatorType const enum_type)
     case OperatorType::VectorUpdate:              string_type = "VectorUpdate";             break;
     case OperatorType::EvaluateOperatorExplicit:  string_type = "EvaluateOperatorExplicit"; break;
 
-    default:AssertThrow(false, ExcMessage("Not implemented.")); break;
+    default:AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
       // clang-format on
   }
 
@@ -86,7 +84,7 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
   else if(string_type == "InverseMassOperatorDstDst") enum_type = OperatorType::InverseMassOperatorDstDst;
   else if(string_type == "VectorUpdate")              enum_type = OperatorType::VectorUpdate;
   else if(string_type == "EvaluateOperatorExplicit")  enum_type = OperatorType::EvaluateOperatorExplicit;
-  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
 
@@ -97,7 +95,7 @@ get_dofs_per_element(std::string const & input_file,
 {
   (void)input_file;
 
-  unsigned int const dofs_per_element = (dim + 2) * Utilities::pow(degree + 1, dim);
+  unsigned int const dofs_per_element = (dim + 2) * dealii::Utilities::pow(degree + 1, dim);
 
   return dofs_per_element;
 }
@@ -106,7 +104,7 @@ template<int dim, typename Number = double>
 class Driver
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   Driver(MPI_Comm const &                              comm,
          std::shared_ptr<ApplicationBase<dim, Number>> application,
@@ -125,7 +123,7 @@ public:
   /*
    * Throughput study
    */
-  std::tuple<unsigned int, types::global_dof_index, double>
+  std::tuple<unsigned int, dealii::types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
                  unsigned int const  n_repetitions_outer) const;
@@ -133,7 +131,7 @@ public:
 private:
   MPI_Comm const mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -143,8 +141,8 @@ private:
 
   std::shared_ptr<ApplicationBase<dim, Number>> application;
 
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   std::shared_ptr<Operator<dim, Number>> pde_operator;
 

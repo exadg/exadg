@@ -26,14 +26,16 @@
 #include <fstream>
 #include <sstream>
 
+// deal.II
+#include <deal.II/base/mpi.h>
+
 namespace ExaDG
 {
-using namespace dealii;
-
 inline std::string
 restart_filename(std::string const & name, MPI_Comm const & mpi_comm)
 {
-  std::string const rank = Utilities::int_to_string(Utilities::MPI::this_mpi_process(mpi_comm));
+  std::string const rank =
+    dealii::Utilities::int_to_string(dealii::Utilities::MPI::this_mpi_process(mpi_comm));
 
   std::string const filename = name + "." + rank + ".restart";
 
@@ -52,7 +54,7 @@ rename_restart_files(std::string const & filename)
   {
     int const error = rename(from.c_str(), to.c_str());
 
-    AssertThrow(error == 0, ExcMessage("Can not rename file: " + from + " -> " + to));
+    AssertThrow(error == 0, dealii::ExcMessage("Can not rename file: " + from + " -> " + to));
   }
 }
 

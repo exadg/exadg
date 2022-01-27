@@ -26,8 +26,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct OutputDataBase
 {
   OutputDataBase()
@@ -47,7 +45,7 @@ struct OutputDataBase
   }
 
   void
-  print(ConditionalOStream & pcout, bool unsteady)
+  print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
     // output for visualization of results
     print_parameter(pcout, "Write output", write_output);

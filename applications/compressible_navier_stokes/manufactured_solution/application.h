@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // problem specific parameters
 double const DYN_VISCOSITY = 0.1;
 double const GAMMA         = 1.4;
@@ -55,19 +53,19 @@ enum class SolutionType
 SolutionType const SOLUTION_TYPE = SolutionType::Polynomial;
 
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(unsigned int const n_components = dim + 2, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double       t  = this->get_time();
-    double const pi = numbers::PI;
+    double const pi = dealii::numbers::PI;
 
     double result = 0.0;
 
@@ -88,7 +86,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     if(component == 0)
@@ -106,21 +104,21 @@ public:
 
 
 template<int dim>
-class RightHandSideDensity : public Function<dim>
+class RightHandSideDensity : public dealii::Function<dim>
 {
 public:
   RightHandSideDensity(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double t       = this->get_time();
-    double pi      = numbers::PI;
+    double pi      = dealii::numbers::PI;
     double sin_pix = sin(pi * p[0]);
     double cos_pix = cos(pi * p[0]);
     double sin_pit = sin(pi * t);
@@ -145,7 +143,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
     // clang-format on
 
@@ -154,19 +152,19 @@ public:
 };
 
 template<int dim>
-class RightHandSideVelocity : public Function<dim>
+class RightHandSideVelocity : public dealii::Function<dim>
 {
 public:
   RightHandSideVelocity(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double       t       = this->get_time();
-    double const pi      = numbers::PI;
+    double const pi      = dealii::numbers::PI;
     double const sin_pix = sin(pi * p[0]);
     double const cos_pix = cos(pi * p[0]);
     double const sin_pit = sin(pi * t);
@@ -203,7 +201,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
     // clang-format on
 
@@ -212,21 +210,21 @@ public:
 };
 
 template<int dim>
-class RightHandSideEnergy : public Function<dim>
+class RightHandSideEnergy : public dealii::Function<dim>
 {
 public:
   RightHandSideEnergy(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double       t             = this->get_time();
-    double const pi            = numbers::PI;
+    double const pi            = dealii::numbers::PI;
     double const sin_pix       = sin(pi * p[0]);
     double const cos_pix       = cos(pi * p[0]);
     double const sin_pit       = sin(pi * t);
@@ -259,7 +257,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
     // clang-format on
 
@@ -279,19 +277,19 @@ public:
 };
 
 template<int dim>
-class VelocityBC : public Function<dim>
+class VelocityBC : public dealii::Function<dim>
 {
 public:
   VelocityBC(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double       t       = this->get_time();
-    double const pi      = numbers::PI;
+    double const pi      = dealii::numbers::PI;
     double       x3      = p[0] * p[0] * p[0];
     double       sin_pit = sin(pi * t);
     double       cos_pit = cos(pi * t);
@@ -308,7 +306,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return result;
@@ -316,20 +314,20 @@ public:
 };
 
 template<int dim>
-class DensityBC : public Function<dim>
+class DensityBC : public dealii::Function<dim>
 {
 public:
-  DensityBC(double const time = 0.) : Function<dim>(1, time)
+  DensityBC(double const time = 0.) : dealii::Function<dim>(1, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double       t       = this->get_time();
-    double const pi      = numbers::PI;
+    double const pi      = dealii::numbers::PI;
     double       sin_pit = sin(pi * t);
     double       sin_pix = sin(pi * p[0]);
     double       x3      = p[0] * p[0] * p[0];
@@ -346,7 +344,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return result;
@@ -361,7 +359,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -426,11 +424,11 @@ public:
   {
     // hypercube volume is [left,right]^dim
     double const left = -1.0, right = 0.5;
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         if(std::fabs(cell.face(face)->center()(1) - left) < 1e-12)
         {
@@ -443,7 +441,7 @@ public:
       }
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 1, this->grid->periodic_faces);
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
@@ -453,15 +451,16 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                   pair;
+    typedef typename std::pair<dealii::types::boundary_id, EnergyBoundaryVariable> pair_variable;
 
     this->boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
     this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
     this->boundary_descriptor->pressure.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->energy.dirichlet_bc.insert(
-      pair(0, new Functions::ConstantFunction<dim>(E_0, 1)));
+      pair(0, new dealii::Functions::ConstantFunction<dim>(E_0, 1)));
     // set energy boundary variable
     this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Energy));

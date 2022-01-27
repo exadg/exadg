@@ -34,10 +34,8 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 inline void
-print_exadg_header(ConditionalOStream const & pcout)
+print_exadg_header(dealii::ConditionalOStream const & pcout)
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -57,10 +55,10 @@ print_exadg_header(ConditionalOStream const & pcout)
 
 // print MPI info
 inline void
-print_MPI_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)
+print_MPI_info(dealii::ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)
 {
   pcout << std::endl << "MPI info:" << std::endl << std::endl;
-  print_parameter(pcout, "Number of processes", Utilities::MPI::n_mpi_processes(mpi_comm));
+  print_parameter(pcout, "Number of processes", dealii::Utilities::MPI::n_mpi_processes(mpi_comm));
 }
 
 template<typename Number>
@@ -84,7 +82,7 @@ get_type(double)
 
 // print deal.II info
 inline void
-print_dealii_info(ConditionalOStream const & pcout)
+print_dealii_info(dealii::ConditionalOStream const & pcout)
 {
   // clang-format off
   pcout << std::endl
@@ -97,11 +95,11 @@ print_dealii_info(ConditionalOStream const & pcout)
 
 template<typename Number>
 inline void
-print_matrixfree_info(ConditionalOStream const & pcout)
+print_matrixfree_info(dealii::ConditionalOStream const & pcout)
 {
-  unsigned int const n_vect_doubles = VectorizedArray<Number>::size();
+  unsigned int const n_vect_doubles = dealii::VectorizedArray<Number>::size();
   unsigned int const n_vect_bits    = 8 * sizeof(Number) * n_vect_doubles;
-  std::string const  vect_level     = Utilities::System::get_current_vectorization_level();
+  std::string const  vect_level     = dealii::Utilities::System::get_current_vectorization_level();
   std::string const  type           = get_type(Number());
 
   // clang-format off
@@ -118,7 +116,7 @@ print_matrixfree_info(ConditionalOStream const & pcout)
 
 template<int dim>
 inline void
-print_grid_info(ConditionalOStream const & pcout, Grid<dim> const & grid)
+print_grid_info(dealii::ConditionalOStream const & pcout, Grid<dim> const & grid)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl
@@ -127,15 +125,17 @@ print_grid_info(ConditionalOStream const & pcout, Grid<dim> const & grid)
   print_parameter(pcout, "Max. number of refinements", grid.triangulation->n_global_levels() - 1);
   print_parameter(pcout, "Number of cells", grid.triangulation->n_global_active_cells());
 
-  std::shared_ptr<MappingQGeneric<dim>> mapping_q_generic =
-    std::dynamic_pointer_cast<MappingQGeneric<dim>>(grid.mapping);
+  std::shared_ptr<dealii::MappingQGeneric<dim>> mapping_q_generic =
+    std::dynamic_pointer_cast<dealii::MappingQGeneric<dim>>(grid.mapping);
   if(mapping_q_generic.get() != 0)
     print_parameter(pcout, "Mapping degree", mapping_q_generic->get_degree());
 }
 
 template<typename Number>
 inline void
-print_general_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm, bool const is_test)
+print_general_info(dealii::ConditionalOStream const & pcout,
+                   MPI_Comm const &                   mpi_comm,
+                   bool const                         is_test)
 {
   print_exadg_header(pcout);
 

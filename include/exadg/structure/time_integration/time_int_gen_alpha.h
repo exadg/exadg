@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 // forward declarations
 class Parameters;
 
@@ -53,7 +51,7 @@ template<int dim, typename Number>
 class TimeIntGenAlpha : public TimeIntGenAlphaBase<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
   TimeIntGenAlpha(std::shared_ptr<Interface::Operator<Number>> operator_,
@@ -120,7 +118,7 @@ private:
 
   MPI_Comm const mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // DoF vectors
   VectorType displacement_n, displacement_np;

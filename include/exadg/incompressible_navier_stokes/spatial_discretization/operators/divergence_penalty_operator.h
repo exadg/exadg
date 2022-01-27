@@ -17,8 +17,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  Divergence penalty operator:
  *
@@ -72,9 +70,9 @@ class DivergencePenaltyKernel
 private:
   typedef CellIntegrator<dim, dim, Number> IntegratorCell;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
 public:
   DivergencePenaltyKernel()
@@ -83,10 +81,10 @@ public:
   }
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         unsigned int const                  dof_index,
-         unsigned int const                  quad_index,
-         DivergencePenaltyKernelData const & data)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
+         unsigned int const                      dof_index,
+         unsigned int const                      quad_index,
+         DivergencePenaltyKernelData const &     data)
   {
     this->matrix_free = &matrix_free;
 
@@ -123,7 +121,7 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_JxW_values | update_gradients;
+    flags.cells = dealii::update_JxW_values | dealii::update_gradients;
 
     // no face integrals
 
@@ -137,13 +135,13 @@ public:
 
     IntegratorCell integrator(*matrix_free, dof_index, quad_index);
 
-    AlignedVector<scalar> JxW_values(integrator.n_q_points);
+    dealii::AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
     unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
     for(unsigned int cell = 0; cell < n_cells; ++cell)
     {
-      scalar tau_convective = make_vectorized_array<Number>(0.0);
-      scalar tau_viscous    = make_vectorized_array<Number>(data.viscosity);
+      scalar tau_convective = dealii::make_vectorized_array<Number>(0.0);
+      scalar tau_viscous    = dealii::make_vectorized_array<Number>(data.viscosity);
 
       if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
          data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
@@ -152,8 +150,8 @@ public:
         integrator.read_dof_values(velocity);
         integrator.evaluate(true, false);
 
-        scalar volume      = make_vectorized_array<Number>(0.0);
-        scalar norm_U_mean = make_vectorized_array<Number>(0.0);
+        scalar volume      = dealii::make_vectorized_array<Number>(0.0);
+        scalar norm_U_mean = dealii::make_vectorized_array<Number>(0.0);
         for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
           volume += integrator.JxW(q);
@@ -197,14 +195,14 @@ public:
   }
 
 private:
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index;
   unsigned int quad_index;
 
   DivergencePenaltyKernelData data;
 
-  AlignedVector<scalar> array_penalty_parameter;
+  dealii::AlignedVector<scalar> array_penalty_parameter;
 
   mutable scalar tau;
 };
@@ -227,7 +225,7 @@ class DivergencePenaltyOperator
 private:
   typedef DivergencePenaltyOperator<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -239,9 +237,9 @@ public:
   DivergencePenaltyOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free,
-             DivergencePenaltyData const &   data,
-             std::shared_ptr<Kernel> const   kernel);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+             DivergencePenaltyData const &           data,
+             std::shared_ptr<Kernel> const           kernel);
 
   void
   update(VectorType const & velocity);
@@ -254,15 +252,15 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           range) const;
 
   void
   do_cell_integral(IntegratorCell & integrator) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   DivergencePenaltyData data;
 

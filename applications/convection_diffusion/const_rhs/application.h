@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 enum class VelocityType
 {
   Constant,
@@ -41,16 +39,16 @@ enum class VelocityType
 VelocityType const VELOCITY_TYPE = VelocityType::CircularZeroAtBoundary;
 
 template<int dim>
-class VelocityField : public Function<dim>
+class VelocityField : public dealii::Function<dim>
 {
 public:
   VelocityField(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & point, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & point, unsigned int const component = 0) const
   {
     double value = 0.0;
 
@@ -68,11 +66,12 @@ public:
         value = point[0];
       else
         AssertThrow(component <= 1,
-                    ExcMessage("Velocity field for 3-dimensional problem is not implemented!"));
+                    dealii::ExcMessage(
+                      "Velocity field for 3-dimensional problem is not implemented!"));
     }
     else if(VELOCITY_TYPE == VelocityType::CircularZeroAtBoundary)
     {
-      double const pi    = numbers::PI;
+      double const pi    = dealii::numbers::PI;
       double       sinx  = std::sin(pi * point[0]);
       double       siny  = std::sin(pi * point[1]);
       double       sin2x = std::sin(2. * pi * point[0]);
@@ -84,7 +83,8 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Invalid type of velocity field prescribed for this problem."));
+      AssertThrow(
+        false, dealii::ExcMessage("Invalid type of velocity field prescribed for this problem."));
     }
 
     return value;
@@ -99,7 +99,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -187,7 +187,7 @@ public:
   void
   create_grid() final
   {
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -195,16 +195,19 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
-    this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(1.0, 1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(
+      new dealii::Functions::ConstantFunction<dim>(1.0, 1));
     this->field_functions->velocity.reset(new VelocityField<dim>());
   }
 

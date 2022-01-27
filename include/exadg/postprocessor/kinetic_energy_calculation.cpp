@@ -28,8 +28,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 KineticEnergyCalculator<dim, Number>::KineticEnergyCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true), matrix_free(nullptr), dof_index(0), quad_index(0)
@@ -38,10 +36,10 @@ KineticEnergyCalculator<dim, Number>::KineticEnergyCalculator(MPI_Comm const & c
 
 template<int dim, typename Number>
 void
-KineticEnergyCalculator<dim, Number>::setup(MatrixFree<dim, Number> const & matrix_free_in,
-                                            unsigned int const              dof_index_in,
-                                            unsigned int const              quad_index_in,
-                                            KineticEnergyData const &       kinetic_energy_data_in)
+KineticEnergyCalculator<dim, Number>::setup(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                            unsigned int const                      dof_index_in,
+                                            unsigned int const                      quad_index_in,
+                                            KineticEnergyData const & kinetic_energy_data_in)
 {
   matrix_free = &matrix_free_in;
   dof_index   = dof_index_in;
@@ -63,10 +61,11 @@ KineticEnergyCalculator<dim, Number>::evaluate(VectorType const & velocity,
   if(data.calculate)
   {
     AssertThrow(time_step_number >= 0,
-                ExcMessage("This postprocessing tool can only be used for unsteady problems."));
+                dealii::ExcMessage(
+                  "This postprocessing tool can only be used for unsteady problems."));
 
     AssertThrow(data.evaluate_individual_terms == false,
-                ExcMessage("Not implemented in this class."));
+                dealii::ExcMessage("Not implemented in this class."));
 
     calculate_basic(velocity, time, time_step_number);
   }
@@ -85,7 +84,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
     integrate(*matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       // clang-format off
       std::ostringstream filename;
@@ -125,28 +124,28 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
 
 template<int dim, typename Number>
 Number
-KineticEnergyCalculator<dim, Number>::integrate(MatrixFree<dim, Number> const & matrix_free,
-                                                VectorType const &              velocity,
-                                                Number &                        energy,
-                                                Number &                        enstrophy,
-                                                Number &                        dissipation,
-                                                Number &                        max_vorticity)
+KineticEnergyCalculator<dim, Number>::integrate(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                                VectorType const &                      velocity,
+                                                Number &                                energy,
+                                                Number &                                enstrophy,
+                                                Number &                                dissipation,
+                                                Number & max_vorticity)
 {
   std::vector<Number> dst(5, 0.0);
   matrix_free.cell_loop(&KineticEnergyCalculator<dim, Number>::cell_loop, this, dst, velocity);
 
   // sum over all MPI processes
   Number volume = 1.0;
-  volume        = Utilities::MPI::sum(dst.at(0), mpi_comm);
-  energy        = Utilities::MPI::sum(dst.at(1), mpi_comm);
-  enstrophy     = Utilities::MPI::sum(dst.at(2), mpi_comm);
-  dissipation   = Utilities::MPI::sum(dst.at(3), mpi_comm);
+  volume        = dealii::Utilities::MPI::sum(dst.at(0), mpi_comm);
+  energy        = dealii::Utilities::MPI::sum(dst.at(1), mpi_comm);
+  enstrophy     = dealii::Utilities::MPI::sum(dst.at(2), mpi_comm);
+  dissipation   = dealii::Utilities::MPI::sum(dst.at(3), mpi_comm);
 
   energy /= volume;
   enstrophy /= volume;
   dissipation /= volume;
 
-  max_vorticity = Utilities::MPI::max(dst.at(4), mpi_comm);
+  max_vorticity = dealii::Utilities::MPI::max(dst.at(4), mpi_comm);
 
   return volume;
 }
@@ -154,7 +153,7 @@ KineticEnergyCalculator<dim, Number>::integrate(MatrixFree<dim, Number> const & 
 template<int dim, typename Number>
 void
 KineticEnergyCalculator<dim, Number>::cell_loop(
-  MatrixFree<dim, Number> const &               matrix_free,
+  dealii::MatrixFree<dim, Number> const &       matrix_free,
   std::vector<Number> &                         dst,
   VectorType const &                            src,
   std::pair<unsigned int, unsigned int> const & cell_range)
@@ -174,33 +173,35 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
     fe_eval.read_dof_values(src);
     fe_eval.evaluate(true, true);
 
-    scalar volume_vec        = make_vectorized_array<Number>(0.);
-    scalar energy_vec        = make_vectorized_array<Number>(0.);
-    scalar enstrophy_vec     = make_vectorized_array<Number>(0.);
-    scalar dissipation_vec   = make_vectorized_array<Number>(0.);
-    scalar max_vorticity_vec = make_vectorized_array<Number>(0.);
+    scalar volume_vec        = dealii::make_vectorized_array<Number>(0.);
+    scalar energy_vec        = dealii::make_vectorized_array<Number>(0.);
+    scalar enstrophy_vec     = dealii::make_vectorized_array<Number>(0.);
+    scalar dissipation_vec   = dealii::make_vectorized_array<Number>(0.);
+    scalar max_vorticity_vec = dealii::make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
       volume_vec += fe_eval.JxW(q);
 
       vector velocity = fe_eval.get_value(q);
-      energy_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(0.5) * velocity * velocity;
+      energy_vec +=
+        fe_eval.JxW(q) * dealii::make_vectorized_array<Number>(0.5) * velocity * velocity;
 
       tensor velocity_gradient = fe_eval.get_gradient(q);
-      dissipation_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(this->data.viscosity) *
+      dissipation_vec += fe_eval.JxW(q) *
+                         dealii::make_vectorized_array<Number>(this->data.viscosity) *
                          scalar_product(velocity_gradient, velocity_gradient);
 
-      Tensor<1, number_vorticity_components, scalar> omega = fe_eval.get_curl(q);
+      dealii::Tensor<1, number_vorticity_components, scalar> omega = fe_eval.get_curl(q);
 
       scalar norm_omega = omega * omega;
 
-      enstrophy_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(0.5) * norm_omega;
+      enstrophy_vec += fe_eval.JxW(q) * dealii::make_vectorized_array<Number>(0.5) * norm_omega;
 
       max_vorticity_vec = std::max(max_vorticity_vec, std::sqrt(norm_omega));
     }
 
-    // sum over entries of VectorizedArray, but only over those
+    // sum over entries of dealii::VectorizedArray, but only over those
     // that are "active"
     for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
     {

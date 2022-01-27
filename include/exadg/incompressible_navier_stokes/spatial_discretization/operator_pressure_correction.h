@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // forward declaration
 template<int dim, typename Number>
 class OperatorPressureCorrection;
@@ -39,7 +37,7 @@ template<int dim, typename Number>
 class NonlinearMomentumOperator
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef OperatorPressureCorrection<dim, Number> PDEOperator;
 
@@ -124,9 +122,9 @@ public:
    * times depending on the specific ALE formulation chosen).
    */
   virtual void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-        std::string const &                          dof_index_temperature = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
+        std::string const &                              dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_mass, VectorType const & velocity);

@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  * Base class for projection-type incompressible Navier-Stokes solvers such as the high-order dual
  * splitting (velocity-correction) scheme or pressure correction schemes.
@@ -65,9 +63,9 @@ public:
    * needed for projection-type methods.
    */
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-        std::string const &                          dof_index_temperature = "") override;
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
+        std::string const &                              dof_index_temperature = "") override;
 
   void
   update_after_grid_motion() override;

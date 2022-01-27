@@ -57,7 +57,7 @@ create_time_integrator(std::shared_ptr<Operator<dim, Number>>          pde_opera
   {
     AssertThrow(parameters.temporal_discretization == TemporalDiscretization::ExplRK ||
                   parameters.temporal_discretization == TemporalDiscretization::BDF,
-                ExcMessage("Specified time integration scheme is not implemented!"));
+                dealii::ExcMessage("Specified time integration scheme is not implemented!"));
   }
 
   return time_integrator;

@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace FSI
 {
-using namespace dealii;
-
 // set problem specific parameters
 #define TESTCASE 2
 
@@ -78,11 +76,11 @@ double const X_3    = X_C + R + L_FLAG * 1.6; // only relevant for mesh
 double const Y_3    = H / 3.0;                // only relevant for mesh
 
 // boundary conditions
-types::boundary_id const BOUNDARY_ID_WALLS    = 0;
-types::boundary_id const BOUNDARY_ID_INFLOW   = 1;
-types::boundary_id const BOUNDARY_ID_OUTFLOW  = 2;
-types::boundary_id const BOUNDARY_ID_CYLINDER = 3;
-types::boundary_id const BOUNDARY_ID_FLAG     = 4;
+dealii::types::boundary_id const BOUNDARY_ID_WALLS    = 0;
+dealii::types::boundary_id const BOUNDARY_ID_INFLOW   = 1;
+dealii::types::boundary_id const BOUNDARY_ID_OUTFLOW  = 2;
+dealii::types::boundary_id const BOUNDARY_ID_CYLINDER = 3;
+dealii::types::boundary_id const BOUNDARY_ID_FLAG     = 4;
 
 bool STRUCTURE_COVERS_FLAG_ONLY = true;
 
@@ -101,15 +99,15 @@ double const REL_TOL_LINEARIZED = 1.e-6;
 double const ABS_TOL_LINEARIZED = 1.e-12;
 
 template<int dim>
-class InflowBC : public Function<dim>
+class InflowBC : public dealii::Function<dim>
 {
 public:
-  InflowBC() : Function<dim>(dim, 0.0)
+  InflowBC() : dealii::Function<dim>(dim, 0.0)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)p;
     double result = 0.0;
@@ -121,27 +119,27 @@ public:
 
     if(component == 0)
       result = U_X_MAX * (y * (H - y) / std::pow(H / 2.0, 2.0)) *
-               ((t < T) ? 0.5 * (1.0 - std::cos(t * numbers::PI / T)) : 1.0);
+               ((t < T) ? 0.5 * (1.0 - std::cos(t * dealii::numbers::PI / T)) : 1.0);
 
     return result;
   }
 };
 
 template<int dim>
-class SpatiallyVaryingE : public Function<dim>
+class SpatiallyVaryingE : public dealii::Function<dim>
 {
 public:
-  SpatiallyVaryingE() : Function<dim>(1, 0.0)
+  SpatiallyVaryingE() : dealii::Function<dim>(1, 0.0)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
     double const value =
-      (std::abs(p[1] - H / 2.) < H / 8.) ? std::cos(4.0 * p[1] / H * numbers::PI) : 0.0;
+      (std::abs(p[1] - H / 2.) < H / 8.) ? std::cos(4.0 * p[1] / H * dealii::numbers::PI) : 0.0;
     double result = 1. + 100. * value * value;
 
     return result;
@@ -156,7 +154,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -323,88 +321,92 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void create_triangulation_fluid(Triangulation<2> & tria)
+  void create_triangulation_fluid(dealii::Triangulation<2> & tria)
   {
-    std::vector<Triangulation<2>> tria_vec;
+    std::vector<dealii::Triangulation<2>> tria_vec;
     tria_vec.resize(11);
 
-    GridGenerator::general_cell(tria_vec[0],
-                                {Point<2>(X_0, 0.0),
-                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                 Point<2>(X_0, H),
-                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
+    dealii::GridGenerator::general_cell(
+      tria_vec[0],
+      {dealii::Point<2>(X_0, 0.0),
+       dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+       dealii::Point<2>(X_0, H),
+       dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
 
-    GridGenerator::general_cell(tria_vec[1],
-                                {Point<2>(X_0, 0.0),
-                                 Point<2>(X_2, 0.0),
-                                 Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0))});
+    dealii::GridGenerator::general_cell(
+      tria_vec[1],
+      {dealii::Point<2>(X_0, 0.0),
+       dealii::Point<2>(X_2, 0.0),
+       dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+       dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0))});
 
-    GridGenerator::general_cell(tria_vec[2],
-                                {Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                 Point<2>(X_0, H),
-                                 Point<2>(X_2, H)});
+    dealii::GridGenerator::general_cell(
+      tria_vec[2],
+      {dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+       dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+       dealii::Point<2>(X_0, H),
+       dealii::Point<2>(X_2, H)});
 
-    GridGenerator::general_cell(tria_vec[3],
-                                {Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                 Point<2>(X_2, 0.0),
-                                 Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))),
-                                          Y_C - T / 2.0),
-                                 Point<2>(X_2, Y_C - T / 2.0)});
+    dealii::GridGenerator::general_cell(
+      tria_vec[3],
+      {dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+       dealii::Point<2>(X_2, 0.0),
+       dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+       dealii::Point<2>(X_2, Y_C - T / 2.0)});
 
-    GridGenerator::general_cell(tria_vec[4],
-                                {Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))),
-                                          Y_C + T / 2.0),
-                                 Point<2>(X_2, Y_C + T / 2.0),
-                                 Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                 Point<2>(X_2, H)});
+    dealii::GridGenerator::general_cell(
+      tria_vec[4],
+      {dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+       dealii::Point<2>(X_2, Y_C + T / 2.0),
+       dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+       dealii::Point<2>(X_2, H)});
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[5],
-                                              {1, 1} /* subdivisions x,y */,
-                                              Point<2>(X_2, 0.0),
-                                              Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0));
+    dealii::GridGenerator::subdivided_hyper_rectangle(tria_vec[5],
+                                                      {1, 1} /* subdivisions x,y */,
+                                                      dealii::Point<2>(X_2, 0.0),
+                                                      dealii::Point<2>(X_C + R + L_FLAG,
+                                                                       Y_C - T / 2.0));
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[6],
-                                              {1, 1} /* subdivisions x,y */,
-                                              Point<2>(X_2, Y_C + T / 2.0),
-                                              Point<2>(X_C + R + L_FLAG, H));
+    dealii::GridGenerator::subdivided_hyper_rectangle(tria_vec[6],
+                                                      {1, 1} /* subdivisions x,y */,
+                                                      dealii::Point<2>(X_2, Y_C + T / 2.0),
+                                                      dealii::Point<2>(X_C + R + L_FLAG, H));
 
-    GridGenerator::general_cell(tria_vec[7],
-                                {Point<2>(X_C + R + L_FLAG, 0.0),
-                                 Point<2>(X_3, 0.0),
-                                 Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0),
-                                 Point<2>(X_3, Y_3)});
+    dealii::GridGenerator::general_cell(tria_vec[7],
+                                        {dealii::Point<2>(X_C + R + L_FLAG, 0.0),
+                                         dealii::Point<2>(X_3, 0.0),
+                                         dealii::Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0),
+                                         dealii::Point<2>(X_3, Y_3)});
 
-    GridGenerator::general_cell(tria_vec[8],
-                                {Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0),
-                                 Point<2>(X_3, 2.0 * Y_3),
-                                 Point<2>(X_C + R + L_FLAG, H),
-                                 Point<2>(X_3, H)});
+    dealii::GridGenerator::general_cell(tria_vec[8],
+                                        {dealii::Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0),
+                                         dealii::Point<2>(X_3, 2.0 * Y_3),
+                                         dealii::Point<2>(X_C + R + L_FLAG, H),
+                                         dealii::Point<2>(X_3, H)});
 
-    GridGenerator::general_cell(tria_vec[9],
-                                {Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0),
-                                 Point<2>(X_3, Y_3),
-                                 Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0),
-                                 Point<2>(X_3, 2.0 * Y_3)});
+    dealii::GridGenerator::general_cell(tria_vec[9],
+                                        {dealii::Point<2>(X_C + R + L_FLAG, Y_C - T / 2.0),
+                                         dealii::Point<2>(X_3, Y_3),
+                                         dealii::Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0),
+                                         dealii::Point<2>(X_3, 2.0 * Y_3)});
 
-    GridGenerator::subdivided_hyper_rectangle(tria_vec[10],
-                                              {8, 3} /* subdivisions x,y */,
-                                              Point<2>(X_3, 0.0),
-                                              Point<2>(L, H));
+    dealii::GridGenerator::subdivided_hyper_rectangle(tria_vec[10],
+                                                      {8, 3} /* subdivisions x,y */,
+                                                      dealii::Point<2>(X_3, 0.0),
+                                                      dealii::Point<2>(L, H));
 
-    std::vector<Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
+    std::vector<dealii::Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
     for(unsigned int i = 0; i < tria_vec.size(); ++i)
       tria_vec_ptr[i] = &tria_vec[i];
 
-    GridGenerator::merge_triangulations(tria_vec_ptr, tria);
+    dealii::GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
-  void create_triangulation_fluid(Triangulation<3> & tria)
+  void create_triangulation_fluid(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   void
@@ -419,13 +421,13 @@ public:
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    Point<dim> center;
+    dealii::Point<dim> center;
     center[0] = X_C;
     center[1] = Y_C;
 
     for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         double const x   = cell->face(f)->center()(0);
         double const y   = cell->face(f)->center()(1);
@@ -458,10 +460,10 @@ public:
         }
 
         // manifold IDs
-        for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
         {
           bool face_at_sphere_boundary = cell->face(f)->at_boundary();
-          for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
               face_at_sphere_boundary = false;
@@ -478,7 +480,7 @@ public:
     }
 
     // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+    static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
     manifold_vec.resize(manifold_ids.size());
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
@@ -487,8 +489,9 @@ public:
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
-          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+          manifold_vec[i] =
+            std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
           this->fluid_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
@@ -503,34 +506,35 @@ public:
     std::shared_ptr<IncNS::BoundaryDescriptor<dim>> boundary_descriptor =
       this->fluid_boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     // fill boundary descriptor velocity
     boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(BOUNDARY_ID_INFLOW, new InflowBC<dim>()));
     boundary_descriptor->velocity->neumann_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
     // fluid-structure interface
     boundary_descriptor->velocity->dirichlet_mortar_bc.insert(
       pair_fsi(BOUNDARY_ID_FLAG, new FunctionCached<1, dim>()));
 
     // fill boundary descriptor pressure
     boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(1)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(1)));
     boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->pressure->neumann_bc.insert(
-      pair(BOUNDARY_ID_FLAG, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_FLAG, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -538,10 +542,11 @@ public:
   {
     std::shared_ptr<IncNS::FieldFunctions<dim>> field_functions = this->fluid_field_functions;
 
-    field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_solution_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_solution_pressure.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
@@ -598,18 +603,19 @@ public:
     std::shared_ptr<Poisson::BoundaryDescriptor<1, dim>> boundary_descriptor =
       this->ale_poisson_boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_mortar_bc.insert(
@@ -623,8 +629,8 @@ public:
     std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions =
       this->ale_poisson_field_functions;
 
-    field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -663,28 +669,29 @@ public:
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->ale_elasticity_boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_WALLS, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_WALLS, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_WALLS, ComponentMask()));
+      pair_mask(BOUNDARY_ID_WALLS, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_INFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_INFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_INFLOW, ComponentMask()));
+      pair_mask(BOUNDARY_ID_INFLOW, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_OUTFLOW, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_OUTFLOW, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_OUTFLOW, ComponentMask()));
+      pair_mask(BOUNDARY_ID_OUTFLOW, dealii::ComponentMask()));
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_CYLINDER, ComponentMask()));
+      pair_mask(BOUNDARY_ID_CYLINDER, dealii::ComponentMask()));
 
     // fluid-structure interface
     boundary_descriptor->dirichlet_mortar_bc.insert(
@@ -699,14 +706,14 @@ public:
 
     using namespace Structure;
 
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;
 
-    double const                   E       = 1.0;
-    double const                   poisson = 0.3;
-    std::shared_ptr<Function<dim>> E_function;
+    double const                           E       = 1.0;
+    double const                           poisson = 0.3;
+    std::shared_ptr<dealii::Function<dim>> E_function;
     E_function.reset(new SpatiallyVaryingE<dim>());
     material_descriptor->insert(
       Pair(0, new StVenantKirchhoffData<dim>(type, E, poisson, two_dim_type, E_function)));
@@ -718,9 +725,9 @@ public:
     std::shared_ptr<Structure::FieldFunctions<dim>> field_functions =
       this->ale_elasticity_field_functions;
 
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   // Structure
@@ -765,139 +772,141 @@ public:
     param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  void create_triangulation_structure(Triangulation<2> & tria)
+  void create_triangulation_structure(dealii::Triangulation<2> & tria)
   {
     if(STRUCTURE_COVERS_FLAG_ONLY)
     {
-      GridGenerator::subdivided_hyper_rectangle(
+      dealii::GridGenerator::subdivided_hyper_rectangle(
         tria,
         {N_CELLS_FLAG_X, 1} /* subdivisions x,y */,
-        Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
-        Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
+        dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+        dealii::Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
     }
     else
     {
-      std::vector<Triangulation<2>> tria_vec;
+      std::vector<dealii::Triangulation<2>> tria_vec;
 
       tria_vec.resize(12);
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[0],
-        {Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-         Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
-         Point<2>(X_C + T / 2.0, Y_C - T),
-         Point<2>(X_C + T / 2.0 +
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C - T / 4.0)});
+        {dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+         dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+         dealii::Point<2>(X_C + T / 2.0, Y_C - T),
+         dealii::Point<2>(X_C + T / 2.0 +
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C - T / 4.0)});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[1],
-        {Point<2>(X_C + T / 2.0, Y_C - T),
-         Point<2>(X_C + T / 2.0 +
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C - T / 4.0),
-         Point<2>(X_C + T / 2.0, Y_C + T),
-         Point<2>(X_C + T / 2.0 +
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C + T / 4.0)});
+        {dealii::Point<2>(X_C + T / 2.0, Y_C - T),
+         dealii::Point<2>(X_C + T / 2.0 +
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C - T / 4.0),
+         dealii::Point<2>(X_C + T / 2.0, Y_C + T),
+         dealii::Point<2>(X_C + T / 2.0 +
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C + T / 4.0)});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[2],
-        {Point<2>(X_C + T / 2.0 +
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C - T / 4.0),
-         Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
-         Point<2>(X_C + T / 2.0 +
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C + T / 4.0),
-         Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0)});
+        {dealii::Point<2>(X_C + T / 2.0 +
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C - T / 4.0),
+         dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+         dealii::Point<2>(X_C + T / 2.0 +
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C + T / 4.0),
+         dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0)});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[3],
-        {Point<2>(X_C + T / 2.0 +
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C + T / 4.0),
-         Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
-         Point<2>(X_C + T / 2.0, Y_C + T),
-         Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
+        {dealii::Point<2>(X_C + T / 2.0 +
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C + T / 4.0),
+         dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+         dealii::Point<2>(X_C + T / 2.0, Y_C + T),
+         dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
 
-      GridGenerator::general_cell(tria_vec[4],
-                                  {Point<2>(X_C - T / 2.0, Y_C - T),
-                                   Point<2>(X_C + T / 2.0, Y_C - T),
-                                   Point<2>(X_C - T / 2.0, Y_C + T),
-                                   Point<2>(X_C + T / 2.0, Y_C + T)});
+      dealii::GridGenerator::general_cell(tria_vec[4],
+                                          {dealii::Point<2>(X_C - T / 2.0, Y_C - T),
+                                           dealii::Point<2>(X_C + T / 2.0, Y_C - T),
+                                           dealii::Point<2>(X_C - T / 2.0, Y_C + T),
+                                           dealii::Point<2>(X_C + T / 2.0, Y_C + T)});
 
-      GridGenerator::general_cell(tria_vec[5],
-                                  {Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                   Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-                                   Point<2>(X_C - T / 2.0, Y_C - T),
-                                   Point<2>(X_C + T / 2.0, Y_C - T)});
+      dealii::GridGenerator::general_cell(
+        tria_vec[5],
+        {dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+         dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+         dealii::Point<2>(X_C - T / 2.0, Y_C - T),
+         dealii::Point<2>(X_C + T / 2.0, Y_C - T)});
 
-      GridGenerator::general_cell(tria_vec[6],
-                                  {Point<2>(X_C - T / 2.0, Y_C + T),
-                                   Point<2>(X_C + T / 2.0, Y_C + T),
-                                   Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-                                   Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
+      dealii::GridGenerator::general_cell(
+        tria_vec[6],
+        {dealii::Point<2>(X_C - T / 2.0, Y_C + T),
+         dealii::Point<2>(X_C + T / 2.0, Y_C + T),
+         dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+         dealii::Point<2>(X_C + R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0))});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[7],
-        {Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
-         Point<2>(X_C - T / 2.0, Y_C - T),
-         Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
-         Point<2>(X_C - T / 2.0 -
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C - T / 4.0)});
+        {dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C - R / std::sqrt(2.0)),
+         dealii::Point<2>(X_C - T / 2.0, Y_C - T),
+         dealii::Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+         dealii::Point<2>(X_C - T / 2.0 -
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C - T / 4.0)});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[8],
-        {Point<2>(X_C - T / 2.0 -
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C - T / 4.0),
-         Point<2>(X_C - T / 2.0, Y_C - T),
-         Point<2>(X_C - T / 2.0 -
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C + T / 4.0),
-         Point<2>(X_C - T / 2.0, Y_C + T)});
+        {dealii::Point<2>(X_C - T / 2.0 -
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C - T / 4.0),
+         dealii::Point<2>(X_C - T / 2.0, Y_C - T),
+         dealii::Point<2>(X_C - T / 2.0 -
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C + T / 4.0),
+         dealii::Point<2>(X_C - T / 2.0, Y_C + T)});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[9],
-        {Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
-         Point<2>(X_C - T / 2.0 -
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C - T / 4.0),
-         Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
-         Point<2>(X_C - T / 2.0 -
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C + T / 4.0)});
+        {dealii::Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+         dealii::Point<2>(X_C - T / 2.0 -
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C - T / 4.0),
+         dealii::Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+         dealii::Point<2>(X_C - T / 2.0 -
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C + T / 4.0)});
 
-      GridGenerator::general_cell(
+      dealii::GridGenerator::general_cell(
         tria_vec[10],
-        {Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
-         Point<2>(X_C - T / 2.0 -
-                    (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
-                  Y_C + T / 4.0),
-         Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
-         Point<2>(X_C - T / 2.0, Y_C + T)});
+        {dealii::Point<2>(X_C - R * std::cos(std::asin(T / (2.0 * R))), Y_C + T / 2.0),
+         dealii::Point<2>(X_C - T / 2.0 -
+                            (X_C + R * std::cos(std::asin(T / (2.0 * R))) - (X_C + T / 2.0)) / 2.0,
+                          Y_C + T / 4.0),
+         dealii::Point<2>(X_C - R / std::sqrt(2.0), Y_C + R / std::sqrt(2.0)),
+         dealii::Point<2>(X_C - T / 2.0, Y_C + T)});
 
-      GridGenerator::subdivided_hyper_rectangle(
+      dealii::GridGenerator::subdivided_hyper_rectangle(
         tria_vec[11],
         {8, 1} /* subdivisions x,y */,
-        Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
-        Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
+        dealii::Point<2>(X_C + R * std::cos(std::asin(T / (2.0 * R))), Y_C - T / 2.0),
+        dealii::Point<2>(X_C + R + L_FLAG, Y_C + T / 2.0));
 
-      std::vector<Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
+      std::vector<dealii::Triangulation<2> const *> tria_vec_ptr(tria_vec.size());
       for(unsigned int i = 0; i < tria_vec.size(); ++i)
         tria_vec_ptr[i] = &tria_vec[i];
 
-      GridGenerator::merge_triangulations(tria_vec_ptr, tria);
+      dealii::GridGenerator::merge_triangulations(tria_vec_ptr, tria);
     }
   }
 
-  void create_triangulation_structure(Triangulation<3> & tria)
+  void create_triangulation_structure(dealii::Triangulation<3> & tria)
   {
     (void)tria;
 
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   void
@@ -912,13 +921,13 @@ public:
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    Point<dim> center;
+    dealii::Point<dim> center;
     center[0] = X_C;
     center[1] = Y_C;
 
     for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         double const x   = cell->face(f)->center()(0);
         double const TOL = 1.e-12;
@@ -945,10 +954,10 @@ public:
         }
 
         // manifold IDs
-        for(unsigned int f = 0; f < GeometryInfo<2>::faces_per_cell; ++f)
+        for(unsigned int f = 0; f < dealii::GeometryInfo<2>::faces_per_cell; ++f)
         {
           bool face_at_sphere_boundary = cell->face(f)->at_boundary();
-          for(unsigned int v = 0; v < GeometryInfo<2 - 1>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<2 - 1>::vertices_per_cell; ++v)
           {
             if(std::abs(center.distance(cell->face(f)->vertex(v)) - R) > TOL)
               face_at_sphere_boundary = false;
@@ -965,7 +974,7 @@ public:
     }
 
     // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+    static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
     manifold_vec.resize(manifold_ids.size());
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
@@ -974,8 +983,9 @@ public:
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
-          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
+          manifold_vec[i] =
+            std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], center)));
           this->structure_grid->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
@@ -990,16 +1000,17 @@ public:
     std::shared_ptr<Structure::BoundaryDescriptor<dim>> boundary_descriptor =
       this->structure_boundary_descriptor;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<FunctionCached<1, dim>>>
       pair_fsi;
 
     boundary_descriptor->dirichlet_bc.insert(
-      pair(BOUNDARY_ID_CYLINDER, new Functions::ZeroFunction<dim>(dim)));
+      pair(BOUNDARY_ID_CYLINDER, new dealii::Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor->dirichlet_bc_component_mask.insert(
-      pair_mask(BOUNDARY_ID_CYLINDER, ComponentMask()));
+      pair_mask(BOUNDARY_ID_CYLINDER, dealii::ComponentMask()));
 
     // fluid-structure interface
     boundary_descriptor->neumann_mortar_bc.insert(
@@ -1012,9 +1023,9 @@ public:
     std::shared_ptr<Structure::FieldFunctions<dim>> field_functions =
       this->structure_field_functions;
 
-    field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_displacement.reset(new dealii::Functions::ZeroFunction<dim>(dim));
+    field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -1025,7 +1036,7 @@ public:
 
     using namespace Structure;
 
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type         = MaterialType::StVenantKirchhoff;
     Type2D const       two_dim_type = Type2D::PlaneStrain;

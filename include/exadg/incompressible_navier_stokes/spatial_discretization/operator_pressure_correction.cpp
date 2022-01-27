@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 OperatorPressureCorrection<dim, Number>::OperatorPressureCorrection(
   std::shared_ptr<Grid<dim> const>                  grid_in,
@@ -58,9 +56,9 @@ OperatorPressureCorrection<dim, Number>::~OperatorPressureCorrection()
 template<int dim, typename Number>
 void
 OperatorPressureCorrection<dim, Number>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-  std::string const &                          dof_index_temperature)
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
+  std::string const &                              dof_index_temperature)
 {
   ProjectionBase::setup(matrix_free, matrix_free_data, dof_index_temperature);
 
@@ -139,7 +137,7 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_preconditioner()
   else
   {
     AssertThrow(this->param.preconditioner_momentum == MomentumPreconditioner::None,
-                ExcNotImplemented());
+                dealii::ExcNotImplemented());
   }
 }
 
@@ -195,7 +193,8 @@ OperatorPressureCorrection<dim, Number>::initialize_momentum_solver()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified solver for momentum equation is not implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Specified solver for momentum equation is not implemented."));
   }
 
 

@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -54,7 +52,7 @@ enum_to_string(SpatialDiscretization const enum_type)
       string_type = "DG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -84,7 +82,7 @@ enum_to_string(Solver const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -114,7 +112,7 @@ enum_to_string(Preconditioner const enum_type)
       string_type = "Multigrid";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

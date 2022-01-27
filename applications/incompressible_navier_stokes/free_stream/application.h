@@ -29,22 +29,20 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class AnalyticalSolutionVelocity : public Functions::ConstantFunction<dim>
+class AnalyticalSolutionVelocity : public dealii::Functions::ConstantFunction<dim>
 {
 public:
-  AnalyticalSolutionVelocity() : Functions::ConstantFunction<dim>(1.0, dim)
+  AnalyticalSolutionVelocity() : dealii::Functions::ConstantFunction<dim>(1.0, dim)
   {
   }
 };
 
 template<int dim>
-class AnalyticalSolutionPressure : public Functions::ConstantFunction<dim>
+class AnalyticalSolutionPressure : public dealii::Functions::ConstantFunction<dim>
 {
 public:
-  AnalyticalSolutionPressure() : Functions::ConstantFunction<dim>(1.0, 1)
+  AnalyticalSolutionPressure() : dealii::Functions::ConstantFunction<dim>(1.0, 1)
   {
   }
 };
@@ -57,13 +55,13 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -72,7 +70,7 @@ public:
       prm.add_parameter("ALE",
                         ALE,
                         "Moving mesh (ALE).",
-                        Patterns::Bool());
+                        dealii::Patterns::Bool());
     prm.leave_subsection();
     // clang-format on
   }
@@ -258,15 +256,15 @@ public:
   void
   create_grid() final
   {
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
-  std::shared_ptr<Function<dim>>
+  std::shared_ptr<dealii::Function<dim>>
   create_mesh_movement_function() final
   {
-    std::shared_ptr<Function<dim>> mesh_motion;
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
     data.temporal                       = MeshMovementAdvanceInTime::Sin;
@@ -286,7 +284,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -294,7 +293,7 @@ public:
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -304,7 +303,7 @@ public:
     this->field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
     this->field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>());
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
