@@ -103,36 +103,36 @@ $(function() {
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>{</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">namespace </span>IP <span class="comment">// IP = interior penalty</span></div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="comment">/*</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="comment"> *  This function calculates the penalty parameter of the interior</span></div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="comment"> *  penalty method for each cell.</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="comment"> */</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keywordtype">void</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>calculate_penalty_parameter(AlignedVector&lt;VectorizedArray&lt;Number&gt;&gt; &amp; array_penalty_parameter,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                            MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;          matrix_free,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                            <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                       dof_index = 0)</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>{</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  array_penalty_parameter.resize(n_cells);</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;       mapping = *matrix_free.get_mapping_info().mapping;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe      = matrix_free.get_dof_handler(dof_index).get_fe();</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>         degree  = fe.degree;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  QGauss&lt;dim&gt;   quadrature(degree + 1);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  FEValues&lt;dim&gt; fe_values(mapping, fe, quadrature, update_JxW_values);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  QGauss&lt;dim - 1&gt;   face_quadrature(degree + 1);</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  FEFaceValues&lt;dim&gt; fe_face_values(mapping, fe, face_quadrature, update_JxW_values);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span> </div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; n_cells; ++i)</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; matrix_free.n_active_entries_per_cell_batch(i); ++v)</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    {</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <span class="keyword">typename</span> DoFHandler&lt;dim&gt;::cell_iterator cell = matrix_free.get_cell_iterator(i, v, dof_index);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="comment">/*</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="comment"> *  This function calculates the penalty parameter of the interior</span></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="comment"> *  penalty method for each cell.</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="comment"> */</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keywordtype">void</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>calculate_penalty_parameter(</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  dealii::AlignedVector&lt;dealii::VectorizedArray&lt;Number&gt;&gt; &amp; array_penalty_parameter,</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;                  matrix_free,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                                       dof_index = 0)</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>{</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  array_penalty_parameter.resize(n_cells);</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;       mapping = *matrix_free.get_mapping_info().mapping;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  dealii::FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe      = matrix_free.get_dof_handler(dof_index).get_fe();</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                 degree  = fe.degree;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  dealii::QGauss&lt;dim&gt;   quadrature(degree + 1);</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  dealii::FEValues&lt;dim&gt; fe_values(mapping, fe, quadrature, dealii::update_JxW_values);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  dealii::QGauss&lt;dim - 1&gt;   face_quadrature(degree + 1);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  dealii::FEFaceValues&lt;dim&gt; fe_face_values(mapping, fe, face_quadrature, dealii::update_JxW_values);</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; n_cells; ++i)</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  {</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> v = 0; v &lt; matrix_free.n_active_entries_per_cell_batch(i); ++v)</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      <span class="keyword">typename</span> dealii::DoFHandler&lt;dim&gt;::cell_iterator cell =</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>        matrix_free.get_cell_iterator(i, v, dof_index);</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      fe_values.reinit(cell);</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>      <span class="comment">// calculate cell volume</span></div>

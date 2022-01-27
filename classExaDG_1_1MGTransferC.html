@@ -78,15 +78,15 @@ Inheritance diagram for ExaDG::MGTransferC&lt; dim, Number, VectorType, componen
  <div class="center">
   <img src="classExaDG_1_1MGTransferC.png" usemap="#ExaDG::MGTransferC_3C_20dim_2C_20Number_2C_20VectorType_2C_20components_20_3E_map" alt=""/>
   <map id="ExaDG::MGTransferC_3C_20dim_2C_20Number_2C_20VectorType_2C_20components_20_3E_map" name="ExaDG::MGTransferC_3C_20dim_2C_20Number_2C_20VectorType_2C_20components_20_3E_map">
-<area href="classExaDG_1_1MGTransfer.html" alt="ExaDG::MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;" shape="rect" coords="0,0,406,24"/>
+<area href="classExaDG_1_1MGTransfer.html" alt="ExaDG::MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;" shape="rect" coords="0,0,442,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a18ed63ef02c6489e96de1a82f7b7ea87"><td class="memItemLeft" align="right" valign="top"><a id="a18ed63ef02c6489e96de1a82f7b7ea87" name="a18ed63ef02c6489e96de1a82f7b7ea87"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGTransferC</b> (Mapping&lt; dim &gt; const &amp;mapping, MatrixFree&lt; dim, Number &gt; const &amp;matrixfree_dg, MatrixFree&lt; dim, Number &gt; const &amp;matrixfree_cg, AffineConstraints&lt; Number &gt; const &amp;constraints_dg, AffineConstraints&lt; Number &gt; const &amp;constraints_cg, unsigned int const level, unsigned int const fe_degree, unsigned int const dof_handler_index=0)</td></tr>
-<tr class="separator:a18ed63ef02c6489e96de1a82f7b7ea87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae16b86b4e8ffe35a8e619c7f2dd93cf6"><td class="memItemLeft" align="right" valign="top"><a id="ae16b86b4e8ffe35a8e619c7f2dd93cf6" name="ae16b86b4e8ffe35a8e619c7f2dd93cf6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MGTransferC</b> (dealii::Mapping&lt; dim &gt; const &amp;mapping, dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrixfree_dg, dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrixfree_cg, dealii::AffineConstraints&lt; Number &gt; const &amp;constraints_dg, dealii::AffineConstraints&lt; Number &gt; const &amp;constraints_cg, unsigned int const level, unsigned int const fe_degree, unsigned int const dof_handler_index=0)</td></tr>
+<tr class="separator:ae16b86b4e8ffe35a8e619c7f2dd93cf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f92ecafc5432d8ae325ac30d3597e93"><td class="memItemLeft" align="right" valign="top"><a id="a9f92ecafc5432d8ae325ac30d3597e93" name="a9f92ecafc5432d8ae325ac30d3597e93"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a9f92ecafc5432d8ae325ac30d3597e93"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -96,15 +96,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_add</b> 
 <tr class="memitem:a0971dedeffe105a1f70d82b64ec3fe78"><td class="memItemLeft" align="right" valign="top"><a id="a0971dedeffe105a1f70d82b64ec3fe78" name="a0971dedeffe105a1f70d82b64ec3fe78"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate_and_add</b> (unsigned int const, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a0971dedeffe105a1f70d82b64ec3fe78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classExaDG_1_1MGTransfer"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MGTransfer')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a></td></tr>
+<tr class="inherit_header pub_methods_classExaDG_1_1MGTransfer"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classExaDG_1_1MGTransfer')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a></td></tr>
 <tr class="memitem:ab05e642da4e8960f222e6ca81f33b736 inherit pub_methods_classExaDG_1_1MGTransfer"><td class="memItemLeft" align="right" valign="top"><a id="ab05e642da4e8960f222e6ca81f33b736" name="ab05e642da4e8960f222e6ca81f33b736"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level, LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src) const=0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>interpolate</b> (unsigned int const level, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src) const=0</td></tr>
 <tr class="separator:ab05e642da4e8960f222e6ca81f33b736 inherit pub_methods_classExaDG_1_1MGTransfer"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad0f2f355ad397cfcd23fa6f5eeb5eafe inherit pub_methods_classExaDG_1_1MGTransfer"><td class="memItemLeft" align="right" valign="top"><a id="ad0f2f355ad397cfcd23fa6f5eeb5eafe" name="ad0f2f355ad397cfcd23fa6f5eeb5eafe"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_add</b> (unsigned int const level, LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src) const=0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>restrict_and_add</b> (unsigned int const level, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src) const=0</td></tr>
 <tr class="separator:ad0f2f355ad397cfcd23fa6f5eeb5eafe inherit pub_methods_classExaDG_1_1MGTransfer"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a0a299f50406e99bcc10dfb78444bfd inherit pub_methods_classExaDG_1_1MGTransfer"><td class="memItemLeft" align="right" valign="top"><a id="a1a0a299f50406e99bcc10dfb78444bfd" name="a1a0a299f50406e99bcc10dfb78444bfd"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate_and_add</b> (unsigned int const level, LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src) const=0</td></tr>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>prolongate_and_add</b> (unsigned int const level, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &amp;dst, dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;src) const=0</td></tr>
 <tr class="separator:a1a0a299f50406e99bcc10dfb78444bfd inherit pub_methods_classExaDG_1_1MGTransfer"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>

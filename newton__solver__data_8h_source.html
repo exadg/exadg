@@ -103,51 +103,49 @@ $(function() {
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>{</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">namespace </span>Newton</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>{</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="structExaDG_1_1Newton_1_1SolverData.html">   37</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Newton_1_1SolverData.html">SolverData</a></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>{</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <a class="code hl_struct" href="structExaDG_1_1Newton_1_1SolverData.html">SolverData</a>() : max_iter(100), abs_tol(1.e-12), rel_tol(1.e-12)</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  {</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  }</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <a class="code hl_struct" href="structExaDG_1_1Newton_1_1SolverData.html">SolverData</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> max_iter_, <span class="keywordtype">double</span> <span class="keyword">const</span> abs_tol_, <span class="keywordtype">double</span> <span class="keyword">const</span> rel_tol_)</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    : max_iter(max_iter_), abs_tol(abs_tol_), rel_tol(rel_tol_)</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  }</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    print_parameter(pcout, <span class="stringliteral">&quot;Maximum number of iterations&quot;</span>, max_iter);</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    print_parameter(pcout, <span class="stringliteral">&quot;Absolute solver tolerance&quot;</span>, abs_tol);</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    print_parameter(pcout, <span class="stringliteral">&quot;Relative solver tolerance&quot;</span>, rel_tol);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> max_iter;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keywordtype">double</span>       abs_tol;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">double</span>       rel_tol;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>};</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno"><a class="line" href="structExaDG_1_1Newton_1_1UpdateData.html">   61</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Newton_1_1UpdateData.html">UpdateData</a></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>{</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_struct" href="structExaDG_1_1Newton_1_1UpdateData.html">UpdateData</a>()</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    : do_update(<span class="keyword">true</span>),</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>      threshold_newton_iter(1),</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      threshold_linear_iter(std::numeric_limits&lt;unsigned int&gt;::max())</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  {</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">bool</span>         do_update;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> threshold_newton_iter;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> threshold_linear_iter;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>};</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>} <span class="comment">// namespace Newton</span></div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="astructExaDG_1_1Newton_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1Newton_1_1SolverData.html">ExaDG::Newton::SolverData</a></div><div class="ttdef"><b>Definition:</b> newton_solver_data.h:38</div></div>
-<div class="ttc" id="astructExaDG_1_1Newton_1_1UpdateData_html"><div class="ttname"><a href="structExaDG_1_1Newton_1_1UpdateData.html">ExaDG::Newton::UpdateData</a></div><div class="ttdef"><b>Definition:</b> newton_solver_data.h:62</div></div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="structExaDG_1_1Newton_1_1SolverData.html">   35</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Newton_1_1SolverData.html">SolverData</a></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>{</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  <a class="code hl_struct" href="structExaDG_1_1Newton_1_1SolverData.html">SolverData</a>() : max_iter(100), abs_tol(1.e-12), rel_tol(1.e-12)</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  {</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  }</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <a class="code hl_struct" href="structExaDG_1_1Newton_1_1SolverData.html">SolverData</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> max_iter_, <span class="keywordtype">double</span> <span class="keyword">const</span> abs_tol_, <span class="keywordtype">double</span> <span class="keyword">const</span> rel_tol_)</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    : max_iter(max_iter_), abs_tol(abs_tol_), rel_tol(rel_tol_)</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  {</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  }</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  print(dealii::ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    print_parameter(pcout, <span class="stringliteral">&quot;Maximum number of iterations&quot;</span>, max_iter);</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    print_parameter(pcout, <span class="stringliteral">&quot;Absolute solver tolerance&quot;</span>, abs_tol);</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    print_parameter(pcout, <span class="stringliteral">&quot;Relative solver tolerance&quot;</span>, rel_tol);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  }</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> max_iter;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">double</span>       abs_tol;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keywordtype">double</span>       rel_tol;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>};</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="structExaDG_1_1Newton_1_1UpdateData.html">   59</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Newton_1_1UpdateData.html">UpdateData</a></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>{</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <a class="code hl_struct" href="structExaDG_1_1Newton_1_1UpdateData.html">UpdateData</a>()</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    : do_update(<span class="keyword">true</span>),</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>      threshold_newton_iter(1),</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      threshold_linear_iter(std::numeric_limits&lt;unsigned int&gt;::max())</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  {</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  }</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">bool</span>         do_update;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> threshold_newton_iter;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> threshold_linear_iter;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>};</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>} <span class="comment">// namespace Newton</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_DATA_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="astructExaDG_1_1Newton_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1Newton_1_1SolverData.html">ExaDG::Newton::SolverData</a></div><div class="ttdef"><b>Definition:</b> newton_solver_data.h:36</div></div>
+<div class="ttc" id="astructExaDG_1_1Newton_1_1UpdateData_html"><div class="ttname"><a href="structExaDG_1_1Newton_1_1UpdateData.html">ExaDG::Newton::UpdateData</a></div><div class="ttdef"><b>Definition:</b> newton_solver_data.h:60</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

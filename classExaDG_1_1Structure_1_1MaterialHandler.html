@@ -76,21 +76,21 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a78e55fa4dfe85695217b850dda553a1b"><td class="memItemLeft" align="right" valign="top"><a id="a78e55fa4dfe85695217b850dda553a1b" name="a78e55fa4dfe85695217b850dda553a1b"></a>
-typedef std::pair&lt; types::material_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Material.html">Material</a>&lt; dim, Number &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Pair</b></td></tr>
-<tr class="separator:a78e55fa4dfe85695217b850dda553a1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5503600aac0d224a120bc4bf65dcfe58"><td class="memItemLeft" align="right" valign="top"><a id="a5503600aac0d224a120bc4bf65dcfe58" name="a5503600aac0d224a120bc4bf65dcfe58"></a>
-typedef std::map&lt; types::material_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Material.html">Material</a>&lt; dim, Number &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Materials</b></td></tr>
-<tr class="separator:a5503600aac0d224a120bc4bf65dcfe58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab28943d13f59df4e20d7a242be90dfd1"><td class="memItemLeft" align="right" valign="top"><a id="ab28943d13f59df4e20d7a242be90dfd1" name="ab28943d13f59df4e20d7a242be90dfd1"></a>
+typedef std::pair&lt; dealii::types::material_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Material.html">Material</a>&lt; dim, Number &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Pair</b></td></tr>
+<tr class="separator:ab28943d13f59df4e20d7a242be90dfd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bc75d43e605ac3cf72d955f62480ab2"><td class="memItemLeft" align="right" valign="top"><a id="a9bc75d43e605ac3cf72d955f62480ab2" name="a9bc75d43e605ac3cf72d955f62480ab2"></a>
+typedef std::map&lt; dealii::types::material_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Material.html">Material</a>&lt; dim, Number &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Materials</b></td></tr>
+<tr class="separator:a9bc75d43e605ac3cf72d955f62480ab2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a32f695f2d9d807d04abde7c58a82dc91"><td class="memItemLeft" align="right" valign="top"><a id="a32f695f2d9d807d04abde7c58a82dc91" name="a32f695f2d9d807d04abde7c58a82dc91"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const n_q_points_1d, unsigned int const dof_index, unsigned int const quad_index, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor)</td></tr>
-<tr class="separator:a32f695f2d9d807d04abde7c58a82dc91"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42826310d4a29b5cfa0733643cdbb461"><td class="memItemLeft" align="right" valign="top"><a id="a42826310d4a29b5cfa0733643cdbb461" name="a42826310d4a29b5cfa0733643cdbb461"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const cell)</td></tr>
-<tr class="separator:a42826310d4a29b5cfa0733643cdbb461"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a086cbc0dbb3536bd38a23c4968a53327"><td class="memItemLeft" align="right" valign="top"><a id="a086cbc0dbb3536bd38a23c4968a53327" name="a086cbc0dbb3536bd38a23c4968a53327"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const n_q_points_1d, unsigned int const dof_index, unsigned int const quad_index, std::shared_ptr&lt; MaterialDescriptor const &gt; material_descriptor)</td></tr>
+<tr class="separator:a086cbc0dbb3536bd38a23c4968a53327"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc338c4b810431e5a505199bd14834e5"><td class="memItemLeft" align="right" valign="top"><a id="adc338c4b810431e5a505199bd14834e5" name="adc338c4b810431e5a505199bd14834e5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, unsigned int const cell)</td></tr>
+<tr class="separator:adc338c4b810431e5a505199bd14834e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07b014530a0d645f43c4fc8d9d7b6bd2"><td class="memItemLeft" align="right" valign="top"><a id="a07b014530a0d645f43c4fc8d9d7b6bd2" name="a07b014530a0d645f43c4fc8d9d7b6bd2"></a>
 std::shared_ptr&lt; <a class="el" href="classExaDG_1_1Structure_1_1Material.html">Material</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_material</b> () const</td></tr>
 <tr class="separator:a07b014530a0d645f43c4fc8d9d7b6bd2"><td class="memSeparator" colspan="2">&#160;</td></tr>

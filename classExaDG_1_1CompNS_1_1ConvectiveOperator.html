@@ -76,9 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a0c789ca44feb719e4507b1643e0cb237"><td class="memItemLeft" align="right" valign="top"><a id="a0c789ca44feb719e4507b1643e0cb237" name="a0c789ca44feb719e4507b1643e0cb237"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a0c789ca44feb719e4507b1643e0cb237"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72e58e625645c015504d35357e8e444f"><td class="memItemLeft" align="right" valign="top"><a id="a72e58e625645c015504d35357e8e444f" name="a72e58e625645c015504d35357e8e444f"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a72e58e625645c015504d35357e8e444f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aabff5e3f0f65a7963b0e4c8cb5a005e5"><td class="memItemLeft" align="right" valign="top"><a id="aabff5e3f0f65a7963b0e4c8cb5a005e5" name="aabff5e3f0f65a7963b0e4c8cb5a005e5"></a>
 typedef <a class="el" href="classExaDG_1_1CompNS_1_1ConvectiveOperator.html">ConvectiveOperator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:aabff5e3f0f65a7963b0e4c8cb5a005e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -94,24 +94,24 @@ typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRig
 <tr class="memitem:a4f9a3d01f3d9b01571f8b51749d59099"><td class="memItemLeft" align="right" valign="top"><a id="a4f9a3d01f3d9b01571f8b51749d59099" name="a4f9a3d01f3d9b01571f8b51749d59099"></a>
 typedef FaceIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>FaceIntegratorVector</b></td></tr>
 <tr class="separator:a4f9a3d01f3d9b01571f8b51749d59099"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a36d7c2f7d3fd844deaf1c28a9c1e1f06"><td class="memItemLeft" align="right" valign="top"><a id="a36d7c2f7d3fd844deaf1c28a9c1e1f06" name="a36d7c2f7d3fd844deaf1c28a9c1e1f06"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:a36d7c2f7d3fd844deaf1c28a9c1e1f06"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a8fb8d45c4e8d38f96aca7be3110606"><td class="memItemLeft" align="right" valign="top"><a id="a9a8fb8d45c4e8d38f96aca7be3110606" name="a9a8fb8d45c4e8d38f96aca7be3110606"></a>
-typedef Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:a9a8fb8d45c4e8d38f96aca7be3110606"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96a7a006fbacf842bf0e111d18615560"><td class="memItemLeft" align="right" valign="top"><a id="a96a7a006fbacf842bf0e111d18615560" name="a96a7a006fbacf842bf0e111d18615560"></a>
-typedef Tensor&lt; 2, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tensor</b></td></tr>
-<tr class="separator:a96a7a006fbacf842bf0e111d18615560"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a11248d6eb21ba99cefb1057077f3f594"><td class="memItemLeft" align="right" valign="top"><a id="a11248d6eb21ba99cefb1057077f3f594" name="a11248d6eb21ba99cefb1057077f3f594"></a>
-typedef Point&lt; dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>point</b></td></tr>
-<tr class="separator:a11248d6eb21ba99cefb1057077f3f594"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21a89c890d622763392aecbe390f9480"><td class="memItemLeft" align="right" valign="top"><a id="a21a89c890d622763392aecbe390f9480" name="a21a89c890d622763392aecbe390f9480"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a21a89c890d622763392aecbe390f9480"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52d2ee6b3b51cc3d8e75950b85be30c1"><td class="memItemLeft" align="right" valign="top"><a id="a52d2ee6b3b51cc3d8e75950b85be30c1" name="a52d2ee6b3b51cc3d8e75950b85be30c1"></a>
+typedef dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
+<tr class="separator:a52d2ee6b3b51cc3d8e75950b85be30c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23d851becbaaf26b7359d66c3f63e1a5"><td class="memItemLeft" align="right" valign="top"><a id="a23d851becbaaf26b7359d66c3f63e1a5" name="a23d851becbaaf26b7359d66c3f63e1a5"></a>
+typedef dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tensor</b></td></tr>
+<tr class="separator:a23d851becbaaf26b7359d66c3f63e1a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6172fb6f86f2628a229a07c061966aa5"><td class="memItemLeft" align="right" valign="top"><a id="a6172fb6f86f2628a229a07c061966aa5" name="a6172fb6f86f2628a229a07c061966aa5"></a>
+typedef dealii::Point&lt; dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>point</b></td></tr>
+<tr class="separator:a6172fb6f86f2628a229a07c061966aa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a549a5a9d034cd1e9cbd1bbf0574aef7c"><td class="memItemLeft" align="right" valign="top"><a id="a549a5a9d034cd1e9cbd1bbf0574aef7c" name="a549a5a9d034cd1e9cbd1bbf0574aef7c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1CompNS_1_1ConvectiveOperatorData.html">ConvectiveOperatorData</a>&lt; dim &gt; const &amp;data_in)</td></tr>
-<tr class="separator:a549a5a9d034cd1e9cbd1bbf0574aef7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa244c3941574cf812e6209dda66bccad"><td class="memItemLeft" align="right" valign="top"><a id="aa244c3941574cf812e6209dda66bccad" name="aa244c3941574cf812e6209dda66bccad"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1CompNS_1_1ConvectiveOperatorData.html">ConvectiveOperatorData</a>&lt; dim &gt; const &amp;data_in)</td></tr>
+<tr class="separator:aa244c3941574cf812e6209dda66bccad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e9d9fd99d9bb77f211731ac777ebd52"><td class="memItemLeft" align="right" valign="top"><a id="a9e9d9fd99d9bb77f211731ac777ebd52" name="a9e9d9fd99d9bb77f211731ac777ebd52"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType &amp;dst, VectorType const &amp;src, Number const evaluation_time) const</td></tr>
 <tr class="separator:a9e9d9fd99d9bb77f211731ac777ebd52"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,9 +127,9 @@ DEAL_II_ALWAYS_INLINE std::tuple&lt; vector, tensor, vector &gt;&#160;</td><td c
 <tr class="memitem:af61f0ec6e9a59bf7872b012f14951e4d"><td class="memItemLeft" align="right" valign="top"><a id="af61f0ec6e9a59bf7872b012f14951e4d" name="af61f0ec6e9a59bf7872b012f14951e4d"></a>
 DEAL_II_ALWAYS_INLINE std::tuple&lt; scalar, vector, scalar &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_flux</b> (FaceIntegratorScalar &amp;density_m, FaceIntegratorScalar &amp;density_p, FaceIntegratorVector &amp;momentum_m, FaceIntegratorVector &amp;momentum_p, FaceIntegratorScalar &amp;energy_m, FaceIntegratorScalar &amp;energy_p, unsigned int const q) const</td></tr>
 <tr class="separator:af61f0ec6e9a59bf7872b012f14951e4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2f7fac456406372c1f2550d70074b89"><td class="memItemLeft" align="right" valign="top"><a id="aa2f7fac456406372c1f2550d70074b89" name="aa2f7fac456406372c1f2550d70074b89"></a>
-DEAL_II_ALWAYS_INLINE std::tuple&lt; scalar, vector, scalar &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_flux_boundary</b> (FaceIntegratorScalar &amp;density, FaceIntegratorVector &amp;momentum, FaceIntegratorScalar &amp;energy, BoundaryType const &amp;boundary_type_density, BoundaryType const &amp;boundary_type_velocity, BoundaryType const &amp;boundary_type_pressure, BoundaryType const &amp;boundary_type_energy, EnergyBoundaryVariable const &amp;boundary_variable, types::boundary_id const &amp;boundary_id, unsigned int const q) const</td></tr>
-<tr class="separator:aa2f7fac456406372c1f2550d70074b89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a180ef60bd0d6f9360d4d961c915bb5cf"><td class="memItemLeft" align="right" valign="top"><a id="a180ef60bd0d6f9360d4d961c915bb5cf" name="a180ef60bd0d6f9360d4d961c915bb5cf"></a>
+DEAL_II_ALWAYS_INLINE std::tuple&lt; scalar, vector, scalar &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_flux_boundary</b> (FaceIntegratorScalar &amp;density, FaceIntegratorVector &amp;momentum, FaceIntegratorScalar &amp;energy, BoundaryType const &amp;boundary_type_density, BoundaryType const &amp;boundary_type_velocity, BoundaryType const &amp;boundary_type_pressure, BoundaryType const &amp;boundary_type_energy, EnergyBoundaryVariable const &amp;boundary_variable, dealii::types::boundary_id const &amp;boundary_id, unsigned int const q) const</td></tr>
+<tr class="separator:a180ef60bd0d6f9360d4d961c915bb5cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/compressible_navier_stokes/spatial_discretization/<a class="el" href="kernels__and__operators_8h_source.html">kernels_and_operators.h</a></li>

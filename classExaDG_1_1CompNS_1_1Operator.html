@@ -90,12 +90,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a91662a9b5b38702856e776c12f7ba0e4"><td class="memItemLeft" align="right" valign="top"><a id="a91662a9b5b38702856e776c12f7ba0e4" name="a91662a9b5b38702856e776c12f7ba0e4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a91662a9b5b38702856e776c12f7ba0e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2224581244cac20437a92d76fda5b3a2"><td class="memItemLeft" align="right" valign="top"><a id="a2224581244cac20437a92d76fda5b3a2" name="a2224581244cac20437a92d76fda5b3a2"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
-<tr class="separator:a2224581244cac20437a92d76fda5b3a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2e4885b13e3ce36c7fd7704b2a930a0"><td class="memItemLeft" align="right" valign="top"><a id="ac2e4885b13e3ce36c7fd7704b2a930a0" name="ac2e4885b13e3ce36c7fd7704b2a930a0"></a>
-types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
-<tr class="separator:ac2e4885b13e3ce36c7fd7704b2a930a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9dea4562b9e0fe0917920d606719bca3"><td class="memItemLeft" align="right" valign="top"><a id="a9dea4562b9e0fe0917920d606719bca3" name="a9dea4562b9e0fe0917920d606719bca3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
+<tr class="separator:a9dea4562b9e0fe0917920d606719bca3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4605fd5bfcb67e091c10149d4631d2c"><td class="memItemLeft" align="right" valign="top"><a id="aa4605fd5bfcb67e091c10149d4631d2c" name="aa4605fd5bfcb67e091c10149d4631d2c"></a>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
+<tr class="separator:aa4605fd5bfcb67e091c10149d4631d2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa98d3acbcf7bbe3296f9a2ad0a98549a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1CompNS_1_1Operator.html#aa98d3acbcf7bbe3296f9a2ad0a98549a">initialize_dof_vector</a> (VectorType &amp;src) const</td></tr>
 <tr class="separator:aa98d3acbcf7bbe3296f9a2ad0a98549a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ebc2b4fa90c58c26361f6e7cc6d98e8"><td class="memItemLeft" align="right" valign="top"><a id="a7ebc2b4fa90c58c26361f6e7cc6d98e8" name="a7ebc2b4fa90c58c26361f6e7cc6d98e8"></a>
@@ -120,24 +120,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_convective_a
 <tr class="memitem:a35e0e19ba8023317727e15d345da2cd3"><td class="memItemLeft" align="right" valign="top"><a id="a35e0e19ba8023317727e15d345da2cd3" name="a35e0e19ba8023317727e15d345da2cd3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_inverse_mass</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a35e0e19ba8023317727e15d345da2cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3cb3974483ca45123fcd8f069f5e3f9d"><td class="memItemLeft" align="right" valign="top"><a id="a3cb3974483ca45123fcd8f069f5e3f9d" name="a3cb3974483ca45123fcd8f069f5e3f9d"></a>
-MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
-<tr class="separator:a3cb3974483ca45123fcd8f069f5e3f9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a367fcf48698fccb4df912e57e3b05010"><td class="memItemLeft" align="right" valign="top"><a id="a367fcf48698fccb4df912e57e3b05010" name="a367fcf48698fccb4df912e57e3b05010"></a>
-Mapping&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
-<tr class="separator:a367fcf48698fccb4df912e57e3b05010"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03578ff281055314b4ee85fae186c4b1"><td class="memItemLeft" align="right" valign="top"><a id="a03578ff281055314b4ee85fae186c4b1" name="a03578ff281055314b4ee85fae186c4b1"></a>
-FESystem&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe</b> () const</td></tr>
-<tr class="separator:a03578ff281055314b4ee85fae186c4b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adccc0c7338e13771ed812072020761a3"><td class="memItemLeft" align="right" valign="top"><a id="adccc0c7338e13771ed812072020761a3" name="adccc0c7338e13771ed812072020761a3"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
-<tr class="separator:adccc0c7338e13771ed812072020761a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae50973f647d7aa79ac6df7e591fb91a4"><td class="memItemLeft" align="right" valign="top"><a id="ae50973f647d7aa79ac6df7e591fb91a4" name="ae50973f647d7aa79ac6df7e591fb91a4"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_scalar</b> () const</td></tr>
-<tr class="separator:ae50973f647d7aa79ac6df7e591fb91a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ddf2bdf8b1d9ec1107abe10a0f59e2b"><td class="memItemLeft" align="right" valign="top"><a id="a8ddf2bdf8b1d9ec1107abe10a0f59e2b" name="a8ddf2bdf8b1d9ec1107abe10a0f59e2b"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_vector</b> () const</td></tr>
-<tr class="separator:a8ddf2bdf8b1d9ec1107abe10a0f59e2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affeda929b79a79c79b9c1efa01992b4c"><td class="memItemLeft" align="right" valign="top"><a id="affeda929b79a79c79b9c1efa01992b4c" name="affeda929b79a79c79b9c1efa01992b4c"></a>
+dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
+<tr class="separator:affeda929b79a79c79b9c1efa01992b4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5683d9a30103414b3b70b4b7b9d6986c"><td class="memItemLeft" align="right" valign="top"><a id="a5683d9a30103414b3b70b4b7b9d6986c" name="a5683d9a30103414b3b70b4b7b9d6986c"></a>
+dealii::Mapping&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+<tr class="separator:a5683d9a30103414b3b70b4b7b9d6986c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ef1ef344baa2905ada616973a36338a"><td class="memItemLeft" align="right" valign="top"><a id="a8ef1ef344baa2905ada616973a36338a" name="a8ef1ef344baa2905ada616973a36338a"></a>
+dealii::FESystem&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe</b> () const</td></tr>
+<tr class="separator:a8ef1ef344baa2905ada616973a36338a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a528fb0d72e63495ae02382de89a6342c"><td class="memItemLeft" align="right" valign="top"><a id="a528fb0d72e63495ae02382de89a6342c" name="a528fb0d72e63495ae02382de89a6342c"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
+<tr class="separator:a528fb0d72e63495ae02382de89a6342c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadba8bf70cdfb38cd168e32f5d06f9bf"><td class="memItemLeft" align="right" valign="top"><a id="aadba8bf70cdfb38cd168e32f5d06f9bf" name="aadba8bf70cdfb38cd168e32f5d06f9bf"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_scalar</b> () const</td></tr>
+<tr class="separator:aadba8bf70cdfb38cd168e32f5d06f9bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8de3df25430d436d61ca822dcdfaff61"><td class="memItemLeft" align="right" valign="top"><a id="a8de3df25430d436d61ca822dcdfaff61" name="a8de3df25430d436d61ca822dcdfaff61"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_vector</b> () const</td></tr>
+<tr class="separator:a8de3df25430d436d61ca822dcdfaff61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99cc706ac38a2f5f8cd3594654fee969"><td class="memItemLeft" align="right" valign="top"><a id="a99cc706ac38a2f5f8cd3594654fee969" name="a99cc706ac38a2f5f8cd3594654fee969"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index_vector</b> () const</td></tr>
 <tr class="separator:a99cc706ac38a2f5f8cd3594654fee969"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -172,9 +172,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_divergence</b
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1CompNS_1_1Interface_1_1Operator.html">ExaDG::CompNS::Interface::Operator&lt; Number &gt;</a></td></tr>
-<tr class="memitem:a4c94cc45ff5a7917869329553336e035 inherit pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator"><td class="memItemLeft" align="right" valign="top"><a id="a4c94cc45ff5a7917869329553336e035" name="a4c94cc45ff5a7917869329553336e035"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a4c94cc45ff5a7917869329553336e035 inherit pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfdc593cb64d7e647904cb36e4dce1a6 inherit pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator"><td class="memItemLeft" align="right" valign="top"><a id="acfdc593cb64d7e647904cb36e4dce1a6" name="acfdc593cb64d7e647904cb36e4dce1a6"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:acfdc593cb64d7e647904cb36e4dce1a6 inherit pub_types_classExaDG_1_1CompNS_1_1Interface_1_1Operator"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="aa455e175217660f2ce7697adcca4ad52" name="aa455e175217660f2ce7697adcca4ad52"></a>

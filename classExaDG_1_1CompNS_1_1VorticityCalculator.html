@@ -77,24 +77,24 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:abf9c5d0ae94e41e1ec99f24a9e9b22af"><td class="memItemLeft" align="right" valign="top"><a id="abf9c5d0ae94e41e1ec99f24a9e9b22af" name="abf9c5d0ae94e41e1ec99f24a9e9b22af"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:abf9c5d0ae94e41e1ec99f24a9e9b22af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa746ccf9c7985553aa0b2f5adfb4ae8"><td class="memItemLeft" align="right" valign="top"><a id="aaa746ccf9c7985553aa0b2f5adfb4ae8" name="aaa746ccf9c7985553aa0b2f5adfb4ae8"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:aaa746ccf9c7985553aa0b2f5adfb4ae8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a402d307077204359c6ff87dc5b5cdc8a"><td class="memItemLeft" align="right" valign="top"><a id="a402d307077204359c6ff87dc5b5cdc8a" name="a402d307077204359c6ff87dc5b5cdc8a"></a>
 typedef <a class="el" href="classExaDG_1_1CompNS_1_1VorticityCalculator.html">VorticityCalculator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:a402d307077204359c6ff87dc5b5cdc8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85866ad2b6231e1171f309c408531920"><td class="memItemLeft" align="right" valign="top"><a id="a85866ad2b6231e1171f309c408531920" name="a85866ad2b6231e1171f309c408531920"></a>
 typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CellIntegratorVector</b></td></tr>
 <tr class="separator:a85866ad2b6231e1171f309c408531920"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75408b2e329ea4199688bbe3f5e228fe"><td class="memItemLeft" align="right" valign="top"><a id="a75408b2e329ea4199688bbe3f5e228fe" name="a75408b2e329ea4199688bbe3f5e228fe"></a>
-typedef Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:a75408b2e329ea4199688bbe3f5e228fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e5f8a99e66f08982d80d2a7350b1f98"><td class="memItemLeft" align="right" valign="top"><a id="a6e5f8a99e66f08982d80d2a7350b1f98" name="a6e5f8a99e66f08982d80d2a7350b1f98"></a>
+typedef dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
+<tr class="separator:a6e5f8a99e66f08982d80d2a7350b1f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6b1ec05417ea52fb0032094661170862"><td class="memItemLeft" align="right" valign="top"><a id="a6b1ec05417ea52fb0032094661170862" name="a6b1ec05417ea52fb0032094661170862"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in)</td></tr>
-<tr class="separator:a6b1ec05417ea52fb0032094661170862"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa50ede8a3d5f035c09d78bed80373280"><td class="memItemLeft" align="right" valign="top"><a id="aa50ede8a3d5f035c09d78bed80373280" name="aa50ede8a3d5f035c09d78bed80373280"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in)</td></tr>
+<tr class="separator:aa50ede8a3d5f035c09d78bed80373280"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abdeb9f2cbf6719b797177be390fe5db0"><td class="memItemLeft" align="right" valign="top"><a id="abdeb9f2cbf6719b797177be390fe5db0" name="abdeb9f2cbf6719b797177be390fe5db0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_vorticity</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:abdeb9f2cbf6719b797177be390fe5db0"><td class="memSeparator" colspan="2">&#160;</td></tr>

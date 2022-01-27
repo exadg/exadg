@@ -79,15 +79,15 @@ Public Types</h2></td></tr>
 <tr class="memitem:a54668c1f28a496a359af569e3b8325e0"><td class="memItemLeft" align="right" valign="top"><a id="a54668c1f28a496a359af569e3b8325e0" name="a54668c1f28a496a359af569e3b8325e0"></a>
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1GradientOperator.html">GradientOperator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:a54668c1f28a496a359af569e3b8325e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af61c3acaafb90ee0a221c8d0f24c2a4d"><td class="memItemLeft" align="right" valign="top"><a id="af61c3acaafb90ee0a221c8d0f24c2a4d" name="af61c3acaafb90ee0a221c8d0f24c2a4d"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:af61c3acaafb90ee0a221c8d0f24c2a4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2a5e5d574006150ff8d615873832a49"><td class="memItemLeft" align="right" valign="top"><a id="aa2a5e5d574006150ff8d615873832a49" name="aa2a5e5d574006150ff8d615873832a49"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:aa2a5e5d574006150ff8d615873832a49"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b7e8b4520d8808592c483e4345d615b"><td class="memItemLeft" align="right" valign="top"><a id="a4b7e8b4520d8808592c483e4345d615b" name="a4b7e8b4520d8808592c483e4345d615b"></a>
-typedef Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:a4b7e8b4520d8808592c483e4345d615b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f21d93e5e368d4f20854a56e4541919"><td class="memItemLeft" align="right" valign="top"><a id="a8f21d93e5e368d4f20854a56e4541919" name="a8f21d93e5e368d4f20854a56e4541919"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a8f21d93e5e368d4f20854a56e4541919"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a068c76c9b8ee1509ef5649ec853dfd2a"><td class="memItemLeft" align="right" valign="top"><a id="a068c76c9b8ee1509ef5649ec853dfd2a" name="a068c76c9b8ee1509ef5649ec853dfd2a"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a068c76c9b8ee1509ef5649ec853dfd2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a985b94fdf3bb37a735dadc1397685c4a"><td class="memItemLeft" align="right" valign="top"><a id="a985b94fdf3bb37a735dadc1397685c4a" name="a985b94fdf3bb37a735dadc1397685c4a"></a>
+typedef dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
+<tr class="separator:a985b94fdf3bb37a735dadc1397685c4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af751b34fcc992c3a7b47767bc042b2bb"><td class="memItemLeft" align="right" valign="top"><a id="af751b34fcc992c3a7b47767bc042b2bb" name="af751b34fcc992c3a7b47767bc042b2bb"></a>
 typedef std::pair&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Range</b></td></tr>
 <tr class="separator:af751b34fcc992c3a7b47767bc042b2bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,9 +106,9 @@ typedef FaceIntegrator&lt; dim, 1, Number &gt;&#160;</td><td class="memItemRight
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a11d0dfe9d5591c2513fd1f096a891845"><td class="memItemLeft" align="right" valign="top"><a id="a11d0dfe9d5591c2513fd1f096a891845" name="a11d0dfe9d5591c2513fd1f096a891845"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1IncNS_1_1GradientOperatorData.html">GradientOperatorData</a>&lt; dim &gt; const &amp;data_in)</td></tr>
-<tr class="separator:a11d0dfe9d5591c2513fd1f096a891845"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4bbbf3fc5e91460f0963586725e7251"><td class="memItemLeft" align="right" valign="top"><a id="ad4bbbf3fc5e91460f0963586725e7251" name="ad4bbbf3fc5e91460f0963586725e7251"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, <a class="el" href="structExaDG_1_1IncNS_1_1GradientOperatorData.html">GradientOperatorData</a>&lt; dim &gt; const &amp;data_in)</td></tr>
+<tr class="separator:ad4bbbf3fc5e91460f0963586725e7251"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accd431bb66029d4160c4d2edc8bb6ef1"><td class="memItemLeft" align="right" valign="top"><a id="accd431bb66029d4160c4d2edc8bb6ef1" name="accd431bb66029d4160c4d2edc8bb6ef1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_scaling_factor_pressure</b> (double const &amp;scaling_factor)</td></tr>
 <tr class="separator:accd431bb66029d4160c4d2edc8bb6ef1"><td class="memSeparator" colspan="2">&#160;</td></tr>

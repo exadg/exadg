@@ -117,10 +117,10 @@ $(function() {
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  {</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordtype">int</span> rank;</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    MPI_Comm_rank(mpi_comm, &amp;rank);</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    Timer  time;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordtype">double</span> min_time = std::numeric_limits&lt;double&gt;::max();</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keywordtype">double</span> max_time = 0.0;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">double</span> sum_time = 0.0;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    dealii::Timer time;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordtype">double</span>        min_time = std::numeric_limits&lt;double&gt;::max();</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keywordtype">double</span>        max_time = 0.0;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">double</span>        sum_time = 0.0;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; best_of; i++)</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    {</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      MPI_Barrier(mpi_comm);</div>

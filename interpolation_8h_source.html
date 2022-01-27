@@ -109,7 +109,7 @@ $(function() {
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="comment">// ExaDG</span></div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="preprocessor">#include &lt;exadg/postprocessor/spectral_analysis/setup.h&gt;</span></div>
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">using namespace </span>dealii;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">namespace </span>dealspectrum</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>{</div>
@@ -126,7 +126,7 @@ $(function() {
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="comment">// destination vector (interpolated values)</span></div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordtype">double</span> * dst = NULL;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="comment">// shape function (gauss lobatto to equidistant)</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  AlignedVector&lt;double&gt; shape_values;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  dealii::AlignedVector&lt;double&gt; shape_values;</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="comment">// number of cells in each direction</span></div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordtype">int</span> cells;</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="comment">// dimensions</span></div>
@@ -198,7 +198,7 @@ $(function() {
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    dst = <span class="keyword">new</span> <span class="keywordtype">double</span>[cells * dofs_target * DIM];</div>
 <div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
 <div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    <span class="comment">// fill shape values</span></div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    <a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">fill_shape_values</a>(shape_values);</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    <a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#afdf581c236fc1955242b15b7b654f9df">fill_shape_values</a>(shape_values);</div>
 <div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  }</div>
 <div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span> </div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  std::vector&lt;dealii::Point&lt;1&gt;&gt;</div>
@@ -213,12 +213,12 @@ $(function() {
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  }</div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span> </div>
 <div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">  164</a></span>  <a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">fill_shape_values</a>(AlignedVector&lt;double&gt; &amp; shape_values)</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#afdf581c236fc1955242b15b7b654f9df">  164</a></span>  <a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#afdf581c236fc1955242b15b7b654f9df">fill_shape_values</a>(dealii::AlignedVector&lt;double&gt; &amp; shape_values)</div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  {</div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    <span class="comment">// determine coefficients with deal.II functions</span></div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    FE_DGQ&lt;1&gt;          fe(points_source - 1);</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    FullMatrix&lt;double&gt; matrix(points_target, points_source);</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    FE_DGQArbitraryNodes&lt;1&gt;(Quadrature&lt;1&gt;(<a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#a1d9b8f5517c976d12a6b3fb499e21f73">get_equidistant_inner</a>(points_target)))</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    dealii::FE_DGQ&lt;1&gt;          fe(points_source - 1);</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    dealii::FullMatrix&lt;double&gt; matrix(points_target, points_source);</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    dealii::FE_DGQArbitraryNodes&lt;1&gt;(dealii::Quadrature&lt;1&gt;(<a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#a1d9b8f5517c976d12a6b3fb499e21f73">get_equidistant_inner</a>(points_target)))</div>
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>      .get_interpolation_matrix(fe, matrix);</div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    <span class="comment">// ... and convert to linearized format</span></div>
@@ -239,8 +239,8 @@ $(function() {
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno"><a class="line" href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">  198</a></span>  <a class="code hl_function" href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">interpolate</a>(<span class="keywordtype">double</span> <span class="keyword">const</span> *&amp; src)</div>
 <div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  {</div>
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    <span class="comment">// allocate dst- and src-vector</span></div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    AlignedVector&lt;double&gt; temp1(MAX(dofs_source, dofs_target));</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    AlignedVector&lt;double&gt; temp2(MAX(dofs_source, dofs_target));</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    dealii::AlignedVector&lt;double&gt; temp1(MAX(dofs_source, dofs_target));</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    dealii::AlignedVector&lt;double&gt; temp2(MAX(dofs_source, dofs_target));</div>
 <div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span> </div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    <span class="comment">// get start point of arrays</span></div>
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    <span class="keywordtype">double</span> <span class="keyword">const</span> * src_ = src;</div>
@@ -382,7 +382,6 @@ $(function() {
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html">dealspectrum::Interpolator</a></div><div class="ttdef"><b>Definition:</b> interpolation.h:50</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a1d9b8f5517c976d12a6b3fb499e21f73"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a1d9b8f5517c976d12a6b3fb499e21f73">dealspectrum::Interpolator::get_equidistant_inner</a></div><div class="ttdeci">std::vector&lt; dealii::Point&lt; 1 &gt; &gt; get_equidistant_inner(unsigned int const n_points)</div><div class="ttdef"><b>Definition:</b> interpolation.h:148</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a240edeb61f6724893fa89d70de13ddcd"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a240edeb61f6724893fa89d70de13ddcd">dealspectrum::Interpolator::interpolate</a></div><div class="ttdeci">void interpolate(double const *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:198</div></div>
-<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a27c9aa70e6d86b0063e6b1686acdede1"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a27c9aa70e6d86b0063e6b1686acdede1">dealspectrum::Interpolator::fill_shape_values</a></div><div class="ttdeci">void fill_shape_values(AlignedVector&lt; double &gt; &amp;shape_values)</div><div class="ttdef"><b>Definition:</b> interpolation.h:164</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a29da807cd1fe3ae6775e3e303b61896a"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a29da807cd1fe3ae6775e3e303b61896a">dealspectrum::Interpolator::deserialize</a></div><div class="ttdeci">void deserialize(char const *filename, double *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:304</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a67b56e08cbd7dbfdd57fe1325cab6f3d"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a67b56e08cbd7dbfdd57fe1325cab6f3d">dealspectrum::Interpolator::Interpolator</a></div><div class="ttdeci">Interpolator(MPI_Comm const &amp;comm, Setup &amp;s)</div><div class="ttdef"><b>Definition:</b> interpolation.h:81</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_a6b09f98b6b45095290fa3ea8269f0c16"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#a6b09f98b6b45095290fa3ea8269f0c16">dealspectrum::Interpolator::serialize</a></div><div class="ttdeci">void serialize(char const *filename, double const *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:328</div></div>
@@ -392,6 +391,7 @@ $(function() {
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_abf5f310c4036f825328ad8dd924f775a"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#abf5f310c4036f825328ad8dd924f775a">dealspectrum::Interpolator::deserialize</a></div><div class="ttdeci">void deserialize(char const *filename)</div><div class="ttdef"><b>Definition:</b> interpolation.h:292</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_aeed0b7a32c90e41dca49a50c826668d5"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#aeed0b7a32c90e41dca49a50c826668d5">dealspectrum::Interpolator::interpolate_simple</a></div><div class="ttdeci">void interpolate_simple(double *&amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:264</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_af628c6a95bdf35330f9eea3e10c221e7"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#af628c6a95bdf35330f9eea3e10c221e7">dealspectrum::Interpolator::io</a></div><div class="ttdeci">void io(int type, char const *filename, VEC &amp;src)</div><div class="ttdef"><b>Definition:</b> interpolation.h:342</div></div>
+<div class="ttc" id="aclassdealspectrum_1_1Interpolator_html_afdf581c236fc1955242b15b7b654f9df"><div class="ttname"><a href="classdealspectrum_1_1Interpolator.html#afdf581c236fc1955242b15b7b654f9df">dealspectrum::Interpolator::fill_shape_values</a></div><div class="ttdeci">void fill_shape_values(dealii::AlignedVector&lt; double &gt; &amp;shape_values)</div><div class="ttdef"><b>Definition:</b> interpolation.h:164</div></div>
 <div class="ttc" id="aclassdealspectrum_1_1Setup_html"><div class="ttname"><a href="classdealspectrum_1_1Setup.html">dealspectrum::Setup</a></div><div class="ttdef"><b>Definition:</b> setup.h:56</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

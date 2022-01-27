@@ -76,15 +76,15 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab314fc2083c16bcc2bbe85bda3fbc26c"><td class="memItemLeft" align="right" valign="top"><a id="ab314fc2083c16bcc2bbe85bda3fbc26c" name="ab314fc2083c16bcc2bbe85bda3fbc26c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, <a class="el" href="structExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernelData.html">ConvectiveKernelData</a>&lt; dim &gt; const &amp;data_in, unsigned int const quad_index, bool const is_mg)</td></tr>
-<tr class="separator:ab314fc2083c16bcc2bbe85bda3fbc26c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adfd5842c440630337bf97d3005590e1d"><td class="memItemLeft" align="right" valign="top"><a id="adfd5842c440630337bf97d3005590e1d" name="adfd5842c440630337bf97d3005590e1d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, <a class="el" href="structExaDG_1_1ConvDiff_1_1Operators_1_1ConvectiveKernelData.html">ConvectiveKernelData</a>&lt; dim &gt; const &amp;data_in, unsigned int const quad_index, bool const is_mg)</td></tr>
+<tr class="separator:adfd5842c440630337bf97d3005590e1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a954265a73d0caa2e1ea181af92c97510"><td class="memItemLeft" align="right" valign="top"><a id="a954265a73d0caa2e1ea181af92c97510" name="a954265a73d0caa2e1ea181af92c97510"></a>
 <a class="el" href="structExaDG_1_1IntegratorFlags.html">IntegratorFlags</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_integrator_flags</b> () const</td></tr>
 <tr class="separator:a954265a73d0caa2e1ea181af92c97510"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a780a6788ecc8ae94decb6b51c449d8"><td class="memItemLeft" align="right" valign="top"><a id="a5a780a6788ecc8ae94decb6b51c449d8" name="a5a780a6788ecc8ae94decb6b51c449d8"></a>
-LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocity</b> () const</td></tr>
-<tr class="separator:a5a780a6788ecc8ae94decb6b51c449d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae383478d749ab7695baa0ef9ace5dfc1"><td class="memItemLeft" align="right" valign="top"><a id="ae383478d749ab7695baa0ef9ace5dfc1" name="ae383478d749ab7695baa0ef9ace5dfc1"></a>
+dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_velocity</b> () const</td></tr>
+<tr class="separator:ae383478d749ab7695baa0ef9ace5dfc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5faea5576041cdaa3e9b1e0d3a66fa8b"><td class="memItemLeft" align="right" valign="top"><a id="a5faea5576041cdaa3e9b1e0d3a66fa8b" name="a5faea5576041cdaa3e9b1e0d3a66fa8b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocity_copy</b> (VectorType const &amp;velocity_in) const</td></tr>
 <tr class="separator:a5faea5576041cdaa3e9b1e0d3a66fa8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -100,9 +100,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (unsi
 <tr class="memitem:afd9ee4a78ce7d9f8a706148d279782c4"><td class="memItemLeft" align="right" valign="top"><a id="afd9ee4a78ce7d9f8a706148d279782c4" name="afd9ee4a78ce7d9f8a706148d279782c4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (unsigned int const face) const</td></tr>
 <tr class="separator:afd9ee4a78ce7d9f8a706148d279782c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d02be232c98409bad6a59be9e023cb9"><td class="memItemLeft" align="right" valign="top"><a id="a0d02be232c98409bad6a59be9e023cb9" name="a0d02be232c98409bad6a59be9e023cb9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (unsigned int const cell, unsigned int const face, types::boundary_id const boundary_id) const</td></tr>
-<tr class="separator:a0d02be232c98409bad6a59be9e023cb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ca09d73300c9620c173c12c80de3b4f"><td class="memItemLeft" align="right" valign="top"><a id="a0ca09d73300c9620c173c12c80de3b4f" name="a0ca09d73300c9620c173c12c80de3b4f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (unsigned int const cell, unsigned int const face, dealii::types::boundary_id const boundary_id) const</td></tr>
+<tr class="separator:a0ca09d73300c9620c173c12c80de3b4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7840c4d564645d4c800b02a48e386d91"><td class="memItemLeft" align="right" valign="top"><a id="a7840c4d564645d4c800b02a48e386d91" name="a7840c4d564645d4c800b02a48e386d91"></a>
 DEAL_II_ALWAYS_INLINE scalar&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_central_flux</b> (scalar const &amp;value_m, scalar const &amp;value_p, scalar const &amp;normal_velocity) const</td></tr>
 <tr class="separator:a7840c4d564645d4c800b02a48e386d91"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -99,59 +99,57 @@ $(function() {
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>{</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html">   37</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1GridMotionBase.html">GridMotionBase</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt;dim, Number&gt;</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>{</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html#aa8fde42c8063336691faaceece56386d">   45</a></span>  <a class="code hl_function" href="classExaDG_1_1GridMotionBase.html#aa8fde42c8063336691faaceece56386d">GridMotionBase</a>(std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed,</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                  mapping_degree_q_cache,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>                 Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;          triangulation)</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    : mapping_undeformed(mapping_undeformed)</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  {</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="comment">// Make sure that MappingQCache is initialized correctly. An empty dof-vector is used and,</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="comment">// hence, no displacements are added to the reference configuration described by</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="comment">// mapping_undeformed.</span></div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    DoFHandler&lt;dim&gt; dof_handler(triangulation);</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    VectorType      displacement_vector;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    moving_mapping = std::make_shared&lt;MappingDoFVector&lt;dim, Number&gt;&gt;(mapping_degree_q_cache);</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    moving_mapping-&gt;initialize_mapping_q_cache(mapping_undeformed,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>                                               displacement_vector,</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>                                               dof_handler);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  }</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html#a65d4b023564631c13df1efdff75b7217">   62</a></span>  <a class="code hl_function" href="classExaDG_1_1GridMotionBase.html#a65d4b023564631c13df1efdff75b7217">fill_grid_coordinates_vector</a>(VectorType &amp;            grid_coordinates,</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>                               DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp; dof_handler) <span class="keyword">const</span> <span class="keyword">final</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  {</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    moving_mapping-&gt;fill_grid_coordinates_vector(grid_coordinates, dof_handler);</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  }</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html#a7556b2f9c23f5d779a60522587a65337">   69</a></span>  <a class="code hl_function" href="classExaDG_1_1GridMotionBase.html#a7556b2f9c23f5d779a60522587a65337">get_mapping</a>() const final</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  {</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keywordflow">return</span> moving_mapping;</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  }</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="comment">// mapping describing undeformed reference state</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  std::shared_ptr&lt;Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="comment">// time-dependent mapping describing deformed state</span></div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt;&gt; moving_mapping;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>};</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html">   35</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1GridMotionBase.html">GridMotionBase</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1GridMotionInterface.html">GridMotionInterface</a>&lt;dim, Number&gt;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>{</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html#acda8e7ed786a239bd0ccd3df1c41e649">   43</a></span>  <a class="code hl_function" href="classExaDG_1_1GridMotionBase.html#acda8e7ed786a239bd0ccd3df1c41e649">GridMotionBase</a>(std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>                 <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span>                          mapping_degree_q_cache,</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>                 dealii::Triangulation&lt;dim&gt; <span class="keyword">const</span> &amp;          triangulation)</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    : mapping_undeformed(mapping_undeformed)</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  {</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="comment">// Make sure that dealii::MappingQCache is initialized correctly. An empty dof-vector is used</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="comment">// and, hence, no displacements are added to the reference configuration described by</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="comment">// mapping_undeformed.</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    dealii::DoFHandler&lt;dim&gt; dof_handler(triangulation);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    VectorType              displacement_vector;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    moving_mapping = std::make_shared&lt;MappingDoFVector&lt;dim, Number&gt;&gt;(mapping_degree_q_cache);</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    moving_mapping-&gt;initialize_mapping_q_cache(mapping_undeformed,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>                                               displacement_vector,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>                                               dof_handler);</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  }</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html#ad1d99208241f5fe1d3ee55c871b7e4fd">   60</a></span>  <a class="code hl_function" href="classExaDG_1_1GridMotionBase.html#ad1d99208241f5fe1d3ee55c871b7e4fd">fill_grid_coordinates_vector</a>(VectorType &amp;                    grid_coordinates,</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                               dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp; dof_handler) <span class="keyword">const</span> <span class="keyword">final</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  {</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    moving_mapping-&gt;fill_grid_coordinates_vector(grid_coordinates, dof_handler);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  }</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno"><a class="line" href="classExaDG_1_1GridMotionBase.html#a7868b20c56ef4b299e9cda7883407420">   67</a></span>  <a class="code hl_function" href="classExaDG_1_1GridMotionBase.html#a7868b20c56ef4b299e9cda7883407420">get_mapping</a>() const final</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  {</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <span class="keywordflow">return</span> moving_mapping;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  }</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="comment">// mapping describing undeformed reference state</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt; <span class="keyword">const</span>&gt; mapping_undeformed;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="comment">// time-dependent mapping describing deformed state</span></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  std::shared_ptr&lt;MappingDoFVector&lt;dim, Number&gt;&gt; moving_mapping;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>};</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>} <span class="comment">// namespace ExaDG</span></div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html">ExaDG::GridMotionBase</a></div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:38</div></div>
-<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html_a65d4b023564631c13df1efdff75b7217"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html#a65d4b023564631c13df1efdff75b7217">ExaDG::GridMotionBase::fill_grid_coordinates_vector</a></div><div class="ttdeci">void fill_grid_coordinates_vector(VectorType &amp;grid_coordinates, DoFHandler&lt; dim &gt; const &amp;dof_handler) const final</div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:62</div></div>
-<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html_a7556b2f9c23f5d779a60522587a65337"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html#a7556b2f9c23f5d779a60522587a65337">ExaDG::GridMotionBase::get_mapping</a></div><div class="ttdeci">std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; get_mapping() const final</div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:69</div></div>
-<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html_aa8fde42c8063336691faaceece56386d"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html#aa8fde42c8063336691faaceece56386d">ExaDG::GridMotionBase::GridMotionBase</a></div><div class="ttdeci">GridMotionBase(std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, Triangulation&lt; dim &gt; const &amp;triangulation)</div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:45</div></div>
-<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html">ExaDG::GridMotionInterface</a></div><div class="ttdef"><b>Definition:</b> grid_motion_interface.h:39</div></div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_MOTION_BASE_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html">ExaDG::GridMotionBase</a></div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:36</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html_a7868b20c56ef4b299e9cda7883407420"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html#a7868b20c56ef4b299e9cda7883407420">ExaDG::GridMotionBase::get_mapping</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; get_mapping() const final</div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:67</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html_acda8e7ed786a239bd0ccd3df1c41e649"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html#acda8e7ed786a239bd0ccd3df1c41e649">ExaDG::GridMotionBase::GridMotionBase</a></div><div class="ttdeci">GridMotionBase(std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt; mapping_undeformed, unsigned int const mapping_degree_q_cache, dealii::Triangulation&lt; dim &gt; const &amp;triangulation)</div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:43</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionBase_html_ad1d99208241f5fe1d3ee55c871b7e4fd"><div class="ttname"><a href="classExaDG_1_1GridMotionBase.html#ad1d99208241f5fe1d3ee55c871b7e4fd">ExaDG::GridMotionBase::fill_grid_coordinates_vector</a></div><div class="ttdeci">void fill_grid_coordinates_vector(VectorType &amp;grid_coordinates, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler) const final</div><div class="ttdef"><b>Definition:</b> grid_motion_base.h:60</div></div>
+<div class="ttc" id="aclassExaDG_1_1GridMotionInterface_html"><div class="ttname"><a href="classExaDG_1_1GridMotionInterface.html">ExaDG::GridMotionInterface</a></div><div class="ttdef"><b>Definition:</b> grid_motion_interface.h:37</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

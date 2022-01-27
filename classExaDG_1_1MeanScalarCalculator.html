@@ -76,24 +76,24 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a653afd5c2f005596f53e0178b7cc394b"><td class="memItemLeft" align="right" valign="top"><a id="a653afd5c2f005596f53e0178b7cc394b" name="a653afd5c2f005596f53e0178b7cc394b"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a653afd5c2f005596f53e0178b7cc394b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf21a381634a937f9d61576e51b47008"><td class="memItemLeft" align="right" valign="top"><a id="aaf21a381634a937f9d61576e51b47008" name="aaf21a381634a937f9d61576e51b47008"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:aaf21a381634a937f9d61576e51b47008"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49cd91641b84a5e087896b71d2cf97e2"><td class="memItemLeft" align="right" valign="top"><a id="a49cd91641b84a5e087896b71d2cf97e2" name="a49cd91641b84a5e087896b71d2cf97e2"></a>
 typedef FaceIntegrator&lt; dim, 1, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>FaceIntegratorScalar</b></td></tr>
 <tr class="separator:a49cd91641b84a5e087896b71d2cf97e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a77f310448b553f06dc465c8276b4e969"><td class="memItemLeft" align="right" valign="top"><a id="a77f310448b553f06dc465c8276b4e969" name="a77f310448b553f06dc465c8276b4e969"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:a77f310448b553f06dc465c8276b4e969"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1889c7a21f5a2f259ea4cbdf4667df31"><td class="memItemLeft" align="right" valign="top"><a id="a1889c7a21f5a2f259ea4cbdf4667df31" name="a1889c7a21f5a2f259ea4cbdf4667df31"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a1889c7a21f5a2f259ea4cbdf4667df31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad4ca852fcfed77030301a2463c3a3e8f"><td class="memItemLeft" align="right" valign="top"><a id="ad4ca852fcfed77030301a2463c3a3e8f" name="ad4ca852fcfed77030301a2463c3a3e8f"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MeanScalarCalculator</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int dof_index_in, unsigned int quad_index_in, MPI_Comm const &amp;mpi_comm_in)</td></tr>
-<tr class="separator:ad4ca852fcfed77030301a2463c3a3e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a628ef022e29f2bbc4e90527e9a418813"><td class="memItemLeft" align="right" valign="top"><a id="a628ef022e29f2bbc4e90527e9a418813" name="a628ef022e29f2bbc4e90527e9a418813"></a>
-Number&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_mean_scalar</b> (VectorType const &amp;solution, std::map&lt; types::boundary_id, Number &gt; &amp;mean_scalar)</td></tr>
-<tr class="separator:a628ef022e29f2bbc4e90527e9a418813"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad10b90e6e3f8284fd78fedde04ae5f3d"><td class="memItemLeft" align="right" valign="top"><a id="ad10b90e6e3f8284fd78fedde04ae5f3d" name="ad10b90e6e3f8284fd78fedde04ae5f3d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MeanScalarCalculator</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int dof_index_in, unsigned int quad_index_in, MPI_Comm const &amp;mpi_comm_in)</td></tr>
+<tr class="separator:ad10b90e6e3f8284fd78fedde04ae5f3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7806ee441f9ee01b0ef2675902105a0"><td class="memItemLeft" align="right" valign="top"><a id="af7806ee441f9ee01b0ef2675902105a0" name="af7806ee441f9ee01b0ef2675902105a0"></a>
+Number&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_mean_scalar</b> (VectorType const &amp;solution, std::map&lt; dealii::types::boundary_id, Number &gt; &amp;mean_scalar)</td></tr>
+<tr class="separator:af7806ee441f9ee01b0ef2675902105a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/postprocessor/<a class="el" href="mean__scalar__calculation_8h_source.html">mean_scalar_calculation.h</a></li>

@@ -98,9 +98,9 @@ typedef Base::VectorType&#160;</td><td class="memItemRight" valign="bottom"><b>V
 <tr class="memitem:ac3fcc549cade77aefb75f6293c0e07f8 inherit pub_types_classExaDG_1_1MultigridOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="ac3fcc549cade77aefb75f6293c0e07f8" name="ac3fcc549cade77aefb75f6293c0e07f8"></a>
 typedef Number&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b></td></tr>
 <tr class="separator:ac3fcc549cade77aefb75f6293c0e07f8 inherit pub_types_classExaDG_1_1MultigridOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c2e2fa8b49de118eaf20f966b8dccab inherit pub_types_classExaDG_1_1MultigridOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a4c2e2fa8b49de118eaf20f966b8dccab" name="a4c2e2fa8b49de118eaf20f966b8dccab"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a4c2e2fa8b49de118eaf20f966b8dccab inherit pub_types_classExaDG_1_1MultigridOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cfc4656c1cc9a2f5fa3dcad0380d4aa inherit pub_types_classExaDG_1_1MultigridOperatorBase"><td class="memItemLeft" align="right" valign="top"><a id="a2cfc4656c1cc9a2f5fa3dcad0380d4aa" name="a2cfc4656c1cc9a2f5fa3dcad0380d4aa"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a2cfc4656c1cc9a2f5fa3dcad0380d4aa inherit pub_types_classExaDG_1_1MultigridOperatorBase"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -110,16 +110,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1c9cb925a449b724c86976c0e2ea3327"><td class="memItemLeft" align="right" valign="top"><a id="a1c9cb925a449b724c86976c0e2ea3327" name="a1c9cb925a449b724c86976c0e2ea3327"></a>
 std::shared_ptr&lt; Operator &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_pde_operator</b> () const</td></tr>
 <tr class="separator:a1c9cb925a449b724c86976c0e2ea3327"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3c26fc668456ddfa9fb23e5e1cbbedd"><td class="memItemLeft" align="right" valign="top">virtual AffineConstraints&lt; typename Operator::value_type &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ac3c26fc668456ddfa9fb23e5e1cbbedd">get_affine_constraints</a> () const</td></tr>
-<tr class="separator:ac3c26fc668456ddfa9fb23e5e1cbbedd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a331b2ba0bf9d279b849a3e2e42638e0c"><td class="memItemLeft" align="right" valign="top">virtual MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a331b2ba0bf9d279b849a3e2e42638e0c">get_matrix_free</a> () const</td></tr>
-<tr class="separator:a331b2ba0bf9d279b849a3e2e42638e0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ba7cc1b4c01de2f27f8094947642f29"><td class="memItemLeft" align="right" valign="top">virtual dealii::AffineConstraints&lt; typename Operator::value_type &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a5ba7cc1b4c01de2f27f8094947642f29">get_affine_constraints</a> () const</td></tr>
+<tr class="separator:a5ba7cc1b4c01de2f27f8094947642f29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2d4cb72fd527dd40c58e82958697171"><td class="memItemLeft" align="right" valign="top">virtual dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ad2d4cb72fd527dd40c58e82958697171">get_matrix_free</a> () const</td></tr>
+<tr class="separator:ad2d4cb72fd527dd40c58e82958697171"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06c3e149ba61aabe45ca78bae906452f"><td class="memItemLeft" align="right" valign="top">virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a06c3e149ba61aabe45ca78bae906452f">get_dof_index</a> () const</td></tr>
 <tr class="separator:a06c3e149ba61aabe45ca78bae906452f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9fed29a03bc105079965e7049c432035"><td class="memItemLeft" align="right" valign="top">virtual types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a9fed29a03bc105079965e7049c432035">m</a> () const</td></tr>
-<tr class="separator:a9fed29a03bc105079965e7049c432035"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac6291c977d7246a3d44f6b028df0584a"><td class="memItemLeft" align="right" valign="top">virtual types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ac6291c977d7246a3d44f6b028df0584a">n</a> () const</td></tr>
-<tr class="separator:ac6291c977d7246a3d44f6b028df0584a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7d64850d69bf59fb21b526e78853481"><td class="memItemLeft" align="right" valign="top">virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#ad7d64850d69bf59fb21b526e78853481">m</a> () const</td></tr>
+<tr class="separator:ad7d64850d69bf59fb21b526e78853481"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6752bfcedfa0e690a627e3be295b7337"><td class="memItemLeft" align="right" valign="top">virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a6752bfcedfa0e690a627e3be295b7337">n</a> () const</td></tr>
+<tr class="separator:a6752bfcedfa0e690a627e3be295b7337"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a827fbd3a9cff3bdaa21df85d88808981"><td class="memItemLeft" align="right" valign="top">virtual Number&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a827fbd3a9cff3bdaa21df85d88808981">el</a> (unsigned int const i, const unsigned int j) const</td></tr>
 <tr class="separator:a827fbd3a9cff3bdaa21df85d88808981"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49da76db9200d367ab00bdbe42500b08"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MultigridOperator.html#a49da76db9200d367ab00bdbe42500b08">initialize_dof_vector</a> (VectorType &amp;vector) const</td></tr>
@@ -250,8 +250,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="ac3c26fc668456ddfa9fb23e5e1cbbedd" name="ac3c26fc668456ddfa9fb23e5e1cbbedd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac3c26fc668456ddfa9fb23e5e1cbbedd">&#9670;&nbsp;</a></span>get_affine_constraints()</h2>
+<a id="a5ba7cc1b4c01de2f27f8094947642f29" name="a5ba7cc1b4c01de2f27f8094947642f29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ba7cc1b4c01de2f27f8094947642f29">&#9670;&nbsp;</a></span>get_affine_constraints()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -262,7 +262,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual AffineConstraints&lt; typename Operator::value_type &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_affine_constraints </td>
+          <td class="memname">virtual dealii::AffineConstraints&lt; typename Operator::value_type &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_affine_constraints </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -308,8 +308,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a331b2ba0bf9d279b849a3e2e42638e0c" name="a331b2ba0bf9d279b849a3e2e42638e0c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a331b2ba0bf9d279b849a3e2e42638e0c">&#9670;&nbsp;</a></span>get_matrix_free()</h2>
+<a id="ad2d4cb72fd527dd40c58e82958697171" name="ad2d4cb72fd527dd40c58e82958697171"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2d4cb72fd527dd40c58e82958697171">&#9670;&nbsp;</a></span>get_matrix_free()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -320,7 +320,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual MatrixFree&lt; dim, Number &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_matrix_free </td>
+          <td class="memname">virtual dealii::MatrixFree&lt; dim, Number &gt; const  &amp; <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::get_matrix_free </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -367,8 +367,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="a9fed29a03bc105079965e7049c432035" name="a9fed29a03bc105079965e7049c432035"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9fed29a03bc105079965e7049c432035">&#9670;&nbsp;</a></span>m()</h2>
+<a id="ad7d64850d69bf59fb21b526e78853481" name="ad7d64850d69bf59fb21b526e78853481"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad7d64850d69bf59fb21b526e78853481">&#9670;&nbsp;</a></span>m()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -379,7 +379,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::m </td>
+          <td class="memname">virtual dealii::types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::m </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -396,8 +396,8 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
 
 </div>
 </div>
-<a id="ac6291c977d7246a3d44f6b028df0584a" name="ac6291c977d7246a3d44f6b028df0584a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac6291c977d7246a3d44f6b028df0584a">&#9670;&nbsp;</a></span>n()</h2>
+<a id="a6752bfcedfa0e690a627e3be295b7337" name="a6752bfcedfa0e690a627e3be295b7337"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6752bfcedfa0e690a627e3be295b7337">&#9670;&nbsp;</a></span>n()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -408,7 +408,7 @@ template&lt;int dim, typename Number , typename Operator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::n </td>
+          <td class="memname">virtual dealii::types::global_dof_index <a class="el" href="classExaDG_1_1MultigridOperator.html">ExaDG::MultigridOperator</a>&lt; dim, Number, Operator &gt;::n </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>

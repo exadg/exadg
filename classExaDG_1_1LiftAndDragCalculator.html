@@ -76,18 +76,18 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aa8c1572f88332192416f02b0d635a0f8"><td class="memItemLeft" align="right" valign="top"><a id="aa8c1572f88332192416f02b0d635a0f8" name="aa8c1572f88332192416f02b0d635a0f8"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:aa8c1572f88332192416f02b0d635a0f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83b20cc3dc712bd17251d442f8ad9177"><td class="memItemLeft" align="right" valign="top"><a id="a83b20cc3dc712bd17251d442f8ad9177" name="a83b20cc3dc712bd17251d442f8ad9177"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a83b20cc3dc712bd17251d442f8ad9177"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa375e112e18e1ecf844d729e2c82f2bf"><td class="memItemLeft" align="right" valign="top"><a id="aa375e112e18e1ecf844d729e2c82f2bf" name="aa375e112e18e1ecf844d729e2c82f2bf"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>LiftAndDragCalculator</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:aa375e112e18e1ecf844d729e2c82f2bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5e0c5119c9c2caa7a765810b72d58add"><td class="memItemLeft" align="right" valign="top"><a id="a5e0c5119c9c2caa7a765810b72d58add" name="a5e0c5119c9c2caa7a765810b72d58add"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_velocity_in, unsigned int const dof_index_pressure_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1LiftAndDragData.html">LiftAndDragData</a> const &amp;lift_and_drag_data_in)</td></tr>
-<tr class="separator:a5e0c5119c9c2caa7a765810b72d58add"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03aaffcb86387a442ce1fe1850e9e094"><td class="memItemLeft" align="right" valign="top"><a id="a03aaffcb86387a442ce1fe1850e9e094" name="a03aaffcb86387a442ce1fe1850e9e094"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_velocity_in, unsigned int const dof_index_pressure_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1LiftAndDragData.html">LiftAndDragData</a> const &amp;lift_and_drag_data_in)</td></tr>
+<tr class="separator:a03aaffcb86387a442ce1fe1850e9e094"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1ad68b091523ee303db91948ed64006"><td class="memItemLeft" align="right" valign="top"><a id="ae1ad68b091523ee303db91948ed64006" name="ae1ad68b091523ee303db91948ed64006"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, Number const &amp;time) const</td></tr>
 <tr class="separator:ae1ad68b091523ee303db91948ed64006"><td class="memSeparator" colspan="2">&#160;</td></tr>

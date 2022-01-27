@@ -76,9 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8e62da587f07eefef8957660723be8b4"><td class="memItemLeft" align="right" valign="top"><a id="a8e62da587f07eefef8957660723be8b4" name="a8e62da587f07eefef8957660723be8b4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, <a class="el" href="structExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernelData.html">ConvectiveKernelData</a> const &amp;data, unsigned int const dof_index, unsigned int const quad_index_linearized, bool const is_mg)</td></tr>
-<tr class="separator:a8e62da587f07eefef8957660723be8b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6e8ecbf7593182a4c4ce23d24761cb2"><td class="memItemLeft" align="right" valign="top"><a id="ab6e8ecbf7593182a4c4ce23d24761cb2" name="ab6e8ecbf7593182a4c4ce23d24761cb2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free, <a class="el" href="structExaDG_1_1IncNS_1_1Operators_1_1ConvectiveKernelData.html">ConvectiveKernelData</a> const &amp;data, unsigned int const dof_index, unsigned int const quad_index_linearized, bool const is_mg)</td></tr>
+<tr class="separator:ab6e8ecbf7593182a4c4ce23d24761cb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab978bd7bed0f7d1629cb83531abdc6d4"><td class="memItemLeft" align="right" valign="top"><a id="ab978bd7bed0f7d1629cb83531abdc6d4" name="ab978bd7bed0f7d1629cb83531abdc6d4"></a>
 <a class="el" href="structExaDG_1_1IntegratorFlags.html">IntegratorFlags</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_integrator_flags</b> () const</td></tr>
 <tr class="separator:ab978bd7bed0f7d1629cb83531abdc6d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,9 +127,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face</b> (unsi
 <tr class="memitem:a708d1ab49cc87f06d25df4721102371f"><td class="memItemLeft" align="right" valign="top"><a id="a708d1ab49cc87f06d25df4721102371f" name="a708d1ab49cc87f06d25df4721102371f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_boundary_face</b> (unsigned int const face) const</td></tr>
 <tr class="separator:a708d1ab49cc87f06d25df4721102371f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5335b693cbcf60d6e1528661009e1e1e"><td class="memItemLeft" align="right" valign="top"><a id="a5335b693cbcf60d6e1528661009e1e1e" name="a5335b693cbcf60d6e1528661009e1e1e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (unsigned int const cell, unsigned int const face, types::boundary_id const boundary_id) const</td></tr>
-<tr class="separator:a5335b693cbcf60d6e1528661009e1e1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0199651c3d4196a949650ed65851368f"><td class="memItemLeft" align="right" valign="top"><a id="a0199651c3d4196a949650ed65851368f" name="a0199651c3d4196a949650ed65851368f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reinit_face_cell_based</b> (unsigned int const cell, unsigned int const face, dealii::types::boundary_id const boundary_id) const</td></tr>
+<tr class="separator:a0199651c3d4196a949650ed65851368f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1bb0b9e2d7ba1fd8120222ea36940515"><td class="memItemLeft" align="right" valign="top"><a id="a1bb0b9e2d7ba1fd8120222ea36940515" name="a1bb0b9e2d7ba1fd8120222ea36940515"></a>
 DEAL_II_ALWAYS_INLINE tensor&#160;</td><td class="memItemRight" valign="bottom"><b>get_volume_flux_linearized_divergence_formulation</b> (vector const &amp;delta_u, unsigned int const q) const</td></tr>
 <tr class="separator:a1bb0b9e2d7ba1fd8120222ea36940515"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -181,9 +181,9 @@ DEAL_II_ALWAYS_INLINE void&#160;</td><td class="memItemRight" valign="bottom"><b
 <tr class="memitem:a1e204e94408bc8f76ab0be1b9f104e33"><td class="memItemLeft" align="right" valign="top"><a id="a1e204e94408bc8f76ab0be1b9f104e33" name="a1e204e94408bc8f76ab0be1b9f104e33"></a>
 DEAL_II_ALWAYS_INLINE vector&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_upwind_flux_linearized</b> (vector const &amp;uM, vector const &amp;uP, vector const &amp;u_grid, vector const &amp;delta_uM, vector const &amp;delta_uP, vector const &amp;normalM) const</td></tr>
 <tr class="separator:a1e204e94408bc8f76ab0be1b9f104e33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06586b4860194756f26a5309c9bebdf5"><td class="memItemLeft" align="right" valign="top"><a id="a06586b4860194756f26a5309c9bebdf5" name="a06586b4860194756f26a5309c9bebdf5"></a>
-DEAL_II_ALWAYS_INLINE Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_exterior_value_linearized</b> (Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt; &amp;delta_uM, unsigned int const q, FaceIntegrator&lt; dim, dim, Number &gt; &amp;integrator, BoundaryTypeU const &amp;boundary_type) const</td></tr>
-<tr class="separator:a06586b4860194756f26a5309c9bebdf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9dca3f89db4b4cae841f030dc65ff374"><td class="memItemLeft" align="right" valign="top"><a id="a9dca3f89db4b4cae841f030dc65ff374" name="a9dca3f89db4b4cae841f030dc65ff374"></a>
+DEAL_II_ALWAYS_INLINE dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_exterior_value_linearized</b> (dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt; &amp;delta_uM, unsigned int const q, FaceIntegrator&lt; dim, dim, Number &gt; &amp;integrator, BoundaryTypeU const &amp;boundary_type) const</td></tr>
+<tr class="separator:a9dca3f89db4b4cae841f030dc65ff374"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>

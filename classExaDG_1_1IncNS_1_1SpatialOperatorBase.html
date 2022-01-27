@@ -93,15 +93,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a48632e10b788b5204a3c2a194e0b96e3"><td class="memItemLeft" align="right" valign="top"><a id="a48632e10b788b5204a3c2a194e0b96e3" name="a48632e10b788b5204a3c2a194e0b96e3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:a48632e10b788b5204a3c2a194e0b96e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abab0b689a91f90944c19352aa4e7bbbf"><td class="memItemLeft" align="right" valign="top"><a id="abab0b689a91f90944c19352aa4e7bbbf" name="abab0b689a91f90944c19352aa4e7bbbf"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;)</td></tr>
-<tr class="separator:abab0b689a91f90944c19352aa4e7bbbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29701314ba7cbbb6fa311edaddb161d5"><td class="memItemLeft" align="right" valign="top"><a id="a29701314ba7cbbb6fa311edaddb161d5" name="a29701314ba7cbbb6fa311edaddb161d5"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data, std::string const &amp;dof_index_temperature=&quot;&quot;)</td></tr>
+<tr class="separator:a29701314ba7cbbb6fa311edaddb161d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a048ae70c404c9252250935a219cd5d42"><td class="memItemLeft" align="right" valign="top"><a id="a048ae70c404c9252250935a219cd5d42" name="a048ae70c404c9252250935a219cd5d42"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solvers</b> (double const &amp;scaling_factor_mass, VectorType const &amp;velocity)</td></tr>
 <tr class="separator:a048ae70c404c9252250935a219cd5d42"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef6d7135be07e2f9bc8651cf305dfe99"><td class="memItemLeft" align="right" valign="top"><a id="aef6d7135be07e2f9bc8651cf305dfe99" name="aef6d7135be07e2f9bc8651cf305dfe99"></a>
-MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
-<tr class="separator:aef6d7135be07e2f9bc8651cf305dfe99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9150007798da959b6b3b06cdf695b7a"><td class="memItemLeft" align="right" valign="top"><a id="aa9150007798da959b6b3b06cdf695b7a" name="aa9150007798da959b6b3b06cdf695b7a"></a>
+dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
+<tr class="separator:aa9150007798da959b6b3b06cdf695b7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2becf48774744c959d20aca11ec88f1"><td class="memItemLeft" align="right" valign="top"><a id="ab2becf48774744c959d20aca11ec88f1" name="ab2becf48774744c959d20aca11ec88f1"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_name_velocity</b> () const</td></tr>
 <tr class="separator:ab2becf48774744c959d20aca11ec88f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -132,36 +132,36 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_inde
 <tr class="memitem:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memItemLeft" align="right" valign="top"><a id="ab3922a0ae5ed0041c75e08973a78ef0e" name="ab3922a0ae5ed0041c75e08973a78ef0e"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_quad_index_velocity_linearized</b> () const</td></tr>
 <tr class="separator:ab3922a0ae5ed0041c75e08973a78ef0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bff5f9a9e029f1279eb44cc4f5dcab5"><td class="memItemLeft" align="right" valign="top"><a id="a7bff5f9a9e029f1279eb44cc4f5dcab5" name="a7bff5f9a9e029f1279eb44cc4f5dcab5"></a>
-std::shared_ptr&lt; Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
-<tr class="separator:a7bff5f9a9e029f1279eb44cc4f5dcab5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac783783b8e956decb04a9276c261a1e2"><td class="memItemLeft" align="right" valign="top"><a id="ac783783b8e956decb04a9276c261a1e2" name="ac783783b8e956decb04a9276c261a1e2"></a>
-FESystem&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_u</b> () const</td></tr>
-<tr class="separator:ac783783b8e956decb04a9276c261a1e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abf136f5e3029dc73db1900d40556e052"><td class="memItemLeft" align="right" valign="top"><a id="abf136f5e3029dc73db1900d40556e052" name="abf136f5e3029dc73db1900d40556e052"></a>
-FE_DGQ&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_p</b> () const</td></tr>
-<tr class="separator:abf136f5e3029dc73db1900d40556e052"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac363146751075ff2e784d8d837616dd0"><td class="memItemLeft" align="right" valign="top"><a id="ac363146751075ff2e784d8d837616dd0" name="ac363146751075ff2e784d8d837616dd0"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_u</b> () const</td></tr>
-<tr class="separator:ac363146751075ff2e784d8d837616dd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd81dfe8a3ebc85118f1c51c35e08f1b"><td class="memItemLeft" align="right" valign="top"><a id="abd81dfe8a3ebc85118f1c51c35e08f1b" name="abd81dfe8a3ebc85118f1c51c35e08f1b"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_u_scalar</b> () const</td></tr>
-<tr class="separator:abd81dfe8a3ebc85118f1c51c35e08f1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7226ecb71eb4b4f20f71597933b200f"><td class="memItemLeft" align="right" valign="top"><a id="ab7226ecb71eb4b4f20f71597933b200f" name="ab7226ecb71eb4b4f20f71597933b200f"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_p</b> () const</td></tr>
-<tr class="separator:ab7226ecb71eb4b4f20f71597933b200f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a99afa283f83004133032c6cf535e22"><td class="memItemLeft" align="right" valign="top"><a id="a9a99afa283f83004133032c6cf535e22" name="a9a99afa283f83004133032c6cf535e22"></a>
-AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraint_p</b> () const</td></tr>
-<tr class="separator:a9a99afa283f83004133032c6cf535e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac759581ff8d5999331d28b487d67e7e3"><td class="memItemLeft" align="right" valign="top"><a id="ac759581ff8d5999331d28b487d67e7e3" name="ac759581ff8d5999331d28b487d67e7e3"></a>
-types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
-<tr class="separator:ac759581ff8d5999331d28b487d67e7e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5747176a032f109c35ef037f2060871a"><td class="memItemLeft" align="right" valign="top"><a id="a5747176a032f109c35ef037f2060871a" name="a5747176a032f109c35ef037f2060871a"></a>
+std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; const &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+<tr class="separator:a5747176a032f109c35ef037f2060871a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dc81ef8cd1a3bbe3d4321b021250e6b"><td class="memItemLeft" align="right" valign="top"><a id="a4dc81ef8cd1a3bbe3d4321b021250e6b" name="a4dc81ef8cd1a3bbe3d4321b021250e6b"></a>
+dealii::FESystem&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_u</b> () const</td></tr>
+<tr class="separator:a4dc81ef8cd1a3bbe3d4321b021250e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee284207524ae556542a0cc9c7063a20"><td class="memItemLeft" align="right" valign="top"><a id="aee284207524ae556542a0cc9c7063a20" name="aee284207524ae556542a0cc9c7063a20"></a>
+dealii::FE_DGQ&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_fe_p</b> () const</td></tr>
+<tr class="separator:aee284207524ae556542a0cc9c7063a20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06b6c69a0e065372b629d75e348d4b2f"><td class="memItemLeft" align="right" valign="top"><a id="a06b6c69a0e065372b629d75e348d4b2f" name="a06b6c69a0e065372b629d75e348d4b2f"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_u</b> () const</td></tr>
+<tr class="separator:a06b6c69a0e065372b629d75e348d4b2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15a33f9c6fda0cd7d30ba6f3dc7296ba"><td class="memItemLeft" align="right" valign="top"><a id="a15a33f9c6fda0cd7d30ba6f3dc7296ba" name="a15a33f9c6fda0cd7d30ba6f3dc7296ba"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_u_scalar</b> () const</td></tr>
+<tr class="separator:a15a33f9c6fda0cd7d30ba6f3dc7296ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab594e4ccd078a90f5a486273eee23dad"><td class="memItemLeft" align="right" valign="top"><a id="ab594e4ccd078a90f5a486273eee23dad" name="ab594e4ccd078a90f5a486273eee23dad"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler_p</b> () const</td></tr>
+<tr class="separator:ab594e4ccd078a90f5a486273eee23dad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf4411e0c99e75d1a09904d4d5ee1d91"><td class="memItemLeft" align="right" valign="top"><a id="adf4411e0c99e75d1a09904d4d5ee1d91" name="adf4411e0c99e75d1a09904d4d5ee1d91"></a>
+dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_constraint_p</b> () const</td></tr>
+<tr class="separator:adf4411e0c99e75d1a09904d4d5ee1d91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a363b6a19d43aa353410e18cbc1cd3634"><td class="memItemLeft" align="right" valign="top"><a id="a363b6a19d43aa353410e18cbc1cd3634" name="a363b6a19d43aa353410e18cbc1cd3634"></a>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
+<tr class="separator:a363b6a19d43aa353410e18cbc1cd3634"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a721393a3fe8b47b34aafb2b473b9d733"><td class="memItemLeft" align="right" valign="top"><a id="a721393a3fe8b47b34aafb2b473b9d733" name="a721393a3fe8b47b34aafb2b473b9d733"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity</b> () const</td></tr>
 <tr class="separator:a721393a3fe8b47b34aafb2b473b9d733"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1469dbb63f11a5679311129edb6d9735"><td class="memItemLeft" align="right" valign="top"><a id="a1469dbb63f11a5679311129edb6d9735" name="a1469dbb63f11a5679311129edb6d9735"></a>
-VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity_boundary_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
-<tr class="separator:a1469dbb63f11a5679311129edb6d9735"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33a1dc8a862e8aa6c68e18a9578b2e7b"><td class="memItemLeft" align="right" valign="top"><a id="a33a1dc8a862e8aa6c68e18a9578b2e7b" name="a33a1dc8a862e8aa6c68e18a9578b2e7b"></a>
+dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_viscosity_boundary_face</b> (unsigned int const face, unsigned int const q) const</td></tr>
+<tr class="separator:a33a1dc8a862e8aa6c68e18a9578b2e7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98d70633d644c79832b2b9c80417b2dd"><td class="memItemLeft" align="right" valign="top"><a id="a98d70633d644c79832b2b9c80417b2dd" name="a98d70633d644c79832b2b9c80417b2dd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_velocity_ptr</b> (VectorType const &amp;velocity) const</td></tr>
 <tr class="separator:a98d70633d644c79832b2b9c80417b2dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,24 +300,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_grid_velocity</b>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-types" name="pro-types"></a>
 Protected Types</h2></td></tr>
-<tr class="memitem:a18833a3a25c2c54e694108a3ef758da1"><td class="memItemLeft" align="right" valign="top"><a id="a18833a3a25c2c54e694108a3ef758da1" name="a18833a3a25c2c54e694108a3ef758da1"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a18833a3a25c2c54e694108a3ef758da1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31aa7466b1680e0a4fa37659cebc8084"><td class="memItemLeft" align="right" valign="top"><a id="a31aa7466b1680e0a4fa37659cebc8084" name="a31aa7466b1680e0a4fa37659cebc8084"></a>
-typedef LinearAlgebra::distributed::BlockVector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b></td></tr>
-<tr class="separator:a31aa7466b1680e0a4fa37659cebc8084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3829fe66e938743b04b6a5f93852de8"><td class="memItemLeft" align="right" valign="top"><a id="ad3829fe66e938743b04b6a5f93852de8" name="ad3829fe66e938743b04b6a5f93852de8"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:ad3829fe66e938743b04b6a5f93852de8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99eb2cc3bb4109a73550cff9b040e89e"><td class="memItemLeft" align="right" valign="top"><a id="a99eb2cc3bb4109a73550cff9b040e89e" name="a99eb2cc3bb4109a73550cff9b040e89e"></a>
+typedef dealii::LinearAlgebra::distributed::BlockVector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BlockVectorType</b></td></tr>
+<tr class="separator:a99eb2cc3bb4109a73550cff9b040e89e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61105b30d38303096a60b50f01acee2a"><td class="memItemLeft" align="right" valign="top"><a id="a61105b30d38303096a60b50f01acee2a" name="a61105b30d38303096a60b50f01acee2a"></a>
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:a61105b30d38303096a60b50f01acee2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af137bc18924a93ca1e0aea1b15c682b0"><td class="memItemLeft" align="right" valign="top"><a id="af137bc18924a93ca1e0aea1b15c682b0" name="af137bc18924a93ca1e0aea1b15c682b0"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:af137bc18924a93ca1e0aea1b15c682b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad395c857884e8bc60167627bb0af4df1"><td class="memItemLeft" align="right" valign="top"><a id="ad395c857884e8bc60167627bb0af4df1" name="ad395c857884e8bc60167627bb0af4df1"></a>
-typedef Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:ad395c857884e8bc60167627bb0af4df1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac101447272bcb9e20a3ff76bb3e0a02"><td class="memItemLeft" align="right" valign="top"><a id="aac101447272bcb9e20a3ff76bb3e0a02" name="aac101447272bcb9e20a3ff76bb3e0a02"></a>
-typedef Tensor&lt; 2, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tensor</b></td></tr>
-<tr class="separator:aac101447272bcb9e20a3ff76bb3e0a02"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a038e5d2a25bd98847fe926fd2d15c887"><td class="memItemLeft" align="right" valign="top"><a id="a038e5d2a25bd98847fe926fd2d15c887" name="a038e5d2a25bd98847fe926fd2d15c887"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a038e5d2a25bd98847fe926fd2d15c887"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82b6ebfa345ddd79ad6a6dc756a15926"><td class="memItemLeft" align="right" valign="top"><a id="a82b6ebfa345ddd79ad6a6dc756a15926" name="a82b6ebfa345ddd79ad6a6dc756a15926"></a>
+typedef dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
+<tr class="separator:a82b6ebfa345ddd79ad6a6dc756a15926"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0658a618ca3081e488fdaed745662d42"><td class="memItemLeft" align="right" valign="top"><a id="a0658a618ca3081e488fdaed745662d42" name="a0658a618ca3081e488fdaed745662d42"></a>
+typedef dealii::Tensor&lt; 2, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tensor</b></td></tr>
+<tr class="separator:a0658a618ca3081e488fdaed745662d42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f5b683bb189837b1fecf77fef61df4e"><td class="memItemLeft" align="right" valign="top"><a id="a8f5b683bb189837b1fecf77fef61df4e" name="a8f5b683bb189837b1fecf77fef61df4e"></a>
 typedef std::pair&lt; unsigned int, unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Range</b></td></tr>
 <tr class="separator:a8f5b683bb189837b1fecf77fef61df4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -336,9 +336,9 @@ typedef <a class="el" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">Proj
 <tr class="memitem:af5bfd1691c4af1c318cf086952cf8323"><td class="memItemLeft" align="right" valign="top"><a id="af5bfd1691c4af1c318cf086952cf8323" name="af5bfd1691c4af1c318cf086952cf8323"></a>
 typedef <a class="el" href="classExaDG_1_1Elementwise_1_1OperatorBase.html">Elementwise::OperatorBase</a>&lt; dim, Number, <a class="el" href="classExaDG_1_1IncNS_1_1ProjectionOperator.html">ProjOperator</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ELEMENTWISE_PROJ_OPERATOR</b></td></tr>
 <tr class="separator:af5bfd1691c4af1c318cf086952cf8323"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a934fdacf5aba25158ca8b2d462f71a5a"><td class="memItemLeft" align="right" valign="top"><a id="a934fdacf5aba25158ca8b2d462f71a5a" name="a934fdacf5aba25158ca8b2d462f71a5a"></a>
-typedef <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">Elementwise::PreconditionerBase</a>&lt; VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ELEMENTWISE_PRECONDITIONER</b></td></tr>
-<tr class="separator:a934fdacf5aba25158ca8b2d462f71a5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a863a3ecbf752b693bac5b94c572e921e"><td class="memItemLeft" align="right" valign="top"><a id="a863a3ecbf752b693bac5b94c572e921e" name="a863a3ecbf752b693bac5b94c572e921e"></a>
+typedef <a class="el" href="classExaDG_1_1Elementwise_1_1PreconditionerBase.html">Elementwise::PreconditionerBase</a>&lt; dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ELEMENTWISE_PRECONDITIONER</b></td></tr>
+<tr class="separator:a863a3ecbf752b693bac5b94c572e921e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -372,12 +372,12 @@ std::string const&#160;</td><td class="memItemRight" valign="bottom"><b>field</b
 <tr class="memitem:a81765e03d3f68e0c4cae4b9dca8885db"><td class="memItemLeft" align="right" valign="top"><a id="a81765e03d3f68e0c4cae4b9dca8885db" name="a81765e03d3f68e0c4cae4b9dca8885db"></a>
 std::shared_ptr&lt; <a class="el" href="structExaDG_1_1Poisson_1_1BoundaryDescriptor.html">Poisson::BoundaryDescriptor</a>&lt; 0, dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>boundary_descriptor_laplace</b></td></tr>
 <tr class="separator:a81765e03d3f68e0c4cae4b9dca8885db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af980c7c70a58e76171d9eedcf7d2b01b"><td class="memItemLeft" align="right" valign="top"><a id="af980c7c70a58e76171d9eedcf7d2b01b" name="af980c7c70a58e76171d9eedcf7d2b01b"></a>
-Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>first_point</b></td></tr>
-<tr class="separator:af980c7c70a58e76171d9eedcf7d2b01b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac201c882b7b8df9e4925513160ed8bdf"><td class="memItemLeft" align="right" valign="top"><a id="ac201c882b7b8df9e4925513160ed8bdf" name="ac201c882b7b8df9e4925513160ed8bdf"></a>
-types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>dof_index_first_point</b></td></tr>
-<tr class="separator:ac201c882b7b8df9e4925513160ed8bdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb05877edb1d437bbb0278b93c096196"><td class="memItemLeft" align="right" valign="top"><a id="abb05877edb1d437bbb0278b93c096196" name="abb05877edb1d437bbb0278b93c096196"></a>
+dealii::Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>first_point</b></td></tr>
+<tr class="separator:abb05877edb1d437bbb0278b93c096196"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae8983342e51aace8cfe0f83e03c6143"><td class="memItemLeft" align="right" valign="top"><a id="aae8983342e51aace8cfe0f83e03c6143" name="aae8983342e51aace8cfe0f83e03c6143"></a>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>dof_index_first_point</b></td></tr>
+<tr class="separator:aae8983342e51aace8cfe0f83e03c6143"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a88f3d5111c4534b6d16ebb3344cfcf6c"><td class="memItemLeft" align="right" valign="top"><a id="a88f3d5111c4534b6d16ebb3344cfcf6c" name="a88f3d5111c4534b6d16ebb3344cfcf6c"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>evaluation_time</b></td></tr>
 <tr class="separator:a88f3d5111c4534b6d16ebb3344cfcf6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -462,9 +462,9 @@ std::shared_ptr&lt; <a class="el" href="classExaDG_1_1PreconditionerBase.html">P
 <tr class="memitem:af465b0cb04db410485e0e0108d979c46"><td class="memItemLeft" align="right" valign="top"><a id="af465b0cb04db410485e0e0108d979c46" name="af465b0cb04db410485e0e0108d979c46"></a>
 MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
 <tr class="separator:af465b0cb04db410485e0e0108d979c46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4075484059a82a7e44d14989700f4d3a"><td class="memItemLeft" align="right" valign="top"><a id="a4075484059a82a7e44d14989700f4d3a" name="a4075484059a82a7e44d14989700f4d3a"></a>
-ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
-<tr class="separator:a4075484059a82a7e44d14989700f4d3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8703888801515fcfbd89a71a7c8ed8f"><td class="memItemLeft" align="right" valign="top"><a id="af8703888801515fcfbd89a71a7c8ed8f" name="af8703888801515fcfbd89a71a7c8ed8f"></a>
+dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
+<tr class="separator:af8703888801515fcfbd89a71a7c8ed8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/exadg/incompressible_navier_stokes/postprocessor/<a class="el" href="incompressible__navier__stokes_2postprocessor_2output__generator_8h_source.html">output_generator.h</a></li>

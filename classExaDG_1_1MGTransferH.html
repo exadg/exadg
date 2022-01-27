@@ -81,39 +81,39 @@ Inheritance diagram for ExaDG::MGTransferH&lt; dim, Number &gt;:</div>
  <div class="center">
   <img src="classExaDG_1_1MGTransferH.png" usemap="#ExaDG::MGTransferH_3C_20dim_2C_20Number_20_3E_map" alt=""/>
   <map id="ExaDG::MGTransferH_3C_20dim_2C_20Number_20_3E_map" name="ExaDG::MGTransferH_3C_20dim_2C_20Number_20_3E_map">
-<area href="classExaDG_1_1MGTransfer.html" alt="ExaDG::MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;" shape="rect" coords="416,0,822,24"/>
+<area href="classExaDG_1_1MGTransfer.html" alt="ExaDG::MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;" shape="rect" coords="452,0,894,24"/>
   </map>
 </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a77ef0fe540084e3906b5de08e6be3f39"><td class="memItemLeft" align="right" valign="top"><a id="a77ef0fe540084e3906b5de08e6be3f39" name="a77ef0fe540084e3906b5de08e6be3f39"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a77ef0fe540084e3906b5de08e6be3f39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7857711fed90b4b5801715ccf66070dd"><td class="memItemLeft" align="right" valign="top"><a id="a7857711fed90b4b5801715ccf66070dd" name="a7857711fed90b4b5801715ccf66070dd"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a7857711fed90b4b5801715ccf66070dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a628be7547b72e300861d38cc5da32048"><td class="memItemLeft" align="right" valign="top"><a id="a628be7547b72e300861d38cc5da32048" name="a628be7547b72e300861d38cc5da32048"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MGTransferH</b> (std::map&lt; unsigned int, unsigned int &gt; level_to_triangulation_level_map, DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
-<tr class="separator:a628be7547b72e300861d38cc5da32048"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6dd74c0526b5705801e186ca730b571"><td class="memItemLeft" align="right" valign="top"><a id="ab6dd74c0526b5705801e186ca730b571" name="ab6dd74c0526b5705801e186ca730b571"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_operator</b> (MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">MultigridOperatorBase</a>&lt; dim, Number &gt; &gt; &gt; const &amp;operator_in)</td></tr>
-<tr class="separator:ab6dd74c0526b5705801e186ca730b571"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2d07b007c2c5b8a2325f1dfafcc71bf"><td class="memItemLeft" align="right" valign="top"><a id="ac2d07b007c2c5b8a2325f1dfafcc71bf" name="ac2d07b007c2c5b8a2325f1dfafcc71bf"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MGTransferH</b> (std::map&lt; unsigned int, unsigned int &gt; level_to_triangulation_level_map, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler)</td></tr>
+<tr class="separator:ac2d07b007c2c5b8a2325f1dfafcc71bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd2f1927e35c434fff765bf19cb38dcd"><td class="memItemLeft" align="right" valign="top"><a id="afd2f1927e35c434fff765bf19cb38dcd" name="afd2f1927e35c434fff765bf19cb38dcd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_operator</b> (dealii::MGLevelObject&lt; std::shared_ptr&lt; <a class="el" href="classExaDG_1_1MultigridOperatorBase.html">MultigridOperatorBase</a>&lt; dim, Number &gt; &gt; &gt; const &amp;operator_in)</td></tr>
+<tr class="separator:afd2f1927e35c434fff765bf19cb38dcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaacbad1e2fcb22f75847ef474f15cf64"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#aaacbad1e2fcb22f75847ef474f15cf64">prolongate_and_add</a> (unsigned int const to_level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:aaacbad1e2fcb22f75847ef474f15cf64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3184524c399a6219aab2a09ba6ac6fc8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a3184524c399a6219aab2a09ba6ac6fc8">restrict_and_add</a> (unsigned int const from_level, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a3184524c399a6219aab2a09ba6ac6fc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a049551197107dbf30cc794eb27d03239"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a049551197107dbf30cc794eb27d03239">interpolate</a> (unsigned int const level_in, VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:a049551197107dbf30cc794eb27d03239"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac6a65b8add700d0d07d4d101ee0a655d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#ac6a65b8add700d0d07d4d101ee0a655d">copy_to_mg</a> (DoFHandler&lt; dim, dim &gt; const &amp;mg_dof, MGLevelObject&lt; VectorType &gt; &amp;dst, VectorType const &amp;src) const</td></tr>
-<tr class="separator:ac6a65b8add700d0d07d4d101ee0a655d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c0e0187ca29cbeff492774a99979ddf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1MGTransferH.html#a9c0e0187ca29cbeff492774a99979ddf">copy_to_mg</a> (dealii::DoFHandler&lt; dim, dim &gt; const &amp;mg_dof, dealii::MGLevelObject&lt; VectorType &gt; &amp;dst, VectorType const &amp;src) const</td></tr>
+<tr class="separator:a9c0e0187ca29cbeff492774a99979ddf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;int dim, typename Number&gt;<br />
 class ExaDG::MGTransferH&lt; dim, Number &gt;</div><p >Specialized matrix-free implementation that overloads the copy_to_mg function for proper initialization of the vectors in matrix-vector products. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="ac6a65b8add700d0d07d4d101ee0a655d" name="ac6a65b8add700d0d07d4d101ee0a655d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac6a65b8add700d0d07d4d101ee0a655d">&#9670;&nbsp;</a></span>copy_to_mg()</h2>
+<a id="a9c0e0187ca29cbeff492774a99979ddf" name="a9c0e0187ca29cbeff492774a99979ddf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9c0e0187ca29cbeff492774a99979ddf">&#9670;&nbsp;</a></span>copy_to_mg()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -123,13 +123,13 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classExaDG_1_1MGTransferH.html">ExaDG::MGTransferH</a>&lt; dim, Number &gt;::copy_to_mg </td>
           <td>(</td>
-          <td class="paramtype">DoFHandler&lt; dim, dim &gt; const &amp;&#160;</td>
+          <td class="paramtype">dealii::DoFHandler&lt; dim, dim &gt; const &amp;&#160;</td>
           <td class="paramname"><em>mg_dof</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">MGLevelObject&lt; VectorType &gt; &amp;&#160;</td>
+          <td class="paramtype">dealii::MGLevelObject&lt; VectorType &gt; &amp;&#160;</td>
           <td class="paramname"><em>dst</em>, </td>
         </tr>
         <tr>
@@ -191,7 +191,7 @@ template&lt;int dim, typename Number &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
 
 </div>
 </div>
@@ -237,7 +237,7 @@ template&lt;int dim, typename Number &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
 
 </div>
 </div>
@@ -283,7 +283,7 @@ template&lt;int dim, typename Number &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
+<p>Implements <a class="el" href="classExaDG_1_1MGTransfer.html">ExaDG::MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;</a>.</p>
 
 </div>
 </div>

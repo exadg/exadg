@@ -76,9 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a19e7146c41b0cf79e5cd1c185c9f0c95"><td class="memItemLeft" align="right" valign="top"><a id="a19e7146c41b0cf79e5cd1c185c9f0c95" name="a19e7146c41b0cf79e5cd1c185c9f0c95"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a19e7146c41b0cf79e5cd1c185c9f0c95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a774349538ec506c58e9b720c128ac738"><td class="memItemLeft" align="right" valign="top"><a id="a774349538ec506c58e9b720c128ac738" name="a774349538ec506c58e9b720c128ac738"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a774349538ec506c58e9b720c128ac738"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc570fd8cd47c3d5ac5259a1ab7d538f"><td class="memItemLeft" align="right" valign="top"><a id="afc570fd8cd47c3d5ac5259a1ab7d538f" name="afc570fd8cd47c3d5ac5259a1ab7d538f"></a>
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">SpatialOperatorBase</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>NavierStokesOperator</b></td></tr>
 <tr class="separator:afc570fd8cd47c3d5ac5259a1ab7d538f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -88,9 +88,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85be13c56d27acdf05459b8811ba068a"><td class="memItemLeft" align="right" valign="top"><a id="a85be13c56d27acdf05459b8811ba068a" name="a85be13c56d27acdf05459b8811ba068a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OutputGenerator</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a85be13c56d27acdf05459b8811ba068a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9faf849bc6d8af85f6a6922c9df27ba4"><td class="memItemLeft" align="right" valign="top"><a id="a9faf849bc6d8af85f6a6922c9df27ba4" name="a9faf849bc6d8af85f6a6922c9df27ba4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">NavierStokesOperator</a> const &amp;navier_stokes_operator_in, DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, DoFHandler&lt; dim &gt; const &amp;dof_handler_pressure_in, Mapping&lt; dim &gt; const &amp;mapping_in, <a class="el" href="structExaDG_1_1IncNS_1_1OutputData.html">OutputData</a> const &amp;output_data_in)</td></tr>
-<tr class="separator:a9faf849bc6d8af85f6a6922c9df27ba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a455aab9edca0304b4fe380281624dfa3"><td class="memItemLeft" align="right" valign="top"><a id="a455aab9edca0304b4fe380281624dfa3" name="a455aab9edca0304b4fe380281624dfa3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (<a class="el" href="classExaDG_1_1IncNS_1_1SpatialOperatorBase.html">NavierStokesOperator</a> const &amp;navier_stokes_operator_in, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_velocity_in, dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_pressure_in, dealii::Mapping&lt; dim &gt; const &amp;mapping_in, <a class="el" href="structExaDG_1_1IncNS_1_1OutputData.html">OutputData</a> const &amp;output_data_in)</td></tr>
+<tr class="separator:a455aab9edca0304b4fe380281624dfa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5cab88c55817926f1b38ee382506123"><td class="memItemLeft" align="right" valign="top"><a id="ad5cab88c55817926f1b38ee382506123" name="ad5cab88c55817926f1b38ee382506123"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, VectorType const &amp;pressure, double const &amp;time, int const &amp;time_step_number)</td></tr>
 <tr class="separator:ad5cab88c55817926f1b38ee382506123"><td class="memSeparator" colspan="2">&#160;</td></tr>

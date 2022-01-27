@@ -76,27 +76,27 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8d4a4582cdf75ece025c7d34a394fe7d"><td class="memItemLeft" align="right" valign="top"><a id="a8d4a4582cdf75ece025c7d34a394fe7d" name="a8d4a4582cdf75ece025c7d34a394fe7d"></a>
-DEAL_II_ALWAYS_INLINE BoundaryTypeU&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_type</b> (types::boundary_id const &amp;boundary_id) const</td></tr>
-<tr class="separator:a8d4a4582cdf75ece025c7d34a394fe7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1489f654e58fd8cb08e74c7db3e4b1a7"><td class="memItemLeft" align="right" valign="top"><a id="a1489f654e58fd8cb08e74c7db3e4b1a7" name="a1489f654e58fd8cb08e74c7db3e4b1a7"></a>
-DEAL_II_ALWAYS_INLINE void&#160;</td><td class="memItemRight" valign="bottom"><b>verify_boundary_conditions</b> (types::boundary_id const boundary_id, std::set&lt; types::boundary_id &gt; const &amp;periodic_boundary_ids) const</td></tr>
-<tr class="separator:a1489f654e58fd8cb08e74c7db3e4b1a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a247210256485a0e1742bba68f0dc1022"><td class="memItemLeft" align="right" valign="top"><a id="a247210256485a0e1742bba68f0dc1022" name="a247210256485a0e1742bba68f0dc1022"></a>
+DEAL_II_ALWAYS_INLINE BoundaryTypeU&#160;</td><td class="memItemRight" valign="bottom"><b>get_boundary_type</b> (dealii::types::boundary_id const &amp;boundary_id) const</td></tr>
+<tr class="separator:a247210256485a0e1742bba68f0dc1022"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92ea86e5675b409929905e1270ce3ef1"><td class="memItemLeft" align="right" valign="top"><a id="a92ea86e5675b409929905e1270ce3ef1" name="a92ea86e5675b409929905e1270ce3ef1"></a>
+DEAL_II_ALWAYS_INLINE void&#160;</td><td class="memItemRight" valign="bottom"><b>verify_boundary_conditions</b> (dealii::types::boundary_id const boundary_id, std::set&lt; dealii::types::boundary_id &gt; const &amp;periodic_boundary_ids) const</td></tr>
+<tr class="separator:a92ea86e5675b409929905e1270ce3ef1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a8fea836e2f1280788188e181d91e1496"><td class="memItemLeft" align="right" valign="top"><a id="a8fea836e2f1280788188e181d91e1496" name="a8fea836e2f1280788188e181d91e1496"></a>
-std::map&lt; types::boundary_id, std::shared_ptr&lt; Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_bc</b></td></tr>
-<tr class="separator:a8fea836e2f1280788188e181d91e1496"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22d2b205a8323e4fbad4dca19f046225"><td class="memItemLeft" align="right" valign="top"><a id="a22d2b205a8323e4fbad4dca19f046225" name="a22d2b205a8323e4fbad4dca19f046225"></a>
-std::map&lt; types::boundary_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1FunctionCached.html">FunctionCached</a>&lt; 1, dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_mortar_bc</b></td></tr>
-<tr class="separator:a22d2b205a8323e4fbad4dca19f046225"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a2e954299ebaba4421241f037e1fa95"><td class="memItemLeft" align="right" valign="top"><a id="a7a2e954299ebaba4421241f037e1fa95" name="a7a2e954299ebaba4421241f037e1fa95"></a>
-std::map&lt; types::boundary_id, std::shared_ptr&lt; Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neumann_bc</b></td></tr>
-<tr class="separator:a7a2e954299ebaba4421241f037e1fa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acdd37436b69488fc7310eea5f8c61c1b"><td class="memItemLeft" align="right" valign="top"><a id="acdd37436b69488fc7310eea5f8c61c1b" name="acdd37436b69488fc7310eea5f8c61c1b"></a>
-std::map&lt; types::boundary_id, std::shared_ptr&lt; Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>symmetry_bc</b></td></tr>
-<tr class="separator:acdd37436b69488fc7310eea5f8c61c1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7463a5f67146208221360213dc2d864"><td class="memItemLeft" align="right" valign="top"><a id="ac7463a5f67146208221360213dc2d864" name="ac7463a5f67146208221360213dc2d864"></a>
+std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_bc</b></td></tr>
+<tr class="separator:ac7463a5f67146208221360213dc2d864"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e7ae32dc00216803200e416d59b36c4"><td class="memItemLeft" align="right" valign="top"><a id="a0e7ae32dc00216803200e416d59b36c4" name="a0e7ae32dc00216803200e416d59b36c4"></a>
+std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; <a class="el" href="classExaDG_1_1FunctionCached.html">FunctionCached</a>&lt; 1, dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>dirichlet_mortar_bc</b></td></tr>
+<tr class="separator:a0e7ae32dc00216803200e416d59b36c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40d73c0f3b51e0b5afd15229a32f27e7"><td class="memItemLeft" align="right" valign="top"><a id="a40d73c0f3b51e0b5afd15229a32f27e7" name="a40d73c0f3b51e0b5afd15229a32f27e7"></a>
+std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>neumann_bc</b></td></tr>
+<tr class="separator:a40d73c0f3b51e0b5afd15229a32f27e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3f1235f5c82d31f4f6d3c7a3d5bf1fe"><td class="memItemLeft" align="right" valign="top"><a id="ab3f1235f5c82d31f4f6d3c7a3d5bf1fe" name="ab3f1235f5c82d31f4f6d3c7a3d5bf1fe"></a>
+std::map&lt; dealii::types::boundary_id, std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>symmetry_bc</b></td></tr>
+<tr class="separator:ab3f1235f5c82d31f4f6d3c7a3d5bf1fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/exadg/incompressible_navier_stokes/user_interface/<a class="el" href="incompressible__navier__stokes_2user__interface_2boundary__descriptor_8h_source.html">boundary_descriptor.h</a></li>

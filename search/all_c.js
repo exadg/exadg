@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['mapping_0',['mapping',['../classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466',1,'ExaDG::Grid']]],
+  ['mapping_0',['mapping',['../classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d',1,'ExaDG::Grid']]],
   ['mappingdofvector_1',['MappingDoFVector',['../classExaDG_1_1MappingDoFVector.html',1,'ExaDG::MappingDoFVector&lt; dim, Number &gt;'],['../classExaDG_1_1MappingDoFVector.html#a02610a355efa9e0350be9647356e570b',1,'ExaDG::MappingDoFVector::MappingDoFVector()']]],
   ['mappingflags_2',['MappingFlags',['../structExaDG_1_1MappingFlags.html',1,'ExaDG']]],
   ['massconservationdata_3',['MassConservationData',['../structExaDG_1_1IncNS_1_1MassConservationData.html',1,'ExaDG::IncNS']]],
@@ -21,13 +21,13 @@ var searchData=
   ['mgcoarseamg_18',['MGCoarseAMG',['../classExaDG_1_1MGCoarseAMG.html',1,'ExaDG']]],
   ['mgcoarsechebyshev_19',['MGCoarseChebyshev',['../classExaDG_1_1MGCoarseChebyshev.html',1,'ExaDG']]],
   ['mgcoarsegridbase_20',['MGCoarseGridBase',['../classdealii_1_1MGCoarseGridBase.html',1,'dealii']]],
-  ['mgcoarsegridbase_3c_20linearalgebra_3a_3adistributed_3a_3avector_3c_20operator_3a_3avalue_5ftype_20_3e_20_3e_21',['MGCoarseGridBase&lt; LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt; &gt;',['../classdealii_1_1MGCoarseGridBase.html',1,'dealii']]],
+  ['mgcoarsegridbase_3c_20dealii_3a_3alinearalgebra_3a_3adistributed_3a_3avector_3c_20operator_3a_3avalue_5ftype_20_3e_20_3e_21',['MGCoarseGridBase&lt; dealii::LinearAlgebra::distributed::Vector&lt; Operator::value_type &gt; &gt;',['../classdealii_1_1MGCoarseGridBase.html',1,'dealii']]],
   ['mgcoarsegridbase_3c_20vector_20_3e_22',['MGCoarseGridBase&lt; Vector &gt;',['../classdealii_1_1MGCoarseGridBase.html',1,'dealii']]],
   ['mgcoarsekrylov_23',['MGCoarseKrylov',['../classExaDG_1_1MGCoarseKrylov.html',1,'ExaDG']]],
   ['mgdofhandleridentifier_24',['MGDoFHandlerIdentifier',['../structExaDG_1_1MGDoFHandlerIdentifier.html',1,'ExaDG']]],
   ['mglevelinfo_25',['MGLevelInfo',['../structExaDG_1_1MGLevelInfo.html',1,'ExaDG']]],
   ['mgtransfer_26',['MGTransfer',['../classExaDG_1_1MGTransfer.html',1,'ExaDG']]],
-  ['mgtransfer_3c_20linearalgebra_3a_3adistributed_3a_3avector_3c_20number_20_3e_20_3e_27',['MGTransfer&lt; LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;',['../classExaDG_1_1MGTransfer.html',1,'ExaDG']]],
+  ['mgtransfer_3c_20dealii_3a_3alinearalgebra_3a_3adistributed_3a_3avector_3c_20number_20_3e_20_3e_27',['MGTransfer&lt; dealii::LinearAlgebra::distributed::Vector&lt; Number &gt; &gt;',['../classExaDG_1_1MGTransfer.html',1,'ExaDG']]],
   ['mgtransferc_28',['MGTransferC',['../classExaDG_1_1MGTransferC.html',1,'ExaDG']]],
   ['mgtransferglobalcoarsening_29',['MGTransferGlobalCoarsening',['../classExaDG_1_1MGTransferGlobalCoarsening.html',1,'ExaDG']]],
   ['mgtransferglobalrefinement_30',['MGTransferGlobalRefinement',['../classExaDG_1_1MGTransferGlobalRefinement.html',1,'ExaDG']]],

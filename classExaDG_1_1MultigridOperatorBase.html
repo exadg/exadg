@@ -88,27 +88,27 @@ Public Types</h2></td></tr>
 <tr class="memitem:ac3fcc549cade77aefb75f6293c0e07f8"><td class="memItemLeft" align="right" valign="top"><a id="ac3fcc549cade77aefb75f6293c0e07f8" name="ac3fcc549cade77aefb75f6293c0e07f8"></a>
 typedef Number&#160;</td><td class="memItemRight" valign="bottom"><b>value_type</b></td></tr>
 <tr class="separator:ac3fcc549cade77aefb75f6293c0e07f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c2e2fa8b49de118eaf20f966b8dccab"><td class="memItemLeft" align="right" valign="top"><a id="a4c2e2fa8b49de118eaf20f966b8dccab" name="a4c2e2fa8b49de118eaf20f966b8dccab"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a4c2e2fa8b49de118eaf20f966b8dccab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cfc4656c1cc9a2f5fa3dcad0380d4aa"><td class="memItemLeft" align="right" valign="top"><a id="a2cfc4656c1cc9a2f5fa3dcad0380d4aa" name="a2cfc4656c1cc9a2f5fa3dcad0380d4aa"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a2cfc4656c1cc9a2f5fa3dcad0380d4aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a77b92bb3af03deebf2d88bedd88db6f9"><td class="memItemLeft" align="right" valign="top"><a id="a77b92bb3af03deebf2d88bedd88db6f9" name="a77b92bb3af03deebf2d88bedd88db6f9"></a>
-virtual AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_affine_constraints</b> () const =0</td></tr>
-<tr class="separator:a77b92bb3af03deebf2d88bedd88db6f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a245b6a07cd97c2c4ca3c9a3e06da4c6b"><td class="memItemLeft" align="right" valign="top"><a id="a245b6a07cd97c2c4ca3c9a3e06da4c6b" name="a245b6a07cd97c2c4ca3c9a3e06da4c6b"></a>
-virtual MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const =0</td></tr>
-<tr class="separator:a245b6a07cd97c2c4ca3c9a3e06da4c6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f35f0754b33f6d615c99bb6029daa24"><td class="memItemLeft" align="right" valign="top"><a id="a5f35f0754b33f6d615c99bb6029daa24" name="a5f35f0754b33f6d615c99bb6029daa24"></a>
+virtual dealii::AffineConstraints&lt; Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_affine_constraints</b> () const =0</td></tr>
+<tr class="separator:a5f35f0754b33f6d615c99bb6029daa24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a511c29f41bcef096e7287a2ab8ed3895"><td class="memItemLeft" align="right" valign="top"><a id="a511c29f41bcef096e7287a2ab8ed3895" name="a511c29f41bcef096e7287a2ab8ed3895"></a>
+virtual dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const =0</td></tr>
+<tr class="separator:a511c29f41bcef096e7287a2ab8ed3895"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5c676684b9e7935222191bb6b29519f"><td class="memItemLeft" align="right" valign="top"><a id="ae5c676684b9e7935222191bb6b29519f" name="ae5c676684b9e7935222191bb6b29519f"></a>
 virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const =0</td></tr>
 <tr class="separator:ae5c676684b9e7935222191bb6b29519f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeaebaf66cbc27e2740ef995a795c3cd2"><td class="memItemLeft" align="right" valign="top"><a id="aeaebaf66cbc27e2740ef995a795c3cd2" name="aeaebaf66cbc27e2740ef995a795c3cd2"></a>
-virtual types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>m</b> () const =0</td></tr>
-<tr class="separator:aeaebaf66cbc27e2740ef995a795c3cd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb11cf6e41c5989267bb7f1b9f4718ca"><td class="memItemLeft" align="right" valign="top"><a id="abb11cf6e41c5989267bb7f1b9f4718ca" name="abb11cf6e41c5989267bb7f1b9f4718ca"></a>
-virtual types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>n</b> () const =0</td></tr>
-<tr class="separator:abb11cf6e41c5989267bb7f1b9f4718ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af20d9d475da59e104a4084f137fb1820"><td class="memItemLeft" align="right" valign="top"><a id="af20d9d475da59e104a4084f137fb1820" name="af20d9d475da59e104a4084f137fb1820"></a>
+virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>m</b> () const =0</td></tr>
+<tr class="separator:af20d9d475da59e104a4084f137fb1820"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc3a242565935b42102c846dfae81a43"><td class="memItemLeft" align="right" valign="top"><a id="afc3a242565935b42102c846dfae81a43" name="afc3a242565935b42102c846dfae81a43"></a>
+virtual dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>n</b> () const =0</td></tr>
+<tr class="separator:afc3a242565935b42102c846dfae81a43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a439a4a97bb6a68f2e65749f3d3abbcfa"><td class="memItemLeft" align="right" valign="top"><a id="a439a4a97bb6a68f2e65749f3d3abbcfa" name="a439a4a97bb6a68f2e65749f3d3abbcfa"></a>
 virtual Number&#160;</td><td class="memItemRight" valign="bottom"><b>el</b> (unsigned int const, const unsigned int) const =0</td></tr>
 <tr class="separator:a439a4a97bb6a68f2e65749f3d3abbcfa"><td class="memSeparator" colspan="2">&#160;</td></tr>

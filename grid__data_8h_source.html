@@ -98,54 +98,52 @@ $(function() {
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>{</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="structExaDG_1_1GridData.html">   32</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>{</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>  <a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a>()</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    : triangulation_type(TriangulationType::Distributed),</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      n_refine_global(0),</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>      n_subdivisions_1d_hypercube(1),</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>      mapping_degree(1)</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  {</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  }</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  check()<span class="keyword"> const</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  }</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  print(ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="keyword">  </span>{</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    print_parameter(pcout, <span class="stringliteral">&quot;Triangulation type&quot;</span>, enum_to_string(triangulation_type));</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno"><a class="line" href="structExaDG_1_1GridData.html">   30</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>{</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a>()</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    : triangulation_type(TriangulationType::Distributed),</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>      n_refine_global(0),</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>      n_subdivisions_1d_hypercube(1),</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>      mapping_degree(1)</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  {</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  }</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  check()<span class="keyword"> const</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  }</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <span class="keywordtype">void</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  print(dealii::ConditionalOStream <span class="keyword">const</span> &amp; pcout)<span class="keyword"> const</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="keyword">  </span>{</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    print_parameter(pcout, <span class="stringliteral">&quot;Triangulation type&quot;</span>, enum_to_string(triangulation_type));</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    print_parameter(pcout, <span class="stringliteral">&quot;Global refinements&quot;</span>, n_refine_global);</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    print_parameter(pcout, <span class="stringliteral">&quot;Global refinements&quot;</span>, n_refine_global);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    print_parameter(pcout, <span class="stringliteral">&quot;Subdivisions hypercube&quot;</span>, n_subdivisions_1d_hypercube);</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    print_parameter(pcout, <span class="stringliteral">&quot;Subdivisions hypercube&quot;</span>, n_subdivisions_1d_hypercube);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    print_parameter(pcout, <span class="stringliteral">&quot;Mapping degree&quot;</span>, mapping_degree);</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  }</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    print_parameter(pcout, <span class="stringliteral">&quot;Mapping degree&quot;</span>, mapping_degree);</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  }</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  TriangulationType triangulation_type;</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  TriangulationType triangulation_type;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_refine_global;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_refine_global;</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="comment">// only relevant for hypercube geometry/mesh</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_subdivisions_1d_hypercube;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="comment">// only relevant for hypercube geometry/mesh</span></div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> n_subdivisions_1d_hypercube;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> mapping_degree;</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> mapping_degree;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="comment">// TODO: path to a grid file</span></div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="comment">// std::string grid_file;</span></div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="comment">// TODO: path to a grid file</span></div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="comment">// std::string grid_file;</span></div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>};</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>} <span class="comment">// namespace ExaDG</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_DATA_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid_data.h:33</div></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_DATA_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid_data.h:31</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

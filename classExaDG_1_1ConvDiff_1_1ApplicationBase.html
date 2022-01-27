@@ -76,9 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a166d17fbb106b53c5eeb6bbedfc42c42"><td class="memItemLeft" align="right" valign="top"><a id="a166d17fbb106b53c5eeb6bbedfc42c42" name="a166d17fbb106b53c5eeb6bbedfc42c42"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (ParameterHandler &amp;prm)</td></tr>
-<tr class="separator:a166d17fbb106b53c5eeb6bbedfc42c42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c8c3445578c30ca31265be998abc0a5"><td class="memItemLeft" align="right" valign="top"><a id="a8c8c3445578c30ca31265be998abc0a5" name="a8c8c3445578c30ca31265be998abc0a5"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameters</b> (dealii::ParameterHandler &amp;prm)</td></tr>
+<tr class="separator:a8c8c3445578c30ca31265be998abc0a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f28d05f08966db8eda95beec8a14816"><td class="memItemLeft" align="right" valign="top"><a id="a5f28d05f08966db8eda95beec8a14816" name="a5f28d05f08966db8eda95beec8a14816"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ApplicationBase</b> (std::string parameter_file, MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a5f28d05f08966db8eda95beec8a14816"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -91,9 +91,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameters_conver
 <tr class="memitem:aede4623213d0f44f13ca929bf3ac3d26"><td class="memItemLeft" align="right" valign="top"><a id="aede4623213d0f44f13ca929bf3ac3d26" name="aede4623213d0f44f13ca929bf3ac3d26"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> ()</td></tr>
 <tr class="separator:aede4623213d0f44f13ca929bf3ac3d26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41f334d4e93a3b96c6fdb09ee317533a"><td class="memItemLeft" align="right" valign="top"><a id="a41f334d4e93a3b96c6fdb09ee317533a" name="a41f334d4e93a3b96c6fdb09ee317533a"></a>
-virtual std::shared_ptr&lt; Function&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_mesh_movement_function</b> ()</td></tr>
-<tr class="separator:a41f334d4e93a3b96c6fdb09ee317533a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab26e2b2c1b389cc7393a1b013c300a7f"><td class="memItemLeft" align="right" valign="top"><a id="ab26e2b2c1b389cc7393a1b013c300a7f" name="ab26e2b2c1b389cc7393a1b013c300a7f"></a>
+virtual std::shared_ptr&lt; dealii::Function&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_mesh_movement_function</b> ()</td></tr>
+<tr class="separator:ab26e2b2c1b389cc7393a1b013c300a7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8dc5a402c5c85b9f37da2fc9d88c11be"><td class="memItemLeft" align="right" valign="top"><a id="a8dc5a402c5c85b9f37da2fc9d88c11be" name="a8dc5a402c5c85b9f37da2fc9d88c11be"></a>
 virtual std::shared_ptr&lt; <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorBase.html">PostProcessorBase</a>&lt; dim, Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_postprocessor</b> ()=0</td></tr>
 <tr class="separator:a8dc5a402c5c85b9f37da2fc9d88c11be"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -115,9 +115,9 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a76ea32968f9e2659e2b5456758092ce0"><td class="memItemLeft" align="right" valign="top"><a id="a76ea32968f9e2659e2b5456758092ce0" name="a76ea32968f9e2659e2b5456758092ce0"></a>
 MPI_Comm const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b></td></tr>
 <tr class="separator:a76ea32968f9e2659e2b5456758092ce0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a826fc4991a217c0052e7e864bc326d80"><td class="memItemLeft" align="right" valign="top"><a id="a826fc4991a217c0052e7e864bc326d80" name="a826fc4991a217c0052e7e864bc326d80"></a>
-ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
-<tr class="separator:a826fc4991a217c0052e7e864bc326d80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74d4d088ffc0225a40903022b219b458"><td class="memItemLeft" align="right" valign="top"><a id="a74d4d088ffc0225a40903022b219b458" name="a74d4d088ffc0225a40903022b219b458"></a>
+dealii::ConditionalOStream&#160;</td><td class="memItemRight" valign="bottom"><b>pcout</b></td></tr>
+<tr class="separator:a74d4d088ffc0225a40903022b219b458"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a18e027200056bd2a1a73649101accf19"><td class="memItemLeft" align="right" valign="top"><a id="a18e027200056bd2a1a73649101accf19" name="a18e027200056bd2a1a73649101accf19"></a>
 <a class="el" href="classExaDG_1_1ConvDiff_1_1Parameters.html">Parameters</a>&#160;</td><td class="memItemRight" valign="bottom"><b>param</b></td></tr>
 <tr class="separator:a18e027200056bd2a1a73649101accf19"><td class="memSeparator" colspan="2">&#160;</td></tr>

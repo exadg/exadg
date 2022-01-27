@@ -76,9 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:af93fae644b692031d7aeda17f853b54b"><td class="memItemLeft" align="right" valign="top"><a id="af93fae644b692031d7aeda17f853b54b" name="af93fae644b692031d7aeda17f853b54b"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:af93fae644b692031d7aeda17f853b54b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9c4a1341760f8ebe3f9f6bec1fdf014"><td class="memItemLeft" align="right" valign="top"><a id="ab9c4a1341760f8ebe3f9f6bec1fdf014" name="ab9c4a1341760f8ebe3f9f6bec1fdf014"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:ab9c4a1341760f8ebe3f9f6bec1fdf014"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fcf5fff1ea6d138a68cf142db862dcc"><td class="memItemLeft" align="right" valign="top"><a id="a2fcf5fff1ea6d138a68cf142db862dcc" name="a2fcf5fff1ea6d138a68cf142db862dcc"></a>
 typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CellIntegratorU</b></td></tr>
 <tr class="separator:a2fcf5fff1ea6d138a68cf142db862dcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -88,15 +88,15 @@ typedef FaceIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRig
 <tr class="memitem:a8c7dfd61467bf7bcf55f74cf098a05e0"><td class="memItemLeft" align="right" valign="top"><a id="a8c7dfd61467bf7bcf55f74cf098a05e0" name="a8c7dfd61467bf7bcf55f74cf098a05e0"></a>
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1MeanVelocityCalculator.html">MeanVelocityCalculator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:a8c7dfd61467bf7bcf55f74cf098a05e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a65a9db7c8854c40d0a681b06cc17eb"><td class="memItemLeft" align="right" valign="top"><a id="a8a65a9db7c8854c40d0a681b06cc17eb" name="a8a65a9db7c8854c40d0a681b06cc17eb"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:a8a65a9db7c8854c40d0a681b06cc17eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37b5fdb079a5304ec3e73b51d6163cff"><td class="memItemLeft" align="right" valign="top"><a id="a37b5fdb079a5304ec3e73b51d6163cff" name="a37b5fdb079a5304ec3e73b51d6163cff"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a37b5fdb079a5304ec3e73b51d6163cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab45a59a4a2633010de794e08f2c45f5e"><td class="memItemLeft" align="right" valign="top"><a id="ab45a59a4a2633010de794e08f2c45f5e" name="ab45a59a4a2633010de794e08f2c45f5e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MeanVelocityCalculator</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1IncNS_1_1MeanVelocityCalculatorData.html">MeanVelocityCalculatorData</a>&lt; dim &gt; const &amp;data_in, MPI_Comm const &amp;comm_in)</td></tr>
-<tr class="separator:ab45a59a4a2633010de794e08f2c45f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5641c30539f6ed8d6d1425f9bde8de6e"><td class="memItemLeft" align="right" valign="top"><a id="a5641c30539f6ed8d6d1425f9bde8de6e" name="a5641c30539f6ed8d6d1425f9bde8de6e"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MeanVelocityCalculator</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1IncNS_1_1MeanVelocityCalculatorData.html">MeanVelocityCalculatorData</a>&lt; dim &gt; const &amp;data_in, MPI_Comm const &amp;comm_in)</td></tr>
+<tr class="separator:a5641c30539f6ed8d6d1425f9bde8de6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e95a40a5fe4651a1bc26ff90364585b"><td class="memItemLeft" align="right" valign="top"><a id="a4e95a40a5fe4651a1bc26ff90364585b" name="a4e95a40a5fe4651a1bc26ff90364585b"></a>
 Number&#160;</td><td class="memItemRight" valign="bottom"><b>calculate_mean_velocity_area</b> (VectorType const &amp;velocity, double const &amp;time)</td></tr>
 <tr class="separator:a4e95a40a5fe4651a1bc26ff90364585b"><td class="memSeparator" colspan="2">&#160;</td></tr>

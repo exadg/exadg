@@ -76,21 +76,21 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a27cc585a40fbd4d6218896906978d624"><td class="memItemLeft" align="right" valign="top"><a id="a27cc585a40fbd4d6218896906978d624" name="a27cc585a40fbd4d6218896906978d624"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a27cc585a40fbd4d6218896906978d624"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22ccf01e689b6dfac479922715788a73"><td class="memItemLeft" align="right" valign="top"><a id="a22ccf01e689b6dfac479922715788a73" name="a22ccf01e689b6dfac479922715788a73"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a22ccf01e689b6dfac479922715788a73"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ec0bd73c20856b7593b92f5fb1f871d"><td class="memItemLeft" align="right" valign="top"><a id="a0ec0bd73c20856b7593b92f5fb1f871d" name="a0ec0bd73c20856b7593b92f5fb1f871d"></a>
 typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CellIntegratorU</b></td></tr>
 <tr class="separator:a0ec0bd73c20856b7593b92f5fb1f871d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80f0ff0eb997c3fe846724065ffb1688"><td class="memItemLeft" align="right" valign="top"><a id="a80f0ff0eb997c3fe846724065ffb1688" name="a80f0ff0eb997c3fe846724065ffb1688"></a>
 typedef FaceIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>FaceIntegratorU</b></td></tr>
 <tr class="separator:a80f0ff0eb997c3fe846724065ffb1688"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67a17831e2c2c6271489c5110a2f6e7c"><td class="memItemLeft" align="right" valign="top"><a id="a67a17831e2c2c6271489c5110a2f6e7c" name="a67a17831e2c2c6271489c5110a2f6e7c"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:a67a17831e2c2c6271489c5110a2f6e7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a58e98132e2705d444415b565ff2442c0"><td class="memItemLeft" align="right" valign="top"><a id="a58e98132e2705d444415b565ff2442c0" name="a58e98132e2705d444415b565ff2442c0"></a>
-typedef Tensor&lt; 1, dim, VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
-<tr class="separator:a58e98132e2705d444415b565ff2442c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e962a51fc0e455b7a3846c989122cc5"><td class="memItemLeft" align="right" valign="top"><a id="a8e962a51fc0e455b7a3846c989122cc5" name="a8e962a51fc0e455b7a3846c989122cc5"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:a8e962a51fc0e455b7a3846c989122cc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9897c676cb4e354a9083120215d10bd"><td class="memItemLeft" align="right" valign="top"><a id="af9897c676cb4e354a9083120215d10bd" name="af9897c676cb4e354a9083120215d10bd"></a>
+typedef dealii::Tensor&lt; 1, dim, dealii::VectorizedArray&lt; Number &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>vector</b></td></tr>
+<tr class="separator:af9897c676cb4e354a9083120215d10bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a289d216d426f6c1bd96dcdd1c78fbde5"><td class="memItemLeft" align="right" valign="top"><a id="a289d216d426f6c1bd96dcdd1c78fbde5" name="a289d216d426f6c1bd96dcdd1c78fbde5"></a>
 typedef <a class="el" href="classExaDG_1_1IncNS_1_1DivergenceAndMassErrorCalculator.html">DivergenceAndMassErrorCalculator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:a289d216d426f6c1bd96dcdd1c78fbde5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -100,9 +100,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aaa2d73fb076eb46245b6c72a1585c132"><td class="memItemLeft" align="right" valign="top"><a id="aaa2d73fb076eb46245b6c72a1585c132" name="aaa2d73fb076eb46245b6c72a1585c132"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>DivergenceAndMassErrorCalculator</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:aaa2d73fb076eb46245b6c72a1585c132"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a64790ea37fe5112c1361cf1cbc5e7d66"><td class="memItemLeft" align="right" valign="top"><a id="a64790ea37fe5112c1361cf1cbc5e7d66" name="a64790ea37fe5112c1361cf1cbc5e7d66"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1IncNS_1_1MassConservationData.html">MassConservationData</a> const &amp;data_in)</td></tr>
-<tr class="separator:a64790ea37fe5112c1361cf1cbc5e7d66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d1e5c7e051fc1733ca9e620faa17418"><td class="memItemLeft" align="right" valign="top"><a id="a9d1e5c7e051fc1733ca9e620faa17418" name="a9d1e5c7e051fc1733ca9e620faa17418"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_in, unsigned int const quad_index_in, <a class="el" href="structExaDG_1_1IncNS_1_1MassConservationData.html">MassConservationData</a> const &amp;data_in)</td></tr>
+<tr class="separator:a9d1e5c7e051fc1733ca9e620faa17418"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4ae3bd947e4076b85e17f75ee1bdf21"><td class="memItemLeft" align="right" valign="top"><a id="ad4ae3bd947e4076b85e17f75ee1bdf21" name="ad4ae3bd947e4076b85e17f75ee1bdf21"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;velocity, double const &amp;time, int const &amp;time_step_number)</td></tr>
 <tr class="separator:ad4ae3bd947e4076b85e17f75ee1bdf21"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -76,9 +76,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a0ed6f296c8f7b3092db6348cd238f8b4"><td class="memItemLeft" align="right" valign="top"><a id="a0ed6f296c8f7b3092db6348cd238f8b4" name="a0ed6f296c8f7b3092db6348cd238f8b4"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a0ed6f296c8f7b3092db6348cd238f8b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc278b58bc743103969c593c5a58653c"><td class="memItemLeft" align="right" valign="top"><a id="adc278b58bc743103969c593c5a58653c" name="adc278b58bc743103969c593c5a58653c"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:adc278b58bc743103969c593c5a58653c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e7523af0672e1734e7ec9baff1b7eb5"><td class="memItemLeft" align="right" valign="top"><a id="a2e7523af0672e1734e7ec9baff1b7eb5" name="a2e7523af0672e1734e7ec9baff1b7eb5"></a>
 typedef <a class="el" href="classExaDG_1_1CompNS_1_1DivergenceCalculator.html">DivergenceCalculator</a>&lt; dim, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>This</b></td></tr>
 <tr class="separator:a2e7523af0672e1734e7ec9baff1b7eb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -88,15 +88,15 @@ typedef CellIntegrator&lt; dim, dim, Number &gt;&#160;</td><td class="memItemRig
 <tr class="memitem:a812359d371cdc4c2dea54310c596be7d"><td class="memItemLeft" align="right" valign="top"><a id="a812359d371cdc4c2dea54310c596be7d" name="a812359d371cdc4c2dea54310c596be7d"></a>
 typedef CellIntegrator&lt; dim, 1, Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CellIntegratorScalar</b></td></tr>
 <tr class="separator:a812359d371cdc4c2dea54310c596be7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d10d27f48dc0e467e91d55737a765e9"><td class="memItemLeft" align="right" valign="top"><a id="a6d10d27f48dc0e467e91d55737a765e9" name="a6d10d27f48dc0e467e91d55737a765e9"></a>
-typedef VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
-<tr class="separator:a6d10d27f48dc0e467e91d55737a765e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff7bf884a2b121e91fe998a7ae8ba9f1"><td class="memItemLeft" align="right" valign="top"><a id="aff7bf884a2b121e91fe998a7ae8ba9f1" name="aff7bf884a2b121e91fe998a7ae8ba9f1"></a>
+typedef dealii::VectorizedArray&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>scalar</b></td></tr>
+<tr class="separator:aff7bf884a2b121e91fe998a7ae8ba9f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0652974296463d4c58479a788f954173"><td class="memItemLeft" align="right" valign="top"><a id="a0652974296463d4c58479a788f954173" name="a0652974296463d4c58479a788f954173"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_vector_in, unsigned int const dof_index_scalar_in, unsigned int const quad_index_in)</td></tr>
-<tr class="separator:a0652974296463d4c58479a788f954173"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e68d70bd09eebc8736691e462df1972"><td class="memItemLeft" align="right" valign="top"><a id="a7e68d70bd09eebc8736691e462df1972" name="a7e68d70bd09eebc8736691e462df1972"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::MatrixFree&lt; dim, Number &gt; const &amp;matrix_free_in, unsigned int const dof_index_vector_in, unsigned int const dof_index_scalar_in, unsigned int const quad_index_in)</td></tr>
+<tr class="separator:a7e68d70bd09eebc8736691e462df1972"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab55a6858cf8ed9f8af836ca25a14926f"><td class="memItemLeft" align="right" valign="top"><a id="ab55a6858cf8ed9f8af836ca25a14926f" name="ab55a6858cf8ed9f8af836ca25a14926f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>compute_divergence</b> (VectorType &amp;dst, VectorType const &amp;src) const</td></tr>
 <tr class="separator:ab55a6858cf8ed9f8af836ca25a14926f"><td class="memSeparator" colspan="2">&#160;</td></tr>

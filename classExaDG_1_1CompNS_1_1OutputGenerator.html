@@ -76,18 +76,18 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a692f1910f105e633cd614d1f0f295ff5"><td class="memItemLeft" align="right" valign="top"><a id="a692f1910f105e633cd614d1f0f295ff5" name="a692f1910f105e633cd614d1f0f295ff5"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:a692f1910f105e633cd614d1f0f295ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3e3201c42a29704f7d96f52ff15d6f2"><td class="memItemLeft" align="right" valign="top"><a id="ac3e3201c42a29704f7d96f52ff15d6f2" name="ac3e3201c42a29704f7d96f52ff15d6f2"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:ac3e3201c42a29704f7d96f52ff15d6f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1bf947f83e110b772afed055dfeef17e"><td class="memItemLeft" align="right" valign="top"><a id="a1bf947f83e110b772afed055dfeef17e" name="a1bf947f83e110b772afed055dfeef17e"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>OutputGenerator</b> (MPI_Comm const &amp;comm)</td></tr>
 <tr class="separator:a1bf947f83e110b772afed055dfeef17e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1dbc440f2abfb7fdc7876e1b7adc2ab"><td class="memItemLeft" align="right" valign="top"><a id="ac1dbc440f2abfb7fdc7876e1b7adc2ab" name="ac1dbc440f2abfb7fdc7876e1b7adc2ab"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (DoFHandler&lt; dim &gt; const &amp;dof_handler_in, Mapping&lt; dim &gt; const &amp;mapping_in, <a class="el" href="structExaDG_1_1CompNS_1_1OutputData.html">OutputData</a> const &amp;output_data_in)</td></tr>
-<tr class="separator:ac1dbc440f2abfb7fdc7876e1b7adc2ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81903fca65d35f32d5c65699007b6520"><td class="memItemLeft" align="right" valign="top"><a id="a81903fca65d35f32d5c65699007b6520" name="a81903fca65d35f32d5c65699007b6520"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (dealii::DoFHandler&lt; dim &gt; const &amp;dof_handler_in, dealii::Mapping&lt; dim &gt; const &amp;mapping_in, <a class="el" href="structExaDG_1_1CompNS_1_1OutputData.html">OutputData</a> const &amp;output_data_in)</td></tr>
+<tr class="separator:a81903fca65d35f32d5c65699007b6520"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19a082d378920c00df4ffe0fd49b5198"><td class="memItemLeft" align="right" valign="top"><a id="a19a082d378920c00df4ffe0fd49b5198" name="a19a082d378920c00df4ffe0fd49b5198"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate</b> (VectorType const &amp;solution_conserved, std::vector&lt; <a class="el" href="classExaDG_1_1SolutionField.html">SolutionField</a>&lt; dim, Number &gt; &gt; const &amp;additional_fields, double const &amp;time, int const &amp;time_step_number)</td></tr>
 <tr class="separator:a19a082d378920c00df4ffe0fd49b5198"><td class="memSeparator" colspan="2">&#160;</td></tr>

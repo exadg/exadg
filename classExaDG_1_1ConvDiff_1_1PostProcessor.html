@@ -90,8 +90,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a24f618b41f355f49c6a532c40bb6d3b6"><td class="memItemLeft" align="right" valign="top"><a id="a24f618b41f355f49c6a532c40bb6d3b6" name="a24f618b41f355f49c6a532c40bb6d3b6"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>PostProcessor</b> (<a class="el" href="structExaDG_1_1ConvDiff_1_1PostProcessorData.html">PostProcessorData</a>&lt; dim &gt; const &amp;pp_data, MPI_Comm const &amp;mpi_comm)</td></tr>
 <tr class="separator:a24f618b41f355f49c6a532c40bb6d3b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa9ddb72f70983d33565f4e2ae14d4cd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#aa9ddb72f70983d33565f4e2ae14d4cd3">setup</a> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator, Mapping&lt; dim &gt; const &amp;mapping) override</td></tr>
-<tr class="separator:aa9ddb72f70983d33565f4e2ae14d4cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea3d349dc445ab22bf078c0a7e128f01"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#aea3d349dc445ab22bf078c0a7e128f01">setup</a> (<a class="el" href="classExaDG_1_1ConvDiff_1_1Operator.html">Operator</a>&lt; dim, Number &gt; const &amp;pde_operator, dealii::Mapping&lt; dim &gt; const &amp;mapping) override</td></tr>
+<tr class="separator:aea3d349dc445ab22bf078c0a7e128f01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4bce5ecd0eedd3a310d910a1ad9ee52e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessor.html#a4bce5ecd0eedd3a310d910a1ad9ee52e">do_postprocessing</a> (VectorType const &amp;solution, double const time=0.0, int const time_step_number=-1) override</td></tr>
 <tr class="separator:a4bce5ecd0eedd3a310d910a1ad9ee52e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -117,9 +117,9 @@ MPI_Comm const&#160;</td><td class="memItemRight" valign="bottom"><b>mpi_comm</b
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classExaDG_1_1ConvDiff_1_1PostProcessorInterface.html">ExaDG::ConvDiff::PostProcessorInterface&lt; Number &gt;</a></td></tr>
-<tr class="memitem:abe8c78b59780c0c71d9bd855ee4e16a2 inherit pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface"><td class="memItemLeft" align="right" valign="top"><a id="abe8c78b59780c0c71d9bd855ee4e16a2" name="abe8c78b59780c0c71d9bd855ee4e16a2"></a>
-typedef LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
-<tr class="separator:abe8c78b59780c0c71d9bd855ee4e16a2 inherit pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a703a4d1f29e24192d5d04d7c8863466e inherit pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface"><td class="memItemLeft" align="right" valign="top"><a id="a703a4d1f29e24192d5d04d7c8863466e" name="a703a4d1f29e24192d5d04d7c8863466e"></a>
+typedef dealii::LinearAlgebra::distributed::Vector&lt; Number &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>VectorType</b></td></tr>
+<tr class="separator:a703a4d1f29e24192d5d04d7c8863466e inherit pub_types_classExaDG_1_1ConvDiff_1_1PostProcessorInterface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a4bce5ecd0eedd3a310d910a1ad9ee52e" name="a4bce5ecd0eedd3a310d910a1ad9ee52e"></a>
@@ -168,8 +168,8 @@ template&lt;int dim, typename Number &gt; </div>
 
 </div>
 </div>
-<a id="aa9ddb72f70983d33565f4e2ae14d4cd3" name="aa9ddb72f70983d33565f4e2ae14d4cd3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa9ddb72f70983d33565f4e2ae14d4cd3">&#9670;&nbsp;</a></span>setup()</h2>
+<a id="aea3d349dc445ab22bf078c0a7e128f01" name="aea3d349dc445ab22bf078c0a7e128f01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea3d349dc445ab22bf078c0a7e128f01">&#9670;&nbsp;</a></span>setup()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -188,7 +188,7 @@ template&lt;int dim, typename Number &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Mapping&lt; dim &gt; const &amp;&#160;</td>
+          <td class="paramtype">dealii::Mapping&lt; dim &gt; const &amp;&#160;</td>
           <td class="paramname"><em>mapping</em>&#160;</td>
         </tr>
         <tr>

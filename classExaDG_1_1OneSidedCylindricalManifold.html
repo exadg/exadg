@@ -81,15 +81,15 @@ Inheritance diagram for ExaDG::OneSidedCylindricalManifold&lt; dim &gt;:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afb85e4736c941029a5414fb0a8871500"><td class="memItemLeft" align="right" valign="top"><a id="afb85e4736c941029a5414fb0a8871500" name="afb85e4736c941029a5414fb0a8871500"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>OneSidedCylindricalManifold</b> (typename Triangulation&lt; dim &gt;::cell_iterator const &amp;cell_in, unsigned int const face_in, Point&lt; dim &gt; const &amp;center_in)</td></tr>
-<tr class="separator:afb85e4736c941029a5414fb0a8871500"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08ffcc7d5b0f9e412c004df9a5648d7d"><td class="memItemLeft" align="right" valign="top"><a id="a08ffcc7d5b0f9e412c004df9a5648d7d" name="a08ffcc7d5b0f9e412c004df9a5648d7d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (Point&lt; 2 &gt; const &amp;x_1, Point&lt; 2 &gt; const &amp;x_2)</td></tr>
-<tr class="separator:a08ffcc7d5b0f9e412c004df9a5648d7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9255e38f56ff5cd3595169f61b595fcc"><td class="memItemLeft" align="right" valign="top"><a id="a9255e38f56ff5cd3595169f61b595fcc" name="a9255e38f56ff5cd3595169f61b595fcc"></a>
-Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>push_forward</b> (Point&lt; dim &gt; const &amp;xi) const override</td></tr>
-<tr class="separator:a9255e38f56ff5cd3595169f61b595fcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe488f026d0a58656f95b556840afd84"><td class="memItemLeft" align="right" valign="top"><a id="afe488f026d0a58656f95b556840afd84" name="afe488f026d0a58656f95b556840afd84"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>OneSidedCylindricalManifold</b> (typename dealii::Triangulation&lt; dim &gt;::cell_iterator const &amp;cell_in, unsigned int const face_in, dealii::Point&lt; dim &gt; const &amp;center_in)</td></tr>
+<tr class="separator:afe488f026d0a58656f95b556840afd84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4162114f73c8b47f7cc4e758ae6ad278"><td class="memItemLeft" align="right" valign="top"><a id="a4162114f73c8b47f7cc4e758ae6ad278" name="a4162114f73c8b47f7cc4e758ae6ad278"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize</b> (dealii::Point&lt; 2 &gt; const &amp;x_1, dealii::Point&lt; 2 &gt; const &amp;x_2)</td></tr>
+<tr class="separator:a4162114f73c8b47f7cc4e758ae6ad278"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6f10baad953c0a1693ecabff04566d7"><td class="memItemLeft" align="right" valign="top"><a id="ac6f10baad953c0a1693ecabff04566d7" name="ac6f10baad953c0a1693ecabff04566d7"></a>
+dealii::Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>push_forward</b> (dealii::Point&lt; dim &gt; const &amp;xi) const override</td></tr>
+<tr class="separator:ac6f10baad953c0a1693ecabff04566d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27719a0872a75c7ab7e39d4a864ce946"><td class="memItemLeft" align="right" valign="top"><a id="a27719a0872a75c7ab7e39d4a864ce946" name="a27719a0872a75c7ab7e39d4a864ce946"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_vertex_id</b> (unsigned int vertex_id_1d) const</td></tr>
 <tr class="separator:a27719a0872a75c7ab7e39d4a864ce946"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -102,15 +102,15 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_index_fac
 <tr class="memitem:aeac97b592729bfbf3624d9ed8d78b043"><td class="memItemLeft" align="right" valign="top"><a id="aeac97b592729bfbf3624d9ed8d78b043" name="aeac97b592729bfbf3624d9ed8d78b043"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_index_other</b> () const</td></tr>
 <tr class="separator:aeac97b592729bfbf3624d9ed8d78b043"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a891022b6ce82389cf835361e37e20a57"><td class="memItemLeft" align="right" valign="top"><a id="a891022b6ce82389cf835361e37e20a57" name="a891022b6ce82389cf835361e37e20a57"></a>
-Tensor&lt; 2, dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_inverse_jacobian</b> (Point&lt; dim &gt; const &amp;xi) const</td></tr>
-<tr class="separator:a891022b6ce82389cf835361e37e20a57"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4e3d943c5bfb020c91157d9d3e44a736"><td class="memItemLeft" align="right" valign="top"><a id="a4e3d943c5bfb020c91157d9d3e44a736" name="a4e3d943c5bfb020c91157d9d3e44a736"></a>
-Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pull_back</b> (Point&lt; dim &gt; const &amp;x) const override</td></tr>
-<tr class="separator:a4e3d943c5bfb020c91157d9d3e44a736"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8a023f1f731713ef0c25d38c5f81363"><td class="memItemLeft" align="right" valign="top"><a id="aa8a023f1f731713ef0c25d38c5f81363" name="aa8a023f1f731713ef0c25d38c5f81363"></a>
-std::unique_ptr&lt; Manifold&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>clone</b> () const override</td></tr>
-<tr class="separator:aa8a023f1f731713ef0c25d38c5f81363"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6cb91270ae0207bbec279be3821a33a"><td class="memItemLeft" align="right" valign="top"><a id="ad6cb91270ae0207bbec279be3821a33a" name="ad6cb91270ae0207bbec279be3821a33a"></a>
+dealii::Tensor&lt; 2, dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_inverse_jacobian</b> (dealii::Point&lt; dim &gt; const &amp;xi) const</td></tr>
+<tr class="separator:ad6cb91270ae0207bbec279be3821a33a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08e9e286b3d7191ef005f668fd7c9b09"><td class="memItemLeft" align="right" valign="top"><a id="a08e9e286b3d7191ef005f668fd7c9b09" name="a08e9e286b3d7191ef005f668fd7c9b09"></a>
+dealii::Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>pull_back</b> (dealii::Point&lt; dim &gt; const &amp;x) const override</td></tr>
+<tr class="separator:a08e9e286b3d7191ef005f668fd7c9b09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0be8dc5ea1ff58d9549fbd89131589b1"><td class="memItemLeft" align="right" valign="top"><a id="a0be8dc5ea1ff58d9549fbd89131589b1" name="a0be8dc5ea1ff58d9549fbd89131589b1"></a>
+std::unique_ptr&lt; dealii::Manifold&lt; dim &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>clone</b> () const override</td></tr>
+<tr class="separator:a0be8dc5ea1ff58d9549fbd89131589b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/exadg/grid/<a class="el" href="one__sided__cylindrical__manifold_8h_source.html">one_sided_cylindrical_manifold.h</a></li>

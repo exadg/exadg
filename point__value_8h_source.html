@@ -102,27 +102,27 @@ $(function() {
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>{</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="keywordtype">void</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>my_point_value(Vector&lt;Number&gt; &amp;                                       result,</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>               Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                                   mapping,</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>               DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                                dof_handler,</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>               LinearAlgebra::distributed::Vector&lt;Number&gt; <span class="keyword">const</span> &amp;     dof_vector,</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>               <span class="keyword">typename</span> DoFHandler&lt;dim&gt;::active_cell_iterator <span class="keyword">const</span> &amp; cell,</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>               Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                     point_in_ref_coord)</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>{</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  Assert(GeometryInfo&lt;dim&gt;::distance_to_unit_cell(point_in_ref_coord) &lt; 1e-10, ExcInternalError());</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  Quadrature&lt;dim&gt; <span class="keyword">const</span> quadrature(GeometryInfo&lt;dim&gt;::project_to_unit_cell(point_in_ref_coord));</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="keywordtype">void</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>my_point_value(dealii::Vector&lt;Number&gt; &amp;                                       result,</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>               dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                                   mapping,</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>               dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                                dof_handler,</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>               dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; <span class="keyword">const</span> &amp;     dof_vector,</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>               <span class="keyword">typename</span> dealii::DoFHandler&lt;dim&gt;::active_cell_iterator <span class="keyword">const</span> &amp; cell,</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>               dealii::Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                     point_in_ref_coord)</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>{</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  Assert(dealii::GeometryInfo&lt;dim&gt;::distance_to_unit_cell(point_in_ref_coord) &lt; 1e-10,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>         dealii::ExcInternalError());</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  dealii::Quadrature&lt;dim&gt; <span class="keyword">const</span> quadrature(</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    dealii::GeometryInfo&lt;dim&gt;::project_to_unit_cell(point_in_ref_coord));</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe = dof_handler.get_fe();</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  FEValues&lt;dim&gt;              fe_values(mapping, fe, quadrature, update_values);</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  dealii::FiniteElement&lt;dim&gt; <span class="keyword">const</span> &amp; fe = dof_handler.get_fe();</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  dealii::FEValues&lt;dim&gt;              fe_values(mapping, fe, quadrature, dealii::update_values);</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  fe_values.reinit(cell);</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="comment">// then use this to get the values of the given fe_function at this point</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  std::vector&lt;Vector&lt;Number&gt;&gt; solution_vector(1, Vector&lt;Number&gt;(fe.n_components()));</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  std::vector&lt;dealii::Vector&lt;Number&gt;&gt; solution_vector(1, dealii::Vector&lt;Number&gt;(fe.n_components()));</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  fe_values.get_function_values(dof_vector, solution_vector);</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  result = solution_vector[0];</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>}</div>
@@ -130,92 +130,94 @@ $(function() {
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keywordtype">void</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>evaluate_scalar_quantity_in_point(</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  Number &amp;                                           solution_value,</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                            dof_handler,</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                               mapping,</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  LinearAlgebra::distributed::Vector&lt;Number&gt; <span class="keyword">const</span> &amp; numerical_solution,</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                 point,</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  MPI_Comm <span class="keyword">const</span> &amp;                                   mpi_comm,</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">double</span> <span class="keyword">const</span>                                       tolerance = 1.e-10)</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  Number &amp;                                                   solution_value,</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                            dof_handler,</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                               mapping,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; <span class="keyword">const</span> &amp; numerical_solution,</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  dealii::Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                 point,</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  MPI_Comm <span class="keyword">const</span> &amp;                                           mpi_comm,</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keywordtype">double</span> <span class="keyword">const</span>                                               tolerance = 1.e-10)</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>{</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">typedef</span> std::pair&lt;typename DoFHandler&lt;dim&gt;::active_cell_iterator, Point&lt;dim&gt;&gt; Pair;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  std::vector&lt;Pair&gt; adjacent_cells =</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="comment">// processor local variables: initialize with zeros since we add values to these variables</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  solution_value       = 0.0;</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="comment">// loop over all adjacent cells</span></div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> cell : adjacent_cells)</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  {</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="comment">// go on only if cell is owned by the processor</span></div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="keywordflow">if</span>(cell.first-&gt;is_locally_owned())</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    {</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>      Vector&lt;Number&gt; value(1);</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>      solution_value += value(0);</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>      ++counter;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    }</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  }</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="comment">// parallel computations: add results of all processors and calculate mean value</span></div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  counter = Utilities::MPI::sum(counter, mpi_comm);</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  AssertThrow(counter &gt; 0, ExcMessage(<span class="stringliteral">&quot;No points found.&quot;</span>));</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  solution_value = Utilities::MPI::sum(solution_value, mpi_comm);</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  solution_value /= (double)counter;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>}</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="keywordtype">void</span> evaluate_vectorial_quantity_in_point(</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  Tensor&lt;1, dim, Number&gt; &amp;                           solution_value,</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                            dof_handler,</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                               mapping,</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  LinearAlgebra::distributed::Vector&lt;Number&gt; <span class="keyword">const</span> &amp; numerical_solution,</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                 point,</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  MPI_Comm <span class="keyword">const</span> &amp;                                   mpi_comm,</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordtype">double</span> <span class="keyword">const</span>                                       tolerance = 1.e-10)</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>{</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keyword">typedef</span> std::pair&lt;typename DoFHandler&lt;dim&gt;::active_cell_iterator, Point&lt;dim&gt;&gt; Pair;</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  std::vector&lt;Pair&gt; adjacent_cells =</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <span class="comment">// processor local variables: initialize with zeros since we add values to these variables</span></div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  solution_value       = 0.0;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <span class="comment">// loop over all adjacent cells</span></div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> cell : adjacent_cells)</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  {</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="comment">// go on only if cell is owned by the processor</span></div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keywordflow">if</span>(cell.first-&gt;is_locally_owned())</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    {</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>      Vector&lt;Number&gt; value(dim);</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>      my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span> </div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>        solution_value[d] += value(d);</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>      ++counter;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    }</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  }</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  <span class="comment">// parallel computations: add results of all processors and calculate mean value</span></div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  counter = Utilities::MPI::sum(counter, mpi_comm);</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  AssertThrow(counter &gt; 0, ExcMessage(<span class="stringliteral">&quot;No points found.&quot;</span>));</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    solution_value[d] = Utilities::MPI::sum(solution_value[d], mpi_comm);</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  solution_value /= (double)counter;</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>}</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span> </div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keyword">typedef</span> std::pair&lt;typename dealii::DoFHandler&lt;dim&gt;::active_cell_iterator, dealii::Point&lt;dim&gt;&gt;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    Pair;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  std::vector&lt;Pair&gt; adjacent_cells =</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    dealii::GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="comment">// processor local variables: initialize with zeros since we add values to these variables</span></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  solution_value       = 0.0;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="comment">// loop over all adjacent cells</span></div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> cell : adjacent_cells)</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  {</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    <span class="comment">// go on only if cell is owned by the processor</span></div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    <span class="keywordflow">if</span>(cell.first-&gt;is_locally_owned())</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    {</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>      dealii::Vector&lt;Number&gt; value(1);</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>      my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>      solution_value += value(0);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>      ++counter;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    }</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  }</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="comment">// parallel computations: add results of all processors and calculate mean value</span></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  counter = dealii::Utilities::MPI::sum(counter, mpi_comm);</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  AssertThrow(counter &gt; 0, dealii::ExcMessage(<span class="stringliteral">&quot;No points found.&quot;</span>));</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  solution_value = dealii::Utilities::MPI::sum(solution_value, mpi_comm);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  solution_value /= (double)counter;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>}</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim, <span class="keyword">typename</span> Number&gt;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span><span class="keywordtype">void</span> evaluate_vectorial_quantity_in_point(</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  dealii::Tensor&lt;1, dim, Number&gt; &amp;                           solution_value,</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  dealii::DoFHandler&lt;dim&gt; <span class="keyword">const</span> &amp;                            dof_handler,</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  dealii::Mapping&lt;dim&gt; <span class="keyword">const</span> &amp;                               mapping,</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; <span class="keyword">const</span> &amp; numerical_solution,</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  dealii::Point&lt;dim&gt; <span class="keyword">const</span> &amp;                                 point,</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  MPI_Comm <span class="keyword">const</span> &amp;                                           mpi_comm,</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordtype">double</span> <span class="keyword">const</span>                                               tolerance = 1.e-10)</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>{</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keyword">typedef</span> std::pair&lt;typename dealii::DoFHandler&lt;dim&gt;::active_cell_iterator, dealii::Point&lt;dim&gt;&gt;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    Pair;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  std::vector&lt;Pair&gt; adjacent_cells =</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    dealii::GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="comment">// processor local variables: initialize with zeros since we add values to these variables</span></div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> counter = 0;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  solution_value       = 0.0;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  <span class="comment">// loop over all adjacent cells</span></div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordflow">for</span>(<span class="keyword">auto</span> cell : adjacent_cells)</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  {</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    <span class="comment">// go on only if cell is owned by the processor</span></div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    <span class="keywordflow">if</span>(cell.first-&gt;is_locally_owned())</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    {</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>      dealii::Vector&lt;Number&gt; value(dim);</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>      my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>      <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>        solution_value[d] += value(d);</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>      ++counter;</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    }</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  }</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="comment">// parallel computations: add results of all processors and calculate mean value</span></div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  counter = dealii::Utilities::MPI::sum(counter, mpi_comm);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  AssertThrow(counter &gt; 0, dealii::ExcMessage(<span class="stringliteral">&quot;No points found.&quot;</span>));</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span> </div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> d = 0; d &lt; dim; ++d)</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    solution_value[d] = dealii::Utilities::MPI::sum(solution_value[d], mpi_comm);</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  solution_value /= (double)counter;</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>}</div>
 <div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_VECTOR_TOOLS_POINT_VALUE_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_VECTOR_TOOLS_POINT_VALUE_H_ */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

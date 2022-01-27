@@ -108,30 +108,30 @@ $(function() {
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>{</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">namespace </span>Elementwise</div>
 <div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>{</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="comment">/*</span></div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="comment"> * Solver data</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="comment"> */</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno"><a class="line" href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">   44</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">IterativeSolverData</a></div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>{</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <a class="code hl_struct" href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">IterativeSolverData</a>() : solver_type(Elementwise::Solver::CG), solver_data(<a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a>())</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  {</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  }</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  Solver solver_type;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  <a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a> solver_data;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>};</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim,</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>         <span class="keywordtype">int</span> number_of_equations,</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>         <span class="keyword">typename</span> Number,</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>         <span class="keyword">typename</span> Operator,</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>         <span class="keyword">typename</span> Preconditioner&gt;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">   60</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">IterativeSolver</a> : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1Krylov_1_1SolverBase.html">Krylov::SolverBase</a>&lt;LinearAlgebra::distributed::Vector&lt;Number&gt;&gt;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="comment">/*</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="comment"> * Solver data</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="comment"> */</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno"><a class="line" href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">   43</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">IterativeSolverData</a></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>{</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  <a class="code hl_struct" href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">IterativeSolverData</a>() : solver_type(Elementwise::Solver::CG), solver_data(<a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a>())</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  }</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  Solver solver_type;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>  <a class="code hl_struct" href="structExaDG_1_1SolverData.html">SolverData</a> solver_data;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>};</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>         <span class="keywordtype">int</span> number_of_equations,</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>         <span class="keyword">typename</span> Number,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>         <span class="keyword">typename</span> Operator,</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>         <span class="keyword">typename</span> Preconditioner&gt;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno"><a class="line" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">   59</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">IterativeSolver</a></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  : <span class="keyword">public</span> <a class="code hl_class" href="classExaDG_1_1Krylov_1_1SolverBase.html">Krylov::SolverBase</a>&lt;dealii::LinearAlgebra::distributed::Vector&lt;Number&gt;&gt;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>{</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">typedef</span> LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">typedef</span> dealii::LinearAlgebra::distributed::Vector&lt;Number&gt; VectorType;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">typedef</span> <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">IterativeSolver&lt;dim, number_of_equations, Number, Operator, Preconditioner&gt;</a> <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">THIS</a>;</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
@@ -158,7 +158,7 @@ $(function() {
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="keyword">private</span>:</div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <span class="keywordtype">void</span></div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  solve_elementwise(MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;               matrix_free,</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  solve_elementwise(dealii::MatrixFree&lt;dim, Number&gt; <span class="keyword">const</span> &amp;       matrix_free,</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>                    VectorType &amp;                                  dst,</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>                    VectorType <span class="keyword">const</span> &amp;                            src,</div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>                    std::pair&lt;unsigned int, unsigned int&gt; <span class="keyword">const</span> &amp; cell_range)<span class="keyword"> const</span></div>
@@ -169,24 +169,24 @@ $(function() {
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <span class="keyword">const</span> dofs_per_cell = integrator.dofs_per_cell;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span> </div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    AlignedVector&lt;VectorizedArray&lt;Number&gt;&gt; solution(dofs_per_cell);</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    dealii::AlignedVector&lt;dealii::VectorizedArray&lt;Number&gt;&gt; solution(dofs_per_cell);</div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="comment">// setup elementwise solver</span></div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordflow">if</span>(iterative_solver_data.solver_type == Solver::CG)</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    {</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>      solver =</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>        std::make_shared&lt;Elementwise::SolverCG&lt;VectorizedArray&lt;Number&gt;, Operator, Preconditioner&gt;&gt;(</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>          dofs_per_cell, iterative_solver_data.solver_data);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>      solver = std::make_shared&lt;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>        <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1SolverCG.html">Elementwise::SolverCG&lt;dealii::VectorizedArray&lt;Number&gt;</a>, Operator, Preconditioner&gt;&gt;(</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>        dofs_per_cell, iterative_solver_data.solver_data);</div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    }</div>
 <div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(iterative_solver_data.solver_type == Solver::GMRES)</div>
 <div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    {</div>
 <div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>      solver = std::make_shared&lt;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1SolverGMRES.html">Elementwise::SolverGMRES&lt;VectorizedArray&lt;Number&gt;</a>, Operator, Preconditioner&gt;&gt;(</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1SolverGMRES.html">Elementwise::SolverGMRES&lt;dealii::VectorizedArray&lt;Number&gt;</a>, Operator, Preconditioner&gt;&gt;(</div>
 <div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>        dofs_per_cell, iterative_solver_data.solver_data);</div>
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    }</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    <span class="keywordflow">else</span></div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    {</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      AssertThrow(<span class="keyword">false</span>, ExcMessage(<span class="stringliteral">&quot;Not implemented.&quot;</span>));</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Not implemented.&quot;</span>));</div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    }</div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="comment">// loop over all cells and solve local problem iteratively on each cell</span></div>
@@ -210,7 +210,7 @@ $(function() {
 <div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  }</div>
 <div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span> </div>
 <div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <span class="keyword">mutable</span> std::shared_ptr&lt;</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1SolverBase.html">Elementwise::SolverBase&lt;VectorizedArray&lt;Number&gt;</a>, Operator, Preconditioner&gt;&gt;</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <a class="code hl_class" href="classExaDG_1_1Elementwise_1_1SolverBase.html">Elementwise::SolverBase&lt;dealii::VectorizedArray&lt;Number&gt;</a>, Operator, Preconditioner&gt;&gt;</div>
 <div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    solver;</div>
 <div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span> </div>
 <div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  Operator &amp; op;</div>
@@ -226,11 +226,12 @@ $(function() {
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_ \</span></div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span><span class="comment">        */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassExaDG_1_1Elementwise_1_1IterativeSolver_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1IterativeSolver.html">ExaDG::Elementwise::IterativeSolver</a></div><div class="ttdef"><b>Definition:</b> wrapper_elementwise_solvers.h:61</div></div>
-<div class="ttc" id="aclassExaDG_1_1Elementwise_1_1SolverBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1SolverBase.html">ExaDG::Elementwise::SolverBase</a></div><div class="ttdef"><b>Definition:</b> elementwise_krylov_solvers.h:215</div></div>
-<div class="ttc" id="aclassExaDG_1_1Elementwise_1_1SolverGMRES_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1SolverGMRES.html">ExaDG::Elementwise::SolverGMRES</a></div><div class="ttdef"><b>Definition:</b> elementwise_krylov_solvers.h:358</div></div>
+<div class="ttc" id="aclassExaDG_1_1Elementwise_1_1SolverBase_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1SolverBase.html">ExaDG::Elementwise::SolverBase</a></div><div class="ttdef"><b>Definition:</b> elementwise_krylov_solvers.h:213</div></div>
+<div class="ttc" id="aclassExaDG_1_1Elementwise_1_1SolverCG_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1SolverCG.html">ExaDG::Elementwise::SolverCG</a></div><div class="ttdef"><b>Definition:</b> elementwise_krylov_solvers.h:231</div></div>
+<div class="ttc" id="aclassExaDG_1_1Elementwise_1_1SolverGMRES_html"><div class="ttname"><a href="classExaDG_1_1Elementwise_1_1SolverGMRES.html">ExaDG::Elementwise::SolverGMRES</a></div><div class="ttdef"><b>Definition:</b> elementwise_krylov_solvers.h:356</div></div>
 <div class="ttc" id="aclassExaDG_1_1Krylov_1_1SolverBase_html"><div class="ttname"><a href="classExaDG_1_1Krylov_1_1SolverBase.html">ExaDG::Krylov::SolverBase</a></div><div class="ttdef"><b>Definition:</b> iterative_solvers_dealii_wrapper.h:40</div></div>
-<div class="ttc" id="astructExaDG_1_1Elementwise_1_1IterativeSolverData_html"><div class="ttname"><a href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">ExaDG::Elementwise::IterativeSolverData</a></div><div class="ttdef"><b>Definition:</b> wrapper_elementwise_solvers.h:45</div></div>
-<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition:</b> solver_data.h:36</div></div>
+<div class="ttc" id="astructExaDG_1_1Elementwise_1_1IterativeSolverData_html"><div class="ttname"><a href="structExaDG_1_1Elementwise_1_1IterativeSolverData.html">ExaDG::Elementwise::IterativeSolverData</a></div><div class="ttdef"><b>Definition:</b> wrapper_elementwise_solvers.h:44</div></div>
+<div class="ttc" id="astructExaDG_1_1SolverData_html"><div class="ttname"><a href="structExaDG_1_1SolverData.html">ExaDG::SolverData</a></div><div class="ttdef"><b>Definition:</b> solver_data.h:34</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

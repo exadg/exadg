@@ -104,61 +104,60 @@ $(function() {
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">namespace </span>ExaDG</div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>{</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">using namespace </span>dealii;</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html">   39</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Grid.html">Grid</a></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>{</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">typedef</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keyword">typename</span> std::vector&lt;GridTools::PeriodicFacePair&lt;typename Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>      PeriodicFaces;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">   49</a></span>  <a class="code hl_function" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">Grid</a>(<a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a> <span class="keyword">const</span> &amp; data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm)</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>  {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="comment">// triangulation</span></div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordflow">if</span>(data.triangulation_type == TriangulationType::Serial)</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    {</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>      AssertDimension(Utilities::MPI::n_mpi_processes(mpi_comm), 1);</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>      <a class="code hl_variable" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">triangulation</a> = std::make_shared&lt;Triangulation&lt;dim&gt;&gt;();</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    }</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.triangulation_type == TriangulationType::Distributed)</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    {</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>      <a class="code hl_variable" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">triangulation</a> = std::make_shared&lt;parallel::distributed::Triangulation&lt;dim&gt;&gt;(</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        mpi_comm,</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>        dealii::Triangulation&lt;dim&gt;::none,</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        parallel::distributed::Triangulation&lt;dim&gt;::construct_multigrid_hierarchy);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    }</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.triangulation_type == TriangulationType::FullyDistributed)</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    {</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>      <a class="code hl_variable" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">triangulation</a> = std::make_shared&lt;parallel::fullydistributed::Triangulation&lt;dim&gt;&gt;(mpi_comm);</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    }</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    <span class="keywordflow">else</span></div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    {</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>      AssertThrow(<span class="keyword">false</span>, ExcMessage(<span class="stringliteral">&quot;Invalid parameter triangulation_type.&quot;</span>));</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    }</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <span class="comment">// mapping</span></div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    <a class="code hl_variable" href="classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466">mapping</a> = std::make_shared&lt;MappingQGeneric&lt;dim&gt;&gt;(data.mapping_degree);</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  }</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">   80</a></span>  std::shared_ptr&lt;Triangulation&lt;dim&gt;&gt; <a class="code hl_variable" href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">triangulation</a>;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">   85</a></span>  PeriodicFaces <a class="code hl_variable" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">periodic_faces</a>;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466">   90</a></span>  std::shared_ptr&lt;Mapping&lt;dim&gt;&gt; <a class="code hl_variable" href="classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466">mapping</a>;</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>};</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="keyword">template</span>&lt;<span class="keywordtype">int</span> dim&gt;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html">   37</a></span><span class="keyword">class </span><a class="code hl_class" href="classExaDG_1_1Grid.html">Grid</a></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>{</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">typedef</span> <span class="keyword">typename</span> std::vector&lt;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    dealii::GridTools::PeriodicFacePair&lt;typename dealii::Triangulation&lt;dim&gt;::cell_iterator&gt;&gt;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    PeriodicFaces;</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">   47</a></span>  <a class="code hl_function" href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">Grid</a>(<a class="code hl_struct" href="structExaDG_1_1GridData.html">GridData</a> <span class="keyword">const</span> &amp; data, MPI_Comm <span class="keyword">const</span> &amp; mpi_comm)</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  {</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="comment">// triangulation</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordflow">if</span>(data.triangulation_type == TriangulationType::Serial)</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    {</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>      AssertDimension(dealii::Utilities::MPI::n_mpi_processes(mpi_comm), 1);</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>      <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a> = std::make_shared&lt;dealii::Triangulation&lt;dim&gt;&gt;();</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    }</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.triangulation_type == TriangulationType::Distributed)</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    {</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>      <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a> = std::make_shared&lt;dealii::parallel::distributed::Triangulation&lt;dim&gt;&gt;(</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        mpi_comm,</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        dealii::Triangulation&lt;dim&gt;::none,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        dealii::parallel::distributed::Triangulation&lt;dim&gt;::construct_multigrid_hierarchy);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    }</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span>(data.triangulation_type == TriangulationType::FullyDistributed)</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    {</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>      <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a> =</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>        std::make_shared&lt;dealii::parallel::fullydistributed::Triangulation&lt;dim&gt;&gt;(mpi_comm);</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    }</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordflow">else</span></div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    {</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>      AssertThrow(<span class="keyword">false</span>, dealii::ExcMessage(<span class="stringliteral">&quot;Invalid parameter triangulation_type.&quot;</span>));</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    }</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="comment">// mapping</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    <a class="code hl_variable" href="classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d">mapping</a> = std::make_shared&lt;dealii::MappingQGeneric&lt;dim&gt;&gt;(data.mapping_degree);</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  }</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">   79</a></span>  std::shared_ptr&lt;dealii::Triangulation&lt;dim&gt;&gt; <a class="code hl_variable" href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">triangulation</a>;</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">   84</a></span>  PeriodicFaces <a class="code hl_variable" href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">periodic_faces</a>;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno"><a class="line" href="classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d">   89</a></span>  std::shared_ptr&lt;dealii::Mapping&lt;dim&gt;&gt; <a class="code hl_variable" href="classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d">mapping</a>;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>};</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>} <span class="comment">// namespace ExaDG</span></div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition:</b> grid.h:40</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_a7150098ee6126c7c3b8e4645b3ab59a1"><div class="ttname"><a href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">ExaDG::Grid::periodic_faces</a></div><div class="ttdeci">PeriodicFaces periodic_faces</div><div class="ttdef"><b>Definition:</b> grid.h:85</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_ab5cc5b9f96815723cc3605265ee069cb"><div class="ttname"><a href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">ExaDG::Grid::Grid</a></div><div class="ttdeci">Grid(GridData const &amp;data, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition:</b> grid.h:49</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_aeef7db68d2345518e4e596ecf7414466"><div class="ttname"><a href="classExaDG_1_1Grid.html#aeef7db68d2345518e4e596ecf7414466">ExaDG::Grid::mapping</a></div><div class="ttdeci">std::shared_ptr&lt; Mapping&lt; dim &gt; &gt; mapping</div><div class="ttdef"><b>Definition:</b> grid.h:90</div></div>
-<div class="ttc" id="aclassExaDG_1_1Grid_html_af6bd184b8b220be575915fc17a9f040d"><div class="ttname"><a href="classExaDG_1_1Grid.html#af6bd184b8b220be575915fc17a9f040d">ExaDG::Grid::triangulation</a></div><div class="ttdeci">std::shared_ptr&lt; Triangulation&lt; dim &gt; &gt; triangulation</div><div class="ttdef"><b>Definition:</b> grid.h:80</div></div>
-<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid_data.h:33</div></div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="preprocessor">#endif </span><span class="comment">/* INCLUDE_EXADG_GRID_GRID_H_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html"><div class="ttname"><a href="classExaDG_1_1Grid.html">ExaDG::Grid</a></div><div class="ttdef"><b>Definition:</b> grid.h:38</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html_a4d54c3a7e8c952ba484c9635cdc8d48d"><div class="ttname"><a href="classExaDG_1_1Grid.html#a4d54c3a7e8c952ba484c9635cdc8d48d">ExaDG::Grid::mapping</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Mapping&lt; dim &gt; &gt; mapping</div><div class="ttdef"><b>Definition:</b> grid.h:89</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html_a5655b41ce6108b3c3e50a5eb7fb2bcf5"><div class="ttname"><a href="classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5">ExaDG::Grid::triangulation</a></div><div class="ttdeci">std::shared_ptr&lt; dealii::Triangulation&lt; dim &gt; &gt; triangulation</div><div class="ttdef"><b>Definition:</b> grid.h:79</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html_a7150098ee6126c7c3b8e4645b3ab59a1"><div class="ttname"><a href="classExaDG_1_1Grid.html#a7150098ee6126c7c3b8e4645b3ab59a1">ExaDG::Grid::periodic_faces</a></div><div class="ttdeci">PeriodicFaces periodic_faces</div><div class="ttdef"><b>Definition:</b> grid.h:84</div></div>
+<div class="ttc" id="aclassExaDG_1_1Grid_html_ab5cc5b9f96815723cc3605265ee069cb"><div class="ttname"><a href="classExaDG_1_1Grid.html#ab5cc5b9f96815723cc3605265ee069cb">ExaDG::Grid::Grid</a></div><div class="ttdeci">Grid(GridData const &amp;data, MPI_Comm const &amp;mpi_comm)</div><div class="ttdef"><b>Definition:</b> grid.h:47</div></div>
+<div class="ttc" id="astructExaDG_1_1GridData_html"><div class="ttname"><a href="structExaDG_1_1GridData.html">ExaDG::GridData</a></div><div class="ttdef"><b>Definition:</b> grid_data.h:31</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

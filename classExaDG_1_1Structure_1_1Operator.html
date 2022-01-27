@@ -90,9 +90,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aba807f9ef18118a817463bf44adad8f5"><td class="memItemLeft" align="right" valign="top"><a id="aba807f9ef18118a817463bf44adad8f5" name="aba807f9ef18118a817463bf44adad8f5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:aba807f9ef18118a817463bf44adad8f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8709aa82a7e02b9889e4a45964e6ef87"><td class="memItemLeft" align="right" valign="top"><a id="a8709aa82a7e02b9889e4a45964e6ef87" name="a8709aa82a7e02b9889e4a45964e6ef87"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
-<tr class="separator:a8709aa82a7e02b9889e4a45964e6ef87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4b0e5786909c74295b7bf1d81bc16cc"><td class="memItemLeft" align="right" valign="top"><a id="ab4b0e5786909c74295b7bf1d81bc16cc" name="ab4b0e5786909c74295b7bf1d81bc16cc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
+<tr class="separator:ab4b0e5786909c74295b7bf1d81bc16cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acfe7c3f52aeac380763f7d1f428293af"><td class="memItemLeft" align="right" valign="top"><a id="acfe7c3f52aeac380763f7d1f428293af" name="acfe7c3f52aeac380763f7d1f428293af"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> ()</td></tr>
 <tr class="separator:acfe7c3f52aeac380763f7d1f428293af"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -129,18 +129,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>apply_linear_operator
 <tr class="separator:a320b5e723770cc5983378cffeaa39f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a4baf85c90fff27dff3e9ff355a71af"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classExaDG_1_1Structure_1_1Operator.html#a3a4baf85c90fff27dff3e9ff355a71af">solve_linear</a> (VectorType &amp;sol, VectorType const &amp;rhs, double const factor, double const time) const</td></tr>
 <tr class="separator:a3a4baf85c90fff27dff3e9ff355a71af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67a5c8942cb800eb05d2692218b56521"><td class="memItemLeft" align="right" valign="top"><a id="a67a5c8942cb800eb05d2692218b56521" name="a67a5c8942cb800eb05d2692218b56521"></a>
-MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
-<tr class="separator:a67a5c8942cb800eb05d2692218b56521"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe2c6f87240e9c99a0c10c4c50d24607"><td class="memItemLeft" align="right" valign="top"><a id="afe2c6f87240e9c99a0c10c4c50d24607" name="afe2c6f87240e9c99a0c10c4c50d24607"></a>
-Mapping&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
-<tr class="separator:afe2c6f87240e9c99a0c10c4c50d24607"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abd9a19d4c42a7166faefaf2df7c11ba6"><td class="memItemLeft" align="right" valign="top"><a id="abd9a19d4c42a7166faefaf2df7c11ba6" name="abd9a19d4c42a7166faefaf2df7c11ba6"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
-<tr class="separator:abd9a19d4c42a7166faefaf2df7c11ba6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac03794f6ce96e6ad024636165b880638"><td class="memItemLeft" align="right" valign="top"><a id="ac03794f6ce96e6ad024636165b880638" name="ac03794f6ce96e6ad024636165b880638"></a>
-types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
-<tr class="separator:ac03794f6ce96e6ad024636165b880638"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade61817a9249314baa58e46275377c5d"><td class="memItemLeft" align="right" valign="top"><a id="ade61817a9249314baa58e46275377c5d" name="ade61817a9249314baa58e46275377c5d"></a>
+dealii::MatrixFree&lt; dim, Number &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_matrix_free</b> () const</td></tr>
+<tr class="separator:ade61817a9249314baa58e46275377c5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac24075610952e52e4eb86568b4084b6d"><td class="memItemLeft" align="right" valign="top"><a id="ac24075610952e52e4eb86568b4084b6d" name="ac24075610952e52e4eb86568b4084b6d"></a>
+dealii::Mapping&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_mapping</b> () const</td></tr>
+<tr class="separator:ac24075610952e52e4eb86568b4084b6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af63e2d50d7ec633232630257c78a58e0"><td class="memItemLeft" align="right" valign="top"><a id="af63e2d50d7ec633232630257c78a58e0" name="af63e2d50d7ec633232630257c78a58e0"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
+<tr class="separator:af63e2d50d7ec633232630257c78a58e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22998e1d7d171f5bdcffa798bed2b78d"><td class="memItemLeft" align="right" valign="top"><a id="a22998e1d7d171f5bdcffa798bed2b78d" name="a22998e1d7d171f5bdcffa798bed2b78d"></a>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
+<tr class="separator:a22998e1d7d171f5bdcffa798bed2b78d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcd79b9442c46b6d6df28193e7a22bdc"><td class="memItemLeft" align="right" valign="top"><a id="afcd79b9442c46b6d6df28193e7a22bdc" name="afcd79b9442c46b6d6df28193e7a22bdc"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_index</b> () const</td></tr>
 <tr class="separator:afcd79b9442c46b6d6df28193e7a22bdc"><td class="memSeparator" colspan="2">&#160;</td></tr>

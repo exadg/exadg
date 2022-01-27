@@ -87,9 +87,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa55a118b1bda5bf47461314502f9b498"><td class="memItemLeft" align="right" valign="top"><a id="aa55a118b1bda5bf47461314502f9b498" name="aa55a118b1bda5bf47461314502f9b498"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrix_free_data</b> (<a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &amp;matrix_free_data) const</td></tr>
 <tr class="separator:aa55a118b1bda5bf47461314502f9b498"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a91343721e409966f58964c684a9a1b36"><td class="memItemLeft" align="right" valign="top"><a id="a91343721e409966f58964c684a9a1b36" name="a91343721e409966f58964c684a9a1b36"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
-<tr class="separator:a91343721e409966f58964c684a9a1b36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e875bfa329eb8e37f46b3638737daff"><td class="memItemLeft" align="right" valign="top"><a id="a0e875bfa329eb8e37f46b3638737daff" name="a0e875bfa329eb8e37f46b3638737daff"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setup</b> (std::shared_ptr&lt; dealii::MatrixFree&lt; dim, Number &gt; &gt; matrix_free, std::shared_ptr&lt; <a class="el" href="structExaDG_1_1MatrixFreeData.html">MatrixFreeData</a>&lt; dim, Number &gt; &gt; matrix_free_data)</td></tr>
+<tr class="separator:a0e875bfa329eb8e37f46b3638737daff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acec1c8390137c20b981f258467e8e1e7"><td class="memItemLeft" align="right" valign="top"><a id="acec1c8390137c20b981f258467e8e1e7" name="acec1c8390137c20b981f258467e8e1e7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setup_solver</b> ()</td></tr>
 <tr class="separator:acec1c8390137c20b981f258467e8e1e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,12 +108,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>vmult</b> (VectorType
 <tr class="memitem:aa44002f47b403f32146bc446287f56be"><td class="memItemLeft" align="right" valign="top"><a id="aa44002f47b403f32146bc446287f56be" name="aa44002f47b403f32146bc446287f56be"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>solve</b> (VectorType &amp;sol, VectorType const &amp;rhs, double const time) const</td></tr>
 <tr class="separator:aa44002f47b403f32146bc446287f56be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a719621cbfac3dd41c9d683a5951939a9"><td class="memItemLeft" align="right" valign="top"><a id="a719621cbfac3dd41c9d683a5951939a9" name="a719621cbfac3dd41c9d683a5951939a9"></a>
-DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
-<tr class="separator:a719621cbfac3dd41c9d683a5951939a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a179280752e8262a3892d954b6435d6c6"><td class="memItemLeft" align="right" valign="top"><a id="a179280752e8262a3892d954b6435d6c6" name="a179280752e8262a3892d954b6435d6c6"></a>
-types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
-<tr class="separator:a179280752e8262a3892d954b6435d6c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a632f2dd88691b9fd9958288f572670c6"><td class="memItemLeft" align="right" valign="top"><a id="a632f2dd88691b9fd9958288f572670c6" name="a632f2dd88691b9fd9958288f572670c6"></a>
+dealii::DoFHandler&lt; dim &gt; const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dof_handler</b> () const</td></tr>
+<tr class="separator:a632f2dd88691b9fd9958288f572670c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcbcb29b200c93e55001349a67ac90e7"><td class="memItemLeft" align="right" valign="top"><a id="adcbcb29b200c93e55001349a67ac90e7" name="adcbcb29b200c93e55001349a67ac90e7"></a>
+dealii::types::global_dof_index&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_dofs</b> () const</td></tr>
+<tr class="separator:adcbcb29b200c93e55001349a67ac90e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0ac0d81b93ee1f438f8178bcb8ab039"><td class="memItemLeft" align="right" valign="top"><a id="ae0ac0d81b93ee1f438f8178bcb8ab039" name="ae0ac0d81b93ee1f438f8178bcb8ab039"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_n10</b> () const</td></tr>
 <tr class="separator:ae0ac0d81b93ee1f438f8178bcb8ab039"><td class="memSeparator" colspan="2">&#160;</td></tr>
