@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Material
 {
@@ -43,15 +41,15 @@ public:
   {
   }
 
-  virtual Tensor<2, dim, VectorizedArray<Number>>
-    evaluate_stress(Tensor<2, dim, VectorizedArray<Number>> const & E,
-                    unsigned int const                              cell,
-                    unsigned int const                              q) const = 0;
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    evaluate_stress(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+                    unsigned int const                                              cell,
+                    unsigned int const                                              q) const = 0;
 
-  virtual Tensor<2, dim, VectorizedArray<Number>>
-    apply_C(Tensor<2, dim, VectorizedArray<Number>> const & E,
-            unsigned int const                              cell,
-            unsigned int const                              q) const = 0;
+  virtual dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    apply_C(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & E,
+            unsigned int const                                              cell,
+            unsigned int const                                              q) const = 0;
 };
 
 } // namespace Structure

@@ -43,9 +43,10 @@ identify_first_process_on_node(MPI_Comm const & mpi_comm)
   MPI_Comm_size(comm_shared, &size_shared);
   MPI_Comm_free(&comm_shared);
 
-  AssertThrow(size_shared == Utilities::MPI::max(size_shared, mpi_comm),
-              ExcMessage("The identification of MPI process groups in terms of compute nodes only "
-                         "works if all nodes are populated with the same number of MPI ranks!"));
+  AssertThrow(size_shared == dealii::Utilities::MPI::max(size_shared, mpi_comm),
+              dealii::ExcMessage(
+                "The identification of MPI process groups in terms of compute nodes only "
+                "works if all nodes are populated with the same number of MPI ranks!"));
   return {rank % size_shared == 0, size_shared};
 }
 

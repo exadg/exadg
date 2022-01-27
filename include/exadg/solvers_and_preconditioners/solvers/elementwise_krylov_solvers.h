@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace Elementwise
 {
-using namespace dealii;
-
 template<typename Number, typename Number2>
 bool
 all_smaller(Number const a, const Number2 b)
@@ -44,9 +42,9 @@ all_smaller(Number const a, const Number2 b)
 
 template<typename Number, typename Number2>
 bool
-all_smaller(VectorizedArray<Number> const a, Number2 const b)
+all_smaller(dealii::VectorizedArray<Number> const a, Number2 const b)
 {
-  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
     if(a[i] >= b)
       return false;
   return true;
@@ -61,9 +59,9 @@ all_true(Number const a)
 
 template<typename Number>
 bool
-all_true(VectorizedArray<Number> const a)
+all_true(dealii::VectorizedArray<Number> const a)
 {
-  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
     if(a[i] < 0)
       return false;
   return true;
@@ -96,15 +94,15 @@ converged(Number &     is_converged,
 
 template<typename Number, typename Number2>
 bool
-converged(VectorizedArray<Number> & is_converged,
-          VectorizedArray<Number>   norm_r_abs,
-          Number2                   ABS_TOL,
-          VectorizedArray<Number>   norm_r_rel,
-          Number2                   REL_TOL,
-          unsigned int              k,
-          unsigned int              MAX_ITER)
+converged(dealii::VectorizedArray<Number> & is_converged,
+          dealii::VectorizedArray<Number>   norm_r_abs,
+          Number2                           ABS_TOL,
+          dealii::VectorizedArray<Number>   norm_r_rel,
+          Number2                           REL_TOL,
+          unsigned int                      k,
+          unsigned int                      MAX_ITER)
 {
-  for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
   {
     if((norm_r_abs[v] < ABS_TOL || norm_r_rel[v] < REL_TOL || k >= MAX_ITER))
       is_converged[v] = 1.0;
@@ -123,9 +121,9 @@ adjust_division_by_zero(Number &)
 
 template<typename Number>
 void
-adjust_division_by_zero(VectorizedArray<Number> & x)
+adjust_division_by_zero(dealii::VectorizedArray<Number> & x)
 {
-  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); ++i)
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); ++i)
     if(x[i] < 1e-30)
       x[i] = 1;
 }
@@ -241,12 +239,12 @@ public:
         Preconditioner const * preconditioner);
 
 private:
-  unsigned int const        M;
-  double const              ABS_TOL;
-  double const              REL_TOL;
-  unsigned int const        MAX_ITER;
-  AlignedVector<value_type> storage;
-  value_type *              p, *r, *v;
+  unsigned int const                M;
+  double const                      ABS_TOL;
+  double const                      REL_TOL;
+  unsigned int const                MAX_ITER;
+  dealii::AlignedVector<value_type> storage;
+  value_type *                      p, *r, *v;
 };
 
 /*
@@ -382,9 +380,9 @@ private:
   value_type norm_r_rel;
 
   // store convergence status which is necessary
-  // for the VectorizedArray data type where the
+  // for the dealii::VectorizedArray data type where the
   // convergence status of the different elements
-  // of VectorizedArray has to be tracked seperately
+  // of dealii::VectorizedArray has to be tracked seperately
   value_type convergence_status;
 
   // accumulated iterations
@@ -394,16 +392,16 @@ private:
   unsigned int k;
 
   // matrices of variable size
-  AlignedVector<AlignedVector<value_type>> V;
-  AlignedVector<AlignedVector<value_type>> H;
+  dealii::AlignedVector<dealii::AlignedVector<value_type>> V;
+  dealii::AlignedVector<dealii::AlignedVector<value_type>> H;
 
   // temporary vector
-  AlignedVector<value_type> temp;
+  dealii::AlignedVector<value_type> temp;
 
   // vectors of variable size
-  AlignedVector<value_type> res;
-  AlignedVector<value_type> s;
-  AlignedVector<value_type> c;
+  dealii::AlignedVector<value_type> res;
+  dealii::AlignedVector<value_type> s;
+  dealii::AlignedVector<value_type> c;
 
   // neutral element of multiplication
   // for data of type value_type
@@ -416,23 +414,23 @@ private:
   do_solve(Matrix const * A, value_type * x, value_type const * b, Preconditioner const * P);
 
   void
-  modified_gram_schmidt(AlignedVector<value_type> &                      w,
-                        AlignedVector<AlignedVector<value_type>> &       H,
-                        AlignedVector<AlignedVector<value_type>> const & V,
-                        unsigned int const                               dim);
+  modified_gram_schmidt(dealii::AlignedVector<value_type> &                              w,
+                        dealii::AlignedVector<dealii::AlignedVector<value_type>> &       H,
+                        dealii::AlignedVector<dealii::AlignedVector<value_type>> const & V,
+                        unsigned int const                                               dim);
 
   template<typename Number>
   void perform_givens_rotation_and_calculate_residual(Number);
 
   template<typename Number>
-  void perform_givens_rotation_and_calculate_residual(VectorizedArray<Number>);
+  void perform_givens_rotation_and_calculate_residual(dealii::VectorizedArray<Number>);
 
   template<typename Number>
   void print(Number, std::string);
 
   template<typename Number>
   void
-  print(VectorizedArray<Number> y, std::string name);
+  print(dealii::VectorizedArray<Number> y, std::string name);
 };
 
 /*
@@ -456,7 +454,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::SolverGMRES(unsigned int const 
   // negative values = false (not converged)
   convergence_status = -1.0;
 
-  temp = AlignedVector<value_type>(M);
+  temp = dealii::AlignedVector<value_type>(M);
 
   one = 1.0;
 }
@@ -480,14 +478,15 @@ void SolverGMRES<value_type, Matrix, Preconditioner>::print(Number, std::string)
 }
 
 /*
- *  Print function for data of type VectorizedArray
+ *  Print function for data of type dealii::VectorizedArray
  */
 template<typename value_type, typename Matrix, typename Preconditioner>
 template<typename Number>
 void
-SolverGMRES<value_type, Matrix, Preconditioner>::print(VectorizedArray<Number> y, std::string name)
+SolverGMRES<value_type, Matrix, Preconditioner>::print(dealii::VectorizedArray<Number> y,
+                                                       std::string                     name)
 {
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
   {
     std::cout << name << "[" << v << "] = " << y[v] << std::endl;
   }
@@ -505,7 +504,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::print(VectorizedArray<Number> y
  *
  *  The operations performed here are "unproblematic"
  *  and can be performed also in the case of the
- *  VectorizedArray data type, i.e., the values written
+ *  dealii::VectorizedArray data type, i.e., the values written
  *  to the Hessenberg matrix in this function are
  *  ignored in case that the solver has already converged
  *  for a specific component of the vectorized array
@@ -515,10 +514,10 @@ SolverGMRES<value_type, Matrix, Preconditioner>::print(VectorizedArray<Number> y
 template<typename value_type, typename Matrix, typename Preconditioner>
 void
 SolverGMRES<value_type, Matrix, Preconditioner>::modified_gram_schmidt(
-  AlignedVector<value_type> &                      w,
-  AlignedVector<AlignedVector<value_type>> &       H,
-  AlignedVector<AlignedVector<value_type>> const & V,
-  unsigned int const                               dim)
+  dealii::AlignedVector<value_type> &                              w,
+  dealii::AlignedVector<dealii::AlignedVector<value_type>> &       H,
+  dealii::AlignedVector<dealii::AlignedVector<value_type>> const & V,
+  unsigned int const                                               dim)
 {
   for(unsigned int i = 0; i < dim; ++i)
   {
@@ -562,12 +561,12 @@ template<typename value_type, typename Matrix, typename Preconditioner>
 template<typename Number>
 void
   SolverGMRES<value_type, Matrix, Preconditioner>::perform_givens_rotation_and_calculate_residual(
-    VectorizedArray<Number>)
+    dealii::VectorizedArray<Number>)
 {
-  VectorizedArray<Number> H_i_k   = VectorizedArray<Number>();
-  VectorizedArray<Number> H_ip1_k = VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> H_i_k   = dealii::VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> H_ip1_k = dealii::VectorizedArray<Number>();
 
-  for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
   {
     if(convergence_status[v] > 0.0)
     {
@@ -595,15 +594,15 @@ void
     }
   }
 
-  VectorizedArray<Number> beta        = VectorizedArray<Number>();
-  VectorizedArray<Number> sin         = VectorizedArray<Number>();
-  VectorizedArray<Number> cos         = VectorizedArray<Number>();
-  VectorizedArray<Number> res_k_store = VectorizedArray<Number>();
-  res_k_store                         = res[k];
-  VectorizedArray<Number> res_k       = VectorizedArray<Number>();
-  VectorizedArray<Number> res_kp1     = VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> beta        = dealii::VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> sin         = dealii::VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> cos         = dealii::VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> res_k_store = dealii::VectorizedArray<Number>();
+  res_k_store                                 = res[k];
+  dealii::VectorizedArray<Number> res_k       = dealii::VectorizedArray<Number>();
+  dealii::VectorizedArray<Number> res_kp1     = dealii::VectorizedArray<Number>();
 
-  for(unsigned int v = 0; v < VectorizedArray<Number>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<Number>::size(); ++v)
   {
     if(convergence_status[v] > 0.0)
     {
@@ -678,7 +677,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
   //    // the solution x: r = b - A*x
   //
   //    //temp2 = A*x
-  //    AlignedVector<value_type> temp2 = AlignedVector<value_type>(M);
+  //    dealii::AlignedVector<value_type> temp2 = dealii::AlignedVector<value_type>(M);
   //    A->vmult(temp2.begin(),x);
   //    // temp = b - temp2 = b - A*x = r
   //    equ(temp.begin(),one,b,-one,temp2.begin());
@@ -693,7 +692,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
                                                           Preconditioner const * P)
 {
   // apply matrix vector product: r = A*x
-  V.push_back(AlignedVector<value_type>(M));
+  V.push_back(dealii::AlignedVector<value_type>(M));
   A->vmult(V[0].begin(), x);
 
   // compute residual r = b - A*x and its norm
@@ -732,7 +731,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
 
     // calculate new search direction by performing
     // matrix-vector product: V[k+1] = A*V[k]
-    V.push_back(AlignedVector<value_type>(M));
+    V.push_back(dealii::AlignedVector<value_type>(M));
 
     // apply preconditioner
     P->vmult(temp.begin(), V[k].begin());
@@ -740,7 +739,7 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
     A->vmult(V[k + 1].begin(), temp.begin());
 
     // resize H
-    H.push_back(AlignedVector<value_type>(k + 2));
+    H.push_back(dealii::AlignedVector<value_type>(k + 2));
 
     // perform modified Gram-Schmidt orthogonalization
     modified_gram_schmidt(V[k + 1], H, V, k + 1);
@@ -757,8 +756,8 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
   }
 
   // calculate solution
-  AlignedVector<value_type> y(k);
-  AlignedVector<value_type> delta = AlignedVector<value_type>(M);
+  dealii::AlignedVector<value_type> y(k);
+  dealii::AlignedVector<value_type> delta = dealii::AlignedVector<value_type>(M);
 
   /*
    *  calculate solution as linear combination of
@@ -780,8 +779,8 @@ SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *        
    *  |   0    0    0  H_33  | |  y_3  |   |  res_3    | -> y_3 = res_3/H_33
    *  |_  0    0    0    0  _| |_  *  _|   |_ res_k+1 _|
    *
-   *  VectorizedArray: assume that the solver converged after 2 iterations
-   *                   for some components of the VectorizedArray
+   *  dealii::VectorizedArray: assume that the solver converged after 2 iterations
+   *                   for some components of the dealii::VectorizedArray
    *                   but after 4 iterations for the other components
    *   _                    _   _     _     _         _
    *  | H_00 H_01   0    0   | |  y_0  |   |  res_0    | -> y_0 = (res_0-H_01*y_0)/H_00

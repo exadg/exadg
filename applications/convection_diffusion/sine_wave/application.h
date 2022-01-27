@@ -31,23 +31,21 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(unsigned int const n_components = 1, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t = this->get_time();
 
-    double result = std::sin(numbers::PI * (p[0] - t));
+    double result = std::sin(dealii::numbers::PI * (p[0] - t));
 
     return result;
   }
@@ -61,7 +59,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -133,12 +131,12 @@ public:
   void
   create_grid() final
   {
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary id of 1 at right boundary (outflow)
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if((std::fabs(cell.face(f)->center()(0) - right) < 1e-12))
           cell.face(f)->set_boundary_id(1);
@@ -148,10 +146,10 @@ public:
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
-  std::shared_ptr<Function<dim>>
+  std::shared_ptr<dealii::Function<dim>>
   create_mesh_movement_function() final
   {
-    std::shared_ptr<Function<dim>> mesh_motion;
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
     data.temporal                       = MeshMovementAdvanceInTime::Sin;
@@ -171,10 +169,12 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
-    this->boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
+    this->boundary_descriptor->neumann_bc.insert(
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
 
@@ -182,10 +182,10 @@ public:
   set_field_functions() final
   {
     this->field_functions->initial_solution.reset(new Solution<dim>());
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
     std::vector<double> velocity = std::vector<double>(dim, 0.0);
     velocity[0]                  = 1.0;
-    this->field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
+    this->field_functions->velocity.reset(new dealii::Functions::ConstantFunction<dim>(velocity));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

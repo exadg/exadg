@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
                                           MPI_Comm const &               mpi_comm_in)
@@ -41,7 +39,7 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::setup(Operator<dim, Number> const & pde_operator,
-                                  Mapping<dim> const &          mapping)
+                                  dealii::Mapping<dim> const &  mapping)
 {
   error_calculator.setup(pde_operator.get_dof_handler(), mapping, pp_data.error_data);
 

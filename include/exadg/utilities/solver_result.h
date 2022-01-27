@@ -26,24 +26,22 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct SolverResult
 {
   SolverResult() : degree(1), dofs(1), n_10(0), tau_10(0.0)
   {
   }
 
-  SolverResult(unsigned int const            degree_,
-               types::global_dof_index const dofs_,
-               double const                  n_10_,
-               double const                  tau_10_)
+  SolverResult(unsigned int const                    degree_,
+               dealii::types::global_dof_index const dofs_,
+               double const                          n_10_,
+               double const                          tau_10_)
     : degree(degree_), dofs(dofs_), n_10(n_10_), tau_10(tau_10_)
   {
   }
 
   void
-  print_header(ConditionalOStream const & pcout) const
+  print_header(dealii::ConditionalOStream const & pcout) const
   {
     // names
     pcout << std::setw(7) << "degree";
@@ -65,7 +63,7 @@ struct SolverResult
   }
 
   void
-  print_results(ConditionalOStream const & pcout) const
+  print_results(dealii::ConditionalOStream const & pcout) const
   {
     pcout << std::setw(7) << std::fixed << degree;
     pcout << std::setw(15) << std::fixed << dofs;
@@ -75,17 +73,18 @@ struct SolverResult
     pcout << std::endl;
   }
 
-  unsigned int            degree;
-  types::global_dof_index dofs;
-  double                  n_10;
-  double                  tau_10;
+  unsigned int                    degree;
+  dealii::types::global_dof_index dofs;
+  double                          n_10;
+  double                          tau_10;
 };
 
 inline void
 print_results(std::vector<SolverResult> const & results, MPI_Comm const & mpi_comm)
 {
   // summarize results for all polynomial degrees and problem sizes
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   pcout << std::endl << print_horizontal_line() << std::endl << std::endl;
 

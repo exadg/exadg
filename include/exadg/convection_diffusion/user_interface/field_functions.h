@@ -26,14 +26,12 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim>
 struct FieldFunctions
 {
-  std::shared_ptr<Function<dim>> initial_solution;
-  std::shared_ptr<Function<dim>> right_hand_side;
-  std::shared_ptr<Function<dim>> velocity;
+  std::shared_ptr<dealii::Function<dim>> initial_solution;
+  std::shared_ptr<dealii::Function<dim>> right_hand_side;
+  std::shared_ptr<dealii::Function<dim>> velocity;
 };
 
 } // namespace ConvDiff

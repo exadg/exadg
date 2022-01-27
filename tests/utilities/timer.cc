@@ -30,12 +30,13 @@
 // ExaDG
 #include <exadg/utilities/timer_tree.h>
 
-using namespace dealii;
+
 
 void
 test1()
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
   // clang-format off
   pcout << std::endl << std::endl<< std::endl
@@ -46,7 +47,7 @@ test1()
         << std::endl;
   // clang-format on
 
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   ExaDG::TimerTree tree;
@@ -99,7 +100,8 @@ test1()
 void
 test2()
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
   // clang-format off
   pcout << std::endl << std::endl<< std::endl
@@ -110,7 +112,7 @@ test2()
         << std::endl;
   // clang-format on
 
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   ExaDG::TimerTree tree;
@@ -171,7 +173,7 @@ main(int argc, char ** argv)
 {
   try
   {
-    Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+    dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
     test1();
 

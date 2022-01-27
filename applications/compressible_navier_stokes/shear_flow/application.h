@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // problem specific parameters
 double const DYN_VISCOSITY  = 0.01;
 double const GAMMA          = 1.5;
@@ -47,16 +45,16 @@ double const L = 1.0;
  *  Analytical solutions
  */
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(unsigned int const n_components = dim + 2, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -79,16 +77,16 @@ public:
  *  zero velocity at the wall boundaries
  */
 template<int dim>
-class VelocityBC : public Function<dim>
+class VelocityBC : public dealii::Function<dim>
 {
 public:
   VelocityBC(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -106,15 +104,15 @@ public:
  *  prescribe a constant temperature at the channel walls
  */
 template<int dim>
-class EnergyBC : public Function<dim>
+class EnergyBC : public dealii::Function<dim>
 {
 public:
-  EnergyBC(double const time = 0.) : Function<dim>(1, time)
+  EnergyBC(double const time = 0.) : dealii::Function<dim>(1, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
@@ -132,7 +130,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -188,11 +186,11 @@ public:
   create_grid() final
   {
     std::vector<unsigned int> repetitions({1, 1});
-    Point<dim>                point1(0.0, 0.0), point2(L, H);
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::Point<dim>        point1(0.0, 0.0), point2(L, H);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -200,14 +198,15 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                   pair;
+    typedef typename std::pair<dealii::types::boundary_id, EnergyBoundaryVariable> pair_variable;
 
     this->boundary_descriptor->density.dirichlet_bc.insert(
-      pair(0, new Functions::ConstantFunction<dim>(RHO_0, 1)));
+      pair(0, new dealii::Functions::ConstantFunction<dim>(RHO_0, 1)));
     this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
     this->boundary_descriptor->pressure.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     // energy: prescribe energy
     this->boundary_descriptor->energy.boundary_variable.insert(
       pair_variable(0, EnergyBoundaryVariable::Energy));
@@ -218,9 +217,12 @@ public:
   set_field_functions() final
   {
     this->field_functions->initial_solution.reset(new Solution<dim>());
-    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_density.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

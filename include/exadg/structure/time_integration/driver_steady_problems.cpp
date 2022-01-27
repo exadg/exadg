@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_,
                                         std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
@@ -42,7 +40,7 @@ DriverSteady<dim, Number>::DriverSteady(std::shared_ptr<Interface::Operator<Numb
     param(param_),
     mpi_comm(mpi_comm_),
     is_test(is_test_),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     timer_tree(new TimerTree())
 {
 }
@@ -62,7 +60,7 @@ template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessing();
@@ -101,7 +99,7 @@ template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::do_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Solving steady state problem ..." << std::endl;
@@ -139,7 +137,7 @@ template<int dim, typename Number>
 void
 DriverSteady<dim, Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessor->do_postprocessing(solution);

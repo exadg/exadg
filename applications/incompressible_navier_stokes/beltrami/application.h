@@ -26,21 +26,20 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
-  AnalyticalSolutionVelocity(double const viscosity) : Function<dim>(dim, 0.0), nu(viscosity)
+  AnalyticalSolutionVelocity(double const viscosity)
+    : dealii::Function<dim>(dim, 0.0), nu(viscosity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
-    double const a = 0.25 * numbers::PI;
+    double const a = 0.25 * dealii::numbers::PI;
     double const d = 2 * a;
 
     double result = 0.0;
@@ -61,19 +60,19 @@ private:
 };
 
 template<int dim>
-class AnalyticalSolutionPressure : public Function<dim>
+class AnalyticalSolutionPressure : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionPressure(double const viscosity)
-    : Function<dim>(1 /*n_components*/, 0.0), nu(viscosity)
+    : dealii::Function<dim>(1 /*n_components*/, 0.0), nu(viscosity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const t = this->get_time();
-    double const a = 0.25 * numbers::PI;
+    double const a = 0.25 * dealii::numbers::PI;
     double const d = 2 * a;
 
     // clang-format off
@@ -91,18 +90,18 @@ private:
 };
 
 template<int dim>
-class PressureBC_dudt : public Function<dim>
+class PressureBC_dudt : public dealii::Function<dim>
 {
 public:
-  PressureBC_dudt(double const viscosity) : Function<dim>(dim, 0.0), nu(viscosity)
+  PressureBC_dudt(double const viscosity) : dealii::Function<dim>(dim, 0.0), nu(viscosity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const t = this->get_time();
-    double const a = 0.25 * numbers::PI;
+    double const a = 0.25 * dealii::numbers::PI;
     double const d = 2 * a;
 
     double result = 0.0;
@@ -130,7 +129,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -253,7 +252,7 @@ public:
   create_grid() final
   {
     double const left = -1.0, right = 1.0;
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -261,7 +260,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new AnalyticalSolutionVelocity<dim>(viscosity)));
@@ -279,7 +279,7 @@ public:
       new AnalyticalSolutionPressure<dim>(viscosity));
     this->field_functions->analytical_solution_pressure.reset(
       new AnalyticalSolutionPressure<dim>(viscosity));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

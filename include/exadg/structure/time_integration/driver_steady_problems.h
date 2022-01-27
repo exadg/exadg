@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 // forward declarations
 class Parameters;
 
@@ -51,7 +49,7 @@ template<int dim, typename Number>
 class DriverSteady
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   DriverSteady(std::shared_ptr<Interface::Operator<Number>> operator_,
                std::shared_ptr<PostProcessorBase<Number>>   postprocessor_,
@@ -91,7 +89,7 @@ private:
 
   bool is_test;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // vectors
   VectorType solution;

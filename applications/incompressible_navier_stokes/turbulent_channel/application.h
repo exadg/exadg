@@ -29,12 +29,10 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // set problem specific parameters like physical dimensions, etc.
-double const DIMENSIONS_X1 = 2.0 * numbers::PI;
+double const DIMENSIONS_X1 = 2.0 * dealii::numbers::PI;
 double const DIMENSIONS_X2 = 2.0;
-double const DIMENSIONS_X3 = numbers::PI;
+double const DIMENSIONS_X3 = dealii::numbers::PI;
 
 // nu = 1/180  coarsest meshes: l2_ku3 or l3_ku2
 // nu = 1/395
@@ -99,10 +97,10 @@ inverse_grid_transform_y(double const & y)
 }
 
 template<int dim>
-class ManifoldTurbulentChannel : public ChartManifold<dim, dim, dim>
+class ManifoldTurbulentChannel : public dealii::ChartManifold<dim, dim, dim>
 {
 public:
-  ManifoldTurbulentChannel(Tensor<1, dim> const & dimensions_in)
+  ManifoldTurbulentChannel(dealii::Tensor<1, dim> const & dimensions_in)
   {
     dimensions = dimensions_in;
   }
@@ -111,10 +109,10 @@ public:
    *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
    *  point x in physical coordinates
    */
-  Point<dim>
-  push_forward(Point<dim> const & xi) const final
+  dealii::Point<dim>
+  push_forward(dealii::Point<dim> const & xi) const final
   {
-    Point<dim> x;
+    dealii::Point<dim> x;
 
     x[0] = xi[0] * dimensions[0] - dimensions[0] / 2.0;
     x[1] = grid_transform_y(xi[1]);
@@ -129,10 +127,10 @@ public:
    *  pull_back operation that maps point x in physical coordinates
    *  to point xi in reference coordinates [0,1]^d
    */
-  Point<dim>
-  pull_back(Point<dim> const & x) const final
+  dealii::Point<dim>
+  pull_back(dealii::Point<dim> const & x) const final
   {
-    Point<dim> xi;
+    dealii::Point<dim> xi;
 
     xi[0] = x[0] / dimensions[0] + 0.5;
     xi[1] = inverse_grid_transform_y(x[1]);
@@ -143,31 +141,31 @@ public:
     return xi;
   }
 
-  std::unique_ptr<Manifold<dim>>
+  std::unique_ptr<dealii::Manifold<dim>>
   clone() const final
   {
     return std::make_unique<ManifoldTurbulentChannel<dim>>(dimensions);
   }
 
 private:
-  Tensor<1, dim> dimensions;
+  dealii::Tensor<1, dim> dimensions;
 };
 
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
-  InitialSolutionVelocity() : Function<dim>(dim, 0.0)
+  InitialSolutionVelocity() : dealii::Function<dim>(dim, 0.0)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     AssertThrow(std::abs(p[1]) < DIMENSIONS_X2 / 2.0 + 1.e-12,
-                ExcMessage("Invalid geometry parameters."));
+                dealii::ExcMessage("Invalid geometry parameters."));
 
-    AssertThrow(dim == 3, ExcMessage("Dimension has to be dim==3."));
+    AssertThrow(dim == 3, dealii::ExcMessage("Dimension has to be dim==3."));
 
     double result = 0.0;
     // use turbulent-like profile with superimposed vortices and random noise to initiate a
@@ -196,7 +194,7 @@ class MyPostProcessor : public PostProcessor<dim, Number>
 public:
   typedef PostProcessor<dim, Number> Base;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef typename Base::Operator Operator;
 
@@ -241,7 +239,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -394,15 +392,15 @@ public:
   void
   create_grid() final
   {
-    Tensor<1, dim> dimensions;
+    dealii::Tensor<1, dim> dimensions;
     dimensions[0] = DIMENSIONS_X1;
     dimensions[1] = DIMENSIONS_X2;
     if(dim == 3)
       dimensions[2] = DIMENSIONS_X3;
 
-    GridGenerator::hyper_rectangle(*this->grid->triangulation,
-                                   Point<dim>(-dimensions / 2.0),
-                                   Point<dim>(dimensions / 2.0));
+    dealii::GridGenerator::hyper_rectangle(*this->grid->triangulation,
+                                           dealii::Point<dim>(-dimensions / 2.0),
+                                           dealii::Point<dim>(dimensions / 2.0));
 
     // manifold
     unsigned int manifold_id = 1;
@@ -425,10 +423,10 @@ public:
       this->grid->triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
     if(dim == 3)
-      GridTools::collect_periodic_faces(
+      dealii::GridTools::collect_periodic_faces(
         *this->grid->triangulation, 2 + 10, 3 + 10, 2, this->grid->periodic_faces);
 
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
@@ -439,24 +437,28 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
   set_field_functions() final
   {
     this->field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     std::vector<double> forcing = std::vector<double>(dim, 0.0);
     forcing[0]                  = 1.0; // constant forcing in x_1-direction
-    this->field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(forcing));
+    this->field_functions->right_hand_side.reset(
+      new dealii::Functions::ConstantFunction<dim>(forcing));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

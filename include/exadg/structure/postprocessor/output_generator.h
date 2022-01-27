@@ -32,20 +32,18 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class OutputGenerator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OutputGenerator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const & dof_handler,
-        Mapping<dim> const &    mapping,
-        OutputDataBase const &  output_data);
+  setup(dealii::DoFHandler<dim> const & dof_handler,
+        dealii::Mapping<dim> const &    mapping,
+        OutputDataBase const &          output_data);
 
   void
   evaluate(VectorType const & solution, double const & time, int const & time_step_number);
@@ -56,9 +54,9 @@ private:
   unsigned int output_counter;
   bool         reset_counter;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler;
-  SmartPointer<Mapping<dim> const>    mapping;
-  OutputDataBase                      output_data;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  OutputDataBase                                      output_data;
 };
 
 } // namespace Structure

@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // forward declarations
 template<int dim, typename Number>
 class OperatorPressureCorrection;

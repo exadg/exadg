@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim> const>               grid_in,
@@ -47,8 +45,8 @@ Operator<dim, Number>::Operator(
     field_functions(field_functions_in),
     param(param_in),
     field(field_in),
-    fe(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim + 2)),
-    fe_vector(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim)),
+    fe(new dealii::FESystem<dim>(dealii::FE_DGQ<dim>(param_in.degree), dim + 2)),
+    fe_vector(new dealii::FESystem<dim>(dealii::FE_DGQ<dim>(param_in.degree), dim)),
     fe_scalar(param_in.degree),
     n_q_points_conv(param_in.degree + 1),
     n_q_points_visc(param_in.degree + 1),
@@ -56,7 +54,7 @@ Operator<dim, Number>::Operator(
     dof_handler_vector(*grid_in->triangulation),
     dof_handler_scalar(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     wall_time_operator_evaluation(0.0)
 {
   pcout << std::endl << "Construct compressible Navier-Stokes DG operator ..." << std::endl;
@@ -69,7 +67,7 @@ Operator<dim, Number>::Operator(
   else if(param.n_q_points_convective == QuadratureRule::Overintegration2k)
     n_q_points_conv = 2 * param.degree + 1;
   else
-    AssertThrow(false, ExcMessage("Specified quadrature rule is not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Specified quadrature rule is not implemented."));
 
   if(param.n_q_points_viscous == QuadratureRule::Standard)
     n_q_points_visc = param.degree + 1;
@@ -78,7 +76,7 @@ Operator<dim, Number>::Operator(
   else if(param.n_q_points_viscous == QuadratureRule::Overintegration2k)
     n_q_points_visc = 2 * param.degree + 1;
   else
-    AssertThrow(false, ExcMessage("Specified quadrature rule is not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Specified quadrature rule is not implemented."));
 
   distribute_dofs();
 
@@ -94,10 +92,10 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   // append mapping flags of compressible solver
   MappingFlags mapping_flags_compressible;
   mapping_flags_compressible.cells =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-  mapping_flags_compressible.inner_faces |= update_quadrature_points;
-  mapping_flags_compressible.boundary_faces |= update_quadrature_points;
+    (dealii::update_gradients | dealii::update_JxW_values | dealii::update_quadrature_points |
+     dealii::update_normal_vectors | dealii::update_values);
+  mapping_flags_compressible.inner_faces |= dealii::update_quadrature_points;
+  mapping_flags_compressible.boundary_faces |= dealii::update_quadrature_points;
 
   matrix_free_data.append_mapping_flags(mapping_flags_compressible);
 
@@ -112,17 +110,18 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
   matrix_free_data.insert_constraint(&constraint, field + dof_index_scalar);
 
   // quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index_standard);
-  matrix_free_data.insert_quadrature(QGauss<1>(n_q_points_conv),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1),
+                                     field + quad_index_standard);
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(n_q_points_conv),
                                      field + quad_index_overintegration_conv);
-  matrix_free_data.insert_quadrature(QGauss<1>(n_q_points_visc),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(n_q_points_visc),
                                      field + quad_index_overintegration_vis);
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-                             std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
+Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in)
 {
   pcout << std::endl << "Setup compressible Navier-Stokes DG operator ..." << std::endl;
 
@@ -136,7 +135,7 @@ Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix
 }
 
 template<int dim, typename Number>
-types::global_dof_index
+dealii::types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
@@ -170,15 +169,15 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double con
   this->field_functions->initial_solution->set_time(time);
 
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(*grid->mapping,
-                           dof_handler,
-                           *(this->field_functions->initial_solution),
-                           src_double);
+  dealii::VectorTools::interpolate(*grid->mapping,
+                                   dof_handler,
+                                   *(this->field_functions->initial_solution),
+                                   src_double);
 
   src = src_double;
 }
@@ -187,7 +186,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::evaluate(VectorType & dst, VectorType const & src, Number const time) const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   evaluate_convective_and_viscous(dst, src, time);
@@ -272,42 +271,42 @@ Operator<dim, Number>::apply_inverse_mass(VectorType & dst, VectorType const & s
 }
 
 template<int dim, typename Number>
-MatrixFree<dim, Number> const &
+dealii::MatrixFree<dim, Number> const &
 Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
 }
 
 template<int dim, typename Number>
-Mapping<dim> const &
+dealii::Mapping<dim> const &
 Operator<dim, Number>::get_mapping() const
 {
   return *grid->mapping;
 }
 
 template<int dim, typename Number>
-FESystem<dim> const &
+dealii::FESystem<dim> const &
 Operator<dim, Number>::get_fe() const
 {
   return *fe;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler_scalar() const
 {
   return dof_handler_scalar;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler_vector() const
 {
   return dof_handler_vector;
@@ -454,7 +453,7 @@ Operator<dim, Number>::distribute_dofs()
   dof_handler_vector.distribute_dofs(*fe_vector);
   dof_handler_scalar.distribute_dofs(fe_scalar);
 
-  unsigned int ndofs_per_cell = Utilities::pow(param.degree + 1, dim) * (dim + 2);
+  unsigned int ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim) * (dim + 2);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -517,8 +516,8 @@ Operator<dim, Number>::setup_operators()
   if(param.use_combined_operator == true)
   {
     AssertThrow(param.n_q_points_convective == param.n_q_points_viscous,
-                ExcMessage("Use the same number of quadrature points for convective term "
-                           "and viscous term in case of combined operator."));
+                dealii::ExcMessage("Use the same number of quadrature points for convective term "
+                                   "and viscous term in case of combined operator."));
 
     CombinedOperatorData<dim> combined_operator_data;
     combined_operator_data.dof_index  = get_dof_index_all();

@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace Elementwise
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename Operator>
 class OperatorBase
 {
@@ -38,7 +36,7 @@ public:
   {
   }
 
-  MatrixFree<dim, Number> const &
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
     return op.get_matrix_free();
@@ -71,7 +69,7 @@ public:
   }
 
   void
-  vmult(VectorizedArray<Number> * dst, VectorizedArray<Number> * src) const
+  vmult(dealii::VectorizedArray<Number> * dst, dealii::VectorizedArray<Number> * src) const
   {
     // set dst vector to zero
     Elementwise::vector_init(dst, problem_size);

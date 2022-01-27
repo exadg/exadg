@@ -32,36 +32,36 @@ namespace ExaDG
 {
 namespace IP // IP = interior penalty
 {
-using namespace dealii;
-
 /*
  *  This function calculates the penalty parameter of the interior
  *  penalty method for each cell.
  */
 template<int dim, typename Number>
 void
-calculate_penalty_parameter(AlignedVector<VectorizedArray<Number>> & array_penalty_parameter,
-                            MatrixFree<dim, Number> const &          matrix_free,
-                            unsigned int const                       dof_index = 0)
+calculate_penalty_parameter(
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> & array_penalty_parameter,
+  dealii::MatrixFree<dim, Number> const &                  matrix_free,
+  unsigned int const                                       dof_index = 0)
 {
   unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
 
-  Mapping<dim> const &       mapping = *matrix_free.get_mapping_info().mapping;
-  FiniteElement<dim> const & fe      = matrix_free.get_dof_handler(dof_index).get_fe();
-  unsigned int const         degree  = fe.degree;
+  dealii::Mapping<dim> const &       mapping = *matrix_free.get_mapping_info().mapping;
+  dealii::FiniteElement<dim> const & fe      = matrix_free.get_dof_handler(dof_index).get_fe();
+  unsigned int const                 degree  = fe.degree;
 
-  QGauss<dim>   quadrature(degree + 1);
-  FEValues<dim> fe_values(mapping, fe, quadrature, update_JxW_values);
+  dealii::QGauss<dim>   quadrature(degree + 1);
+  dealii::FEValues<dim> fe_values(mapping, fe, quadrature, dealii::update_JxW_values);
 
-  QGauss<dim - 1>   face_quadrature(degree + 1);
-  FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, update_JxW_values);
+  dealii::QGauss<dim - 1>   face_quadrature(degree + 1);
+  dealii::FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, dealii::update_JxW_values);
 
   for(unsigned int i = 0; i < n_cells; ++i)
   {
     for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(i); ++v)
     {
-      typename DoFHandler<dim>::cell_iterator cell = matrix_free.get_cell_iterator(i, v, dof_index);
+      typename dealii::DoFHandler<dim>::cell_iterator cell =
+        matrix_free.get_cell_iterator(i, v, dof_index);
       fe_values.reinit(cell);
 
       // calculate cell volume

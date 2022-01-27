@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 // problem specific parameters
 double const DYN_VISCOSITY = 1.0e-2;
 double const GAMMA         = 1.4;
@@ -43,16 +41,16 @@ double const H = 3.0;
 double const L = 2.0 * H;
 
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
   Solution(unsigned int const n_components = dim + 2, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double const T =
       T_0 + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1] * p[1] / (H * H) - 1.0);
@@ -75,16 +73,16 @@ public:
 };
 
 template<int dim>
-class VelocityBC : public Function<dim>
+class VelocityBC : public dealii::Function<dim>
 {
 public:
   VelocityBC(unsigned int const n_components = dim, double const time = 0.)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -98,15 +96,15 @@ public:
 };
 
 template<int dim>
-class DensityBC : public Function<dim>
+class DensityBC : public dealii::Function<dim>
 {
 public:
-  DensityBC(double const time = 0.) : Function<dim>(1, time)
+  DensityBC(double const time = 0.) : dealii::Function<dim>(1, time)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)component;
 
@@ -128,7 +126,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -184,11 +182,11 @@ public:
   create_grid() final
   {
     std::vector<unsigned int> repetitions({2, 1});
-    Point<dim>                point1(0.0, 0.0), point2(L, H);
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::Point<dim>        point1(0.0, 0.0), point2(L, H);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     // indicator
     // fixed wall = 0
@@ -206,7 +204,7 @@ public:
      */
     for(auto cell : *this->grid->triangulation)
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         if(std::fabs(cell.face(face)->center()(1) - point2[1]) < 1e-12)
         {
@@ -227,7 +225,7 @@ public:
       }
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
@@ -237,16 +235,17 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable>         pair_variable;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                   pair;
+    typedef typename std::pair<dealii::types::boundary_id, EnergyBoundaryVariable> pair_variable;
 
     // density
     this->boundary_descriptor->density.dirichlet_bc.insert(pair(0, new DensityBC<dim>()));
     this->boundary_descriptor->density.dirichlet_bc.insert(pair(1, new DensityBC<dim>()));
     //  boundary_descriptor->density.neumann_bc.insert(pair(0,new
-    //  Functions::ZeroFunction<dim>(1)));
+    //  dealii::Functions::ZeroFunction<dim>(1)));
     //  boundary_descriptor->density.neumann_bc.insert(pair(1,new
-    //  Functions::ZeroFunction<dim>(1)));
+    //  dealii::Functions::ZeroFunction<dim>(1)));
 
     // velocity
     this->boundary_descriptor->velocity.dirichlet_bc.insert(pair(0, new VelocityBC<dim>()));
@@ -254,9 +253,9 @@ public:
 
     // pressure
     this->boundary_descriptor->pressure.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->pressure.neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
 
     // energy: prescribe temperature
     this->boundary_descriptor->energy.boundary_variable.insert(
@@ -265,18 +264,21 @@ public:
       pair_variable(1, EnergyBoundaryVariable::Temperature));
 
     this->boundary_descriptor->energy.neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(1)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     this->boundary_descriptor->energy.dirichlet_bc.insert(
-      pair(1, new Functions::ConstantFunction<dim>(T_0, 1)));
+      pair(1, new dealii::Functions::ConstantFunction<dim>(T_0, 1)));
   }
 
   void
   set_field_functions() final
   {
     this->field_functions->initial_solution.reset(new Solution<dim>());
-    this->field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_density.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->right_hand_side_energy.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

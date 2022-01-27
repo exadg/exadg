@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // standard constructor that initializes parameters
 Parameters::Parameters()
   : // MATHEMATICAL MODEL
@@ -235,88 +233,93 @@ Parameters::Parameters()
 }
 
 void
-Parameters::check(ConditionalOStream const & pcout) const
+Parameters::check(dealii::ConditionalOStream const & pcout) const
 {
   // MATHEMATICAL MODEL
-  AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
-  AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
+  AssertThrow(problem_type != ProblemType::Undefined,
+              dealii::ExcMessage("parameter must be defined"));
+  AssertThrow(equation_type != EquationType::Undefined,
+              dealii::ExcMessage("parameter must be defined"));
 
   if(equation_type == EquationType::Euler)
   {
     AssertThrow(std::abs(viscosity) < 1.e-15,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Make sure that the viscosity is zero when solving the Euler equations."));
   }
 
   AssertThrow(formulation_viscous_term != FormulationViscousTerm::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
   AssertThrow(formulation_convective_term != FormulationConvectiveTerm::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
 
   // ALE
   if(ale_formulation)
   {
     AssertThrow(
       formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
-      ExcMessage(
+      dealii::ExcMessage(
         "Convective formulation of convective operator has to be used for ALE formulation."));
 
     AssertThrow(
       problem_type == ProblemType::Unsteady && solver_type == SolverType::Unsteady,
-      ExcMessage(
+      dealii::ExcMessage(
         "Both problem type and solver type have to be Unsteady when using ALE formulation."));
 
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
-                ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
+                dealii::ExcMessage(
+                  "ALE formulation is not implemented for OIF substepping technique."));
 
     AssertThrow(
       convective_problem() == true,
-      ExcMessage(
+      dealii::ExcMessage(
         "ALE formulation only implemented for equations that include the convective operator, "
         "e.g., ALE is currently not available for the Stokes equations."));
   }
 
   // PHYSICAL QUANTITIES
-  AssertThrow(end_time > start_time, ExcMessage("parameter end_time must be defined"));
-  AssertThrow(viscosity >= 0.0, ExcMessage("parameter must be defined"));
+  AssertThrow(end_time > start_time, dealii::ExcMessage("parameter end_time must be defined"));
+  AssertThrow(viscosity >= 0.0, dealii::ExcMessage("parameter must be defined"));
 
   // TEMPORAL DISCRETIZATION
-  AssertThrow(solver_type != SolverType::Undefined, ExcMessage("parameter must be defined"));
+  AssertThrow(solver_type != SolverType::Undefined,
+              dealii::ExcMessage("parameter must be defined"));
   AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
 
   if(convective_problem())
   {
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
-                ExcMessage("parameter must be defined"));
+                dealii::ExcMessage("parameter must be defined"));
   }
 
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
 
   if(calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
-    AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
-    AssertThrow(max_velocity > 0., ExcMessage("parameter must be defined"));
+    AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
+    AssertThrow(max_velocity > 0., dealii::ExcMessage("parameter must be defined"));
   }
 
   if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
-    AssertThrow(time_step_size > 0., ExcMessage("parameter must be defined"));
+    AssertThrow(time_step_size > 0., dealii::ExcMessage("parameter must be defined"));
 
   if(calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
-    AssertThrow(c_eff > 0., ExcMessage("parameter must be defined"));
+    AssertThrow(c_eff > 0., dealii::ExcMessage("parameter must be defined"));
 
   if(adaptive_time_stepping)
   {
     AssertThrow(calculation_of_time_step_size == TimeStepCalculation::CFL,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Adaptive time stepping is only implemented for TimeStepCalculation::CFL."));
   }
 
   if(problem_type == ProblemType::Unsteady)
   {
     AssertThrow(solver_type == SolverType::Unsteady,
-                ExcMessage("An unsteady solver has to be used to solve unsteady problems."));
+                dealii::ExcMessage(
+                  "An unsteady solver has to be used to solve unsteady problems."));
   }
 
   if(solver_type == SolverType::Steady)
@@ -324,7 +327,7 @@ Parameters::check(ConditionalOStream const & pcout) const
     if(convective_problem())
     {
       AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
-                  ExcMessage(
+                  dealii::ExcMessage(
                     "Convective term has to be formulated implicitly when using a steady solver."));
     }
   }
@@ -335,7 +338,7 @@ Parameters::check(ConditionalOStream const & pcout) const
     {
       AssertThrow(
         treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
-        ExcMessage(
+        dealii::ExcMessage(
           "Operator-integration-factor splitting approach introduces a splitting error. "
           "Hence, this approach cannot be used to solve the steady Navier-Stokes equations."));
     }
@@ -351,27 +354,27 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(temporal_discretization != TemporalDiscretization::BDFCoupledSolution)
     AssertThrow(
       get_degree_p(degree_u) > 0,
-      ExcMessage(
+      dealii::ExcMessage(
         "Polynomial degree of pressure has to be larger than zero for projection-type methods."));
 
   AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
 
   if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
   {
     AssertThrow(penalty_term_div_formulation != PenaltyTermDivergenceFormulation::Undefined,
-                ExcMessage("parameter must be defined"));
+                dealii::ExcMessage("parameter must be defined"));
   }
 
   if(equation_type == EquationType::NavierStokes)
   {
-    AssertThrow(upwind_factor >= 0.0, ExcMessage("Upwind factor must not be negative."));
+    AssertThrow(upwind_factor >= 0.0, dealii::ExcMessage("Upwind factor must not be negative."));
   }
 
   if(use_continuity_penalty == true)
   {
     AssertThrow(continuity_penalty_components != ContinuityPenaltyComponents::Undefined,
-                ExcMessage("Parameter must be defined"));
+                dealii::ExcMessage("Parameter must be defined"));
 
     if(continuity_penalty_use_boundary_data == true)
     {
@@ -379,7 +382,7 @@ Parameters::check(ConditionalOStream const & pcout) const
       {
         AssertThrow(
           apply_penalty_terms_in_postprocessing_step == true,
-          ExcMessage(
+          dealii::ExcMessage(
             "Penalty terms have to be applied in postprocessing step if boundary data is used. "
             "Otherwise, the boundary condition will be inconsistent and temporal accuracy is limited to low order."));
       }
@@ -389,7 +392,7 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
     AssertThrow(type_penalty_parameter != TypePenaltyParameter::Undefined,
-                ExcMessage("Parameter must be defined"));
+                dealii::ExcMessage("Parameter must be defined"));
   }
 
   if(solver_type == SolverType::Steady)
@@ -397,8 +400,9 @@ Parameters::check(ConditionalOStream const & pcout) const
     if(use_divergence_penalty == true || use_continuity_penalty == true)
     {
       AssertThrow(apply_penalty_terms_in_postprocessing_step == false,
-                  ExcMessage("Use apply_penalty_terms_in_postprocessing_step = false, "
-                             "otherwise the penalty terms will be ignored by the steady solver."));
+                  dealii::ExcMessage(
+                    "Use apply_penalty_terms_in_postprocessing_step = false, "
+                    "otherwise the penalty terms will be ignored by the steady solver."));
     }
   }
 
@@ -406,7 +410,7 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     AssertThrow(order_extrapolation_pressure_nbc <= order_time_integrator,
-                ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
+                dealii::ExcMessage("Invalid parameter order_extrapolation_pressure_nbc!"));
 
     if(order_extrapolation_pressure_nbc > 2)
     {
@@ -422,29 +426,29 @@ Parameters::check(ConditionalOStream const & pcout) const
                     FormulationConvectiveTerm::DivergenceFormulation ||
                   formulation_convective_term_bc ==
                     FormulationConvectiveTerm::ConvectiveFormulation,
-                ExcMessage("Not implemented."));
+                dealii::ExcMessage("Not implemented."));
 
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Implicit,
-                ExcMessage("An implicit treatment of the convective term is not possible "
-                           "in combination with the dual splitting scheme."));
+                dealii::ExcMessage("An implicit treatment of the convective term is not possible "
+                                   "in combination with the dual splitting scheme."));
   }
 
   // PRESSURE-CORRECTION SCHEME
   if(temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     AssertThrow(order_pressure_extrapolation <= order_time_integrator,
-                ExcMessage("Invalid parameter order_pressure_extrapolation!"));
+                dealii::ExcMessage("Invalid parameter order_pressure_extrapolation!"));
 
     if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
     {
       AssertThrow(multigrid_operator_type_momentum != MultigridOperatorType::Undefined,
-                  ExcMessage("Parameter must be defined"));
+                  dealii::ExcMessage("Parameter must be defined"));
 
       if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
-        AssertThrow(multigrid_operator_type_momentum !=
-                      MultigridOperatorType::ReactionConvectionDiffusion,
-                    ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+        AssertThrow(
+          multigrid_operator_type_momentum != MultigridOperatorType::ReactionConvectionDiffusion,
+          dealii::ExcMessage("Invalid parameter. Convective term is treated explicitly."));
       }
     }
   }
@@ -453,25 +457,27 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     if(use_scaling_continuity == true)
-      AssertThrow(scaling_factor_continuity > 0.0, ExcMessage("Invalid parameter"));
+      AssertThrow(scaling_factor_continuity > 0.0, dealii::ExcMessage("Invalid parameter"));
 
     if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid)
     {
       AssertThrow(multigrid_operator_type_velocity_block != MultigridOperatorType::Undefined,
-                  ExcMessage("Parameter must be defined"));
+                  dealii::ExcMessage("Parameter must be defined"));
 
       if(equation_type == EquationType::Stokes)
       {
         AssertThrow(multigrid_operator_type_velocity_block !=
                       MultigridOperatorType::ReactionConvectionDiffusion,
-                    ExcMessage("Invalid parameter (the specified equation type is Stokes)."));
+                    dealii::ExcMessage(
+                      "Invalid parameter (the specified equation type is Stokes)."));
       }
 
       if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
         AssertThrow(multigrid_operator_type_velocity_block !=
                       MultigridOperatorType::ReactionConvectionDiffusion,
-                    ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+                    dealii::ExcMessage(
+                      "Invalid parameter. Convective term is treated explicitly."));
       }
     }
   }
@@ -480,13 +486,14 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     AssertThrow(time_integrator_oif != TimeIntegratorOIF::Undefined,
-                ExcMessage("parameter must be defined"));
+                dealii::ExcMessage("parameter must be defined"));
 
-    AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
-    AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+    AssertThrow(cfl > 0., dealii::ExcMessage("parameter must be defined"));
+    AssertThrow(cfl_oif > 0., dealii::ExcMessage("parameter must be defined"));
 
     AssertThrow(ale_formulation == false,
-                ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
+                dealii::ExcMessage(
+                  "ALE formulation is not implemented for OIF substepping technique."));
   }
 
   // NUMERICAL PARAMETERS
@@ -494,7 +501,7 @@ Parameters::check(ConditionalOStream const & pcout) const
   {
     AssertThrow(
       use_cell_based_face_loops == true,
-      ExcMessage(
+      dealii::ExcMessage(
         "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
   }
 
@@ -503,8 +510,9 @@ Parameters::check(ConditionalOStream const & pcout) const
   if(use_turbulence_model)
   {
     AssertThrow(turbulence_model != TurbulenceEddyViscosityModel::Undefined,
-                ExcMessage("parameter must be defined"));
-    AssertThrow(turbulence_model_constant > 0, ExcMessage("parameter must be greater than zero"));
+                dealii::ExcMessage("parameter must be defined"));
+    AssertThrow(turbulence_model_constant > 0,
+                dealii::ExcMessage("parameter must be greater than zero"));
   }
 }
 
@@ -546,8 +554,8 @@ Parameters::get_degree_p(unsigned int const degree_u) const
   if(degree_p == DegreePressure::MixedOrder)
   {
     AssertThrow(degree_u > 0,
-                ExcMessage("The polynomial degree of the velocity shape functions"
-                           " has to be larger than zero for a mixed-order formulation."));
+                dealii::ExcMessage("The polynomial degree of the velocity shape functions"
+                                   " has to be larger than zero for a mixed-order formulation."));
 
     k = degree_u - 1;
   }
@@ -557,14 +565,14 @@ Parameters::get_degree_p(unsigned int const degree_u) const
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   return k;
 }
 
 void
-Parameters::print(ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -603,7 +611,7 @@ Parameters::print(ConditionalOStream const & pcout, std::string const & name) co
 }
 
 void
-Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -637,7 +645,7 @@ Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout
 
 
 void
-Parameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
+Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -662,7 +670,7 @@ Parameters::print_parameters_physical_quantities(ConditionalOStream const & pcou
 }
 
 void
-Parameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -726,7 +734,7 @@ Parameters::print_parameters_temporal_discretization(ConditionalOStream const & 
 }
 
 void
-Parameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial discretization:" << std::endl;
 
@@ -813,7 +821,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 }
 
 void
-Parameters::print_parameters_turbulence(ConditionalOStream const & pcout) const
+Parameters::print_parameters_turbulence(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Turbulence:" << std::endl;
 
@@ -827,7 +835,7 @@ Parameters::print_parameters_turbulence(ConditionalOStream const & pcout) const
 }
 
 void
-Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
+Parameters::print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 
@@ -846,7 +854,7 @@ Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pco
 }
 
 void
-Parameters::print_parameters_pressure_poisson(ConditionalOStream const & pcout) const
+Parameters::print_parameters_pressure_poisson(dealii::ConditionalOStream const & pcout) const
 {
   // pressure Poisson equation
   pcout << std::endl << "  Pressure Poisson equation (PPE):" << std::endl;
@@ -877,7 +885,7 @@ Parameters::print_parameters_pressure_poisson(ConditionalOStream const & pcout) 
 }
 
 void
-Parameters::print_parameters_projection_step(ConditionalOStream const & pcout) const
+Parameters::print_parameters_projection_step(dealii::ConditionalOStream const & pcout) const
 {
   if(use_divergence_penalty == true)
   {
@@ -921,7 +929,7 @@ Parameters::print_parameters_projection_step(ConditionalOStream const & pcout) c
 }
 
 void
-Parameters::print_parameters_dual_splitting(ConditionalOStream const & pcout) const
+Parameters::print_parameters_dual_splitting(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "High-order dual splitting scheme:" << std::endl;
 
@@ -972,7 +980,7 @@ Parameters::print_parameters_dual_splitting(ConditionalOStream const & pcout) co
 }
 
 void
-Parameters::print_parameters_pressure_correction(ConditionalOStream const & pcout) const
+Parameters::print_parameters_pressure_correction(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Pressure-correction scheme:" << std::endl;
 
@@ -1043,7 +1051,7 @@ Parameters::print_parameters_pressure_correction(ConditionalOStream const & pcou
 
 
 void
-Parameters::print_parameters_coupled_solver(ConditionalOStream const & pcout) const
+Parameters::print_parameters_coupled_solver(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Coupled Navier-Stokes solver:" << std::endl;
 

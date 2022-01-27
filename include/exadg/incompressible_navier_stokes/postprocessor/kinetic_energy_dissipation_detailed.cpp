@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 KineticEnergyCalculatorDetailed<dim, Number>::KineticEnergyCalculatorDetailed(MPI_Comm const & comm)
   : KineticEnergyCalculator<dim, Number>(comm)
@@ -40,11 +38,11 @@ KineticEnergyCalculatorDetailed<dim, Number>::KineticEnergyCalculatorDetailed(MP
 template<int dim, typename Number>
 void
 KineticEnergyCalculatorDetailed<dim, Number>::setup(
-  NavierStokesOperator const &    navier_stokes_operator_in,
-  MatrixFree<dim, Number> const & matrix_free_in,
-  unsigned int const              dof_index_in,
-  unsigned int const              quad_index_in,
-  KineticEnergyData const &       kinetic_energy_data_in)
+  NavierStokesOperator const &            navier_stokes_operator_in,
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_in,
+  unsigned int const                      quad_index_in,
+  KineticEnergyData const &               kinetic_energy_data_in)
 {
   Base::setup(matrix_free_in, dof_index_in, quad_index_in, kinetic_energy_data_in);
 
@@ -60,7 +58,8 @@ KineticEnergyCalculatorDetailed<dim, Number>::evaluate(VectorType const & veloci
   if(this->data.calculate == true)
   {
     AssertThrow(time_step_number >= 0,
-                ExcMessage("This postprocessing tool can only be used for unsteady problems."));
+                dealii::ExcMessage(
+                  "This postprocessing tool can only be used for unsteady problems."));
 
     if(this->data.evaluate_individual_terms)
       calculate_detailed(velocity, time, time_step_number);
@@ -83,7 +82,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
     Number volume = this->integrate(
       *this->matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
 
-    AssertThrow(navier_stokes_operator != nullptr, ExcMessage("Invalid pointer."));
+    AssertThrow(navier_stokes_operator != nullptr, dealii::ExcMessage("Invalid pointer."));
     Number dissipation_convective =
       navier_stokes_operator->calculate_dissipation_convective_term(velocity, time) / volume;
     Number dissipation_viscous =
@@ -94,7 +93,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
       navier_stokes_operator->calculate_dissipation_continuity_term(velocity) / volume;
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
     {
       // clang-format off
       std::ostringstream filename;

@@ -74,7 +74,7 @@ run(std::string const & input_file,
     MPI_Comm const &    mpi_comm,
     bool const          is_test)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   std::shared_ptr<IncNS::ApplicationBase<dim, Number>> application =
@@ -111,8 +111,8 @@ main(int argc, char ** argv)
   // use stride of n cores
   int const n = 48; // 24;
 
-  int const rank     = Utilities::MPI::this_mpi_process(mpi_comm);
-  int const size     = Utilities::MPI::n_mpi_processes(mpi_comm);
+  int const rank     = dealii::Utilities::MPI::this_mpi_process(mpi_comm);
+  int const size     = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
   int const flag     = 1;
   int const new_rank = rank + (rank % n) * size;
 

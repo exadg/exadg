@@ -27,14 +27,12 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim>
 struct FieldFunctions
 {
-  std::shared_ptr<Function<dim>> right_hand_side;
-  std::shared_ptr<Function<dim>> initial_displacement;
-  std::shared_ptr<Function<dim>> initial_velocity;
+  std::shared_ptr<dealii::Function<dim>> right_hand_side;
+  std::shared_ptr<dealii::Function<dim>> initial_displacement;
+  std::shared_ptr<dealii::Function<dim>> initial_velocity;
 };
 
 } // namespace Structure

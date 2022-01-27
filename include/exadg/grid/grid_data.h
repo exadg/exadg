@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct GridData
 {
   GridData()
@@ -45,7 +43,7 @@ struct GridData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 

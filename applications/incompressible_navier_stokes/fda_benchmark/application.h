@@ -34,22 +34,20 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
   InitialSolutionVelocity(double const max_velocity)
-    : Function<dim>(dim, 0.0), max_velocity(max_velocity)
+    : dealii::Function<dim>(dim, 0.0), max_velocity(max_velocity)
   {
     srand(0); // initialize rand() to obtain reproducible results
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
-    AssertThrow(dim == 3, ExcMessage("Dimension has to be dim==3."));
+    AssertThrow(dim == 3, dealii::ExcMessage("Dimension has to be dim==3."));
 
     double result = 0.0;
 
@@ -77,9 +75,10 @@ public:
         double const phi    = std::atan2(p[1], p[0]);
         double const factor = 0.5;
 
-        double perturbation = factor * max_velocity_z * std::sin(4.0 * phi) *
-                                std::sin(8.0 * numbers::PI * p[2] / FDANozzle::LENGTH_PRECURSOR) +
-                              factor * max_velocity_z * ((double)rand() / RAND_MAX - 0.5) / 0.5;
+        double perturbation =
+          factor * max_velocity_z * std::sin(4.0 * phi) *
+            std::sin(8.0 * dealii::numbers::PI * p[2] / FDANozzle::LENGTH_PRECURSOR) +
+          factor * max_velocity_z * ((double)rand() / RAND_MAX - 0.5) / 0.5;
 
         // the perturbations should fulfill the Dirichlet boundary conditions
         perturbation *= (1.0 - pow(r / R, 6.0));
@@ -97,16 +96,16 @@ private:
 
 
 template<int dim>
-class InflowProfile : public Function<dim>
+class InflowProfile : public dealii::Function<dim>
 {
 public:
   InflowProfile(InflowDataStorage<dim> const & inflow_data_storage)
-    : Function<dim>(dim, 0.0), data(inflow_data_storage)
+    : dealii::Function<dim>(dim, 0.0), data(inflow_data_storage)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     // compute polar coordinates (r, phi) from point p
     // given in Cartesian coordinates (x, y) = inflow plane
@@ -130,16 +129,16 @@ private:
  *  Only relevant for precursor simulation.
  */
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
   RightHandSide(FlowRateController const & flow_rate_controller)
-    : Function<dim>(dim, 0.0), flow_rate_controller(flow_rate_controller)
+    : dealii::Function<dim>(dim, 0.0), flow_rate_controller(flow_rate_controller)
   {
   }
 
   double
-  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -165,7 +164,7 @@ public:
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -183,16 +182,16 @@ public:
       unsigned int degree       = 1;
       unsigned int refine_space = 0;
 
-      ParameterHandler prm;
+      dealii::ParameterHandler prm;
       // clang-format off
       prm.enter_subsection("General");
-        prm.add_parameter("DegreeMin",      degree,       "Polynomial degree of shape functions.", Patterns::Integer(1,15));
-        prm.add_parameter("RefineSpaceMin", refine_space, "Number of mesh refinements.",           Patterns::Integer(0,20));
+        prm.add_parameter("DegreeMin",      degree,       "Polynomial degree of shape functions.", dealii::Patterns::Integer(1,15));
+        prm.add_parameter("RefineSpaceMin", refine_space, "Number of mesh refinements.",           dealii::Patterns::Integer(0,20));
       prm.leave_subsection();
       // clang-format on
       prm.parse_input(input_file, "", true, true);
 
-      n_points = 20 * (degree + 1) * Utilities::pow(2, refine_space);
+      n_points = 20 * (degree + 1) * dealii::Utilities::pow(2, refine_space);
     }
 
     inflow_data_storage.reset(new InflowDataStorage<dim>(n_points,
@@ -208,8 +207,8 @@ public:
   // kinematic viscosity (same viscosity for all Reynolds numbers)
   double const viscosity = 3.31e-6;
 
-  double const area_inflow = FDANozzle::R_OUTER * FDANozzle::R_OUTER * numbers::PI;
-  double const area_throat = FDANozzle::R_INNER * FDANozzle::R_INNER * numbers::PI;
+  double const area_inflow = FDANozzle::R_OUTER * FDANozzle::R_OUTER * dealii::numbers::PI;
+  double const area_throat = FDANozzle::R_INNER * FDANozzle::R_INNER * dealii::numbers::PI;
 
   double const mean_velocity_throat = Re * viscosity / (2.0 * FDANozzle::R_INNER);
   double const target_flow_rate     = mean_velocity_throat * area_throat;
@@ -449,15 +448,15 @@ public:
   void
   create_grid_precursor() final
   {
-    Triangulation<2> tria_2d;
-    GridGenerator::hyper_ball(tria_2d, Point<2>(), FDANozzle::R_OUTER);
-    GridGenerator::extrude_triangulation(tria_2d,
-                                         FDANozzle::N_CELLS_AXIAL_PRECURSOR + 1,
-                                         FDANozzle::LENGTH_PRECURSOR,
-                                         *this->grid_pre->triangulation);
-    Tensor<1, dim> offset = Tensor<1, dim>();
-    offset[2]             = FDANozzle::Z1_PRECURSOR;
-    GridTools::shift(offset, *this->grid_pre->triangulation);
+    dealii::Triangulation<2> tria_2d;
+    dealii::GridGenerator::hyper_ball(tria_2d, dealii::Point<2>(), FDANozzle::R_OUTER);
+    dealii::GridGenerator::extrude_triangulation(tria_2d,
+                                                 FDANozzle::N_CELLS_AXIAL_PRECURSOR + 1,
+                                                 FDANozzle::LENGTH_PRECURSOR,
+                                                 *this->grid_pre->triangulation);
+    dealii::Tensor<1, dim> offset = dealii::Tensor<1, dim>();
+    offset[2]                     = FDANozzle::Z1_PRECURSOR;
+    dealii::GridTools::shift(offset, *this->grid_pre->triangulation);
 
     /*
      *  MANIFOLDS
@@ -470,12 +469,12 @@ public:
 
     for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         bool face_at_sphere_boundary = true;
-        for(unsigned int v = 0; v < GeometryInfo<dim - 1>::vertices_per_cell; ++v)
+        for(unsigned int v = 0; v < dealii::GeometryInfo<dim - 1>::vertices_per_cell; ++v)
         {
-          Point<dim> point = Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
+          dealii::Point<dim> point = dealii::Point<dim>(0, 0, cell->face(f)->vertex(v)[2]);
 
           if(std::abs((cell->face(f)->vertex(v) - point).norm() - FDANozzle::R_OUTER) > 1e-12)
             face_at_sphere_boundary = false;
@@ -491,7 +490,7 @@ public:
     }
 
     // generate vector of manifolds and apply manifold to all cells that have been marked
-    static std::vector<std::shared_ptr<Manifold<dim>>> manifold_vec;
+    static std::vector<std::shared_ptr<dealii::Manifold<dim>>> manifold_vec;
     manifold_vec.resize(manifold_ids.size());
 
     for(unsigned int i = 0; i < manifold_ids.size(); ++i)
@@ -500,8 +499,9 @@ public:
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
-          manifold_vec[i] = std::shared_ptr<Manifold<dim>>(static_cast<Manifold<dim> *>(
-            new OneSidedCylindricalManifold<dim>(cell, face_ids[i], Point<dim>())));
+          manifold_vec[i] =
+            std::shared_ptr<dealii::Manifold<dim>>(static_cast<dealii::Manifold<dim> *>(
+              new OneSidedCylindricalManifold<dim>(cell, face_ids[i], dealii::Point<dim>())));
           this->grid_pre->triangulation->set_manifold(manifold_ids[i], *(manifold_vec[i]));
         }
       }
@@ -512,7 +512,7 @@ public:
      */
     for(auto cell : this->grid_pre->triangulation->active_cell_iterators())
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         // left boundary
         if((std::fabs(cell->face(face)->center()[2] - FDANozzle::Z1_PRECURSOR) < 1e-12))
@@ -528,7 +528,7 @@ public:
       }
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 2, this->grid_pre->periodic_faces);
     this->grid_pre->triangulation->add_periodicity(this->grid_pre->periodic_faces);
 
@@ -543,12 +543,13 @@ public:
     /*
      *  FILL BOUNDARY DESCRIPTORS
      */
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     // no slip boundaries at the upper and lower wall with ID=0
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=1: prescribe velocity profile which
     // is obtained as the results of the simulation on DOMAIN 1
@@ -557,22 +558,22 @@ public:
 
     // outflow boundary condition at right boundary with ID=2
     this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(dim)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at the upper and lower wall with ID=0
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // inflow boundary condition at left boundary with ID=1
     // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
     // we assume that this is negligible when using the dual splitting scheme
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // outflow boundary condition at right boundary with ID=2: set pressure to zero
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(1)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
@@ -581,17 +582,18 @@ public:
     /*
      *  FILL BOUNDARY DESCRIPTORS
      */
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     // no slip boundaries at lower and upper wall with ID=0
     this->boundary_descriptor_pre->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     // no slip boundaries at lower and upper wall with ID=0
     this->boundary_descriptor_pre->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -599,9 +601,11 @@ public:
   {
     this->field_functions->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(max_velocity));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
@@ -609,9 +613,10 @@ public:
   {
     this->field_functions_pre->initial_solution_velocity.reset(
       new InitialSolutionVelocity<dim>(max_velocity));
-    this->field_functions_pre->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions_pre->analytical_solution_pressure.reset(
-      new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(1));
     // prescribe body force for the turbulent pipe flow (precursor) to adjust the desired flow rate
     this->field_functions_pre->right_hand_side.reset(new RightHandSide<dim>(*flow_rate_controller));
   }
@@ -672,32 +677,32 @@ public:
            z_7 = 0.008, z_8 = 0.016, z_9 = 0.024, z_10 = 0.032, z_11 = 0.06, z_12 = 0.08;
 
     // begin and end points of all lines
-    axial_profile->begin      = Point<dim>(0, 0, FDANozzle::Z1_INFLOW);
-    axial_profile->end        = Point<dim>(0, 0, FDANozzle::Z2_OUTFLOW);
-    radial_profile_z1->begin  = Point<dim>(0, 0, z_1);
-    radial_profile_z1->end    = Point<dim>(FDANozzle::radius_function(z_1), 0, z_1);
-    radial_profile_z2->begin  = Point<dim>(0, 0, z_2);
-    radial_profile_z2->end    = Point<dim>(FDANozzle::radius_function(z_2), 0, z_2);
-    radial_profile_z3->begin  = Point<dim>(0, 0, z_3);
-    radial_profile_z3->end    = Point<dim>(FDANozzle::radius_function(z_3), 0, z_3);
-    radial_profile_z4->begin  = Point<dim>(0, 0, z_4);
-    radial_profile_z4->end    = Point<dim>(FDANozzle::radius_function(z_4), 0, z_4);
-    radial_profile_z5->begin  = Point<dim>(0, 0, z_5);
-    radial_profile_z5->end    = Point<dim>(FDANozzle::radius_function(z_5), 0, z_5);
-    radial_profile_z6->begin  = Point<dim>(0, 0, z_6);
-    radial_profile_z6->end    = Point<dim>(FDANozzle::radius_function(z_6), 0, z_6);
-    radial_profile_z7->begin  = Point<dim>(0, 0, z_7);
-    radial_profile_z7->end    = Point<dim>(FDANozzle::radius_function(z_7), 0, z_7);
-    radial_profile_z8->begin  = Point<dim>(0, 0, z_8);
-    radial_profile_z8->end    = Point<dim>(FDANozzle::radius_function(z_8), 0, z_8);
-    radial_profile_z9->begin  = Point<dim>(0, 0, z_9);
-    radial_profile_z9->end    = Point<dim>(FDANozzle::radius_function(z_9), 0, z_9);
-    radial_profile_z10->begin = Point<dim>(0, 0, z_10);
-    radial_profile_z10->end   = Point<dim>(FDANozzle::radius_function(z_10), 0, z_10);
-    radial_profile_z11->begin = Point<dim>(0, 0, z_11);
-    radial_profile_z11->end   = Point<dim>(FDANozzle::radius_function(z_11), 0, z_11);
-    radial_profile_z12->begin = Point<dim>(0, 0, z_12);
-    radial_profile_z12->end   = Point<dim>(FDANozzle::radius_function(z_12), 0, z_12);
+    axial_profile->begin      = dealii::Point<dim>(0, 0, FDANozzle::Z1_INFLOW);
+    axial_profile->end        = dealii::Point<dim>(0, 0, FDANozzle::Z2_OUTFLOW);
+    radial_profile_z1->begin  = dealii::Point<dim>(0, 0, z_1);
+    radial_profile_z1->end    = dealii::Point<dim>(FDANozzle::radius_function(z_1), 0, z_1);
+    radial_profile_z2->begin  = dealii::Point<dim>(0, 0, z_2);
+    radial_profile_z2->end    = dealii::Point<dim>(FDANozzle::radius_function(z_2), 0, z_2);
+    radial_profile_z3->begin  = dealii::Point<dim>(0, 0, z_3);
+    radial_profile_z3->end    = dealii::Point<dim>(FDANozzle::radius_function(z_3), 0, z_3);
+    radial_profile_z4->begin  = dealii::Point<dim>(0, 0, z_4);
+    radial_profile_z4->end    = dealii::Point<dim>(FDANozzle::radius_function(z_4), 0, z_4);
+    radial_profile_z5->begin  = dealii::Point<dim>(0, 0, z_5);
+    radial_profile_z5->end    = dealii::Point<dim>(FDANozzle::radius_function(z_5), 0, z_5);
+    radial_profile_z6->begin  = dealii::Point<dim>(0, 0, z_6);
+    radial_profile_z6->end    = dealii::Point<dim>(FDANozzle::radius_function(z_6), 0, z_6);
+    radial_profile_z7->begin  = dealii::Point<dim>(0, 0, z_7);
+    radial_profile_z7->end    = dealii::Point<dim>(FDANozzle::radius_function(z_7), 0, z_7);
+    radial_profile_z8->begin  = dealii::Point<dim>(0, 0, z_8);
+    radial_profile_z8->end    = dealii::Point<dim>(FDANozzle::radius_function(z_8), 0, z_8);
+    radial_profile_z9->begin  = dealii::Point<dim>(0, 0, z_9);
+    radial_profile_z9->end    = dealii::Point<dim>(FDANozzle::radius_function(z_9), 0, z_9);
+    radial_profile_z10->begin = dealii::Point<dim>(0, 0, z_10);
+    radial_profile_z10->end   = dealii::Point<dim>(FDANozzle::radius_function(z_10), 0, z_10);
+    radial_profile_z11->begin = dealii::Point<dim>(0, 0, z_11);
+    radial_profile_z11->end   = dealii::Point<dim>(FDANozzle::radius_function(z_11), 0, z_11);
+    radial_profile_z12->begin = dealii::Point<dim>(0, 0, z_12);
+    radial_profile_z12->end   = dealii::Point<dim>(FDANozzle::radius_function(z_12), 0, z_12);
 
     // number of points
     axial_profile->n_points      = n_points_line_axial;
@@ -741,7 +746,7 @@ public:
     radial_profile_z11->n_points_circumferential = n_points_line_circumferential;
     radial_profile_z12->n_points_circumferential = n_points_line_circumferential;
 
-    Tensor<1, dim, double> normal;
+    dealii::Tensor<1, dim, double> normal;
     normal[2]                         = 1.0;
     radial_profile_z1->normal_vector  = normal;
     radial_profile_z2->normal_vector  = normal;
@@ -858,7 +863,7 @@ public:
     pp_data_fda.mean_velocity_data.calculate = true;
     pp_data_fda.mean_velocity_data.directory = this->output_directory;
     pp_data_fda.mean_velocity_data.filename  = filename_flowrate;
-    Tensor<1, dim, double> direction;
+    dealii::Tensor<1, dim, double> direction;
     direction[2]                                 = 1.0;
     pp_data_fda.mean_velocity_data.direction     = direction;
     pp_data_fda.mean_velocity_data.write_to_file = true;

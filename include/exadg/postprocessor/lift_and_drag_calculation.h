@@ -26,8 +26,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct LiftAndDragData
 {
   LiftAndDragData()
@@ -59,7 +57,7 @@ struct LiftAndDragData
    *  set containing boundary ID's of the surface area used
    *  to calculate lift and drag coefficients
    */
-  std::set<types::boundary_id> boundary_IDs;
+  std::set<dealii::types::boundary_id> boundary_IDs;
 
   /*
    *  filenames
@@ -74,17 +72,17 @@ template<int dim, typename Number>
 class LiftAndDragCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   LiftAndDragCalculator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const &         dof_handler_velocity_in,
-        MatrixFree<dim, Number> const & matrix_free_in,
-        unsigned int const              dof_index_velocity_in,
-        unsigned int const              dof_index_pressure_in,
-        unsigned int const              quad_index_in,
-        LiftAndDragData const &         lift_and_drag_data_in);
+  setup(dealii::DoFHandler<dim> const &         dof_handler_velocity_in,
+        dealii::MatrixFree<dim, Number> const & matrix_free_in,
+        unsigned int const                      dof_index_velocity_in,
+        unsigned int const                      dof_index_pressure_in,
+        unsigned int const                      quad_index_in,
+        LiftAndDragData const &                 lift_and_drag_data_in);
 
   void
   evaluate(VectorType const & velocity, VectorType const & pressure, Number const & time) const;
@@ -94,9 +92,9 @@ private:
 
   mutable bool clear_files;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
-  MatrixFree<dim, Number> const *     matrix_free;
-  unsigned int                        dof_index_velocity, dof_index_pressure, quad_index;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::MatrixFree<dim, Number> const *             matrix_free;
+  unsigned int dof_index_velocity, dof_index_pressure, quad_index;
 
   mutable double c_L_min, c_L_max, c_D_min, c_D_max;
 

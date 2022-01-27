@@ -31,8 +31,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, int n_components>
 OperatorBase<dim, Number, n_components>::OperatorBase()
   : dealii::Subscriptor(),
@@ -41,7 +39,7 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
     is_mg(false),
     is_dg(true),
     data(OperatorBaseData()),
-    level(numbers::invalid_unsigned_int),
+    level(dealii::numbers::invalid_unsigned_int),
     block_diagonal_preconditioner_is_initialized(false),
     n_mpi_processes(0)
 {
@@ -49,9 +47,10 @@ OperatorBase<dim, Number, n_components>::OperatorBase()
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const &   matrix_free,
-                                                AffineConstraints<Number> const & constraints,
-                                                OperatorBaseData const &          data)
+OperatorBase<dim, Number, n_components>::reinit(
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & constraints,
+  OperatorBaseData const &                  data)
 {
   // reinit data structures
   this->matrix_free.reset(matrix_free);
@@ -95,14 +94,15 @@ OperatorBase<dim, Number, n_components>::reinit(MatrixFree<dim, Number> const & 
 
   // The default value is is_mg = false and this variable is set to true in case
   // the operator is applied in multigrid algorithm. By convention, the default
-  // argument numbers::invalid_unsigned_int corresponds to the default
+  // argument dealii::numbers::invalid_unsigned_int corresponds to the default
   // value is_mg = false
-  this->is_mg = (this->level != numbers::invalid_unsigned_int);
+  this->is_mg = (this->level != dealii::numbers::invalid_unsigned_int);
 
   // initialize n_mpi_proceses
-  DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
 
-  n_mpi_processes = Utilities::MPI::n_mpi_processes(dof_handler.get_communicator());
+  n_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(dof_handler.get_communicator());
 }
 
 template<int dim, typename Number, int n_components>
@@ -127,14 +127,14 @@ OperatorBase<dim, Number, n_components>::get_level() const
 }
 
 template<int dim, typename Number, int n_components>
-AffineConstraints<Number> const &
+dealii::AffineConstraints<Number> const &
 OperatorBase<dim, Number, n_components>::get_affine_constraints() const
 {
   return *constraint;
 }
 
 template<int dim, typename Number, int n_components>
-MatrixFree<dim, Number> const &
+dealii::MatrixFree<dim, Number> const &
 OperatorBase<dim, Number, n_components>::get_matrix_free() const
 {
   return *this->matrix_free;
@@ -192,14 +192,14 @@ OperatorBase<dim, Number, n_components>::vmult_add_interface_up(VectorType &    
 }
 
 template<int dim, typename Number, int n_components>
-types::global_dof_index
+dealii::types::global_dof_index
 OperatorBase<dim, Number, n_components>::m() const
 {
   return n();
 }
 
 template<int dim, typename Number, int n_components>
-types::global_dof_index
+dealii::types::global_dof_index
 OperatorBase<dim, Number, n_components>::n() const
 {
   unsigned int dof_index = get_dof_index();
@@ -211,7 +211,7 @@ template<int dim, typename Number, int n_components>
 Number
 OperatorBase<dim, Number, n_components>::el(unsigned int const, const unsigned int) const
 {
-  AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+  AssertThrow(false, dealii::ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
 }
 
@@ -417,25 +417,26 @@ OperatorBase<dim, Number, n_components>::add_diagonal(VectorType & diagonal) con
   }
   else
   {
-    MatrixFreeTools::compute_diagonal<dim, -1, 0, n_components, Number, VectorizedArray<Number>>(
-      *matrix_free,
-      diagonal,
-      [&](auto & integrator) -> void {
-        // TODO this line is currently needed as bugfix, but should be
-        // removed because reinit is now done twice
-        this->reinit_cell(integrator.get_current_cell_index());
+    dealii::MatrixFreeTools::
+      compute_diagonal<dim, -1, 0, n_components, Number, dealii::VectorizedArray<Number>>(
+        *matrix_free,
+        diagonal,
+        [&](auto & integrator) -> void {
+          // TODO this line is currently needed as bugfix, but should be
+          // removed because reinit is now done twice
+          this->reinit_cell(integrator.get_current_cell_index());
 
-        integrator.evaluate(integrator_flags.cell_evaluate.value,
-                            integrator_flags.cell_evaluate.gradient,
-                            integrator_flags.cell_evaluate.hessian);
+          integrator.evaluate(integrator_flags.cell_evaluate.value,
+                              integrator_flags.cell_evaluate.gradient,
+                              integrator_flags.cell_evaluate.hessian);
 
-        this->do_cell_integral(integrator);
+          this->do_cell_integral(integrator);
 
-        integrator.integrate(integrator_flags.cell_integrate.value,
-                             integrator_flags.cell_integrate.gradient);
-      },
-      data.dof_index,
-      data.quad_index);
+          integrator.integrate(integrator_flags.cell_integrate.value,
+                               integrator_flags.cell_integrate.gradient);
+        },
+        data.dof_index,
+        data.quad_index);
   }
 }
 
@@ -443,7 +444,7 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() const
 {
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   // allocate memory only the first time
   if(!block_diagonal_preconditioner_is_initialized ||
@@ -453,7 +454,7 @@ OperatorBase<dim, Number, n_components>::calculate_block_diagonal_matrices() con
       matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
 
     matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                    LAPACKFullMatrix<Number>(dofs, dofs));
+                    dealii::LAPACKFullMatrix<Number>(dofs, dofs));
 
     block_diagonal_preconditioner_is_initialized = true;
   }
@@ -470,7 +471,7 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix & matrices) const
 {
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   if(evaluate_face_integrals())
   {
@@ -482,7 +483,7 @@ OperatorBase<dim, Number, n_components>::add_block_diagonal_matrices(BlockMatrix
     {
       AssertThrow(
         n_mpi_processes == 1,
-        ExcMessage(
+        dealii::ExcMessage(
           "Block diagonal calculation with separate loops over cells and faces only works in serial. "
           "Use cell based loops for parallel computations."));
 
@@ -506,9 +507,9 @@ OperatorBase<dim, Number, n_components>::apply_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
 {
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_diagonal_preconditioner_is_initialized,
-              ExcMessage("Block Jacobi matrices have not been initialized!"));
+              dealii::ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   matrix_free->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
 }
@@ -540,9 +541,9 @@ OperatorBase<dim, Number, n_components>::apply_inverse_block_diagonal_matrix_bas
   VectorType &       dst,
   VectorType const & src) const
 {
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_diagonal_preconditioner_is_initialized,
-              ExcMessage("Block Jacobi matrices have not been initialized!"));
+              dealii::ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   matrix_free->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based,
                          this,
@@ -559,7 +560,7 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
 
   if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
   {
-    typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+    typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
 
     elementwise_preconditioner =
       std::make_shared<IDENTITY>(elementwise_operator->get_problem_size());
@@ -573,7 +574,7 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   Elementwise::IterativeSolverData iterative_solver_data;
@@ -589,14 +590,14 @@ OperatorBase<dim, Number, n_components>::initialize_block_diagonal_preconditione
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
-  unsigned int const                    cell,
-  VectorizedArray<Number> * const       dst,
-  VectorizedArray<Number> const * const src,
-  unsigned int const                    problem_size) const
+  unsigned int const                            cell,
+  dealii::VectorizedArray<Number> * const       dst,
+  dealii::VectorizedArray<Number> const * const src,
+  unsigned int const                            problem_size) const
 {
   (void)problem_size;
 
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   this->reinit_cell(cell);
 
@@ -618,7 +619,7 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
   if(is_dg && evaluate_face_integrals())
   {
     // face integrals
-    unsigned int const n_faces = ReferenceCells::template get_hypercube<dim>().n_faces();
+    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
       auto bids = (*matrix_free).get_faces_by_cells_boundary_id(cell, face);
@@ -634,7 +635,7 @@ OperatorBase<dim, Number, n_components>::apply_add_block_diagonal_elementwise(
       integrator_m->evaluate(integrator_flags.face_evaluate.value,
                              integrator_flags.face_evaluate.gradient);
 
-      if(bid == numbers::internal_face_boundary_id) // internal face
+      if(bid == dealii::numbers::internal_face_boundary_id) // internal face
       {
         this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
       }
@@ -656,7 +657,7 @@ template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() const
 {
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(is_dg, dealii::ExcMessage("Block Jacobi only implemented for DG!"));
 
   // initialization
 
@@ -672,7 +673,7 @@ OperatorBase<dim, Number, n_components>::update_block_diagonal_preconditioner() 
       auto dofs =
         matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
       matrices.resize(matrix_free->n_cell_batches() * vectorization_length,
-                      LAPACKFullMatrix<Number>(dofs, dofs));
+                      dealii::LAPACKFullMatrix<Number>(dofs, dofs));
     }
 
     block_diagonal_preconditioner_is_initialized = true;
@@ -700,23 +701,24 @@ namespace
 // temporary hack
 template<int dim, int spacedim, typename SparsityPatternType, typename Number>
 void
-make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
-                      SparsityPatternType &             sparsity,
-                      unsigned int const                level,
-                      AffineConstraints<Number> const & constraints,
-                      bool const                        keep_constrained_dofs = true)
+make_sparsity_pattern(const dealii::DoFHandler<dim, spacedim> & dof,
+                      SparsityPatternType &                     sparsity,
+                      unsigned int const                        level,
+                      dealii::AffineConstraints<Number> const & constraints,
+                      bool const                                keep_constrained_dofs = true)
 {
-  const types::global_dof_index n_dofs = dof.n_dofs(level);
+  const dealii::types::global_dof_index n_dofs = dof.n_dofs(level);
   (void)n_dofs;
 
-  Assert(sparsity.n_rows() == n_dofs, ExcDimensionMismatch(sparsity.n_rows(), n_dofs));
-  Assert(sparsity.n_cols() == n_dofs, ExcDimensionMismatch(sparsity.n_cols(), n_dofs));
+  Assert(sparsity.n_rows() == n_dofs, dealii::ExcDimensionMismatch(sparsity.n_rows(), n_dofs));
+  Assert(sparsity.n_cols() == n_dofs, dealii::ExcDimensionMismatch(sparsity.n_cols(), n_dofs));
 
-  unsigned int const                                dofs_per_cell = dof.get_fe().n_dofs_per_cell();
-  std::vector<types::global_dof_index>              dofs_on_this_cell(dofs_per_cell);
-  typename DoFHandler<dim, spacedim>::cell_iterator cell = dof.begin(level), endc = dof.end(level);
+  unsigned int const                           dofs_per_cell = dof.get_fe().n_dofs_per_cell();
+  std::vector<dealii::types::global_dof_index> dofs_on_this_cell(dofs_per_cell);
+  typename dealii::DoFHandler<dim, spacedim>::cell_iterator cell = dof.begin(level),
+                                                            endc = dof.end(level);
   for(; cell != endc; ++cell)
-    if(dof.get_triangulation().locally_owned_subdomain() == numbers::invalid_subdomain_id ||
+    if(dof.get_triangulation().locally_owned_subdomain() == dealii::numbers::invalid_subdomain_id ||
        cell->level_subdomain_id() == dof.get_triangulation().locally_owned_subdomain())
     {
       cell->get_mg_dof_indices(dofs_on_this_cell);
@@ -729,8 +731,8 @@ make_sparsity_pattern(const DoFHandler<dim, spacedim> & dof,
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix,
-  MPI_Comm const &                 mpi_comm) const
+  dealii::TrilinosWrappers::SparseMatrix & system_matrix,
+  MPI_Comm const &                         mpi_comm) const
 {
   internal_init_system_matrix(system_matrix, mpi_comm);
 }
@@ -738,7 +740,7 @@ OperatorBase<dim, Number, n_components>::init_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::calculate_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix) const
+  dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   internal_calculate_system_matrix(system_matrix);
 }
@@ -748,8 +750,8 @@ OperatorBase<dim, Number, n_components>::calculate_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::init_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix,
-  MPI_Comm const &                   mpi_comm) const
+  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
+  MPI_Comm const &                           mpi_comm) const
 {
   internal_init_system_matrix(system_matrix, mpi_comm);
 }
@@ -757,7 +759,7 @@ OperatorBase<dim, Number, n_components>::init_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::calculate_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
 {
   internal_calculate_system_matrix(system_matrix);
 }
@@ -770,46 +772,48 @@ OperatorBase<dim, Number, n_components>::internal_init_system_matrix(
   SparseMatrix &   system_matrix,
   MPI_Comm const & mpi_comm) const
 {
-  DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler(this->data.dof_index);
+  dealii::DoFHandler<dim> const & dof_handler =
+    this->matrix_free->get_dof_handler(this->data.dof_index);
 
-  IndexSet const & owned_dofs =
+  dealii::IndexSet const & owned_dofs =
     is_mg ? dof_handler.locally_owned_mg_dofs(this->level) : dof_handler.locally_owned_dofs();
 
   // check for a valid subcommunicator by asserting that the sum of the dofs
   // owned by all participating processes is equal to the sum of global dofs -
   // the second check is needed on the MPI processes not participating in the
   // actual communication, i.e., which are left out from sub-communication
-  types::global_dof_index const sum_of_locally_owned_dofs =
-    Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm);
+  dealii::types::global_dof_index const sum_of_locally_owned_dofs =
+    dealii::Utilities::MPI::sum(owned_dofs.n_elements(), mpi_comm);
   bool const my_rank_is_part_of_subcommunicator = sum_of_locally_owned_dofs == owned_dofs.size();
   AssertThrow(my_rank_is_part_of_subcommunicator || owned_dofs.n_elements() == 0,
-              ExcMessage("The given communicator mpi_comm in init_system_matrix does not span "
-                         "all MPI processes needed to cover the index space of all dofs: " +
-                         std::to_string(sum_of_locally_owned_dofs) + " vs " +
-                         std::to_string(owned_dofs.size())));
+              dealii::ExcMessage(
+                "The given communicator mpi_comm in init_system_matrix does not span "
+                "all MPI processes needed to cover the index space of all dofs: " +
+                std::to_string(sum_of_locally_owned_dofs) + " vs " +
+                std::to_string(owned_dofs.size())));
 
-  IndexSet relevant_dofs;
+  dealii::IndexSet relevant_dofs;
   if(is_mg)
-    DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+    dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
   else
-    DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
-  DynamicSparsityPattern dsp(relevant_dofs);
+    dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs);
+  dealii::DynamicSparsityPattern dsp(relevant_dofs);
 
   if(is_dg && is_mg)
-    MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
+    dealii::MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
   else if(is_dg && !is_mg)
-    DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
+    dealii::DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   else if(/*!is_dg &&*/ is_mg)
-    make_sparsity_pattern<dim, dim, DynamicSparsityPattern, Number>(dof_handler,
-                                                                    dsp,
-                                                                    this->level,
-                                                                    *this->constraint);
+    make_sparsity_pattern<dim, dim, dealii::DynamicSparsityPattern, Number>(dof_handler,
+                                                                            dsp,
+                                                                            this->level,
+                                                                            *this->constraint);
   else /* if (!is_dg && !is_mg)*/
-    DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
+    dealii::DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
   if(my_rank_is_part_of_subcommunicator)
   {
-    SparsityTools::distribute_sparsity_pattern(dsp, owned_dofs, mpi_comm, relevant_dofs);
+    dealii::SparsityTools::distribute_sparsity_pattern(dsp, owned_dofs, mpi_comm, relevant_dofs);
     system_matrix.reinit(owned_dofs, owned_dofs, dsp, mpi_comm);
   }
 }
@@ -839,7 +843,7 @@ OperatorBase<dim, Number, n_components>::internal_calculate_system_matrix(
   }
 
   // communicate overlapping matrix parts
-  system_matrix.compress(VectorOperation::add);
+  system_matrix.compress(dealii::VectorOperation::add);
 }
 
 template<int dim, typename Number, int n_components>
@@ -870,7 +874,8 @@ OperatorBase<dim, Number, n_components>::do_cell_integral(IntegratorCell & integ
 {
   (void)integrator;
 
-  AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral() has not been implemented!"));
+  AssertThrow(false,
+              dealii::ExcMessage("OperatorBase::do_cell_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, int n_components>
@@ -881,35 +886,37 @@ OperatorBase<dim, Number, n_components>::do_face_integral(IntegratorFace & integ
   (void)integrator_m;
   (void)integrator_p;
 
-  AssertThrow(false, ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
+  AssertThrow(false,
+              dealii::ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::do_boundary_integral(
-  IntegratorFace &           integrator,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   (void)integrator;
   (void)operator_type;
   (void)boundary_id;
 
-  AssertThrow(false, ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
+  AssertThrow(false,
+              dealii::ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::do_boundary_integral_continuous(
-  IntegratorFace &           integrator,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator,
+  dealii::types::boundary_id const & boundary_id) const
 {
   (void)integrator;
   (void)boundary_id;
 
   AssertThrow(
     false,
-    ExcMessage(
+    dealii::ExcMessage(
       "OperatorBase::do_boundary_integral_continuous() has to be overwritten by derived class!"));
 }
 
@@ -922,7 +929,7 @@ OperatorBase<dim, Number, n_components>::set_constrained_values(VectorType & sol
   (void)time;
 
   AssertThrow(false,
-              ExcMessage(
+              dealii::ExcMessage(
                 "OperatorBase::set_constrained_values() has to be overwritten by derived class!"));
 }
 
@@ -934,7 +941,8 @@ OperatorBase<dim, Number, n_components>::do_face_int_integral(IntegratorFace & i
   (void)integrator_m;
   (void)integrator_p;
 
-  AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral() has not been implemented!"));
+  AssertThrow(false,
+              dealii::ExcMessage("OperatorBase::do_face_int_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, int n_components>
@@ -945,19 +953,20 @@ OperatorBase<dim, Number, n_components>::do_face_ext_integral(IntegratorFace & i
   (void)integrator_m;
   (void)integrator_p;
 
-  AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral() has not been implemented!"));
+  AssertThrow(false,
+              dealii::ExcMessage("OperatorBase::do_face_ext_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::reinit_face_cell_based(
-  unsigned int const       cell,
-  unsigned int const       face,
-  types::boundary_id const boundary_id) const
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   integrator_m->reinit(cell, face);
 
-  if(boundary_id == numbers::internal_face_boundary_id) // internal face
+  if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
   {
     integrator_p->reinit(cell, face);
   }
@@ -979,8 +988,8 @@ OperatorBase<dim, Number, n_components>::create_standard_basis(unsigned int     
 {
   // create a standard basis in the dof values of FEEvalution
   for(unsigned int i = 0; i < integrator.dofs_per_cell; ++i)
-    integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+    integrator.begin_dof_values()[i] = dealii::make_vectorized_array<Number>(0.);
+  integrator.begin_dof_values()[j] = dealii::make_vectorized_array<Number>(1.);
 }
 
 template<int dim, typename Number, int n_components>
@@ -990,8 +999,8 @@ OperatorBase<dim, Number, n_components>::create_standard_basis(unsigned int     
 {
   // create a standard basis in the dof values of FEEvalution
   for(unsigned int i = 0; i < integrator.dofs_per_cell; ++i)
-    integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+    integrator.begin_dof_values()[i] = dealii::make_vectorized_array<Number>(0.);
+  integrator.begin_dof_values()[j] = dealii::make_vectorized_array<Number>(1.);
 }
 
 
@@ -1003,20 +1012,21 @@ OperatorBase<dim, Number, n_components>::create_standard_basis(unsigned int     
 {
   // create a standard basis in the dof values of the first FEFaceEvalution
   for(unsigned int i = 0; i < integrator_1.dofs_per_cell; ++i)
-    integrator_1.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-  integrator_1.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+    integrator_1.begin_dof_values()[i] = dealii::make_vectorized_array<Number>(0.);
+  integrator_1.begin_dof_values()[j] = dealii::make_vectorized_array<Number>(1.);
 
   // clear dof values of the second FEFaceEvalution
   for(unsigned int i = 0; i < integrator_2.dofs_per_cell; ++i)
-    integrator_2.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+    integrator_2.begin_dof_values()[i] = dealii::make_vectorized_array<Number>(0.);
 }
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::cell_loop_dbc(MatrixFree<dim, Number> const & matrix_free,
-                                                       VectorType &                    dst,
-                                                       VectorType const &              src,
-                                                       Range const &                   range) const
+OperatorBase<dim, Number, n_components>::cell_loop_dbc(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
 
@@ -1040,10 +1050,11 @@ OperatorBase<dim, Number, n_components>::cell_loop_dbc(MatrixFree<dim, Number> c
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                                   VectorType &                    dst,
-                                                   VectorType const &              src,
-                                                   Range const &                   range) const
+OperatorBase<dim, Number, n_components>::cell_loop(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
 
@@ -1066,10 +1077,11 @@ OperatorBase<dim, Number, n_components>::cell_loop(MatrixFree<dim, Number> const
 
 template<int dim, typename Number, int n_components>
 void
-OperatorBase<dim, Number, n_components>::face_loop(MatrixFree<dim, Number> const & matrix_free,
-                                                   VectorType &                    dst,
-                                                   VectorType const &              src,
-                                                   Range const &                   range) const
+OperatorBase<dim, Number, n_components>::face_loop(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
 
@@ -1098,10 +1110,10 @@ OperatorBase<dim, Number, n_components>::face_loop(MatrixFree<dim, Number> const
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   for(unsigned int face = range.first; face < range.second; face++)
   {
@@ -1124,10 +1136,10 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_hom_operator(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)src;
 
@@ -1170,10 +1182,10 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_inhom_operator(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_full_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   for(unsigned int face = range.first; face < range.second; face++)
   {
@@ -1194,10 +1206,10 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_full_operator(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_empty(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -1210,10 +1222,10 @@ OperatorBase<dim, Number, n_components>::cell_loop_empty(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::face_loop_empty(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -1226,17 +1238,17 @@ OperatorBase<dim, Number, n_components>::face_loop_empty(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)src;
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator->dofs_per_cell;
-  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+  unsigned int const                                     dofs_per_cell = integrator->dofs_per_cell;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -1244,7 +1256,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      // write standard basis into dof values of FEEvaluation
+      // write standard basis into dof values of dealii::FEEvaluation
       this->create_standard_basis(j, *integrator);
 
       integrator->evaluate(integrator_flags.cell_evaluate.value,
@@ -1259,7 +1271,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
       // extract single value from result vector and temporally store it
       local_diag[j] = integrator->begin_dof_values()[j];
     }
-    // copy local diagonal entries into dof values of FEEvaluation ...
+    // copy local diagonal entries into dof values of dealii::FEEvaluation ...
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
       integrator->begin_dof_values()[j] = local_diag[j];
 
@@ -1271,17 +1283,17 @@ OperatorBase<dim, Number, n_components>::cell_loop_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::face_loop_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)src;
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator_m->dofs_per_cell;
-  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+  unsigned int const dofs_per_cell = integrator_m->dofs_per_cell;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(auto face = range.first; face < range.second; ++face)
   {
@@ -1334,16 +1346,16 @@ OperatorBase<dim, Number, n_components>::face_loop_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)src;
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator_m->dofs_per_cell;
-  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+  unsigned int const dofs_per_cell = integrator_m->dofs_per_cell;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(unsigned int face = range.first; face < range.second; face++)
   {
@@ -1377,16 +1389,16 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)src;
 
   // create temporal array for local diagonal
-  unsigned int const                     dofs_per_cell = integrator->dofs_per_cell;
-  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+  unsigned int const                                     dofs_per_cell = integrator->dofs_per_cell;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> local_diag(dofs_per_cell);
 
   for(auto cell = range.first; cell < range.second; ++cell)
   {
@@ -1409,7 +1421,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
     }
 
     // loop over all faces and gather results into local diagonal local_diag
-    unsigned int const n_faces = ReferenceCells::template get_hypercube<dim>().n_faces();
+    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
@@ -1421,7 +1433,8 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
       unsigned int const n_filled_lanes = matrix_free.n_active_entries_per_cell_batch(cell);
       for(unsigned int v = 0; v < n_filled_lanes; v++)
         Assert(bid == bids[v],
-               ExcMessage("Cell-based face loop encountered face batch with different bids."));
+               dealii::ExcMessage(
+                 "Cell-based face loop encountered face batch with different bids."));
 #endif
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1431,7 +1444,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
         integrator_m->evaluate(integrator_flags.face_evaluate.value,
                                integrator_flags.face_evaluate.gradient);
 
-        if(bid == numbers::internal_face_boundary_id) // internal face
+        if(bid == dealii::numbers::internal_face_boundary_id) // internal face
         {
           this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
         }
@@ -1459,10 +1472,10 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_matrix_based(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   cell_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           cell_range) const
 {
   (void)matrix_free;
 
@@ -1476,7 +1489,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_
 
     for(unsigned int v = 0; v < vectorization_length; ++v)
     {
-      Vector<Number> src_vector(dofs_per_cell);
+      dealii::Vector<Number> src_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
         src_vector(j) = integrator->begin_dof_values()[j][v];
 
@@ -1494,10 +1507,10 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_inverse_block_diagonal_
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_based(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
 
@@ -1511,8 +1524,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_b
 
     for(unsigned int v = 0; v < vectorization_length; ++v)
     {
-      Vector<Number> src_vector(dofs_per_cell);
-      Vector<Number> dst_vector(dofs_per_cell);
+      dealii::Vector<Number> src_vector(dofs_per_cell);
+      dealii::Vector<Number> dst_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
         src_vector(j) = integrator->begin_dof_values()[j][v];
 
@@ -1530,8 +1543,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_apply_block_diagonal_matrix_b
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                   matrices,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  BlockMatrix &                           matrices,
   BlockMatrix const &,
   Range const & range) const
 {
@@ -1566,8 +1579,8 @@ OperatorBase<dim, Number, n_components>::cell_loop_block_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                   matrices,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  BlockMatrix &                           matrices,
   BlockMatrix const &,
   Range const & range) const
 {
@@ -1626,8 +1639,8 @@ OperatorBase<dim, Number, n_components>::face_loop_block_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                   matrices,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  BlockMatrix &                           matrices,
   BlockMatrix const &,
   Range const & range) const
 {
@@ -1667,8 +1680,8 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_block_diagonal(
 template<int dim, typename Number, int n_components>
 void
 OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
-  MatrixFree<dim, Number> const & matrix_free,
-  BlockMatrix &                   matrices,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  BlockMatrix &                           matrices,
   BlockMatrix const &,
   Range const & range) const
 {
@@ -1699,7 +1712,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
     }
 
     // loop over all faces
-    unsigned int const n_faces = ReferenceCells::template get_hypercube<dim>().n_faces();
+    unsigned int const n_faces = dealii::ReferenceCells::template get_hypercube<dim>().n_faces();
     for(unsigned int face = 0; face < n_faces; ++face)
     {
       auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
@@ -1710,7 +1723,8 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
 #ifdef DEBUG
       for(unsigned int v = 0; v < n_filled_lanes; v++)
         Assert(bid == bids[v],
-               ExcMessage("Cell-based face loop encountered face batch with different bids."));
+               dealii::ExcMessage(
+                 "Cell-based face loop encountered face batch with different bids."));
 #endif
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1720,7 +1734,7 @@ OperatorBase<dim, Number, n_components>::cell_based_loop_block_diagonal(
         integrator_m->evaluate(integrator_flags.face_evaluate.value,
                                integrator_flags.face_evaluate.gradient);
 
-        if(bid == numbers::internal_face_boundary_id) // internal face
+        if(bid == dealii::numbers::internal_face_boundary_id) // internal face
         {
           this->do_face_int_integral_cell_based(*integrator_m, *integrator_p);
         }
@@ -1745,10 +1759,10 @@ template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
 OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
-  MatrixFree<dim, Number> const & matrix_free,
-  SparseMatrix &                  dst,
-  SparseMatrix const &            src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  SparseMatrix &                          dst,
+  SparseMatrix const &                    src,
+  Range const &                           range) const
 {
   (void)src;
 
@@ -1789,7 +1803,7 @@ OperatorBase<dim, Number, n_components>::cell_loop_calculate_system_matrix(
     {
       auto cell_v = matrix_free.get_cell_iterator(cell, v);
 
-      std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
       else
@@ -1819,10 +1833,10 @@ template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
 OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
-  MatrixFree<dim, Number> const & matrix_free,
-  SparseMatrix &                  dst,
-  SparseMatrix const &            src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  SparseMatrix &                          dst,
+  SparseMatrix const &                    src,
+  Range const &                           range) const
 {
   (void)src;
 
@@ -1854,8 +1868,8 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
     // process minus trial function
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      // write standard basis into dof values of first FEFaceEvaluation and
-      // clear dof values of second FEFaceEvaluation
+      // write standard basis into dof values of first dealii::FEFaceEvaluation and
+      // clear dof values of second dealii::FEFaceEvaluation
       this->create_standard_basis(j, *integrator_m, *integrator_p);
 
       integrator_m->evaluate(integrator_flags.face_evaluate.value,
@@ -1893,8 +1907,8 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
                                                   cell_number_p % vectorization_length);
 
       // get position in global matrix
-      std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
-      std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> dof_indices_m(dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> dof_indices_p(dofs_per_cell);
       if(is_mg)
       {
         cell_m->get_mg_dof_indices(dof_indices_m);
@@ -1918,8 +1932,8 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
     // process positive trial function
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
     {
-      // write standard basis into dof values of first FEFaceEvaluation and
-      // clear dof values of second FEFaceEvaluation
+      // write standard basis into dof values of first dealii::FEFaceEvaluation and
+      // clear dof values of second dealii::FEFaceEvaluation
       this->create_standard_basis(j, *integrator_p, *integrator_m);
 
       integrator_m->evaluate(integrator_flags.face_evaluate.value,
@@ -1957,8 +1971,8 @@ OperatorBase<dim, Number, n_components>::face_loop_calculate_system_matrix(
                                                   cell_number_p % vectorization_length);
 
       // get position in global matrix
-      std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
-      std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> dof_indices_m(dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> dof_indices_p(dofs_per_cell);
       if(is_mg)
       {
         cell_m->get_mg_dof_indices(dof_indices_m);
@@ -1985,10 +1999,10 @@ template<int dim, typename Number, int n_components>
 template<typename SparseMatrix>
 void
 OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_matrix(
-  MatrixFree<dim, Number> const & matrix_free,
-  SparseMatrix &                  dst,
-  SparseMatrix const &            src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  SparseMatrix &                          dst,
+  SparseMatrix const &                    src,
+  Range const &                           range) const
 {
   (void)src;
 
@@ -2031,7 +2045,7 @@ OperatorBase<dim, Number, n_components>::boundary_face_loop_calculate_system_mat
       auto cell_v = matrix_free.get_cell_iterator(cell_number / vectorization_length,
                                                   cell_number % vectorization_length);
 
-      std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+      std::vector<dealii::types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
       else

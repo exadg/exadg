@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Application : public ApplicationBasePrecursor<dim, Number>
 {
@@ -36,7 +34,7 @@ public:
     : ApplicationBasePrecursor<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -70,33 +68,39 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
   }
 
   void
   set_boundary_descriptor_precursor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   void
   set_field_functions_precursor() final
   {
     this->field_functions_pre->initial_solution_velocity.reset(
-      new Functions::ZeroFunction<dim>(dim));
-    this->field_functions_pre->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions_pre->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions_pre->analytical_solution_pressure.reset(
-      new Functions::ZeroFunction<dim>(1));
-    this->field_functions_pre->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions_pre->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

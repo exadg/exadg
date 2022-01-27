@@ -30,14 +30,12 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::initialize(
-  MatrixFree<dim, Number> const &        matrix_free,
-  AffineConstraints<Number> const &      affine_constraints,
-  LaplaceOperatorData<rank, dim> const & data)
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  LaplaceOperatorData<rank, dim> const &    data)
 {
   operator_data = data;
 
@@ -51,8 +49,8 @@ LaplaceOperator<dim, Number, n_components>::initialize(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::calculate_penalty_parameter(
-  MatrixFree<dim, Number> const & matrix_free,
-  unsigned int const              dof_index)
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  unsigned int const                      dof_index)
 {
   kernel.calculate_penalty_parameter(matrix_free, dof_index);
 }
@@ -106,9 +104,9 @@ LaplaceOperator<dim, Number, n_components>::reinit_boundary_face(unsigned int co
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::reinit_face_cell_based(
-  unsigned int const       cell,
-  unsigned int const       face,
-  types::boundary_id const boundary_id) const
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -210,9 +208,9 @@ LaplaceOperator<dim, Number, n_components>::do_face_ext_integral(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
-  IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -256,10 +254,10 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::cell_loop_empty(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -272,10 +270,10 @@ LaplaceOperator<dim, Number, n_components>::cell_loop_empty(
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::face_loop_empty(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   (void)matrix_free;
   (void)dst;
@@ -289,10 +287,10 @@ template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::
   boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   range) const
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           range) const
 {
   for(unsigned int face = range.first; face < range.second; face++)
   {
@@ -317,9 +315,9 @@ LaplaceOperator<dim, Number, n_components>::
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_from_dof_vector(
-  IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -331,7 +329,8 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
     // deviating from the standard boundary_face_loop_inhom_operator() function,
     // because the boundary condition comes from the vector src
     Assert(operator_type == OperatorType::inhomogeneous,
-           ExcMessage("This function is only implemented for OperatorType::inhomogeneous."));
+           dealii::ExcMessage(
+             "This function is only implemented for OperatorType::inhomogeneous."));
 
     value value_p = value();
     if(boundary_type == BoundaryType::Dirichlet)
@@ -344,7 +343,8 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
     }
     else
     {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+      AssertThrow(false,
+                  dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
     }
 
     value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
@@ -374,8 +374,8 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
-  IntegratorFace &           integrator_m,
-  types::boundary_id const & boundary_id) const
+  IntegratorFace &                   integrator_m,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -394,23 +394,23 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
                                                                    double const time) const
 {
   // standard Dirichlet boundary conditions
-  std::map<types::global_dof_index, double> boundary_values;
+  std::map<dealii::types::global_dof_index, double> boundary_values;
   for(auto dbc : operator_data.bc->dirichlet_bc)
   {
     dbc.second->set_time(time);
 
-    ComponentMask mask     = ComponentMask();
-    auto          dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
+    dealii::ComponentMask mask     = dealii::ComponentMask();
+    auto                  dbc_mask = operator_data.bc->dirichlet_bc_component_mask.find(dbc.first);
     if(dbc_mask != operator_data.bc->dirichlet_bc_component_mask.end())
       mask = dbc_mask->second;
 
-    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
-                                             this->matrix_free->get_dof_handler(
-                                               operator_data.dof_index),
-                                             dbc.first,
-                                             *dbc.second,
-                                             boundary_values,
-                                             mask);
+    dealii::VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                                     this->matrix_free->get_dof_handler(
+                                                       operator_data.dof_index),
+                                                     dbc.first,
+                                                     *dbc.second,
+                                                     boundary_values,
+                                                     mask);
   }
 
   // set Dirichlet values in solution vector
@@ -433,7 +433,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
         this->matrix_free->n_inner_face_batches() + this->matrix_free->n_boundary_face_batches();
         ++face)
     {
-      types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
+      dealii::types::boundary_id const boundary_id = this->matrix_free->get_boundary_id(face);
 
       BoundaryType const boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
@@ -450,7 +450,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
           unsigned int const index = this->matrix_free->get_shape_info(dof_index, quad_index)
                                        .face_to_cell_index_nodal[local_face_number][q];
 
-          Tensor<rank, dim, VectorizedArray<Number>> g;
+          dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> g;
 
           if(boundary_type == BoundaryType::DirichletMortar)
           {
@@ -460,7 +460,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
           }
           else
           {
-            AssertThrow(false, ExcMessage("Not implemented."));
+            AssertThrow(false, dealii::ExcMessage("Not implemented."));
           }
 
           integrator.submit_dof_value(g, index);
@@ -472,7 +472,7 @@ LaplaceOperator<dim, Number, n_components>::set_constrained_values(VectorType & 
       {
         AssertThrow(boundary_type == BoundaryType::Dirichlet ||
                       boundary_type == BoundaryType::Neumann,
-                    ExcMessage("BoundaryType not implemented."));
+                    dealii::ExcMessage("BoundaryType not implemented."));
       }
     }
   }

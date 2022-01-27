@@ -44,13 +44,11 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
   /*
@@ -74,9 +72,9 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
-        std::string const &                          dof_index_velocity_external_in = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
+        std::string const &                              dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -277,16 +275,16 @@ public:
    * Setters and getters.
    */
 
-  MatrixFree<dim, Number> const &
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler_velocity() const;
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   get_number_of_dofs() const;
 
   std::string
@@ -312,7 +310,7 @@ private:
   calculate_minimum_element_length() const;
 
   /*
-   * Initializes DoFHandlers.
+   * Initializes dealii::DoFHandlers.
    */
   void
   distribute_dofs();
@@ -376,19 +374,19 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  FE_DGQ<dim>     fe;
-  DoFHandler<dim> dof_handler;
+  dealii::FE_DGQ<dim>     fe;
+  dealii::DoFHandler<dim> dof_handler;
 
   /*
    * Numerical velocity field.
    */
-  std::shared_ptr<FESystem<dim>>   fe_velocity;
-  std::shared_ptr<DoFHandler<dim>> dof_handler_velocity;
+  std::shared_ptr<dealii::FESystem<dim>>   fe_velocity;
+  std::shared_ptr<dealii::DoFHandler<dim>> dof_handler_velocity;
 
   /*
    * Constraints.
    */
-  AffineConstraints<Number> affine_constraints;
+  dealii::AffineConstraints<Number> affine_constraints;
 
   std::string const dof_index_std      = "conv_diff";
   std::string const dof_index_velocity = "conv_diff_velocity";
@@ -401,8 +399,8 @@ private:
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
 
   /*
    * Basic operators.
@@ -435,7 +433,7 @@ private:
   /*
    * Output to screen.
    */
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 };
 
 } // namespace ConvDiff

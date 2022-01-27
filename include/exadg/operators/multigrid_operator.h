@@ -26,8 +26,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename Operator>
 class MultigridOperator : public MultigridOperatorBase<dim, Number>
 {
@@ -47,18 +45,18 @@ public:
   std::shared_ptr<Operator>
   get_pde_operator() const
   {
-    AssertThrow(pde_operator.get() != 0, ExcMessage("Invalid pointer"));
+    AssertThrow(pde_operator.get() != 0, dealii::ExcMessage("Invalid pointer"));
 
     return pde_operator;
   }
 
-  virtual AffineConstraints<typename Operator::value_type> const &
+  virtual dealii::AffineConstraints<typename Operator::value_type> const &
   get_affine_constraints() const
   {
     return pde_operator->get_affine_constraints();
   }
 
-  virtual MatrixFree<dim, Number> const &
+  virtual dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
     return pde_operator->get_matrix_free();
@@ -70,13 +68,13 @@ public:
     return pde_operator->get_dof_index();
   }
 
-  virtual types::global_dof_index
+  virtual dealii::types::global_dof_index
   m() const
   {
     return pde_operator->m();
   }
 
-  virtual types::global_dof_index
+  virtual dealii::types::global_dof_index
   n() const
   {
     return pde_operator->n();
@@ -138,14 +136,14 @@ public:
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix,
-                     MPI_Comm const &                 mpi_comm) const
+  init_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix,
+                     MPI_Comm const &                         mpi_comm) const
   {
     pde_operator->init_system_matrix(system_matrix, mpi_comm);
   }
 
   virtual void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  calculate_system_matrix(dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
   {
     pde_operator->calculate_system_matrix(system_matrix);
   }
@@ -153,14 +151,14 @@ public:
 
 #ifdef DEAL_II_WITH_PETSC
   virtual void
-  init_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix,
-                     MPI_Comm const &                   mpi_comm) const
+  init_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
+                     MPI_Comm const &                           mpi_comm) const
   {
     pde_operator->init_system_matrix(system_matrix, mpi_comm);
   }
 
   virtual void
-  calculate_system_matrix(PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  calculate_system_matrix(dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
   {
     pde_operator->calculate_system_matrix(system_matrix);
   }

@@ -31,14 +31,12 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 LinePlotCalculatorStatistics<dim, Number>::LinePlotCalculatorStatistics(
-  DoFHandler<dim> const & dof_handler_velocity_in,
-  DoFHandler<dim> const & dof_handler_pressure_in,
-  Mapping<dim> const &    mapping_in,
-  MPI_Comm const &        mpi_comm_in)
+  dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+  dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+  dealii::Mapping<dim> const &    mapping_in,
+  MPI_Comm const &                mpi_comm_in)
   : clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
@@ -60,7 +58,7 @@ LinePlotCalculatorStatistics<dim, Number>::setup(
 
   if(data.statistics_data.calculate == true)
   {
-    AssertThrow(data.line_data.lines.size() > 0, ExcMessage("Empty data"));
+    AssertThrow(data.line_data.lines.size() > 0, dealii::ExcMessage("Empty data"));
 
     // allocate data structures
     velocity_global.resize(data.line_data.lines.size());
@@ -82,8 +80,8 @@ LinePlotCalculatorStatistics<dim, Number>::setup(
       // initialize global_points: use/assume equidistant points along line
       for(unsigned int i = 0; i < (*line)->n_points; ++i)
       {
-        Point<dim> point = (*line)->begin + double(i) / double((*line)->n_points - 1) *
-                                              ((*line)->end - (*line)->begin);
+        dealii::Point<dim> point = (*line)->begin + double(i) / double((*line)->n_points - 1) *
+                                                      ((*line)->end - (*line)->begin);
         global_points[line_iterator].push_back(point);
       }
 
@@ -147,7 +145,8 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
       std::dynamic_pointer_cast<LineCircumferentialAveraging<dim>>(*line);
 
     AssertThrow(line_circ.get() != 0,
-                ExcMessage("Invalid line type, expected LineCircumferentialAveraging<dim>"));
+                dealii::ExcMessage(
+                  "Invalid line type, expected LineCircumferentialAveraging<dim>"));
 
     // find out which quantities have to be evaluated
     bool velocity_has_to_be_evaluated = false;
@@ -172,8 +171,8 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
     }
 
     // determine two unit vectors defining circumferential plane
-    Tensor<1, dim, double> normal_vector;
-    Tensor<1, dim, double> unit_vector_1, unit_vector_2;
+    dealii::Tensor<1, dim, double> normal_vector;
+    dealii::Tensor<1, dim, double> unit_vector_1, unit_vector_2;
     if(line_circ->average_circumferential == true)
     {
       normal_vector = line_circ->normal_vector;
@@ -183,16 +182,16 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
       // Calculate two unit vectors in the plane that is normal to the normal_vector.
       unit_vector_1       = (*line)->end - (*line)->begin;
       double const norm_1 = unit_vector_1.norm();
-      AssertThrow(norm_1 > 1.e-12, ExcMessage("Invalid begin and end points found."));
+      AssertThrow(norm_1 > 1.e-12, dealii::ExcMessage("Invalid begin and end points found."));
 
       unit_vector_1 /= norm_1;
 
-      AssertThrow(dim == 3, ExcMessage("Not implemented."));
+      AssertThrow(dim == 3, dealii::ExcMessage("Not implemented."));
 
       unit_vector_2       = cross_product_3d(normal_vector, unit_vector_1);
       double const norm_2 = unit_vector_2.norm();
 
-      AssertThrow(norm_2 > 1.e-12, ExcMessage("Invalid begin and end points found."));
+      AssertThrow(norm_2 > 1.e-12, dealii::ExcMessage("Invalid begin and end points found."));
 
       unit_vector_2 /= norm_2;
     }
@@ -200,11 +199,11 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
     // for all points along a line
     for(unsigned int p = 0; p < (*line)->n_points; ++p)
     {
-      Point<dim> point = global_points[line_iterator][p];
+      dealii::Point<dim> point = global_points[line_iterator][p];
 
       // In case no averaging in circumferential direction is performed, just insert point
       // "point".
-      std::vector<Point<dim>> points;
+      std::vector<dealii::Point<dim>> points;
       points.push_back(point);
 
       // If averaging in circumferential direction is used, we insert additional points along
@@ -216,12 +215,12 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         for(unsigned int i = 1; i < line_circ->n_points_circumferential; ++i)
         {
           double cos =
-            std::cos((double(i) / line_circ->n_points_circumferential) * 2.0 * numbers::PI);
+            std::cos((double(i) / line_circ->n_points_circumferential) * 2.0 * dealii::numbers::PI);
           double sin =
-            std::sin((double(i) / line_circ->n_points_circumferential) * 2.0 * numbers::PI);
+            std::sin((double(i) / line_circ->n_points_circumferential) * 2.0 * dealii::numbers::PI);
           double radius = (point - (*line)->begin).norm();
 
-          Point<dim> new_point;
+          dealii::Point<dim> new_point;
           for(unsigned int d = 0; d < dim; ++d)
           {
             new_point[d] = ((*line)->begin)[d] + cos * radius * unit_vector_1[d] +
@@ -232,14 +231,14 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         }
       }
 
-      for(typename std::vector<Point<dim>>::iterator point_it = points.begin();
+      for(typename std::vector<dealii::Point<dim>>::iterator point_it = points.begin();
           point_it != points.end();
           ++point_it)
       {
         if(velocity_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+          auto adjacent_cells = dealii::GridTools::find_all_active_cells_around_point(
             mapping, dof_handler_velocity.get_triangulation(), *point_it, 1.e-10);
 
           auto dof_indices_and_shape_values = get_dof_indices_and_shape_values(adjacent_cells,
@@ -258,7 +257,7 @@ LinePlotCalculatorStatistics<dim, Number>::initialize_cell_data(VectorType const
         if(pressure_has_to_be_evaluated == true)
         {
           // find adjacent cells and store data required later for evaluating the solution.
-          auto adjacent_cells = GridTools::find_all_active_cells_around_point(
+          auto adjacent_cells = dealii::GridTools::find_all_active_cells_around_point(
             mapping, dof_handler_pressure.get_triangulation(), *point_it, 1.e-10);
 
           auto dof_indices_and_shape_values = get_dof_indices_and_shape_values(adjacent_cells,
@@ -349,7 +348,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
   // Local variables for the current line:
 
   // for all points along the line: velocity vector
-  std::vector<Tensor<1, dim, Number>> velocity_vector_local(line.n_points);
+  std::vector<dealii::Tensor<1, dim, Number>> velocity_vector_local(line.n_points);
   // for all points along the line: counter
   std::vector<unsigned int> counter_vector_local(line.n_points);
 
@@ -371,7 +370,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
         if((*quantity)->type == QuantityType::Velocity)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
+          dealii::Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
             dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity values
@@ -379,7 +378,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
         }
         else
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
       }
     }
@@ -387,7 +386,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
 
   // Cells are distributed over processors, therefore we need
   // to sum the contributions of every single processor.
-  Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
+  dealii::Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
 
   // Perform MPI communcation as well as averaging for all quantities of the current line.
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
@@ -397,10 +396,12 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
   {
     if((*quantity)->type == QuantityType::Velocity)
     {
-      Utilities::MPI::sum(
-        ArrayView<Number const>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()),
-        mpi_comm,
-        ArrayView<Number>(&velocity_vector_local[0][0], dim * velocity_vector_local.size()));
+      dealii::Utilities::MPI::sum(dealii::ArrayView<Number const>(&velocity_vector_local[0][0],
+                                                                  dim *
+                                                                    velocity_vector_local.size()),
+                                  mpi_comm,
+                                  dealii::ArrayView<Number>(&velocity_vector_local[0][0],
+                                                            dim * velocity_vector_local.size()));
 
       // Accumulate instantaneous values into global vector.
       // When writing the output files, we calculate the time-averaged values
@@ -420,7 +421,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_velocity(VectorType const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -466,7 +467,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
         }
         else
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
       }
     }
@@ -474,7 +475,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
 
   // Cells are distributed over processors, therefore we need
   // to sum the contributions of every single processor.
-  Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
+  dealii::Utilities::MPI::sum(counter_vector_local, mpi_comm, counter_vector_local);
 
   // Perform MPI communcation as well as averaging for all quantities of the current line.
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
@@ -484,7 +485,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
   {
     if((*quantity)->type == QuantityType::Pressure)
     {
-      Utilities::MPI::sum(pressure_vector_local, mpi_comm, pressure_vector_local);
+      dealii::Utilities::MPI::sum(pressure_vector_local, mpi_comm, pressure_vector_local);
 
       // Accumulate instantaneous values into global vector.
       // When writing the output files, we calculate the time-averaged values
@@ -500,7 +501,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_evaluate_pressure(VectorType const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -509,7 +510,8 @@ template<int dim, typename Number>
 void
 LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
 {
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0 && data.statistics_data.calculate == true)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0 &&
+     data.statistics_data.calculate == true)
   {
     unsigned int const precision = data.line_data.precision;
 
@@ -544,9 +546,11 @@ LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
           print_headline(f, number_of_samples);
 
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "x_" + dealii::Utilities::int_to_string(d + 1);
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "u_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "u_" + dealii::Utilities::int_to_string(d + 1);
 
           f << std::endl;
 
@@ -571,12 +575,12 @@ LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
 
         if((*quantity)->type == QuantityType::ReynoldsStresses)
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
 
         if((*quantity)->type == QuantityType::SkinFriction)
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
 
         // ... and pressure quantities.
@@ -597,7 +601,8 @@ LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
           print_headline(f, number_of_samples);
 
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "x_" + dealii::Utilities::int_to_string(d + 1);
 
           f << std::setw(precision + 8) << std::left << "p";
 
@@ -620,7 +625,7 @@ LinePlotCalculatorStatistics<dim, Number>::do_write_output() const
 
         if((*quantity)->type == QuantityType::PressureCoefficient)
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
       }
     }

@@ -32,22 +32,19 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 void
-create_periodic_box(
-  std::shared_ptr<Triangulation<dim>> triangulation,
-  unsigned int const                  n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                     periodic_faces,
-  unsigned int const n_subdivisions,
-  double const       left,
-  double const       right,
-  bool const         curvilinear_mesh = false,
-  double const       deformation      = 0.1)
+create_periodic_box(std::shared_ptr<dealii::Triangulation<dim>>              triangulation,
+                    unsigned int const                                       n_refine_space,
+                    std::vector<dealii::GridTools::PeriodicFacePair<
+                      typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces,
+                    unsigned int const                                       n_subdivisions,
+                    double const                                             left,
+                    double const                                             right,
+                    bool const   curvilinear_mesh = false,
+                    double const deformation      = 0.1)
 {
-  GridGenerator::subdivided_hyper_cube(*triangulation, n_subdivisions, left, right);
+  dealii::GridGenerator::subdivided_hyper_cube(*triangulation, n_subdivisions, left, right);
 
   if(curvilinear_mesh)
   {
@@ -58,7 +55,7 @@ create_periodic_box(
 
     std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
 
-    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+    for(typename dealii::Triangulation<dim>::cell_iterator cell = triangulation->begin();
         cell != triangulation->end();
         ++cell)
     {
@@ -66,8 +63,8 @@ create_periodic_box(
       {
         if(vertex_touched[cell->vertex_index(v)] == false)
         {
-          Point<dim> & vertex                   = cell->vertex(v);
-          Point<dim>   new_point                = manifold.push_forward(vertex);
+          dealii::Point<dim> & vertex           = cell->vertex(v);
+          dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
           vertex                                = new_point;
           vertex_touched[cell->vertex_index(v)] = true;
         }
@@ -75,8 +72,8 @@ create_periodic_box(
     }
   }
 
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(),
-                                             endc = triangulation->end();
+  typename dealii::Triangulation<dim>::cell_iterator cell = triangulation->begin(),
+                                                     endc = triangulation->end();
   for(; cell != endc; ++cell)
   {
     for(const unsigned int face_number : cell->face_indices())
@@ -99,10 +96,13 @@ create_periodic_box(
     }
   }
 
-  GridTools::collect_periodic_faces(*triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
+  dealii::GridTools::collect_periodic_faces(
+    *triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
+  dealii::GridTools::collect_periodic_faces(
+    *triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
   if(dim == 3)
-    GridTools::collect_periodic_faces(*triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
+    dealii::GridTools::collect_periodic_faces(
+      *triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
 
   triangulation->add_periodicity(periodic_faces);
 

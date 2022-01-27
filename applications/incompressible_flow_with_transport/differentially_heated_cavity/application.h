@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace FTI
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Application : public FTI::ApplicationBase<dim, Number>
 {
@@ -81,7 +79,7 @@ public:
     : FTI::ApplicationBase<dim, Number>(input_file, comm, 1)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -315,12 +313,12 @@ public:
   void
   create_grid() final
   {
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary IDs: 0 by default, set left boundary to 1
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if((std::fabs(cell->face(f)->center()(0) - left) < 1e-12))
         {
@@ -339,10 +337,10 @@ public:
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
 
-  std::shared_ptr<Function<dim>>
+  std::shared_ptr<dealii::Function<dim>>
   create_mesh_movement_function() final
   {
-    std::shared_ptr<Function<dim>> mesh_motion;
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
     data.temporal      = MeshMovementAdvanceInTime::Sin;
@@ -362,35 +360,40 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(dim)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(dim)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
     std::vector<double> gravity = std::vector<double>(dim, 0.0);
     gravity[1]                  = -g;
-    this->field_functions->gravitational_force.reset(new Functions::ConstantFunction<dim>(gravity));
+    this->field_functions->gravitational_force.reset(
+      new dealii::Functions::ConstantFunction<dim>(gravity));
   }
 
   std::shared_ptr<IncNS::PostProcessorBase<dim, Number>>
@@ -417,25 +420,26 @@ public:
   void
   set_boundary_descriptor_scalar(unsigned int scalar_index = 0) final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
-      pair(0, new Functions::ConstantFunction<dim>(T_ref)));
+      pair(0, new dealii::Functions::ConstantFunction<dim>(T_ref)));
     this->scalar_boundary_descriptor[scalar_index]->dirichlet_bc.insert(
-      pair(1, new Functions::ConstantFunction<dim>(T_ref + delta_T)));
+      pair(1, new dealii::Functions::ConstantFunction<dim>(T_ref + delta_T)));
     this->scalar_boundary_descriptor[scalar_index]->neumann_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(1)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions_scalar(unsigned int scalar_index = 0) final
   {
     this->scalar_field_functions[scalar_index]->initial_solution.reset(
-      new Functions::ConstantFunction<dim>(T_ref));
+      new dealii::Functions::ConstantFunction<dim>(T_ref));
     this->scalar_field_functions[scalar_index]->right_hand_side.reset(
-      new Functions::ZeroFunction<dim>(1));
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->scalar_field_functions[scalar_index]->velocity.reset(
-      new Functions::ZeroFunction<dim>(dim));
+      new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>

@@ -24,32 +24,33 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
-std::vector<std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>>>
-find_all_active_cells_around_point(Mapping<dim> const &                                mapping,
-                                   Triangulation<dim> const &                          tria,
-                                   Point<dim> const &                                  point,
-                                   double const                                        tolerance,
-                                   typename Triangulation<dim>::active_cell_iterator & cell_hint,
-                                   std::vector<bool> const &          marked_vertices,
-                                   GridTools::Cache<dim, dim> const & cache)
+std::vector<
+  std::pair<typename dealii::Triangulation<dim>::active_cell_iterator, dealii::Point<dim>>>
+find_all_active_cells_around_point(
+  dealii::Mapping<dim> const &                                mapping,
+  dealii::Triangulation<dim> const &                          tria,
+  dealii::Point<dim> const &                                  point,
+  double const                                                tolerance,
+  typename dealii::Triangulation<dim>::active_cell_iterator & cell_hint,
+  std::vector<bool> const &                                   marked_vertices,
+  dealii::GridTools::Cache<dim, dim> const &                  cache)
 {
-  typedef std::pair<typename Triangulation<dim>::active_cell_iterator, Point<dim>> Pair;
+  typedef std::pair<typename dealii::Triangulation<dim>::active_cell_iterator, dealii::Point<dim>>
+    Pair;
 
   std::vector<Pair> adjacent_cells;
 
-  Pair first_cell =
-    GridTools::find_active_cell_around_point(cache, point, cell_hint, marked_vertices, tolerance);
+  Pair first_cell = dealii::GridTools::find_active_cell_around_point(
+    cache, point, cell_hint, marked_vertices, tolerance);
 
   if(first_cell.first != tria.end())
   {
     // update cell_hint to have a good hint when the function is called next time
     cell_hint = first_cell.first;
 
-    adjacent_cells =
-      GridTools::find_all_active_cells_around_point(mapping, tria, point, tolerance, first_cell);
+    adjacent_cells = dealii::GridTools::find_all_active_cells_around_point(
+      mapping, tria, point, tolerance, first_cell);
   }
 
   return adjacent_cells;
@@ -58,13 +59,13 @@ find_all_active_cells_around_point(Mapping<dim> const &                         
 template<int dim>
 unsigned int
 n_locally_owned_active_cells_around_point(
-  Triangulation<dim> const &                               tria,
-  Mapping<dim> const &                                     mapping,
-  Point<dim> const &                                       point,
-  double const                                             tolerance,
-  typename Triangulation<dim, dim>::active_cell_iterator & cell_hint,
-  std::vector<bool> const &                                marked_vertices,
-  GridTools::Cache<dim, dim> const &                       cache)
+  dealii::Triangulation<dim> const &                               tria,
+  dealii::Mapping<dim> const &                                     mapping,
+  dealii::Point<dim> const &                                       point,
+  double const                                                     tolerance,
+  typename dealii::Triangulation<dim, dim>::active_cell_iterator & cell_hint,
+  std::vector<bool> const &                                        marked_vertices,
+  dealii::GridTools::Cache<dim, dim> const &                       cache)
 {
   auto adjacent_cells = find_all_active_cells_around_point(
     mapping, tria, point, tolerance, cell_hint, marked_vertices, cache);

@@ -26,8 +26,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  Class that provides a spherical manifold applied to one of the faces
  *  of a quadrilateral element.
@@ -41,16 +39,17 @@ using namespace dealii;
  *  has to be extruded in x3/z-direction.
  */
 template<int dim>
-class OneSidedCylindricalManifold : public ChartManifold<dim, dim, dim>
+class OneSidedCylindricalManifold : public dealii::ChartManifold<dim, dim, dim>
 {
 public:
-  OneSidedCylindricalManifold(typename Triangulation<dim>::cell_iterator const & cell_in,
-                              unsigned int const                                 face_in,
-                              Point<dim> const &                                 center_in)
-    : cell(cell_in), face(face_in), center(center_in)
+  OneSidedCylindricalManifold(typename dealii::Triangulation<dim>::cell_iterator const & cell_in,
+                              unsigned int const                                         face_in,
+                              dealii::Point<dim> const &                                 center_in)
+    : alpha(1.0), radius(1.0), cell(cell_in), face(face_in), center(center_in)
   {
     AssertThrow(face >= 0 && face <= 3,
-                ExcMessage("One sided spherical manifold can only be applied to face f=0,1,2,3."));
+                dealii::ExcMessage(
+                  "One sided spherical manifold can only be applied to face f=0,1,2,3."));
 
     // get center coordinates in x1-x2 plane
     x_C[0] = center[0];
@@ -58,17 +57,17 @@ public:
 
     // determine x_1 and x_2 which denote the end points of the face that is
     // subject to the spherical manifold.
-    Point<dim> x_1, x_2;
+    dealii::Point<dim> x_1, x_2;
     x_1 = cell->vertex(get_vertex_id(0));
     x_2 = cell->vertex(get_vertex_id(1));
 
-    Point<2> x_1_2d = Point<2>(x_1[0], x_1[1]);
-    Point<2> x_2_2d = Point<2>(x_2[0], x_2[1]);
+    dealii::Point<2> x_1_2d = dealii::Point<2>(x_1[0], x_1[1]);
+    dealii::Point<2> x_2_2d = dealii::Point<2>(x_2[0], x_2[1]);
 
     initialize(x_1_2d, x_2_2d);
   }
 
-  void initialize(Point<2> const & x_1, Point<2> const & x_2)
+  void initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
   {
     double const tol = 1.e-12;
 
@@ -81,8 +80,9 @@ public:
     // check correctness of geometry and parameters
     double radius_check = v_2.norm();
     AssertThrow(std::abs(radius - radius_check) < tol * radius,
-                ExcMessage("Invalid geometry parameters. To apply a spherical manifold both "
-                           "end points of the face must have the same distance from the center."));
+                dealii::ExcMessage(
+                  "Invalid geometry parameters. To apply a spherical manifold both "
+                  "end points of the face must have the same distance from the center."));
 
     // normalize v_1 and v_2
     v_1 /= v_1.norm();
@@ -94,7 +94,7 @@ public:
     // calculate vector that is perpendicular to v_1 in plane that is spanned by v_1 and v_2
     normal = v_2 - (v_2 * v_1) * v_1;
 
-    AssertThrow(normal.norm() > tol, ExcMessage("Vector must not have length 0."));
+    AssertThrow(normal.norm() > tol, dealii::ExcMessage("Vector must not have length 0."));
 
     normal /= normal.norm();
   }
@@ -103,10 +103,10 @@ public:
    *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
    *  point x in physical coordinates
    */
-  Point<dim>
-  push_forward(Point<dim> const & xi) const override
+  dealii::Point<dim>
+  push_forward(dealii::Point<dim> const & xi) const override
   {
-    Point<dim> x;
+    dealii::Point<dim> x;
 
     // standard mapping from reference space to physical space using d-linear shape functions
     for(const unsigned int v : cell->vertex_indices())
@@ -127,25 +127,27 @@ public:
     // calculate deformation related to the spherical manifold
     double beta = xi_face * alpha;
 
-    Tensor<1, 2> direction;
+    dealii::Tensor<1, 2> direction;
     direction = std::cos(beta) * v_1 + std::sin(beta) * normal;
 
-    Assert(std::abs(direction.norm() - 1.0) < 1.e-12, ExcMessage("Vector must have length 1."));
+    Assert(std::abs(direction.norm() - 1.0) < 1.e-12,
+           dealii::ExcMessage("Vector must have length 1."));
 
     // calculate point x_S on spherical manifold
-    Tensor<1, 2> x_S;
+    dealii::Tensor<1, 2> x_S;
     x_S = x_C + radius * direction;
 
     // calculate displacement as compared to straight sided quadrilateral element
     // on the face that is subject to the manifold
-    Tensor<1, 2> displ, x_lin;
-    for(unsigned int v : ReferenceCells::template get_hypercube<1>().vertex_indices())
+    dealii::Tensor<1, 2> displ, x_lin;
+    for(unsigned int v : dealii::ReferenceCells::template get_hypercube<1>().vertex_indices())
     {
       double shape_function_value =
-        ReferenceCells::template get_hypercube<1>().d_linear_shape_function(Point<1>(xi_face), v);
+        dealii::ReferenceCells::template get_hypercube<1>().d_linear_shape_function(
+          dealii::Point<1>(xi_face), v);
 
-      unsigned int vertex_id = get_vertex_id(v);
-      Point<dim>   vertex    = cell->vertex(vertex_id);
+      unsigned int       vertex_id = get_vertex_id(v);
+      dealii::Point<dim> vertex    = cell->vertex(vertex_id);
 
       x_lin[0] += shape_function_value * vertex[0];
       x_lin[1] += shape_function_value * vertex[1];
@@ -154,14 +156,15 @@ public:
     displ = x_S - x_lin;
 
     // deformation decreases linearly in the second (other) direction
-    Point<1>     xi_other_1d = Point<1>(xi_other);
-    unsigned int index_1d    = get_index_1d();
-    double       fading_value =
-      ReferenceCells::template get_hypercube<1>().d_linear_shape_function(xi_other_1d, index_1d);
+    dealii::Point<1> xi_other_1d = dealii::Point<1>(xi_other);
+    unsigned int     index_1d    = get_index_1d();
+    double           fading_value =
+      dealii::ReferenceCells::template get_hypercube<1>().d_linear_shape_function(xi_other_1d,
+                                                                                  index_1d);
     x[0] += fading_value * displ[0];
     x[1] += fading_value * displ[1];
 
-    Assert(numbers::is_finite(x.norm_square()), ExcMessage("Invalid point found"));
+    Assert(dealii::numbers::is_finite(x.norm_square()), dealii::ExcMessage("Invalid point found"));
 
     return x;
   }
@@ -201,7 +204,7 @@ public:
     else if(face == 1 || face == 3)
       index_1d = 1;
     else
-      Assert(false, ExcMessage("Face ID is invalid."));
+      Assert(false, dealii::ExcMessage("Face ID is invalid."));
 
     return index_1d;
   }
@@ -220,7 +223,7 @@ public:
     else if(face == 2 || face == 3)
       index_face = 0;
     else
-      Assert(false, ExcMessage("Face ID is invalid."));
+      Assert(false, dealii::ExcMessage("Face ID is invalid."));
 
     return index_face;
   }
@@ -242,15 +245,15 @@ public:
    *  We assume that the gradient of the standard bilinear shape functions is sufficient
    *  to find the solution.
    */
-  Tensor<2, dim>
-  get_inverse_jacobian(Point<dim> const & xi) const
+  dealii::Tensor<2, dim>
+  get_inverse_jacobian(dealii::Point<dim> const & xi) const
   {
-    Tensor<2, dim> jacobian;
+    dealii::Tensor<2, dim> jacobian;
 
     // standard mapping from reference space to physical space using d-linear shape functions
     for(const unsigned int v : cell->vertex_indices())
     {
-      Tensor<1, dim> shape_function_gradient =
+      dealii::Tensor<1, dim> shape_function_gradient =
         cell->reference_cell().d_linear_shape_function_gradient(xi, v);
       jacobian += outer_product(cell->vertex(v), shape_function_gradient);
     }
@@ -263,12 +266,12 @@ public:
    *  to point xi in reference coordinates [0,1]^d using the
    *  push_forward operation and Newton's method
    */
-  Point<dim>
-  pull_back(Point<dim> const & x) const override
+  dealii::Point<dim>
+  pull_back(dealii::Point<dim> const & x) const override
   {
-    Point<dim>     xi;
-    Tensor<1, dim> residual = push_forward(xi) - x;
-    Tensor<1, dim> delta_xi;
+    dealii::Point<dim>     xi;
+    dealii::Tensor<1, dim> residual = push_forward(xi) - x;
+    dealii::Tensor<1, dim> delta_xi;
 
     // Newton method to solve nonlinear pull_back operation
     unsigned int n_iter = 0, MAX_ITER = 100;
@@ -303,35 +306,35 @@ public:
     }
 
     Assert(n_iter < MAX_ITER,
-           ExcMessage("Newton solver did not converge to given tolerance. "
-                      "Maximum number of iterations exceeded."));
+           dealii::ExcMessage("Newton solver did not converge to given tolerance. "
+                              "Maximum number of iterations exceeded."));
 
     Assert(xi[0] >= 0.0 && xi[0] <= 1.0,
-           ExcMessage("Pull back operation generated invalid xi[0] values."));
+           dealii::ExcMessage("Pull back operation generated invalid xi[0] values."));
 
     Assert(xi[1] >= 0.0 && xi[1] <= 1.0,
-           ExcMessage("Pull back operation generated invalid xi[1] values."));
+           dealii::ExcMessage("Pull back operation generated invalid xi[1] values."));
 
     return xi;
   }
 
-  std::unique_ptr<Manifold<dim>>
+  std::unique_ptr<dealii::Manifold<dim>>
   clone() const override
   {
     return std::make_unique<OneSidedCylindricalManifold<dim>>(cell, face, center);
   }
 
 private:
-  Point<2>     x_C;
-  Tensor<1, 2> v_1;
-  Tensor<1, 2> v_2;
-  Tensor<1, 2> normal;
-  double       alpha;
-  double       radius;
+  dealii::Point<2>     x_C;
+  dealii::Tensor<1, 2> v_1;
+  dealii::Tensor<1, 2> v_2;
+  dealii::Tensor<1, 2> normal;
+  double               alpha;
+  double               radius;
 
-  typename Triangulation<dim>::cell_iterator cell;
-  unsigned int                               face;
-  Point<dim>                                 center;
+  typename dealii::Triangulation<dim>::cell_iterator cell;
+  unsigned int                                       face;
+  dealii::Point<dim>                                 center;
 };
 
 /*
@@ -346,20 +349,22 @@ private:
  *  where the axis of the cone has to be along the x3/z-direction.
  */
 template<int dim>
-class OneSidedConicalManifold : public ChartManifold<dim, dim, dim>
+class OneSidedConicalManifold : public dealii::ChartManifold<dim, dim, dim>
 {
 public:
-  OneSidedConicalManifold(typename Triangulation<dim>::cell_iterator const & cell_in,
-                          unsigned int const                                 face_in,
-                          Point<dim> const &                                 center_in,
-                          double const                                       r_0_in,
-                          double const                                       r_1_in)
-    : cell(cell_in), face(face_in), center(center_in), r_0(r_0_in), r_1(r_1_in)
+  OneSidedConicalManifold(typename dealii::Triangulation<dim>::cell_iterator const & cell_in,
+                          unsigned int const                                         face_in,
+                          dealii::Point<dim> const &                                 center_in,
+                          double const                                               r_0_in,
+                          double const                                               r_1_in)
+    : alpha(1.0), cell(cell_in), face(face_in), center(center_in), r_0(r_0_in), r_1(r_1_in)
   {
-    AssertThrow(dim == 3, ExcMessage("OneSidedConicalManifold can only be used for 3D problems."));
+    AssertThrow(dim == 3,
+                dealii::ExcMessage("OneSidedConicalManifold can only be used for 3D problems."));
 
     AssertThrow(face >= 0 && face <= 3,
-                ExcMessage("One sided spherical manifold can only be applied to face f=0,1,2,3."));
+                dealii::ExcMessage(
+                  "One sided spherical manifold can only be applied to face f=0,1,2,3."));
 
     // get center coordinates in x1-x2 plane
     x_C[0] = center[0];
@@ -367,17 +372,17 @@ public:
 
     // determine x_1 and x_2 which denote the end points of the face that is
     // subject to the spherical manifold.
-    Point<dim> x_1, x_2;
+    dealii::Point<dim> x_1, x_2;
     x_1 = cell->vertex(get_vertex_id(0));
     x_2 = cell->vertex(get_vertex_id(1));
 
-    Point<2> x_1_2d = Point<2>(x_1[0], x_1[1]);
-    Point<2> x_2_2d = Point<2>(x_2[0], x_2[1]);
+    dealii::Point<2> x_1_2d = dealii::Point<2>(x_1[0], x_1[1]);
+    dealii::Point<2> x_2_2d = dealii::Point<2>(x_2[0], x_2[1]);
 
     initialize(x_1_2d, x_2_2d);
   }
 
-  void initialize(Point<2> const & x_1, Point<2> const & x_2)
+  void initialize(dealii::Point<2> const & x_1, dealii::Point<2> const & x_2)
   {
     double const tol = 1.e-12;
 
@@ -391,8 +396,9 @@ public:
     double radius_check = v_2.norm();
 
     AssertThrow(std::abs(r_0 - radius_check) < tol * r_0,
-                ExcMessage("Invalid geometry parameters. To apply a spherical manifold both "
-                           "end points of the face must have the same distance from the center."));
+                dealii::ExcMessage(
+                  "Invalid geometry parameters. To apply a spherical manifold both "
+                  "end points of the face must have the same distance from the center."));
 
     // normalize v_1 and v_2
     v_1 /= v_1.norm();
@@ -404,7 +410,7 @@ public:
     // calculate vector that is perpendicular to v_1 in plane that is spanned by v_1 and v_2
     normal = v_2 - (v_2 * v_1) * v_1;
 
-    AssertThrow(normal.norm() > tol, ExcMessage("Vector must not have length 0."));
+    AssertThrow(normal.norm() > tol, dealii::ExcMessage("Vector must not have length 0."));
 
     normal /= normal.norm();
   }
@@ -413,10 +419,10 @@ public:
    *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
    *  point x in physical coordinates
    */
-  Point<dim>
-  push_forward(Point<dim> const & xi) const override
+  dealii::Point<dim>
+  push_forward(dealii::Point<dim> const & xi) const override
   {
-    Point<dim> x;
+    dealii::Point<dim> x;
 
     // standard mapping from reference space to physical space using d-linear shape functions
     for(const unsigned int v : cell->vertex_indices())
@@ -437,25 +443,27 @@ public:
     // calculate deformation related to the conical manifold
     double beta = xi_face * alpha;
 
-    Tensor<1, 2> direction;
+    dealii::Tensor<1, 2> direction;
     direction = std::cos(beta) * v_1 + std::sin(beta) * normal;
 
-    Assert(std::abs(direction.norm() - 1.0) < 1.e-12, ExcMessage("Vector must have length 1."));
+    Assert(std::abs(direction.norm() - 1.0) < 1.e-12,
+           dealii::ExcMessage("Vector must have length 1."));
 
     // calculate point x_S on spherical manifold
-    Tensor<1, 2> x_S;
+    dealii::Tensor<1, 2> x_S;
     x_S = x_C + r_0 * direction;
 
     // calculate displacement as compared to straight sided quadrilateral element
     // on the face that is subject to the manifold
-    Tensor<1, 2> displ, x_lin;
-    for(const unsigned int v : ReferenceCells::template get_hypercube<1>().vertex_indices())
+    dealii::Tensor<1, 2> displ, x_lin;
+    for(const unsigned int v : dealii::ReferenceCells::template get_hypercube<1>().vertex_indices())
     {
       double shape_function_value =
-        ReferenceCells::template get_hypercube<1>().d_linear_shape_function(Point<1>(xi_face), v);
+        dealii::ReferenceCells::template get_hypercube<1>().d_linear_shape_function(
+          dealii::Point<1>(xi_face), v);
 
-      unsigned int vertex_id = get_vertex_id(v);
-      Point<dim>   vertex    = cell->vertex(vertex_id);
+      unsigned int       vertex_id = get_vertex_id(v);
+      dealii::Point<dim> vertex    = cell->vertex(vertex_id);
 
       x_lin[0] += shape_function_value * vertex[0];
       x_lin[1] += shape_function_value * vertex[1];
@@ -467,14 +475,15 @@ public:
     displ *= (1 - xi[2] * (r_0 - r_1) / r_0);
 
     // deformation decreases linearly in the second (other) direction
-    Point<1>     xi_other_1d = Point<1>(xi_other);
-    unsigned int index_1d    = get_index_1d();
-    double       fading_value =
-      ReferenceCells::template get_hypercube<1>().d_linear_shape_function(xi_other_1d, index_1d);
+    dealii::Point<1> xi_other_1d = dealii::Point<1>(xi_other);
+    unsigned int     index_1d    = get_index_1d();
+    double           fading_value =
+      dealii::ReferenceCells::template get_hypercube<1>().d_linear_shape_function(xi_other_1d,
+                                                                                  index_1d);
     x[0] += fading_value * displ[0];
     x[1] += fading_value * displ[1];
 
-    Assert(numbers::is_finite(x.norm_square()), ExcMessage("Invalid point found"));
+    Assert(dealii::numbers::is_finite(x.norm_square()), dealii::ExcMessage("Invalid point found"));
 
     return x;
   }
@@ -514,7 +523,7 @@ public:
     else if(face == 1 || face == 3)
       index_1d = 1;
     else
-      Assert(false, ExcMessage("Face ID is invalid."));
+      Assert(false, dealii::ExcMessage("Face ID is invalid."));
 
     return index_1d;
   }
@@ -533,7 +542,7 @@ public:
     else if(face == 2 || face == 3)
       index_face = 0;
     else
-      Assert(false, ExcMessage("Face ID is invalid."));
+      Assert(false, dealii::ExcMessage("Face ID is invalid."));
 
     return index_face;
   }
@@ -555,15 +564,15 @@ public:
    *  We assume that the gradient of the standard bilinear shape functions is sufficient
    *  to find the solution.
    */
-  Tensor<2, dim>
-  get_inverse_jacobian(Point<dim> const & xi) const
+  dealii::Tensor<2, dim>
+  get_inverse_jacobian(dealii::Point<dim> const & xi) const
   {
-    Tensor<2, dim> jacobian;
+    dealii::Tensor<2, dim> jacobian;
 
     // standard mapping from reference space to physical space using d-linear shape functions
     for(const unsigned int v : cell->vertex_indices())
     {
-      Tensor<1, dim> shape_function_gradient =
+      dealii::Tensor<1, dim> shape_function_gradient =
         cell->reference_cell().d_linear_shape_function_gradient(xi, v);
       jacobian += outer_product(cell->vertex(v), shape_function_gradient);
     }
@@ -576,12 +585,12 @@ public:
    *  to point xi in reference coordinates [0,1]^d using the
    *  push_forward operation and Newton's method
    */
-  Point<dim>
-  pull_back(Point<dim> const & x) const override
+  dealii::Point<dim>
+  pull_back(dealii::Point<dim> const & x) const override
   {
-    Point<dim>     xi;
-    Tensor<1, dim> residual = push_forward(xi) - x;
-    Tensor<1, dim> delta_xi;
+    dealii::Point<dim>     xi;
+    dealii::Tensor<1, dim> residual = push_forward(xi) - x;
+    dealii::Tensor<1, dim> delta_xi;
 
     // Newton method to solve nonlinear pull_back operation
     unsigned int n_iter = 0, MAX_ITER = 100;
@@ -621,22 +630,22 @@ public:
     }
 
     Assert(n_iter < MAX_ITER,
-           ExcMessage("Newton solver did not converge to given tolerance. "
-                      "Maximum number of iterations exceeded."));
+           dealii::ExcMessage("Newton solver did not converge to given tolerance. "
+                              "Maximum number of iterations exceeded."));
 
     Assert(xi[0] >= 0.0 && xi[0] <= 1.0,
-           ExcMessage("Pull back operation generated invalid xi[0] values."));
+           dealii::ExcMessage("Pull back operation generated invalid xi[0] values."));
 
     Assert(xi[1] >= 0.0 && xi[1] <= 1.0,
-           ExcMessage("Pull back operation generated invalid xi[1] values."));
+           dealii::ExcMessage("Pull back operation generated invalid xi[1] values."));
 
     Assert(xi[2] >= 0.0 && xi[2] <= 1.0,
-           ExcMessage("Pull back operation generated invalid xi[2] values."));
+           dealii::ExcMessage("Pull back operation generated invalid xi[2] values."));
 
     return xi;
   }
 
-  std::unique_ptr<Manifold<dim>>
+  std::unique_ptr<dealii::Manifold<dim>>
   clone() const override
   {
     return std::make_unique<OneSidedConicalManifold<dim>>(cell, face, center, r_0, r_1);
@@ -644,16 +653,16 @@ public:
 
 
 private:
-  Point<2>     x_C;
-  Tensor<1, 2> v_1;
-  Tensor<1, 2> v_2;
-  Tensor<1, 2> normal;
-  double       alpha;
+  dealii::Point<2>     x_C;
+  dealii::Tensor<1, 2> v_1;
+  dealii::Tensor<1, 2> v_2;
+  dealii::Tensor<1, 2> normal;
+  double               alpha;
 
-  typename Triangulation<dim>::cell_iterator cell;
-  unsigned int                               face;
+  typename dealii::Triangulation<dim>::cell_iterator cell;
+  unsigned int                                       face;
 
-  Point<dim> center;
+  dealii::Point<dim> center;
 
   // radius of cone at xi_3 = 0 (-> r_0) and at xi_3 = 1 (-> r_1)
   double r_0, r_1;
@@ -666,39 +675,39 @@ private:
  *  cylinder surface.
  */
 template<int dim, int spacedim = dim>
-class MyCylindricalManifold : public ChartManifold<dim, spacedim, spacedim>
+class MyCylindricalManifold : public dealii::ChartManifold<dim, spacedim, spacedim>
 {
 public:
-  MyCylindricalManifold(Point<spacedim> const center_in)
-    : ChartManifold<dim, spacedim, spacedim>(
+  MyCylindricalManifold(dealii::Point<spacedim> const center_in)
+    : dealii::ChartManifold<dim, spacedim, spacedim>(
         MyCylindricalManifold<dim, spacedim>::get_periodicity()),
       center(center_in)
   {
   }
 
-  Tensor<1, spacedim>
+  dealii::Tensor<1, spacedim>
   get_periodicity()
   {
-    Tensor<1, spacedim> periodicity;
+    dealii::Tensor<1, spacedim> periodicity;
 
     // angle theta is 2*pi periodic
-    periodicity[1] = 2 * numbers::PI;
+    periodicity[1] = 2 * dealii::numbers::PI;
     return periodicity;
   }
 
-  Point<spacedim>
-  push_forward(Point<spacedim> const & ref_point) const override
+  dealii::Point<spacedim>
+  push_forward(dealii::Point<spacedim> const & ref_point) const override
   {
     double const radius = ref_point[0];
     double const theta  = ref_point[1];
 
-    Assert(ref_point[0] >= 0.0, ExcMessage("Radius must be positive."));
+    Assert(ref_point[0] >= 0.0, dealii::ExcMessage("Radius must be positive."));
 
-    Point<spacedim> space_point;
+    dealii::Point<spacedim> space_point;
     if(radius > 1e-10)
     {
       AssertThrow(spacedim == 2 || spacedim == 3,
-                  ExcMessage("Only implemented for 2D and 3D case."));
+                  dealii::ExcMessage("Only implemented for 2D and 3D case."));
 
       space_point[0] = radius * cos(theta);
       space_point[1] = radius * sin(theta);
@@ -710,28 +719,28 @@ public:
     return space_point + center;
   }
 
-  Point<spacedim>
-  pull_back(Point<spacedim> const & space_point) const override
+  dealii::Point<spacedim>
+  pull_back(dealii::Point<spacedim> const & space_point) const override
   {
-    Tensor<1, spacedim> vector;
+    dealii::Tensor<1, spacedim> vector;
     vector[0] = space_point[0] - center[0];
     vector[1] = space_point[1] - center[1];
     // for the 3D case: vector[2] will always be 0.
 
     double const radius = vector.norm();
 
-    Point<spacedim> ref_point;
+    dealii::Point<spacedim> ref_point;
     ref_point[0] = radius;
     ref_point[1] = atan2(vector[1], vector[0]);
     if(ref_point[1] < 0)
-      ref_point[1] += 2.0 * numbers::PI;
+      ref_point[1] += 2.0 * dealii::numbers::PI;
     if(spacedim == 3)
       ref_point[2] = space_point[2];
 
     return ref_point;
   }
 
-  std::unique_ptr<Manifold<dim>>
+  std::unique_ptr<dealii::Manifold<dim>>
   clone() const override
   {
     return std::make_unique<MyCylindricalManifold<dim, spacedim>>(center);
@@ -739,7 +748,7 @@ public:
 
 
 private:
-  Point<dim> center;
+  dealii::Point<dim> center;
 };
 } // namespace ExaDG
 

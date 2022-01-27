@@ -23,14 +23,12 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MeanScalarCalculator<dim, Number>::MeanScalarCalculator(
-  MatrixFree<dim, Number> const & matrix_free_in,
-  unsigned int const              dof_index_in,
-  unsigned int const              quad_index_in,
-  MPI_Comm const &                mpi_comm_in)
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_in,
+  unsigned int const                      quad_index_in,
+  MPI_Comm const &                        mpi_comm_in)
   : matrix_free(matrix_free_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
@@ -41,8 +39,8 @@ MeanScalarCalculator<dim, Number>::MeanScalarCalculator(
 template<int dim, typename Number>
 Number
 MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
-  VectorType const &                     solution,
-  std::map<types::boundary_id, Number> & mean_scalar)
+  VectorType const &                             solution,
+  std::map<dealii::types::boundary_id, Number> & mean_scalar)
 {
   // zero mean scalars since we sum into these variables
   for(auto & iterator : mean_scalar)
@@ -52,14 +50,14 @@ MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
 
   FaceIntegratorScalar integrator(matrix_free, true, dof_index, quad_index);
 
-  std::map<types::boundary_id, Number> area(mean_scalar);
+  std::map<dealii::types::boundary_id, Number> area(mean_scalar);
 
   for(unsigned int face = matrix_free.n_inner_face_batches();
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
   {
-    typename std::map<types::boundary_id, Number>::iterator it;
-    types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+    typename std::map<dealii::types::boundary_id, Number>::iterator it;
+    dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
     it = mean_scalar.find(boundary_id);
     if(it != mean_scalar.end())
@@ -68,8 +66,8 @@ MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
       integrator.read_dof_values(solution);
       integrator.evaluate(true, false);
 
-      scalar mean_scalar_face = make_vectorized_array<Number>(0.0);
-      scalar area_face        = make_vectorized_array<Number>(0.0);
+      scalar mean_scalar_face = dealii::make_vectorized_array<Number>(0.0);
+      scalar area_face        = dealii::make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
@@ -77,7 +75,7 @@ MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
         area_face += integrator.JxW(q);
       }
 
-      // sum over all entries of VectorizedArray
+      // sum over all entries of dealii::VectorizedArray
       for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
       {
         mean_scalar.at(boundary_id) += mean_scalar_face[n];
@@ -96,14 +94,15 @@ MeanScalarCalculator<dim, Number>::calculate_mean_scalar(
     area_vector[counter]        = (iterator_area++)->second;
   }
 
-  Utilities::MPI::sum(ArrayView<double const>(&(*mean_scalar_vector.begin()),
-                                              mean_scalar_vector.size()),
-                      mpi_comm,
-                      ArrayView<double>(&(*mean_scalar_vector.begin()), mean_scalar_vector.size()));
+  dealii::Utilities::MPI::sum(
+    dealii::ArrayView<double const>(&(*mean_scalar_vector.begin()), mean_scalar_vector.size()),
+    mpi_comm,
+    dealii::ArrayView<double>(&(*mean_scalar_vector.begin()), mean_scalar_vector.size()));
 
-  Utilities::MPI::sum(ArrayView<double const>(&(*area_vector.begin()), area_vector.size()),
-                      mpi_comm,
-                      ArrayView<double>(&(*area_vector.begin()), area_vector.size()));
+  dealii::Utilities::MPI::sum(
+    dealii::ArrayView<double const>(&(*area_vector.begin()), area_vector.size()),
+    mpi_comm,
+    dealii::ArrayView<double>(&(*area_vector.begin()), area_vector.size()));
 
   iterator = mean_scalar.begin();
   for(unsigned int counter = 0; counter < mean_scalar.size(); ++counter)

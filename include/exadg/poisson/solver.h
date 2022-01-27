@@ -74,7 +74,7 @@ run(std::vector<SolverResult> & results,
     MPI_Comm const &            mpi_comm,
     bool const                  is_test)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =

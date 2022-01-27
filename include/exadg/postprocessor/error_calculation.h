@@ -33,8 +33,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 struct ErrorCalculationData
 {
@@ -52,7 +50,7 @@ struct ErrorCalculationData
   }
 
   void
-  print(ConditionalOStream & pcout, bool unsteady)
+  print(dealii::ConditionalOStream & pcout, bool unsteady)
   {
     print_parameter(pcout, "Calculate error", analytical_solution_available);
     if(analytical_solution_available == true && unsteady == true)
@@ -72,7 +70,7 @@ struct ErrorCalculationData
   // to calculate the error an analytical solution to the problem has to be available
   bool analytical_solution_available;
 
-  std::shared_ptr<Function<dim>> analytical_solution;
+  std::shared_ptr<dealii::Function<dim>> analytical_solution;
 
   // relative or absolute errors?
   // If calculate_relative_errors == false, this implies that absolute errors are calculated
@@ -103,13 +101,13 @@ template<int dim, typename Number>
 class ErrorCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   ErrorCalculator(MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const &           dof_handler,
-        Mapping<dim> const &              mapping,
+  setup(dealii::DoFHandler<dim> const &   dof_handler,
+        dealii::Mapping<dim> const &      mapping,
         ErrorCalculationData<dim> const & error_data);
 
   void
@@ -126,8 +124,8 @@ private:
 
   bool clear_files_L2, clear_files_H1_seminorm;
 
-  SmartPointer<DoFHandler<dim> const> dof_handler;
-  SmartPointer<Mapping<dim> const>    mapping;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
 
   ErrorCalculationData<dim> error_data;
 };

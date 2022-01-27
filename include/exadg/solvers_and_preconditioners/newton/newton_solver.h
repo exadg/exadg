@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace Newton
 {
-using namespace dealii;
-
 template<typename VectorType,
          typename NonlinearOperator,
          typename LinearOperator,
@@ -115,8 +113,8 @@ public:
       } while(norm_r_damp >= (1.0 - tau * omega) * norm_r && n_iter_damp < max_iter_damp);
 
       AssertThrow(norm_r_damp < (1.0 - tau * omega) * norm_r,
-                  ExcMessage("Damped Newton iteration did not converge. "
-                             "Maximum number of iterations exceeded!"));
+                  dealii::ExcMessage("Damped Newton iteration did not converge. "
+                                     "Maximum number of iterations exceeded!"));
 
       // update solution and residual
       solution = temporary;
@@ -128,8 +126,9 @@ public:
     }
 
     AssertThrow(norm_r <= this->solver_data.abs_tol || norm_r / norm_r_0 <= solver_data.rel_tol,
-                ExcMessage("Newton solver failed to solve nonlinear problem to given tolerance. "
-                           "Maximum number of iterations exceeded!"));
+                dealii::ExcMessage(
+                  "Newton solver failed to solve nonlinear problem to given tolerance. "
+                  "Maximum number of iterations exceeded!"));
 
     return std::tuple<unsigned int, unsigned int>(newton_iterations, linear_iterations);
   }

@@ -29,19 +29,18 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
-void calculate_lift_and_drag_force(Tensor<1, dim, Number> &             Force,
-                                   MatrixFree<dim, Number> const &      matrix_free,
-                                   unsigned int const &                 dof_index_velocity,
-                                   unsigned int const &                 quad_index_velocity,
-                                   unsigned int const &                 dof_index_pressure,
-                                   std::set<types::boundary_id> const & boundary_IDs,
-                                   LinearAlgebra::distributed::Vector<Number> const & velocity,
-                                   LinearAlgebra::distributed::Vector<Number> const & pressure,
-                                   double const &                                     viscosity,
-                                   MPI_Comm const &                                   mpi_comm)
+void
+  calculate_lift_and_drag_force(dealii::Tensor<1, dim, Number> &             Force,
+                                dealii::MatrixFree<dim, Number> const &      matrix_free,
+                                unsigned int const &                         dof_index_velocity,
+                                unsigned int const &                         quad_index_velocity,
+                                unsigned int const &                         dof_index_pressure,
+                                std::set<dealii::types::boundary_id> const & boundary_IDs,
+                                dealii::LinearAlgebra::distributed::Vector<Number> const & velocity,
+                                dealii::LinearAlgebra::distributed::Vector<Number> const & pressure,
+                                double const &   viscosity,
+                                MPI_Comm const & mpi_comm)
 {
   FaceIntegrator<dim, dim, Number> integrator_velocity(matrix_free,
                                                        true,
@@ -67,29 +66,31 @@ void calculate_lift_and_drag_force(Tensor<1, dim, Number> &             Force,
     integrator_pressure.read_dof_values(pressure);
     integrator_pressure.evaluate(true, false);
 
-    types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+    dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
-    typename std::set<types::boundary_id>::iterator it = boundary_IDs.find(boundary_id);
+    typename std::set<dealii::types::boundary_id>::iterator it = boundary_IDs.find(boundary_id);
     if(it != boundary_IDs.end())
     {
       for(unsigned int q = 0; q < integrator_velocity.n_q_points; ++q)
       {
-        VectorizedArray<Number> pressure = integrator_pressure.get_value(q);
+        dealii::VectorizedArray<Number> pressure = integrator_pressure.get_value(q);
 
-        Tensor<1, dim, VectorizedArray<Number>> normal = integrator_velocity.get_normal_vector(q);
-        Tensor<2, dim, VectorizedArray<Number>> velocity_gradient =
+        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal =
+          integrator_velocity.get_normal_vector(q);
+        dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> velocity_gradient =
           integrator_velocity.get_gradient(q);
 
-        Tensor<1, dim, VectorizedArray<Number>> tau =
+        dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> tau =
           pressure * normal -
           viscosity * (velocity_gradient + transpose(velocity_gradient)) * normal;
 
         integrator_velocity.submit_value(tau, q);
       }
 
-      Tensor<1, dim, VectorizedArray<Number>> Force_local = integrator_velocity.integrate_value();
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> Force_local =
+        integrator_velocity.integrate_value();
 
-      // sum over all entries of VectorizedArray
+      // sum over all entries of dealii::VectorizedArray
       for(unsigned int d = 0; d < dim; ++d)
       {
         for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
@@ -97,7 +98,7 @@ void calculate_lift_and_drag_force(Tensor<1, dim, Number> &             Force,
       }
     }
   }
-  Force = Utilities::MPI::sum(Force, mpi_comm);
+  Force = dealii::Utilities::MPI::sum(Force, mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -117,12 +118,12 @@ LiftAndDragCalculator<dim, Number>::LiftAndDragCalculator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-LiftAndDragCalculator<dim, Number>::setup(DoFHandler<dim> const &         dof_handler_velocity_in,
-                                          MatrixFree<dim, Number> const & matrix_free_in,
-                                          unsigned int const              dof_index_velocity_in,
-                                          unsigned int const              dof_index_pressure_in,
-                                          unsigned int const              quad_index_in,
-                                          LiftAndDragData const &         data_in)
+LiftAndDragCalculator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+                                          dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                          unsigned int const      dof_index_velocity_in,
+                                          unsigned int const      dof_index_pressure_in,
+                                          unsigned int const      quad_index_in,
+                                          LiftAndDragData const & data_in)
 {
   dof_handler_velocity = &dof_handler_velocity_in;
   matrix_free          = &matrix_free_in;
@@ -143,7 +144,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
 {
   if(data.calculate)
   {
-    Tensor<1, dim, Number> Force;
+    dealii::Tensor<1, dim, Number> Force;
 
     calculate_lift_and_drag_force<dim, Number>(Force,
                                                *matrix_free,
@@ -166,7 +167,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
     c_L_min = std::min(c_L_min, lift);
     c_L_max = std::max(c_L_max, lift);
 
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename_drag, filename_lift;
       filename_drag = data.directory + data.filename_drag;

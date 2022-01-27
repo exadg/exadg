@@ -32,8 +32,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // forward declarations
 template<int dim, typename Number>
 class OperatorCoupled;
@@ -46,7 +44,7 @@ private:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef OperatorCoupled<dim, Number> Operator;
 

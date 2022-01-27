@@ -25,13 +25,11 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim>
 struct FieldFunctions
 {
-  std::shared_ptr<Function<dim>> initial_solution;
-  std::shared_ptr<Function<dim>> right_hand_side;
+  std::shared_ptr<dealii::Function<dim>> initial_solution;
+  std::shared_ptr<dealii::Function<dim>> right_hand_side;
 };
 
 } // namespace Poisson

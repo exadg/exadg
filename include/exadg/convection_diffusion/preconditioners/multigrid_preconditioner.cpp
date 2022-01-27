@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & mpi_comm)
   : Base(mpi_comm),
@@ -44,15 +42,16 @@ MultigridPreconditioner<dim, Number>::MultigridPreconditioner(MPI_Comm const & m
 
 template<int dim, typename Number>
 void
-MultigridPreconditioner<dim, Number>::initialize(MultigridData const &               mg_data,
-                                                 Triangulation<dim> const *          tria,
-                                                 FiniteElement<dim> const &          fe,
-                                                 std::shared_ptr<Mapping<dim> const> mapping,
-                                                 PDEOperator const &                 pde_operator,
-                                                 MultigridOperatorType const & mg_operator_type,
-                                                 bool const                    mesh_is_moving,
-                                                 Map const *                   dirichlet_bc,
-                                                 PeriodicFacePairs const *     periodic_face_pairs)
+MultigridPreconditioner<dim, Number>::initialize(
+  MultigridData const &                       mg_data,
+  dealii::Triangulation<dim> const *          tria,
+  dealii::FiniteElement<dim> const &          fe,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  PDEOperator const &                         pde_operator,
+  MultigridOperatorType const &               mg_operator_type,
+  bool const                                  mesh_is_moving,
+  Map const *                                 dirichlet_bc,
+  PeriodicFacePairs const *                   periodic_face_pairs)
 {
   this->pde_operator     = &pde_operator;
   this->mg_operator_type = mg_operator_type;
@@ -67,7 +66,7 @@ MultigridPreconditioner<dim, Number>::initialize(MultigridData const &          
   // operators should be "active" for the multigrid preconditioner, independently of
   // the actual equation type that is solved.
   AssertThrow(this->mg_operator_type != MultigridOperatorType::Undefined,
-              ExcMessage("Invalid parameter mg_operator_type."));
+              dealii::ExcMessage("Invalid parameter mg_operator_type."));
 
   if(this->mg_operator_type == MultigridOperatorType::ReactionDiffusion)
   {
@@ -88,7 +87,7 @@ MultigridPreconditioner<dim, Number>::initialize(MultigridData const &          
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   Base::initialize(
@@ -135,14 +134,14 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops && this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
                                      "std_quadrature");
 
   if(data.convective_problem)
@@ -158,7 +157,7 @@ MultigridPreconditioner<dim, Number>::fill_matrix_free_data(
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -199,11 +198,11 @@ MultigridPreconditioner<dim, Number>::initialize_operator(unsigned int const lev
 template<int dim, typename Number>
 void
 MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
-  bool const                 operator_is_singular,
-  PeriodicFacePairs const *  periodic_face_pairs,
-  FiniteElement<dim> const & fe,
-  Triangulation<dim> const * tria,
-  Map const *                dirichlet_bc)
+  bool const                         operator_is_singular,
+  PeriodicFacePairs const *          periodic_face_pairs,
+  dealii::FiniteElement<dim> const & fe,
+  dealii::Triangulation<dim> const * tria,
+  Map const *                        dirichlet_bc)
 {
   Base::initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
@@ -211,8 +210,8 @@ MultigridPreconditioner<dim, Number>::initialize_dof_handler_and_constraints(
   if(data.convective_problem &&
      data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
   {
-    FESystem<dim> fe_velocity(FE_DGQ<dim>(fe.degree), dim);
-    Map           dirichlet_bc_velocity;
+    dealii::FESystem<dim> fe_velocity(dealii::FE_DGQ<dim>(fe.degree), dim);
+    Map                   dirichlet_bc_velocity;
     this->do_initialize_dof_handler_and_constraints(false,
                                                     *periodic_face_pairs,
                                                     fe_velocity,

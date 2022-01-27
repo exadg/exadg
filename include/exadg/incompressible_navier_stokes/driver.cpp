@@ -36,15 +36,13 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
                             std::shared_ptr<ApplicationBase<dim, Number>> app,
                             bool const                                    is_test,
                             bool const                                    is_throughput_study)
   : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(comm) == 0),
     is_test(is_test),
     is_throughput_study(is_throughput_study),
     application(app)
@@ -56,7 +54,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up incompressible Navier-Stokes solver:" << std::endl;
@@ -68,7 +66,8 @@ Driver<dim, Number>::setup()
   {
     if(application->get_parameters().mesh_movement_type == MeshMovementType::Analytical)
     {
-      std::shared_ptr<Function<dim>> mesh_motion = application->create_mesh_movement_function();
+      std::shared_ptr<dealii::Function<dim>> mesh_motion =
+        application->create_mesh_movement_function();
 
       grid_motion = std::make_shared<GridMotionAnalytical<dim, Number>>(
         application->get_grid()->mapping,
@@ -94,7 +93,7 @@ Driver<dim, Number>::setup()
       poisson_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       poisson_matrix_free_data->append(poisson_operator);
 
-      poisson_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+      poisson_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
       if(application->get_parameters_poisson().enable_cell_based_face_loops)
         Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                             poisson_matrix_free_data->data);
@@ -113,7 +112,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -140,18 +139,18 @@ Driver<dim, Number>::setup()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   // initialize matrix_free
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  std::shared_ptr<Mapping<dim> const> mapping =
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
@@ -187,7 +186,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     if(application->get_parameters().solver_type == SolverType::Unsteady)
@@ -205,7 +204,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -217,17 +216,17 @@ void
 Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
-  Timer sub_timer;
+  dealii::Timer sub_timer;
 
   sub_timer.restart();
   grid_motion->update(time_integrator->get_next_time(), false);
   timer_tree.insert({"Incompressible flow", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<Mapping<dim> const> mapping =
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
   matrix_free->update_mapping(*mapping);
   timer_tree.insert({"Incompressible flow", "ALE", "Update matrix-free"}, sub_timer.wall_time());
@@ -285,12 +284,12 @@ Driver<dim, Number>::solve() const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 }
 
@@ -332,11 +331,12 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
-  unsigned int const            N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  dealii::types::global_dof_index const DoFs = pde_operator->get_number_of_dofs();
+  unsigned int const N_mpi_processes         = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+  dealii::Utilities::MPI::MinMaxAvg overall_time_data =
+    dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const overall_time_avg = overall_time_data.avg;
 
   if(application->get_parameters().solver_type == SolverType::Unsteady)
   {
@@ -357,7 +357,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 }
 
 template<int dim, typename Number>
-std::tuple<unsigned int, types::global_dof_index, double>
+std::tuple<unsigned int, dealii::types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
@@ -368,7 +368,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   string_to_enum(operator_type, operator_type_string);
 
   AssertThrow(application->get_parameters().degree_p == DegreePressure::MixedOrder,
-              ExcMessage(
+              dealii::ExcMessage(
                 "The function get_dofs_per_element() assumes mixed-order polynomials for "
                 "velocity and pressure. Additional operator types have to be introduced to "
                 "enable equal-order polynomials for this throughput study."));
@@ -381,7 +381,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                   operator_type == OperatorType::CoupledNonlinearResidual ||
                   operator_type == OperatorType::CoupledLinearized ||
                   operator_type == OperatorType::InverseMassOperator,
-                ExcMessage("Invalid operator specified for coupled solution approach."));
+                dealii::ExcMessage("Invalid operator specified for coupled solution approach."));
   }
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFDualSplittingScheme)
@@ -391,7 +391,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                   operator_type == OperatorType::HelmholtzOperator ||
                   operator_type == OperatorType::ProjectionOperator ||
                   operator_type == OperatorType::InverseMassOperator,
-                ExcMessage("Invalid operator specified for dual splitting scheme."));
+                dealii::ExcMessage("Invalid operator specified for dual splitting scheme."));
   }
   else if(application->get_parameters().temporal_discretization ==
           TemporalDiscretization::BDFPressureCorrection)
@@ -401,21 +401,21 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                   operator_type == OperatorType::VelocityConvDiffOperator ||
                   operator_type == OperatorType::ProjectionOperator ||
                   operator_type == OperatorType::InverseMassOperator,
-                ExcMessage("Invalid operator specified for pressure-correction scheme."));
+                dealii::ExcMessage("Invalid operator specified for pressure-correction scheme."));
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   // Vectors needed for coupled solution approach
-  LinearAlgebra::distributed::BlockVector<Number> dst1, src1;
+  dealii::LinearAlgebra::distributed::BlockVector<Number> dst1, src1;
 
   // ... for dual splitting, pressure-correction.
-  LinearAlgebra::distributed::Vector<Number> dst2, src2;
+  dealii::LinearAlgebra::distributed::Vector<Number> dst2, src2;
 
   // set velocity required for evaluation of linearized operators
-  LinearAlgebra::distributed::Vector<Number> velocity;
+  dealii::LinearAlgebra::distributed::Vector<Number> velocity;
   pde_operator->initialize_vector_velocity(velocity);
   velocity = 1.0;
   pde_operator->set_velocity_ptr(velocity);
@@ -453,7 +453,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     src2 = 1.0;
@@ -475,14 +475,14 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     src2 = 1.0;
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   const std::function<void(void)> operator_evaluation = [&](void) {
@@ -501,7 +501,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       else if(operator_type == OperatorType::InverseMassOperator)
         operator_coupled->apply_inverse_mass_operator(dst2,src2);
       else
-        AssertThrow(false,ExcMessage("Not implemented."));
+        AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }
     else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -519,7 +519,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       else if(operator_type == OperatorType::InverseMassOperator)
         operator_dual_splitting->apply_inverse_mass_operator(dst2,src2);
       else
-        AssertThrow(false,ExcMessage("Not implemented."));
+        AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }
     else if(application->get_parameters().temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
@@ -535,11 +535,11 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
       else if(operator_type == OperatorType::InverseMassOperator)
         operator_pressure_correction->apply_inverse_mass_operator(dst2,src2);
       else
-        AssertThrow(false,ExcMessage("Not implemented."));
+        AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }
     else
     {
-      AssertThrow(false,ExcMessage("Not implemented."));
+      AssertThrow(false,dealii::ExcMessage("Not implemented."));
     }
     // clang-format on
 
@@ -549,8 +549,8 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   // calculate throughput
 
   // determine DoFs and degree
-  types::global_dof_index dofs      = 0;
-  unsigned int            fe_degree = 1;
+  dealii::types::global_dof_index dofs      = 0;
+  unsigned int                    fe_degree = 1;
 
   if(operator_type == OperatorType::CoupledNonlinearResidual ||
      operator_type == OperatorType::CoupledLinearized)
@@ -577,7 +577,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   // do the measurements
@@ -586,7 +586,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   double const throughput = (double)dofs / wall_time;
 
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
   if(not(is_test))
   {
@@ -600,7 +600,9 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(fe_degree, dofs, throughput);
+  return std::tuple<unsigned int, dealii::types::global_dof_index, double>(fe_degree,
+                                                                           dofs,
+                                                                           throughput);
 }
 
 

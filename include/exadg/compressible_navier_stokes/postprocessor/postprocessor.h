@@ -34,8 +34,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim>
 struct PostProcessorData
 {
@@ -58,7 +56,7 @@ template<int dim, typename Number>
 class PostProcessor : public PostProcessorBase<dim, Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & comm);
 
@@ -93,7 +91,7 @@ private:
 
   PostProcessorData<dim> pp_data;
 
-  SmartPointer<Operator<dim, Number> const> navier_stokes_operator;
+  dealii::SmartPointer<Operator<dim, Number> const> navier_stokes_operator;
 
   OutputGenerator<dim, Number>                 output_generator;
   ErrorCalculator<dim, Number>                 error_calculator;

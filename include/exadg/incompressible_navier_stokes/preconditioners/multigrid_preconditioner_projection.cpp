@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MultigridPreconditionerProjection<dim, Number>::MultigridPreconditionerProjection(
   MPI_Comm const & mpi_comm)
@@ -38,14 +36,14 @@ MultigridPreconditionerProjection<dim, Number>::MultigridPreconditionerProjectio
 template<int dim, typename Number>
 void
 MultigridPreconditionerProjection<dim, Number>::initialize(
-  MultigridData const &               mg_data,
-  Triangulation<dim> const *          tria,
-  FiniteElement<dim> const &          fe,
-  std::shared_ptr<Mapping<dim> const> mapping,
-  PDEOperator const &                 pde_operator,
-  bool const                          mesh_is_moving,
-  Map const *                         dirichlet_bc,
-  PeriodicFacePairs const *           periodic_face_pairs)
+  MultigridData const &                       mg_data,
+  dealii::Triangulation<dim> const *          tria,
+  dealii::FiniteElement<dim> const &          fe,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  PDEOperator const &                         pde_operator,
+  bool const                                  mesh_is_moving,
+  Map const *                                 dirichlet_bc,
+  PeriodicFacePairs const *                   periodic_face_pairs)
 {
   this->pde_operator = &pde_operator;
 
@@ -96,14 +94,14 @@ MultigridPreconditionerProjection<dim, Number>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops && this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "std_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "std_dof_handler");
-  matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
                                      "std_quadrature");
 }
 

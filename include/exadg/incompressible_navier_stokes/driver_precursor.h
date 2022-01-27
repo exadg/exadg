@@ -38,8 +38,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class DriverPrecursor
 {
@@ -68,7 +66,7 @@ private:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -79,8 +77,8 @@ private:
   /*
    * MatrixFree
    */
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_pre, matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_pre, matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_pre, matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_pre, matrix_free;
 
   /*
    * Spatial discretization

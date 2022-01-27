@@ -74,7 +74,7 @@ template<int dim, typename Number>
 void
 run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_test)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   std::shared_ptr<IncNS::ApplicationBasePrecursor<dim, Number>> application =

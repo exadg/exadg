@@ -37,7 +37,6 @@ namespace ExaDG
 {
 namespace Elementwise
 {
-using namespace dealii;
 /*
  * Solver data
  */
@@ -57,10 +56,11 @@ template<int dim,
          typename Number,
          typename Operator,
          typename Preconditioner>
-class IterativeSolver : public Krylov::SolverBase<LinearAlgebra::distributed::Vector<Number>>
+class IterativeSolver
+  : public Krylov::SolverBase<dealii::LinearAlgebra::distributed::Vector<Number>>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef IterativeSolver<dim, number_of_equations, Number, Operator, Preconditioner> THIS;
 
@@ -87,7 +87,7 @@ public:
 
 private:
   void
-  solve_elementwise(MatrixFree<dim, Number> const &               matrix_free,
+  solve_elementwise(dealii::MatrixFree<dim, Number> const &       matrix_free,
                     VectorType &                                  dst,
                     VectorType const &                            src,
                     std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -98,24 +98,24 @@ private:
 
     unsigned int const dofs_per_cell = integrator.dofs_per_cell;
 
-    AlignedVector<VectorizedArray<Number>> solution(dofs_per_cell);
+    dealii::AlignedVector<dealii::VectorizedArray<Number>> solution(dofs_per_cell);
 
     // setup elementwise solver
     if(iterative_solver_data.solver_type == Solver::CG)
     {
-      solver =
-        std::make_shared<Elementwise::SolverCG<VectorizedArray<Number>, Operator, Preconditioner>>(
-          dofs_per_cell, iterative_solver_data.solver_data);
+      solver = std::make_shared<
+        Elementwise::SolverCG<dealii::VectorizedArray<Number>, Operator, Preconditioner>>(
+        dofs_per_cell, iterative_solver_data.solver_data);
     }
     else if(iterative_solver_data.solver_type == Solver::GMRES)
     {
       solver = std::make_shared<
-        Elementwise::SolverGMRES<VectorizedArray<Number>, Operator, Preconditioner>>(
+        Elementwise::SolverGMRES<dealii::VectorizedArray<Number>, Operator, Preconditioner>>(
         dofs_per_cell, iterative_solver_data.solver_data);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     // loop over all cells and solve local problem iteratively on each cell
@@ -139,7 +139,7 @@ private:
   }
 
   mutable std::shared_ptr<
-    Elementwise::SolverBase<VectorizedArray<Number>, Operator, Preconditioner>>
+    Elementwise::SolverBase<dealii::VectorizedArray<Number>, Operator, Preconditioner>>
     solver;
 
   Operator & op;

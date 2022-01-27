@@ -37,8 +37,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  * This function calculates statistics along lines over time
  * and one spatial, homogeneous direction (averaging_direction = {0,1,2}), e.g.,
@@ -54,16 +52,16 @@ template<int dim, typename Number>
 class LinePlotCalculatorStatisticsHomogeneous
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef
-    typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
-      TYPE;
+  typedef typename std::vector<
+    std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>>
+    TYPE;
 
-  LinePlotCalculatorStatisticsHomogeneous(DoFHandler<dim> const & dof_handler_velocity_in,
-                                          DoFHandler<dim> const & dof_handler_pressure_in,
-                                          Mapping<dim> const &    mapping_in,
-                                          MPI_Comm const &        mpi_comm_in);
+  LinePlotCalculatorStatisticsHomogeneous(dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+                                          dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+                                          dealii::Mapping<dim> const &    mapping_in,
+                                          MPI_Comm const &                mpi_comm_in);
 
   void
   setup(LinePlotDataStatistics<dim> const & data_in);
@@ -98,42 +96,43 @@ private:
                                    double &           pressure_local);
 
   void
-  find_points_and_weights(Point<dim> const &        point_in_ref_coord,
-                          std::vector<Point<dim>> & points,
-                          std::vector<double> &     weights,
-                          unsigned int const        averaging_direction,
-                          QGauss<1> const &         gauss_1d);
+  find_points_and_weights(dealii::Point<dim> const &        point_in_ref_coord,
+                          std::vector<dealii::Point<dim>> & points,
+                          std::vector<double> &             weights,
+                          unsigned int const                averaging_direction,
+                          dealii::QGauss<1> const &         gauss_1d);
 
   void
   do_write_output() const;
 
   mutable bool clear_files;
 
-  DoFHandler<dim> const & dof_handler_velocity;
-  DoFHandler<dim> const & dof_handler_pressure;
-  Mapping<dim> const &    mapping;
-  MPI_Comm                mpi_comm;
+  dealii::DoFHandler<dim> const & dof_handler_velocity;
+  dealii::DoFHandler<dim> const & dof_handler_pressure;
+  dealii::Mapping<dim> const &    mapping;
+  MPI_Comm                        mpi_comm;
 
   LinePlotDataStatistics<dim> data;
 
   // Global points
-  std::vector<std::vector<Point<dim>>> global_points;
+  std::vector<std::vector<dealii::Point<dim>>> global_points;
 
   // For all lines: for all points along the line: list of all relevant cells and points in ref
   // coordinates
-  std::vector<
-    std::vector<std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>>>
+  std::vector<std::vector<std::vector<
+    std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>>>>
     cells_and_ref_points_velocity;
 
   // For all lines: for all points along the line: list of all relevant cells and points in ref
   // coordinates
-  std::vector<
-    std::vector<std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>>>
+  std::vector<std::vector<std::vector<
+    std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>>>>
     cells_and_ref_points_pressure;
 
   // For all lines: for pressure reference point: list of all relevant cells and points in ref
   // coordinates
-  std::vector<std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>>
+  std::vector<std::vector<
+    std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>>>
     cells_and_ref_points_ref_pressure;
 
   // number of samples for averaging in time
@@ -144,7 +143,7 @@ private:
 
   // Velocity quantities
   // For all lines: for all points along the line
-  std::vector<std::vector<Tensor<1, dim, double>>> velocity_global;
+  std::vector<std::vector<dealii::Tensor<1, dim, double>>> velocity_global;
 
   // Skin Friction quantities
   // For all lines: for all points along the line
@@ -152,7 +151,7 @@ private:
 
   // Reynolds Stress quantities
   // For all lines: for all points along the line
-  std::vector<std::vector<Tensor<2, dim, double>>> reynolds_global;
+  std::vector<std::vector<dealii::Tensor<2, dim, double>>> reynolds_global;
 
   // Pressure quantities
   // For all lines: for all points along the line

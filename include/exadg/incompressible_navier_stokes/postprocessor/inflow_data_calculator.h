@@ -36,8 +36,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  * inflow data: use velocity at the outflow of one domain as inflow-BC for another domain
  *
@@ -67,7 +65,7 @@ struct InflowData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(write_inflow_data == true)
     {
@@ -95,7 +93,7 @@ struct InflowData
   std::vector<double> * y_values;
   std::vector<double> * z_values;
   // and the velocity values at n_points_y*n_points_z points
-  std::vector<Tensor<1, dim, double>> * array;
+  std::vector<dealii::Tensor<1, dim, double>> * array;
 };
 
 template<int dim, typename Number>
@@ -105,20 +103,21 @@ public:
   InflowDataCalculator(InflowData<dim> const & inflow_data, MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const & dof_handler_velocity, Mapping<dim> const & mapping);
+  setup(dealii::DoFHandler<dim> const & dof_handler_velocity, dealii::Mapping<dim> const & mapping);
 
   void
-  calculate(LinearAlgebra::distributed::Vector<Number> const & velocity);
+  calculate(dealii::LinearAlgebra::distributed::Vector<Number> const & velocity);
 
 private:
-  SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
-  SmartPointer<Mapping<dim> const>    mapping;
-  InflowData<dim>                     inflow_data;
-  bool                                inflow_data_has_been_initialized;
+  dealii::SmartPointer<dealii::DoFHandler<dim> const> dof_handler_velocity;
+  dealii::SmartPointer<dealii::Mapping<dim> const>    mapping;
+  InflowData<dim>                                     inflow_data;
+  bool                                                inflow_data_has_been_initialized;
 
   MPI_Comm const mpi_comm;
 
-  std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>
+  std::vector<
+    std::vector<std::pair<std::vector<dealii::types::global_dof_index>, std::vector<Number>>>>
     array_dof_indices_and_shape_values;
 
   std::vector<unsigned int> array_counter;

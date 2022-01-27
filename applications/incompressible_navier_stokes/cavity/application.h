@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -36,7 +34,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -220,12 +218,12 @@ public:
   create_grid() final
   {
     double const left = 0.0, right = L;
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     // set boundary indicator
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         if((std::fabs(cell->face(face)->center()(1) - L) < 1e-12))
           cell->face(face)->set_boundary_id(1);
@@ -240,30 +238,34 @@ public:
   {
     // all boundaries have ID = 0 by default -> Dirichlet boundaries
 
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     std::vector<double> velocity = std::vector<double>(dim, 0.0);
     velocity[0]                  = 1.0;
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(1, new Functions::ConstantFunction<dim>(velocity)));
+      pair(1, new dealii::Functions::ConstantFunction<dim>(velocity)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -303,8 +305,8 @@ public:
 
       // vertical line
       vert_line.reset(new Line<dim>());
-      vert_line->begin    = Point<dim>(0.5, 0.0);
-      vert_line->end      = Point<dim>(0.5, 1.0);
+      vert_line->begin    = dealii::Point<dim>(0.5, 0.0);
+      vert_line->end      = dealii::Point<dim>(0.5, 1.0);
       vert_line->name     = this->output_name + "_vert_line";
       vert_line->n_points = 100001; // 2001;
       vert_line->quantities.push_back(quantity_u);
@@ -313,8 +315,8 @@ public:
 
       // horizontal line
       hor_line.reset(new Line<dim>());
-      hor_line->begin    = Point<dim>(0.0, 0.5);
-      hor_line->end      = Point<dim>(1.0, 0.5);
+      hor_line->begin    = dealii::Point<dim>(0.0, 0.5);
+      hor_line->end      = dealii::Point<dim>(1.0, 0.5);
       hor_line->name     = this->output_name + "_hor_line";
       hor_line->n_points = 10001; // 2001;
       hor_line->quantities.push_back(quantity_u);

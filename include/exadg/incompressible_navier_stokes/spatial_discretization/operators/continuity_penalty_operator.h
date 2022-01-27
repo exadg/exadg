@@ -19,8 +19,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  *  Continuity penalty operator:
  *
@@ -84,10 +82,10 @@ private:
   typedef CellIntegrator<dim, dim, Number> IntegratorCell;
   typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
 public:
   ContinuityPenaltyKernel()
@@ -96,10 +94,10 @@ public:
   }
 
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         unsigned int const                  dof_index,
-         unsigned int const                  quad_index,
-         ContinuityPenaltyKernelData const & data)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
+         unsigned int const                      dof_index,
+         unsigned int const                      quad_index,
+         ContinuityPenaltyKernelData const &     data)
   {
     this->matrix_free = &matrix_free;
 
@@ -138,8 +136,9 @@ public:
 
     // no cell integrals
 
-    flags.inner_faces    = update_JxW_values | update_normal_vectors;
-    flags.boundary_faces = update_JxW_values | update_normal_vectors | update_quadrature_points;
+    flags.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;
+    flags.boundary_faces =
+      dealii::update_JxW_values | dealii::update_normal_vectors | dealii::update_quadrature_points;
 
     return flags;
   }
@@ -151,7 +150,7 @@ public:
 
     IntegratorCell integrator(*matrix_free, dof_index, quad_index);
 
-    AlignedVector<scalar> JxW_values(integrator.n_q_points);
+    dealii::AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
     unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
     for(unsigned int cell = 0; cell < n_cells; ++cell)
@@ -159,8 +158,8 @@ public:
       integrator.reinit(cell);
       integrator.read_dof_values(velocity);
       integrator.evaluate(true, false);
-      scalar volume      = make_vectorized_array<Number>(0.0);
-      scalar norm_U_mean = make_vectorized_array<Number>(0.0);
+      scalar volume      = dealii::make_vectorized_array<Number>(0.0);
+      scalar norm_U_mean = dealii::make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
@@ -172,7 +171,7 @@ public:
 
       scalar tau_convective = norm_U_mean;
       scalar h_eff          = std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
-      scalar tau_viscous    = make_vectorized_array<Number>(data.viscosity) / h_eff;
+      scalar tau_viscous    = dealii::make_vectorized_array<Number>(data.viscosity) / h_eff;
 
       if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
       {
@@ -203,11 +202,11 @@ public:
   }
 
   void
-  reinit_face_cell_based(types::boundary_id const boundary_id,
-                         IntegratorFace &         integrator_m,
-                         IntegratorFace &         integrator_p) const
+  reinit_face_cell_based(dealii::types::boundary_id const boundary_id,
+                         IntegratorFace &                 integrator_m,
+                         IntegratorFace &                 integrator_p) const
   {
-    if(boundary_id == numbers::internal_face_boundary_id) // internal face
+    if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
       tau = 0.5 * (integrator_m.read_cell_data(array_penalty_parameter) +
                    integrator_p.read_cell_data(array_penalty_parameter));
@@ -237,7 +236,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     return flux;
@@ -245,14 +244,14 @@ public:
 
 
 private:
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index;
   unsigned int quad_index;
 
   ContinuityPenaltyKernelData data;
 
-  AlignedVector<scalar> array_penalty_parameter;
+  dealii::AlignedVector<scalar> array_penalty_parameter;
 
   mutable scalar tau;
 };
@@ -281,9 +280,9 @@ class ContinuityPenaltyOperator
 private:
   typedef ContinuityPenaltyOperator<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -295,9 +294,9 @@ public:
   ContinuityPenaltyOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &    matrix_free,
-             ContinuityPenaltyData<dim> const & data,
-             std::shared_ptr<Kernel> const      kernel);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+             ContinuityPenaltyData<dim> const &      data,
+             std::shared_ptr<Kernel> const           kernel);
 
   void
   update(VectorType const & velocity);
@@ -325,50 +324,50 @@ public:
 
 private:
   void
-  cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                  VectorType &                    dst,
-                  VectorType const &              src,
-                  Range const &                   range) const;
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           range) const;
 
   void
-  face_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   face_range) const;
+  face_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           face_range) const;
 
   void
-  face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                  VectorType &                    dst,
-                  VectorType const &              src,
-                  Range const &                   face_range) const;
+  face_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           face_range) const;
 
   void
-  boundary_face_loop_hom(MatrixFree<dim, Number> const & matrix_free,
-                         VectorType &                    dst,
-                         VectorType const &              src,
-                         Range const &                   face_range) const;
+  boundary_face_loop_hom(dealii::MatrixFree<dim, Number> const & matrix_free,
+                         VectorType &                            dst,
+                         VectorType const &                      src,
+                         Range const &                           face_range) const;
 
   void
-  boundary_face_loop_full(MatrixFree<dim, Number> const & matrix_free,
-                          VectorType &                    dst,
-                          VectorType const &              src,
-                          Range const &                   face_range) const;
+  boundary_face_loop_full(dealii::MatrixFree<dim, Number> const & matrix_free,
+                          VectorType &                            dst,
+                          VectorType const &                      src,
+                          Range const &                           face_range) const;
 
   void
-  boundary_face_loop_inhom(MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                    dst,
-                           VectorType const &              src,
-                           Range const &                   face_range) const;
+  boundary_face_loop_inhom(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           face_range) const;
 
   void
   do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_boundary_integral(IntegratorFace &           integrator_m,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator_m,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   ContinuityPenaltyData<dim> data;
 

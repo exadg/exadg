@@ -35,8 +35,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Operator;
 
@@ -44,7 +42,7 @@ template<typename Number>
 class PostProcessorInterface
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   virtual ~PostProcessorInterface()
   {
@@ -68,7 +66,7 @@ public:
   }
 
   virtual void
-  setup(Operator<dim, Number> const & pde_operator, Mapping<dim> const & mapping) = 0;
+  setup(Operator<dim, Number> const & pde_operator, dealii::Mapping<dim> const & mapping) = 0;
 };
 
 } // namespace ConvDiff

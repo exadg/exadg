@@ -31,8 +31,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 namespace ConvDiff
 {
 class Parameters;

@@ -23,8 +23,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Number>
 TimeIntBDFBase<Number>::TimeIntBDFBase(double const        start_time_,
                                        double const        end_time_,
@@ -141,7 +139,7 @@ TimeIntBDFBase<Number>::get_previous_time(int const i /* t_{n-i} */) const
    *                 |         |        |           |           /
    *  time_steps-vec:   dt[2]     dt[1]    dt[0]
    */
-  AssertThrow(i >= 0, ExcMessage("Invalid parameter."));
+  AssertThrow(i >= 0, dealii::ExcMessage("Invalid parameter."));
 
   double t = this->time;
 
@@ -169,9 +167,9 @@ TimeIntBDFBase<Number>::get_time_step_size(int const i /* dt[i] */) const
    *                 |         |        |           |           /
    *  time_steps-vec:   dt[2]     dt[1]    dt[0]
    */
-  AssertThrow(i >= 0 && i <= int(order) - 1, ExcMessage("Invalid access."));
+  AssertThrow(i >= 0 && i <= int(order) - 1, dealii::ExcMessage("Invalid access."));
 
-  AssertThrow(time_steps[i] > 0.0, ExcMessage("Invalid or uninitialized time step size."));
+  AssertThrow(time_steps[i] > 0.0, dealii::ExcMessage("Invalid or uninitialized time step size."));
 
   return time_steps[i];
 }
@@ -213,8 +211,8 @@ TimeIntBDFBase<Number>::set_current_time_step_size(double const & time_step_size
   if(adaptive_time_stepping == false)
   {
     AssertThrow(time_step_number == 1,
-                ExcMessage("For time integration with constant time step sizes this "
-                           "function can only be called in the very first time step."));
+                dealii::ExcMessage("For time integration with constant time step sizes this "
+                                   "function can only be called in the very first time step."));
   }
 
   time_steps[0] = time_step_size;
@@ -324,7 +322,7 @@ TimeIntBDFBase<Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum
       // number of sub-steps per "macro" time step
       int M = (int)(cfl / (cfl_oif - eps));
 
-      AssertThrow(M >= 1, ExcMessage("Invalid parameters cfl and cfl_oif."));
+      AssertThrow(M >= 1, dealii::ExcMessage("Invalid parameters cfl and cfl_oif."));
 
       // make sure that cfl_oif is not violated
       if(cfl_oif < cfl / double(M) - eps)
@@ -374,12 +372,12 @@ TimeIntBDFBase<Number>::read_restart_preamble(boost::archive::binary_iarchive & 
   unsigned int n_old_ranks = 1;
   ia &         n_old_ranks;
 
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
   AssertThrow(n_old_ranks == n_ranks,
-              ExcMessage("Tried to restart with " + Utilities::to_string(n_ranks) +
-                         " processes, "
-                         "but restart was written on " +
-                         Utilities::to_string(n_old_ranks) + " processes."));
+              dealii::ExcMessage("Tried to restart with " + dealii::Utilities::to_string(n_ranks) +
+                                 " processes, "
+                                 "but restart was written on " +
+                                 dealii::Utilities::to_string(n_old_ranks) + " processes."));
 
   // 2. time
   ia & time;
@@ -392,7 +390,7 @@ TimeIntBDFBase<Number>::read_restart_preamble(boost::archive::binary_iarchive & 
   unsigned int old_order = 1;
   ia &         old_order;
 
-  AssertThrow(old_order == order, ExcMessage("Order of time integrator may not change."));
+  AssertThrow(old_order == order, dealii::ExcMessage("Order of time integrator may not change."));
 
   // 4. time step sizes
   for(unsigned int i = 0; i < order; i++)
@@ -416,7 +414,7 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::write_restart_preamble(boost::archive::binary_oarchive & oa) const
 {
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int n_ranks = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // 1. ranks
   oa & n_ranks;
@@ -436,21 +434,21 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::postprocessing_steady_problem() const
 {
-  AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
+  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
 }
 
 template<typename Number>
 void
 TimeIntBDFBase<Number>::solve_steady_problem()
 {
-  AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
+  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
 }
 
 template<typename Number>
 void
 TimeIntBDFBase<Number>::initialize_solution_oif_substepping(VectorType &, unsigned int)
 {
-  AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
+  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
 }
 
 template<typename Number>
@@ -459,7 +457,7 @@ TimeIntBDFBase<Number>::update_sum_alphai_ui_oif_substepping(VectorType &,
                                                              VectorType const &,
                                                              unsigned int)
 {
-  AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
+  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
 }
 
 template<typename Number>
@@ -469,7 +467,7 @@ TimeIntBDFBase<Number>::do_timestep_oif_substepping(VectorType &,
                                                     double const,
                                                     double const)
 {
-  AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
+  AssertThrow(false, dealii::ExcMessage("This function has to be implemented by derived classes."));
 }
 
 template class TimeIntBDFBase<float>;

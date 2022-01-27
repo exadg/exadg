@@ -78,26 +78,29 @@ void
 Parameters::check() const
 {
   // MATHEMATICAL MODEL
-  AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("Parameter must be defined."));
+  AssertThrow(problem_type != ProblemType::Undefined,
+              dealii::ExcMessage("Parameter must be defined."));
 
   if(problem_type == ProblemType::QuasiStatic)
   {
     AssertThrow(large_deformation == true,
-                ExcMessage("QuasiStatic solver only implemented for nonlinear formulation."));
+                dealii::ExcMessage(
+                  "QuasiStatic solver only implemented for nonlinear formulation."));
   }
 
   if(problem_type == ProblemType::Unsteady)
   {
-    AssertThrow(restarted_simulation == false, ExcMessage("Restart has not been implemented."));
+    AssertThrow(restarted_simulation == false,
+                dealii::ExcMessage("Restart has not been implemented."));
   }
 
   // SPATIAL DISCRETIZATION
   grid.check();
 
-  AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
+  AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
   // SOLVER
-  AssertThrow(solver != Solver::Undefined, ExcMessage("Parameter must be defined."));
+  AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("Parameter must be defined."));
 }
 
 void

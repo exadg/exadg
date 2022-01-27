@@ -30,14 +30,13 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
-FlowRateCalculator<dim, Number>::FlowRateCalculator(MatrixFree<dim, Number> const & matrix_free_in,
-                                                    unsigned int const              dof_index_in,
-                                                    unsigned int const              quad_index_in,
-                                                    FlowRateCalculatorData<dim> const & data_in,
-                                                    MPI_Comm const &                    comm)
+FlowRateCalculator<dim, Number>::FlowRateCalculator(
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_in,
+  unsigned int const                      quad_index_in,
+  FlowRateCalculatorData<dim> const &     data_in,
+  MPI_Comm const &                        comm)
   : data(data_in),
     matrix_free(matrix_free_in),
     dof_index(dof_index_in),
@@ -52,9 +51,9 @@ FlowRateCalculator<dim, Number>::FlowRateCalculator(MatrixFree<dim, Number> cons
 template<int dim, typename Number>
 Number
 FlowRateCalculator<dim, Number>::calculate_flow_rates(
-  VectorType const &                     velocity,
-  double const &                         time,
-  std::map<types::boundary_id, Number> & flow_rates)
+  VectorType const &                             velocity,
+  double const &                                 time,
+  std::map<dealii::types::boundary_id, Number> & flow_rates)
 {
   if(data.calculate == true)
   {
@@ -84,7 +83,7 @@ FlowRateCalculator<dim, Number>::write_output(Number const &      value,
                                               std::string const & name)
 {
   // write output file
-  if(data.write_to_file == true && Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(data.write_to_file == true && dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::string filename = data.directory + data.filename;
 
@@ -110,8 +109,8 @@ FlowRateCalculator<dim, Number>::write_output(Number const &      value,
 template<int dim, typename Number>
 void
 FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
-  VectorType const &                     velocity,
-  std::map<types::boundary_id, Number> & flow_rates)
+  VectorType const &                             velocity,
+  std::map<dealii::types::boundary_id, Number> & flow_rates)
 {
   // zero flow rates since we sum into these variables
   for(auto iterator = flow_rates.begin(); iterator != flow_rates.end(); ++iterator)
@@ -125,8 +124,8 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
   {
-    typename std::map<types::boundary_id, Number>::iterator it;
-    types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+    typename std::map<dealii::types::boundary_id, Number>::iterator it;
+    dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
     it = flow_rates.find(boundary_id);
     if(it != flow_rates.end())
@@ -135,7 +134,7 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
       integrator.read_dof_values(velocity);
       integrator.evaluate(true, false);
 
-      scalar flow_rate_face = make_vectorized_array<Number>(0.0);
+      scalar flow_rate_face = dealii::make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
@@ -143,7 +142,7 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
           integrator.JxW(q) * integrator.get_value(q) * integrator.get_normal_vector(q);
       }
 
-      // sum over all entries of VectorizedArray
+      // sum over all entries of dealii::VectorizedArray
       for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
         flow_rates.at(boundary_id) += flow_rate_face[n];
     }
@@ -156,10 +155,10 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
     flow_rates_vector[counter] = (iterator++)->second;
   }
 
-  Utilities::MPI::sum(ArrayView<double const>(&(*flow_rates_vector.begin()),
-                                              flow_rates_vector.size()),
-                      mpi_comm,
-                      ArrayView<double>(&(*flow_rates_vector.begin()), flow_rates_vector.size()));
+  dealii::Utilities::MPI::sum(
+    dealii::ArrayView<double const>(&(*flow_rates_vector.begin()), flow_rates_vector.size()),
+    mpi_comm,
+    dealii::ArrayView<double>(&(*flow_rates_vector.begin()), flow_rates_vector.size()));
 
   iterator = flow_rates.begin();
   for(unsigned int counter = 0; counter < flow_rates.size(); ++counter)

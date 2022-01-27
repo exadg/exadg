@@ -56,14 +56,12 @@ namespace ExaDG
 {
 namespace FSI
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class ApplicationBase
 {
 public:
   virtual void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
     prm.enter_subsection("Output");
@@ -76,7 +74,7 @@ public:
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
   }
@@ -111,7 +109,7 @@ public:
     structure_param.check();
     // Some FSI specific Asserts
     AssertThrow(structure_param.pull_back_traction == true,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
     structure_param.print(pcout, "List of parameters for structure:");
 
     // grid
@@ -143,9 +141,9 @@ public:
 
     // Some FSI specific Asserts
     AssertThrow(fluid_param.problem_type == IncNS::ProblemType::Unsteady,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
     AssertThrow(fluid_param.ale_formulation == true,
-                ExcMessage("Invalid parameter in context of fluid-structure interaction."));
+                dealii::ExcMessage("Invalid parameter in context of fluid-structure interaction."));
 
     // grid
     fluid_grid = std::make_shared<Grid<dim>>(fluid_param.grid, mpi_comm);
@@ -170,7 +168,7 @@ public:
       set_parameters_ale_poisson();
       ale_poisson_param.check();
       AssertThrow(ale_poisson_param.right_hand_side == false,
-                  ExcMessage("Parameter does not make sense in context of FSI."));
+                  dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       ale_poisson_param.print(pcout, "List of parameters for ALE solver (Poisson):");
 
       // boundary conditions
@@ -188,7 +186,7 @@ public:
       set_parameters_ale_elasticity();
       ale_elasticity_param.check();
       AssertThrow(ale_elasticity_param.body_force == false,
-                  ExcMessage("Parameter does not make sense in context of FSI."));
+                  dealii::ExcMessage("Parameter does not make sense in context of FSI."));
       ale_elasticity_param.print(pcout, "List of parameters for ALE solver (elasticity):");
 
       // boundary conditions
@@ -206,7 +204,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
   }
 
@@ -315,7 +313,7 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // fluid
   IncNS::Parameters                               fluid_param;

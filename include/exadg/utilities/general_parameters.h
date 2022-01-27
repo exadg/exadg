@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct GeneralParameters
 {
   GeneralParameters()
@@ -50,17 +48,17 @@ struct GeneralParameters
       prm.add_parameter("Precision",
                         precision,
                         "Floating point precision.",
-                        Patterns::Selection("float|double"),
+                        dealii::Patterns::Selection("float|double"),
                         false);
       prm.add_parameter("Dim",
                         dim,
                         "Number of space dimension.",
-                        Patterns::Integer(2,3),
+                        dealii::Patterns::Integer(2,3),
                         true);
       prm.add_parameter("IsTest",
                         is_test,
                         "Set to true if the program is run as a test.",
-                        Patterns::Bool(),
+                        dealii::Patterns::Bool(),
                         false);
     prm.leave_subsection();
     // clang-format on

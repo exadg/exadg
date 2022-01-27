@@ -28,9 +28,7 @@ namespace IncNS
 {
 namespace Geometry
 {
-using namespace dealii;
-
-double const PI = numbers::PI;
+double const PI = dealii::numbers::PI;
 
 // Height H
 double const H = 0.041;
@@ -119,7 +117,7 @@ inverse_grid_transform_y(double const & y)
 }
 
 template<int dim>
-class MyManifold : public ChartManifold<dim, dim, dim>
+class MyManifold : public dealii::ChartManifold<dim, dim, dim>
 {
 public:
   MyManifold()
@@ -130,11 +128,11 @@ public:
    *  push_forward operation that maps point xi in reference coordinates
    *  to point x in physical coordinates
    */
-  Point<dim>
-  push_forward(Point<dim> const & xi) const final
+  dealii::Point<dim>
+  push_forward(dealii::Point<dim> const & xi) const final
   {
-    Point<dim> x = xi;
-    x[1]         = grid_transform_y(xi[1]);
+    dealii::Point<dim> x = xi;
+    x[1]                 = grid_transform_y(xi[1]);
 
     return x;
   }
@@ -143,16 +141,16 @@ public:
    *  pull_back operation that maps point x in physical coordinates
    *  to point xi in reference coordinates
    */
-  Point<dim>
-  pull_back(Point<dim> const & x) const final
+  dealii::Point<dim>
+  pull_back(dealii::Point<dim> const & x) const final
   {
-    Point<dim> xi = x;
-    xi[1]         = inverse_grid_transform_y(x[1]);
+    dealii::Point<dim> xi = x;
+    xi[1]                 = inverse_grid_transform_y(x[1]);
 
     return xi;
   }
 
-  std::unique_ptr<Manifold<dim>>
+  std::unique_ptr<dealii::Manifold<dim>>
   clone() const final
   {
     return std::make_unique<MyManifold<dim>>();
@@ -161,46 +159,47 @@ public:
 
 template<int dim>
 void
-create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
-            unsigned int const                  n_refine_space,
-            std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-              periodic_faces)
+create_grid(std::shared_ptr<dealii::Triangulation<dim>>              triangulation,
+            unsigned int const                                       n_refine_space,
+            std::vector<dealii::GridTools::PeriodicFacePair<
+              typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
 {
-  AssertThrow(dim == 3, ExcMessage("NotImplemented"));
+  AssertThrow(dim == 3, dealii::ExcMessage("NotImplemented"));
 
-  Triangulation<dim> tria_1, tria_2, tria_3;
+  dealii::Triangulation<dim> tria_1, tria_2, tria_3;
 
   // inflow part of BFS
-  GridGenerator::subdivided_hyper_rectangle(tria_1,
-                                            std::vector<unsigned int>({1, 1, 1}),
-                                            Point<dim>(-LENGTH_BFS_UP, 0.0, -WIDTH_BFS / 2.0),
-                                            Point<dim>(0.0, HEIGHT_BFS_INFLOW, WIDTH_BFS / 2.0));
+  dealii::GridGenerator::subdivided_hyper_rectangle(
+    tria_1,
+    std::vector<unsigned int>({1, 1, 1}),
+    dealii::Point<dim>(-LENGTH_BFS_UP, 0.0, -WIDTH_BFS / 2.0),
+    dealii::Point<dim>(0.0, HEIGHT_BFS_INFLOW, WIDTH_BFS / 2.0));
 
   // downstream part of BFS (upper)
-  GridGenerator::subdivided_hyper_rectangle(tria_2,
-                                            std::vector<unsigned int>({10, 1, 1}),
-                                            Point<dim>(0.0, 0.0, -WIDTH_BFS / 2.0),
-                                            Point<dim>(LENGTH_BFS_DOWN,
-                                                       HEIGHT_BFS_INFLOW,
-                                                       WIDTH_BFS / 2.0));
+  dealii::GridGenerator::subdivided_hyper_rectangle(tria_2,
+                                                    std::vector<unsigned int>({10, 1, 1}),
+                                                    dealii::Point<dim>(0.0, 0.0, -WIDTH_BFS / 2.0),
+                                                    dealii::Point<dim>(LENGTH_BFS_DOWN,
+                                                                       HEIGHT_BFS_INFLOW,
+                                                                       WIDTH_BFS / 2.0));
 
   // downstream part of BFS (lower = step)
-  GridGenerator::subdivided_hyper_rectangle(tria_3,
-                                            std::vector<unsigned int>({10, 1, 1}),
-                                            Point<dim>(0.0, 0.0, -WIDTH_BFS / 2.0),
-                                            Point<dim>(LENGTH_BFS_DOWN,
-                                                       -HEIGHT_BFS_STEP,
-                                                       WIDTH_BFS / 2.0));
+  dealii::GridGenerator::subdivided_hyper_rectangle(tria_3,
+                                                    std::vector<unsigned int>({10, 1, 1}),
+                                                    dealii::Point<dim>(0.0, 0.0, -WIDTH_BFS / 2.0),
+                                                    dealii::Point<dim>(LENGTH_BFS_DOWN,
+                                                                       -HEIGHT_BFS_STEP,
+                                                                       WIDTH_BFS / 2.0));
 
-  Triangulation<dim> tmp1;
-  GridGenerator::merge_triangulations(tria_1, tria_2, tmp1);
-  GridGenerator::merge_triangulations(tmp1, tria_3, *triangulation);
+  dealii::Triangulation<dim> tmp1;
+  dealii::GridGenerator::merge_triangulations(tria_1, tria_2, tmp1);
+  dealii::GridGenerator::merge_triangulations(tmp1, tria_3, *triangulation);
 
 
   // set boundary ID's
   for(auto cell : triangulation->active_cell_iterators())
   {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
     {
       // outflow boundary on the right has ID = 1
       if((std::fabs(cell->face(f)->center()(0) - X1_COORDINATE_OUTFLOW) < 1.e-12))
@@ -232,7 +231,7 @@ create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
   }
 
   // periodicity in z-direction
-  GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
+  dealii::GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
   triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements
@@ -241,27 +240,27 @@ create_grid(std::shared_ptr<Triangulation<dim>> triangulation,
 
 template<int dim>
 void
-create_grid_precursor(
-  std::shared_ptr<Triangulation<dim>> triangulation,
-  unsigned int const                  n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-    periodic_faces)
+create_grid_precursor(std::shared_ptr<dealii::Triangulation<dim>>              triangulation,
+                      unsigned int const                                       n_refine_space,
+                      std::vector<dealii::GridTools::PeriodicFacePair<
+                        typename dealii::Triangulation<dim>::cell_iterator>> & periodic_faces)
 {
-  AssertThrow(dim == 3, ExcMessage("NotImplemented"));
+  AssertThrow(dim == 3, dealii::ExcMessage("NotImplemented"));
 
-  Tensor<1, dim> dimensions;
+  dealii::Tensor<1, dim> dimensions;
   dimensions[0] = LENGTH_CHANNEL;
   dimensions[1] = HEIGHT_CHANNEL;
   dimensions[2] = WIDTH_CHANNEL;
 
-  Tensor<1, dim> center;
+  dealii::Tensor<1, dim> center;
   center[0] = -(LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL / 2.0);
   center[1] = HEIGHT_CHANNEL / 2.0;
 
-  GridGenerator::subdivided_hyper_rectangle(*triangulation,
-                                            std::vector<unsigned int>({2, 1, 1}), // refinements
-                                            Point<dim>(center - dimensions / 2.0),
-                                            Point<dim>(center + dimensions / 2.0));
+  dealii::GridGenerator::subdivided_hyper_rectangle(*triangulation,
+                                                    std::vector<unsigned int>(
+                                                      {2, 1, 1}), // refinements
+                                                    dealii::Point<dim>(center - dimensions / 2.0),
+                                                    dealii::Point<dim>(center + dimensions / 2.0));
 
   if(use_grid_stretching_in_y_direction == true)
   {
@@ -280,7 +279,7 @@ create_grid_precursor(
   // set boundary ID's: periodicity
   for(auto cell : triangulation->active_cell_iterators())
   {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+    for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
     {
       // periodicity in x-direction
       if(std::fabs(cell->face(f)->center()(0) - (center[0] - dimensions[0] / 2.0)) < 1.e-12)
@@ -296,8 +295,8 @@ create_grid_precursor(
     }
   }
 
-  GridTools::collect_periodic_faces(*triangulation, 0 + 10, 1 + 10, 0, periodic_faces);
-  GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
+  dealii::GridTools::collect_periodic_faces(*triangulation, 0 + 10, 1 + 10, 0, periodic_faces);
+  dealii::GridTools::collect_periodic_faces(*triangulation, 2 + 10, 3 + 10, 2, periodic_faces);
   triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements: use one level finer for the channel

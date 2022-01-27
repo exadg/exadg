@@ -27,22 +27,20 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename VectorType>
 void
 MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
-  Mapping<dim> const &                                        mapping,
-  MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
-  MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
-  unsigned int const                                          dof_handler_index)
+  dealii::Mapping<dim> const &                                                mapping,
+  dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
+  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
+  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> &         mg_constrained_dofs,
+  unsigned int const                                                          dof_handler_index)
 {
   std::vector<MGLevelInfo>            global_levels;
   std::vector<MGDoFHandlerIdentifier> p_levels;
 
   unsigned int const min_level = mg_matrixfree.min_level();
-  AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
+  AssertThrow(min_level == 0, dealii::ExcMessage("Currently, we expect min_level==0!"));
 
   unsigned int const max_level = mg_matrixfree.max_level();
   int const          n_components =
@@ -141,7 +139,7 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
       }
       else
       {
-        AssertThrow(false, ExcMessage("Cannot create MGTransferP!"));
+        AssertThrow(false, dealii::ExcMessage("Cannot create MGTransferP!"));
       }
     }
     else if(coarse_level.is_dg() != fine_level.is_dg()) // c-transfer
@@ -170,7 +168,7 @@ MGTransferGlobalRefinement<dim, Number, VectorType>::reinit(
       }
       else
       {
-        AssertThrow(false, ExcMessage("Cannot create MGTransferP!"));
+        AssertThrow(false, dealii::ExcMessage("Cannot create MGTransferP!"));
       }
     }
     mg_level_object[i] = temp;

@@ -26,13 +26,11 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                          matrix_free,
-  AffineConstraints<Number> const &                        affine_constraints,
+  dealii::MatrixFree<dim, Number> const &                  matrix_free,
+  dealii::AffineConstraints<Number> const &                affine_constraints,
   DiffusiveOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel)
 {
@@ -72,9 +70,10 @@ DiffusiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) co
 
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                       unsigned int const       face,
-                                                       types::boundary_id const boundary_id) const
+DiffusiveOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -128,13 +127,13 @@ DiffusiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator
   {
     // set exterior value to zero
     scalar value_m = integrator_m.get_value(q);
-    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_p = dealii::make_vectorized_array<Number>(0.0);
 
     scalar gradient_flux = kernel->calculate_gradient_flux(value_m, value_p);
 
     // set exterior value to zero
     scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
-    scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
+    scalar normal_gradient_p = dealii::make_vectorized_array<Number>(0.0);
 
     scalar value_flux =
       kernel->calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
@@ -154,13 +153,13 @@ DiffusiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator
   for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
   {
     // set value_m to zero
-    scalar value_m = make_vectorized_array<Number>(0.0);
+    scalar value_m = dealii::make_vectorized_array<Number>(0.0);
     scalar value_p = integrator_p.get_value(q);
 
     scalar gradient_flux = kernel->calculate_gradient_flux(value_p, value_m);
 
     // set gradient_m to zero
-    scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
+    scalar normal_gradient_m = dealii::make_vectorized_array<Number>(0.0);
     // minus sign to get the correct normal vector n⁺ = -n⁻
     scalar normal_gradient_p = -integrator_p.get_normal_derivative(q);
 
@@ -174,9 +173,10 @@ DiffusiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator
 
 template<int dim, typename Number>
 void
-DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
-                                                     OperatorType const &       operator_type,
-                                                     types::boundary_id const & boundary_id) const
+DiffusiveOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator_m,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 

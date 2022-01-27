@@ -91,7 +91,7 @@ run(ThroughputParameters const & throughput,
 
   driver->setup();
 
-  std::tuple<unsigned int, types::global_dof_index, double> wall_time =
+  std::tuple<unsigned int, dealii::types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,
                            throughput.n_repetitions_inner,
                            throughput.n_repetitions_outer);
@@ -107,7 +107,7 @@ main(int argc, char ** argv)
   LIKWID_MARKER_INIT;
 #endif
 
-  Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+  dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
   MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
@@ -165,7 +165,8 @@ main(int argc, char ** argv)
       ExaDG::run<3, double>(
         throughput, input_file, degree, refine_space, n_cells_1d, mpi_comm, general.is_test);
     else
-      AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+      AssertThrow(false,
+                  dealii::ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
   }
 
   if(not(general.is_test))

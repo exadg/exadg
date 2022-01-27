@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 struct MassConservationData
 {
   MassConservationData()
@@ -48,7 +46,7 @@ struct MassConservationData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
@@ -72,23 +70,23 @@ template<int dim, typename Number>
 class DivergenceAndMassErrorCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef DivergenceAndMassErrorCalculator<dim, Number> This;
 
   DivergenceAndMassErrorCalculator(MPI_Comm const & comm);
 
   void
-  setup(MatrixFree<dim, Number> const & matrix_free_in,
-        unsigned int const              dof_index_in,
-        unsigned int const              quad_index_in,
-        MassConservationData const &    data_in);
+  setup(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+        unsigned int const                      dof_index_in,
+        unsigned int const                      quad_index_in,
+        MassConservationData const &            data_in);
 
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
@@ -107,28 +105,28 @@ private:
    *  Reference value for mass error: (1,|0.5(um + up)*n|)_dOmegaI
    */
   void
-  do_evaluate(MatrixFree<dim, Number> const & matrix_free,
-              VectorType const &              velocity,
-              Number &                        div_error,
-              Number &                        div_error_reference,
-              Number &                        mass_error,
-              Number &                        mass_error_reference);
+  do_evaluate(dealii::MatrixFree<dim, Number> const & matrix_free,
+              VectorType const &                      velocity,
+              Number &                                div_error,
+              Number &                                div_error_reference,
+              Number &                                mass_error,
+              Number &                                mass_error_reference);
 
   void
-  local_compute_div(MatrixFree<dim, Number> const &               data,
+  local_compute_div(dealii::MatrixFree<dim, Number> const &       data,
                     std::vector<Number> &                         dst,
                     VectorType const &                            source,
                     const std::pair<unsigned int, unsigned int> & cell_range);
 
   void
-  local_compute_div_face(MatrixFree<dim, Number> const &               data,
+  local_compute_div_face(dealii::MatrixFree<dim, Number> const &       data,
                          std::vector<Number> &                         dst,
                          VectorType const &                            source,
                          const std::pair<unsigned int, unsigned int> & face_range);
 
   // not needed
   void
-  local_compute_div_boundary_face(MatrixFree<dim, Number> const &,
+  local_compute_div_boundary_face(dealii::MatrixFree<dim, Number> const &,
                                   std::vector<Number> &,
                                   VectorType const &,
                                   const std::pair<unsigned int, unsigned int> &);
@@ -148,9 +146,9 @@ private:
   Number divergence_sample;
   Number mass_sample;
 
-  MatrixFree<dim, Number> const * matrix_free;
-  unsigned int                    dof_index, quad_index;
-  MassConservationData            data;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+  unsigned int                            dof_index, quad_index;
+  MassConservationData                    data;
 };
 
 

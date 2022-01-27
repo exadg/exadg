@@ -26,8 +26,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  This function inverts the diagonal (element by element).
  *  If diagonal values are very small, the inverse of this
@@ -35,7 +33,7 @@ using namespace dealii;
  */
 template<typename Number>
 void
-invert_diagonal(LinearAlgebra::distributed::Vector<Number> & diagonal)
+invert_diagonal(dealii::LinearAlgebra::distributed::Vector<Number> & diagonal)
 {
   for(unsigned int i = 0; i < diagonal.locally_owned_size(); ++i)
   {

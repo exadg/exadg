@@ -42,8 +42,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
   std::shared_ptr<Grid<dim> const>                     grid_in,
@@ -60,7 +58,7 @@ Operator<dim, Number, n_components>::Operator(
     field(field_in),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct Poisson operator ..." << std::endl;
 
@@ -76,24 +74,24 @@ Operator<dim, Number, n_components>::distribute_dofs()
   if(n_components == 1)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<FE_DGQ<dim>>(param.degree);
+      fe = std::make_shared<dealii::FE_DGQ<dim>>(param.degree);
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<FE_Q<dim>>(param.degree);
+      fe = std::make_shared<dealii::FE_Q<dim>>(param.degree);
     else
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
   else if(n_components == dim)
   {
     if(param.spatial_discretization == SpatialDiscretization::DG)
-      fe = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
+      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
     else if(param.spatial_discretization == SpatialDiscretization::CG)
-      fe = std::make_shared<FESystem<dim>>(FE_Q<dim>(param.degree), dim);
+      fe = std::make_shared<dealii::FESystem<dim>>(dealii::FE_Q<dim>(param.degree), dim);
     else
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
   else
   {
-    AssertThrow(false, ExcMessage("not implemented."));
+    AssertThrow(false, dealii::ExcMessage("not implemented."));
   }
 
   dof_handler.distribute_dofs(*fe);
@@ -106,25 +104,31 @@ Operator<dim, Number, n_components>::distribute_dofs()
     // standard Dirichlet boundaries
     for(auto it : this->boundary_descriptor->dirichlet_bc)
     {
-      ComponentMask mask    = ComponentMask();
-      auto          it_mask = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
+      dealii::ComponentMask mask = dealii::ComponentMask();
+      auto it_mask               = boundary_descriptor->dirichlet_bc_component_mask.find(it.first);
       if(it_mask != boundary_descriptor->dirichlet_bc_component_mask.end())
         mask = it_mask->second;
 
-      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+      dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
+                                                       it.first,
+                                                       affine_constraints,
+                                                       mask);
     }
 
     // mortar type Dirichlet boundaries
     for(auto it : this->boundary_descriptor->dirichlet_mortar_bc)
     {
-      ComponentMask mask = ComponentMask();
-      DoFTools::make_zero_boundary_constraints(dof_handler, it.first, affine_constraints, mask);
+      dealii::ComponentMask mask = dealii::ComponentMask();
+      dealii::DoFTools::make_zero_boundary_constraints(dof_handler,
+                                                       it.first,
+                                                       affine_constraints,
+                                                       mask);
     }
 
     affine_constraints.close();
   }
 
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
+  unsigned int const ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim);
 
   pcout << std::endl;
 
@@ -137,7 +141,7 @@ Operator<dim, Number, n_components>::distribute_dofs()
           << "Continuous Galerkin finite element discretization:" << std::endl
           << std::endl;
   else
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
   print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
@@ -166,7 +170,7 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
 
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
 
   // In order to set constrained degrees of freedom for continuous Galerkin
   // discretizations with Dirichlet mortar boundary conditions, a Gauss-Lobatto
@@ -176,7 +180,7 @@ Operator<dim, Number, n_components>::fill_matrix_free_data(
   if(param.spatial_discretization == SpatialDiscretization::CG &&
      not(boundary_descriptor->dirichlet_mortar_bc.empty()))
   {
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree + 1),
+    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree + 1),
                                        get_quad_gauss_lobatto_name());
   }
 }
@@ -211,8 +215,8 @@ Operator<dim, Number, n_components>::setup_operators()
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in)
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in)
 {
   pcout << std::endl << "Setup Poisson operator ..." << std::endl;
 
@@ -266,7 +270,7 @@ Operator<dim, Number, n_components>::setup_solver()
                   param.preconditioner == Poisson::Preconditioner::PointJacobi ||
                   param.preconditioner == Poisson::Preconditioner::BlockJacobi ||
                   param.preconditioner == Poisson::Preconditioner::Multigrid,
-                ExcMessage("Specified preconditioner is not implemented!"));
+                dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 
   if(param.solver == Poisson::Solver::CG)
@@ -306,7 +310,7 @@ Operator<dim, Number, n_components>::setup_solver()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified solver is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -326,12 +330,12 @@ Operator<dim, Number, n_components>::prescribe_initial_conditions(VectorType & s
   field_functions->initial_solution->set_time(0.0);
 
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
+  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
 
   src = src_double;
 }
@@ -389,14 +393,14 @@ Operator<dim, Number, n_components>::solve(VectorType &       sol,
 }
 
 template<int dim, typename Number, int n_components>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number, n_components>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number, int n_components>
-types::global_dof_index
+dealii::types::global_dof_index
 Operator<dim, Number, n_components>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
@@ -420,8 +424,8 @@ Operator<dim, Number, n_components>::get_average_convergence_rate() const
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::init_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix,
-  MPI_Comm const &                 mpi_comm) const
+  dealii::TrilinosWrappers::SparseMatrix & system_matrix,
+  MPI_Comm const &                         mpi_comm) const
 {
   laplace_operator.init_system_matrix(system_matrix, mpi_comm);
 }
@@ -429,7 +433,7 @@ Operator<dim, Number, n_components>::init_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::calculate_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix) const
+  dealii::TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   laplace_operator.calculate_system_matrix(system_matrix);
 }
@@ -437,9 +441,9 @@ Operator<dim, Number, n_components>::calculate_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::vmult_matrix_based(
-  VectorTypeDouble &                     dst,
-  TrilinosWrappers::SparseMatrix const & system_matrix,
-  VectorTypeDouble const &               src) const
+  VectorTypeDouble &                             dst,
+  dealii::TrilinosWrappers::SparseMatrix const & system_matrix,
+  VectorTypeDouble const &                       src) const
 {
   system_matrix.vmult(dst, src);
 }
@@ -449,8 +453,8 @@ Operator<dim, Number, n_components>::vmult_matrix_based(
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::init_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix,
-  MPI_Comm const &                   mpi_comm) const
+  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix,
+  MPI_Comm const &                           mpi_comm) const
 {
   laplace_operator.init_system_matrix(system_matrix, mpi_comm);
 }
@@ -458,7 +462,7 @@ Operator<dim, Number, n_components>::init_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::calculate_system_matrix(
-  PETScWrappers::MPI::SparseMatrix & system_matrix) const
+  dealii::PETScWrappers::MPI::SparseMatrix & system_matrix) const
 {
   laplace_operator.calculate_system_matrix(system_matrix);
 }
@@ -466,15 +470,15 @@ Operator<dim, Number, n_components>::calculate_system_matrix(
 template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::vmult_matrix_based(
-  VectorTypeDouble &                       dst,
-  PETScWrappers::MPI::SparseMatrix const & system_matrix,
-  VectorTypeDouble const &                 src) const
+  VectorTypeDouble &                               dst,
+  dealii::PETScWrappers::MPI::SparseMatrix const & system_matrix,
+  VectorTypeDouble const &                         src) const
 {
   apply_petsc_operation(dst,
                         src,
                         system_matrix.get_mpi_communicator(),
-                        [&](PETScWrappers::VectorBase &       petsc_dst,
-                            PETScWrappers::VectorBase const & petsc_src) {
+                        [&](dealii::PETScWrappers::VectorBase &       petsc_dst,
+                            dealii::PETScWrappers::VectorBase const & petsc_src) {
                           system_matrix.vmult(petsc_dst, petsc_src);
                         });
 }

@@ -29,8 +29,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /**
  * Pure-virtual interface class for moving grid functionality.
  */
@@ -38,7 +36,7 @@ template<int dim, typename Number>
 class GridMotionInterface
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   /**
    * Destructor.
@@ -59,21 +57,21 @@ public:
   virtual void
   print_iterations() const
   {
-    AssertThrow(false, ExcMessage("Has to be overwritten by derived classes."));
+    AssertThrow(false, dealii::ExcMessage("Has to be overwritten by derived classes."));
   }
 
   /**
    * Extract the grid coordinates of the current mesh configuration and fill a dof-vector given a
-   * corresponding DoFHandler object.
+   * corresponding dealii::DoFHandler object.
    */
   virtual void
-  fill_grid_coordinates_vector(VectorType &            grid_coordinates,
-                               DoFHandler<dim> const & dof_handler) const = 0;
+  fill_grid_coordinates_vector(VectorType &                    grid_coordinates,
+                               dealii::DoFHandler<dim> const & dof_handler) const = 0;
 
   /**
    * Return a shared pointer to dealii::Mapping<dim>.
    */
-  virtual std::shared_ptr<Mapping<dim> const>
+  virtual std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const = 0;
 };
 

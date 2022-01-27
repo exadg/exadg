@@ -29,15 +29,13 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<typename Operator, typename Number>
 class PreconditionerAMG : public PreconditionerBase<Number>
 {
 private:
-  typedef double                                          NumberAMG;
-  typedef typename PreconditionerBase<Number>::VectorType VectorType;
-  typedef LinearAlgebra::distributed::Vector<NumberAMG>   VectorTypeAMG;
+  typedef double                                                NumberAMG;
+  typedef typename PreconditionerBase<Number>::VectorType       VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<NumberAMG> VectorTypeAMG;
 
 public:
   PreconditionerAMG(Operator const & pde_operator, AMGData const & data)
@@ -51,7 +49,7 @@ public:
       preconditioner_amg =
         std::make_shared<PreconditionerBoomerAMG<Operator, double>>(pde_operator, data.boomer_data);
 #else
-      AssertThrow(false, ExcMessage("deal.II is not compiled with PETSc!"));
+      AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with PETSc!"));
 #endif
     }
     else if(data.amg_type == AMGType::ML)
@@ -60,12 +58,12 @@ public:
       preconditioner_amg =
         std::make_shared<PreconditionerML<Operator, double>>(pde_operator, data.ml_data);
 #else
-      AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
+      AssertThrow(false, dealii::ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
     }
     else
     {
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(false, dealii::ExcNotImplemented());
     }
   }
 

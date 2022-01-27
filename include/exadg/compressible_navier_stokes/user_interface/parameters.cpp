@@ -29,9 +29,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
-
 // standard constructor that initializes parameters with default values
 Parameters::Parameters()
   : // MATHEMATICAL MODEL
@@ -87,52 +84,53 @@ void
 Parameters::check() const
 {
   // MATHEMATICAL MODEL
-  AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
+  AssertThrow(equation_type != EquationType::Undefined,
+              dealii::ExcMessage("parameter must be defined"));
 
 
   // PHYSICAL QUANTITIES
-  AssertThrow(end_time > start_time, ExcMessage("parameter must be defined"));
+  AssertThrow(end_time > start_time, dealii::ExcMessage("parameter must be defined"));
 
 
   // TEMPORAL DISCRETIZATION
   AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
 
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
-              ExcMessage("parameter must be defined"));
+              dealii::ExcMessage("parameter must be defined"));
 
   if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
-    AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
+    AssertThrow(time_step_size > 0.0, dealii::ExcMessage("parameter must be defined"));
 
   if(temporal_discretization == TemporalDiscretization::ExplRK)
   {
     AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
-                ExcMessage("Specified order of time integrator ExplRK not implemented!"));
+                dealii::ExcMessage("Specified order of time integrator ExplRK not implemented!"));
   }
 
   if(temporal_discretization == TemporalDiscretization::SSPRK)
   {
-    AssertThrow(stages >= 1, ExcMessage("Specify number of RK stages!"));
+    AssertThrow(stages >= 1, dealii::ExcMessage("Specify number of RK stages!"));
   }
 
   if(calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
   {
-    AssertThrow(max_velocity >= 0.0, ExcMessage("Invalid parameter max_velocity."));
-    AssertThrow(cfl_number > 0.0, ExcMessage("parameter must be defined"));
-    AssertThrow(diffusion_number > 0.0, ExcMessage("parameter must be defined"));
+    AssertThrow(max_velocity >= 0.0, dealii::ExcMessage("Invalid parameter max_velocity."));
+    AssertThrow(cfl_number > 0.0, dealii::ExcMessage("parameter must be defined"));
+    AssertThrow(diffusion_number > 0.0, dealii::ExcMessage("parameter must be defined"));
   }
 
 
   // SPATIAL DISCRETIZATION
   grid.check();
 
-  AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
+  AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
   if(use_combined_operator)
   {
     AssertThrow(
       n_q_points_convective == n_q_points_viscous,
-      ExcMessage(
+      dealii::ExcMessage(
         "For the combined operator, both convective and viscous terms have to be integrated with the same number of quadrature points."));
   }
 
@@ -141,7 +139,7 @@ Parameters::check() const
 
 
 void
-Parameters::print(ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -166,7 +164,7 @@ Parameters::print(ConditionalOStream const & pcout, std::string const & name) co
 }
 
 void
-Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -175,7 +173,7 @@ Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout
 }
 
 void
-Parameters::print_parameters_physical_quantities(ConditionalOStream const & pcout) const
+Parameters::print_parameters_physical_quantities(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Physical quantities:" << std::endl;
 
@@ -190,7 +188,7 @@ Parameters::print_parameters_physical_quantities(ConditionalOStream const & pcou
 }
 
 void
-Parameters::print_parameters_temporal_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_temporal_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Temporal discretization:" << std::endl;
 
@@ -229,7 +227,7 @@ Parameters::print_parameters_temporal_discretization(ConditionalOStream const & 
 }
 
 void
-Parameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -244,7 +242,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 }
 
 void
-Parameters::print_parameters_solver(ConditionalOStream const & /*pcout*/) const
+Parameters::print_parameters_solver(dealii::ConditionalOStream const & /*pcout*/) const
 {
   /*
   pcout << std::endl
@@ -253,7 +251,7 @@ Parameters::print_parameters_solver(ConditionalOStream const & /*pcout*/) const
 }
 
 void
-Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
+Parameters::print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 

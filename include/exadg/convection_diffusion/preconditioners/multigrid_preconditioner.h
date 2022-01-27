@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 /*
  *  Multigrid preconditioner for scalar convection-diffusion equation.
  */
@@ -65,15 +63,15 @@ public:
    *  This function initializes the multigrid preconditioner.
    */
   void
-  initialize(MultigridData const &               mg_data,
-             Triangulation<dim> const *          tria,
-             FiniteElement<dim> const &          fe,
-             std::shared_ptr<Mapping<dim> const> mapping,
-             PDEOperator const &                 pde_operator,
-             MultigridOperatorType const &       mg_operator_type,
-             bool const                          mesh_is_moving,
-             Map const *                         dirichlet_bc        = nullptr,
-             PeriodicFacePairs const *           periodic_face_pairs = nullptr);
+  initialize(MultigridData const &                       mg_data,
+             dealii::Triangulation<dim> const *          tria,
+             dealii::FiniteElement<dim> const &          fe,
+             std::shared_ptr<dealii::Mapping<dim> const> mapping,
+             PDEOperator const &                         pde_operator,
+             MultigridOperatorType const &               mg_operator_type,
+             bool const                                  mesh_is_moving,
+             Map const *                                 dirichlet_bc        = nullptr,
+             PeriodicFacePairs const *                   periodic_face_pairs = nullptr);
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -91,11 +89,11 @@ private:
   initialize_operator(unsigned int const level) override;
 
   void
-  initialize_dof_handler_and_constraints(bool const                 operator_is_singular,
-                                         PeriodicFacePairs const *  periodic_face_pairs,
-                                         FiniteElement<dim> const & fe,
-                                         Triangulation<dim> const * tria,
-                                         Map const *                dirichlet_bc) override;
+  initialize_dof_handler_and_constraints(bool const                         operator_is_singular,
+                                         PeriodicFacePairs const *          periodic_face_pairs,
+                                         dealii::FiniteElement<dim> const & fe,
+                                         dealii::Triangulation<dim> const * tria,
+                                         Map const *                        dirichlet_bc) override;
 
   void
   initialize_transfer_operators() override;
@@ -152,9 +150,10 @@ private:
 
   std::shared_ptr<MGTransfer<VectorTypeMG>> transfers_velocity;
 
-  MGLevelObject<std::shared_ptr<DoFHandler<dim> const>>              dof_handlers_velocity;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                  constrained_dofs_velocity;
-  MGLevelObject<std::shared_ptr<AffineConstraints<MultigridNumber>>> constraints_velocity;
+  dealii::MGLevelObject<std::shared_ptr<dealii::DoFHandler<dim> const>> dof_handlers_velocity;
+  dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>>     constrained_dofs_velocity;
+  dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<MultigridNumber>>>
+    constraints_velocity;
 
   CombinedOperatorData<dim> data;
 

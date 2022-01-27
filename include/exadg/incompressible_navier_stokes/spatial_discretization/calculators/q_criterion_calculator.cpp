@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 QCriterionCalculator<dim, Number>::QCriterionCalculator()
   : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
@@ -35,10 +33,11 @@ QCriterionCalculator<dim, Number>::QCriterionCalculator()
 
 template<int dim, typename Number>
 void
-QCriterionCalculator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free_in,
-                                              unsigned int const              dof_index_u_in,
-                                              unsigned int const              dof_index_u_scalar_in,
-                                              unsigned int const              quad_index_in)
+QCriterionCalculator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_u_in,
+  unsigned int const                      dof_index_u_scalar_in,
+  unsigned int const                      quad_index_in)
 {
   matrix_free        = &matrix_free_in;
   dof_index_u        = dof_index_u_in;
@@ -57,10 +56,10 @@ QCriterionCalculator<dim, Number>::compute(VectorType & dst, VectorType const & 
 
 template<int dim, typename Number>
 void
-QCriterionCalculator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                             VectorType &                    dst,
-                                             VectorType const &              src,
-                                             Range const &                   cell_range) const
+QCriterionCalculator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                             VectorType &                            dst,
+                                             VectorType const &                      src,
+                                             Range const & cell_range) const
 {
   CellIntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
   CellIntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);

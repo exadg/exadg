@@ -46,10 +46,10 @@ private:
   {
     int rank;
     MPI_Comm_rank(mpi_comm, &rank);
-    Timer  time;
-    double min_time = std::numeric_limits<double>::max();
-    double max_time = 0.0;
-    double sum_time = 0.0;
+    dealii::Timer time;
+    double        min_time = std::numeric_limits<double>::max();
+    double        max_time = 0.0;
+    double        sum_time = 0.0;
     for(int i = 0; i < best_of; i++)
     {
       MPI_Barrier(mpi_comm);

@@ -34,8 +34,6 @@ namespace ConvDiff
 {
 namespace Operators
 {
-using namespace dealii;
-
 template<int dim>
 struct ConvectiveKernelData
 {
@@ -57,7 +55,7 @@ struct ConvectiveKernelData
   unsigned int dof_index_velocity;
 
   // TypeVelocityField::Function
-  std::shared_ptr<Function<dim>> velocity;
+  std::shared_ptr<dealii::Function<dim>> velocity;
 
   // numerical flux (e.g., central flux vs. Lax-Friedrichs flux)
   NumericalFluxConvectiveOperator numerical_flux_formulation;
@@ -67,23 +65,23 @@ template<int dim, typename Number>
 class ConvectiveKernel
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVelocity;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVelocity;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef CellIntegrator<dim, 1, Number> IntegratorCell;
   typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         ConvectiveKernelData<dim> const & data_in,
-         unsigned int const                quad_index,
-         bool const                        is_mg)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
+         ConvectiveKernelData<dim> const &       data_in,
+         unsigned int const                      quad_index,
+         bool const                              is_mg)
   {
     data = data_in;
 
@@ -128,7 +126,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     flags.face_evaluate  = FaceFlags(true, false);
@@ -142,16 +140,17 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_gradients | update_JxW_values |
-                  update_quadrature_points; // q-points due to analytical velocity field
-    flags.inner_faces = update_JxW_values | update_quadrature_points |
-                        update_normal_vectors; // q-points due to analytical velocity field
-    flags.boundary_faces = update_JxW_values | update_quadrature_points | update_normal_vectors;
+    flags.cells = dealii::update_gradients | dealii::update_JxW_values |
+                  dealii::update_quadrature_points; // q-points due to analytical velocity field
+    flags.inner_faces = dealii::update_JxW_values | dealii::update_quadrature_points |
+                        dealii::update_normal_vectors; // q-points due to analytical velocity field
+    flags.boundary_faces =
+      dealii::update_JxW_values | dealii::update_quadrature_points | dealii::update_normal_vectors;
 
     return flags;
   }
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const
   {
     return *velocity;
@@ -161,7 +160,7 @@ public:
   set_velocity_copy(VectorType const & velocity_in) const
   {
     AssertThrow(data.velocity_type == TypeVelocityField::DoFVector,
-                ExcMessage("Invalid parameter velocity_type."));
+                dealii::ExcMessage("Invalid parameter velocity_type."));
 
     velocity.own() = velocity_in;
 
@@ -172,7 +171,7 @@ public:
   set_velocity_ptr(VectorType const & velocity_in) const
   {
     AssertThrow(data.velocity_type == TypeVelocityField::DoFVector,
-                ExcMessage("Invalid parameter velocity_type."));
+                dealii::ExcMessage("Invalid parameter velocity_type."));
 
     velocity.reset(velocity_in);
 
@@ -213,16 +212,16 @@ public:
   }
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const
   {
     if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity_m->reinit(cell, face);
       integrator_velocity_m->gather_evaluate(*velocity, true, false);
 
-      if(boundary_id == numbers::internal_face_boundary_id) // internal face
+      if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
       {
         // TODO: Matrix-free implementation in deal.II does currently not allow to access data of
         // the neighboring element in case of cell-based face loops.
@@ -306,11 +305,11 @@ public:
                    Number const &     time,
                    bool const         exterior_velocity_available) const
   {
-    scalar flux = make_vectorized_array<Number>(0.0);
+    scalar flux = dealii::make_vectorized_array<Number>(0.0);
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
-      Point<dim, scalar> q_points = integrator.quadrature_point(q);
+      dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
       vector velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity, q_points, time);
 
@@ -365,12 +364,12 @@ public:
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return flux;
@@ -387,7 +386,7 @@ public:
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
-      Point<dim, scalar> q_points = integrator.quadrature_point(q);
+      dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
       velocity = FunctionEvaluator<1, dim, Number>::value(data.velocity, q_points, time);
     }
@@ -401,7 +400,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return velocity;
@@ -489,7 +488,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return (-value * velocity);
@@ -516,7 +515,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return (velocity * gradient);
@@ -558,17 +557,17 @@ private:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
 public:
   void
-  initialize(MatrixFree<dim, Number> const &                           matrix_free,
-             AffineConstraints<Number> const &                         affine_constraints,
+  initialize(dealii::MatrixFree<dim, Number> const &                   matrix_free,
+             dealii::AffineConstraints<Number> const &                 affine_constraints,
              ConvectiveOperatorData<dim> const &                       data,
              std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   void
@@ -588,9 +587,9 @@ private:
   reinit_boundary_face(unsigned int const face) const;
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   void
   do_cell_integral(IntegratorCell & integrator) const;
@@ -605,9 +604,9 @@ private:
   do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_boundary_integral(IntegratorFace &           integrator_m,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator_m,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   // TODO can be removed later once matrix-free evaluation allows accessing neighboring data for
   // cell-based face loops

@@ -41,8 +41,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // Note: Make sure that the correct time integration scheme is selected in the input file that is
 //       compatible with the OperatorType specified here. This also includes the treatment of the
 //       convective term (explicit/implicit), e.g., specifying VelocityConvDiffOperator together
@@ -79,7 +77,7 @@ enum_to_string(OperatorType const enum_type)
     case OperatorType::VelocityConvDiffOperator: string_type = "VelocityConvDiffOperator"; break;
     case OperatorType::InverseMassOperator:      string_type = "InverseMassOperator";      break;
 
-    default:AssertThrow(false, ExcMessage("Not implemented.")); break;
+    default:AssertThrow(false, dealii::ExcMessage("Not implemented.")); break;
       // clang-format on
   }
 
@@ -98,7 +96,7 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
   else if(string_type == "ProjectionOperator")        enum_type = OperatorType::ProjectionOperator;
   else if(string_type == "VelocityConvDiffOperator")  enum_type = OperatorType::VelocityConvDiffOperator;
   else if(string_type == "InverseMassOperator")       enum_type = OperatorType::InverseMassOperator;
-  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
 
@@ -115,14 +113,14 @@ get_dofs_per_element(std::string const & input_file,
     prm.add_parameter("PressureDegree",
                       pressure_degree,
                       "Degree of pressure shape functions.",
-                      Patterns::Selection("MixedOrder|EqualOrder"),
+                      dealii::Patterns::Selection("MixedOrder|EqualOrder"),
                       true);
   prm.leave_subsection();
   prm.enter_subsection("Throughput");
     prm.add_parameter("OperatorType",
                       operator_type_string,
                       "Type of operator.",
-                      Patterns::Anything(),
+                      dealii::Patterns::Anything(),
                       true);
   prm.leave_subsection();
   // clang-format on
@@ -131,14 +129,14 @@ get_dofs_per_element(std::string const & input_file,
   OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
-  unsigned int const velocity_dofs_per_element = dim * Utilities::pow(degree + 1, dim);
+  unsigned int const velocity_dofs_per_element = dim * dealii::Utilities::pow(degree + 1, dim);
   unsigned int       pressure_dofs_per_element = 1;
   if(pressure_degree == "MixedOrder")
-    pressure_dofs_per_element = Utilities::pow(degree, dim);
+    pressure_dofs_per_element = dealii::Utilities::pow(degree, dim);
   else if(pressure_degree == "EqualOrder")
-    pressure_dofs_per_element = Utilities::pow(degree + 1, dim);
+    pressure_dofs_per_element = dealii::Utilities::pow(degree + 1, dim);
   else
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
   if(operator_type == OperatorType::CoupledNonlinearResidual ||
      operator_type == OperatorType::CoupledLinearized)
@@ -161,7 +159,7 @@ get_dofs_per_element(std::string const & input_file,
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   return 0;
@@ -188,7 +186,7 @@ public:
   /*
    * Throughput study
    */
-  std::tuple<unsigned int, types::global_dof_index, double>
+  std::tuple<unsigned int, dealii::types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
                  unsigned int const  n_repetitions_outer) const;
@@ -201,7 +199,7 @@ private:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -217,14 +215,14 @@ private:
 
   // solve mesh deformation by a Poisson problem
   std::shared_ptr<MatrixFreeData<dim, Number>>         poisson_matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>             poisson_matrix_free;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>>     poisson_matrix_free;
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator;
 
   /*
    * MatrixFree
    */
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   /*
    * Spatial discretization

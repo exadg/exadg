@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename T>
 class lazy_ptr
 {

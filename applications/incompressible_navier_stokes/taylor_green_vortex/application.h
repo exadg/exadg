@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 enum class MeshType
 {
   Cartesian,
@@ -43,21 +41,21 @@ string_to_enum(MeshType & enum_type, std::string const & string_type)
   // clang-format off
   if     (string_type == "Cartesian")   enum_type = MeshType::Cartesian;
   else if(string_type == "Curvilinear") enum_type = MeshType::Curvilinear;
-  else AssertThrow(false, ExcMessage("Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
   // clang-format on
 }
 
 template<int dim>
-class InitialSolutionVelocity : public Function<dim>
+class InitialSolutionVelocity : public dealii::Function<dim>
 {
 public:
   InitialSolutionVelocity(double const V_0, double const L)
-    : Function<dim>(dim, 0.0), V_0(V_0), L(L)
+    : dealii::Function<dim>(dim, 0.0), V_0(V_0), L(L)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -76,16 +74,16 @@ private:
 };
 
 template<int dim>
-class InitialSolutionPressure : public Function<dim>
+class InitialSolutionPressure : public dealii::Function<dim>
 {
 public:
   InitialSolutionPressure(double const V_0, double const L, double const p_0)
-    : Function<dim>(1 /*n_components*/, 0.0), V_0(V_0), L(L), p_0(p_0)
+    : dealii::Function<dim>(1 /*n_components*/, 0.0), V_0(V_0), L(L), p_0(p_0)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double const result = p_0 + V_0 * V_0 / 16.0 *
                                   (std::cos(2.0 * p[0] / L) + std::cos(2.0 * p[1] / L)) *
@@ -106,7 +104,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -118,14 +116,14 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("MeshType",        mesh_type_string,                  "Type of mesh (Cartesian versus curvilinear).", Patterns::Selection("Cartesian|Curvilinear"));
-      prm.add_parameter("NCoarseCells1D",  n_subdivisions_1d_hypercube,       "Number of cells per direction on coarse grid.", Patterns::Integer(1,5));
+      prm.add_parameter("MeshType",        mesh_type_string,                  "Type of mesh (Cartesian versus curvilinear).", dealii::Patterns::Selection("Cartesian|Curvilinear"));
+      prm.add_parameter("NCoarseCells1D",  n_subdivisions_1d_hypercube,       "Number of cells per direction on coarse grid.", dealii::Patterns::Integer(1,5));
       prm.add_parameter("ExploitSymmetry", exploit_symmetry,                  "Exploit symmetry and reduce DoFs by a factor of 8?");
       prm.add_parameter("MovingMesh",      ALE,                               "Moving mesh?");
       prm.add_parameter("Inviscid",        inviscid,                          "Is this an inviscid simulation?");
@@ -165,7 +163,7 @@ public:
   double const characteristic_time = L / V_0;
   double const start_time          = 0.0;
   double const end_time            = 20.0 * characteristic_time;
-  double const left = -numbers::PI * L, right = numbers::PI * L;
+  double const left = -dealii::numbers::PI * L, right = dealii::numbers::PI * L;
 
   // viscosity
   double viscosity = inviscid ? 0.0 : V_0 * L / Re;
@@ -355,7 +353,8 @@ public:
     if(ALE)
     {
       AssertThrow(mesh_type == MeshType::Cartesian,
-                  ExcMessage("Taylor-Green vortex: Parameter MESH_TYPE is invalid for ALE."));
+                  dealii::ExcMessage(
+                    "Taylor-Green vortex: Parameter MESH_TYPE is invalid for ALE."));
     }
 
     bool curvilinear_mesh = false;
@@ -369,7 +368,7 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     if(exploit_symmetry == false) // periodic box
@@ -385,10 +384,10 @@ public:
     }
     else // symmetric box
     {
-      GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
-                                           n_subdivisions_1d_hypercube,
-                                           0.0,
-                                           right);
+      dealii::GridGenerator::subdivided_hyper_cube(*this->grid->triangulation,
+                                                   n_subdivisions_1d_hypercube,
+                                                   0.0,
+                                                   right);
 
       if(curvilinear_mesh)
       {
@@ -401,12 +400,12 @@ public:
 
         for(auto cell : this->grid->triangulation->active_cell_iterators())
         {
-          for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+          for(unsigned int v = 0; v < dealii::GeometryInfo<dim>::vertices_per_cell; ++v)
           {
             if(vertex_touched[cell->vertex_index(v)] == false)
             {
-              Point<dim> & vertex                   = cell->vertex(v);
-              Point<dim>   new_point                = manifold.push_forward(vertex);
+              dealii::Point<dim> & vertex           = cell->vertex(v);
+              dealii::Point<dim>   new_point        = manifold.push_forward(vertex);
               vertex                                = new_point;
               vertex_touched[cell->vertex_index(v)] = true;
             }
@@ -419,10 +418,10 @@ public:
     }
   }
 
-  std::shared_ptr<Function<dim>>
+  std::shared_ptr<dealii::Function<dim>>
   create_mesh_movement_function() final
   {
-    std::shared_ptr<Function<dim>> mesh_motion;
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
     data.temporal                       = MeshMovementAdvanceInTime::Sin;
@@ -445,12 +444,13 @@ public:
   {
     if(exploit_symmetry)
     {
-      typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+      typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+        pair;
 
       this->boundary_descriptor->velocity->symmetry_bc.insert(
-        pair(0, new Functions::ZeroFunction<dim>(dim))); // function will not be used
+        pair(0, new dealii::Functions::ZeroFunction<dim>(dim))); // function will not be used
       this->boundary_descriptor->pressure->neumann_bc.insert(
-        pair(0, new Functions::ZeroFunction<dim>(dim))); // dg_u/dt=0 for dual splitting
+        pair(0, new dealii::Functions::ZeroFunction<dim>(dim))); // dg_u/dt=0 for dual splitting
     }
     else
     {
@@ -467,8 +467,9 @@ public:
       new InitialSolutionVelocity<dim>(V_0, L));
     this->field_functions->initial_solution_pressure.reset(
       new InitialSolutionPressure<dim>(V_0, L, p_0));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

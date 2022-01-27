@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 enum class MeshMovementAdvanceInTime
 {
   Undefined,
@@ -57,7 +55,7 @@ struct MeshMovementData
 
   MeshMovementAdvanceInTime temporal;
   MeshMovementShape         shape;
-  Tensor<1, dim>            dimensions;
+  dealii::Tensor<1, dim>    dimensions;
   double                    amplitude;
   double                    period;
   double                    t_start;
@@ -66,11 +64,11 @@ struct MeshMovementData
 };
 
 template<int dim>
-class CubeMeshMovementFunctions : public Function<dim>
+class CubeMeshMovementFunctions : public dealii::Function<dim>
 {
 public:
   CubeMeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : Function<dim>(dim),
+    : dealii::Function<dim>(dim),
       data(data_in),
       width(data_in.dimensions[0]),
       left(-1.0 / 2.0 * width),
@@ -81,7 +79,7 @@ public:
   }
 
   double
-  value(Point<dim> const & x, unsigned int const coordinate_direction = 0) const override
+  value(dealii::Point<dim> const & x, unsigned int const coordinate_direction = 0) const override
   {
     double displacement = 0.0;
 
@@ -92,15 +90,15 @@ public:
 
 private:
   double
-  compute_displacement_share(Point<dim> const & x,
-                             unsigned int const coordinate_direction = 0) const
+  compute_displacement_share(dealii::Point<dim> const & x,
+                             unsigned int const         coordinate_direction = 0) const
   {
     double solution = 0.0;
 
     switch(data.shape)
     {
       case MeshMovementShape::Undefined:
-        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementShape."));
+        AssertThrow(false, dealii::ExcMessage("Undefined parameter MeshMovementShape."));
         break;
 
       case MeshMovementShape::Sin:
@@ -157,7 +155,7 @@ private:
         break;
 
       default:
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
         break;
     }
 
@@ -172,7 +170,7 @@ private:
     switch(data.temporal)
     {
       case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementAdvanceInTime."));
+        AssertThrow(false, dealii::ExcMessage("Undefined parameter MeshMovementAdvanceInTime."));
         break;
 
       case MeshMovementAdvanceInTime::SinSquared:
@@ -184,14 +182,14 @@ private:
         break;
 
       default:
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
         break;
     }
     return solution;
   }
 
 protected:
-  double const                pi = numbers::PI;
+  double const                pi = dealii::numbers::PI;
   MeshMovementData<dim> const data;
   double const                width;
   double const                left;
@@ -201,11 +199,11 @@ protected:
 };
 
 template<int dim>
-class RectangleMeshMovementFunctions : public Function<dim>
+class RectangleMeshMovementFunctions : public dealii::Function<dim>
 {
 public:
   RectangleMeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : Function<dim>(dim),
+    : dealii::Function<dim>(dim),
       data(data_in),
       length(data_in.dimensions[0]),
       height(data_in.dimensions[1]),
@@ -216,10 +214,10 @@ public:
   }
 
   double
-  value(Point<dim> const & x_in, unsigned int const coordinate_direction = 0) const override
+  value(dealii::Point<dim> const & x_in, unsigned int const coordinate_direction = 0) const override
   {
     // For 2D and 3D the coordinate system is set differently
-    Point<dim> x = x_in;
+    dealii::Point<dim> x = x_in;
     if(dim == 2)
       x[0] -= length / 2.0;
 
@@ -232,15 +230,15 @@ public:
 
 private:
   double
-  compute_displacement_share(Point<dim> const & x,
-                             unsigned int const coordinate_direction = 0) const
+  compute_displacement_share(dealii::Point<dim> const & x,
+                             unsigned int const         coordinate_direction = 0) const
   {
     double solution = 0.0;
 
     switch(data.shape)
     {
       case MeshMovementShape::Undefined:
-        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementShape."));
+        AssertThrow(false, dealii::ExcMessage("Undefined parameter MeshMovementShape."));
         break;
 
       case MeshMovementShape::Sin:
@@ -256,7 +254,7 @@ private:
         break;
 
       default:
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
         break;
     }
 
@@ -271,7 +269,7 @@ private:
     switch(data.temporal)
     {
       case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementAdvanceInTime."));
+        AssertThrow(false, dealii::ExcMessage("Undefined parameter MeshMovementAdvanceInTime."));
         break;
 
       case MeshMovementAdvanceInTime::SinSquared:
@@ -283,14 +281,14 @@ private:
         break;
 
       default:
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
         break;
     }
     return solution;
   }
 
 protected:
-  double const                pi = numbers::PI;
+  double const                pi = dealii::numbers::PI;
   MeshMovementData<dim> const data;
   double const                length;
   double const                height;

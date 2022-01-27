@@ -23,7 +23,10 @@
 #define INCLUDE_FUNCTIONALITIES_MATRIX_FREE_DATA_H_
 
 // deal.II
+#include <deal.II/base/quadrature.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 // ExaDG
@@ -32,8 +35,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 struct MatrixFreeData
 {
@@ -43,7 +44,7 @@ public:
    */
   MatrixFreeData()
   {
-    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
+    data.tasks_parallel_scheme = dealii::MatrixFree<dim, Number>::AdditionalData::none;
   }
 
   /**
@@ -57,25 +58,25 @@ public:
     pde_operator->fill_matrix_free_data(*this);
   }
 
-  std::vector<DoFHandler<dim> const *> &
+  std::vector<dealii::DoFHandler<dim> const *> &
   get_dof_handler_vector()
   {
     return dof_handler_vec;
   }
 
-  std::vector<AffineConstraints<Number> const *> &
+  std::vector<dealii::AffineConstraints<Number> const *> &
   get_constraint_vector()
   {
     return constraint_vec;
   }
 
-  std::vector<Quadrature<dim>> &
+  std::vector<dealii::Quadrature<dim>> &
   get_quadrature_vector()
   {
     return quadrature_vec;
   }
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler(std::string const & name)
   {
     return *dof_handler_vec.at(get_dof_index(name));
@@ -99,22 +100,22 @@ public:
   }
 
   void
-  insert_dof_handler(DoFHandler<dim> const * dof_handler, std::string const & name)
+  insert_dof_handler(dealii::DoFHandler<dim> const * dof_handler, std::string const & name)
   {
     insert_element(dof_handler_vec, dof_index_map, dof_handler, name);
   }
 
   void
-  insert_constraint(AffineConstraints<Number> const * constraint, std::string const & name)
+  insert_constraint(dealii::AffineConstraints<Number> const * constraint, std::string const & name)
   {
     insert_element(constraint_vec, constraint_index_map, constraint, name);
   }
 
   template<int dim_quad>
   void
-  insert_quadrature(Quadrature<dim_quad> const & quadrature, std::string const & name)
+  insert_quadrature(dealii::Quadrature<dim_quad> const & quadrature, std::string const & name)
   {
-    insert_element(quadrature_vec, quad_index_map, Quadrature<dim>(quadrature), name);
+    insert_element(quadrature_vec, quad_index_map, dealii::Quadrature<dim>(quadrature), name);
   }
 
   unsigned int
@@ -136,7 +137,7 @@ public:
   }
 
   // additional data
-  typename MatrixFree<dim, Number>::AdditionalData data;
+  typename dealii::MatrixFree<dim, Number>::AdditionalData data;
 
 private:
   template<typename T>
@@ -157,7 +158,7 @@ private:
     }
     else
     {
-      AssertThrow(it == map.end(), ExcMessage("Element already exists. Aborting."));
+      AssertThrow(it == map.end(), dealii::ExcMessage("Element already exists. Aborting."));
     }
 
     vector.resize(index + 1);
@@ -169,7 +170,7 @@ private:
   {
     auto it = map.find(name);
 
-    unsigned int index = numbers::invalid_unsigned_int;
+    unsigned int index = dealii::numbers::invalid_unsigned_int;
 
     if(it != map.end())
     {
@@ -177,21 +178,21 @@ private:
     }
     else
     {
-      AssertThrow(it != map.end(), ExcMessage("Could not find element. Aborting."));
+      AssertThrow(it != map.end(), dealii::ExcMessage("Could not find element. Aborting."));
     }
 
     return index;
   }
 
-  // maps between names and indices for DoFHandler, Constraint, Quadrature
+  // maps between names and indices for dealii::DoFHandler, Constraint, dealii::Quadrature
   std::map<std::string, unsigned int> dof_index_map;
   std::map<std::string, unsigned int> constraint_index_map;
   std::map<std::string, unsigned int> quad_index_map;
 
   // collection of data structures required for initialization and update of matrix_free
-  std::vector<DoFHandler<dim> const *>           dof_handler_vec;
-  std::vector<AffineConstraints<Number> const *> constraint_vec;
-  std::vector<Quadrature<dim>>                   quadrature_vec;
+  std::vector<dealii::DoFHandler<dim> const *>           dof_handler_vec;
+  std::vector<dealii::AffineConstraints<Number> const *> constraint_vec;
+  std::vector<dealii::Quadrature<dim>>                   quadrature_vec;
 };
 } // namespace ExaDG
 

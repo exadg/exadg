@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim>
 struct CombinedOperatorData : public OperatorBaseData
 {
@@ -67,20 +65,20 @@ private:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
 public:
   CombinedOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<Number> const & affine_constraints,
-             CombinedOperatorData<dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             CombinedOperatorData<dim> const &         data);
 
   void
-  initialize(MatrixFree<dim, Number> const &                           matrix_free,
-             AffineConstraints<Number> const &                         affine_constraints,
+  initialize(dealii::MatrixFree<dim, Number> const &                   matrix_free,
+             dealii::AffineConstraints<Number> const &                 affine_constraints,
              CombinedOperatorData<dim> const &                         data,
              std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel,
              std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel);
@@ -91,7 +89,7 @@ public:
   void
   update_after_grid_motion();
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  dealii::LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   void
@@ -117,9 +115,9 @@ private:
   reinit_boundary_face(unsigned int const face) const;
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const;
 
   void
   do_cell_integral(IntegratorCell & integrator) const;
@@ -134,9 +132,9 @@ private:
   do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_boundary_integral(IntegratorFace &           integrator_m,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(IntegratorFace &                   integrator_m,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   // TODO can be removed later once matrix-free evaluation allows accessing neighboring data for
   // cell-based face loops

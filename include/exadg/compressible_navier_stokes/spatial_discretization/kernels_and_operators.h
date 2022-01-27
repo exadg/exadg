@@ -39,74 +39,72 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
-    calculate_pressure(Tensor<1, dim, VectorizedArray<Number>> const & rho_u,
-                       Tensor<1, dim, VectorizedArray<Number>> const & u,
-                       VectorizedArray<Number> const &                 rho_E,
-                       Number const &                                  gamma)
+    dealii::VectorizedArray<Number>
+    calculate_pressure(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u,
+                       dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
+                       dealii::VectorizedArray<Number> const &                         rho_E,
+                       Number const &                                                  gamma)
 {
   return (gamma - 1.0) * (rho_E - 0.5 * scalar_product(rho_u, u));
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_pressure(VectorizedArray<Number> const &                 rho,
-                     Tensor<1, dim, VectorizedArray<Number>> const & u,
-                     VectorizedArray<Number> const &                 E,
-                     Number const &                                  gamma)
+  dealii::VectorizedArray<Number>
+  calculate_pressure(dealii::VectorizedArray<Number> const &                         rho,
+                     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
+                     dealii::VectorizedArray<Number> const &                         E,
+                     Number const &                                                  gamma)
 {
   return (gamma - 1.0) * rho * (E - 0.5 * scalar_product(u, u));
 }
 
 template<typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_temperature(VectorizedArray<Number> const & p,
-                        VectorizedArray<Number> const & rho,
-                        Number const &                  R)
+  dealii::VectorizedArray<Number>
+  calculate_temperature(dealii::VectorizedArray<Number> const & p,
+                        dealii::VectorizedArray<Number> const & rho,
+                        Number const &                          R)
 {
   return p / (rho * R);
 }
 
 template<int dim, typename Number>
-inline VectorizedArray<Number>
-calculate_energy(VectorizedArray<Number> const &                 T,
-                 Tensor<1, dim, VectorizedArray<Number>> const & u,
-                 Number const &                                  c_v)
+inline dealii::VectorizedArray<Number>
+calculate_energy(dealii::VectorizedArray<Number> const &                         T,
+                 dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
+                 Number const &                                                  c_v)
 {
   return c_v * T + 0.5 * scalar_product(u, u);
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<1, dim, VectorizedArray<Number>>
-  calculate_grad_E(VectorizedArray<Number> const &                 rho_inverse,
-                   VectorizedArray<Number> const &                 rho_E,
-                   Tensor<1, dim, VectorizedArray<Number>> const & grad_rho,
-                   Tensor<1, dim, VectorizedArray<Number>> const & grad_rho_E)
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+  calculate_grad_E(dealii::VectorizedArray<Number> const &                         rho_inverse,
+                   dealii::VectorizedArray<Number> const &                         rho_E,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & grad_rho,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & grad_rho_E)
 {
-  VectorizedArray<Number> E = rho_inverse * rho_E;
+  dealii::VectorizedArray<Number> E = rho_inverse * rho_E;
 
   return rho_inverse * (grad_rho_E - E * grad_rho);
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<2, dim, VectorizedArray<Number>>
-  calculate_grad_u(VectorizedArray<Number> const &                 rho_inverse,
-                   Tensor<1, dim, VectorizedArray<Number>> const & rho_u,
-                   Tensor<1, dim, VectorizedArray<Number>> const & grad_rho,
-                   Tensor<2, dim, VectorizedArray<Number>> const & grad_rho_u)
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  calculate_grad_u(dealii::VectorizedArray<Number> const &                         rho_inverse,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & grad_rho,
+                   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_rho_u)
 {
-  Tensor<2, dim, VectorizedArray<Number>> out;
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> out;
   for(unsigned int d = 0; d < dim; ++d)
   {
-    VectorizedArray<Number> ud = rho_inverse * rho_u[d];
+    dealii::VectorizedArray<Number> ud = rho_inverse * rho_u[d];
     for(unsigned int e = 0; e < dim; ++e)
       out[d][e] = rho_inverse * (grad_rho_u[d][e] - ud * grad_rho[e]);
   }
@@ -116,25 +114,25 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
-    calculate_grad_T(Tensor<1, dim, VectorizedArray<Number>> const & grad_E,
-                     Tensor<1, dim, VectorizedArray<Number>> const & u,
-                     Tensor<2, dim, VectorizedArray<Number>> const & grad_u,
-                     Number const &                                  gamma,
-                     Number const &                                  R)
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_grad_T(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & grad_E,
+                     dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u,
+                     dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_u,
+                     Number const &                                                  gamma,
+                     Number const &                                                  R)
 {
   return (gamma - 1.0) / R * (grad_E - u * grad_u);
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<2, dim, VectorizedArray<Number>>
-    calculate_stress_tensor(Tensor<2, dim, VectorizedArray<Number>> const & grad_u,
-                            Number const &                                  viscosity)
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    calculate_stress_tensor(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & grad_u,
+                            Number const & viscosity)
 {
-  VectorizedArray<Number> const divu = (2. / 3.) * trace(grad_u);
+  dealii::VectorizedArray<Number> const divu = (2. / 3.) * trace(grad_u);
 
-  Tensor<2, dim, VectorizedArray<Number>> out;
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> out;
   for(unsigned int d = 0; d < dim; ++d)
   {
     for(unsigned int e = 0; e < dim; ++e)
@@ -151,22 +149,23 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<rank, dim, VectorizedArray<Number>>
-  calculate_exterior_value(Tensor<rank, dim, VectorizedArray<Number>> const & value_m,
-                           BoundaryType const                                 boundary_type,
-                           BoundaryDescriptorStd<dim> const &                 boundary_descriptor,
-                           types::boundary_id const &                         boundary_id,
-                           Point<dim, VectorizedArray<Number>> const &        q_point,
-                           Number const &                                     time)
+  dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
+  calculate_exterior_value(
+    dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> const & value_m,
+    BoundaryType const                                                 boundary_type,
+    BoundaryDescriptorStd<dim> const &                                 boundary_descriptor,
+    dealii::types::boundary_id const &                                 boundary_id,
+    dealii::Point<dim, dealii::VectorizedArray<Number>> const &        q_point,
+    Number const &                                                     time)
 {
-  Tensor<rank, dim, VectorizedArray<Number>> value_p;
+  dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> value_p;
 
   if(boundary_type == BoundaryType::Dirichlet)
   {
     auto bc = boundary_descriptor.dirichlet_bc.find(boundary_id)->second;
     auto g  = FunctionEvaluator<rank, dim, Number>::value(bc, q_point, time);
 
-    value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
+    value_p = -value_m + dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>(2.0 * g);
   }
   else if(boundary_type == BoundaryType::Neumann)
   {
@@ -174,7 +173,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   return value_p;
@@ -186,15 +185,16 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<rank, dim, VectorizedArray<Number>>
-  calculate_exterior_normal_grad(Tensor<rank, dim, VectorizedArray<Number>> const & grad_M_normal,
-                                 BoundaryType const &                               boundary_type,
-                                 BoundaryDescriptorStd<dim> const &          boundary_descriptor,
-                                 types::boundary_id const &                  boundary_id,
-                                 Point<dim, VectorizedArray<Number>> const & q_point,
-                                 Number const &                              time)
+  dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>
+  calculate_exterior_normal_grad(
+    dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> const & grad_M_normal,
+    BoundaryType const &                                               boundary_type,
+    BoundaryDescriptorStd<dim> const &                                 boundary_descriptor,
+    dealii::types::boundary_id const &                                 boundary_id,
+    dealii::Point<dim, dealii::VectorizedArray<Number>> const &        q_point,
+    Number const &                                                     time)
 {
-  Tensor<rank, dim, VectorizedArray<Number>> grad_P_normal;
+  dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> grad_P_normal;
 
   if(boundary_type == BoundaryType::Dirichlet)
   {
@@ -206,11 +206,12 @@ inline DEAL_II_ALWAYS_INLINE //
     auto bc = boundary_descriptor.neumann_bc.find(boundary_id)->second;
     auto h  = FunctionEvaluator<rank, dim, Number>::value(bc, q_point, time);
 
-    grad_P_normal = -grad_M_normal + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
+    grad_P_normal =
+      -grad_M_normal + dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>>(2.0 * h);
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   return grad_P_normal;
@@ -221,18 +222,18 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
-    calculate_flux(Tensor<2, dim, VectorizedArray<Number>> const & momentum_flux_M,
-                   Tensor<2, dim, VectorizedArray<Number>> const & momentum_flux_P,
-                   Tensor<1, dim, VectorizedArray<Number>> const & rho_u_M,
-                   Tensor<1, dim, VectorizedArray<Number>> const & rho_u_P,
-                   VectorizedArray<Number> const &                 lambda,
-                   Tensor<1, dim, VectorizedArray<Number>> const & normal)
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_flux(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & momentum_flux_M,
+                   dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> const & momentum_flux_P,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u_M,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & rho_u_P,
+                   dealii::VectorizedArray<Number> const &                         lambda,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal)
 {
-  Tensor<1, dim, VectorizedArray<Number>> out;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> out;
   for(unsigned int d = 0; d < dim; ++d)
   {
-    VectorizedArray<Number> sum = VectorizedArray<Number>();
+    dealii::VectorizedArray<Number> sum = dealii::VectorizedArray<Number>();
     for(unsigned int e = 0; e < dim; ++e)
       sum += (momentum_flux_M[d][e] + momentum_flux_P[d][e]) * normal[e];
     out[d] = 0.5 * (sum + lambda * (rho_u_M[d] - rho_u_P[d]));
@@ -246,15 +247,15 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    VectorizedArray<Number>
-    calculate_flux(Tensor<1, dim, VectorizedArray<Number>> const & flux_M,
-                   Tensor<1, dim, VectorizedArray<Number>> const & flux_P,
-                   VectorizedArray<Number> const &                 value_M,
-                   VectorizedArray<Number> const &                 value_P,
-                   VectorizedArray<Number> const &                 lambda,
-                   Tensor<1, dim, VectorizedArray<Number>> const & normal)
+    dealii::VectorizedArray<Number>
+    calculate_flux(dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & flux_M,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & flux_P,
+                   dealii::VectorizedArray<Number> const &                         value_M,
+                   dealii::VectorizedArray<Number> const &                         value_P,
+                   dealii::VectorizedArray<Number> const &                         lambda,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal)
 {
-  Tensor<1, dim, VectorizedArray<Number>> average_flux = 0.5 * (flux_M + flux_P);
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> average_flux = 0.5 * (flux_M + flux_P);
 
   return average_flux * normal + 0.5 * lambda * (value_M - value_P);
 }
@@ -265,17 +266,17 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_lambda(VectorizedArray<Number> const &                 rho_m,
-                   VectorizedArray<Number> const &                 rho_p,
-                   Tensor<1, dim, VectorizedArray<Number>> const & u_m,
-                   Tensor<1, dim, VectorizedArray<Number>> const & u_p,
-                   VectorizedArray<Number> const &                 p_m,
-                   VectorizedArray<Number> const &                 p_p,
-                   Number const &                                  gamma)
+  dealii::VectorizedArray<Number>
+  calculate_lambda(dealii::VectorizedArray<Number> const &                         rho_m,
+                   dealii::VectorizedArray<Number> const &                         rho_p,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u_m,
+                   dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u_p,
+                   dealii::VectorizedArray<Number> const &                         p_m,
+                   dealii::VectorizedArray<Number> const &                         p_p,
+                   Number const &                                                  gamma)
 {
-  VectorizedArray<Number> lambda_m = u_m.norm() + std::sqrt(std::abs(gamma * p_m / rho_m));
-  VectorizedArray<Number> lambda_p = u_p.norm() + std::sqrt(std::abs(gamma * p_p / rho_p));
+  dealii::VectorizedArray<Number> lambda_m = u_m.norm() + std::sqrt(std::abs(gamma * p_m / rho_m));
+  dealii::VectorizedArray<Number> lambda_p = u_p.norm() + std::sqrt(std::abs(gamma * p_p / rho_p));
 
   return std::max(lambda_m, lambda_p);
 }
@@ -290,34 +291,34 @@ struct BodyForceOperatorData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  std::shared_ptr<Function<dim>> rhs_rho;
-  std::shared_ptr<Function<dim>> rhs_u;
-  std::shared_ptr<Function<dim>> rhs_E;
+  std::shared_ptr<dealii::Function<dim>> rhs_rho;
+  std::shared_ptr<dealii::Function<dim>> rhs_u;
+  std::shared_ptr<dealii::Function<dim>> rhs_E;
 };
 
 template<int dim, typename Number>
 class BodyForceOperator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef BodyForceOperator<dim, Number> This;
 
   typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
-  typedef Point<dim, VectorizedArray<Number>>     point;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::Point<dim, dealii::VectorizedArray<Number>>     point;
 
   BodyForceOperator() : matrix_free(nullptr), eval_time(0.0)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &    matrix_free_in,
-             BodyForceOperatorData<dim> const & data_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             BodyForceOperatorData<dim> const &      data_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
@@ -358,7 +359,7 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const &               matrix_free,
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -392,7 +393,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   BodyForceOperatorData<dim> data;
 
@@ -413,7 +414,7 @@ template<int dim, typename Number>
 class MassOperator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef MassOperator<dim, Number> This;
 
@@ -425,7 +426,8 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in, MassOperatorData const & data_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             MassOperatorData const &                data_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
@@ -447,7 +449,7 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const &               matrix_free,
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -480,8 +482,8 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
-  MassOperatorData                data;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+  MassOperatorData                        data;
 };
 
 template<int dim>
@@ -505,7 +507,7 @@ template<int dim, typename Number>
 class ConvectiveOperator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef ConvectiveOperator<dim, Number> This;
 
@@ -514,18 +516,18 @@ public:
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVector;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
-  typedef Point<dim, VectorizedArray<Number>>     point;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::Point<dim, dealii::VectorizedArray<Number>>     point;
 
   ConvectiveOperator() : matrix_free(nullptr)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &     matrix_free_in,
-             ConvectiveOperatorData<dim> const & data_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             ConvectiveOperatorData<dim> const &     data_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
@@ -635,16 +637,16 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_flux_boundary(FaceIntegratorScalar &         density,
-                      FaceIntegratorVector &         momentum,
-                      FaceIntegratorScalar &         energy,
-                      BoundaryType const &           boundary_type_density,
-                      BoundaryType const &           boundary_type_velocity,
-                      BoundaryType const &           boundary_type_pressure,
-                      BoundaryType const &           boundary_type_energy,
-                      EnergyBoundaryVariable const & boundary_variable,
-                      types::boundary_id const &     boundary_id,
-                      unsigned int const             q) const
+    get_flux_boundary(FaceIntegratorScalar &             density,
+                      FaceIntegratorVector &             momentum,
+                      FaceIntegratorScalar &             energy,
+                      BoundaryType const &               boundary_type_density,
+                      BoundaryType const &               boundary_type_velocity,
+                      BoundaryType const &               boundary_type_pressure,
+                      BoundaryType const &               boundary_type_energy,
+                      EnergyBoundaryVariable const &     boundary_variable,
+                      dealii::types::boundary_id const & boundary_id,
+                      unsigned int const                 q) const
   {
     vector normal = momentum.get_normal_vector(q);
 
@@ -685,7 +687,7 @@ public:
                                                           this->eval_time);
 
     // calculate E_P
-    scalar E_P = make_vectorized_array<Number>(0.0);
+    scalar E_P = dealii::make_vectorized_array<Number>(0.0);
     if(boundary_variable == EnergyBoundaryVariable::Energy)
     {
       E_P = calculate_exterior_value<dim, Number, 0>(E_M,
@@ -738,7 +740,7 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const &               matrix_free,
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -774,7 +776,7 @@ private:
   }
 
   void
-  face_loop(MatrixFree<dim, Number> const &               matrix_free,
+  face_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & face_range) const
@@ -841,7 +843,7 @@ private:
   }
 
   void
-  boundary_face_loop(MatrixFree<dim, Number> const &               matrix_free,
+  boundary_face_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
                      VectorType &                                  dst,
                      VectorType const &                            src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
@@ -861,7 +863,7 @@ private:
       energy.reinit(face);
       energy.gather_evaluate(src, true, false);
 
-      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+      dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
       BoundaryType boundary_type_density  = data.bc->density.get_boundary_type(boundary_id);
       BoundaryType boundary_type_velocity = data.bc->velocity.get_boundary_type(boundary_id);
@@ -894,7 +896,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   ConvectiveOperatorData<dim> data;
 
@@ -944,7 +946,7 @@ template<int dim, typename Number>
 class ViscousOperator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef ViscousOperator<dim, Number> This;
 
@@ -953,24 +955,24 @@ public:
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVector;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
-  typedef Point<dim, VectorizedArray<Number>>     point;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::Point<dim, dealii::VectorizedArray<Number>>     point;
 
   ViscousOperator() : matrix_free(nullptr), degree(1)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &  matrix_free_in,
-             ViscousOperatorData<dim> const & data_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             ViscousOperatorData<dim> const &        data_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
 
-    FiniteElement<dim> const & fe = matrix_free->get_dof_handler(data.dof_index).get_fe();
-    degree                        = fe.degree;
+    dealii::FiniteElement<dim> const & fe = matrix_free->get_dof_handler(data.dof_index).get_fe();
+    degree                                = fe.degree;
 
     gamma  = data.heat_capacity_ratio;
     R      = data.specific_gas_constant;
@@ -1126,16 +1128,16 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_gradient_flux_boundary(FaceIntegratorScalar &         density,
-                               FaceIntegratorVector &         momentum,
-                               FaceIntegratorScalar &         energy,
-                               scalar const &                 tau_IP,
-                               BoundaryType const &           boundary_type_density,
-                               BoundaryType const &           boundary_type_velocity,
-                               BoundaryType const &           boundary_type_energy,
-                               EnergyBoundaryVariable const & boundary_variable,
-                               types::boundary_id const &     boundary_id,
-                               unsigned int const             q) const
+    get_gradient_flux_boundary(FaceIntegratorScalar &             density,
+                               FaceIntegratorVector &             momentum,
+                               FaceIntegratorScalar &             energy,
+                               scalar const &                     tau_IP,
+                               BoundaryType const &               boundary_type_density,
+                               BoundaryType const &               boundary_type_velocity,
+                               BoundaryType const &               boundary_type_energy,
+                               EnergyBoundaryVariable const &     boundary_variable,
+                               dealii::types::boundary_id const & boundary_id,
+                               unsigned int const                 q) const
   {
     vector normal = momentum.get_normal_vector(q);
 
@@ -1188,7 +1190,7 @@ public:
     vector grad_rho_E_M = energy.get_gradient(q);
 
     scalar E_M = rho_inv_M * rho_E_M;
-    scalar E_P = make_vectorized_array<Number>(0.0);
+    scalar E_P = dealii::make_vectorized_array<Number>(0.0);
     if(boundary_variable == EnergyBoundaryVariable::Energy)
     {
       E_P = calculate_exterior_value<dim, Number, 0>(E_M,
@@ -1319,15 +1321,15 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector /*dummy_M*/, tensor /*value_flux_momentum_M*/, vector /*value_flux_energy_M*/>
-    get_value_flux_boundary(FaceIntegratorScalar &         density,
-                            FaceIntegratorVector &         momentum,
-                            FaceIntegratorScalar &         energy,
-                            BoundaryType const &           boundary_type_density,
-                            BoundaryType const &           boundary_type_velocity,
-                            BoundaryType const &           boundary_type_energy,
-                            EnergyBoundaryVariable const & boundary_variable,
-                            types::boundary_id const &     boundary_id,
-                            unsigned int const             q) const
+    get_value_flux_boundary(FaceIntegratorScalar &             density,
+                            FaceIntegratorVector &             momentum,
+                            FaceIntegratorScalar &             energy,
+                            BoundaryType const &               boundary_type_density,
+                            BoundaryType const &               boundary_type_velocity,
+                            BoundaryType const &               boundary_type_energy,
+                            EnergyBoundaryVariable const &     boundary_variable,
+                            dealii::types::boundary_id const & boundary_id,
+                            unsigned int const                 q) const
   {
     vector normal = momentum.get_normal_vector(q);
 
@@ -1359,7 +1361,7 @@ public:
     scalar rho_E_M = energy.get_value(q);
     scalar E_M     = rho_inv_M * rho_E_M;
 
-    scalar E_P = make_vectorized_array<Number>(0.0);
+    scalar E_P = dealii::make_vectorized_array<Number>(0.0);
     if(boundary_variable == EnergyBoundaryVariable::Energy)
     {
       E_P = calculate_exterior_value<dim, Number, 0>(E_M,
@@ -1412,7 +1414,7 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const &               matrix_free,
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -1446,7 +1448,7 @@ private:
   }
 
   void
-  face_loop(MatrixFree<dim, Number> const &               matrix_free,
+  face_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & face_range) const
@@ -1526,7 +1528,7 @@ private:
   }
 
   void
-  boundary_face_loop(MatrixFree<dim, Number> const &               matrix_free,
+  boundary_face_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
                      VectorType &                                  dst,
                      VectorType const &                            src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
@@ -1548,7 +1550,7 @@ private:
 
       scalar tau_IP = get_penalty_parameter(density);
 
-      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+      dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
       BoundaryType boundary_type_density  = data.bc->density.get_boundary_type(boundary_id);
       BoundaryType boundary_type_velocity = data.bc->velocity.get_boundary_type(boundary_id);
@@ -1596,7 +1598,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   ViscousOperatorData<dim> data;
 
@@ -1620,7 +1622,7 @@ private:
   // thermal conductivity
   Number lambda;
 
-  AlignedVector<VectorizedArray<Number>> array_penalty_parameter;
+  dealii::AlignedVector<dealii::VectorizedArray<Number>> array_penalty_parameter;
 
   mutable Number eval_time;
 };
@@ -1642,7 +1644,7 @@ template<int dim, typename Number>
 class CombinedOperator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef ConvectiveOperator<dim, Number> ConvectiveOp;
   typedef ViscousOperator<dim, Number>    ViscousOp;
@@ -1653,20 +1655,20 @@ public:
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVector;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
-  typedef Point<dim, VectorizedArray<Number>>     point;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
+  typedef dealii::Point<dim, dealii::VectorizedArray<Number>>     point;
 
   CombinedOperator() : matrix_free(nullptr), convective_operator(nullptr), viscous_operator(nullptr)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &   matrix_free_in,
-             CombinedOperatorData<dim> const & data_in,
-             ConvectiveOp const &              convective_operator_in,
-             ViscousOp const &                 viscous_operator_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             CombinedOperatorData<dim> const &       data_in,
+             ConvectiveOp const &                    convective_operator_in,
+             ViscousOp const &                       viscous_operator_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
@@ -1697,7 +1699,7 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const &               matrix_free,
+  cell_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -1737,7 +1739,7 @@ private:
   }
 
   void
-  face_loop(MatrixFree<dim, Number> const &               matrix_free,
+  face_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
             VectorType &                                  dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & face_range) const
@@ -1819,7 +1821,7 @@ private:
   }
 
   void
-  boundary_face_loop(MatrixFree<dim, Number> const &               matrix_free,
+  boundary_face_loop(dealii::MatrixFree<dim, Number> const &       matrix_free,
                      VectorType &                                  dst,
                      VectorType const &                            src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
@@ -1841,7 +1843,7 @@ private:
 
       scalar tau_IP = viscous_operator->get_penalty_parameter(density);
 
-      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+      dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
       BoundaryType boundary_type_density  = data.bc->density.get_boundary_type(boundary_id);
       BoundaryType boundary_type_velocity = data.bc->velocity.get_boundary_type(boundary_id);
@@ -1902,7 +1904,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   CombinedOperatorData<dim> data;
 

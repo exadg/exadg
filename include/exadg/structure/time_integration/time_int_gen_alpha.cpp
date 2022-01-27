@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
   std::shared_ptr<Interface::Operator<Number>> operator_,
@@ -51,7 +49,7 @@ TimeIntGenAlpha<dim, Number>::TimeIntGenAlpha(
     refine_steps_time(param_.n_refine_time),
     param(param_),
     mpi_comm(mpi_comm_),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     use_extrapolation(true),
     store_solution(false),
     iterations({0, {0, 0}})
@@ -100,7 +98,7 @@ TimeIntGenAlpha<dim, Number>::advance_one_timestep_partitioned_solve(bool const 
                                                                      bool const store_solution)
 {
   if(this->use_extrapolation == false)
-    AssertThrow(this->store_solution == true, ExcMessage("Invalid parameters."));
+    AssertThrow(this->store_solution == true, dealii::ExcMessage("Invalid parameters."));
 
   this->use_extrapolation = use_extrapolation;
   this->store_solution    = store_solution;
@@ -114,7 +112,7 @@ TimeIntGenAlpha<dim, Number>::do_timestep_solve()
 {
   // compute right-hand side in case of linear problems or "constant vector"
   // in case of nonlinear problems
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // compute const_vector
@@ -269,7 +267,7 @@ void
 TimeIntGenAlpha<dim, Number>::do_write_restart(std::string const & filename) const
 {
   (void)filename;
-  AssertThrow(false, ExcMessage("Restart has not been implemented for Structure."));
+  AssertThrow(false, dealii::ExcMessage("Restart has not been implemented for Structure."));
 }
 
 template<int dim, typename Number>
@@ -277,14 +275,14 @@ void
 TimeIntGenAlpha<dim, Number>::do_read_restart(std::ifstream & in)
 {
   (void)in;
-  AssertThrow(false, ExcMessage("Restart has not been implemented for Structure."));
+  AssertThrow(false, dealii::ExcMessage("Restart has not been implemented for Structure."));
 }
 
 template<int dim, typename Number>
 void
 TimeIntGenAlpha<dim, Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessor->do_postprocessing(displacement_n, this->get_time(), this->get_time_step_number());

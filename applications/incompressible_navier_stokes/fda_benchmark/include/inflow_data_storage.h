@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct InflowDataStorage
 {
@@ -55,8 +53,8 @@ struct InflowDataStorage
   void
   initialize_r_and_phi_values()
   {
-    AssertThrow(n_points_r >= 2, ExcMessage("Variable n_points_r is invalid"));
-    AssertThrow(n_points_phi >= 2, ExcMessage("Variable n_points_phi is invalid"));
+    AssertThrow(n_points_r >= 2, dealii::ExcMessage("Variable n_points_r is invalid"));
+    AssertThrow(n_points_phi >= 2, dealii::ExcMessage("Variable n_points_phi is invalid"));
 
     // 0 <= radius <= R_OUTER
     for(unsigned int i = 0; i < n_points_r; ++i)
@@ -64,20 +62,21 @@ struct InflowDataStorage
 
     // - pi <= phi <= pi
     for(unsigned int i = 0; i < n_points_phi; ++i)
-      phi_values[i] = -numbers::PI + double(i) / double(n_points_phi - 1) * 2.0 * numbers::PI;
+      phi_values[i] =
+        -dealii::numbers::PI + double(i) / double(n_points_phi - 1) * 2.0 * dealii::numbers::PI;
   }
 
   void
   initialize_velocity_values()
   {
-    AssertThrow(n_points_r >= 2, ExcMessage("Variable n_points_r is invalid"));
-    AssertThrow(n_points_phi >= 2, ExcMessage("Variable n_points_phi is invalid"));
+    AssertThrow(n_points_r >= 2, dealii::ExcMessage("Variable n_points_r is invalid"));
+    AssertThrow(n_points_phi >= 2, dealii::ExcMessage("Variable n_points_phi is invalid"));
 
     for(unsigned int iy = 0; iy < n_points_r; ++iy)
     {
       for(unsigned int iz = 0; iz < n_points_phi; ++iz)
       {
-        Tensor<1, dim, double> velocity;
+        dealii::Tensor<1, dim, double> velocity;
         // flow in z-direction
         velocity[2] = max_velocity * (1.0 - std::pow(r_values[iy] / R, 2.0));
 
@@ -97,8 +96,8 @@ struct InflowDataStorage
   void
   add_random_perturbations()
   {
-    AssertThrow(n_points_r >= 2, ExcMessage("Variable n_points_r is invalid"));
-    AssertThrow(n_points_phi >= 2, ExcMessage("Variable n_points_phi is invalid"));
+    AssertThrow(n_points_r >= 2, dealii::ExcMessage("Variable n_points_r is invalid"));
+    AssertThrow(n_points_phi >= 2, dealii::ExcMessage("Variable n_points_phi is invalid"));
 
     for(unsigned int iy = 0; iy < n_points_r; ++iy)
     {
@@ -120,9 +119,9 @@ struct InflowDataStorage
   bool const   use_random_perturbations;
   double const factor_random_perturbations;
 
-  std::vector<double>                 r_values;
-  std::vector<double>                 phi_values;
-  std::vector<Tensor<1, dim, double>> velocity_values;
+  std::vector<double>                         r_values;
+  std::vector<double>                         phi_values;
+  std::vector<dealii::Tensor<1, dim, double>> velocity_values;
 };
 
 } // namespace IncNS

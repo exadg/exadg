@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Elementwise
 {
-using namespace dealii;
-
 std::string
 enum_to_string(Solver const enum_type)
 {
@@ -48,7 +46,7 @@ enum_to_string(Solver const enum_type)
       string_type = "GMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

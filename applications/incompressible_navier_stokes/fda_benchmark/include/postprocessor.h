@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct PostProcessorDataFDA
 {
@@ -50,7 +48,7 @@ class PostProcessorFDA : public PostProcessor<dim, Number>
 public:
   typedef PostProcessor<dim, Number> Base;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef typename Base::Operator Operator;
 

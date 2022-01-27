@@ -23,8 +23,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, int n_components, typename Number>
 MassOperator<dim, n_components, Number>::MassOperator() : scaling_factor(1.0)
 {
@@ -33,9 +31,9 @@ MassOperator<dim, n_components, Number>::MassOperator() : scaling_factor(1.0)
 template<int dim, int n_components, typename Number>
 void
 MassOperator<dim, n_components, Number>::initialize(
-  MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<Number> const & affine_constraints,
-  MassOperatorData<dim> const &     data)
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  MassOperatorData<dim> const &             data)
 {
   Base::reinit(matrix_free, affine_constraints, data);
 

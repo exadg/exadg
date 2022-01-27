@@ -34,8 +34,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 struct PerturbationEnergyData
 {
   PerturbationEnergyData()
@@ -50,7 +48,7 @@ struct PerturbationEnergyData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
@@ -81,12 +79,12 @@ template<int dim, typename Number>
 class PerturbationEnergyCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef PerturbationEnergyCalculator<dim, Number> This;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   PerturbationEnergyCalculator(MPI_Comm const & comm)
     : mpi_comm(comm),
@@ -100,10 +98,10 @@ public:
   }
 
   void
-  setup(MatrixFree<dim, Number> const & matrix_free_in,
-        unsigned int const              dof_index_in,
-        unsigned int const              quad_index_in,
-        PerturbationEnergyData const &  data_in)
+  setup(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+        unsigned int const                      dof_index_in,
+        unsigned int const                      quad_index_in,
+        PerturbationEnergyData const &          data_in)
   {
     matrix_free = &matrix_free_in;
     dof_index   = dof_index_in;
@@ -126,8 +124,9 @@ public:
       else // steady problem (time_step_number = -1)
       {
         AssertThrow(false,
-                    ExcMessage("Calculation of perturbation energy for "
-                               "Orr-Sommerfeld problem only makes sense for unsteady problems."));
+                    dealii::ExcMessage(
+                      "Calculation of perturbation energy for "
+                      "Orr-Sommerfeld problem only makes sense for unsteady problems."));
       }
     }
   }
@@ -150,14 +149,15 @@ private:
       }
 
       // write output file
-      if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
         // clang-format off
         unsigned int l = matrix_free->get_dof_handler(dof_index)
                            .get_triangulation().n_global_levels() - 1;
         // clang-format on
 
-        std::string filename = data.directory + data.filename + "_l" + Utilities::int_to_string(l);
+        std::string filename =
+          data.directory + data.filename + "_l" + dealii::Utilities::int_to_string(l);
 
         std::ofstream f;
         if(clear_files == true)
@@ -192,19 +192,19 @@ private:
    *  Perturbation energy: E = (1,u*u)_Omega
    */
   void
-  integrate(MatrixFree<dim, Number> const & matrix_free,
-            VectorType const &              velocity,
-            Number &                        energy)
+  integrate(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType const &                      velocity,
+            Number &                                energy)
   {
     std::vector<Number> dst(1, 0.0);
     matrix_free.cell_loop(&This::local_compute, this, dst, velocity);
 
     // sum over all MPI processes
-    energy = Utilities::MPI::sum(dst.at(0), mpi_comm);
+    energy = dealii::Utilities::MPI::sum(dst.at(0), mpi_comm);
   }
 
   void
-  local_compute(MatrixFree<dim, Number> const &               matrix_free,
+  local_compute(dealii::MatrixFree<dim, Number> const &       matrix_free,
                 std::vector<Number> &                         dst,
                 VectorType const &                            src,
                 std::pair<unsigned int, unsigned int> const & cell_range)
@@ -218,12 +218,12 @@ private:
       integrator.read_dof_values(src);
       integrator.evaluate(true, false);
 
-      VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
+      dealii::VectorizedArray<Number> energy_vec = dealii::make_vectorized_array<Number>(0.);
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector velocity = integrator.get_value(q);
 
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+        dealii::Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         scalar y = q_points[1] / data.h;
 
@@ -232,7 +232,7 @@ private:
         energy_vec += integrator.JxW(q) * (velocity - velocity_base) * (velocity - velocity_base);
       }
 
-      // sum over entries of VectorizedArray, but only over those
+      // sum over entries of dealii::VectorizedArray, but only over those
       // that are "active"
       for(unsigned int v = 0; v < matrix_free.n_active_entries_per_cell_batch(cell); ++v)
       {
@@ -247,9 +247,9 @@ private:
   bool   initial_perturbation_energy_has_been_calculated;
   Number initial_perturbation_energy;
 
-  MatrixFree<dim, Number> const * matrix_free;
-  unsigned int                    dof_index, quad_index;
-  PerturbationEnergyData          data;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+  unsigned int                            dof_index, quad_index;
+  PerturbationEnergyData                  data;
 };
 
 } // namespace IncNS

@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct InflowDataStorage
 {
@@ -47,8 +45,8 @@ struct InflowDataStorage
   void
   initialize_y_and_z_values()
   {
-    AssertThrow(n_points_y >= 2, ExcMessage("Variable n_points_y is invalid"));
-    AssertThrow(n_points_z >= 2, ExcMessage("Variable n_points_z is invalid"));
+    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
+    AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
 
     for(unsigned int i = 0; i < n_points_y; ++i)
       y_values[i] = double(i) / double(n_points_y - 1) * Geometry::HEIGHT_CHANNEL;
@@ -61,14 +59,14 @@ struct InflowDataStorage
   void
   initialize_velocity_values()
   {
-    AssertThrow(n_points_y >= 2, ExcMessage("Variable n_points_y is invalid"));
-    AssertThrow(n_points_z >= 2, ExcMessage("Variable n_points_z is invalid"));
+    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
+    AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
 
     for(unsigned int iy = 0; iy < n_points_y; ++iy)
     {
       for(unsigned int iz = 0; iz < n_points_z; ++iz)
       {
-        Tensor<1, dim, double> velocity;
+        dealii::Tensor<1, dim, double> velocity;
         velocity_values[iy * n_points_z + iz] = velocity;
       }
     }
@@ -77,9 +75,9 @@ struct InflowDataStorage
   unsigned int n_points_y;
   unsigned int n_points_z;
 
-  std::vector<double>                 y_values;
-  std::vector<double>                 z_values;
-  std::vector<Tensor<1, dim, double>> velocity_values;
+  std::vector<double>                         y_values;
+  std::vector<double>                         z_values;
+  std::vector<dealii::Tensor<1, dim, double>> velocity_values;
 };
 
 } // namespace IncNS

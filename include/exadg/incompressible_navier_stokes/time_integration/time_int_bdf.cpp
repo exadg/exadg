@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(
   std::shared_ptr<OperatorBase>                   operator_in,
@@ -172,7 +170,7 @@ TimeIntBDF<dim, Number>::advance_one_timestep_partitioned_solve(bool const use_e
                                                                 bool const store_solution)
 {
   if(this->use_extrapolation == false)
-    AssertThrow(this->store_solution == true, ExcMessage("Invalid parameters."));
+    AssertThrow(this->store_solution == true, dealii::ExcMessage("Invalid parameters."));
 
   this->use_extrapolation = use_extrapolation;
   this->store_solution    = store_solution;
@@ -270,11 +268,11 @@ TimeIntBDF<dim, Number>::initialize_oif()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     AssertThrow(time_integrator_OIF.get() != 0,
-                ExcMessage("OIF time integrator has not been initialized correctly."));
+                dealii::ExcMessage("OIF time integrator has not been initialized correctly."));
   }
 }
 
@@ -417,7 +415,8 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
+    AssertThrow(false,
+                dealii::ExcMessage("Specified type of time step calculation is not implemented."));
   }
 
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
@@ -425,7 +424,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     // make sure that CFL condition is used for the calculation of the time step size (the aim
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
     AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Specified type of time step calculation is not compatible with OIF approach!"));
 
     this->pcout << std::endl << "OIF sub-stepping for convective term:" << std::endl << std::endl;
@@ -440,7 +439,7 @@ double
 TimeIntBDF<dim, Number>::recalculate_time_step_size() const
 {
   AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
   VectorType u_relative = get_velocity();
@@ -505,7 +504,7 @@ TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *
   }
 
   AssertThrow(current_order > 0 && current_order <= this->order,
-              ExcMessage("Invalid parameter current_order"));
+              dealii::ExcMessage("Invalid parameter current_order"));
 
   velocities.resize(current_order);
   times.resize(current_order);
@@ -540,7 +539,7 @@ TimeIntBDF<dim, Number>::get_velocities_and_times_np(std::vector<VectorType cons
   }
 
   AssertThrow(current_order > 0 && current_order <= this->order,
-              ExcMessage("Invalid parameter current_order"));
+              dealii::ExcMessage("Invalid parameter current_order"));
 
   velocities.resize(current_order + 1);
   times.resize(current_order + 1);
@@ -604,7 +603,7 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::postprocessing() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   // To allow a computation of errors at start_time (= if time step number is 1 and if the

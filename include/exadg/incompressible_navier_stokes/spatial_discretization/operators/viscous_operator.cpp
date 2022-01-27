@@ -12,13 +12,11 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                        matrix_free,
-  AffineConstraints<Number> const &                      affine_constraints,
+  dealii::MatrixFree<dim, Number> const &                matrix_free,
+  dealii::AffineConstraints<Number> const &              affine_constraints,
   ViscousOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel)
 {
@@ -58,9 +56,10 @@ ViscousOperator<dim, Number>::reinit_boundary_face(unsigned int const face) cons
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                     unsigned int const       face,
-                                                     types::boundary_id const boundary_id) const
+ViscousOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -171,9 +170,10 @@ ViscousOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator,
-                                                   OperatorType const &       operator_type,
-                                                   types::boundary_id const & boundary_id) const
+ViscousOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 

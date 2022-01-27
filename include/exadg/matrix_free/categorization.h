@@ -22,26 +22,27 @@
 #ifndef OPERATOR_BASE_CATEGORIZATION_H
 #define OPERATOR_BASE_CATEGORIZATION_H
 
+// deal.II
+#include <deal.II/grid/tria.h>
+
 namespace ExaDG
 {
 namespace Categorization
 {
-using namespace dealii;
-
 /*
  * Adjust MatrixFree::AdditionalData such that
  *   1) cells which have the same boundary IDs for all faces are put into the
  *      same category
- *   2) cell based loops are enabled (incl. FEEvaluationBase::read_cell_data()
+ *   2) cell based loops are enabled (incl. dealii::FEEvaluationBase::read_cell_data()
  *      for all neighboring cells)
  */
 template<int dim, typename AdditionalData>
 void
-do_cell_based_loops(Triangulation<dim> const & tria,
-                    AdditionalData &           data,
-                    unsigned int const         level = numbers::invalid_unsigned_int)
+do_cell_based_loops(dealii::Triangulation<dim> const & tria,
+                    AdditionalData &                   data,
+                    unsigned int const level = dealii::numbers::invalid_unsigned_int)
 {
-  bool is_mg = (level != numbers::invalid_unsigned_int);
+  bool is_mg = (level != dealii::numbers::invalid_unsigned_int);
 
   // ... create list for the category of each cell
   if(is_mg)

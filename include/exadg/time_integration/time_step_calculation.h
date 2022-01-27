@@ -34,8 +34,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  limit the maximum increase/decrease of the time step size
  */
@@ -99,17 +97,17 @@ calculate_time_step_max_efficiency(double const       global_min_cell_diameter,
  */
 template<int dim>
 inline double
-calculate_max_velocity(Triangulation<dim> const &     triangulation,
-                       std::shared_ptr<Function<dim>> velocity,
-                       double const                   time,
-                       MPI_Comm const &               mpi_comm)
+calculate_max_velocity(dealii::Triangulation<dim> const &     triangulation,
+                       std::shared_ptr<dealii::Function<dim>> velocity,
+                       double const                           time,
+                       MPI_Comm const &                       mpi_comm)
 {
-  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
-                                                    endc = triangulation.end();
+  typename dealii::Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
+                                                            endc = triangulation.end();
 
   double U = 0.0, max_U = std::numeric_limits<double>::min();
 
-  Tensor<1, dim, double> vel;
+  dealii::Tensor<1, dim, double> vel;
   velocity->set_time(time);
 
   for(; cell != endc; ++cell)
@@ -117,7 +115,7 @@ calculate_max_velocity(Triangulation<dim> const &     triangulation,
     if(cell->is_locally_owned())
     {
       // calculate maximum velocity
-      Point<dim> point = cell->center();
+      dealii::Point<dim> point = cell->center();
 
       for(unsigned int d = 0; d < dim; ++d)
         vel[d] = velocity->value(point, d);
@@ -127,7 +125,7 @@ calculate_max_velocity(Triangulation<dim> const &     triangulation,
         max_U = U;
     }
   }
-  double const global_max_U = Utilities::MPI::max(max_U, mpi_comm);
+  double const global_max_U = dealii::Utilities::MPI::max(max_U, mpi_comm);
 
   return global_max_U;
 }
@@ -175,15 +173,15 @@ calculate_const_time_step_diff(double const       diffusivity,
  */
 template<int dim, typename value_type>
 inline double
-calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
-                              unsigned int const                   dof_index,
-                              unsigned int const                   quad_index,
-                              std::shared_ptr<Function<dim>> const velocity,
-                              double const                         time,
-                              unsigned int const                   degree,
-                              double const                         exponent_fe_degree,
-                              CFLConditionType const               cfl_condition_type,
-                              MPI_Comm const &                     mpi_comm)
+calculate_time_step_cfl_local(dealii::MatrixFree<dim, value_type> const &  data,
+                              unsigned int const                           dof_index,
+                              unsigned int const                           quad_index,
+                              std::shared_ptr<dealii::Function<dim>> const velocity,
+                              double const                                 time,
+                              unsigned int const                           degree,
+                              double const                                 exponent_fe_degree,
+                              CFLConditionType const                       cfl_condition_type,
+                              MPI_Comm const &                             mpi_comm)
 {
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -194,21 +192,22 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
   {
-    VectorizedArray<value_type> delta_t_cell =
-      make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());
+    dealii::VectorizedArray<value_type> delta_t_cell =
+      dealii::make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());
 
     fe_eval.reinit(cell);
 
     // loop over quadrature points
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      Point<dim, VectorizedArray<value_type>> q_point = fe_eval.quadrature_point(q);
+      dealii::Point<dim, dealii::VectorizedArray<value_type>> q_point = fe_eval.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<value_type>> u_x =
+      dealii::Tensor<1, dim, dealii::VectorizedArray<value_type>> u_x =
         FunctionEvaluator<1, dim, value_type>::value(velocity, q_point, time);
-      Tensor<2, dim, VectorizedArray<value_type>> invJ  = fe_eval.inverse_jacobian(q);
-      invJ                                              = transpose(invJ);
-      Tensor<1, dim, VectorizedArray<value_type>> ut_xi = invJ * u_x;
+      dealii::Tensor<2, dim, dealii::VectorizedArray<value_type>> invJ =
+        fe_eval.inverse_jacobian(q);
+      invJ                                                              = transpose(invJ);
+      dealii::Tensor<1, dim, dealii::VectorizedArray<value_type>> ut_xi = invJ * u_x;
 
       if(cfl_condition_type == CFLConditionType::VelocityNorm)
       {
@@ -221,13 +220,13 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
     }
 
     // loop over vectorized array
     double dt = std::numeric_limits<double>::max();
-    for(unsigned int v = 0; v < VectorizedArray<value_type>::size(); ++v)
+    for(unsigned int v = 0; v < dealii::VectorizedArray<value_type>::size(); ++v)
     {
       dt = std::min(dt, (double)delta_t_cell[v]);
     }
@@ -236,7 +235,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
   }
 
   // find minimum over all processors
-  new_time_step = Utilities::MPI::min(new_time_step, mpi_comm);
+  new_time_step = dealii::Utilities::MPI::min(new_time_step, mpi_comm);
 
   return new_time_step;
 }
@@ -247,14 +246,15 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
  */
 template<int dim, typename value_type>
 inline double
-calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &                    data,
-                              unsigned int const                                     dof_index,
-                              unsigned int const                                     quad_index,
-                              LinearAlgebra::distributed::Vector<value_type> const & velocity,
-                              unsigned int const                                     degree,
-                              double const           exponent_fe_degree,
-                              CFLConditionType const cfl_condition_type,
-                              MPI_Comm const &       mpi_comm)
+calculate_time_step_cfl_local(
+  dealii::MatrixFree<dim, value_type> const &                    data,
+  unsigned int const                                             dof_index,
+  unsigned int const                                             quad_index,
+  dealii::LinearAlgebra::distributed::Vector<value_type> const & velocity,
+  unsigned int const                                             degree,
+  double const                                                   exponent_fe_degree,
+  CFLConditionType const                                         cfl_condition_type,
+  MPI_Comm const &                                               mpi_comm)
 {
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -265,12 +265,12 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_cell_batches(); ++cell)
   {
-    VectorizedArray<value_type> delta_t_cell =
-      make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());
+    dealii::VectorizedArray<value_type> delta_t_cell =
+      dealii::make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());
 
-    Tensor<2, dim, VectorizedArray<value_type>> invJ;
-    Tensor<1, dim, VectorizedArray<value_type>> u_x;
-    Tensor<1, dim, VectorizedArray<value_type>> ut_xi;
+    dealii::Tensor<2, dim, dealii::VectorizedArray<value_type>> invJ;
+    dealii::Tensor<1, dim, dealii::VectorizedArray<value_type>> u_x;
+    dealii::Tensor<1, dim, dealii::VectorizedArray<value_type>> ut_xi;
 
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(velocity);
@@ -295,13 +295,13 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
     }
 
     // loop over vectorized array
     double dt = std::numeric_limits<double>::max();
-    for(unsigned int v = 0; v < VectorizedArray<value_type>::size(); ++v)
+    for(unsigned int v = 0; v < dealii::VectorizedArray<value_type>::size(); ++v)
     {
       dt = std::min(dt, (double)delta_t_cell[v]);
     }
@@ -310,7 +310,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   }
 
   // find minimum over all processors
-  new_time_step = Utilities::MPI::min(new_time_step, mpi_comm);
+  new_time_step = dealii::Utilities::MPI::min(new_time_step, mpi_comm);
 
   // Cut time step size after, e.g., 4 digits of accuracy in order to make sure that there is no
   // drift in the time step size depending on the number of processors when using adaptive time
@@ -321,7 +321,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   // that the sequence of time step sizes is exactly reproducible with the results being
   // independent of the number of processors, which is important for code verification in a
   // parallel setting.
-  new_time_step = Utilities::truncate_to_n_digits(new_time_step, 4);
+  new_time_step = dealii::Utilities::truncate_to_n_digits(new_time_step, 4);
 
   return new_time_step;
 }
@@ -333,15 +333,15 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
 
 template<int dim, typename value_type>
 void
-calculate_cfl(LinearAlgebra::distributed::Vector<value_type> &       cfl,
-              Triangulation<dim> const &                             triangulation,
-              MatrixFree<dim, value_type> const &                    data,
-              unsigned int const                                     dof_index,
-              unsigned int const                                     quad_index,
-              LinearAlgebra::distributed::Vector<value_type> const & velocity,
-              double const                                           time_step,
-              unsigned int const                                     degree,
-              double const                                           exponent_fe_degree)
+calculate_cfl(dealii::LinearAlgebra::distributed::Vector<value_type> &       cfl,
+              dealii::Triangulation<dim> const &                             triangulation,
+              dealii::MatrixFree<dim, value_type> const &                    data,
+              unsigned int const                                             dof_index,
+              unsigned int const                                             quad_index,
+              dealii::LinearAlgebra::distributed::Vector<value_type> const & velocity,
+              double const                                                   time_step,
+              unsigned int const                                             degree,
+              double const                                                   exponent_fe_degree)
 {
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -355,12 +355,12 @@ calculate_cfl(LinearAlgebra::distributed::Vector<value_type> &       cfl,
     fe_eval.read_dof_values(velocity);
     fe_eval.evaluate(true, false);
 
-    VectorizedArray<value_type> u_va =
-      make_vectorized_array<value_type>(std::numeric_limits<value_type>::min());
+    dealii::VectorizedArray<value_type> u_va =
+      dealii::make_vectorized_array<value_type>(std::numeric_limits<value_type>::min());
 
-    Tensor<2, dim, VectorizedArray<value_type>> invJ;
-    Tensor<1, dim, VectorizedArray<value_type>> u_x;
-    Tensor<1, dim, VectorizedArray<value_type>> ut_xi;
+    dealii::Tensor<2, dim, dealii::VectorizedArray<value_type>> invJ;
+    dealii::Tensor<1, dim, dealii::VectorizedArray<value_type>> u_x;
+    dealii::Tensor<1, dim, dealii::VectorizedArray<value_type>> ut_xi;
 
     // loop over quadrature points
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)

@@ -26,19 +26,17 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionVelocity(double const H, double const max_velocity)
-    : Function<dim>(dim, 0.0), H(H), max_velocity(max_velocity)
+    : dealii::Function<dim>(dim, 0.0), H(H), max_velocity(max_velocity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -60,7 +58,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -192,7 +190,7 @@ public:
   {
     std::vector<unsigned int> repetitions(dim, 1);
     repetitions[0] = 2;
-    Point<dim> point1, point2;
+    dealii::Point<dim> point1, point2;
     point1[0] = 0.0;
     point1[1] = -H / 2;
     if(dim == 3)
@@ -203,15 +201,15 @@ public:
     if(dim == 3)
       point2[2] = H;
 
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     // set boundary indicator
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         if((std::fabs(cell->face(face)->center()(0) - L) < 1e-12))
           cell->face(face)->set_boundary_id(1);
@@ -224,28 +222,32 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
       pair(0, new AnalyticalSolutionVelocity<dim>(H, max_velocity)));
     this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -273,7 +275,7 @@ public:
 
     // ... pressure error
     pp_data.error_data_p.analytical_solution_available = true;
-    pp_data.error_data_p.analytical_solution.reset(new Functions::ZeroFunction<dim>(1));
+    pp_data.error_data_p.analytical_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
     pp_data.error_data_p.calculate_relative_errors = false;
     pp_data.error_data_p.error_calc_start_time     = start_time;
     pp_data.error_data_p.error_calc_interval_time  = (end_time - start_time) / 20;

@@ -41,15 +41,12 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
-
 template<int dim, typename Number>
 class ApplicationBase
 {
 public:
   virtual void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     // clang-format off
     prm.enter_subsection("Output");
@@ -62,7 +59,7 @@ public:
 
   ApplicationBase(std::string parameter_file, MPI_Comm const & comm)
     : mpi_comm(comm),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+      pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
       parameter_file(parameter_file)
   {
   }
@@ -144,7 +141,7 @@ public:
 protected:
   MPI_Comm const & mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   Parameters param;
 

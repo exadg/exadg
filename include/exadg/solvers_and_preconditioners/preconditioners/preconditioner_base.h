@@ -30,13 +30,11 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename value_type>
 class PreconditionerBase
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   virtual ~PreconditionerBase()
   {

@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 enum class BoundaryConditionType
 {
   HomogeneousDBC,
@@ -41,15 +39,15 @@ bool const RIGHT_HAND_SIDE =
   (BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS) ? true : false;
 
 template<int dim>
-class Solution : public Function<dim>
+class Solution : public dealii::Function<dim>
 {
 public:
-  Solution(double const diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
+  Solution(double const diffusivity) : dealii::Function<dim>(1, 0.0), diffusivity(diffusivity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t      = this->get_time();
     double result = 1.0;
@@ -57,24 +55,24 @@ public:
     if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
     {
       for(int d = 0; d < dim; d++)
-        result *= std::cos(p[d] * numbers::PI / 2.0);
-      result *= std::exp(-0.5 * diffusivity * pow(numbers::PI, 2.0) * t);
+        result *= std::cos(p[d] * dealii::numbers::PI / 2.0);
+      result *= std::exp(-0.5 * diffusivity * pow(dealii::numbers::PI, 2.0) * t);
     }
     else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
     {
       for(int d = 0; d < dim; d++)
-        result *= std::cos(p[d] * numbers::PI);
-      result *= std::exp(-2.0 * diffusivity * pow(numbers::PI, 2.0) * t);
+        result *= std::cos(p[d] * dealii::numbers::PI);
+      result *= std::exp(-2.0 * diffusivity * pow(dealii::numbers::PI, 2.0) * t);
     }
     else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
     {
       for(int d = 0; d < dim; d++)
-        result *= std::cos(p[d] * numbers::PI) + 1.0;
-      result *= std::exp(-2.0 * diffusivity * pow(numbers::PI, 2.0) * t);
+        result *= std::cos(p[d] * dealii::numbers::PI) + 1.0;
+      result *= std::exp(-2.0 * diffusivity * pow(dealii::numbers::PI, 2.0) * t);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return result;
@@ -85,15 +83,15 @@ private:
 };
 
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
-  RightHandSide(double const diffusivity) : Function<dim>(1, 0.0), diffusivity(diffusivity)
+  RightHandSide(double const diffusivity) : dealii::Function<dim>(1, 0.0), diffusivity(diffusivity)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -106,13 +104,13 @@ public:
     else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
     {
       for(int d = 0; d < dim; ++d)
-        result += std::cos(p[d] * numbers::PI) + 1;
-      result *= -std::pow(numbers::PI, 2.0) * diffusivity *
-                std::exp(-2.0 * diffusivity * pow(numbers::PI, 2.0) * t);
+        result += std::cos(p[d] * dealii::numbers::PI) + 1;
+      result *= -std::pow(dealii::numbers::PI, 2.0) * diffusivity *
+                std::exp(-2.0 * diffusivity * pow(dealii::numbers::PI, 2.0) * t);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     return result;
@@ -130,7 +128,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -202,7 +200,7 @@ public:
   create_grid() final
   {
     // hypercube volume is [left,right]^dim
-    GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -211,7 +209,8 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
     {
@@ -220,11 +219,12 @@ public:
     else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC ||
             BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
     {
-      this->boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+      this->boundary_descriptor->neumann_bc.insert(
+        pair(0, new dealii::Functions::ZeroFunction<dim>(1)));
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -233,7 +233,7 @@ public:
   {
     this->field_functions->initial_solution.reset(new Solution<dim>(diffusivity));
     this->field_functions->right_hand_side.reset(new RightHandSide<dim>(diffusivity));
-    this->field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

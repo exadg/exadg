@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number, int n_components>
 MultigridPreconditioner<dim, Number, n_components>::MultigridPreconditioner(
   MPI_Comm const & mpi_comm)
@@ -37,14 +35,14 @@ MultigridPreconditioner<dim, Number, n_components>::MultigridPreconditioner(
 template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize(
-  MultigridData const &                  mg_data,
-  Triangulation<dim> const *             tria,
-  FiniteElement<dim> const &             fe,
-  std::shared_ptr<Mapping<dim> const>    mapping,
-  LaplaceOperatorData<rank, dim> const & data_in,
-  bool const                             mesh_is_moving,
-  Map const *                            dirichlet_bc,
-  PeriodicFacePairs const *              periodic_face_pairs)
+  MultigridData const &                       mg_data,
+  dealii::Triangulation<dim> const *          tria,
+  dealii::FiniteElement<dim> const &          fe,
+  std::shared_ptr<dealii::Mapping<dim> const> mapping,
+  LaplaceOperatorData<rank, dim> const &      data_in,
+  bool const                                  mesh_is_moving,
+  Map const *                                 dirichlet_bc,
+  PeriodicFacePairs const *                   periodic_face_pairs)
 {
   data = data_in;
 
@@ -93,29 +91,29 @@ MultigridPreconditioner<dim, Number, n_components>::fill_matrix_free_data(
 
   if(data.use_cell_based_loops && this->level_info[level].is_dg())
   {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+    auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> const *>(
       &this->dof_handlers[level]->get_triangulation());
     Categorization::do_cell_based_loops(*tria, matrix_free_data.data, h_level);
   }
 
   matrix_free_data.insert_dof_handler(&(*this->dof_handlers[level]), "laplace_dof_handler");
   matrix_free_data.insert_constraint(&(*this->constraints[level]), "laplace_dof_handler");
-  matrix_free_data.insert_quadrature(QGauss<1>(this->level_info[level].degree() + 1),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(this->level_info[level].degree() + 1),
                                      "laplace_quadrature");
 }
 
 template<int dim, typename Number, int n_components>
 void
 MultigridPreconditioner<dim, Number, n_components>::initialize_constrained_dofs(
-  DoFHandler<dim> const & dof_handler,
-  MGConstrainedDoFs &     constrained_dofs,
-  Map const &             dirichlet_bc)
+  dealii::DoFHandler<dim> const & dof_handler,
+  dealii::MGConstrainedDoFs &     constrained_dofs,
+  Map const &                     dirichlet_bc)
 {
   // TODO: use the same code as for CG case below (which currently segfaults
   // if used for DG case as well)
   if(is_dg)
   {
-    std::set<types::boundary_id> dirichlet_boundary;
+    std::set<dealii::types::boundary_id> dirichlet_boundary;
     for(auto & it : dirichlet_bc)
       dirichlet_boundary.insert(it.first);
     constrained_dofs.initialize(dof_handler);
@@ -129,11 +127,11 @@ MultigridPreconditioner<dim, Number, n_components>::initialize_constrained_dofs(
     constrained_dofs.initialize(dof_handler);
     for(auto it : data.bc->dirichlet_bc)
     {
-      std::set<types::boundary_id> dirichlet_boundary;
+      std::set<dealii::types::boundary_id> dirichlet_boundary;
       dirichlet_boundary.insert(it.first);
 
-      ComponentMask mask    = ComponentMask();
-      auto          it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
+      dealii::ComponentMask mask    = dealii::ComponentMask();
+      auto                  it_mask = data.bc->dirichlet_bc_component_mask.find(it.first);
       if(it_mask != data.bc->dirichlet_bc_component_mask.end())
         mask = it_mask->second;
 

@@ -37,8 +37,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  * This function calculates statistics along lines by averaging over time.
  *
@@ -64,16 +62,16 @@ template<int dim, typename Number>
 class LinePlotCalculatorStatistics
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef
-    typename std::vector<std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>>
-      TYPE;
+  typedef typename std::vector<
+    std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>>
+    TYPE;
 
-  LinePlotCalculatorStatistics(DoFHandler<dim> const & dof_handler_velocity_in,
-                               DoFHandler<dim> const & dof_handler_pressure_in,
-                               Mapping<dim> const &    mapping_in,
-                               MPI_Comm const &        mpi_comm_in);
+  LinePlotCalculatorStatistics(dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+                               dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+                               dealii::Mapping<dim> const &    mapping_in,
+                               MPI_Comm const &                mpi_comm_in);
 
   void
   setup(LinePlotDataStatistics<dim> const & line_plot_data_in);
@@ -112,28 +110,28 @@ private:
 
   mutable bool clear_files;
 
-  DoFHandler<dim> const & dof_handler_velocity;
-  DoFHandler<dim> const & dof_handler_pressure;
-  Mapping<dim> const &    mapping;
-  MPI_Comm                mpi_comm;
+  dealii::DoFHandler<dim> const & dof_handler_velocity;
+  dealii::DoFHandler<dim> const & dof_handler_pressure;
+  dealii::Mapping<dim> const &    mapping;
+  MPI_Comm                        mpi_comm;
 
   LinePlotDataStatistics<dim> data;
 
   // Global points
-  std::vector<std::vector<Point<dim>>> global_points;
+  std::vector<std::vector<dealii::Point<dim>>> global_points;
 
   bool cell_data_has_been_initialized;
 
   // For all lines: for all points along the line: for all relevant cells: dof index of first dof of
   // current cell and all shape function values
-  std::vector<
-    std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>>
+  std::vector<std::vector<
+    std::vector<std::pair<std::vector<dealii::types::global_dof_index>, std::vector<Number>>>>>
     cells_global_velocity;
 
   // For all lines: for all points along the line: for all relevant cells: dof index of first dof of
   // current cell and all shape function values
-  std::vector<
-    std::vector<std::vector<std::pair<std::vector<types::global_dof_index>, std::vector<Number>>>>>
+  std::vector<std::vector<
+    std::vector<std::pair<std::vector<dealii::types::global_dof_index>, std::vector<Number>>>>>
     cells_global_pressure;
 
   // number of samples for averaging in time
@@ -141,7 +139,7 @@ private:
 
   // Velocity quantities
   // For all lines: for all points along the line
-  std::vector<std::vector<Tensor<1, dim, Number>>> velocity_global;
+  std::vector<std::vector<dealii::Tensor<1, dim, Number>>> velocity_global;
 
   // Pressure quantities
   // For all lines: for all points along the line

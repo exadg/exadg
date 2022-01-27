@@ -41,8 +41,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 class Parameters
 {
 public:
@@ -70,26 +68,26 @@ public:
 
   // print functions
   void
-  print(ConditionalOStream const & pcout, std::string const & name) const;
+  print(dealii::ConditionalOStream const & pcout, std::string const & name) const;
 
 private:
   void
-  print_parameters_mathematical_model(ConditionalOStream const & pcout) const;
+  print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_physical_quantities(ConditionalOStream const & pcout) const;
+  print_parameters_physical_quantities(dealii::ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_temporal_discretization(ConditionalOStream const & pcout) const;
+  print_parameters_temporal_discretization(dealii::ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_spatial_discretization(ConditionalOStream const & pcout) const;
+  print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_solver(ConditionalOStream const & pcout) const;
+  print_parameters_solver(dealii::ConditionalOStream const & pcout) const;
 
   void
-  print_parameters_numerical_parameters(ConditionalOStream const & pcout) const;
+  print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const;
 
 public:
   /**************************************************************************************/
@@ -314,10 +312,10 @@ public:
 
   // In case that the velocity field is prescribed analytically, it might be advantageous
   // from the point of view of computational costs to store the velocity field in a DoF
-  // vector instead of repeatedly calling Function<dim>::value() whenever evaluating the
+  // vector instead of repeatedly calling dealii::Function<dim>::value() whenever evaluating the
   // operator in iterative solvers. In other words, depending on the computer hardware it
   // might be more efficient to load a DoF vector and interpolate into the quadrature points
-  // than calculating the velocity field by means of Function<dim>::value().
+  // than calculating the velocity field by means of dealii::Function<dim>::value().
   // This strategy makes only sense in case of steady state problems or unsteady problems
   // with an implicit treatment of the convective term, i.e., in cases where the convective
   // term has to be evaluated more than once at a given time t.

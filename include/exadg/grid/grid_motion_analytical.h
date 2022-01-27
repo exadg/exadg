@@ -26,26 +26,24 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /**
  * Class for moving mesh problems based on mesh motions that can be described analytically via a
- * Function<dim> object.
+ * dealii::Function<dim> object.
  */
 template<int dim, typename Number>
 class GridMotionAnalytical : public GridMotionBase<dim, Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   /**
    * Constructor.
    */
-  GridMotionAnalytical(std::shared_ptr<Mapping<dim> const>  mapping_undeformed,
-                       unsigned int const                   mapping_degree_q_cache,
-                       Triangulation<dim> const &           triangulation,
-                       std::shared_ptr<Function<dim>> const mesh_movement_function,
-                       double const                         start_time)
+  GridMotionAnalytical(std::shared_ptr<dealii::Mapping<dim> const>  mapping_undeformed,
+                       unsigned int const                           mapping_degree_q_cache,
+                       dealii::Triangulation<dim> const &           triangulation,
+                       std::shared_ptr<dealii::Function<dim>> const mesh_movement_function,
+                       double const                                 start_time)
     : GridMotionBase<dim, Number>(mapping_undeformed, mapping_degree_q_cache, triangulation),
       mesh_movement_function(mesh_movement_function),
       triangulation(triangulation)
@@ -54,7 +52,7 @@ public:
   }
 
   /**
-   * Updates the grid coordinates using a Function<dim> object evaluated at a given time.
+   * Updates the grid coordinates using a dealii::Function<dim> object evaluated at a given time.
    */
   void
   update(double const time, bool const print_solver_info) override
@@ -68,36 +66,38 @@ public:
 
 private:
   /**
-   * Initializes the MappingQCache object by providing a Function<dim> that describes the
-   * displacement of the grid compared to an undeformed reference configuration described by the
-   * static mapping of this class.
+   * Initializes the dealii::MappingQCache object by providing a dealii::Function<dim> that
+   * describes the displacement of the grid compared to an undeformed reference configuration
+   * described by the static mapping of this class.
    */
   void
-  initialize(Triangulation<dim> const &     triangulation,
-             std::shared_ptr<Function<dim>> displacement_function)
+  initialize(dealii::Triangulation<dim> const &     triangulation,
+             std::shared_ptr<dealii::Function<dim>> displacement_function)
   {
-    AssertThrow(MultithreadInfo::n_threads() == 1, ExcNotImplemented());
+    AssertThrow(dealii::MultithreadInfo::n_threads() == 1, dealii::ExcNotImplemented());
 
-    // dummy FE for compatibility with interface of FEValues
-    FE_Nothing<dim> dummy_fe;
-    FEValues<dim>   fe_values(*this->mapping_undeformed,
-                            dummy_fe,
-                            QGaussLobatto<dim>(this->moving_mapping->get_degree() + 1),
-                            update_quadrature_points);
+    // dummy FE for compatibility with interface of dealii::FEValues
+    dealii::FE_Nothing<dim> dummy_fe;
+    dealii::FEValues<dim>   fe_values(*this->mapping_undeformed,
+                                    dummy_fe,
+                                    dealii::QGaussLobatto<dim>(this->moving_mapping->get_degree() +
+                                                               1),
+                                    dealii::update_quadrature_points);
 
     this->moving_mapping->initialize(
       triangulation,
-      [&](typename Triangulation<dim>::cell_iterator const & cell) -> std::vector<Point<dim>> {
+      [&](typename dealii::Triangulation<dim>::cell_iterator const & cell)
+        -> std::vector<dealii::Point<dim>> {
         fe_values.reinit(cell);
 
         // compute displacement and add to original position
-        std::vector<Point<dim>> points_moved(fe_values.n_quadrature_points);
+        std::vector<dealii::Point<dim>> points_moved(fe_values.n_quadrature_points);
         for(unsigned int i = 0; i < fe_values.n_quadrature_points; ++i)
         {
-          // need to adjust for hierarchic numbering of MappingQCache
-          Point<dim> const point = fe_values.quadrature_point(
+          // need to adjust for hierarchic numbering of dealii::MappingQCache
+          dealii::Point<dim> const point = fe_values.quadrature_point(
             this->moving_mapping->hierarchic_to_lexicographic_numbering[i]);
-          Point<dim> displacement;
+          dealii::Point<dim> displacement;
           for(unsigned int d = 0; d < dim; ++d)
             displacement[d] = displacement_function->value(point, d);
 
@@ -108,9 +108,9 @@ private:
       });
   }
 
-  std::shared_ptr<Function<dim>> mesh_movement_function;
+  std::shared_ptr<dealii::Function<dim>> mesh_movement_function;
 
-  Triangulation<dim> const & triangulation;
+  dealii::Triangulation<dim> const & triangulation;
 };
 
 } // namespace ExaDG

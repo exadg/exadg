@@ -31,21 +31,19 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /**
  * Specialized matrix-free implementation that overloads the copy_to_mg function for proper
  * initialization of the vectors in matrix-vector products.
  */
 template<int dim, typename Number>
-class MGTransferH : public MGTransferMatrixFree<dim, Number>,
-                    public MGTransfer<LinearAlgebra::distributed::Vector<Number>>
+class MGTransferH : public dealii::MGTransferMatrixFree<dim, Number>,
+                    public MGTransfer<dealii::LinearAlgebra::distributed::Vector<Number>>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   MGTransferH(std::map<unsigned int, unsigned int> level_to_triangulation_level_map,
-              DoFHandler<dim> const &              dof_handler);
+              dealii::DoFHandler<dim> const &      dof_handler);
 
   virtual ~MGTransferH()
   {
@@ -53,7 +51,7 @@ public:
 
   void
   set_operator(
-    MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const & operator_in);
+    dealii::MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const & operator_in);
 
   virtual void
   prolongate_and_add(unsigned int const to_level, VectorType & dst, VectorType const & src) const;
@@ -68,12 +66,13 @@ public:
    * Overload copy_to_mg from MGTransferMatrixFree
    */
   void
-  copy_to_mg(DoFHandler<dim, dim> const & mg_dof,
-             MGLevelObject<VectorType> &  dst,
-             VectorType const &           src) const;
+  copy_to_mg(dealii::DoFHandler<dim, dim> const & mg_dof,
+             dealii::MGLevelObject<VectorType> &  dst,
+             VectorType const &                   src) const;
 
 private:
-  MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const * underlying_operator;
+  dealii::MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> const *
+    underlying_operator;
 
   /*
    * This map converts the multigrid level as used in the V-cycle to an actual level in the
@@ -82,7 +81,7 @@ private:
    */
   mutable std::map<unsigned int, unsigned int> level_to_triangulation_level_map;
 
-  DoFHandler<dim> const & dof_handler;
+  dealii::DoFHandler<dim> const & dof_handler;
 };
 } // namespace ExaDG
 

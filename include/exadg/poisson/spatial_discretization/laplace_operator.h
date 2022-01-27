@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 namespace Operators
 {
 struct LaplaceKernelData
@@ -48,33 +46,33 @@ template<int dim, typename Number, int n_components = 1>
 class LaplaceKernel
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
   typedef FaceIntegrator<dim, n_components, Number> IntegratorFace;
 
 public:
-  LaplaceKernel() : degree(1), tau(make_vectorized_array<Number>(0.0))
+  LaplaceKernel() : degree(1), tau(dealii::make_vectorized_array<Number>(0.0))
   {
   }
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free,
-         LaplaceKernelData const &       data_in,
-         unsigned int const              dof_index)
+  reinit(dealii::MatrixFree<dim, Number> const & matrix_free,
+         LaplaceKernelData const &               data_in,
+         unsigned int const                      dof_index)
   {
     data = data_in;
 
-    FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
-    degree                        = fe.degree;
+    dealii::FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+    degree                                = fe.degree;
 
     calculate_penalty_parameter(matrix_free, dof_index);
   }
 
   void
-  calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const              dof_index)
+  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
+                              unsigned int const                      dof_index)
   {
     IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter, matrix_free, dof_index);
   }
@@ -108,17 +106,18 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells = update_gradients | update_JxW_values;
+    flags.cells = dealii::update_gradients | dealii::update_JxW_values;
 
     if(compute_interior_face_integrals)
     {
-      flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+      flags.inner_faces =
+        dealii::update_gradients | dealii::update_JxW_values | dealii::update_normal_vectors;
     }
 
     if(compute_boundary_face_integrals)
     {
-      flags.boundary_faces =
-        update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+      flags.boundary_faces = dealii::update_gradients | dealii::update_JxW_values |
+                             dealii::update_normal_vectors | dealii::update_quadrature_points;
     }
 
     return flags;
@@ -140,11 +139,11 @@ public:
   }
 
   void
-  reinit_face_cell_based(types::boundary_id const boundary_id,
-                         IntegratorFace &         integrator_m,
-                         IntegratorFace &         integrator_p) const
+  reinit_face_cell_based(dealii::types::boundary_id const boundary_id,
+                         IntegratorFace &                 integrator_m,
+                         IntegratorFace &                 integrator_p) const
   {
-    if(boundary_id == numbers::internal_face_boundary_id) // internal face
+    if(boundary_id == dealii::numbers::internal_face_boundary_id) // internal face
     {
       tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                      integrator_p.read_cell_data(array_penalty_parameter)) *
@@ -181,7 +180,7 @@ private:
 
   unsigned int degree;
 
-  AlignedVector<scalar> array_penalty_parameter;
+  dealii::AlignedVector<scalar> array_penalty_parameter;
 
   mutable scalar tau;
 };
@@ -210,7 +209,7 @@ class LaplaceOperator : public OperatorBase<dim, Number, n_components>
 {
 private:
   static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : dealii::numbers::invalid_unsigned_int);
 
   typedef OperatorBase<dim, Number, n_components>    Base;
   typedef LaplaceOperator<dim, Number, n_components> This;
@@ -220,7 +219,7 @@ private:
 
   typedef typename Base::Range Range;
 
-  typedef Tensor<rank, dim, VectorizedArray<Number>> value;
+  typedef dealii::Tensor<rank, dim, dealii::VectorizedArray<Number>> value;
 
   typedef typename Base::VectorType VectorType;
 
@@ -228,9 +227,9 @@ public:
   typedef Number value_type;
 
   void
-  initialize(MatrixFree<dim, Number> const &        matrix_free,
-             AffineConstraints<Number> const &      affine_constraints,
-             LaplaceOperatorData<rank, dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             LaplaceOperatorData<rank, dim> const &    data);
 
   LaplaceOperatorData<rank, dim> const &
   get_data() const
@@ -239,15 +238,15 @@ public:
   }
 
   void
-  calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
-                              unsigned int const              dof_index);
+  calculate_penalty_parameter(dealii::MatrixFree<dim, Number> const & matrix_free,
+                              unsigned int const                      dof_index);
 
   void
   update_penalty_parameter();
 
   // Some more functionality on top of what is provided by the base class.
   // This function evaluates the inhomogeneous boundary face integrals in DG where the
-  // Dirichlet boundary condition is extracted from a dof vector instead of a Function<dim>.
+  // Dirichlet boundary condition is extracted from a dof vector instead of a dealii::Function<dim>.
   void
   rhs_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
@@ -263,9 +262,9 @@ private:
   reinit_boundary_face(unsigned int const face) const final;
 
   void
-  reinit_face_cell_based(unsigned int const       cell,
-                         unsigned int const       face,
-                         types::boundary_id const boundary_id) const final;
+  reinit_face_cell_based(unsigned int const               cell,
+                         unsigned int const               face,
+                         dealii::types::boundary_id const boundary_id) const final;
 
   void
   do_cell_integral(IntegratorCell & integrator) const final;
@@ -280,40 +279,41 @@ private:
   do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const final;
 
   void
-  do_boundary_integral(IntegratorFace &           integrator_m,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const final;
+  do_boundary_integral(IntegratorFace &                   integrator_m,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const final;
 
   void
-  cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                  VectorType &                    dst,
-                  VectorType const &              src,
-                  Range const &                   range) const;
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           range) const;
 
   void
-  face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
-                  VectorType &                    dst,
-                  VectorType const &              src,
-                  Range const &                   range) const;
+  face_loop_empty(dealii::MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                            dst,
+                  VectorType const &                      src,
+                  Range const &                           range) const;
 
   // DG
   void
   boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   range) const;
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           range) const;
 
   // DG
   void
-  do_boundary_integral_dirichlet_bc_from_dof_vector(IntegratorFace &           integrator_m,
-                                                    OperatorType const &       operator_type,
-                                                    types::boundary_id const & boundary_id) const;
+  do_boundary_integral_dirichlet_bc_from_dof_vector(
+    IntegratorFace &                   integrator_m,
+    OperatorType const &               operator_type,
+    dealii::types::boundary_id const & boundary_id) const;
 
   // continuous FE: calculates Neumann boundary integral
   void
-  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  types::boundary_id const & boundary_id) const final;
+  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
+                                  dealii::types::boundary_id const & boundary_id) const final;
 
   LaplaceOperatorData<rank, dim> operator_data;
 

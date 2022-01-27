@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  * Note:
  * The default argument "double" could be removed but this implies that all BoundaryDescriptors
@@ -37,36 +35,37 @@ class FunctionCached
 {
 private:
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
-  typedef std::map<Id, types::global_dof_index>                                     MapVectorIndex;
-  typedef std::vector<Tensor<rank, dim, Number>>                                    ArrayTensor;
+  typedef std::map<Id, dealii::types::global_dof_index>                             MapVectorIndex;
+  typedef std::vector<dealii::Tensor<rank, dim, Number>>                            ArrayTensor;
 
 public:
   FunctionCached() : global_map_vector_index(nullptr), map_solution(nullptr)
   {
   }
 
-  Tensor<rank, dim, Number>
+  dealii::Tensor<rank, dim, Number>
   tensor_value(unsigned int const face,
                unsigned int const q,
                unsigned int const v,
                unsigned int const quad_index) const
   {
     Assert(global_map_vector_index != nullptr,
-           ExcMessage("Pointer global_map_vector_index is not initialized."));
+           dealii::ExcMessage("Pointer global_map_vector_index is not initialized."));
     Assert(global_map_vector_index->find(quad_index) != global_map_vector_index->end(),
-           ExcMessage("Specified quad_index does not exist in global_map_vector_index."));
+           dealii::ExcMessage("Specified quad_index does not exist in global_map_vector_index."));
 
-    Assert(map_solution != nullptr, ExcMessage("Pointer map_solution is not initialized."));
+    Assert(map_solution != nullptr, dealii::ExcMessage("Pointer map_solution is not initialized."));
     Assert(map_solution->find(quad_index) != map_solution->end(),
-           ExcMessage("Specified quad_index does not exist in map_solution."));
+           dealii::ExcMessage("Specified quad_index does not exist in map_solution."));
 
     MapVectorIndex const & map_vector_index = global_map_vector_index->find(quad_index)->second;
     ArrayTensor const &    array_solution   = map_solution->find(quad_index)->second;
 
-    Id                      id    = std::make_tuple(face, q, v);
-    types::global_dof_index index = map_vector_index.find(id)->second;
+    Id                              id    = std::make_tuple(face, q, v);
+    dealii::types::global_dof_index index = map_vector_index.find(id)->second;
 
-    Assert(index < array_solution.size(), ExcMessage("Index exceeds dimensions of vector."));
+    Assert(index < array_solution.size(),
+           dealii::ExcMessage("Index exceeds dimensions of vector."));
 
     return array_solution[index];
   }

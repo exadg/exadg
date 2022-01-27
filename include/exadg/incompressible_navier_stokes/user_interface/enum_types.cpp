@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -54,7 +52,7 @@ enum_to_string(ProblemType const enum_type)
       string_type = "Unsteady";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -81,7 +79,7 @@ enum_to_string(EquationType const enum_type)
       string_type = "NavierStokes";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -105,7 +103,7 @@ enum_to_string(FormulationViscousTerm const enum_type)
       string_type = "LaplaceFormulation";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -129,7 +127,7 @@ enum_to_string(FormulationConvectiveTerm const enum_type)
       string_type = "ConvectiveFormulation";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -153,7 +151,7 @@ enum_to_string(MeshMovementType const enum_type)
       string_type = "Elasticity";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -194,7 +192,7 @@ enum_to_string(TemporalDiscretization const enum_type)
       string_type = "BDF coupled solution";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -221,7 +219,7 @@ enum_to_string(TreatmentOfConvectiveTerm const enum_type)
       string_type = "Implicit";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -269,7 +267,7 @@ enum_to_string(TimeIntegratorOIF const enum_type)
       string_type = "ExplRK5Stage9Reg2S";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -297,7 +295,7 @@ enum_to_string(TimeStepCalculation const enum_type)
       string_type = "MaxEfficiency";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -321,7 +319,7 @@ enum_to_string(ConvergenceCriterionSteadyProblem const enum_type)
       string_type = "SolutionIncrement";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -342,7 +340,7 @@ enum_to_string(DegreePressure const enum_type)
       string_type = "Equal-order";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -369,7 +367,7 @@ enum_to_string(TypeDirichletBCs const enum_type)
       string_type = "Mirror";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -393,7 +391,7 @@ enum_to_string(InteriorPenaltyFormulation const enum_type)
       string_type = "NIPG";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -417,7 +415,7 @@ enum_to_string(PenaltyTermDivergenceFormulation const enum_type)
       string_type = "NotSymmetrized";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -441,7 +439,7 @@ enum_to_string(AdjustPressureLevel const enum_type)
       string_type = "ApplyAnalyticalSolutionInPoint";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -462,7 +460,7 @@ enum_to_string(FormulationVelocityDivergenceTerm const enum_type)
       string_type = "Strong";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -483,7 +481,7 @@ enum_to_string(FormulationPressureGradientTerm const enum_type)
       string_type = "Strong";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -507,7 +505,7 @@ enum_to_string(ContinuityPenaltyComponents const enum_type)
       string_type = "Normal";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -534,7 +532,7 @@ enum_to_string(TypePenaltyParameter const enum_type)
       string_type = "ViscousAndConvectiveTerms";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -564,7 +562,7 @@ enum_to_string(MultigridOperatorType const enum_type)
       string_type = "ReactionConvectionDiffusion";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -585,7 +583,7 @@ enum_to_string(QuadratureRuleLinearization const enum_type)
       string_type = "Over-integration (3/2k)";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -612,7 +610,7 @@ enum_to_string(SolverPressurePoisson const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -636,7 +634,7 @@ enum_to_string(PreconditionerPressurePoisson const enum_type)
       string_type = "Multigrid";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -657,7 +655,7 @@ enum_to_string(SolverProjection const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -687,7 +685,7 @@ enum_to_string(PreconditionerProjection const enum_type)
       string_type = "Multigrid";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -711,7 +709,7 @@ enum_to_string(SolverViscous const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -741,7 +739,7 @@ enum_to_string(PreconditionerViscous const enum_type)
       string_type = "Multigrid";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -765,7 +763,7 @@ enum_to_string(SolverMomentum const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -786,7 +784,7 @@ enum_to_string(SolverCoupled const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -813,7 +811,7 @@ enum_to_string(PreconditionerCoupled const enum_type)
       string_type = "BlockTriangularFactorization";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -843,7 +841,7 @@ enum_to_string(MomentumPreconditioner const enum_type)
       string_type = "Multigrid";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -873,7 +871,7 @@ enum_to_string(SchurComplementPreconditioner const enum_type)
       string_type = "PressureConvectionDiffusion";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -909,7 +907,7 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type)
       string_type = "Sigma";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

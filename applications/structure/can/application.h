@@ -26,19 +26,19 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim>
-class DisplacementDBC : public Function<dim>
+class DisplacementDBC : public dealii::Function<dim>
 {
 public:
   DisplacementDBC(double displacement, bool incremental_loading)
-    : Function<dim>(dim), displacement(displacement), incremental_loading(incremental_loading)
+    : dealii::Function<dim>(dim),
+      displacement(displacement),
+      incremental_loading(incremental_loading)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -58,16 +58,16 @@ private:
 };
 
 template<int dim>
-class AreaForce : public Function<dim>
+class AreaForce : public dealii::Function<dim>
 {
 public:
   AreaForce(double force, bool incremental_loading)
-    : Function<dim>(dim), force(force), incremental_loading(incremental_loading)
+    : dealii::Function<dim>(dim), force(force), incremental_loading(incremental_loading)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -87,15 +87,15 @@ private:
 };
 
 template<int dim>
-class VolumeForce : public Function<dim>
+class VolumeForce : public dealii::Function<dim>
 {
 public:
-  VolumeForce(double volume_force) : Function<dim>(dim), volume_force(volume_force)
+  VolumeForce(double volume_force) : dealii::Function<dim>(dim), volume_force(volume_force)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const c) const
+  value(dealii::Point<dim> const & p, unsigned int const c) const
   {
     (void)p;
 
@@ -117,13 +117,13 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
 
   void
-  add_parameters(ParameterHandler & prm)
+  add_parameters(dealii::ParameterHandler & prm)
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -134,7 +134,7 @@ public:
     prm.add_parameter("Height",           height,           "Height.");
     prm.add_parameter("UseVolumeForce",   use_volume_force, "Use volume force.");
     prm.add_parameter("VolumeForce",      volume_force,     "Volume force.");
-    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.", Patterns::Selection("Dirichlet|Neumann"));
+    prm.add_parameter("BoundaryType",     boundary_type,    "Type of boundary condition, Dirichlet vs Neumann.", dealii::Patterns::Selection("Dirichlet|Neumann"));
     prm.add_parameter("Displacement",     displacement,     "Diplacement of right boundary in case of Dirichlet BC.");
     prm.add_parameter("Traction",         area_force,       "Traction acting on right boundary in case of Neumann BC.");
     prm.leave_subsection();
@@ -184,18 +184,21 @@ public:
   void
   create_grid() final
   {
-    AssertThrow(dim == 3, ExcMessage("This application only makes sense for dim=3."));
+    AssertThrow(dim == 3, dealii::ExcMessage("This application only makes sense for dim=3."));
 
-    GridGenerator::cylinder_shell(*this->grid->triangulation, height, inner_radius, outer_radius);
+    dealii::GridGenerator::cylinder_shell(*this->grid->triangulation,
+                                          height,
+                                          inner_radius,
+                                          outer_radius);
 
     // 0 = bottom ; 1 = top ; 2 = inner and outer radius
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if(cell->face(f)->at_boundary())
         {
-          Point<dim> const face_center = cell->face(f)->center();
+          dealii::Point<dim> const face_center = cell->face(f)->center();
 
           // bottom
           if(dim == 3 && std::abs(face_center[dim - 1] - 0.0) < 1.e-8)
@@ -222,13 +225,15 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
-    typedef typename std::pair<types::boundary_id, ComponentMask>                  pair_mask;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+                                                                                  pair;
+    typedef typename std::pair<dealii::types::boundary_id, dealii::ComponentMask> pair_mask;
 
     // Dirichlet BC at the bottom (boundary_id = 0)
     //     std::vector<bool> mask_lower = {false, false, true}; // let boundary slide in x-y-plane
     std::vector<bool> mask_lower = {true, true, true}; // clamp boundary, i.e., fix all directions
-    this->boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->dirichlet_bc_component_mask.insert(pair_mask(0, mask_lower));
 
     // BC at the top (boundary_id = 1)
@@ -249,17 +254,18 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
 
     // Neumann BC at the inner and outer radius (boundary_id = 2)
-    this->boundary_descriptor->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+    this->boundary_descriptor->neumann_bc.insert(
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
   set_material_descriptor() final
   {
-    typedef std::pair<types::material_id, std::shared_ptr<MaterialData>> Pair;
+    typedef std::pair<dealii::types::material_id, std::shared_ptr<MaterialData>> Pair;
 
     MaterialType const type = MaterialType::StVenantKirchhoff;
     double const       E = 200.0e9, nu = 0.3;
@@ -275,10 +281,11 @@ public:
     if(use_volume_force)
       this->field_functions->right_hand_side.reset(new VolumeForce<dim>(volume_force));
     else
-      this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+      this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
 
-    this->field_functions->initial_displacement.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_displacement.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_velocity.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessor<dim, Number>>

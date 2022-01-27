@@ -18,8 +18,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 // clang-format off
 /*
  * Velocity:
@@ -41,13 +39,13 @@ using namespace dealii;
 // clang-format on
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<1, dim, VectorizedArray<Number>>
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
   calculate_interior_value(unsigned int const                       q,
                            FaceIntegrator<dim, dim, Number> const & integrator,
                            OperatorType const &                     operator_type)
 {
   // element e⁻
-  Tensor<1, dim, VectorizedArray<Number>> value_m;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_m;
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
@@ -59,7 +57,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
   }
 
   return value_m;
@@ -67,24 +65,25 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
-    calculate_exterior_value(Tensor<1, dim, VectorizedArray<Number>> const & value_m,
-                             unsigned int const                              q,
-                             FaceIntegrator<dim, dim, Number> const &        integrator,
-                             OperatorType const &                            operator_type,
-                             BoundaryTypeU const &                           boundary_type,
-                             types::boundary_id const                        boundary_id,
-                             std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
-                             double const &                                  time)
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
+    calculate_exterior_value(
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & value_m,
+      unsigned int const                                              q,
+      FaceIntegrator<dim, dim, Number> const &                        integrator,
+      OperatorType const &                                            operator_type,
+      BoundaryTypeU const &                                           boundary_type,
+      dealii::types::boundary_id const                                boundary_id,
+      std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
+      double const &                                                  time)
 {
   // element e⁺
-  Tensor<1, dim, VectorizedArray<Number>> value_p;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_p;
 
   if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      Tensor<1, dim, VectorizedArray<Number>> g;
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
       if(boundary_type == BoundaryTypeU::Dirichlet)
       {
@@ -103,10 +102,10 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
 
-      value_p = -value_m + Tensor<1, dim, VectorizedArray<Number>>(2.0 * g);
+      value_p = -value_m + dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>(2.0 * g);
     }
     else if(operator_type == OperatorType::homogeneous)
     {
@@ -114,7 +113,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+      AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
     }
   }
   else if(boundary_type == BoundaryTypeU::Neumann)
@@ -123,13 +122,14 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator.get_normal_vector(q);
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
+      integrator.get_normal_vector(q);
 
     value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
   }
   else
   {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return value_p;
@@ -148,22 +148,22 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
     calculate_exterior_value_nonlinear(
-      Tensor<1, dim, VectorizedArray<Number>> const & u_m,
-      unsigned int const                              q,
-      FaceIntegrator<dim, dim, Number> &              integrator,
-      BoundaryTypeU const &                           boundary_type,
-      TypeDirichletBCs const &                        type_dirichlet_bc,
-      types::boundary_id const                        boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
-      double const &                                  time)
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & u_m,
+      unsigned int const                                              q,
+      FaceIntegrator<dim, dim, Number> &                              integrator,
+      BoundaryTypeU const &                                           boundary_type,
+      TypeDirichletBCs const &                                        type_dirichlet_bc,
+      dealii::types::boundary_id const                                boundary_id,
+      std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
+      double const &                                                  time)
 {
-  Tensor<1, dim, VectorizedArray<Number>> u_p;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> u_p;
 
   if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
-    Tensor<1, dim, VectorizedArray<Number>> g;
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g;
 
     if(boundary_type == BoundaryTypeU::Dirichlet)
     {
@@ -182,12 +182,12 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
     {
-      u_p = -u_m + make_vectorized_array<Number>(2.0) * g;
+      u_p = -u_m + dealii::make_vectorized_array<Number>(2.0) * g;
     }
     else if(type_dirichlet_bc == TypeDirichletBCs::Direct)
     {
@@ -195,7 +195,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("TypeDirichletBCs is not implemented."));
+      AssertThrow(false, dealii::ExcMessage("TypeDirichletBCs is not implemented."));
     }
   }
   else if(boundary_type == BoundaryTypeU::Neumann)
@@ -204,13 +204,14 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator.get_normal_vector(q);
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
+      integrator.get_normal_vector(q);
 
     u_p = u_m - 2. * (u_m * normal_m) * normal_m;
   }
   else
   {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return u_p;
@@ -218,24 +219,24 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
     calculate_exterior_value_from_dof_vector(
-      Tensor<1, dim, VectorizedArray<Number>> const & value_m,
-      unsigned int const                              q,
-      FaceIntegrator<dim, dim, Number> const &        integrator_bc,
-      OperatorType const &                            operator_type,
-      BoundaryTypeU const &                           boundary_type)
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & value_m,
+      unsigned int const                                              q,
+      FaceIntegrator<dim, dim, Number> const &                        integrator_bc,
+      OperatorType const &                                            operator_type,
+      BoundaryTypeU const &                                           boundary_type)
 {
   // element e⁺
-  Tensor<1, dim, VectorizedArray<Number>> value_p;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> value_p;
 
   if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      Tensor<1, dim, VectorizedArray<Number>> g = integrator_bc.get_value(q);
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> g = integrator_bc.get_value(q);
 
-      value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
+      value_p = -value_m + dealii::make_vectorized_array<Number>(2.0) * g;
     }
     else if(operator_type == OperatorType::homogeneous)
     {
@@ -243,7 +244,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+      AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
     }
   }
   else if(boundary_type == BoundaryTypeU::Neumann)
@@ -252,13 +253,14 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator_bc.get_normal_vector(q);
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_m =
+      integrator_bc.get_normal_vector(q);
 
     value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
   }
   else
   {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return value_p;
@@ -283,13 +285,13 @@ inline DEAL_II_ALWAYS_INLINE //
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
+  dealii::VectorizedArray<Number>
   calculate_interior_value(unsigned int const                     q,
                            FaceIntegrator<dim, 1, Number> const & integrator,
                            OperatorType const &                   operator_type)
 {
   // element e⁻
-  VectorizedArray<Number> value_m = make_vectorized_array<Number>(0.0);
+  dealii::VectorizedArray<Number> value_m = dealii::make_vectorized_array<Number>(0.0);
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
@@ -301,7 +303,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
   }
 
   return value_m;
@@ -310,18 +312,18 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_exterior_value(VectorizedArray<Number> const &                 value_m,
+  dealii::VectorizedArray<Number>
+  calculate_exterior_value(dealii::VectorizedArray<Number> const &         value_m,
                            unsigned int const                              q,
                            FaceIntegrator<dim, 1, Number> const &          integrator,
                            OperatorType const &                            operator_type,
                            BoundaryTypeP const &                           boundary_type,
-                           types::boundary_id const                        boundary_id,
+                           dealii::types::boundary_id const                boundary_id,
                            std::shared_ptr<BoundaryDescriptorP<dim> const> boundary_descriptor,
                            double const &                                  time,
                            double const &                                  inverse_scaling_factor)
 {
-  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
+  dealii::VectorizedArray<Number> value_p = dealii::make_vectorized_array<Number>(0.0);
 
   if(boundary_type == BoundaryTypeP::Dirichlet)
   {
@@ -330,7 +332,8 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      VectorizedArray<Number> g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, time);
+      dealii::VectorizedArray<Number> g =
+        FunctionEvaluator<0, dim, Number>::value(bc, q_points, time);
 
       value_p = -value_m + 2.0 * inverse_scaling_factor * g;
     }
@@ -340,7 +343,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+      AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
     }
   }
   else if(boundary_type == BoundaryTypeP::Neumann)
@@ -349,7 +352,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return value_p;
@@ -357,21 +360,21 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  calculate_exterior_value_from_dof_vector(VectorizedArray<Number> const &        value_m,
-                                           unsigned int const                     q,
-                                           FaceIntegrator<dim, 1, Number> const & integrator_bc,
-                                           OperatorType const &                   operator_type,
-                                           BoundaryTypeP const &                  boundary_type,
+  dealii::VectorizedArray<Number>
+  calculate_exterior_value_from_dof_vector(dealii::VectorizedArray<Number> const & value_m,
+                                           unsigned int const                      q,
+                                           FaceIntegrator<dim, 1, Number> const &  integrator_bc,
+                                           OperatorType const &                    operator_type,
+                                           BoundaryTypeP const &                   boundary_type,
                                            double const & inverse_scaling_factor)
 {
-  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
+  dealii::VectorizedArray<Number> value_p = dealii::make_vectorized_array<Number>(0.0);
 
   if(boundary_type == BoundaryTypeP::Dirichlet)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      VectorizedArray<Number> g = integrator_bc.get_value(q);
+      dealii::VectorizedArray<Number> g = integrator_bc.get_value(q);
 
       value_p = -value_m + 2.0 * inverse_scaling_factor * g;
     }
@@ -381,7 +384,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+      AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
     }
   }
   else if(boundary_type == BoundaryTypeP::Neumann)
@@ -390,7 +393,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return value_p;
@@ -429,19 +432,19 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
+    dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
     calculate_exterior_normal_gradient(
-      Tensor<1, dim, VectorizedArray<Number>> const & normal_gradient_m,
-      unsigned int const                              q,
-      FaceIntegrator<dim, dim, Number> const &        integrator,
-      OperatorType const &                            operator_type,
-      BoundaryTypeU const &                           boundary_type,
-      types::boundary_id const                        boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim> const> boundary_descriptor,
-      double const &                                  time,
-      bool const                                      variable_normal_vector)
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> const & normal_gradient_m,
+      unsigned int const                                              q,
+      FaceIntegrator<dim, dim, Number> const &                        integrator,
+      OperatorType const &                                            operator_type,
+      BoundaryTypeU const &                                           boundary_type,
+      dealii::types::boundary_id const                                boundary_id,
+      std::shared_ptr<BoundaryDescriptorU<dim> const>                 boundary_descriptor,
+      double const &                                                  time,
+      bool const                                                      variable_normal_vector)
 {
-  Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> normal_gradient_p;
 
   if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
   {
@@ -454,7 +457,7 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<Number>> h;
+      dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> h;
       if(variable_normal_vector == false)
       {
         h = FunctionEvaluator<1, dim, Number>::value(bc, q_points, time);
@@ -473,7 +476,7 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+      AssertThrow(false, dealii::ExcMessage("Specified OperatorType is not implemented!"));
     }
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
@@ -483,7 +486,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else
   {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return normal_gradient_p;

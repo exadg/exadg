@@ -24,12 +24,10 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MGTransferH<dim, Number>::MGTransferH(
   std::map<unsigned int, unsigned int> level_to_triangulation_level_map,
-  DoFHandler<dim> const &              dof_handler)
+  dealii::DoFHandler<dim> const &      dof_handler)
   : underlying_operator(0),
     level_to_triangulation_level_map(level_to_triangulation_level_map),
     dof_handler(dof_handler)
@@ -39,7 +37,7 @@ MGTransferH<dim, Number>::MGTransferH(
 template<int dim, typename Number>
 void
 MGTransferH<dim, Number>::set_operator(
-  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> & operator_in)
+  const dealii::MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> & operator_in)
 {
   underlying_operator = &operator_in;
 }
@@ -50,9 +48,8 @@ MGTransferH<dim, Number>::prolongate_and_add(unsigned int const to_level,
                                              VectorType &       dst,
                                              VectorType const & src) const
 {
-  MGTransferMatrixFree<dim, Number>::prolongate_and_add(level_to_triangulation_level_map[to_level],
-                                                        dst,
-                                                        src);
+  dealii::MGTransferMatrixFree<dim, Number>::prolongate_and_add(
+    level_to_triangulation_level_map[to_level], dst, src);
 }
 
 template<int dim, typename Number>
@@ -61,9 +58,8 @@ MGTransferH<dim, Number>::restrict_and_add(unsigned int const from_level,
                                            VectorType &       dst,
                                            VectorType const & src) const
 {
-  MGTransferMatrixFree<dim, Number>::restrict_and_add(level_to_triangulation_level_map[from_level],
-                                                      dst,
-                                                      src);
+  dealii::MGTransferMatrixFree<dim, Number>::restrict_and_add(
+    level_to_triangulation_level_map[from_level], dst, src);
 }
 
 template<int dim, typename Number>
@@ -75,25 +71,25 @@ MGTransferH<dim, Number>::interpolate(unsigned int const level_in,
   auto & fe    = dof_handler.get_fe();
   auto   level = level_to_triangulation_level_map[level_in];
 
-  LinearAlgebra::distributed::Vector<Number> src_ghosted;
-  IndexSet                                   relevant_dofs;
-  DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+  dealii::LinearAlgebra::distributed::Vector<Number> src_ghosted;
+  dealii::IndexSet                                   relevant_dofs;
+  dealii::DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
   src_ghosted.reinit(dof_handler.locally_owned_mg_dofs(level),
                      relevant_dofs,
                      src.get_mpi_communicator());
   src_ghosted.copy_locally_owned_data_from(src);
   src_ghosted.update_ghost_values();
 
-  std::vector<Number>                     dof_values_coarse(fe.dofs_per_cell);
-  Vector<Number>                          dof_values_fine(fe.dofs_per_cell);
-  Vector<Number>                          tmp(fe.dofs_per_cell);
-  std::vector<types::global_dof_index>    dof_indices(fe.dofs_per_cell);
-  typename DoFHandler<dim>::cell_iterator cell = dof_handler.begin(level - 1);
-  typename DoFHandler<dim>::cell_iterator endc = dof_handler.end(level - 1);
+  std::vector<Number>                             dof_values_coarse(fe.dofs_per_cell);
+  dealii::Vector<Number>                          dof_values_fine(fe.dofs_per_cell);
+  dealii::Vector<Number>                          tmp(fe.dofs_per_cell);
+  std::vector<dealii::types::global_dof_index>    dof_indices(fe.dofs_per_cell);
+  typename dealii::DoFHandler<dim>::cell_iterator cell = dof_handler.begin(level - 1);
+  typename dealii::DoFHandler<dim>::cell_iterator endc = dof_handler.end(level - 1);
   for(; cell != endc; ++cell)
     if(cell->is_locally_owned_on_level())
     {
-      Assert(cell->has_children(), ExcNotImplemented());
+      Assert(cell->has_children(), dealii::ExcNotImplemented());
       std::fill(dof_values_coarse.begin(), dof_values_coarse.end(), 0.);
       for(unsigned int child = 0; child < cell->n_children(); ++child)
       {
@@ -118,16 +114,16 @@ MGTransferH<dim, Number>::interpolate(unsigned int const level_in,
 
 template<int dim, typename Number>
 void
-MGTransferH<dim, Number>::copy_to_mg(const DoFHandler<dim, dim> & mg_dof,
-                                     MGLevelObject<VectorType> &  dst,
-                                     VectorType const &           src) const
+MGTransferH<dim, Number>::copy_to_mg(const dealii::DoFHandler<dim, dim> & mg_dof,
+                                     dealii::MGLevelObject<VectorType> &  dst,
+                                     VectorType const &                   src) const
 {
-  AssertThrow(underlying_operator != 0, ExcNotInitialized());
+  AssertThrow(underlying_operator != 0, dealii::ExcNotInitialized());
 
   for(unsigned int level = dst.min_level(); level <= dst.max_level(); ++level)
     (*underlying_operator)[level]->initialize_dof_vector(dst[level]);
 
-  MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
+  dealii::MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
 }
 
 template class MGTransferH<2, float>;

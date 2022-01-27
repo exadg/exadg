@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 VelocityMagnitudeCalculator<dim, Number>::VelocityMagnitudeCalculator()
   : matrix_free(nullptr), dof_index_u(0), dof_index_u_scalar(0), quad_index(0)
@@ -35,10 +33,11 @@ VelocityMagnitudeCalculator<dim, Number>::VelocityMagnitudeCalculator()
 
 template<int dim, typename Number>
 void
-VelocityMagnitudeCalculator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free_in,
-                                                     unsigned int const              dof_index_u_in,
-                                                     unsigned int const dof_index_u_scalar_in,
-                                                     unsigned int const quad_index_in)
+VelocityMagnitudeCalculator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
+  unsigned int const                      dof_index_u_in,
+  unsigned int const                      dof_index_u_scalar_in,
+  unsigned int const                      quad_index_in)
 {
   matrix_free        = &matrix_free_in;
   dof_index_u        = dof_index_u_in;
@@ -57,10 +56,11 @@ VelocityMagnitudeCalculator<dim, Number>::compute(VectorType & dst, VectorType c
 
 template<int dim, typename Number>
 void
-VelocityMagnitudeCalculator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                                    VectorType &                    dst,
-                                                    VectorType const &              src,
-                                                    Range const & cell_range) const
+VelocityMagnitudeCalculator<dim, Number>::cell_loop(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           cell_range) const
 {
   IntegratorVector integrator_vector(matrix_free, dof_index_u, quad_index);
   IntegratorScalar integrator_scalar(matrix_free, dof_index_u_scalar, quad_index);

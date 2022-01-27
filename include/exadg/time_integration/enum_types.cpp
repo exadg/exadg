@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 std::string
 enum_to_string(CFLConditionType const enum_type)
 {
@@ -43,7 +41,7 @@ enum_to_string(CFLConditionType const enum_type)
       string_type = "VelocityComponents";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -70,7 +68,7 @@ enum_to_string(GenAlphaType const enum_type)
       string_type = "BossakAlpha";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

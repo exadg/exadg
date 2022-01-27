@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 // manually compute eigenvalues for the coarsest level for proper setup of the
 // Chebyshev iteration
 template<typename Operator, typename VectorType>
@@ -45,13 +43,13 @@ compute_eigenvalues(Operator const &   op,
   if(operator_is_singular)
     set_zero_mean_value(rhs);
 
-  SolverControl control(eig_n_iter, rhs.l2_norm() * 1e-5);
-  internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;
+  dealii::SolverControl control(eig_n_iter, rhs.l2_norm() * 1e-5);
+  dealii::internal::PreconditionChebyshevImplementation::EigenvalueTracker eigenvalue_tracker;
 
-  SolverCG<VectorType> solver(control);
+  dealii::SolverCG<VectorType> solver(control);
 
   solver.connect_eigenvalues_slot(
-    std::bind(&internal::PreconditionChebyshevImplementation::EigenvalueTracker::slot,
+    std::bind(&dealii::internal::PreconditionChebyshevImplementation::EigenvalueTracker::slot,
               &eigenvalue_tracker,
               std::placeholders::_1));
 
@@ -61,7 +59,7 @@ compute_eigenvalues(Operator const &   op,
   {
     solver.solve(op, solution, rhs, preconditioner);
   }
-  catch(SolverControl::NoConvergence &)
+  catch(dealii::SolverControl::NoConvergence &)
   {
   }
 

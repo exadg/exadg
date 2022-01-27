@@ -30,8 +30,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 /*
  * Multigrid preconditioner for momentum operator of the incompressible Navier-Stokes equations.
  */
@@ -59,15 +57,15 @@ public:
   MultigridPreconditioner(MPI_Comm const & comm);
 
   void
-  initialize(MultigridData const &               mg_data,
-             Triangulation<dim> const *          tria,
-             FiniteElement<dim> const &          fe,
-             std::shared_ptr<Mapping<dim> const> mapping,
-             PDEOperator const &                 pde_operator,
-             MultigridOperatorType const &       mg_operator_type,
-             bool const                          mesh_is_moving,
-             Map const *                         dirichlet_bc        = nullptr,
-             PeriodicFacePairs const *           periodic_face_pairs = nullptr);
+  initialize(MultigridData const &                       mg_data,
+             dealii::Triangulation<dim> const *          tria,
+             dealii::FiniteElement<dim> const &          fe,
+             std::shared_ptr<dealii::Mapping<dim> const> mapping,
+             PDEOperator const &                         pde_operator,
+             MultigridOperatorType const &               mg_operator_type,
+             bool const                                  mesh_is_moving,
+             Map const *                                 dirichlet_bc        = nullptr,
+             PeriodicFacePairs const *                   periodic_face_pairs = nullptr);
 
   /*
    * This function updates the multigrid preconditioner.

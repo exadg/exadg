@@ -28,8 +28,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 struct MassOperatorData : public OperatorBaseData
 {
@@ -52,9 +50,9 @@ public:
   MassOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &   matrix_free,
-             AffineConstraints<Number> const & affine_constraints,
-             MassOperatorData<dim> const &     data);
+  initialize(dealii::MatrixFree<dim, Number> const &   matrix_free,
+             dealii::AffineConstraints<Number> const & affine_constraints,
+             MassOperatorData<dim> const &             data);
 
   void
   set_scaling_factor(Number const & number);

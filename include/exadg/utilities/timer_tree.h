@@ -23,11 +23,10 @@
 #define INCLUDE_EXADG_UTILITIES_TIMER_TREE_H_
 
 #include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/exceptions.h>
 
 namespace ExaDG
 {
-using namespace dealii;
-
 class TimerTree
 {
 public:
@@ -56,11 +55,11 @@ public:
   void
   insert(std::vector<std::string> const ids, double const wall_time)
   {
-    AssertThrow(ids.size() > 0, ExcMessage("empty name."));
+    AssertThrow(ids.size() > 0, dealii::ExcMessage("empty name."));
 
     if(this->id == "") // the tree is currently empty
     {
-      AssertThrow(sub_trees.empty(), ExcMessage("invalid state found. aborting."));
+      AssertThrow(sub_trees.empty(), dealii::ExcMessage("invalid state found. aborting."));
 
       this->id = ids[0];
 
@@ -118,8 +117,8 @@ public:
     else // the provided name does not fit to this tree
     {
       AssertThrow(false,
-                  ExcMessage("The name provided is " + ids[0] + ", but must be " + id +
-                             " instead."));
+                  dealii::ExcMessage("The name provided is " + ids[0] + ", but must be " + id +
+                                     " instead."));
     }
   }
 
@@ -135,8 +134,8 @@ public:
          std::shared_ptr<TimerTree> sub_tree,
          std::string const          new_name = "")
   {
-    AssertThrow(ids.size() > 0, ExcMessage("Empty ID specified."));
-    AssertThrow(id == ids[0], ExcMessage("Invalid ID specified."));
+    AssertThrow(ids.size() > 0, dealii::ExcMessage("Empty ID specified."));
+    AssertThrow(id == ids[0], dealii::ExcMessage("Invalid ID specified."));
 
     std::vector<std::string> remaining_id = erase_first(ids);
 
@@ -157,7 +156,7 @@ public:
     {
       AssertThrow(
         remaining_id.size() == 0,
-        ExcMessage(
+        dealii::ExcMessage(
           "Subtree can not be inserted since the specified ID does not exist in this tree."));
 
       std::shared_ptr<TimerTree> new_tree(new TimerTree());
@@ -170,7 +169,7 @@ public:
       {
         AssertThrow(
           new_tree->id != (*it)->id,
-          ExcMessage(
+          dealii::ExcMessage(
             "Subtree can not be inserted since the tree already contains a subtree with the same ID."));
       }
 
@@ -183,7 +182,7 @@ public:
    * the relative share of the children.
    */
   void
-  print_plain(ConditionalOStream const & pcout) const
+  print_plain(dealii::ConditionalOStream const & pcout) const
   {
     unsigned int const length = get_length();
 
@@ -203,7 +202,7 @@ public:
    * covered by timers.
    */
   void
-  print_level(ConditionalOStream const & pcout, unsigned int const level) const
+  print_level(dealii::ConditionalOStream const & pcout, unsigned int const level) const
   {
     unsigned int const length = get_length();
 
@@ -225,7 +224,7 @@ private:
   std::vector<std::string>
   erase_first(std::vector<std::string> const & in) const
   {
-    AssertThrow(in.size() > 0, ExcMessage("empty name."));
+    AssertThrow(in.size() > 0, dealii::ExcMessage("empty name."));
 
     std::vector<std::string> out(in);
     out.erase(out.begin());
@@ -236,8 +235,8 @@ private:
   double
   get_average_wall_time() const
   {
-    Utilities::MPI::MinMaxAvg time_data =
-      Utilities::MPI::min_max_avg(data->wall_time, MPI_COMM_WORLD);
+    dealii::Utilities::MPI::MinMaxAvg time_data =
+      dealii::Utilities::MPI::min_max_avg(data->wall_time, MPI_COMM_WORLD);
     return time_data.avg;
   }
 
@@ -258,9 +257,9 @@ private:
   }
 
   void
-  do_print_plain(ConditionalOStream const & pcout,
-                 unsigned int const         offset,
-                 unsigned int const         length) const
+  do_print_plain(dealii::ConditionalOStream const & pcout,
+                 unsigned int const                 offset,
+                 unsigned int const                 length) const
   {
     if(id.empty())
       return;
@@ -274,10 +273,10 @@ private:
   }
 
   void
-  do_print_level(ConditionalOStream const & pcout,
-                 unsigned int const         level,
-                 unsigned int const         offset,
-                 unsigned int const         length) const
+  do_print_level(dealii::ConditionalOStream const & pcout,
+                 unsigned int const                 level,
+                 unsigned int const                 offset,
+                 unsigned int const                 length) const
   {
     if(id.empty())
       return;
@@ -312,9 +311,9 @@ private:
   }
 
   void
-  print_name(ConditionalOStream const & pcout,
-             unsigned int const         offset,
-             unsigned int const         length) const
+  print_name(dealii::ConditionalOStream const & pcout,
+             unsigned int const                 offset,
+             unsigned int const                 length) const
   {
     pcout << std::setw(offset) << "" << std::setw(length - offset) << std::left << id;
 
@@ -322,16 +321,17 @@ private:
   }
 
   void
-  print_own(ConditionalOStream const & pcout,
-            unsigned int const         offset,
-            unsigned int const         length,
-            bool const                 relative = false,
-            double const               ref_time = -1.0) const
+  print_own(dealii::ConditionalOStream const & pcout,
+            unsigned int const                 offset,
+            unsigned int const                 length,
+            bool const                         relative = false,
+            double const                       ref_time = -1.0) const
   {
     pcout << std::setw(offset) << "" << std::setw(length - offset) << std::left << id;
 
-    Utilities::MPI::MinMaxAvg ref_time_data = Utilities::MPI::min_max_avg(ref_time, MPI_COMM_WORLD);
-    double const              ref_time_avg  = ref_time_data.avg;
+    dealii::Utilities::MPI::MinMaxAvg ref_time_data =
+      dealii::Utilities::MPI::min_max_avg(ref_time, MPI_COMM_WORLD);
+    double const ref_time_avg = ref_time_data.avg;
 
     if(data.get())
     {
@@ -349,11 +349,11 @@ private:
   }
 
   void
-  print_direct_children(ConditionalOStream const & pcout,
-                        unsigned int const         offset,
-                        unsigned int const         length,
-                        bool const                 relative = false,
-                        double const               ref_time = -1.0) const
+  print_direct_children(dealii::ConditionalOStream const & pcout,
+                        unsigned int const                 offset,
+                        unsigned int const                 length,
+                        bool const                         relative = false,
+                        double const                       ref_time = -1.0) const
   {
     TimerTree other;
     if(relative && sub_trees.size() > 0)

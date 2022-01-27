@@ -33,9 +33,9 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
-template<int dim, typename Number, typename VectorType = LinearAlgebra::distributed::Vector<Number>>
+template<int dim,
+         typename Number,
+         typename VectorType = dealii::LinearAlgebra::distributed::Vector<Number>>
 class MGTransferGlobalRefinement : virtual public MGTransfer<VectorType>
 {
 public:
@@ -44,11 +44,11 @@ public:
   }
 
   void
-  reinit(Mapping<dim> const &                                        mapping,
-         MGLevelObject<std::shared_ptr<MatrixFree<dim, Number>>> &   mg_matrixfree,
-         MGLevelObject<std::shared_ptr<AffineConstraints<Number>>> & mg_constraints,
-         MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         mg_constrained_dofs,
-         unsigned int const                                          dof_handler_index = 0);
+  reinit(dealii::Mapping<dim> const &                                                mapping,
+         dealii::MGLevelObject<std::shared_ptr<dealii::MatrixFree<dim, Number>>> &   mg_matrixfree,
+         dealii::MGLevelObject<std::shared_ptr<dealii::AffineConstraints<Number>>> & mg_constraints,
+         dealii::MGLevelObject<std::shared_ptr<dealii::MGConstrainedDoFs>> & mg_constrained_dofs,
+         unsigned int const                                                  dof_handler_index = 0);
 
   virtual void
   interpolate(unsigned int const level, VectorType & dst, VectorType const & src) const;
@@ -60,7 +60,7 @@ public:
   prolongate_and_add(unsigned int const level, VectorType & dst, VectorType const & src) const;
 
 private:
-  MGLevelObject<std::shared_ptr<MGTransfer<VectorType>>> mg_level_object;
+  dealii::MGLevelObject<std::shared_ptr<MGTransfer<VectorType>>> mg_level_object;
 };
 
 } // namespace ExaDG

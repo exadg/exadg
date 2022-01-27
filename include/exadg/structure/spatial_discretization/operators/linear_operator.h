@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class LinearOperator : public ElasticityOperatorBase<dim, Number>
 {
@@ -40,7 +38,7 @@ private:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   /*
    * Calculates the integral
@@ -64,8 +62,8 @@ private:
    *  - (v_h, t)_{Gamma_N}
    */
   void
-  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  types::boundary_id const & boundary_id) const override;
+  do_boundary_integral_continuous(IntegratorFace &                   integrator_m,
+                                  dealii::types::boundary_id const & boundary_id) const override;
 };
 
 } // namespace Structure

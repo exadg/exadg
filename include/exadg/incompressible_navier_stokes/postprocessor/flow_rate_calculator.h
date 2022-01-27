@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
 struct FlowRateCalculatorData
 {
@@ -39,7 +37,7 @@ struct FlowRateCalculatorData
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(dealii::ConditionalOStream & pcout)
   {
     if(calculate == true)
     {
@@ -84,23 +82,23 @@ template<int dim, typename Number>
 class FlowRateCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
-  FlowRateCalculator(MatrixFree<dim, Number> const &     matrix_free_in,
-                     unsigned int const                  dof_index_in,
-                     unsigned int const                  quad_index_in,
-                     FlowRateCalculatorData<dim> const & data_in,
-                     MPI_Comm const &                    mpi_comm_in);
+  FlowRateCalculator(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                     unsigned int const                      dof_index_in,
+                     unsigned int const                      quad_index_in,
+                     FlowRateCalculatorData<dim> const &     data_in,
+                     MPI_Comm const &                        mpi_comm_in);
 
   Number
-  calculate_flow_rates(VectorType const &                     velocity,
-                       double const &                         time,
-                       std::map<types::boundary_id, Number> & flow_rates);
+  calculate_flow_rates(VectorType const &                             velocity,
+                       double const &                                 time,
+                       std::map<dealii::types::boundary_id, Number> & flow_rates);
 
 
 private:
@@ -108,13 +106,13 @@ private:
   write_output(Number const & value, double const & time, std::string const & name);
 
   void
-  do_calculate_flow_rates(VectorType const &                     velocity,
-                          std::map<types::boundary_id, Number> & flow_rates);
+  do_calculate_flow_rates(VectorType const &                             velocity,
+                          std::map<dealii::types::boundary_id, Number> & flow_rates);
 
-  FlowRateCalculatorData<dim> const & data;
-  MatrixFree<dim, Number> const &     matrix_free;
-  unsigned int                        dof_index, quad_index;
-  bool                                clear_files;
+  FlowRateCalculatorData<dim> const &     data;
+  dealii::MatrixFree<dim, Number> const & matrix_free;
+  unsigned int                            dof_index, quad_index;
+  bool                                    clear_files;
 
   MPI_Comm const mpi_comm;
 };

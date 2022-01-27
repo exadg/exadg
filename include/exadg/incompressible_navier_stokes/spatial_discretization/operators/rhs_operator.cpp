@@ -11,8 +11,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), time(0.0), temperature(nullptr)
 {
@@ -20,8 +18,8 @@ RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), time(0.0), tempe
 
 template<int dim, typename Number>
 void
-RHSOperator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free_in,
-                                     RHSOperatorData<dim> const &    data_in)
+RHSOperator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                     RHSOperatorData<dim> const &            data_in)
 {
   this->matrix_free = &matrix_free_in;
   this->data        = data_in;
@@ -69,10 +67,10 @@ RHSOperator<dim, Number>::do_cell_integral(Integrator &       integrator,
 
 template<int dim, typename Number>
 void
-RHSOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                    VectorType &                    dst,
-                                    VectorType const &              src,
-                                    Range const &                   cell_range) const
+RHSOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                    VectorType &                            dst,
+                                    VectorType const &                      src,
+                                    Range const &                           cell_range) const
 {
   (void)src;
 

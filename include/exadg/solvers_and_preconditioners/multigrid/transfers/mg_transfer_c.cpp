@@ -28,29 +28,27 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferC<dim, Number, VectorType, components>::MGTransferC(
-  Mapping<dim> const &              mapping,
-  MatrixFree<dim, Number> const &   matrixfree_dg,
-  MatrixFree<dim, Number> const &   matrixfree_cg,
-  AffineConstraints<Number> const & constraints_dg,
-  AffineConstraints<Number> const & constraints_cg,
-  unsigned int const                level,
-  unsigned int const                fe_degree,
-  unsigned int const                dof_handler_index)
+  dealii::Mapping<dim> const &              mapping,
+  dealii::MatrixFree<dim, Number> const &   matrixfree_dg,
+  dealii::MatrixFree<dim, Number> const &   matrixfree_cg,
+  dealii::AffineConstraints<Number> const & constraints_dg,
+  dealii::AffineConstraints<Number> const & constraints_cg,
+  unsigned int const                        level,
+  unsigned int const                        fe_degree,
+  unsigned int const                        dof_handler_index)
   : fe_degree(fe_degree)
 {
-  std::vector<DoFHandler<dim> const *> dofhandlers = {
+  std::vector<dealii::DoFHandler<dim> const *> dofhandlers = {
     &matrixfree_cg.get_dof_handler(dof_handler_index),
     &matrixfree_dg.get_dof_handler(dof_handler_index)};
 
-  std::vector<AffineConstraints<Number> const *> constraint_matrices = {&constraints_cg,
-                                                                        &constraints_dg};
-  QGauss<1>                                      quadrature(1);
+  std::vector<dealii::AffineConstraints<Number> const *> constraint_matrices = {&constraints_cg,
+                                                                                &constraints_dg};
+  dealii::QGauss<1>                                      quadrature(1);
 
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+  typename dealii::MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.mg_level = level;
   data_composite.reinit(mapping, dofhandlers, constraint_matrices, quadrature, additional_data);
 }
@@ -66,8 +64,8 @@ void
 MGTransferC<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
                                                                  VectorType const & src) const
 {
-  FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
-  FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
+  dealii::FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
+  dealii::FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
   VectorType vec_dg;
   data_composite.initialize_dof_vector(vec_dg, 1);
@@ -93,8 +91,8 @@ void
 MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType &       dst,
                                                                       VectorType const & src) const
 {
-  FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
-  FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
+  dealii::FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
+  dealii::FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
   VectorType src_temp;
   data_composite.initialize_dof_vector(src_temp, 1);
@@ -113,7 +111,7 @@ MGTransferC<dim, Number, VectorType, components>::do_restrict_and_add(VectorType
     fe_eval_cg.distribute_local_to_global(dst);
   }
 
-  dst.compress(VectorOperation::add);
+  dst.compress(dealii::VectorOperation::add);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -124,8 +122,8 @@ MGTransferC<dim, Number, VectorType, components>::do_prolongate(VectorType &    
 {
   src.update_ghost_values();
 
-  FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
-  FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
+  dealii::FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
+  dealii::FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
   VectorType dst_temp;
   data_composite.initialize_dof_vector(dst_temp, 1);
@@ -174,7 +172,7 @@ MGTransferC<dim, Number, VectorType, components>::interpolate(unsigned int const
     case 14: do_interpolate<14>(dst, src); break;
     case 15: do_interpolate<15>(dst, src); break;
     default:
-      AssertThrow(false, ExcMessage("MGTransferC::interpolate() not implemented for this degree!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferC::interpolate() not implemented for this degree!"));
       // clang-format on
   }
 }
@@ -204,7 +202,7 @@ MGTransferC<dim, Number, VectorType, components>::restrict_and_add(unsigned int 
     case 14: do_restrict_and_add<14>(dst, src); break;
     case 15: do_restrict_and_add<15>(dst, src); break;
     default:
-      AssertThrow(false, ExcMessage("MGTransferC::restrict_and_add() not implemented for this degree!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferC::restrict_and_add() not implemented for this degree!"));
       // clang-format on
   }
 }
@@ -234,7 +232,7 @@ MGTransferC<dim, Number, VectorType, components>::prolongate_and_add(unsigned in
     case 14: do_prolongate<14>(dst, src); break;
     case 15: do_prolongate<15>(dst, src); break;
     default:
-      AssertThrow(false, ExcMessage("MGTransferC::prolongate() not implemented for this degree!"));
+      AssertThrow(false, dealii::ExcMessage("MGTransferC::prolongate() not implemented for this degree!"));
       // clang-format on
   }
 }

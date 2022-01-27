@@ -54,22 +54,22 @@ struct ResolutionParameters
       prm.add_parameter("DegreeFluid",
                         degree_fluid,
                         "Polynomial degree of fluid (velocity).",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("DegreeStructure",
                         degree_structure,
                         "Polynomial degree of structural problem.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineFluid",
                         refine_fluid,
                         "Number of mesh refinements (fluid).",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
       prm.add_parameter("RefineStructure",
                         refine_structure,
                         "Number of mesh refinements (structure).",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
     prm.leave_subsection();
     // clang-format on
@@ -116,7 +116,7 @@ template<int dim, typename Number>
 void
 run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_test)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =

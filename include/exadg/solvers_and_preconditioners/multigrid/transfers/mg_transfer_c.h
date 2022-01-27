@@ -30,23 +30,21 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim,
          typename Number,
-         typename VectorType = LinearAlgebra::distributed::Vector<Number>,
+         typename VectorType = dealii::LinearAlgebra::distributed::Vector<Number>,
          int components      = 1>
 class MGTransferC : virtual public MGTransfer<VectorType>
 {
 public:
-  MGTransferC(Mapping<dim> const &              mapping,
-              MatrixFree<dim, Number> const &   matrixfree_dg,
-              MatrixFree<dim, Number> const &   matrixfree_cg,
-              AffineConstraints<Number> const & constraints_dg,
-              AffineConstraints<Number> const & constraints_cg,
-              unsigned int const                level,
-              unsigned int const                fe_degree,
-              unsigned int const                dof_handler_index = 0);
+  MGTransferC(dealii::Mapping<dim> const &              mapping,
+              dealii::MatrixFree<dim, Number> const &   matrixfree_dg,
+              dealii::MatrixFree<dim, Number> const &   matrixfree_cg,
+              dealii::AffineConstraints<Number> const & constraints_dg,
+              dealii::AffineConstraints<Number> const & constraints_cg,
+              unsigned int const                        level,
+              unsigned int const                        fe_degree,
+              unsigned int const                        dof_handler_index = 0);
 
   virtual ~MGTransferC();
 
@@ -72,8 +70,8 @@ private:
   void
   do_prolongate(VectorType & dst, VectorType const & src) const;
 
-  unsigned int const      fe_degree;
-  MatrixFree<dim, Number> data_composite;
+  unsigned int const              fe_degree;
+  dealii::MatrixFree<dim, Number> data_composite;
 };
 
 } // namespace ExaDG

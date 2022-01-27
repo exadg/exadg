@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  * study throughput as a function of polynomial degree or problem size
  */
@@ -49,7 +47,7 @@ string_to_enum(RunType & enum_type, std::string const string_type)
   if     (string_type == "RefineHAndP")           enum_type = RunType::RefineHAndP;
   else if(string_type == "FixedProblemSize")      enum_type = RunType::FixedProblemSize;
   else if(string_type == "IncreasingProblemSize") enum_type = RunType::IncreasingProblemSize;
-  else AssertThrow(false, ExcMessage("Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Not implemented."));
   // clang-format on
 }
 
@@ -61,23 +59,24 @@ inline void
 fill_resolutions_vector(
   std::vector<
     std::tuple<unsigned int /*k*/, unsigned int /*l*/, unsigned int /*subdivisions hypercube*/>> &
-                                resolutions,
-  unsigned int const            dim,
-  unsigned int const            degree,
-  unsigned int const            dofs_per_element,
-  types::global_dof_index const n_dofs_min,
-  types::global_dof_index const n_dofs_max,
-  RunType const &               run_type)
+                                        resolutions,
+  unsigned int const                    dim,
+  unsigned int const                    degree,
+  unsigned int const                    dofs_per_element,
+  dealii::types::global_dof_index const n_dofs_min,
+  dealii::types::global_dof_index const n_dofs_max,
+  RunType const &                       run_type)
 {
   unsigned int l = 0, n_subdivisions_1d = 1;
 
-  types::global_dof_index n_cells_min = (n_dofs_min + dofs_per_element - 1) / dofs_per_element;
-  types::global_dof_index n_cells_max = n_dofs_max / dofs_per_element;
+  dealii::types::global_dof_index n_cells_min =
+    (n_dofs_min + dofs_per_element - 1) / dofs_per_element;
+  dealii::types::global_dof_index n_cells_max = n_dofs_max / dofs_per_element;
 
-  int                     refine_level = 0;
-  types::global_dof_index n_cells      = 1;
+  int                             refine_level = 0;
+  dealii::types::global_dof_index n_cells      = 1;
 
-  while(n_cells <= Utilities::pow(2ULL, dim) * n_cells_max)
+  while(n_cells <= dealii::Utilities::pow(2ULL, dim) * n_cells_max)
   {
     // We want to increase the problem size approximately by a factor of two, which is
     // realized by using a coarse grid with {3,4}^dim elements in 2D and {3,4,5}^dim elements
@@ -87,8 +86,8 @@ fill_resolutions_vector(
     if(refine_level >= 2)
     {
       n_subdivisions_1d = 3;
-      n_cells =
-        Utilities::pow(n_subdivisions_1d, dim) * Utilities::pow(2ULL, (refine_level - 2) * dim);
+      n_cells           = dealii::Utilities::pow(n_subdivisions_1d, dim) *
+                dealii::Utilities::pow(2ULL, (refine_level - 2) * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -101,14 +100,14 @@ fill_resolutions_vector(
           resolutions.push_back(
             std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
         else
-          AssertThrow(false, ExcMessage("Not implemented:"));
+          AssertThrow(false, dealii::ExcMessage("Not implemented:"));
       }
     }
 
     // coarse grid with only a single cell, and refine_level uniform refinements
     {
       n_subdivisions_1d = 1;
-      n_cells           = Utilities::pow(2ULL, refine_level * dim);
+      n_cells           = dealii::Utilities::pow(2ULL, refine_level * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -121,7 +120,7 @@ fill_resolutions_vector(
           resolutions.push_back(
             std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
         else
-          AssertThrow(false, ExcMessage("Not implemented:"));
+          AssertThrow(false, dealii::ExcMessage("Not implemented:"));
       }
     }
 
@@ -129,8 +128,8 @@ fill_resolutions_vector(
     if(dim == 3 && refine_level >= 2)
     {
       n_subdivisions_1d = 5;
-      n_cells =
-        Utilities::pow(n_subdivisions_1d, dim) * Utilities::pow(2ULL, (refine_level - 2) * dim);
+      n_cells           = dealii::Utilities::pow(n_subdivisions_1d, dim) *
+                dealii::Utilities::pow(2ULL, (refine_level - 2) * dim);
 
       if(n_cells >= n_cells_min && n_cells <= n_cells_max)
       {
@@ -143,28 +142,29 @@ fill_resolutions_vector(
           resolutions.push_back(
             std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
         else
-          AssertThrow(false, ExcMessage("Not implemented:"));
+          AssertThrow(false, dealii::ExcMessage("Not implemented:"));
       }
     }
 
     // perform one global refinement
     ++refine_level;
-    n_cells = Utilities::pow(2ULL, refine_level * dim);
+    n_cells = dealii::Utilities::pow(2ULL, refine_level * dim);
   }
 
   if(run_type == RunType::FixedProblemSize)
   {
     AssertThrow((n_cells >= n_cells_min && n_cells <= n_cells_max),
-                ExcMessage("No mesh found that meets the requirements regarding problem size. "
-                           "Make sure that maximum number of dofs is sufficiently larger than "
-                           "minimum number of dofs."));
+                dealii::ExcMessage(
+                  "No mesh found that meets the requirements regarding problem size. "
+                  "Make sure that maximum number of dofs is sufficiently larger than "
+                  "minimum number of dofs."));
 
     resolutions.push_back(
       std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));
   }
   else
   {
-    AssertThrow(run_type == RunType::IncreasingProblemSize, ExcMessage("Not implemented."));
+    AssertThrow(run_type == RunType::IncreasingProblemSize, dealii::ExcMessage("Not implemented."));
   }
 }
 
@@ -193,37 +193,37 @@ struct HypercubeResolutionParameters
       prm.add_parameter("RunType",
                         run_type_string,
                         "Type of throughput study.",
-                        Patterns::Selection("RefineHAndP|FixedProblemSize|IncreasingProblemSize"),
+                        dealii::Patterns::Selection("RefineHAndP|FixedProblemSize|IncreasingProblemSize"),
                         true);
       prm.add_parameter("DegreeMin",
                         degree_min,
                         "Minimal polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("DegreeMax",
                         degree_max,
                         "Maximal polynomial degree of shape functions.",
-                        Patterns::Integer(1,EXADG_DEGREE_MAX),
+                        dealii::Patterns::Integer(1,EXADG_DEGREE_MAX),
                         true);
       prm.add_parameter("RefineSpaceMin",
                         refine_space_min,
                         "Minimal number of mesh refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
       prm.add_parameter("RefineSpaceMax",
                         refine_space_max,
                         "Maximal number of mesh refinements.",
-                        Patterns::Integer(0,20),
+                        dealii::Patterns::Integer(0,20),
                         true);
       prm.add_parameter("DofsMin",
                         n_dofs_min,
                         "Minimal number of degrees of freedom.",
-                        Patterns::Integer(1),
+                        dealii::Patterns::Integer(1),
                         true);
       prm.add_parameter("DofsMax",
                         n_dofs_max,
                         "Maximal number of degrees of freedom.",
-                        Patterns::Integer(1),
+                        dealii::Patterns::Integer(1),
                         true);
     prm.leave_subsection();
     // clang-format on
@@ -234,26 +234,26 @@ struct HypercubeResolutionParameters
   {
     if(run_type == RunType::RefineHAndP)
     {
-      AssertThrow(degree_max >= degree_min, ExcMessage("Invalid parameters."));
-      AssertThrow(refine_space_max >= refine_space_min, ExcMessage("Invalid parameters."));
+      AssertThrow(degree_max >= degree_min, dealii::ExcMessage("Invalid parameters."));
+      AssertThrow(refine_space_max >= refine_space_min, dealii::ExcMessage("Invalid parameters."));
     }
     else if(run_type == RunType::FixedProblemSize)
     {
-      AssertThrow(degree_max >= degree_min, ExcMessage("Invalid parameters."));
-      AssertThrow(n_dofs_max >= n_dofs_min, ExcMessage("Invalid parameters."));
+      AssertThrow(degree_max >= degree_min, dealii::ExcMessage("Invalid parameters."));
+      AssertThrow(n_dofs_max >= n_dofs_min, dealii::ExcMessage("Invalid parameters."));
     }
     else if(run_type == RunType::IncreasingProblemSize)
     {
       AssertThrow(
         degree_min == degree_max,
-        ExcMessage(
+        dealii::ExcMessage(
           "Only a single polynomial degree can be considered for RunType::IncreasingProblemSize"));
 
-      AssertThrow(n_dofs_max >= n_dofs_min, ExcMessage("Invalid parameters."));
+      AssertThrow(n_dofs_max >= n_dofs_min, dealii::ExcMessage("Invalid parameters."));
     }
     else
     {
-      AssertThrow(false, ExcMessage("not implemented."));
+      AssertThrow(false, dealii::ExcMessage("not implemented."));
     }
   }
 
@@ -290,7 +290,7 @@ struct HypercubeResolutionParameters
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -305,8 +305,8 @@ struct HypercubeResolutionParameters
   unsigned int refine_space_min = 0; // minimal number of global refinements
   unsigned int refine_space_max = 0; // maximal number of global refinements
 
-  types::global_dof_index n_dofs_min = 1e4; // minimal number of unknowns
-  types::global_dof_index n_dofs_max = 3e4; // maximal number of unknowns
+  dealii::types::global_dof_index n_dofs_min = 1e4; // minimal number of unknowns
+  dealii::types::global_dof_index n_dofs_max = 3e4; // maximal number of unknowns
 
   // a vector storing tuples of the form (degree k, refine level l, n_subdivisions_1d)
   std::vector<std::tuple<unsigned int, unsigned int, unsigned int>> resolutions;

@@ -38,8 +38,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Operator<dim, Number>::Operator(
   std::shared_ptr<Grid<dim> const>                  grid_in,
@@ -59,14 +57,14 @@ Operator<dim, Number>::Operator(
     fe(param_in.degree),
     dof_handler(*grid_in->triangulation),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
   if(needs_own_dof_handler_velocity())
   {
-    fe_velocity          = std::make_shared<FESystem<dim>>(FE_DGQ<dim>(param.degree), dim);
-    dof_handler_velocity = std::make_shared<DoFHandler<dim>>(*grid->triangulation);
+    fe_velocity = std::make_shared<dealii::FESystem<dim>>(dealii::FE_DGQ<dim>(param.degree), dim);
+    dof_handler_velocity = std::make_shared<dealii::DoFHandler<dim>>(*grid->triangulation);
   }
 
   distribute_dofs();
@@ -105,7 +103,7 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
       Operators::DiffusiveKernel<dim, Number>::get_mapping_flags(true, true));
   }
 
-  // DoFHandler, AffineConstraints
+  // dealii::DoFHandler, dealii::AffineConstraints
   matrix_free_data.insert_dof_handler(&dof_handler, get_dof_name());
   matrix_free_data.insert_constraint(&affine_constraints, get_dof_name());
 
@@ -115,20 +113,20 @@ Operator<dim, Number>::fill_matrix_free_data(MatrixFreeData<dim, Number> & matri
     matrix_free_data.insert_constraint(&affine_constraints, get_dof_name_velocity());
   }
 
-  // Quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree + 1), get_quad_name());
+  // dealii::Quadrature
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + 1), get_quad_name());
 
   if(param.use_overintegration)
   {
-    matrix_free_data.insert_quadrature(QGauss<1>(param.degree + (param.degree + 2) / 2),
+    matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree + (param.degree + 2) / 2),
                                        get_quad_name_overintegration());
   }
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-                             std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
+Operator<dim, Number>::setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
+                             std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
                              std::string const & dof_index_velocity_external_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
@@ -264,7 +262,7 @@ Operator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     combined_operator_data.convective_kernel_data = convective_kernel_data;
@@ -298,7 +296,7 @@ Operator<dim, Number>::distribute_dofs()
     dof_handler_velocity->distribute_dofs(*fe_velocity);
   }
 
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
+  unsigned int const ndofs_per_cell = dealii::Utilities::pow(param.degree + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -365,7 +363,7 @@ Operator<dim, Number>::get_dof_index_velocity() const
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     return matrix_free_data->get_dof_index(get_dof_name_velocity());
   else
-    return numbers::invalid_unsigned_int;
+    return dealii::numbers::invalid_unsigned_int;
 }
 
 template<int dim, typename Number>
@@ -399,7 +397,8 @@ Operator<dim, Number>::setup_solver(double const scaling_factor_mass, VectorType
     {
       AssertThrow(
         velocity != nullptr,
-        ExcMessage("In case of a numerical velocity field, a velocity vector has to be provided."));
+        dealii::ExcMessage(
+          "In case of a numerical velocity field, a velocity vector has to be provided."));
 
       combined_operator.set_velocity_ptr(*velocity);
     }
@@ -438,7 +437,7 @@ Operator<dim, Number>::initialize_preconditioner()
     {
       AssertThrow(param.mg_operator_type != MultigridOperatorType::ReactionConvection &&
                     param.mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
-                  ExcMessage(
+                  dealii::ExcMessage(
                     "Invalid solver parameters. The convective term is treated explicitly."));
     }
 
@@ -461,7 +460,7 @@ Operator<dim, Number>::initialize_preconditioner()
           matrix_free_data->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
         AssertThrow(
           degree_scalar == degree_velocity,
-          ExcMessage(
+          dealii::ExcMessage(
             "When using a multigrid preconditioner for the scalar convection-diffusion equation, "
             "the scalar field and the velocity field must have the same polynomial degree."));
       }
@@ -486,7 +485,7 @@ Operator<dim, Number>::initialize_preconditioner()
                   param.preconditioner == Preconditioner::PointJacobi ||
                   param.preconditioner == Preconditioner::BlockJacobi ||
                   param.preconditioner == Preconditioner::Multigrid,
-                ExcMessage("Specified preconditioner is not implemented!"));
+                dealii::ExcMessage("Specified preconditioner is not implemented!"));
   }
 }
 
@@ -546,7 +545,7 @@ Operator<dim, Number>::initialize_solver()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified solver is not implemented!"));
+    AssertThrow(false, dealii::ExcMessage("Specified solver is not implemented!"));
   }
 }
 
@@ -571,12 +570,14 @@ Operator<dim, Number>::interpolate_velocity(VectorType & velocity, double const 
   field_functions->velocity->set_time(time);
 
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble vector_double;
   vector_double = velocity;
 
-  VectorTools::interpolate(get_dof_handler_velocity(), *(field_functions->velocity), vector_double);
+  dealii::VectorTools::interpolate(get_dof_handler_velocity(),
+                                   *(field_functions->velocity),
+                                   vector_double);
 
   velocity = vector_double;
 }
@@ -602,12 +603,12 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src, double con
   field_functions->initial_solution->set_time(time);
 
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
+  dealii::VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
 
   src = src_double;
 }
@@ -637,7 +638,8 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
-        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+        AssertThrow(velocity != nullptr,
+                    dealii::ExcMessage("velocity pointer is not initialized."));
         convective_operator.set_velocity_ptr(*velocity);
       }
 
@@ -662,7 +664,8 @@ Operator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
-        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+        AssertThrow(velocity != nullptr,
+                    dealii::ExcMessage("velocity pointer is not initialized."));
 
         combined_operator.set_velocity_ptr(*velocity);
       }
@@ -693,7 +696,7 @@ Operator<dim, Number>::evaluate_convective_term(VectorType &       dst,
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
-    AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+    AssertThrow(velocity != nullptr, dealii::ExcMessage("velocity pointer is not initialized."));
 
     convective_operator.set_velocity_ptr(*velocity);
   }
@@ -711,7 +714,7 @@ Operator<dim, Number>::evaluate_oif(VectorType &       dst,
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
-    AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+    AssertThrow(velocity != nullptr, dealii::ExcMessage("velocity pointer is not initialized."));
 
     convective_operator.set_velocity_ptr(*velocity);
   }
@@ -735,7 +738,7 @@ Operator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+      AssertThrow(velocity != nullptr, dealii::ExcMessage("velocity pointer is not initialized."));
 
       combined_operator.set_velocity_ptr(*velocity);
     }
@@ -778,7 +781,7 @@ Operator<dim, Number>::update_convective_term(double const time, VectorType cons
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
-    AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+    AssertThrow(velocity != nullptr, dealii::ExcMessage("velocity pointer is not initialized."));
 
     convective_operator.set_velocity_ptr(*velocity);
   }
@@ -813,7 +816,7 @@ Operator<dim, Number>::update_conv_diff_operator(double const       time,
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+      AssertThrow(velocity != nullptr, dealii::ExcMessage("velocity pointer is not initialized."));
 
       combined_operator.set_velocity_ptr(*velocity);
     }
@@ -962,28 +965,28 @@ Operator<dim, Number>::calculate_minimum_element_length() const
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 Operator<dim, Number>::get_dof_handler_velocity() const
 {
   return matrix_free_data->get_dof_handler(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
-types::global_dof_index
+dealii::types::global_dof_index
 Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
 template<int dim, typename Number>
-MatrixFree<dim, Number> const &
+dealii::MatrixFree<dim, Number> const &
 Operator<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;

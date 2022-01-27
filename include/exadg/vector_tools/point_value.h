@@ -31,27 +31,27 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 void
-my_point_value(Vector<Number> &                                       result,
-               Mapping<dim> const &                                   mapping,
-               DoFHandler<dim> const &                                dof_handler,
-               LinearAlgebra::distributed::Vector<Number> const &     dof_vector,
-               typename DoFHandler<dim>::active_cell_iterator const & cell,
-               Point<dim> const &                                     point_in_ref_coord)
+my_point_value(dealii::Vector<Number> &                                       result,
+               dealii::Mapping<dim> const &                                   mapping,
+               dealii::DoFHandler<dim> const &                                dof_handler,
+               dealii::LinearAlgebra::distributed::Vector<Number> const &     dof_vector,
+               typename dealii::DoFHandler<dim>::active_cell_iterator const & cell,
+               dealii::Point<dim> const &                                     point_in_ref_coord)
 {
-  Assert(GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord) < 1e-10, ExcInternalError());
+  Assert(dealii::GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord) < 1e-10,
+         dealii::ExcInternalError());
 
-  Quadrature<dim> const quadrature(GeometryInfo<dim>::project_to_unit_cell(point_in_ref_coord));
+  dealii::Quadrature<dim> const quadrature(
+    dealii::GeometryInfo<dim>::project_to_unit_cell(point_in_ref_coord));
 
-  FiniteElement<dim> const & fe = dof_handler.get_fe();
-  FEValues<dim>              fe_values(mapping, fe, quadrature, update_values);
+  dealii::FiniteElement<dim> const & fe = dof_handler.get_fe();
+  dealii::FEValues<dim>              fe_values(mapping, fe, quadrature, dealii::update_values);
   fe_values.reinit(cell);
 
   // then use this to get the values of the given fe_function at this point
-  std::vector<Vector<Number>> solution_vector(1, Vector<Number>(fe.n_components()));
+  std::vector<dealii::Vector<Number>> solution_vector(1, dealii::Vector<Number>(fe.n_components()));
   fe_values.get_function_values(dof_vector, solution_vector);
   result = solution_vector[0];
 }
@@ -59,18 +59,19 @@ my_point_value(Vector<Number> &                                       result,
 template<int dim, typename Number>
 void
 evaluate_scalar_quantity_in_point(
-  Number &                                           solution_value,
-  DoFHandler<dim> const &                            dof_handler,
-  Mapping<dim> const &                               mapping,
-  LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
-  Point<dim> const &                                 point,
-  MPI_Comm const &                                   mpi_comm,
-  double const                                       tolerance = 1.e-10)
+  Number &                                                   solution_value,
+  dealii::DoFHandler<dim> const &                            dof_handler,
+  dealii::Mapping<dim> const &                               mapping,
+  dealii::LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
+  dealii::Point<dim> const &                                 point,
+  MPI_Comm const &                                           mpi_comm,
+  double const                                               tolerance = 1.e-10)
 {
-  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+  typedef std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>
+    Pair;
 
   std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+    dealii::GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
 
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -82,7 +83,7 @@ evaluate_scalar_quantity_in_point(
     // go on only if cell is owned by the processor
     if(cell.first->is_locally_owned())
     {
-      Vector<Number> value(1);
+      dealii::Vector<Number> value(1);
       my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);
 
       solution_value += value(0);
@@ -91,27 +92,28 @@ evaluate_scalar_quantity_in_point(
   }
 
   // parallel computations: add results of all processors and calculate mean value
-  counter = Utilities::MPI::sum(counter, mpi_comm);
-  AssertThrow(counter > 0, ExcMessage("No points found."));
+  counter = dealii::Utilities::MPI::sum(counter, mpi_comm);
+  AssertThrow(counter > 0, dealii::ExcMessage("No points found."));
 
-  solution_value = Utilities::MPI::sum(solution_value, mpi_comm);
+  solution_value = dealii::Utilities::MPI::sum(solution_value, mpi_comm);
   solution_value /= (double)counter;
 }
 
 template<int dim, typename Number>
 void evaluate_vectorial_quantity_in_point(
-  Tensor<1, dim, Number> &                           solution_value,
-  DoFHandler<dim> const &                            dof_handler,
-  Mapping<dim> const &                               mapping,
-  LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
-  Point<dim> const &                                 point,
-  MPI_Comm const &                                   mpi_comm,
-  double const                                       tolerance = 1.e-10)
+  dealii::Tensor<1, dim, Number> &                           solution_value,
+  dealii::DoFHandler<dim> const &                            dof_handler,
+  dealii::Mapping<dim> const &                               mapping,
+  dealii::LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
+  dealii::Point<dim> const &                                 point,
+  MPI_Comm const &                                           mpi_comm,
+  double const                                               tolerance = 1.e-10)
 {
-  typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> Pair;
+  typedef std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator, dealii::Point<dim>>
+    Pair;
 
   std::vector<Pair> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
+    dealii::GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, tolerance);
 
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -123,7 +125,7 @@ void evaluate_vectorial_quantity_in_point(
     // go on only if cell is owned by the processor
     if(cell.first->is_locally_owned())
     {
-      Vector<Number> value(dim);
+      dealii::Vector<Number> value(dim);
       my_point_value(value, mapping, dof_handler, numerical_solution, cell.first, cell.second);
 
       for(unsigned int d = 0; d < dim; ++d)
@@ -134,11 +136,11 @@ void evaluate_vectorial_quantity_in_point(
   }
 
   // parallel computations: add results of all processors and calculate mean value
-  counter = Utilities::MPI::sum(counter, mpi_comm);
-  AssertThrow(counter > 0, ExcMessage("No points found."));
+  counter = dealii::Utilities::MPI::sum(counter, mpi_comm);
+  AssertThrow(counter > 0, dealii::ExcMessage("No points found."));
 
   for(unsigned int d = 0; d < dim; ++d)
-    solution_value[d] = Utilities::MPI::sum(solution_value[d], mpi_comm);
+    solution_value[d] = dealii::Utilities::MPI::sum(solution_value[d], mpi_comm);
   solution_value /= (double)counter;
 }
 

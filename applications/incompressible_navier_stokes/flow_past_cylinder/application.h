@@ -32,22 +32,21 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
 using namespace FlowPastCylinder;
 
 template<int dim>
-class InflowBC : public Function<dim>
+class InflowBC : public dealii::Function<dim>
 {
 public:
-  InflowBC(double const                                Um,
-           double const                                H,
-           double const                                end_time,
-           unsigned int const                          test_case,
-           bool const                                  use_random_perturbations,
-           std::vector<double> const &                 y,
-           std::vector<double> const &                 z,
-           std::vector<Tensor<1, dim, double>> const & u)
-    : Function<dim>(dim, 0.0),
+  InflowBC(double const                                        Um,
+           double const                                        H,
+           double const                                        end_time,
+           unsigned int const                                  test_case,
+           bool const                                          use_random_perturbations,
+           std::vector<double> const &                         y,
+           std::vector<double> const &                         z,
+           std::vector<dealii::Tensor<1, dim, double>> const & u)
+    : dealii::Function<dim>(dim, 0.0),
       Um(Um),
       H(H),
       end_time(end_time),
@@ -60,17 +59,17 @@ public:
   }
 
   double
-  value(Point<dim> const & x, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & x, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
     if(component == 0)
     {
-      double const pi = numbers::PI;
-      double const T  = 1.0;
-      double       coefficient =
-        Utilities::fixed_power<dim - 1>(4.) * Um / Utilities::fixed_power<2 * dim - 2>(H);
+      double const pi          = dealii::numbers::PI;
+      double const T           = 1.0;
+      double       coefficient = dealii::Utilities::fixed_power<dim - 1>(4.) * Um /
+                           dealii::Utilities::fixed_power<2 * dim - 2>(H);
 
       if(test_case == 1)
         result = coefficient * x[1] * (H - x[1]);
@@ -80,7 +79,7 @@ public:
       else if(test_case == 3)
         result = coefficient * x[1] * (H - x[1]) * std::sin(pi * t / end_time);
       else
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
       if(dim == 3)
         result *= x[2] * (H - x[2]);
@@ -93,7 +92,7 @@ public:
           perturbation = linear_interpolation_1d(x[1], y_vector, u_vector, component);
         else if(dim == 3)
         {
-          Point<dim> point_3d;
+          dealii::Point<dim> point_3d;
           point_3d[0] = x[0];
           point_3d[1] = x[1];
           point_3d[2] = x[2];
@@ -102,7 +101,7 @@ public:
             linear_interpolation_2d_cartesian(point_3d, y_vector, z_vector, u_vector, component);
         }
         else
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
 
         result += perturbation;
       }
@@ -116,37 +115,37 @@ private:
   unsigned int const test_case;
 
   // perturbations
-  bool const                          use_random_perturbations;
-  std::vector<double> const &         y_vector;
-  std::vector<double> const &         z_vector;
-  std::vector<Tensor<1, dim, double>> u_vector;
+  bool const                                  use_random_perturbations;
+  std::vector<double> const &                 y_vector;
+  std::vector<double> const &                 z_vector;
+  std::vector<dealii::Tensor<1, dim, double>> u_vector;
 };
 
 template<int dim>
-class PressureBC_dudt : public Function<dim>
+class PressureBC_dudt : public dealii::Function<dim>
 {
 public:
   PressureBC_dudt(double const       Um,
                   double const       H,
                   double const       end_time,
                   unsigned int const test_case)
-    : Function<dim>(dim, 0.0), Um(Um), H(H), end_time(end_time), test_case(test_case)
+    : dealii::Function<dim>(dim, 0.0), Um(Um), H(H), end_time(end_time), test_case(test_case)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
 
     if(component == 0 && std::abs(p[0] - (dim == 2 ? L1 : 0.0)) < 1.e-12)
     {
-      double const pi = numbers::PI;
+      double const pi = dealii::numbers::PI;
 
-      double const T = 1.0;
-      double       coefficient =
-        Utilities::fixed_power<dim - 1>(4.) * Um / Utilities::fixed_power<2 * dim - 2>(H);
+      double const T           = 1.0;
+      double       coefficient = dealii::Utilities::fixed_power<dim - 1>(4.) * Um /
+                           dealii::Utilities::fixed_power<2 * dim - 2>(H);
 
       if(test_case == 2)
         result = coefficient * p[1] * (H - p[1]) *
@@ -174,7 +173,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -188,9 +187,9 @@ public:
   void
   initialize_y_and_z_values()
   {
-    AssertThrow(n_points_y >= 2, ExcMessage("Variable n_points_y is invalid"));
+    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
     if(dim == 3)
-      AssertThrow(n_points_z >= 2, ExcMessage("Variable n_points_z is invalid"));
+      AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
 
     // 0 <= y <= H
     for(unsigned int i = 0; i < n_points_y; ++i)
@@ -205,23 +204,23 @@ public:
   void
   initialize_velocity_values()
   {
-    AssertThrow(n_points_y >= 2, ExcMessage("Variable n_points_y is invalid"));
+    AssertThrow(n_points_y >= 2, dealii::ExcMessage("Variable n_points_y is invalid"));
     if(dim == 3)
-      AssertThrow(n_points_z >= 2, ExcMessage("Variable n_points_z is invalid"));
+      AssertThrow(n_points_z >= 2, dealii::ExcMessage("Variable n_points_z is invalid"));
 
     for(unsigned int iy = 0; iy < n_points_y; ++iy)
     {
       for(unsigned int iz = 0; iz < n_points_z; ++iz)
       {
-        Tensor<1, dim, double> velocity;
+        dealii::Tensor<1, dim, double> velocity;
 
         if(use_perturbation == true)
         {
           // Add random perturbation
-          double const y = y_values[iy];
-          double const z = z_values[iz];
-          double       coefficient =
-            Utilities::fixed_power<dim - 1>(4.) * Um / Utilities::fixed_power<2 * dim - 2>(H);
+          double const y           = y_values[iy];
+          double const z           = z_values[iz];
+          double       coefficient = dealii::Utilities::fixed_power<dim - 1>(4.) * Um /
+                               dealii::Utilities::fixed_power<2 * dim - 2>(H);
           double perturbation =
             amplitude_perturbation * coefficient * ((double)rand() / RAND_MAX - 0.5) / 0.5;
           perturbation *= y * (H - y);
@@ -237,15 +236,15 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
     // clang-format off
     prm.enter_subsection("Application");
-      prm.add_parameter("TestCase",     test_case,            "Number of test case.", Patterns::Integer(1,3));
-      prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",    Patterns::Selection("circular|square"));
-      prm.add_parameter("CFL",          cfl_number,           "CFL number.",          Patterns::Double(0.0, 1.0e6), true);
+      prm.add_parameter("TestCase",     test_case,            "Number of test case.", dealii::Patterns::Integer(1,3));
+      prm.add_parameter("CylinderType", cylinder_type_string, "Type of cylinder.",    dealii::Patterns::Selection("circular|square"));
+      prm.add_parameter("CFL",          cfl_number,           "CFL number.",          dealii::Patterns::Double(0.0, 1.0e6), true);
     prm.leave_subsection();
     // clang-format on
   }
@@ -282,8 +281,8 @@ public:
   std::vector<double> y_values = std::vector<double>(n_points_y);
   std::vector<double> z_values = std::vector<double>(n_points_z);
 
-  std::vector<Tensor<1, dim, double>> velocity_values =
-    std::vector<Tensor<1, dim, double>>(n_points_y * n_points_z);
+  std::vector<dealii::Tensor<1, dim, double>> velocity_values =
+    std::vector<dealii::Tensor<1, dim, double>>(n_points_y * n_points_z);
 
   // solver tolerances
   double const ABS_TOL = 1.e-12;
@@ -473,12 +472,12 @@ public:
   {
     this->refine_level = this->param.grid.n_refine_global;
 
-    if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(
-         this->grid->triangulation.get()))
+    if(auto tria_fully_dist =
+         dynamic_cast<dealii::parallel::fullydistributed::Triangulation<dim> *>(
+           this->grid->triangulation.get()))
     {
-      auto const construction_data =
-        TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim,
-                                                                                             dim>(
+      auto const construction_data = dealii::TriangulationDescription::Utilities::
+        create_description_from_triangulation_in_groups<dim, dim>(
           [&](dealii::Triangulation<dim, dim> & tria) mutable {
             create_cylinder_grid<dim>(tria,
                                       this->param.grid.n_refine_global,
@@ -489,16 +488,17 @@ public:
              const MPI_Comm                    comm,
              unsigned int const /* group_size */) {
             // metis partitioning
-            GridTools::partition_triangulation(Utilities::MPI::n_mpi_processes(comm), tria);
+            dealii::GridTools::partition_triangulation(
+              dealii::Utilities::MPI::n_mpi_processes(comm), tria);
             // p4est partitioning
-            //            GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm),
+            //            dealii::GridTools::partition_triangulation_zorder(dealii::Utilities::MPI::n_mpi_processes(comm),
             //            tria);
           },
           tria_fully_dist->get_communicator(),
           1 /* group size */);
       tria_fully_dist->create_triangulation(construction_data);
     }
-    else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(
+    else if(auto tria = dynamic_cast<dealii::parallel::distributed::Triangulation<dim> *>(
               this->grid->triangulation.get()))
     {
       create_cylinder_grid<dim>(*tria,
@@ -508,14 +508,15 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcMessage("Unknown triangulation!"));
+      AssertThrow(false, dealii::ExcMessage("Unknown triangulation!"));
     }
   }
 
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
@@ -523,9 +524,9 @@ public:
            new InflowBC<dim>(
              Um, H, end_time, test_case, use_perturbation, y_values, z_values, velocity_values)));
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(2, new Functions::ZeroFunction<dim>(dim)));
+      pair(2, new dealii::Functions::ZeroFunction<dim>(dim)));
     this->boundary_descriptor->velocity->neumann_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(dim)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     // fill boundary descriptor pressure
     this->boundary_descriptor->pressure->neumann_bc.insert(
@@ -533,16 +534,19 @@ public:
     this->boundary_descriptor->pressure->neumann_bc.insert(
       pair(2, new PressureBC_dudt<dim>(Um, H, end_time, test_case)));
     this->boundary_descriptor->pressure->dirichlet_bc.insert(
-      pair(1, new Functions::ZeroFunction<dim>(1)));
+      pair(1, new dealii::Functions::ZeroFunction<dim>(1)));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(dim));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -588,13 +592,13 @@ public:
     pp_data.pressure_difference_data.calculate = true;
     if(dim == 2)
     {
-      Point<dim> point_1_2D((X_C - D / 2.0), Y_C), point_2_2D((X_C + D / 2.0), Y_C);
+      dealii::Point<dim> point_1_2D((X_C - D / 2.0), Y_C), point_2_2D((X_C + D / 2.0), Y_C);
       pp_data.pressure_difference_data.point_1 = point_1_2D;
       pp_data.pressure_difference_data.point_2 = point_2_2D;
     }
     else if(dim == 3)
     {
-      Point<dim> point_1_3D((X_C - D / 2.0), Y_C, H / 2.0),
+      dealii::Point<dim> point_1_3D((X_C - D / 2.0), Y_C, H / 2.0),
         point_2_3D((X_C + D / 2.0), Y_C, H / 2.0);
       pp_data.pressure_difference_data.point_1 = point_1_3D;
       pp_data.pressure_difference_data.point_2 = point_2_3D;

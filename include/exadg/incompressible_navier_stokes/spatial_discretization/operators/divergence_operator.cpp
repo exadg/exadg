@@ -11,8 +11,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DivergenceOperator<dim, Number>::DivergenceOperator()
   : matrix_free(nullptr), time(0.0), velocity_bc(nullptr)
@@ -21,8 +19,8 @@ DivergenceOperator<dim, Number>::DivergenceOperator()
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &     matrix_free_in,
-                                            DivergenceOperatorData<dim> const & data_in)
+DivergenceOperator<dim, Number>::initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+                                            DivergenceOperatorData<dim> const &     data_in)
 {
   this->matrix_free = &matrix_free_in;
   this->data        = data_in;
@@ -204,17 +202,18 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &          velocity,
-                                                      FaceIntegratorP &          pressure,
-                                                      OperatorType const &       operator_type,
-                                                      types::boundary_id const & boundary_id) const
+DivergenceOperator<dim, Number>::do_boundary_integral(
+  FaceIntegratorU &                  velocity,
+  FaceIntegratorP &                  pressure,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = data.bc->get_boundary_type(boundary_id);
 
@@ -244,7 +243,7 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -252,11 +251,11 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
 template<int dim, typename Number>
 void
 DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
-  FaceIntegratorU &          velocity,
-  FaceIntegratorU &          velocity_bc,
-  FaceIntegratorP &          pressure,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+  FaceIntegratorU &                  velocity,
+  FaceIntegratorU &                  velocity_bc,
+  FaceIntegratorP &                  pressure,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = data.bc->get_boundary_type(boundary_id);
 
@@ -286,17 +285,17 @@ DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                           VectorType &                    dst,
-                                           VectorType const &              src,
-                                           Range const &                   cell_range) const
+DivergenceOperator<dim, Number>::cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                           VectorType &                            dst,
+                                           VectorType const &                      src,
+                                           Range const &                           cell_range) const
 {
   CellIntegratorU velocity(matrix_free, data.dof_index_velocity, data.quad_index);
   CellIntegratorP pressure(matrix_free, data.dof_index_pressure, data.quad_index);
@@ -329,10 +328,10 @@ DivergenceOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matri
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::face_loop(MatrixFree<dim, Number> const & matrix_free,
-                                           VectorType &                    dst,
-                                           VectorType const &              src,
-                                           Range const &                   face_range) const
+DivergenceOperator<dim, Number>::face_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                           VectorType &                            dst,
+                                           VectorType const &                      src,
+                                           Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {
@@ -364,10 +363,10 @@ DivergenceOperator<dim, Number>::face_loop(MatrixFree<dim, Number> const & matri
 template<int dim, typename Number>
 void
 DivergenceOperator<dim, Number>::boundary_face_loop_hom_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {
@@ -395,10 +394,10 @@ DivergenceOperator<dim, Number>::boundary_face_loop_hom_operator(
 template<int dim, typename Number>
 void
 DivergenceOperator<dim, Number>::boundary_face_loop_full_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   face_range) const
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           face_range) const
 {
   if(data.integration_by_parts == true)
   {
@@ -425,7 +424,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_full_operator(
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::cell_loop_inhom_operator(MatrixFree<dim, Number> const &,
+DivergenceOperator<dim, Number>::cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
                                                           VectorType &,
                                                           VectorType const &,
                                                           Range const &) const
@@ -434,7 +433,7 @@ DivergenceOperator<dim, Number>::cell_loop_inhom_operator(MatrixFree<dim, Number
 
 template<int dim, typename Number>
 void
-DivergenceOperator<dim, Number>::face_loop_inhom_operator(MatrixFree<dim, Number> const &,
+DivergenceOperator<dim, Number>::face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &,
                                                           VectorType &,
                                                           VectorType const &,
                                                           Range const &) const
@@ -444,8 +443,8 @@ DivergenceOperator<dim, Number>::face_loop_inhom_operator(MatrixFree<dim, Number
 template<int dim, typename Number>
 void
 DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
   VectorType const &,
   std::pair<unsigned int, unsigned int> const & face_range) const
 {
@@ -473,8 +472,8 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator(
 template<int dim, typename Number>
 void
 DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vector(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
   VectorType const &,
   Range const & face_range) const
 {

@@ -29,8 +29,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true)
@@ -39,9 +37,10 @@ PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm
 
 template<int dim, typename Number>
 void
-PressureDifferenceCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_pressure_in,
-                                                 Mapping<dim> const &    mapping_in,
-                                                 PressureDifferenceData<dim> const & data_in)
+PressureDifferenceCalculator<dim, Number>::setup(
+  dealii::DoFHandler<dim> const &     dof_handler_pressure_in,
+  dealii::Mapping<dim> const &        mapping_in,
+  PressureDifferenceData<dim> const & data_in)
 {
   dof_handler_pressure = &dof_handler_pressure_in;
   mapping              = &mapping_in;
@@ -60,7 +59,7 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
   {
     Number pressure_1 = 0.0, pressure_2 = 0.0;
 
-    Point<dim> point_1, point_2;
+    dealii::Point<dim> point_1, point_2;
     point_1 = data.point_1;
     point_2 = data.point_2;
 
@@ -71,7 +70,7 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
 
     Number const pressure_difference = pressure_1 - pressure_2;
 
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename = data.directory + data.filename;
 

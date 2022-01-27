@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  This function calculates the characteristic element length h
  *  defined as h = min_{e=1,...,N_el} h_e, where h_e is the
@@ -36,11 +34,11 @@ using namespace dealii;
  */
 template<int dim>
 inline double
-calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation,
-                                  MPI_Comm const &           mpi_comm)
+calculate_minimum_vertex_distance(dealii::Triangulation<dim> const & triangulation,
+                                  MPI_Comm const &                   mpi_comm)
 {
-  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
-                                                    endc = triangulation.end();
+  typename dealii::Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
+                                                            endc = triangulation.end();
 
   double diameter = 0.0, min_cell_diameter = std::numeric_limits<double>::max();
 
@@ -54,7 +52,8 @@ calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation,
     }
   }
 
-  double const global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, mpi_comm);
+  double const global_min_cell_diameter =
+    -dealii::Utilities::MPI::max(-min_cell_diameter, mpi_comm);
 
   return global_min_cell_diameter;
 }

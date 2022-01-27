@@ -30,11 +30,9 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
-  MatrixFree<dim, Number> const &         matrix_free_in,
+  dealii::MatrixFree<dim, Number> const & matrix_free_in,
   unsigned int const                      dof_index_in,
   unsigned int const                      quad_index_in,
   MeanVelocityCalculatorData<dim> const & data_in,
@@ -70,8 +68,9 @@ MeanVelocityCalculator<dim, Number>::calculate_mean_velocity_area(VectorType con
 
     Number flow_rate = do_calculate_flow_rate_area(velocity);
 
-    AssertThrow(area_has_been_initialized == true, ExcMessage("Area has not been initialized."));
-    AssertThrow(this->area != 0.0, ExcMessage("Area has not been initialized."));
+    AssertThrow(area_has_been_initialized == true,
+                dealii::ExcMessage("Area has not been initialized."));
+    AssertThrow(this->area != 0.0, dealii::ExcMessage("Area has not been initialized."));
     Number mean_velocity = flow_rate / this->area;
 
     write_output(mean_velocity, time, "Mean velocity [m/s]");
@@ -156,7 +155,7 @@ MeanVelocityCalculator<dim, Number>::write_output(Number const &      value,
                                                   std::string const & name) const
 {
   // write output file
-  if(data.write_to_file == true && Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(data.write_to_file == true && dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::string filename = data.directory + data.filename;
 
@@ -191,28 +190,28 @@ MeanVelocityCalculator<dim, Number>::calculate_area() const
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
   {
-    typename std::set<types::boundary_id>::iterator it;
-    types::boundary_id                              boundary_id = matrix_free.get_boundary_id(face);
+    typename std::set<dealii::types::boundary_id>::iterator it;
+    dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
     it = data.boundary_IDs.find(boundary_id);
     if(it != data.boundary_IDs.end())
     {
       integrator.reinit(face);
 
-      scalar area_local = make_vectorized_array<Number>(0.0);
+      scalar area_local = dealii::make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         area_local += integrator.JxW(q);
       }
 
-      // sum over all entries of VectorizedArray
+      // sum over all entries of dealii::VectorizedArray
       for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
         area += area_local[n];
     }
   }
 
-  area = Utilities::MPI::sum(area, mpi_comm);
+  area = dealii::Utilities::MPI::sum(area, mpi_comm);
 
   return area;
 }
@@ -228,7 +227,7 @@ MeanVelocityCalculator<dim, Number>::calculate_volume() const
 
   // sum over all MPI processes
   Number volume = 1.0;
-  volume        = Utilities::MPI::sum(dst.at(0), mpi_comm);
+  volume        = dealii::Utilities::MPI::sum(dst.at(0), mpi_comm);
 
   return volume;
 }
@@ -236,8 +235,8 @@ MeanVelocityCalculator<dim, Number>::calculate_volume() const
 template<int dim, typename Number>
 void
 MeanVelocityCalculator<dim, Number>::local_calculate_volume(
-  MatrixFree<dim, Number> const & data,
-  std::vector<Number> &           dst,
+  dealii::MatrixFree<dim, Number> const & data,
+  std::vector<Number> &                   dst,
   VectorType const &,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
@@ -250,14 +249,14 @@ MeanVelocityCalculator<dim, Number>::local_calculate_volume(
   {
     integrator.reinit(cell);
 
-    scalar volume_vec = make_vectorized_array<Number>(0.);
+    scalar volume_vec = dealii::make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       volume_vec += integrator.JxW(q);
     }
 
-    // sum over entries of VectorizedArray, but only over those that are "active"
+    // sum over entries of dealii::VectorizedArray, but only over those that are "active"
     for(unsigned int v = 0; v < data.n_active_entries_per_cell_batch(cell); ++v)
     {
       volume += volume_vec[v];
@@ -280,8 +279,8 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
   {
-    typename std::set<types::boundary_id>::iterator it;
-    types::boundary_id                              boundary_id = matrix_free.get_boundary_id(face);
+    typename std::set<dealii::types::boundary_id>::iterator it;
+    dealii::types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
     it = data.boundary_IDs.find(boundary_id);
     if(it != data.boundary_IDs.end())
@@ -290,7 +289,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
       integrator.read_dof_values(velocity);
       integrator.evaluate(true, false);
 
-      scalar flow_rate_face = make_vectorized_array<Number>(0.0);
+      scalar flow_rate_face = dealii::make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
@@ -298,13 +297,13 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
           integrator.JxW(q) * integrator.get_value(q) * integrator.get_normal_vector(q);
       }
 
-      // sum over all entries of VectorizedArray
+      // sum over all entries of dealii::VectorizedArray
       for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
         flow_rate += flow_rate_face[n];
     }
   }
 
-  flow_rate = Utilities::MPI::sum(flow_rate, mpi_comm);
+  flow_rate = dealii::Utilities::MPI::sum(flow_rate, mpi_comm);
 
   return flow_rate;
 }
@@ -318,10 +317,11 @@ MeanVelocityCalculator<dim, Number>::do_calculate_mean_velocity_volume(
   matrix_free.cell_loop(&This::local_calculate_flow_rate_volume, this, dst, velocity);
 
   // sum over all MPI processes
-  Number mean_velocity = Utilities::MPI::sum(dst.at(0), mpi_comm);
+  Number mean_velocity = dealii::Utilities::MPI::sum(dst.at(0), mpi_comm);
 
-  AssertThrow(volume_has_been_initialized == true, ExcMessage("Volume has not been initialized."));
-  AssertThrow(this->volume != 0.0, ExcMessage("Volume has not been initialized."));
+  AssertThrow(volume_has_been_initialized == true,
+              dealii::ExcMessage("Volume has not been initialized."));
+  AssertThrow(this->volume != 0.0, dealii::ExcMessage("Volume has not been initialized."));
 
   mean_velocity /= this->volume;
 
@@ -337,7 +337,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_volume(
   matrix_free.cell_loop(&This::local_calculate_flow_rate_volume, this, dst, velocity);
 
   // sum over all MPI processes
-  Number flow_rate_times_length = Utilities::MPI::sum(dst.at(0), mpi_comm);
+  Number flow_rate_times_length = dealii::Utilities::MPI::sum(dst.at(0), mpi_comm);
 
   return flow_rate_times_length;
 }
@@ -345,7 +345,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_volume(
 template<int dim, typename Number>
 void
 MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
-  MatrixFree<dim, Number> const &               data,
+  dealii::MatrixFree<dim, Number> const &       data,
   std::vector<Number> &                         dst,
   VectorType const &                            src,
   std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -361,7 +361,7 @@ MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
     integrator.read_dof_values(src);
     integrator.evaluate(true, false);
 
-    scalar flow_rate_vec = make_vectorized_array<Number>(0.);
+    scalar flow_rate_vec = dealii::make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
@@ -370,7 +370,7 @@ MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
       flow_rate_vec += velocity_direction * integrator.JxW(q);
     }
 
-    // sum over entries of VectorizedArray, but only over those
+    // sum over entries of dealii::VectorizedArray, but only over those
     // that are "active"
     for(unsigned int v = 0; v < data.n_active_entries_per_cell_batch(cell); ++v)
     {

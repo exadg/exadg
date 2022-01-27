@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 // forward declaration
 class Parameters;
 
@@ -51,7 +49,7 @@ template<typename Number>
 class DriverSteadyProblems
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef Interface::Operator<Number> Operator;
 
@@ -91,7 +89,7 @@ private:
 
   bool is_test;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   std::shared_ptr<TimerTree> timer_tree;
 

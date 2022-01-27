@@ -51,8 +51,6 @@ namespace ExaDG
 {
 namespace FTI
 {
-using namespace dealii;
-
 template<int dim, typename Number = double>
 class Driver
 {
@@ -90,7 +88,7 @@ private:
   MPI_Comm const mpi_comm;
 
   // output to std::cout
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // do not print wall times if is_test
   bool const is_test;
@@ -111,8 +109,8 @@ private:
   // INCOMPRESSIBLE NAVIER-STOKES
 
   //  MatrixFree
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   std::shared_ptr<IncNS::SpatialOperatorBase<dim, Number>> fluid_operator;
 
@@ -135,7 +133,7 @@ private:
 
   std::vector<std::shared_ptr<TimeIntBase>> scalar_time_integrator;
 
-  mutable LinearAlgebra::distributed::Vector<Number> temperature;
+  mutable dealii::LinearAlgebra::distributed::Vector<Number> temperature;
 
   /*
    * Computation time (wall clock time).

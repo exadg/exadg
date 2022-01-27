@@ -35,8 +35,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   std::shared_ptr<Grid<dim> const>                  grid_in,
@@ -55,7 +53,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
     field(field_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
-    fe_u(new FESystem<dim>(FE_DGQ<dim>(parameters_in.degree_u), dim)),
+    fe_u(new dealii::FESystem<dim>(dealii::FE_DGQ<dim>(parameters_in.degree_u), dim)),
     fe_p(parameters_in.get_degree_p(parameters_in.degree_u)),
     fe_u_scalar(parameters_in.degree_u),
     dof_handler_u(*grid_in->triangulation),
@@ -63,7 +61,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
     dof_handler_u_scalar(*grid_in->triangulation),
     pressure_level_is_undefined(false),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     velocity_ptr(nullptr),
     pressure_ptr(nullptr)
 {
@@ -82,7 +80,7 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
   // Erroneously, the boundary descriptor might contain too many boundary IDs which
   // do not even exist in the triangulation. Here, we make sure that each entry of
   // the boundary descriptor has indeed a counterpart in the triangulation.
-  std::vector<types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
+  std::vector<dealii::types::boundary_id> boundary_ids = grid->triangulation->get_boundary_ids();
   for(auto it = boundary_descriptor->pressure->dirichlet_bc.begin();
       it != boundary_descriptor->pressure->dirichlet_bc.end();
       ++it)
@@ -91,8 +89,8 @@ SpatialOperatorBase<dim, Number>::SpatialOperatorBase(
       std::find(boundary_ids.begin(), boundary_ids.end(), it->first) != boundary_ids.end();
 
     AssertThrow(triangulation_has_boundary_id,
-                ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
-                           "that are not part of the triangulation."));
+                dealii::ExcMessage("The boundary descriptor for the pressure contains boundary IDs "
+                                   "that are not part of the triangulation."));
   }
 
   pressure_level_is_undefined = boundary_descriptor->pressure->dirichlet_bc.empty();
@@ -150,16 +148,17 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
   matrix_free_data.insert_constraint(&constraint_u_scalar, field + dof_index_u_scalar);
 
   // quadrature
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree_u + 1), field + quad_index_u);
-  matrix_free_data.insert_quadrature(QGauss<1>(param.get_degree_p(param.degree_u) + 1),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + 1), field + quad_index_u);
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.get_degree_p(param.degree_u) + 1),
                                      field + quad_index_p);
-  matrix_free_data.insert_quadrature(QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
+  matrix_free_data.insert_quadrature(dealii::QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
                                      field + quad_index_u_nonlinear);
   if(param.store_previous_boundary_values)
   {
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.degree_u + 1),
+    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.degree_u + 1),
                                        field + quad_index_u_gauss_lobatto);
-    matrix_free_data.insert_quadrature(QGaussLobatto<1>(param.get_degree_p(param.degree_u) + 1),
+    matrix_free_data.insert_quadrature(dealii::QGaussLobatto<1>(param.get_degree_p(param.degree_u) +
+                                                                1),
                                        field + quad_index_p_gauss_lobatto);
   }
 }
@@ -167,9 +166,9 @@ SpatialOperatorBase<dim, Number>::fill_matrix_free_data(
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free_in,
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data_in,
-  std::string const &                          dof_index_temperature)
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free_in,
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data_in,
+  std::string const &                              dof_index_temperature)
 {
   pcout << std::endl
         << "Setup incompressible Navier-Stokes operator ..." << std::endl
@@ -220,15 +219,17 @@ SpatialOperatorBase<dim, Number>::initialize_boundary_descriptor_laplace()
   //       descriptor for the Laplace operator because these inhomogeneous
   //       boundary conditions have to be implemented separately
   //       and can not be applied by the Laplace operator.
-  for(typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::const_iterator it =
+  for(typename std::map<dealii::types::boundary_id,
+                        std::shared_ptr<dealii::Function<dim>>>::const_iterator it =
         boundary_descriptor->pressure->neumann_bc.begin();
       it != boundary_descriptor->pressure->neumann_bc.end();
       ++it)
   {
-    std::shared_ptr<Function<dim>> zero_function;
-    zero_function = std::make_shared<Functions::ZeroFunction<dim>>(1);
+    std::shared_ptr<dealii::Function<dim>> zero_function;
+    zero_function = std::make_shared<dealii::Functions::ZeroFunction<dim>>(1);
     boundary_descriptor_laplace->neumann_bc.insert(
-      std::pair<types::boundary_id, std::shared_ptr<Function<dim>>>(it->first, zero_function));
+      std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>(it->first,
+                                                                                    zero_function));
   }
 }
 
@@ -241,9 +242,10 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
   dof_handler_p.distribute_dofs(fe_p);
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
 
-  unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
+  unsigned int const ndofs_per_cell_velocity =
+    dealii::Utilities::pow(param.degree_u + 1, dim) * dim;
   unsigned int const ndofs_per_cell_pressure =
-    Utilities::pow(param.get_degree_p(param.degree_u) + 1, dim);
+    dealii::Utilities::pow(param.get_degree_p(param.degree_u) + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -270,7 +272,7 @@ SpatialOperatorBase<dim, Number>::distribute_dofs()
 }
 
 template<int dim, typename Number>
-types::global_dof_index
+dealii::types::global_dof_index
 SpatialOperatorBase<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler_u.n_dofs() + dof_handler_p.n_dofs();
@@ -303,7 +305,7 @@ SpatialOperatorBase<dim, Number>::initialize_operators(std::string const & dof_i
   viscous_kernel = std::make_shared<Operators::ViscousKernel<dim, Number>>();
   viscous_kernel->reinit(*matrix_free, viscous_kernel_data, get_dof_index_velocity());
 
-  AffineConstraints<Number> constraint_dummy;
+  dealii::AffineConstraints<Number> constraint_dummy;
   constraint_dummy.close();
 
   // mass operator
@@ -539,11 +541,11 @@ SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
   for(unsigned int d = 0; d < dim; ++d)
     first_point[d] = 0.0;
 
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
-    typename DoFHandler<dim>::active_cell_iterator first_cell;
-    typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_p.begin_active(),
-                                                   endc = dof_handler_p.end();
+    typename dealii::DoFHandler<dim>::active_cell_iterator first_cell;
+    typename dealii::DoFHandler<dim>::active_cell_iterator cell = dof_handler_p.begin_active(),
+                                                           endc = dof_handler_p.end();
 
     bool processor_has_active_cells = false;
     for(; cell != endc; ++cell)
@@ -558,28 +560,29 @@ SpatialOperatorBase<dim, Number>::initialization_pure_dirichlet_bc()
     }
 
     AssertThrow(processor_has_active_cells == true,
-                ExcMessage("No active cells on Processor with ID=0"));
+                dealii::ExcMessage("No active cells on Processor with ID=0"));
 
-    FEValues<dim> fe_values(dof_handler_p.get_fe(),
-                            Quadrature<dim>(dof_handler_p.get_fe().get_unit_support_points()),
-                            update_quadrature_points);
+    dealii::FEValues<dim> fe_values(dof_handler_p.get_fe(),
+                                    dealii::Quadrature<dim>(
+                                      dof_handler_p.get_fe().get_unit_support_points()),
+                                    dealii::update_quadrature_points);
 
     fe_values.reinit(first_cell);
 
     first_point = fe_values.quadrature_point(0);
-    std::vector<types::global_dof_index> dof_indices(dof_handler_p.get_fe().dofs_per_cell);
+    std::vector<dealii::types::global_dof_index> dof_indices(dof_handler_p.get_fe().dofs_per_cell);
     first_cell->get_dof_indices(dof_indices);
     dof_index_first_point = dof_indices[0];
   }
-  dof_index_first_point = Utilities::MPI::sum(dof_index_first_point, mpi_comm);
+  dof_index_first_point = dealii::Utilities::MPI::sum(dof_index_first_point, mpi_comm);
   for(unsigned int d = 0; d < dim; ++d)
   {
-    first_point[d] = Utilities::MPI::sum(first_point[d], mpi_comm);
+    first_point[d] = dealii::Utilities::MPI::sum(first_point[d], mpi_comm);
   }
 }
 
 template<int dim, typename Number>
-MatrixFree<dim, Number> const &
+dealii::MatrixFree<dim, Number> const &
 SpatialOperatorBase<dim, Number>::get_matrix_free() const
 {
   return *matrix_free;
@@ -665,55 +668,55 @@ SpatialOperatorBase<dim, Number>::get_quad_index_velocity_linearized() const
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented"));
+    AssertThrow(false, dealii::ExcMessage("Not implemented"));
     return get_quad_index_velocity_nonlinear();
   }
 }
 
 template<int dim, typename Number>
-std::shared_ptr<Mapping<dim> const>
+std::shared_ptr<dealii::Mapping<dim> const>
 SpatialOperatorBase<dim, Number>::get_mapping() const
 {
   return get_dynamic_mapping<dim, Number>(grid, grid_motion);
 }
 
 template<int dim, typename Number>
-FESystem<dim> const &
+dealii::FESystem<dim> const &
 SpatialOperatorBase<dim, Number>::get_fe_u() const
 {
   return *fe_u;
 }
 
 template<int dim, typename Number>
-FE_DGQ<dim> const &
+dealii::FE_DGQ<dim> const &
 SpatialOperatorBase<dim, Number>::get_fe_p() const
 {
   return fe_p;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 SpatialOperatorBase<dim, Number>::get_dof_handler_u() const
 {
   return dof_handler_u;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 SpatialOperatorBase<dim, Number>::get_dof_handler_u_scalar() const
 {
   return dof_handler_u_scalar;
 }
 
 template<int dim, typename Number>
-DoFHandler<dim> const &
+dealii::DoFHandler<dim> const &
 SpatialOperatorBase<dim, Number>::get_dof_handler_p() const
 {
   return dof_handler_p;
 }
 
 template<int dim, typename Number>
-AffineConstraints<Number> const &
+dealii::AffineConstraints<Number> const &
 SpatialOperatorBase<dim, Number>::get_constraint_p() const
 {
   return constraint_p;
@@ -727,11 +730,12 @@ SpatialOperatorBase<dim, Number>::get_viscosity() const
 }
 
 template<int dim, typename Number>
-VectorizedArray<Number>
+dealii::VectorizedArray<Number>
 SpatialOperatorBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
                                                               unsigned int const q) const
 {
-  VectorizedArray<Number> viscosity = make_vectorized_array<Number>(get_viscosity());
+  dealii::VectorizedArray<Number> viscosity =
+    dealii::make_vectorized_array<Number>(get_viscosity());
 
   bool const viscosity_is_variable = param.use_turbulence_model;
   if(viscosity_is_variable)
@@ -792,22 +796,22 @@ SpatialOperatorBase<dim, Number>::prescribe_initial_conditions(VectorType & velo
   field_functions->initial_solution_pressure->set_time(time);
 
   // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+  typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble velocity_double;
   VectorTypeDouble pressure_double;
   velocity_double = velocity;
   pressure_double = pressure;
 
-  VectorTools::interpolate(*get_mapping(),
-                           dof_handler_u,
-                           *(field_functions->initial_solution_velocity),
-                           velocity_double);
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   dof_handler_u,
+                                   *(field_functions->initial_solution_velocity),
+                                   velocity_double);
 
-  VectorTools::interpolate(*get_mapping(),
-                           dof_handler_p,
-                           *(field_functions->initial_solution_pressure),
-                           pressure_double);
+  dealii::VectorTools::interpolate(*get_mapping(),
+                                   dof_handler_p,
+                                   *(field_functions->initial_solution_pressure),
+                                   pressure_double);
 
   velocity = velocity_double;
   pressure = pressure_double;
@@ -982,7 +986,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
       double current = 0.;
       if(pressure.locally_owned_elements().is_element(dof_index_first_point))
         current = pressure(dof_index_first_point);
-      current = Utilities::MPI::sum(current, mpi_comm);
+      current = dealii::Utilities::MPI::sum(current, mpi_comm);
 
       VectorType vec_temp(pressure);
       for(unsigned int i = 0; i < vec_temp.locally_owned_size(); ++i)
@@ -992,7 +996,7 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
-      LinearAlgebra::set_zero_mean_value(pressure);
+      dealii::LinearAlgebra::set_zero_mean_value(pressure);
     }
     // If an analytical solution is available: shift pressure so that the numerical pressure
     // solution has a mean value identical to the "exact pressure solution" obtained by
@@ -1001,17 +1005,17 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
       // one cannot use Number as template here since Number might be float
-      // while analytical_solution_pressure is of type Function<dim,double>
-      typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+      // while analytical_solution_pressure is of type dealii::Function<dim,double>
+      typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
       VectorTypeDouble vec_double;
       vec_double = pressure; // initialize
 
       field_functions->analytical_solution_pressure->set_time(time);
-      VectorTools::interpolate(*get_mapping(),
-                               dof_handler_p,
-                               *(field_functions->analytical_solution_pressure),
-                               vec_double);
+      dealii::VectorTools::interpolate(*get_mapping(),
+                                       dof_handler_p,
+                                       *(field_functions->analytical_solution_pressure),
+                                       vec_double);
 
       double const exact   = vec_double.mean_value();
       double const current = pressure.mean_value();
@@ -1024,8 +1028,8 @@ SpatialOperatorBase<dim, Number>::adjust_pressure_level_if_undefined(VectorType 
     }
     else
     {
-      AssertThrow(false,
-                  ExcMessage("Specified method to adjust pressure level is not implemented."));
+      AssertThrow(
+        false, dealii::ExcMessage("Specified method to adjust pressure level is not implemented."));
     }
   }
 }
@@ -1034,7 +1038,7 @@ template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::set_temperature(VectorType const & temperature)
 {
-  AssertThrow(param.boussinesq_term, ExcMessage("Invalid parameters detected."));
+  AssertThrow(param.boussinesq_term, dealii::ExcMessage("Invalid parameters detected."));
 
   rhs_operator.set_temperature(temperature);
 }
@@ -1096,7 +1100,8 @@ void
 SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                                          VectorType const & src) const
 {
-  AssertThrow(dim == 2, ExcMessage("Calculation of streamfunction can only be used for dim==2."));
+  AssertThrow(dim == 2,
+              dealii::ExcMessage("Calculation of streamfunction can only be used for dim==2."));
 
   // compute rhs vector
   StreamfunctionCalculatorRHSOperator<dim, Number> rhs_operator;
@@ -1120,11 +1125,11 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor->velocity->dirichlet_bc;
 
   AssertThrow(boundary_descriptor->velocity->neumann_bc.empty() == true,
-              ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
-                         "not implemented for this type of boundary conditions."));
+              dealii::ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
+                                 "not implemented for this type of boundary conditions."));
   AssertThrow(boundary_descriptor->velocity->symmetry_bc.empty() == true,
-              ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
-                         "not implemented for this type of boundary conditions."));
+              dealii::ExcMessage("Assumption is not fulfilled. Streamfunction calculator is "
+                                 "not implemented for this type of boundary conditions."));
 
   laplace_operator_data.bc = boundary_descriptor_streamfunction;
 
@@ -1132,7 +1137,7 @@ SpatialOperatorBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   typedef Poisson::LaplaceOperator<dim, Number, 1> Laplace;
   Laplace                                          laplace_operator;
-  AffineConstraints<Number>                        constraint_dummy;
+  dealii::AffineConstraints<Number>                constraint_dummy;
   laplace_operator.initialize(*matrix_free, constraint_dummy, laplace_operator_data);
 
   // setup preconditioner
@@ -1400,11 +1405,11 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
         std::make_shared<ELEMENTWISE_PROJ_OPERATOR>(*projection_operator);
 
       // preconditioner
-      typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PROJ_PRECONDITIONER;
+      typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>> PROJ_PRECONDITIONER;
 
       if(param.preconditioner_projection == PreconditionerProjection::None)
       {
-        typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+        typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<Number>> IDENTITY;
 
         elementwise_preconditioner_projection =
           std::make_shared<IDENTITY>(elementwise_projection_operator->get_problem_size());
@@ -1420,7 +1425,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
       }
       else
       {
-        AssertThrow(false, ExcMessage("The specified preconditioner is not implemented."));
+        AssertThrow(false, dealii::ExcMessage("The specified preconditioner is not implemented."));
       }
 
       // solver
@@ -1440,7 +1445,7 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Specified projection solver not implemented."));
     }
   }
   // continuity penalty term with/without divergence penalty term -> globally coupled problem
@@ -1496,7 +1501,8 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     else
     {
       AssertThrow(false,
-                  ExcMessage("Preconditioner specified for projection step is not implemented."));
+                  dealii::ExcMessage(
+                    "Preconditioner specified for projection step is not implemented."));
     }
 
     // solver
@@ -1540,14 +1546,14 @@ SpatialOperatorBase<dim, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Specified projection solver not implemented."));
     }
   }
   else
   {
     AssertThrow(
       param.use_divergence_penalty == false && param.use_continuity_penalty == false,
-      ExcMessage(
+      dealii::ExcMessage(
         "Specified combination of divergence and continuity penalty operators not implemented."));
   }
 }
@@ -1565,7 +1571,7 @@ SpatialOperatorBase<dim, Number>::update_projection_operator(VectorType const & 
                                                              double const time_step_size) const
 {
   AssertThrow(projection_operator.get() != 0,
-              ExcMessage("Projection operator is not initialized."));
+              dealii::ExcMessage("Projection operator is not initialized."));
 
   // Update projection operator, i.e., the penalty parameters that depend on the velocity field
   // and the time step size
@@ -1587,7 +1593,8 @@ SpatialOperatorBase<dim, Number>::solve_projection(VectorType &       dst,
                                                    VectorType const & src,
                                                    bool const &       update_preconditioner) const
 {
-  Assert(projection_solver.get() != 0, ExcMessage("Projection solver has not been initialized."));
+  Assert(projection_solver.get() != 0,
+         dealii::ExcMessage("Projection solver has not been initialized."));
 
   unsigned int n_iter = projection_solver->solve(dst, src, update_preconditioner);
 
@@ -1597,8 +1604,8 @@ SpatialOperatorBase<dim, Number>::solve_projection(VectorType &       dst,
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundary_face(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
   VectorType const &,
   Range const & face_range) const
 {
@@ -1609,7 +1616,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
     BoundaryTypeU const boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
@@ -1644,7 +1651,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
         }
         else
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          AssertThrow(false, dealii::ExcMessage("Not implemented."));
         }
 
         integrator.submit_dof_value(g, index);
@@ -1656,7 +1663,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
     {
       AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
                     boundary_type == BoundaryTypeU::Symmetry,
-                  ExcMessage("BoundaryTypeU not implemented."));
+                  dealii::ExcMessage("BoundaryTypeU not implemented."));
     }
   }
 }
@@ -1664,8 +1671,8 @@ SpatialOperatorBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_bounda
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundary_face(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
   VectorType const &,
   Range const & face_range) const
 {
@@ -1676,7 +1683,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_bounda
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
     BoundaryTypeP const boundary_type =
       this->boundary_descriptor->pressure->get_boundary_type(boundary_id);
@@ -1705,7 +1712,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_bounda
     else
     {
       AssertThrow(boundary_type == BoundaryTypeP::Neumann,
-                  ExcMessage("BoundaryTypeP not implemented."));
+                  dealii::ExcMessage("BoundaryTypeP not implemented."));
     }
   }
 }
@@ -1713,8 +1720,8 @@ SpatialOperatorBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_bounda
 template<int dim, typename Number>
 void
 SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
-  MatrixFree<dim, Number> const & matrix_free,
-  VectorType &                    dst,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
   VectorType const &,
   Range const & face_range) const
 {
@@ -1727,7 +1734,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
-    types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+    dealii::types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
 
     BoundaryTypeU const boundary_type =
       this->boundary_descriptor->velocity->get_boundary_type(boundary_id);
@@ -1770,7 +1777,7 @@ SpatialOperatorBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
       AssertThrow(boundary_type == BoundaryTypeU::Dirichlet ||
                     boundary_type == BoundaryTypeU::Neumann ||
                     boundary_type == BoundaryTypeU::Symmetry,
-                  ExcMessage("BoundaryTypeU not implemented."));
+                  dealii::ExcMessage("BoundaryTypeU not implemented."));
     }
   }
 }

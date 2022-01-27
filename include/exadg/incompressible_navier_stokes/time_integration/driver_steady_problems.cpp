@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   std::shared_ptr<Operator>                       operator_,
@@ -47,7 +45,7 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
     mpi_comm(mpi_comm_),
     is_test(is_test_),
     timer_tree(new TimerTree()),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     postprocessor(postprocessor_),
     iterations({0, {0, 0}})
 {
@@ -66,7 +64,7 @@ DriverSteadyProblems<dim, Number>::setup()
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 DriverSteadyProblems<dim, Number>::get_velocity() const
 {
   return solution.block(0);
@@ -103,7 +101,7 @@ template<int dim, typename Number>
 void
 DriverSteadyProblems<dim, Number>::solve(double const time, bool unsteady_problem)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   postprocessing(time, unsteady_problem);
@@ -122,7 +120,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   if(iterations.first == 0)
     global_timer.restart();
 
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(print_solver_info(time, unsteady_problem))
@@ -134,7 +132,7 @@ DriverSteadyProblems<dim, Number>::do_solve(double const time, bool unsteady_pro
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
     AssertThrow(this->param.apply_penalty_terms_in_postprocessing_step == false,
-                ExcMessage(
+                dealii::ExcMessage(
                   "Penalty terms have to be applied in momentum equation for steady problems."));
 
     if(this->param.use_divergence_penalty == true)
@@ -230,7 +228,7 @@ template<int dim, typename Number>
 void
 DriverSteadyProblems<dim, Number>::postprocessing(double const time, bool unsteady_problem) const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(unsteady_problem)

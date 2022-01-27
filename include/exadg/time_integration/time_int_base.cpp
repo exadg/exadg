@@ -24,8 +24,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 TimeIntBase::TimeIntBase(double const &      start_time_,
                          double const &      end_time_,
                          unsigned int const  max_number_of_time_steps_,
@@ -36,7 +34,7 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
     end_time(end_time_),
     time(start_time_),
     eps(1.e-10),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     time_step_number(1),
     max_number_of_time_steps(max_number_of_time_steps_),
     restart_data(restart_data_),
@@ -80,7 +78,7 @@ TimeIntBase::advance_one_timestep()
 void
 TimeIntBase::advance_one_timestep_pre_solve(bool const print_header)
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(started() && !finished())
@@ -103,7 +101,7 @@ TimeIntBase::advance_one_timestep_pre_solve(bool const print_header)
 void
 TimeIntBase::advance_one_timestep_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(started() && !finished())
@@ -117,7 +115,7 @@ TimeIntBase::advance_one_timestep_solve()
 void
 TimeIntBase::advance_one_timestep_post_solve()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   if(started() && !finished())
@@ -143,7 +141,8 @@ TimeIntBase::reset_time(double const & current_time)
   if(current_time <= start_time + eps)
     time = current_time;
   else
-    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
+    AssertThrow(false,
+                dealii::ExcMessage("The variable time may not be overwritten via public access."));
 }
 
 double
@@ -218,7 +217,7 @@ TimeIntBase::read_restart()
 
   std::string   filename = restart_filename(restart_data.filename, mpi_comm);
   std::ifstream in(filename);
-  AssertThrow(in, ExcMessage("File " + filename + " does not exist."));
+  AssertThrow(in, dealii::ExcMessage("File " + filename + " does not exist."));
 
   do_read_restart(in);
 

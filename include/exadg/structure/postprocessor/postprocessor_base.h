@@ -28,8 +28,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<typename Number>
 class PostProcessorBase
 {

@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  *  To check the correctness of the efficient computation of the diagonal
  *  the result is compared to a naive calculation that simply applies the
@@ -38,17 +36,18 @@ using namespace dealii;
  */
 template<typename Operator, typename value_type>
 void
-verify_calculation_of_diagonal(Operator &                                       op,
-                               LinearAlgebra::distributed::Vector<value_type> & diagonal,
-                               MPI_Comm const &                                 mpi_comm)
+verify_calculation_of_diagonal(Operator &                                               op,
+                               dealii::LinearAlgebra::distributed::Vector<value_type> & diagonal,
+                               MPI_Comm const &                                         mpi_comm)
 {
-  AssertThrow(Utilities::MPI::n_mpi_processes(mpi_comm) == 1,
-              ExcMessage("Number of MPI processes has to be 1."));
+  AssertThrow(dealii::Utilities::MPI::n_mpi_processes(mpi_comm) == 1,
+              dealii::ExcMessage("Number of MPI processes has to be 1."));
 
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << "Verify calculation of diagonal:" << std::endl;
 
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<value_type> VectorType;
 
   VectorType diagonal_check(diagonal);
   VectorType src(diagonal);

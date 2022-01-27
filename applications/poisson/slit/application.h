@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -39,7 +37,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
   }
@@ -81,7 +79,7 @@ public:
     double const length = 1.0;
     double const left = -length, right = length;
 
-    GridGenerator::hyper_cube_slit(*this->grid->triangulation, left, right);
+    dealii::GridGenerator::hyper_cube_slit(*this->grid->triangulation, left, right);
 
     this->grid->triangulation->refine_global(this->param.grid.n_refine_global);
   }
@@ -89,17 +87,18 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->dirichlet_bc.insert(
-      pair(0, new Functions::SlitSingularityFunction<dim>()));
+      pair(0, new dealii::Functions::SlitSingularityFunction<dim>()));
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->right_hand_side.reset(new dealii::Functions::ZeroFunction<dim>(1));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>
@@ -113,7 +112,8 @@ public:
     pp_data.output_data.degree             = this->param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
-    pp_data.error_data.analytical_solution.reset(new Functions::SlitSingularityFunction<dim>());
+    pp_data.error_data.analytical_solution.reset(
+      new dealii::Functions::SlitSingularityFunction<dim>());
 
     std::shared_ptr<PostProcessorBase<dim, Number>> pp;
     pp.reset(new PostProcessor<dim, Number>(pp_data, this->mpi_comm));

@@ -30,12 +30,10 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<2, dim, VectorizedArray<Number>>
-    add_identity(Tensor<2, dim, VectorizedArray<Number>> gradient)
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    add_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
 {
   for(unsigned int i = 0; i < dim; i++)
     gradient[i][i] = gradient[i][i] + 1.0;
@@ -44,8 +42,8 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number = double>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<2, dim, VectorizedArray<Number>>
-    subtract_identity(Tensor<2, dim, VectorizedArray<Number>> gradient)
+    dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+    subtract_identity(dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> gradient)
 {
   for(unsigned int i = 0; i < dim; i++)
     gradient[i][i] = gradient[i][i] - 1.0;
@@ -54,16 +52,16 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<2, dim, VectorizedArray<Number>>
-  get_F(const Tensor<2, dim, VectorizedArray<Number>> & H)
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  get_F(const dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & H)
 {
   return add_identity(H);
 }
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<2, dim, VectorizedArray<Number>>
-  get_E(const Tensor<2, dim, VectorizedArray<Number>> & F)
+  dealii::Tensor<2, dim, dealii::VectorizedArray<Number>>
+  get_E(const dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> & F)
 {
   return 0.5 * subtract_identity(transpose(F) * F);
 }

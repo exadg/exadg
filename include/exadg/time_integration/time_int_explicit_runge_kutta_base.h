@@ -30,13 +30,11 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Number>
 class TimeIntExplRKBase : public TimeIntBase
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   TimeIntExplRKBase(double const &      start_time_,
                     double const &      end_time_,

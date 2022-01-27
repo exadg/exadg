@@ -30,13 +30,11 @@ namespace CompNS
 {
 namespace Interface
 {
-using namespace dealii;
-
 template<typename Number>
 class Operator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   Operator()
   {

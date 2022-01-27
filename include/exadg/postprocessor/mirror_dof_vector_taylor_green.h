@@ -35,8 +35,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  * Taylor-Green symmetries:
  *
@@ -48,12 +46,12 @@ using namespace dealii;
  */
 template<int dim, typename Number>
 void
-apply_taylor_green_symmetry(DoFHandler<dim> const &                            dof_handler_symm,
-                            DoFHandler<dim> const &                            dof_handler,
-                            double const                                       n_cells_1d,
-                            double const                                       delta,
-                            const LinearAlgebra::distributed::Vector<Number> & vector_symm,
-                            LinearAlgebra::distributed::Vector<Number> &       vector)
+apply_taylor_green_symmetry(dealii::DoFHandler<dim> const & dof_handler_symm,
+                            dealii::DoFHandler<dim> const & dof_handler,
+                            double const                    n_cells_1d,
+                            double const                    delta,
+                            const dealii::LinearAlgebra::distributed::Vector<Number> & vector_symm,
+                            dealii::LinearAlgebra::distributed::Vector<Number> &       vector)
 {
   // determine some useful constants
   auto const & fe = dof_handler.get_fe();
@@ -61,16 +59,17 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
   MPI_Comm const comm = dof_handler.get_communicator();
 
   // determine which process has which index (lex numbering) and wants which
-  IndexSet range_has_lex(dof_handler_symm.n_dofs());  // has in symm system
-  IndexSet range_want_lex(dof_handler_symm.n_dofs()); // want in full system
+  dealii::IndexSet range_has_lex(dof_handler_symm.n_dofs());  // has in symm system
+  dealii::IndexSet range_want_lex(dof_handler_symm.n_dofs()); // want in full system
 
   // ... and create a map: lex to cell iterators
-  std::map<unsigned int, typename DoFHandler<dim>::active_cell_iterator> map_lex_to_cell_symm;
-  std::map<unsigned int, std::vector<typename DoFHandler<dim>::active_cell_iterator>>
+  std::map<unsigned int, typename dealii::DoFHandler<dim>::active_cell_iterator>
+    map_lex_to_cell_symm;
+  std::map<unsigned int, std::vector<typename dealii::DoFHandler<dim>::active_cell_iterator>>
     map_lex_to_cell_full;
 
   {
-    auto norm_point_to_lex = [&](Point<dim> const c) {
+    auto norm_point_to_lex = [&](dealii::Point<dim> const c) {
       // convert normalized point [0, 1] to lex
       if(dim == 2)
         return static_cast<std::size_t>(std::floor(c[0]) + n_cells_1d * std::floor(c[1]));
@@ -110,18 +109,19 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
 
   // determine who has and who wants data
   std::map<unsigned int, std::vector<unsigned int>> recv_map_proc_to_lex_offset;
-  std::map<unsigned int, IndexSet>                  send_map_proc_to_lex;
+  std::map<unsigned int, dealii::IndexSet>          send_map_proc_to_lex;
 
   {
     std::vector<unsigned int> owning_ranks_of_ghosts(range_want_lex.n_elements());
 
     // set up dictionary
-    Utilities::MPI::internal::ComputeIndexOwner::ConsensusAlgorithmsPayload process(
+    dealii::Utilities::MPI::internal::ComputeIndexOwner::ConsensusAlgorithmsPayload process(
       range_has_lex, range_want_lex, comm, owning_ranks_of_ghosts, true);
 
-    Utilities::MPI::ConsensusAlgorithms::
-      Selector<std::pair<types::global_dof_index, types::global_dof_index>, unsigned int>
-        consensus_algorithm(process, comm);
+    dealii::Utilities::MPI::ConsensusAlgorithms::Selector<
+      std::pair<dealii::types::global_dof_index, dealii::types::global_dof_index>,
+      unsigned int>
+      consensus_algorithm(process, comm);
     consensus_algorithm.run();
 
     for(auto const & owner : owning_ranks_of_ghosts)
@@ -168,8 +168,8 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
         send_buffer.resize(send_index_set.second.n_elements() * fe.n_dofs_per_cell());
 
         // collect data to be send
-        auto                                 send_buffer_ptr = &send_buffer[0];
-        std::vector<types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
+        auto                                         send_buffer_ptr = &send_buffer[0];
+        std::vector<dealii::types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
         for(auto const cell_index : send_index_set.second)
         {
           auto const & cell_accessor = map_lex_to_cell_symm[cell_index];
@@ -213,7 +213,7 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
 
     unsigned int const n_dofs_per_component = fe.n_dofs_per_cell() / dim;
 
-    std::vector<types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
+    std::vector<dealii::types::global_dof_index> dof_indices(fe.n_dofs_per_cell());
     for(auto const cell_index : range_want_lex)
     {
       auto const & cell_accessors = map_lex_to_cell_full[cell_index];
@@ -224,12 +224,12 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
 
         for(unsigned int i = 0; i < n_dofs_per_component; i++)
         {
-          Point<dim, unsigned int> p =
-            dim == 2 ?
-              Point<dim, unsigned int>(i % (fe.degree + 1), i / (fe.degree + 1)) :
-              Point<dim, unsigned int>(i % (fe.degree + 1),
-                                       (i % ((fe.degree + 1) * (fe.degree + 1))) / (fe.degree + 1),
-                                       i / (fe.degree + 1) / (fe.degree + 1));
+          dealii::Point<dim, unsigned int> p =
+            dim == 2 ? dealii::Point<dim, unsigned int>(i % (fe.degree + 1), i / (fe.degree + 1)) :
+                       dealii::Point<dim, unsigned int>(i % (fe.degree + 1),
+                                                        (i % ((fe.degree + 1) * (fe.degree + 1))) /
+                                                          (fe.degree + 1),
+                                                        i / (fe.degree + 1) / (fe.degree + 1));
 
           auto c = cell_accessor->center();
 
@@ -253,11 +253,11 @@ apply_taylor_green_symmetry(DoFHandler<dim> const &                            d
 
 template<typename MeshType, typename Number>
 void
-initialize_dof_vector(LinearAlgebra::distributed::Vector<Number> & vec,
-                      const MeshType &                             dof_handler)
+initialize_dof_vector(dealii::LinearAlgebra::distributed::Vector<Number> & vec,
+                      const MeshType &                                     dof_handler)
 {
-  IndexSet locally_relevant_dofs;
-  DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  dealii::IndexSet locally_relevant_dofs;
+  dealii::DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
   MPI_Comm const comm = dof_handler.get_communicator();
 

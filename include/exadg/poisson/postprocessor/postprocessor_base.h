@@ -32,13 +32,11 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 template<typename Number>
 class PostProcessorInterface
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   virtual ~PostProcessorInterface()
   {
@@ -62,7 +60,7 @@ public:
   }
 
   virtual void
-  setup(DoFHandler<dim, dim> const & dof_handler, Mapping<dim> const & mapping) = 0;
+  setup(dealii::DoFHandler<dim, dim> const & dof_handler, dealii::Mapping<dim> const & mapping) = 0;
 };
 
 } // namespace Poisson

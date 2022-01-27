@@ -30,14 +30,12 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::LinePlotCalculatorStatisticsHomogeneous(
-  DoFHandler<dim> const & dof_handler_velocity_in,
-  DoFHandler<dim> const & dof_handler_pressure_in,
-  Mapping<dim> const &    mapping_in,
-  MPI_Comm const &        mpi_comm_in)
+  dealii::DoFHandler<dim> const & dof_handler_velocity_in,
+  dealii::DoFHandler<dim> const & dof_handler_pressure_in,
+  dealii::Mapping<dim> const &    mapping_in,
+  MPI_Comm const &                mpi_comm_in)
   : clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
@@ -58,9 +56,9 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
   if(data.statistics_data.calculate)
   {
-    AssertThrow(dim == 3, ExcMessage("Not implemented."));
+    AssertThrow(dim == 3, dealii::ExcMessage("Not implemented."));
 
-    AssertThrow(data.line_data.lines.size() > 0, ExcMessage("Empty data"));
+    AssertThrow(data.line_data.lines.size() > 0, dealii::ExcMessage("Empty data"));
 
     global_points.resize(data.line_data.lines.size());
     cells_and_ref_points_velocity.resize(data.line_data.lines.size());
@@ -77,11 +75,11 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
     std::shared_ptr<LineHomogeneousAveraging<dim>> line_hom =
       std::dynamic_pointer_cast<LineHomogeneousAveraging<dim>>(data.line_data.lines[0]);
     AssertThrow(line_hom.get() != 0,
-                ExcMessage("Invalid line type, expected LineHomogeneousAveraging<dim>"));
+                dealii::ExcMessage("Invalid line type, expected LineHomogeneousAveraging<dim>"));
     averaging_direction = line_hom->averaging_direction;
 
     AssertThrow(averaging_direction == 0 || averaging_direction == 1 || averaging_direction == 2,
-                ExcMessage("Take the average either in x, y or z-direction"));
+                dealii::ExcMessage("Take the average either in x, y or z-direction"));
 
     unsigned int line_iterator = 0;
     for(typename std::vector<std::shared_ptr<Line<dim>>>::iterator line =
@@ -94,10 +92,10 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
         std::dynamic_pointer_cast<LineHomogeneousAveraging<dim>>(*line);
 
       AssertThrow(line_hom.get() != 0,
-                  ExcMessage("Invalid line type, expected LineHomogeneousAveraging<dim>"));
+                  dealii::ExcMessage("Invalid line type, expected LineHomogeneousAveraging<dim>"));
 
       AssertThrow(averaging_direction == line_hom->averaging_direction,
-                  ExcMessage("All lines must use the same averaging direction."));
+                  dealii::ExcMessage("All lines must use the same averaging direction."));
 
       // Resize global variables for # of points on line
       velocity_global[line_iterator].resize((*line)->n_points);
@@ -110,8 +108,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
       // initialize global_points: use equidistant points along line
       for(unsigned int i = 0; i < (*line)->n_points; ++i)
       {
-        Point<dim> point = (*line)->begin + double(i) / double((*line)->n_points - 1) *
-                                              ((*line)->end - (*line)->begin);
+        dealii::Point<dim> point = (*line)->begin + double(i) / double((*line)->n_points - 1) *
+                                                      ((*line)->end - (*line)->begin);
         global_points[line_iterator].push_back(point);
       }
     }
@@ -123,7 +121,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
     double const tolerance = 1.e-12;
 
     // For velocity quantities:
-    for(typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_velocity.begin_active();
+    for(typename dealii::DoFHandler<dim>::active_cell_iterator cell =
+          dof_handler_velocity.begin_active();
         cell != dof_handler_velocity.end();
         ++cell)
     {
@@ -136,7 +135,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
             ++line, ++line_iterator)
         {
           AssertThrow((*line)->quantities.size() > 0,
-                      ExcMessage("No quantities specified for line."));
+                      dealii::ExcMessage("No quantities specified for line."));
 
           bool velocity_has_to_be_evaluated = false;
           for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
@@ -159,22 +158,22 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
             {
               // First, we move the line to the position of the current cell (vertex 0) in
               // averaging direction and check whether this new point is inside the current cell
-              Point<dim> translated_point           = global_points[line_iterator][p];
+              dealii::Point<dim> translated_point   = global_points[line_iterator][p];
               translated_point[averaging_direction] = cell->vertex(0)[averaging_direction];
 
               // If the new point lies in the current cell, we have to take the current cell into
               // account
-              Point<dim> const p_unit =
+              dealii::Point<dim> const p_unit =
                 cell->real_to_unit_cell_affine_approximation(translated_point);
 
-              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
+              if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
               {
                 cells_and_ref_points_velocity[line_iterator][p].push_back(
-                  std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>(cell,
-                                                                                        p_unit));
+                  std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator,
+                            dealii::Point<dim>>(cell, p_unit));
               }
 
-              //              Point<dim> p_unit = Point<dim>();
+              //              dealii::Point<dim> p_unit = Point<dim>();
               //              try
               //              {
               //                p_unit = mapping.transform_real_to_unit_cell(cell,
@@ -185,11 +184,12 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
               //                // A point that does not lie on the reference cell.
               //                p_unit[0] = 2.0;
               //              }
-              //              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
+              //              if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
               //              {
               //                cells_and_ref_points_velocity[line_iterator][p].push_back(
-              //                    std::pair<typename DoFHandler<dim>::active_cell_iterator,
-              //                    Point<dim> >(cell,p_unit));
+              //                    std::pair<typename
+              //                    dealii::DoFHandler<dim>::active_cell_iterator,
+              //                    dealii::Point<dim> >(cell,p_unit));
               //              }
             }
           }
@@ -198,9 +198,10 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
     }
 
     // Save all cells and corresponding points on unit cell that are relevant for a given point
-    // along the line. We have to do the same for the pressure because the DoFHandlers for velocity
-    // and pressure are different.
-    for(typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_pressure.begin_active();
+    // along the line. We have to do the same for the pressure because the dealii::DoFHandlers for
+    // velocity and pressure are different.
+    for(typename dealii::DoFHandler<dim>::active_cell_iterator cell =
+          dof_handler_pressure.begin_active();
         cell != dof_handler_pressure.end();
         ++cell)
     {
@@ -218,7 +219,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
               ++quantity)
           {
             AssertThrow((*line)->quantities.size() > 0,
-                        ExcMessage("No quantities specified for line."));
+                        dealii::ExcMessage("No quantities specified for line."));
 
             // evaluate quantities that involve pressure
             if((*quantity)->type == QuantityType::Pressure)
@@ -228,21 +229,21 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
               {
                 // First, we move the line to the position of the current cell (vertex 0) in
                 // averaging direction and check whether this new point is inside the current cell
-                Point<dim> translated_point           = global_points[line_iterator][p];
+                dealii::Point<dim> translated_point   = global_points[line_iterator][p];
                 translated_point[averaging_direction] = cell->vertex(0)[averaging_direction];
 
                 // If the new point lies in the current cell, we have to take the current cell into
                 // account
-                Point<dim> const p_unit =
+                dealii::Point<dim> const p_unit =
                   cell->real_to_unit_cell_affine_approximation(translated_point);
-                if(GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
+                if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
                 {
                   cells_and_ref_points_pressure[line_iterator][p].push_back(
-                    std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>(cell,
-                                                                                          p_unit));
+                    std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator,
+                              dealii::Point<dim>>(cell, p_unit));
                 }
 
-                //                Point<dim> p_unit = Point<dim>();
+                //                dealii::Point<dim> p_unit = Point<dim>();
                 //                try
                 //                {
                 //                  p_unit = mapping.transform_real_to_unit_cell(cell,
@@ -253,11 +254,12 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
                 //                  // A point that does not lie on the reference cell.
                 //                  p_unit[0] = 2.0;
                 //                }
-                //                if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
+                //                if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
                 //                {
                 //                  cells_and_ref_points_pressure[line_iterator][p].push_back(
-                //                    std::pair<typename DoFHandler<dim>::active_cell_iterator,
-                //                    Point<dim> >(cell,p_unit));
+                //                    std::pair<typename
+                //                    dealii::DoFHandler<dim>::active_cell_iterator,
+                //                    dealii::Point<dim> >(cell,p_unit));
                 //                }
               }
             }
@@ -270,7 +272,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
               ++quantity)
           {
             AssertThrow((*line)->quantities.size() > 0,
-                        ExcMessage("No quantities specified for line."));
+                        dealii::ExcMessage("No quantities specified for line."));
 
             // evaluate quantities that involve pressure
             if((*quantity)->type == QuantityType::PressureCoefficient)
@@ -280,21 +282,21 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
 
               // First, we move the line to the position of the current cell (vertex 0) in
               // averaging direction and check whether this new point is inside the current cell
-              Point<dim> translated_point           = quantity_ref_pressure->reference_point;
+              dealii::Point<dim> translated_point   = quantity_ref_pressure->reference_point;
               translated_point[averaging_direction] = cell->vertex(0)[averaging_direction];
 
               // If the new point lies in the current cell, we have to take the current cell into
               // account
-              Point<dim> const p_unit =
+              dealii::Point<dim> const p_unit =
                 cell->real_to_unit_cell_affine_approximation(translated_point);
-              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
+              if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit, tolerance))
               {
                 cells_and_ref_points_ref_pressure[line_iterator].push_back(
-                  std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>>(cell,
-                                                                                        p_unit));
+                  std::pair<typename dealii::DoFHandler<dim>::active_cell_iterator,
+                            dealii::Point<dim>>(cell, p_unit));
               }
 
-              //              Point<dim> p_unit = Point<dim>();
+              //              dealii::Point<dim> p_unit = Point<dim>();
               //              try
               //              {
               //                p_unit = mapping.transform_real_to_unit_cell(cell,
@@ -305,11 +307,12 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::setup(
               //                // A point that does not lie on the reference cell.
               //                p_unit[0] = 2.0;
               //              }
-              //              if(GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
+              //              if(dealii::GeometryInfo<dim>::is_inside_unit_cell(p_unit,1.e-12))
               //              {
               //                ref_pressure_cells_and_ref_points[line_iterator].push_back(
-              //                    std::pair<typename DoFHandler<dim>::active_cell_iterator,
-              //                    Point<dim> >(cell,p_unit));
+              //                    std::pair<typename
+              //                    dealii::DoFHandler<dim>::active_cell_iterator,
+              //                    dealii::Point<dim> >(cell,p_unit));
               //              }
             }
           }
@@ -424,17 +427,18 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
   unsigned int const line_iterator)
 {
   // Local variables for specific line
-  std::vector<double>                 length_local(line.n_points);
-  std::vector<Tensor<1, dim, double>> velocity_local(line.n_points);
-  std::vector<double>                 wall_shear_local(line.n_points);
-  std::vector<Tensor<2, dim, double>> reynolds_local(line.n_points);
+  std::vector<double>                         length_local(line.n_points);
+  std::vector<dealii::Tensor<1, dim, double>> velocity_local(line.n_points);
+  std::vector<double>                         wall_shear_local(line.n_points);
+  std::vector<dealii::Tensor<2, dim, double>> reynolds_local(line.n_points);
 
   unsigned int const scalar_dofs_per_cell =
     dof_handler_velocity.get_fe().base_element(0).dofs_per_cell;
 
-  std::vector<Tensor<1, dim>> velocity_vector(scalar_dofs_per_cell);
+  std::vector<dealii::Tensor<1, dim>> velocity_vector(scalar_dofs_per_cell);
 
-  std::vector<types::global_dof_index> dof_indices(dof_handler_velocity.get_fe().dofs_per_cell);
+  std::vector<dealii::types::global_dof_index> dof_indices(
+    dof_handler_velocity.get_fe().dofs_per_cell);
 
   for(unsigned int p = 0; p < line.n_points; ++p)
   {
@@ -446,24 +450,25 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
       unsigned int const fe_degree_velocity = dof_handler_velocity.get_fe().degree;
 
       // use quadrature for averaging in homogeneous direction
-      QGauss<1>               gauss_1d(fe_degree_velocity + 1);
-      std::vector<Point<dim>> points(gauss_1d.size());  // 1D points
-      std::vector<double>     weights(gauss_1d.size()); // 1D weights
+      dealii::QGauss<1>               gauss_1d(fe_degree_velocity + 1);
+      std::vector<dealii::Point<dim>> points(gauss_1d.size());  // 1D points
+      std::vector<double>             weights(gauss_1d.size()); // 1D weights
 
-      typename DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
+      typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
 
-      Point<dim> const p_unit = cell_and_ref_point->second;
+      dealii::Point<dim> const p_unit = cell_and_ref_point->second;
 
       // Find points and weights for Gauss quadrature
       find_points_and_weights(p_unit, points, weights, averaging_direction, gauss_1d);
 
-      FEValues<dim, dim> fe_values(mapping,
-                                   dof_handler_velocity.get_fe().base_element(0),
-                                   Quadrature<dim>(points, weights),
-                                   update_values | update_jacobians | update_quadrature_points |
-                                     update_gradients);
+      dealii::FEValues<dim, dim> fe_values(mapping,
+                                           dof_handler_velocity.get_fe().base_element(0),
+                                           dealii::Quadrature<dim>(points, weights),
+                                           dealii::update_values | dealii::update_jacobians |
+                                             dealii::update_quadrature_points |
+                                             dealii::update_gradients);
 
-      fe_values.reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+      fe_values.reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
 
       cell->get_dof_indices(dof_indices);
 
@@ -490,7 +495,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
             quantity != line.quantities.end();
             ++quantity)
         {
-          Tensor<1, dim> velocity;
+          dealii::Tensor<1, dim> velocity;
 
           if((*quantity)->type == QuantityType::Velocity ||
              (*quantity)->type == QuantityType::ReynoldsStresses)
@@ -517,15 +522,15 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
           }
           else if((*quantity)->type == QuantityType::SkinFriction)
           {
-            Tensor<2, dim> velocity_gradient;
+            dealii::Tensor<2, dim> velocity_gradient;
             for(unsigned int j = 0; j < velocity_vector.size(); ++j)
               velocity_gradient += outer_product(velocity_vector[j], fe_values.shape_grad(j, q));
 
             std::shared_ptr<QuantitySkinFriction<dim>> quantity_skin_friction =
               std::dynamic_pointer_cast<QuantitySkinFriction<dim>>(*quantity);
 
-            Tensor<1, dim, double> normal  = quantity_skin_friction->normal_vector;
-            Tensor<1, dim, double> tangent = quantity_skin_friction->tangent_vector;
+            dealii::Tensor<1, dim, double> normal  = quantity_skin_friction->normal_vector;
+            dealii::Tensor<1, dim, double> tangent = quantity_skin_friction->tangent_vector;
 
             for(unsigned int i = 0; i < dim; ++i)
               for(unsigned int j = 0; j < dim; ++j)
@@ -536,7 +541,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     }
   }
 
-  Utilities::MPI::sum(length_local, mpi_comm, length_local);
+  dealii::Utilities::MPI::sum(length_local, mpi_comm, length_local);
 
   for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
         line.quantities.begin();
@@ -547,10 +552,10 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     // to sum the contributions of every single processor.
     if((*quantity)->type == QuantityType::Velocity)
     {
-      Utilities::MPI::sum(ArrayView<double const>(&velocity_local[0][0],
-                                                  dim * velocity_local.size()),
-                          mpi_comm,
-                          ArrayView<double>(&velocity_local[0][0], dim * velocity_local.size()));
+      dealii::Utilities::MPI::sum(
+        dealii::ArrayView<double const>(&velocity_local[0][0], dim * velocity_local.size()),
+        mpi_comm,
+        dealii::ArrayView<double>(&velocity_local[0][0], dim * velocity_local.size()));
 
       for(unsigned int p = 0; p < line.n_points; ++p)
       {
@@ -562,10 +567,11 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     }
     else if((*quantity)->type == QuantityType::ReynoldsStresses)
     {
-      Utilities::MPI::sum(
-        ArrayView<double const>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()),
+      dealii::Utilities::MPI::sum(
+        dealii::ArrayView<double const>(&reynolds_local[0][0][0],
+                                        dim * dim * reynolds_local.size()),
         mpi_comm,
-        ArrayView<double>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()));
+        dealii::ArrayView<double>(&reynolds_local[0][0][0], dim * dim * reynolds_local.size()));
 
       for(unsigned int p = 0; p < line.n_points; ++p)
       {
@@ -580,7 +586,7 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_velocity(
     }
     else if((*quantity)->type == QuantityType::SkinFriction)
     {
-      Utilities::MPI::sum(wall_shear_local, mpi_comm, wall_shear_local);
+      dealii::Utilities::MPI::sum(wall_shear_local, mpi_comm, wall_shear_local);
 
       for(unsigned int p = 0; p < line.n_points; ++p)
       {
@@ -620,8 +626,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_pressure(
       }
 
       // MPI communication
-      Utilities::MPI::sum(length_local, mpi_comm, length_local);
-      Utilities::MPI::sum(pressure_local, mpi_comm, pressure_local);
+      dealii::Utilities::MPI::sum(length_local, mpi_comm, length_local);
+      dealii::Utilities::MPI::sum(pressure_local, mpi_comm, pressure_local);
 
       // averaging in space (over homogeneous direction)
       for(unsigned int p = 0; p < line.n_points; ++p)
@@ -641,8 +647,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_evaluate_pressure(
                                        pressure_local);
 
       // MPI communication
-      length_local   = Utilities::MPI::sum(length_local, mpi_comm);
-      pressure_local = Utilities::MPI::sum(pressure_local, mpi_comm);
+      length_local   = dealii::Utilities::MPI::sum(length_local, mpi_comm);
+      pressure_local = dealii::Utilities::MPI::sum(pressure_local, mpi_comm);
 
       // averaging in space (over homogeneous direction)
       reference_pressure_global[line_iterator] += pressure_local / length_local;
@@ -660,8 +666,9 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
 {
   unsigned int const scalar_dofs_per_cell =
     dof_handler_pressure.get_fe().base_element(0).dofs_per_cell;
-  std::vector<double>                  pressure_vector(scalar_dofs_per_cell);
-  std::vector<types::global_dof_index> dof_indices(dof_handler_pressure.get_fe().dofs_per_cell);
+  std::vector<double>                          pressure_vector(scalar_dofs_per_cell);
+  std::vector<dealii::types::global_dof_index> dof_indices(
+    dof_handler_pressure.get_fe().dofs_per_cell);
 
   for(typename TYPE::const_iterator cell_and_ref_point = vector_cells_and_ref_points.begin();
       cell_and_ref_point != vector_cells_and_ref_points.end();
@@ -670,23 +677,24 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
     unsigned int const fe_degree_pressure = dof_handler_pressure.get_fe().degree;
 
     // use quadrature for averaging in homogeneous direction
-    QGauss<1>               gauss_1d(fe_degree_pressure + 1);
-    std::vector<Point<dim>> points(gauss_1d.size());  // 1D points
-    std::vector<double>     weights(gauss_1d.size()); // 1D weights
+    dealii::QGauss<1>               gauss_1d(fe_degree_pressure + 1);
+    std::vector<dealii::Point<dim>> points(gauss_1d.size());  // 1D points
+    std::vector<double>             weights(gauss_1d.size()); // 1D weights
 
-    typename DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
+    typename dealii::DoFHandler<dim>::active_cell_iterator const cell = cell_and_ref_point->first;
 
-    Point<dim> const p_unit = cell_and_ref_point->second;
+    dealii::Point<dim> const p_unit = cell_and_ref_point->second;
 
     // Find points and weights for Gauss quadrature
     find_points_and_weights(p_unit, points, weights, averaging_direction, gauss_1d);
 
-    FEValues<dim, dim> fe_values(mapping,
-                                 dof_handler_pressure.get_fe().base_element(0),
-                                 Quadrature<dim>(points, weights),
-                                 update_values | update_jacobians | update_quadrature_points);
+    dealii::FEValues<dim, dim> fe_values(mapping,
+                                         dof_handler_pressure.get_fe().base_element(0),
+                                         dealii::Quadrature<dim>(points, weights),
+                                         dealii::update_values | dealii::update_jacobians |
+                                           dealii::update_quadrature_points);
 
-    fe_values.reinit(typename Triangulation<dim>::active_cell_iterator(cell));
+    fe_values.reinit(typename dealii::Triangulation<dim>::active_cell_iterator(cell));
 
     cell->get_dof_indices(dof_indices);
 
@@ -712,11 +720,11 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::average_pressure_for_given
 template<int dim, typename Number>
 void
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::find_points_and_weights(
-  Point<dim> const &        point_in_ref_coord,
-  std::vector<Point<dim>> & points,
-  std::vector<double> &     weights,
-  unsigned int const        averaging_direction,
-  QGauss<1> const &         gauss_1d)
+  dealii::Point<dim> const &        point_in_ref_coord,
+  std::vector<dealii::Point<dim>> & points,
+  std::vector<double> &             weights,
+  unsigned int const                averaging_direction,
+  dealii::QGauss<1> const &         gauss_1d)
 {
   for(unsigned int q = 0; q < gauss_1d.size(); ++q)
   {
@@ -735,7 +743,7 @@ template<int dim, typename Number>
 void
 LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
 {
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0 && data.statistics_data.calculate)
+  if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0 && data.statistics_data.calculate)
   {
     unsigned int const precision = data.line_data.precision;
 
@@ -769,9 +777,11 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
           print_headline(f, number_of_samples);
 
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "x_" + dealii::Utilities::int_to_string(d + 1);
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "u_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "u_" + dealii::Utilities::int_to_string(d + 1);
 
           f << std::endl;
 
@@ -810,14 +820,16 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
           print_headline(f, number_of_samples);
 
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "x_" + dealii::Utilities::int_to_string(d + 1);
 
           for(unsigned int i = 0; i < dim; ++i)
           {
             for(unsigned int j = 0; j < dim; ++j)
             {
               f << std::setw(precision + 8) << std::left
-                << "u_" + Utilities::int_to_string(i + 1) + "u_" + Utilities::int_to_string(j + 1);
+                << "u_" + dealii::Utilities::int_to_string(i + 1) + "u_" +
+                     dealii::Utilities::int_to_string(j + 1);
             }
           }
           f << std::endl;
@@ -866,7 +878,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
           print_headline(f, number_of_samples);
 
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "x_" + dealii::Utilities::int_to_string(d + 1);
 
           f << std::setw(precision + 8) << std::left << "tau_w" << std::endl;
 
@@ -907,7 +920,8 @@ LinePlotCalculatorStatisticsHomogeneous<dim, Number>::do_write_output() const
           print_headline(f, number_of_samples);
 
           for(unsigned int d = 0; d < dim; ++d)
-            f << std::setw(precision + 8) << std::left << "x_" + Utilities::int_to_string(d + 1);
+            f << std::setw(precision + 8) << std::left
+              << "x_" + dealii::Utilities::int_to_string(d + 1);
 
           f << std::setw(precision + 8) << std::left << "p";
 

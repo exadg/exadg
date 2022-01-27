@@ -33,28 +33,26 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class VorticityCalculator
 {
 public:
   static unsigned int const number_vorticity_components = (dim == 2) ? 1 : dim;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef VorticityCalculator<dim, Number> This;
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
 
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   VorticityCalculator() : matrix_free(nullptr), dof_index(0), quad_index(0){};
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              dof_index_in,
-             unsigned int const              quad_index_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_in,
+             unsigned int const                      quad_index_in)
   {
     matrix_free = &matrix_free_in;
     dof_index   = dof_index_in;
@@ -69,7 +67,7 @@ public:
 
 private:
   void
-  local_compute_vorticity(MatrixFree<dim, Number> const &               matrix_free,
+  local_compute_vorticity(dealii::MatrixFree<dim, Number> const &       matrix_free,
                           VectorType &                                  dst,
                           VectorType const &                            src,
                           std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -84,7 +82,7 @@ private:
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        Tensor<1, number_vorticity_components, VectorizedArray<Number>> omega =
+        dealii::Tensor<1, number_vorticity_components, dealii::VectorizedArray<Number>> omega =
           integrator.get_curl(q);
 
         // omega_vector is a vector with dim components
@@ -102,9 +100,9 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
-  unsigned int                    dof_index;
-  unsigned int                    quad_index;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
+  unsigned int                            dof_index;
+  unsigned int                            quad_index;
 };
 
 
@@ -112,23 +110,23 @@ template<int dim, typename Number>
 class DivergenceCalculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef DivergenceCalculator<dim, Number> This;
 
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
   typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef dealii::VectorizedArray<Number> scalar;
 
   DivergenceCalculator()
     : matrix_free(nullptr), dof_index_vector(1), dof_index_scalar(2), quad_index(0){};
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              dof_index_vector_in,
-             unsigned int const              dof_index_scalar_in,
-             unsigned int const              quad_index_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_vector_in,
+             unsigned int const                      dof_index_scalar_in,
+             unsigned int const                      quad_index_in)
   {
     matrix_free      = &matrix_free_in;
     dof_index_vector = dof_index_vector_in;
@@ -144,7 +142,7 @@ public:
 
 private:
   void
-  local_compute_divergence(MatrixFree<dim, Number> const &               matrix_free,
+  local_compute_divergence(dealii::MatrixFree<dim, Number> const &       matrix_free,
                            VectorType &                                  dst,
                            VectorType const &                            src,
                            std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -171,7 +169,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index_vector;
   unsigned int dof_index_scalar;
@@ -188,15 +186,15 @@ template<int dim, typename Number>
 class p_u_T_Calculator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef p_u_T_Calculator<dim, Number> This;
 
   typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
   typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   p_u_T_Calculator()
     : matrix_free(nullptr),
@@ -210,13 +208,13 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              dof_index_all_in,
-             unsigned int const              dof_index_vector_in,
-             unsigned int const              dof_index_scalar_in,
-             unsigned int const              quad_index_in,
-             double const                    heat_capacity_ratio_in,
-             double const                    specific_gas_constant_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_all_in,
+             unsigned int const                      dof_index_vector_in,
+             unsigned int const                      dof_index_scalar_in,
+             unsigned int const                      quad_index_in,
+             double const                            heat_capacity_ratio_in,
+             double const                            specific_gas_constant_in)
   {
     matrix_free           = &matrix_free_in;
     dof_index_all         = dof_index_all_in;
@@ -230,8 +228,10 @@ public:
   void
   compute_pressure(VectorType & pressure, VectorType const & solution_conserved) const
   {
-    AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
-    AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
+    AssertThrow(heat_capacity_ratio > 0.0,
+                dealii::ExcMessage("heat capacity ratio has not been set!"));
+    AssertThrow(specific_gas_constant > 0.0,
+                dealii::ExcMessage("specific gas constant has not been set!"));
 
     matrix_free->cell_loop(&This::local_apply_pressure, this, pressure, solution_conserved);
   }
@@ -245,15 +245,17 @@ public:
   void
   compute_temperature(VectorType & temperature, VectorType const & solution_conserved) const
   {
-    AssertThrow(heat_capacity_ratio > 0.0, ExcMessage("heat capacity ratio has not been set!"));
-    AssertThrow(specific_gas_constant > 0.0, ExcMessage("specific gas constant has not been set!"));
+    AssertThrow(heat_capacity_ratio > 0.0,
+                dealii::ExcMessage("heat capacity ratio has not been set!"));
+    AssertThrow(specific_gas_constant > 0.0,
+                dealii::ExcMessage("specific gas constant has not been set!"));
 
     matrix_free->cell_loop(&This::local_apply_temperature, this, temperature, solution_conserved);
   }
 
 private:
   void
-  local_apply_pressure(MatrixFree<dim, Number> const &               matrix_free,
+  local_apply_pressure(dealii::MatrixFree<dim, Number> const &       matrix_free,
                        VectorType &                                  dst,
                        VectorType const &                            src,
                        std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -292,7 +294,7 @@ private:
         // compute derived quantities in quadrature point
         vector u = rho_u / rho;
 
-        scalar p = make_vectorized_array<Number>(heat_capacity_ratio - 1.0) *
+        scalar p = dealii::make_vectorized_array<Number>(heat_capacity_ratio - 1.0) *
                    (rho_E - 0.5 * rho * scalar_product(u, u));
 
         pressure.submit_value(p, q);
@@ -304,7 +306,7 @@ private:
   }
 
   void
-  local_apply_velocity(MatrixFree<dim, Number> const &               matrix_free,
+  local_apply_velocity(dealii::MatrixFree<dim, Number> const &       matrix_free,
                        VectorType &                                  dst,
                        VectorType const &                            src,
                        std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -347,7 +349,7 @@ private:
   }
 
   void
-  local_apply_temperature(MatrixFree<dim, Number> const &               matrix_free,
+  local_apply_temperature(dealii::MatrixFree<dim, Number> const &       matrix_free,
                           VectorType &                                  dst,
                           VectorType const &                            src,
                           std::pair<unsigned int, unsigned int> const & cell_range) const
@@ -387,9 +389,9 @@ private:
         vector u = rho_u / rho;
         scalar E = rho_E / rho;
 
-        scalar T =
-          make_vectorized_array<Number>((heat_capacity_ratio - 1.0) / specific_gas_constant) *
-          (E - 0.5 * scalar_product(u, u));
+        scalar T = dealii::make_vectorized_array<Number>((heat_capacity_ratio - 1.0) /
+                                                         specific_gas_constant) *
+                   (E - 0.5 * scalar_product(u, u));
 
         temperature.submit_value(T, q);
       }
@@ -399,7 +401,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index_all;
   unsigned int dof_index_vector;

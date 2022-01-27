@@ -31,8 +31,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number>
 {
@@ -62,9 +60,9 @@ public:
 
   void
   initialize(MultigridData const &                       mg_data,
-             Triangulation<dim> const *                  tria,
-             FiniteElement<dim> const &                  fe,
-             std::shared_ptr<Mapping<dim> const>         mapping,
+             dealii::Triangulation<dim> const *          tria,
+             dealii::FiniteElement<dim> const &          fe,
+             std::shared_ptr<dealii::Mapping<dim> const> mapping,
              ElasticityOperatorBase<dim, Number> const & pde_operator,
              bool const                                  nonlinear_operator,
              Map const *                                 dirichlet_bc        = nullptr,
@@ -83,12 +81,12 @@ private:
                         unsigned int const                     h_level) override;
 
   /*
-   * Has to be overwritten since we want to use ComponentMask here
+   * Has to be overwritten since we want to use dealii::ComponentMask here
    */
   void
-  initialize_constrained_dofs(DoFHandler<dim> const & dof_handler,
-                              MGConstrainedDoFs &     constrained_dofs,
-                              Map const &             dirichlet_bc) override;
+  initialize_constrained_dofs(dealii::DoFHandler<dim> const & dof_handler,
+                              dealii::MGConstrainedDoFs &     constrained_dofs,
+                              Map const &                     dirichlet_bc) override;
 
   /*
    * This function updates the multigrid operators for all levels

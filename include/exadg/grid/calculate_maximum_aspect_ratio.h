@@ -30,23 +30,21 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim>
 inline double
-calculate_maximum_vertex_distance(typename Triangulation<dim>::active_cell_iterator & cell)
+calculate_maximum_vertex_distance(typename dealii::Triangulation<dim>::active_cell_iterator & cell)
 {
   double maximum_vertex_distance = 0.0;
 
   for(const unsigned int i : cell->vertex_indices())
   {
-    Point<dim> & ref_vertex = cell->vertex(i);
+    dealii::Point<dim> & ref_vertex = cell->vertex(i);
     // start the loop with the second vertex!
     for(const unsigned int j : cell->vertex_indices())
     {
       if(j != i)
       {
-        Point<dim> & vertex     = cell->vertex(j);
+        dealii::Point<dim> & vertex = cell->vertex(j);
         maximum_vertex_distance = std::max(maximum_vertex_distance, vertex.distance(ref_vertex));
       }
     }
@@ -59,16 +57,17 @@ calculate_maximum_vertex_distance(typename Triangulation<dim>::active_cell_itera
  * This is a rather naive version of computing the aspect ratio as this version does not
  * detect all modes of deformation (e.g., parallelogram with small angle, assuming that both
  * sides of the parallelogram have the same length, the aspect ratio would tend to a value of
- * 2 if the angle goes to zero!). Instead, the version GridTools::compute_maximum_aspect_ratio()
- * that relies on the computation of singular values of the Jacobian should be used.
+ * 2 if the angle goes to zero!). Instead, the version
+ * dealii::GridTools::compute_maximum_aspect_ratio() that relies on the computation of singular
+ * values of the Jacobian should be used.
  */
 template<int dim>
 inline double
-calculate_aspect_ratio_vertex_distance(Triangulation<dim> const & triangulation,
-                                       MPI_Comm const &           mpi_comm)
+calculate_aspect_ratio_vertex_distance(dealii::Triangulation<dim> const & triangulation,
+                                       MPI_Comm const &                   mpi_comm)
 {
-  typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
-                                                    endc = triangulation.end();
+  typename dealii::Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
+                                                            endc = triangulation.end();
 
   double max_aspect_ratio = 0.0;
 
@@ -86,7 +85,7 @@ calculate_aspect_ratio_vertex_distance(Triangulation<dim> const & triangulation,
     }
   }
 
-  double const global_max_aspect_ratio = Utilities::MPI::max(max_aspect_ratio, mpi_comm);
+  double const global_max_aspect_ratio = dealii::Utilities::MPI::max(max_aspect_ratio, mpi_comm);
 
   return global_max_aspect_ratio;
 }

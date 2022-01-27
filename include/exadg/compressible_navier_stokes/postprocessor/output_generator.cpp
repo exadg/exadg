@@ -31,13 +31,11 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
 template<int dim, typename Number, typename VectorType>
 void
 write_output(OutputData const &                              output_data,
-             DoFHandler<dim> const &                         dof_handler,
-             Mapping<dim> const &                            mapping,
+             dealii::DoFHandler<dim> const &                 dof_handler,
+             dealii::Mapping<dim> const &                    mapping,
              VectorType const &                              solution_conserved,
              std::vector<SolutionField<dim, Number>> const & additional_fields,
              unsigned int const                              output_counter,
@@ -45,10 +43,10 @@ write_output(OutputData const &                              output_data,
 {
   std::string folder = output_data.directory, file = output_data.filename;
 
-  DataOutBase::VtkFlags flags;
+  dealii::DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = output_data.write_higher_order;
 
-  DataOut<dim> data_out;
+  dealii::DataOut<dim> data_out;
   data_out.set_flags(flags);
 
   // conserved variables
@@ -56,12 +54,13 @@ write_output(OutputData const &                              output_data,
   solution_names_conserved[0]       = "rho";
   solution_names_conserved[1 + dim] = "rho_E";
 
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    solution_component_interpretation(dim + 2,
-                                      DataComponentInterpretation::component_is_part_of_vector);
+  std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+    solution_component_interpretation(
+      dim + 2, dealii::DataComponentInterpretation::component_is_part_of_vector);
 
-  solution_component_interpretation[0]       = DataComponentInterpretation::component_is_scalar;
-  solution_component_interpretation[1 + dim] = DataComponentInterpretation::component_is_scalar;
+  solution_component_interpretation[0] = dealii::DataComponentInterpretation::component_is_scalar;
+  solution_component_interpretation[1 + dim] =
+    dealii::DataComponentInterpretation::component_is_scalar;
 
 #if !DEAL_II_VERSION_GTE(10, 0, 0)
   solution_conserved.update_ghost_values();
@@ -89,18 +88,19 @@ write_output(OutputData const &                              output_data,
     else if(it->type == SolutionFieldType::vector)
     {
       std::vector<std::string> names(dim, it->name);
-      std::vector<DataComponentInterpretation::DataComponentInterpretation>
-        component_interpretation(dim, DataComponentInterpretation::component_is_part_of_vector);
+      std::vector<dealii::DataComponentInterpretation::DataComponentInterpretation>
+        component_interpretation(dim,
+                                 dealii::DataComponentInterpretation::component_is_part_of_vector);
 
       data_out.add_data_vector(*it->dof_handler, *it->vector, names, component_interpretation);
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
-  data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping, output_data.degree, dealii::DataOut<dim>::curved_inner_cells);
 
   data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
 }
@@ -113,9 +113,9 @@ OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
-                                    Mapping<dim> const &    mapping_in,
-                                    OutputData const &      output_data_in)
+OutputGenerator<dim, Number>::setup(dealii::DoFHandler<dim> const & dof_handler_in,
+                                    dealii::Mapping<dim> const &    mapping_in,
+                                    OutputData const &              output_data_in)
 {
   dof_handler = &dof_handler_in;
   mapping     = &mapping_in;
@@ -155,7 +155,7 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
     // processor_id
     if(output_data.write_processor_id)
     {
-      GridOut grid_out;
+      dealii::GridOut grid_out;
 
       grid_out.write_mesh_per_processor_as_vtu(dof_handler->get_triangulation(),
                                                output_data.directory + output_data.filename +
@@ -172,7 +172,8 @@ OutputGenerator<dim, Number>::evaluate(
   double const &                                  time,
   int const &                                     time_step_number)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+  dealii::ConditionalOStream pcout(std::cout,
+                                   dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   if(output_data.write_output == true)
   {

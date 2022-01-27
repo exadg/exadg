@@ -27,8 +27,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 enum class SolutionFieldType
 {
   scalar,
@@ -49,9 +47,9 @@ public:
 
   std::string name;
 
-  DoFHandler<dim> const * dof_handler;
+  dealii::DoFHandler<dim> const * dof_handler;
 
-  LinearAlgebra::distributed::Vector<Number> const * vector;
+  dealii::LinearAlgebra::distributed::Vector<Number> const * vector;
 };
 
 } // namespace ExaDG

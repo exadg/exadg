@@ -33,8 +33,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 // forward declarations
 class Parameters;
 
@@ -51,7 +49,7 @@ template<int dim, typename Number>
 class DriverQuasiStatic
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
   DriverQuasiStatic(std::shared_ptr<Interface::Operator<Number>> operator_,
@@ -101,7 +99,7 @@ private:
 
   bool const is_test;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   // vectors
   VectorType solution;

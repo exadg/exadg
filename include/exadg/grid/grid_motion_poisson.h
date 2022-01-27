@@ -32,8 +32,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /**
  * Class for moving grid problems based on a Poisson-type grid motion technique.
  */
@@ -41,12 +39,12 @@ template<int dim, typename Number>
 class GridMotionPoisson : public GridMotionBase<dim, Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   /**
    * Constructor.
    */
-  GridMotionPoisson(std::shared_ptr<Mapping<dim> const>                  mapping_undeformed,
+  GridMotionPoisson(std::shared_ptr<dealii::Mapping<dim> const>          mapping_undeformed,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator)
     : GridMotionBase<dim, Number>(mapping_undeformed,
                                   // extract mapping_degree_moving from Poisson operator
@@ -54,7 +52,7 @@ public:
                                   poisson_operator->get_dof_handler().get_triangulation()),
       poisson(poisson_operator),
       pcout(std::cout,
-            Utilities::MPI::this_mpi_process(
+            dealii::Utilities::MPI::this_mpi_process(
               poisson_operator->get_dof_handler().get_communicator()) == 0),
       iterations({0, 0})
   {
@@ -67,7 +65,7 @@ public:
   void
   update(double const time, bool const print_solver_info) override
   {
-    Timer timer;
+    dealii::Timer timer;
     timer.restart();
 
     VectorType rhs;
@@ -115,7 +113,7 @@ private:
   // costs by allowing larger tolerances
   VectorType displacement;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
   std::pair<unsigned int /* calls */, unsigned long long /* iteration counts */> iterations;
 };

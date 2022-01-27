@@ -18,8 +18,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 namespace Operators
 {
 template<int dim, typename Number>
@@ -28,8 +26,8 @@ class DivergenceKernel
 private:
   typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
 public:
   static MappingFlags
@@ -37,9 +35,10 @@ public:
   {
     MappingFlags flags;
 
-    flags.cells          = update_JxW_values | update_gradients;
-    flags.inner_faces    = update_JxW_values | update_normal_vectors;
-    flags.boundary_faces = update_JxW_values | update_quadrature_points | update_normal_vectors;
+    flags.cells       = dealii::update_JxW_values | dealii::update_gradients;
+    flags.inner_faces = dealii::update_JxW_values | dealii::update_normal_vectors;
+    flags.boundary_faces =
+      dealii::update_JxW_values | dealii::update_quadrature_points | dealii::update_normal_vectors;
 
     return flags;
   }
@@ -111,10 +110,10 @@ class DivergenceOperator
 public:
   typedef DivergenceOperator<dim, Number> This;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -127,7 +126,8 @@ public:
   DivergenceOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free, DivergenceOperatorData<dim> const & data);
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free,
+             DivergenceOperatorData<dim> const &     data);
 
   DivergenceOperatorData<dim> const &
   get_operator_data() const;
@@ -170,67 +170,68 @@ private:
                    FaceIntegratorP & pressure_p) const;
 
   void
-  do_boundary_integral(FaceIntegratorU &          velocity,
-                       FaceIntegratorP &          pressure,
-                       OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral(FaceIntegratorU &                  velocity,
+                       FaceIntegratorP &                  pressure,
+                       OperatorType const &               operator_type,
+                       dealii::types::boundary_id const & boundary_id) const;
 
   void
-  do_boundary_integral_from_dof_vector(FaceIntegratorU &          velocity,
-                                       FaceIntegratorU &          velocity_exterior,
-                                       FaceIntegratorP &          pressure,
-                                       OperatorType const &       operator_type,
-                                       types::boundary_id const & boundary_id) const;
+  do_boundary_integral_from_dof_vector(FaceIntegratorU &                  velocity,
+                                       FaceIntegratorU &                  velocity_exterior,
+                                       FaceIntegratorP &                  pressure,
+                                       OperatorType const &               operator_type,
+                                       dealii::types::boundary_id const & boundary_id) const;
 
   void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const;
+  cell_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           cell_range) const;
 
   void
-  face_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   face_range) const;
+  face_loop(dealii::MatrixFree<dim, Number> const & matrix_free,
+            VectorType &                            dst,
+            VectorType const &                      src,
+            Range const &                           face_range) const;
 
   void
-  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & matrix_free,
-                                  VectorType &                    dst,
-                                  VectorType const &              src,
-                                  Range const &                   face_range) const;
+  boundary_face_loop_hom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                  VectorType &                            dst,
+                                  VectorType const &                      src,
+                                  Range const &                           face_range) const;
 
   void
-  boundary_face_loop_full_operator(MatrixFree<dim, Number> const & matrix_free,
-                                   VectorType &                    dst,
-                                   VectorType const &              src,
-                                   Range const &                   face_range) const;
+  boundary_face_loop_full_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                   VectorType &                            dst,
+                                   VectorType const &                      src,
+                                   Range const &                           face_range) const;
 
   void
-  cell_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                    dst,
-                           VectorType const &              src,
-                           Range const &                   cell_range) const;
+  cell_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           cell_range) const;
 
   void
-  face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                           VectorType &                    dst,
-                           VectorType const &              src,
-                           Range const &                   face_range) const;
+  face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                            dst,
+                           VectorType const &                      src,
+                           Range const &                           face_range) const;
 
   void
-  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const &               matrix_free,
+  boundary_face_loop_inhom_operator(dealii::MatrixFree<dim, Number> const &       matrix_free,
                                     VectorType &                                  dst,
                                     VectorType const &                            src,
                                     std::pair<unsigned int, unsigned int> const & face_range) const;
 
   void
-  boundary_face_loop_inhom_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
-                                                       VectorType &                    dst,
-                                                       VectorType const &              src,
-                                                       Range const & face_range) const;
+  boundary_face_loop_inhom_operator_bc_from_dof_vector(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   DivergenceOperatorData<dim> data;
 

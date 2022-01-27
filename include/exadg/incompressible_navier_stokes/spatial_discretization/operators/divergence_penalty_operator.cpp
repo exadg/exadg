@@ -11,8 +11,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 DivergencePenaltyOperator<dim, Number>::DivergencePenaltyOperator() : matrix_free(nullptr)
 {
@@ -20,9 +18,10 @@ DivergencePenaltyOperator<dim, Number>::DivergencePenaltyOperator() : matrix_fre
 
 template<int dim, typename Number>
 void
-DivergencePenaltyOperator<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free,
-                                                   DivergencePenaltyData const &   data,
-                                                   std::shared_ptr<Kernel> const   kernel)
+DivergencePenaltyOperator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  DivergencePenaltyData const &           data,
+  std::shared_ptr<Kernel> const           kernel)
 {
   this->matrix_free = &matrix_free;
   this->data        = data;
@@ -52,10 +51,11 @@ DivergencePenaltyOperator<dim, Number>::apply_add(VectorType & dst, VectorType c
 
 template<int dim, typename Number>
 void
-DivergencePenaltyOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
-                                                  VectorType &                    dst,
-                                                  VectorType const &              src,
-                                                  Range const &                   range) const
+DivergencePenaltyOperator<dim, Number>::cell_loop(
+  dealii::MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                            dst,
+  VectorType const &                      src,
+  Range const &                           range) const
 {
   IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 

@@ -46,8 +46,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  * Re-implementation of multigrid preconditioner (V-cycle) in order to have more direct control over
  * its individual components and avoid inner products and other expensive stuff.
@@ -56,12 +54,12 @@ template<typename VectorType, typename MatrixType, typename SmootherType>
 class MultigridAlgorithm
 {
 public:
-  MultigridAlgorithm(MGLevelObject<std::shared_ptr<MatrixType>> const &   matrix,
-                     MGCoarseGridBase<VectorType> const &                 coarse,
-                     MGTransfer<VectorType> const &                       transfer,
-                     MGLevelObject<std::shared_ptr<SmootherType>> const & smoother,
-                     MPI_Comm const &                                     comm,
-                     unsigned int const                                   n_cycles = 1)
+  MultigridAlgorithm(dealii::MGLevelObject<std::shared_ptr<MatrixType>> const &   matrix,
+                     dealii::MGCoarseGridBase<VectorType> const &                 coarse,
+                     MGTransfer<VectorType> const &                               transfer,
+                     dealii::MGLevelObject<std::shared_ptr<SmootherType>> const & smoother,
+                     MPI_Comm const &                                             comm,
+                     unsigned int const                                           n_cycles = 1)
     : minlevel(matrix.min_level()),
       maxlevel(matrix.max_level()),
       defect(minlevel, maxlevel),
@@ -74,7 +72,7 @@ public:
       mpi_comm(comm),
       n_cycles(n_cycles)
   {
-    AssertThrow(n_cycles == 1, ExcNotImplemented());
+    AssertThrow(n_cycles == 1, dealii::ExcNotImplemented());
 
     for(unsigned int level = minlevel; level <= maxlevel; ++level)
     {
@@ -91,7 +89,7 @@ public:
   vmult(OtherVectorType & dst, OtherVectorType const & src) const
   {
 #if ENABLE_TIMING
-    Timer timer;
+    dealii::Timer timer;
 #endif
 
     for(unsigned int i = minlevel; i < maxlevel; i++)
@@ -175,7 +173,7 @@ private:
   v_cycle(unsigned int const level, bool const multigrid_is_a_solver) const
   {
 #if ENABLE_TIMING
-    Timer timer;
+    dealii::Timer timer;
 #endif
 
     // call coarse grid solver
@@ -255,27 +253,27 @@ private:
    * Input vector for the cycle. Contains the defect of the outer method
    * projected to the multilevel vectors.
    */
-  mutable MGLevelObject<VectorType> defect;
+  mutable dealii::MGLevelObject<VectorType> defect;
 
   /**
    * The solution update after the multigrid step.
    */
-  mutable MGLevelObject<VectorType> solution;
+  mutable dealii::MGLevelObject<VectorType> solution;
 
   /**
    * Auxiliary vector.
    */
-  mutable MGLevelObject<VectorType> t;
+  mutable dealii::MGLevelObject<VectorType> t;
 
   /**
    * The matrix for each level.
    */
-  SmartPointer<MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
+  dealii::SmartPointer<dealii::MGLevelObject<std::shared_ptr<MatrixType>> const> matrix;
 
   /**
    * The matrix for each level.
    */
-  SmartPointer<MGCoarseGridBase<VectorType> const> coarse;
+  dealii::SmartPointer<dealii::MGCoarseGridBase<VectorType> const> coarse;
 
   /**
    * Object for grid transfer.
@@ -285,7 +283,7 @@ private:
   /**
    * The smoothing object.
    */
-  SmartPointer<MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
+  dealii::SmartPointer<dealii::MGLevelObject<std::shared_ptr<SmootherType>> const> smoother;
 
   MPI_Comm const mpi_comm;
 

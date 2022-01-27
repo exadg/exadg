@@ -30,20 +30,18 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionVelocity(double const                              H,
                              double const                              MAX_VELOCITY,
                              double const                              ALPHA,
                              double const                              EPSILON,
-                             FE_DGQ<1> const &                         FE,
+                             dealii::FE_DGQ<1> const &                 FE,
                              std::complex<double> const &              OMEGA,
                              std::vector<std::complex<double>> const & EIG_VEC)
-    : Function<dim>(dim, 0.0),
+    : dealii::Function<dim>(dim, 0.0),
       H(H),
       MAX_VELOCITY(MAX_VELOCITY),
       ALPHA(ALPHA),
@@ -55,7 +53,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double t      = this->get_time();
     double result = 0.0;
@@ -65,7 +63,7 @@ public:
     double const eta = 0.5 * (p[1] / H + 1.0);
 
     Assert(eta <= 1.0 + 1.e-12 and eta >= 0.0 - 1.e-12,
-           ExcMessage("Point in reference coordinates is invalid."));
+           dealii::ExcMessage("Point in reference coordinates is invalid."));
 
     double cos = std::cos(ALPHA * x - OMEGA.real() * t);
     double sin = std::sin(ALPHA * x - OMEGA.real() * t);
@@ -82,7 +80,7 @@ public:
       // evaluate derivative d(psi)/d(eta) in eta(y)
       std::complex<double> dpsi = 0;
       for(unsigned int i = 0; i < FE.get_degree() + 1; ++i)
-        dpsi += EIG_VEC[i] * FE.shape_grad(i, Point<1>(eta))[0];
+        dpsi += EIG_VEC[i] * FE.shape_grad(i, dealii::Point<1>(eta))[0];
 
       // multiply by d(eta)/dy to obtain derivative d(psi)/dy in physical space
       dpsi *= 0.5 / H;
@@ -97,7 +95,7 @@ public:
       // evaluate function psi in y
       std::complex<double> psi = 0;
       for(unsigned int i = 0; i < FE.get_degree() + 1; ++i)
-        psi += EIG_VEC[i] * FE.shape_value(i, Point<1>(eta));
+        psi += EIG_VEC[i] * FE.shape_value(i, dealii::Point<1>(eta));
 
       std::complex<double> i(0, 1);
       std::complex<double> perturbation_complex = -i * ALPHA * psi * exp * amplification;
@@ -107,7 +105,7 @@ public:
     }
     else
     {
-      Assert(false, ExcMessage("Orr-Sommerfeld problem is a 2-dimensional problem."));
+      Assert(false, dealii::ExcMessage("Orr-Sommerfeld problem is a 2-dimensional problem."));
     }
 
     return result;
@@ -119,7 +117,7 @@ private:
   double const ALPHA        = 1.0;
   double const EPSILON      = 1.0e-5;
 
-  FE_DGQ<1> const &                         FE;
+  dealii::FE_DGQ<1> const &                 FE;
   std::complex<double> const &              OMEGA;
   std::vector<std::complex<double>> const & EIG_VEC;
 };
@@ -130,16 +128,16 @@ private:
  *  right-hand side of the momentum equation of the Navier-Stokes equations
  */
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
   RightHandSide(double const viscosity, double const max_velocity, double const H)
-    : Function<dim>(dim, 0.0), nu(viscosity), U_max(max_velocity), H(H)
+    : dealii::Function<dim>(dim, 0.0), nu(viscosity), U_max(max_velocity), H(H)
   {
   }
 
   double
-  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -166,7 +164,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -180,7 +178,7 @@ public:
   double const Re = 7500.0;
 
   double const H  = 1.0;
-  double const PI = numbers::PI;
+  double const PI = dealii::numbers::PI;
   double const L  = 2.0 * PI * H;
 
   double const MAX_VELOCITY = 1.0;
@@ -193,7 +191,7 @@ public:
   // do not use more than 300 due to conditioning of polynomials
   unsigned int const DEGREE_OS_SOLVER = 200;
 
-  FE_DGQ<1> FE = FE_DGQ<1>(DEGREE_OS_SOLVER);
+  dealii::FE_DGQ<1> FE = dealii::FE_DGQ<1>(DEGREE_OS_SOLVER);
 
   std::complex<double> OMEGA;
 
@@ -329,16 +327,16 @@ public:
   create_grid() final
   {
     std::vector<unsigned int> repetitions({1, 1});
-    Point<dim>                point1(0.0, -H), point2(L, H);
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::Point<dim>        point1(0.0, -H), point2(L, H);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     // periodicity in x-direction
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+      for(unsigned int f = 0; f < dealii::GeometryInfo<dim>::faces_per_cell; ++f)
       {
         if((std::fabs(cell->face(f)->center()(0) - 0.0) < 1e-12))
           cell->face(f)->set_boundary_id(0 + 10);
@@ -347,7 +345,7 @@ public:
       }
     }
 
-    GridTools::collect_periodic_faces(
+    dealii::GridTools::collect_periodic_faces(
       *this->grid->triangulation, 0 + 10, 1 + 10, 0, this->grid->periodic_faces);
     this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
 
@@ -357,13 +355,14 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     this->boundary_descriptor->velocity->dirichlet_bc.insert(pair(
       0, new AnalyticalSolutionVelocity<dim>(H, MAX_VELOCITY, ALPHA, EPSILON, FE, OMEGA, EIG_VEC)));
 
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
   }
 
   void
@@ -371,8 +370,10 @@ public:
   {
     this->field_functions->initial_solution_velocity.reset(
       new AnalyticalSolutionVelocity<dim>(H, MAX_VELOCITY, ALPHA, EPSILON, FE, OMEGA, EIG_VEC));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-    this->field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
+    this->field_functions->analytical_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     this->field_functions->right_hand_side.reset(
       new RightHandSide<dim>(VISCOSITY, MAX_VELOCITY, H));
   }

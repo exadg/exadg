@@ -25,8 +25,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 TurbulenceModel<dim, Number>::TurbulenceModel() : matrix_free(nullptr)
 {
@@ -35,8 +33,8 @@ TurbulenceModel<dim, Number>::TurbulenceModel() : matrix_free(nullptr)
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                        matrix_free_in,
-  Mapping<dim> const &                                   mapping_in,
+  dealii::MatrixFree<dim, Number> const &                matrix_free_in,
+  dealii::Mapping<dim> const &                           mapping_in,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
   TurbulenceModelData const &                            data_in)
 {
@@ -64,7 +62,7 @@ TurbulenceModel<dim, Number>::calculate_turbulent_viscosity(VectorType const & v
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
-  MatrixFree<dim, Number> const & matrix_free,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
   Range const &      cell_range) const
@@ -86,7 +84,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      scalar viscosity = make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
+      scalar viscosity = dealii::make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
 
       // calculate velocity gradient
       tensor velocity_gradient = integrator.get_gradient(q);
@@ -102,7 +100,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::face_loop_set_coefficients(
-  MatrixFree<dim, Number> const & matrix_free,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
   Range const &      face_range) const
@@ -136,9 +134,9 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      scalar viscosity = make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
+      scalar viscosity = dealii::make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
       scalar viscosity_neighbor =
-        make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
+        dealii::make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
 
       // calculate velocity gradient for both elements adjacent to the current face
       tensor velocity_gradient          = integrator_m.get_gradient(q);
@@ -160,7 +158,7 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
-  MatrixFree<dim, Number> const & matrix_free,
+  dealii::MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
   Range const &      face_range) const
@@ -185,7 +183,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      scalar viscosity = make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
+      scalar viscosity = dealii::make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
 
       // calculate velocity gradient
       tensor velocity_gradient = integrator.get_gradient(q);
@@ -200,7 +198,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::calculate_filter_width(Mapping<dim> const & mapping)
+TurbulenceModel<dim, Number>::calculate_filter_width(dealii::Mapping<dim> const & mapping)
 {
   unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
 
@@ -208,19 +206,19 @@ TurbulenceModel<dim, Number>::calculate_filter_width(Mapping<dim> const & mappin
 
   unsigned int const dof_index = turb_model_data.dof_index;
 
-  QGauss<dim> quadrature(turb_model_data.degree + 1);
+  dealii::QGauss<dim> quadrature(turb_model_data.degree + 1);
 
-  FEValues<dim> fe_values(mapping,
-                          matrix_free->get_dof_handler(dof_index).get_fe(),
-                          quadrature,
-                          update_JxW_values);
+  dealii::FEValues<dim> fe_values(mapping,
+                                  matrix_free->get_dof_handler(dof_index).get_fe(),
+                                  quadrature,
+                                  dealii::update_JxW_values);
 
   // loop over all cells
   for(unsigned int i = 0; i < n_cells; ++i)
   {
     for(unsigned int v = 0; v < matrix_free->n_active_entries_per_cell_batch(i); ++v)
     {
-      typename DoFHandler<dim>::cell_iterator cell =
+      typename dealii::DoFHandler<dim>::cell_iterator cell =
         matrix_free->get_cell_iterator(i, v, dof_index);
       fe_values.reinit(cell);
 
@@ -254,7 +252,7 @@ TurbulenceModel<dim, Number>::add_turbulent_viscosity(scalar &       viscosity,
   {
     case TurbulenceEddyViscosityModel::Undefined:
       AssertThrow(turb_model_data.turbulence_model != TurbulenceEddyViscosityModel::Undefined,
-                  ExcMessage("parameter must be defined"));
+                  dealii::ExcMessage("parameter must be defined"));
       break;
     case TurbulenceEddyViscosityModel::Smagorinsky:
       smagorinsky_model(filter_width, velocity_gradient, model_constant, viscosity);
@@ -279,7 +277,7 @@ TurbulenceModel<dim, Number>::smagorinsky_model(scalar const & filter_width,
                                                 scalar &       viscosity) const
 {
   tensor symmetric_gradient =
-    make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
+    dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
 
   scalar rate_of_strain = 2.0 * scalar_product(symmetric_gradient, symmetric_gradient);
   rate_of_strain        = std::exp(0.5 * std::log(rate_of_strain));
@@ -302,7 +300,7 @@ TurbulenceModel<dim, Number>::vreman_model(scalar const & filter_width,
   tensor tensor = velocity_gradient * transpose(velocity_gradient);
 
   AssertThrow(dim == 3,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Number of dimensions has to be dim==3 to evaluate Vreman turbulence model."));
 
   scalar B_gamma = +tensor[0][0] * tensor[1][1] - tensor[0][1] * tensor[0][1] +
@@ -311,7 +309,7 @@ TurbulenceModel<dim, Number>::vreman_model(scalar const & filter_width,
 
   scalar factor = C * filter_width;
 
-  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); i++)
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); i++)
   {
     // If the norm of the velocity gradient tensor is zero, the subgrid-scale
     // viscosity is defined as zero, so we do nothing in that case.
@@ -333,7 +331,7 @@ TurbulenceModel<dim, Number>::wale_model(scalar const & filter_width,
                                          scalar &       viscosity) const
 {
   tensor S =
-    make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
+    dealii::make_vectorized_array<Number>(0.5) * (velocity_gradient + transpose(velocity_gradient));
   scalar S_norm_square = scalar_product(S, S);
 
   tensor square_gradient       = velocity_gradient * velocity_gradient;
@@ -345,14 +343,15 @@ TurbulenceModel<dim, Number>::wale_model(scalar const & filter_width,
     isotropic_tensor[i][i] = 1.0 / 3.0 * trace_square_gradient;
   }
 
-  tensor S_d = make_vectorized_array<Number>(0.5) * (square_gradient + transpose(square_gradient)) -
-               isotropic_tensor;
+  tensor S_d =
+    dealii::make_vectorized_array<Number>(0.5) * (square_gradient + transpose(square_gradient)) -
+    isotropic_tensor;
 
   scalar S_d_norm_square = scalar_product(S_d, S_d);
 
-  scalar D = make_vectorized_array<Number>(0.0);
+  scalar D = dealii::make_vectorized_array<Number>(0.0);
 
-  for(unsigned int i = 0; i < VectorizedArray<Number>::size(); i++)
+  for(unsigned int i = 0; i < dealii::VectorizedArray<Number>::size(); i++)
   {
     Number const tolerance = 1.e-12;
     if(S_d_norm_square[i] > tolerance)
@@ -375,7 +374,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
                                           scalar &       viscosity) const
 {
   AssertThrow(dim == 3,
-              ExcMessage(
+              dealii::ExcMessage(
                 "Number of dimensions has to be dim==3 to evaluate Sigma turbulence model."));
 
   /*
@@ -383,7 +382,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
    *  (see appendix in Nicoud et al. (2011)). This approach is more efficient
    *  than calculating eigenvalues or singular values using LAPACK routines.
    */
-  scalar D = make_vectorized_array<Number>(0.0);
+  scalar D = dealii::make_vectorized_array<Number>(0.0);
 
   tensor G = transpose(velocity_gradient) * velocity_gradient;
 
@@ -391,7 +390,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   scalar invariant2 = 0.5 * (invariant1 * invariant1 - trace(G * G));
   scalar invariant3 = determinant(G);
 
-  for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
+  for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); n++)
   {
     // if trace(G) = 0, all eigenvalues (and all singular values) have to be zero
     // and hence G is also zero. Set D[n]=0 in that case.
@@ -402,14 +401,14 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
                       invariant1[n] * invariant2[n] / 6.0 + invariant3[n] / 2.0;
 
       AssertThrow(alpha1 >= std::numeric_limits<double>::denorm_min() /*smallest positive value*/,
-                  ExcMessage("alpha1 has to be larger than zero."));
+                  dealii::ExcMessage("alpha1 has to be larger than zero."));
 
       Number factor = alpha2 / std::pow(alpha1, 1.5);
 
       AssertThrow(std::abs(factor) <=
                     1.0 + 1.0e-12, /* we found that a larger tolerance (1e-8,1e-6,1e-4) might be
                                       necessary in some cases */
-                  ExcMessage("Cannot compute arccos(value) if abs(value)>1.0."));
+                  dealii::ExcMessage("Cannot compute arccos(value) if abs(value)>1.0."));
 
       // Ensure that the argument of arccos() is in the interval [-1,1].
       if(factor > 1.0)
@@ -419,11 +418,13 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
 
       Number alpha3 = 1.0 / 3.0 * std::acos(factor);
 
-      Vector<Number> sv = Vector<Number>(dim);
+      dealii::Vector<Number> sv = dealii::Vector<Number>(dim);
 
       sv[0] = invariant1[n] / 3.0 + 2 * std::sqrt(alpha1) * std::cos(alpha3);
-      sv[1] = invariant1[n] / 3.0 - 2 * std::sqrt(alpha1) * std::cos(numbers::PI / 3.0 + alpha3);
-      sv[2] = invariant1[n] / 3.0 - 2 * std::sqrt(alpha1) * std::cos(numbers::PI / 3.0 - alpha3);
+      sv[1] =
+        invariant1[n] / 3.0 - 2 * std::sqrt(alpha1) * std::cos(dealii::numbers::PI / 3.0 + alpha3);
+      sv[2] =
+        invariant1[n] / 3.0 - 2 * std::sqrt(alpha1) * std::cos(dealii::numbers::PI / 3.0 - alpha3);
 
       // Calculate the square root only if the value is larger than zero.
       // Otherwise set sv to zero (this is reasonable since negative values will
@@ -450,7 +451,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
    */
 
   //    scalar D_copy = D; // save a copy in order to verify the correctness of
-  //    the computation for(unsigned int n = 0; n < VectorizedArray<Number>::size();
+  //    the computation for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size();
   //    n++)
   //    {
   //      LAPACKFullMatrix<Number> G_local = LAPACKFullMatrix<Number>(dim);
@@ -475,7 +476,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //      // This sorts the list in ascending order, beginning with the smallest eigenvalue.
   //      ev_list.sort();
   //
-  //      Vector<Number> ev = Vector<Number>(dim);
+  //      dealii::Vector<Number> ev = dealii::Vector<Number>(dim);
   //      typename std::list<Number>::reverse_iterator it;
   //      unsigned int k;
   //
@@ -494,10 +495,10 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //    }
   //
   //    // make sure that both variants yield the same result
-  //    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
+  //    for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); n++)
   //    {
-  //      AssertThrow(std::abs(D[n]-D_copy[n])<1.e-5,ExcMessage("Calculation of singular values is
-  //      incorrect."));
+  //      AssertThrow(std::abs(D[n]-D_copy[n])<1.e-5,dealii::ExcMessage("Calculation of singular
+  //      values is incorrect."));
   //    }
 
 
@@ -505,9 +506,9 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
    *  Alternatively, compute singular values directly using SVD.
    */
   //    scalar D_copy2 = D; // save a copy in order to verify the correctness of
-  //    the computation D = make_vectorized_array<Number>(0.0);
+  //    the computation D = dealii::make_vectorized_array<Number>(0.0);
   //
-  //    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
+  //    for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); n++)
   //    {
   //      LAPACKFullMatrix<Number> gradient = LAPACKFullMatrix<Number>(dim);
   //      for(unsigned int i = 0; i < dim; i++)
@@ -519,7 +520,7 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //      }
   //      gradient.compute_svd();
   //
-  //      Vector<Number> sv = Vector<Number>(dim);
+  //      dealii::Vector<Number> sv = dealii::Vector<Number>(dim);
   //      for(unsigned int i=0;i<dim;++i)
   //      {
   //        sv[i] = gradient.singular_value(i);
@@ -533,10 +534,10 @@ TurbulenceModel<dim, Number>::sigma_model(scalar const & filter_width,
   //    }
   //
   //    // make sure that both variants yield the same result
-  //    for(unsigned int n = 0; n < VectorizedArray<Number>::size(); n++)
+  //    for(unsigned int n = 0; n < dealii::VectorizedArray<Number>::size(); n++)
   //    {
-  //      AssertThrow(std::abs(D[n]-D_copy2[n])<1.e-5,ExcMessage("Calculation of singular values
-  //      is incorrect."));
+  //      AssertThrow(std::abs(D[n]-D_copy2[n])<1.e-5,dealii::ExcMessage("Calculation of singular
+  //      values is incorrect."));
   //    }
 
   // add turbulent eddy-viscosity to laminar viscosity

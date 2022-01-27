@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 MATHEMATICAL MODEL                                 */
@@ -55,7 +53,7 @@ enum_to_string(ProblemType const enum_type)
       string_type = "Unsteady";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -82,7 +80,7 @@ enum_to_string(EquationType const enum_type)
       string_type = "ConvectionDiffusion";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -103,7 +101,7 @@ enum_to_string(FormulationConvectiveTerm const enum_type)
       string_type = "ConvectiveFormulation";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -143,7 +141,7 @@ enum_to_string(TemporalDiscretization const enum_type)
       string_type = "BDF";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -170,7 +168,7 @@ enum_to_string(TreatmentOfConvectiveTerm const enum_type)
       string_type = "Implicit";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -218,7 +216,7 @@ enum_to_string(TimeIntegratorRK const enum_type)
       string_type = "ExplRK5Stage9Reg2S";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -251,7 +249,7 @@ enum_to_string(TimeStepCalculation const enum_type)
       string_type = "MaxEfficiency";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -281,7 +279,7 @@ enum_to_string(NumericalFluxConvectiveOperator const enum_type)
       string_type = "LaxFriedrichsFlux";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -311,7 +309,7 @@ enum_to_string(Solver const enum_type)
       string_type = "FGMRES";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -344,7 +342,7 @@ enum_to_string(Preconditioner const enum_type)
       string_type = "Multigrid";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -371,7 +369,7 @@ enum_to_string(MultigridOperatorType const enum_type)
       string_type = "ReactionConvectionDiffusion";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

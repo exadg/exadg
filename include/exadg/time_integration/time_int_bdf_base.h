@@ -32,13 +32,11 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<typename Number>
 class TimeIntBDFBase : public TimeIntBase
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   /*
    * Constructor.

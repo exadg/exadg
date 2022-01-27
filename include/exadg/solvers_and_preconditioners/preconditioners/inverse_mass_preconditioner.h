@@ -27,17 +27,15 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, int n_components, typename Number>
 class InverseMassPreconditioner : public PreconditionerBase<Number>
 {
 public:
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
-  InverseMassPreconditioner(MatrixFree<dim, Number> const & matrix_free,
-                            unsigned int const              dof_index,
-                            unsigned int const              quad_index)
+  InverseMassPreconditioner(dealii::MatrixFree<dim, Number> const & matrix_free,
+                            unsigned int const                      dof_index,
+                            unsigned int const                      quad_index)
   {
     inverse_mass_operator.initialize(matrix_free, dof_index, quad_index);
   }

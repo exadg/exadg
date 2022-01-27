@@ -60,8 +60,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 class SpatialOperatorBase;
 
@@ -72,7 +70,7 @@ template<int dim, typename Number>
 class OperatorOIF
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OperatorOIF(std::shared_ptr<SpatialOperatorBase<dim, Number>> operator_in)
     : pde_operator(operator_in),
@@ -129,14 +127,14 @@ template<int dim, typename Number>
 class SpatialOperatorBase : public dealii::Subscriptor
 {
 protected:
-  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
-  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number>      VectorType;
+  typedef dealii::LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef SpatialOperatorBase<dim, Number> This;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef dealii::VectorizedArray<Number>                         scalar;
+  typedef dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> vector;
+  typedef dealii::Tensor<2, dim, dealii::VectorizedArray<Number>> tensor;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -171,9 +169,9 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data,
-        std::string const &                          dof_index_temperature = "");
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data,
+        std::string const &                              dof_index_temperature = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -186,7 +184,7 @@ public:
   /*
    * Getters and setters.
    */
-  MatrixFree<dim, Number> const &
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
   std::string
@@ -219,34 +217,34 @@ public:
   unsigned int
   get_quad_index_velocity_linearized() const;
 
-  std::shared_ptr<Mapping<dim> const>
+  std::shared_ptr<dealii::Mapping<dim> const>
   get_mapping() const;
 
-  FESystem<dim> const &
+  dealii::FESystem<dim> const &
   get_fe_u() const;
 
-  FE_DGQ<dim> const &
+  dealii::FE_DGQ<dim> const &
   get_fe_p() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler_u() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler_u_scalar() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler_p() const;
 
-  AffineConstraints<Number> const &
+  dealii::AffineConstraints<Number> const &
   get_constraint_p() const;
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   get_number_of_dofs() const;
 
   double
   get_viscosity() const;
 
-  VectorizedArray<Number>
+  dealii::VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
   void
@@ -278,7 +276,7 @@ public:
   /*
    * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
    *
-   * Note that this function only works as long as one uses a nodal FE_DGQ element with
+   * Note that this function only works as long as one uses a nodal dealii::FE_DGQ element with
    * Gauss-Lobatto points. Otherwise, the quadrature formula used in this function does not match
    * the nodes of the element, and the values injected by this function into the DoF vector are not
    * the degrees of freedom of the underlying finite element space.
@@ -544,8 +542,8 @@ protected:
   /*
    * Special case: pure Dirichlet boundary conditions.
    */
-  Point<dim>              first_point;
-  types::global_dof_index dof_index_first_point;
+  dealii::Point<dim>              first_point;
+  dealii::types::global_dof_index dof_index_first_point;
 
   /*
    * Element variable used to store the current physical time. This variable is needed for the
@@ -557,15 +555,15 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  std::shared_ptr<FESystem<dim>> fe_u;
-  FE_DGQ<dim>                    fe_p;
-  FE_DGQ<dim>                    fe_u_scalar;
+  std::shared_ptr<dealii::FESystem<dim>> fe_u;
+  dealii::FE_DGQ<dim>                    fe_p;
+  dealii::FE_DGQ<dim>                    fe_u_scalar;
 
-  DoFHandler<dim> dof_handler_u;
-  DoFHandler<dim> dof_handler_p;
-  DoFHandler<dim> dof_handler_u_scalar;
+  dealii::DoFHandler<dim> dof_handler_u;
+  dealii::DoFHandler<dim> dof_handler_p;
+  dealii::DoFHandler<dim> dof_handler_u_scalar;
 
-  AffineConstraints<Number> constraint_u, constraint_p, constraint_u_scalar;
+  dealii::AffineConstraints<Number> constraint_u, constraint_p, constraint_u_scalar;
 
   std::string const dof_index_u        = "velocity";
   std::string const dof_index_p        = "pressure";
@@ -577,8 +575,8 @@ private:
   std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
   std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
 
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   bool pressure_level_is_undefined;
 
@@ -633,7 +631,8 @@ protected:
   typedef Elementwise::OperatorBase<dim, Number, ProjOperator> ELEMENTWISE_PROJ_OPERATOR;
   std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                   elementwise_projection_operator;
 
-  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
+  typedef Elementwise::PreconditionerBase<dealii::VectorizedArray<Number>>
+                                              ELEMENTWISE_PRECONDITIONER;
   std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
 
   // projection solver
@@ -650,7 +649,7 @@ protected:
 
   MPI_Comm const mpi_comm;
 
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 
 private:
   // Minimum element length h_min required for global CFL condition.
@@ -679,7 +678,7 @@ private:
   initialization_pure_dirichlet_bc();
 
   void
-  cell_loop_empty(MatrixFree<dim, Number> const &,
+  cell_loop_empty(dealii::MatrixFree<dim, Number> const &,
                   VectorType &,
                   VectorType const &,
                   Range const &) const
@@ -687,7 +686,7 @@ private:
   }
 
   void
-  face_loop_empty(MatrixFree<dim, Number> const &,
+  face_loop_empty(dealii::MatrixFree<dim, Number> const &,
                   VectorType &,
                   VectorType const &,
                   Range const &) const
@@ -695,22 +694,24 @@ private:
   }
 
   void
-  local_interpolate_velocity_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                        VectorType &                    dst,
-                                                        VectorType const &              src,
-                                                        Range const & face_range) const;
+  local_interpolate_velocity_dirichlet_bc_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   void
-  local_interpolate_pressure_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                        VectorType &                    dst,
-                                                        VectorType const &              src,
-                                                        Range const & face_range) const;
+  local_interpolate_pressure_dirichlet_bc_boundary_face(
+    dealii::MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                            dst,
+    VectorType const &                      src,
+    Range const &                           face_range) const;
 
   void
-  local_interpolate_stress_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                            VectorType &                    dst,
-                                            VectorType const &              src,
-                                            Range const &                   face_range) const;
+  local_interpolate_stress_bc_boundary_face(dealii::MatrixFree<dim, Number> const & matrix_free,
+                                            VectorType &                            dst,
+                                            VectorType const &                      src,
+                                            Range const & face_range) const;
 
   // Interpolation of stress requires velocity and pressure, but the MatrixFree interface
   // only provides one argument, so we store pointers to have access to both velocity and

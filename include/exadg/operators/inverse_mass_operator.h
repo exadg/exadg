@@ -31,20 +31,18 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 template<int dim, int n_components, typename Number>
 class InverseMassOperator
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef InverseMassOperator<dim, n_components, Number> This;
 
   typedef CellIntegrator<dim, n_components, Number> Integrator;
 
   // use a template parameter of -1 to select the precompiled version of this operator
-  typedef MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
+  typedef dealii::MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
     CellwiseInverseMass;
 
   typedef std::pair<unsigned int, unsigned int> Range;
@@ -55,9 +53,9 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              dof_index_in,
-             unsigned int const              quad_index_in)
+  initialize(dealii::MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const                      dof_index_in,
+             unsigned int const                      quad_index_in)
   {
     this->matrix_free = &matrix_free_in;
     dof_index         = dof_index_in;
@@ -74,7 +72,7 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const &,
+  cell_loop(dealii::MatrixFree<dim, Number> const &,
             VectorType &       dst,
             VectorType const & src,
             Range const &      cell_range) const
@@ -93,7 +91,7 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  dealii::MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index, quad_index;
 };

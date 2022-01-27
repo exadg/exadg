@@ -86,7 +86,8 @@ public:
     else
     {
       AssertThrow(data.preconditioner == PreconditionerSmoother::None,
-                  ExcMessage("Specified preconditioner not implemented for GMRES smoother"));
+                  dealii::ExcMessage(
+                    "Specified preconditioner not implemented for GMRES smoother"));
     }
   }
 
@@ -108,16 +109,16 @@ public:
   void
   step(VectorType & dst, VectorType const & src) const
   {
-    IterationNumberControl control(data.number_of_iterations, 1.e-20);
+    dealii::IterationNumberControl control(data.number_of_iterations, 1.e-20);
 
-    typename SolverGMRES<VectorType>::AdditionalData additional_data;
+    typename dealii::SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.right_preconditioning = true;
-    SolverGMRES<VectorType> solver(control, additional_data);
+    dealii::SolverGMRES<VectorType> solver(control, additional_data);
 
     if(preconditioner != nullptr)
       solver.solve(*underlying_operator, dst, src, *preconditioner);
     else
-      solver.solve(*underlying_operator, dst, src, PreconditionIdentity());
+      solver.solve(*underlying_operator, dst, src, dealii::PreconditionIdentity());
   }
 
 private:

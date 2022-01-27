@@ -33,8 +33,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 struct SolverInfoData
 {
   SolverInfoData()
@@ -48,7 +46,7 @@ struct SolverInfoData
   }
 
   void
-  print(ConditionalOStream const & pcout) const
+  print(dealii::ConditionalOStream const & pcout) const
   {
     pcout << "  Solver information:" << std::endl;
     print_parameter(pcout, "Interval physical time", interval_time);

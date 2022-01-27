@@ -29,8 +29,6 @@ namespace ExaDG
 {
 namespace Poisson
 {
-using namespace dealii;
-
 Parameters::Parameters()
   : // MATHEMATICAL MODEL
     right_hand_side(false),
@@ -60,18 +58,18 @@ Parameters::check() const
   grid.check();
 
   AssertThrow(spatial_discretization != SpatialDiscretization::Undefined,
-              ExcMessage("parameter must be defined."));
+              dealii::ExcMessage("parameter must be defined."));
 
-  AssertThrow(degree > 0, ExcMessage("Polynomial degree must be larger than zero."));
+  AssertThrow(degree > 0, dealii::ExcMessage("Polynomial degree must be larger than zero."));
 
   // SOLVER
-  AssertThrow(solver != Solver::Undefined, ExcMessage("parameter must be defined."));
+  AssertThrow(solver != Solver::Undefined, dealii::ExcMessage("parameter must be defined."));
   AssertThrow(preconditioner != Preconditioner::Undefined,
-              ExcMessage("parameter must be defined."));
+              dealii::ExcMessage("parameter must be defined."));
 }
 
 void
-Parameters::print(ConditionalOStream const & pcout, std::string const & name) const
+Parameters::print(dealii::ConditionalOStream const & pcout, std::string const & name) const
 {
   pcout << std::endl << name << std::endl;
 
@@ -89,7 +87,7 @@ Parameters::print(ConditionalOStream const & pcout, std::string const & name) co
 }
 
 void
-Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout) const
+Parameters::print_parameters_mathematical_model(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
@@ -97,7 +95,7 @@ Parameters::print_parameters_mathematical_model(ConditionalOStream const & pcout
 }
 
 void
-Parameters::print_parameters_spatial_discretization(ConditionalOStream const & pcout) const
+Parameters::print_parameters_spatial_discretization(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Spatial Discretization:" << std::endl;
 
@@ -112,7 +110,7 @@ Parameters::print_parameters_spatial_discretization(ConditionalOStream const & p
 }
 
 void
-Parameters::print_parameters_solver(ConditionalOStream const & pcout) const
+Parameters::print_parameters_solver(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Solver:" << std::endl;
 
@@ -128,7 +126,7 @@ Parameters::print_parameters_solver(ConditionalOStream const & pcout) const
 
 
 void
-Parameters::print_parameters_numerical_parameters(ConditionalOStream const & pcout) const
+Parameters::print_parameters_numerical_parameters(dealii::ConditionalOStream const & pcout) const
 {
   pcout << std::endl << "Numerical parameters:" << std::endl;
 

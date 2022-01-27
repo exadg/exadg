@@ -29,9 +29,6 @@ namespace ExaDG
 {
 namespace CompNS
 {
-using namespace dealii;
-
-
 std::string
 enum_to_string(EquationType const enum_type)
 {
@@ -49,7 +46,7 @@ enum_to_string(EquationType const enum_type)
       string_type = "NavierStokes";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -91,7 +88,7 @@ enum_to_string(TemporalDiscretization const enum_type)
       string_type = "SSPRK";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -122,7 +119,7 @@ enum_to_string(TimeStepCalculation const enum_type)
       string_type = "CFLAndDiffusion";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 
@@ -147,7 +144,7 @@ enum_to_string(QuadratureRule const enum_type)
       string_type = "2k over-integration";
       break;
     default:
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
       break;
   }
 

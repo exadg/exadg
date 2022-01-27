@@ -35,15 +35,13 @@ namespace ExaDG
 {
 namespace ConvDiff
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
                             std::shared_ptr<ApplicationBase<dim, Number>> app,
                             bool const                                    is_test,
                             bool const                                    is_throughput_study)
   : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
     is_throughput_study(is_throughput_study),
     application(app)
@@ -55,7 +53,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up scalar convection-diffusion solver:" << std::endl;
@@ -64,7 +62,8 @@ Driver<dim, Number>::setup()
 
   if(application->get_parameters().ale_formulation) // moving mesh
   {
-    std::shared_ptr<Function<dim>> mesh_motion = application->create_mesh_movement_function();
+    std::shared_ptr<dealii::Function<dim>> mesh_motion =
+      application->create_mesh_movement_function();
     grid_motion =
       std::make_shared<GridMotionAnalytical<dim, Number>>(application->get_grid()->mapping,
                                                           application->get_parameters().degree,
@@ -86,11 +85,11 @@ Driver<dim, Number>::setup()
   matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
   matrix_free_data->append(pde_operator);
 
-  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*application->get_grid()->triangulation,
                                         matrix_free_data->data);
-  std::shared_ptr<Mapping<dim> const> mapping =
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
   matrix_free->reinit(*mapping,
                       matrix_free_data->get_dof_handler_vector(),
@@ -124,13 +123,13 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented"));
+      AssertThrow(false, dealii::ExcMessage("Not implemented"));
     }
 
     // setup solvers in case of BDF time integration or steady problems
-    typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-    VectorType const *                                 velocity_ptr = nullptr;
-    VectorType                                         velocity;
+    typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
+    VectorType const *                                         velocity_ptr = nullptr;
+    VectorType                                                 velocity;
 
     if(application->get_parameters().problem_type == ProblemType::Unsteady)
     {
@@ -153,7 +152,7 @@ Driver<dim, Number>::setup()
       {
         AssertThrow(application->get_parameters().temporal_discretization ==
                       TemporalDiscretization::ExplRK,
-                    ExcMessage("Not implemented."));
+                    dealii::ExcMessage("Not implemented."));
       }
     }
     else if(application->get_parameters().problem_type == ProblemType::Steady)
@@ -169,7 +168,7 @@ Driver<dim, Number>::setup()
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented"));
+      AssertThrow(false, dealii::ExcMessage("Not implemented"));
     }
   }
 
@@ -182,7 +181,7 @@ Driver<dim, Number>::ale_update() const
 {
   // move the mesh and update dependent data structures
   grid_motion->update(time_integrator->get_next_time(), false);
-  std::shared_ptr<Mapping<dim> const> mapping =
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
   matrix_free->update_mapping(*mapping);
   pde_operator->update_after_grid_motion();
@@ -221,7 +220,7 @@ Driver<dim, Number>::solve()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented"));
+    AssertThrow(false, dealii::ExcMessage("Not implemented"));
   }
 }
 
@@ -266,7 +265,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
   else
@@ -281,11 +280,12 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs            = pde_operator->get_number_of_dofs();
-  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  dealii::types::global_dof_index const DoFs = pde_operator->get_number_of_dofs();
+  unsigned int N_mpi_processes               = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+  dealii::Utilities::MPI::MinMaxAvg overall_time_data =
+    dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const overall_time_avg = overall_time_data.avg;
 
   if(application->get_parameters().problem_type == ProblemType::Unsteady)
   {
@@ -306,7 +306,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
 }
 
 template<int dim, typename Number>
-std::tuple<unsigned int, types::global_dof_index, double>
+std::tuple<unsigned int, dealii::types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
                                     unsigned int const  n_repetitions_outer) const
@@ -316,13 +316,13 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
   OperatorType operator_type;
   string_to_enum(operator_type, operator_type_string);
 
-  LinearAlgebra::distributed::Vector<Number> dst, src;
+  dealii::LinearAlgebra::distributed::Vector<Number> dst, src;
 
   pde_operator->initialize_dof_vector(src);
   src = 1.0;
   pde_operator->initialize_dof_vector(dst);
 
-  LinearAlgebra::distributed::Vector<Number> velocity;
+  dealii::LinearAlgebra::distributed::Vector<Number> velocity;
   if(application->get_parameters().convective_problem())
   {
     if(application->get_parameters().get_type_velocity_field() == TypeVelocityField::DoFVector)
@@ -358,11 +358,11 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                                             mpi_comm);
 
   // calculate throughput
-  types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
+  dealii::types::global_dof_index const dofs = pde_operator->get_number_of_dofs();
 
   double const throughput = (double)dofs / wall_time;
 
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
   if(not(is_test))
   {
@@ -376,7 +376,7 @@ Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 
-  return std::tuple<unsigned int, types::global_dof_index, double>(
+  return std::tuple<unsigned int, dealii::types::global_dof_index, double>(
     application->get_parameters().degree, dofs, throughput);
 }
 

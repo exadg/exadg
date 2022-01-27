@@ -40,8 +40,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                   PARAMETERS                                       */
@@ -79,7 +77,7 @@ public:
   void
   set_value(value_type const value, unsigned int const i)
   {
-    AssertThrow(i < M, ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     data[i] = value;
   }
@@ -106,8 +104,8 @@ public:
 
 private:
   // number of rows and columns of matrix
-  unsigned int const        M;
-  AlignedVector<value_type> data;
+  unsigned int const                M;
+  dealii::AlignedVector<value_type> data;
 };
 
 
@@ -156,15 +154,15 @@ public:
   void
   set_value(value_type const value, unsigned int const i, unsigned int const j)
   {
-    AssertThrow(i < M && j < M, ExcMessage("Index exceeds matrix dimensions."));
+    AssertThrow(i < M && j < M, dealii::ExcMessage("Index exceeds matrix dimensions."));
 
     data[i * M + j] = value;
   }
 
 private:
   // number of rows and columns of matrix
-  unsigned int const        M;
-  AlignedVector<value_type> data;
+  unsigned int const                M;
+  dealii::AlignedVector<value_type> data;
 };
 
 
@@ -299,55 +297,55 @@ gmres_test_2a()
 
   SolverData solver_data(100, tol, tol, 30);
 
-  typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
-  typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
-  Preconditioner                                                            preconditioner(M);
-  Elementwise::SolverGMRES<VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
+  typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<double>> Preconditioner;
+  typedef MyMatrix<dealii::VectorizedArray<double>>                            Matrix;
+  Preconditioner                                                               preconditioner(M);
+  Elementwise::SolverGMRES<dealii::VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
     M, solver_data);
 
-  MyVector<VectorizedArray<double>> b(M);
-  b.set_value(make_vectorized_array<double>(1.0), 0);
-  b.set_value(make_vectorized_array<double>(2.0), 1);
-  b.set_value(make_vectorized_array<double>(3.0), 2);
+  MyVector<dealii::VectorizedArray<double>> b(M);
+  b.set_value(dealii::make_vectorized_array<double>(1.0), 0);
+  b.set_value(dealii::make_vectorized_array<double>(2.0), 1);
+  b.set_value(dealii::make_vectorized_array<double>(3.0), 2);
 
-  MyVector<VectorizedArray<double>> x(M);
+  MyVector<dealii::VectorizedArray<double>> x(M);
   x.init();
-  x.set_value(make_vectorized_array<double>(1.0), 0);
-  x.set_value(make_vectorized_array<double>(1.0), 1);
-  x.set_value(make_vectorized_array<double>(1.0), 2);
+  x.set_value(dealii::make_vectorized_array<double>(1.0), 0);
+  x.set_value(dealii::make_vectorized_array<double>(1.0), 1);
+  x.set_value(dealii::make_vectorized_array<double>(1.0), 2);
 
   Matrix A(M);
-  A.set_value(make_vectorized_array<double>(1.0), 0, 0);
-  A.set_value(make_vectorized_array<double>(2.0), 1, 1);
-  A.set_value(make_vectorized_array<double>(3.0), 2, 2);
+  A.set_value(dealii::make_vectorized_array<double>(1.0), 0, 0);
+  A.set_value(dealii::make_vectorized_array<double>(2.0), 1, 1);
+  A.set_value(dealii::make_vectorized_array<double>(3.0), 2, 2);
 
   /*
-  MyVector<VectorizedArray<double>> initial_res(M);
+  MyVector<dealii::VectorizedArray<double>> initial_res(M);
   A.vmult(initial_res.ptr(), x.ptr());
-  initial_res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  initial_res.sadd(dealii::make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
+  dealii::VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm_initial_res[v] <<
   std::endl;
    */
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
 
-  MyVector<VectorizedArray<double>> res(M);
+  MyVector<dealii::VectorizedArray<double>> res(M);
   A.vmult(res.ptr(), x.ptr());
-  res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  res.sadd(dealii::make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm = res.l2_norm();
+  dealii::VectorizedArray<double> l2_norm = res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    AssertThrow(l2_norm[v] < 1.e-12, ExcMessage("Did not converge."));
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
+    AssertThrow(l2_norm[v] < 1.e-12, dealii::ExcMessage("Did not converge."));
 
   std::cout << "converged." << std::endl;
 }
 
-// VectorizedArray: start with zero solution
+// dealii::VectorizedArray: start with zero solution
 void
 gmres_test_2b()
 {
@@ -358,58 +356,58 @@ gmres_test_2b()
 
   SolverData solver_data(100, 1e-12, 1e-12, 30);
 
-  typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
-  typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
-  Preconditioner                                                            preconditioner(M);
-  Elementwise::SolverGMRES<VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
+  typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<double>> Preconditioner;
+  typedef MyMatrix<dealii::VectorizedArray<double>>                            Matrix;
+  Preconditioner                                                               preconditioner(M);
+  Elementwise::SolverGMRES<dealii::VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
     M, solver_data);
 
-  MyVector<VectorizedArray<double>> b(M);
-  b.set_value(make_vectorized_array<double>(1.0), 0);
-  b.set_value(make_vectorized_array<double>(4.0), 1);
-  b.set_value(make_vectorized_array<double>(6.0), 2);
+  MyVector<dealii::VectorizedArray<double>> b(M);
+  b.set_value(dealii::make_vectorized_array<double>(1.0), 0);
+  b.set_value(dealii::make_vectorized_array<double>(4.0), 1);
+  b.set_value(dealii::make_vectorized_array<double>(6.0), 2);
 
-  MyVector<VectorizedArray<double>> x(M);
+  MyVector<dealii::VectorizedArray<double>> x(M);
   x.init();
 
   Matrix A(M);
-  A.set_value(make_vectorized_array<double>(1.0), 0, 0);
-  A.set_value(make_vectorized_array<double>(2.0), 0, 1);
-  A.set_value(make_vectorized_array<double>(3.0), 0, 2);
-  A.set_value(make_vectorized_array<double>(2.0), 1, 0);
-  A.set_value(make_vectorized_array<double>(3.0), 1, 1);
-  A.set_value(make_vectorized_array<double>(1.0), 1, 2);
-  A.set_value(make_vectorized_array<double>(3.0), 2, 0);
-  A.set_value(make_vectorized_array<double>(1.0), 2, 1);
-  A.set_value(make_vectorized_array<double>(2.0), 2, 2);
+  A.set_value(dealii::make_vectorized_array<double>(1.0), 0, 0);
+  A.set_value(dealii::make_vectorized_array<double>(2.0), 0, 1);
+  A.set_value(dealii::make_vectorized_array<double>(3.0), 0, 2);
+  A.set_value(dealii::make_vectorized_array<double>(2.0), 1, 0);
+  A.set_value(dealii::make_vectorized_array<double>(3.0), 1, 1);
+  A.set_value(dealii::make_vectorized_array<double>(1.0), 1, 2);
+  A.set_value(dealii::make_vectorized_array<double>(3.0), 2, 0);
+  A.set_value(dealii::make_vectorized_array<double>(1.0), 2, 1);
+  A.set_value(dealii::make_vectorized_array<double>(2.0), 2, 2);
 
   /*
-  MyVector<VectorizedArray<double>> initial_res(M);
+  MyVector<dealii::VectorizedArray<double>> initial_res(M);
   A.vmult(initial_res.ptr(), x.ptr());
-  initial_res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  initial_res.sadd(dealii::make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
+  dealii::VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm_initial_res[v] <<
   std::endl;
   */
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
 
-  MyVector<VectorizedArray<double>> res(M);
+  MyVector<dealii::VectorizedArray<double>> res(M);
   A.vmult(res.ptr(), x.ptr());
-  res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  res.sadd(dealii::make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm = res.l2_norm();
+  dealii::VectorizedArray<double> l2_norm = res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    AssertThrow(l2_norm[v] < 1.e-12, ExcMessage("Did not converge."));
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
+    AssertThrow(l2_norm[v] < 1.e-12, dealii::ExcMessage("Did not converge."));
 
   std::cout << "converged." << std::endl;
 }
 
-// VectorizedArray: solve different systems of equations for the
+// dealii::VectorizedArray: solve different systems of equations for the
 // different components of the vectorized array
 void
 gmres_test_2c()
@@ -421,56 +419,56 @@ gmres_test_2c()
 
   SolverData solver_data(100, tol, tol, 30);
 
-  typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
-  typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
-  Preconditioner                                                            preconditioner(M);
-  Elementwise::SolverGMRES<VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
+  typedef Elementwise::PreconditionerIdentity<dealii::VectorizedArray<double>> Preconditioner;
+  typedef MyMatrix<dealii::VectorizedArray<double>>                            Matrix;
+  Preconditioner                                                               preconditioner(M);
+  Elementwise::SolverGMRES<dealii::VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
     M, solver_data);
 
-  MyVector<VectorizedArray<double>> b(M);
-  b.set_value(make_vectorized_array<double>(1.0), 0);
-  b.set_value(make_vectorized_array<double>(2.0), 1);
-  b.set_value(make_vectorized_array<double>(3.0), 2);
+  MyVector<dealii::VectorizedArray<double>> b(M);
+  b.set_value(dealii::make_vectorized_array<double>(1.0), 0);
+  b.set_value(dealii::make_vectorized_array<double>(2.0), 1);
+  b.set_value(dealii::make_vectorized_array<double>(3.0), 2);
 
-  MyVector<VectorizedArray<double>> x(M);
+  MyVector<dealii::VectorizedArray<double>> x(M);
   x.init();
-  x.set_value(make_vectorized_array<double>(1.0), 0);
-  x.set_value(make_vectorized_array<double>(1.0), 1);
+  x.set_value(dealii::make_vectorized_array<double>(1.0), 0);
+  x.set_value(dealii::make_vectorized_array<double>(1.0), 1);
 
-  VectorizedArray<double> inhom_array = make_vectorized_array<double>(1.0);
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
+  dealii::VectorizedArray<double> inhom_array = dealii::make_vectorized_array<double>(1.0);
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
     if(v > 1)
       inhom_array[v] = 0.0;
 
   x.set_value(inhom_array, 2);
 
   Matrix A(M);
-  A.set_value(make_vectorized_array<double>(1.0), 0, 0);
-  A.set_value(make_vectorized_array<double>(2.0), 1, 1);
-  A.set_value(make_vectorized_array<double>(3.0), 2, 2);
+  A.set_value(dealii::make_vectorized_array<double>(1.0), 0, 0);
+  A.set_value(dealii::make_vectorized_array<double>(2.0), 1, 1);
+  A.set_value(dealii::make_vectorized_array<double>(3.0), 2, 2);
 
   /*
-  MyVector<VectorizedArray<double>> initial_res(M);
+  MyVector<dealii::VectorizedArray<double>> initial_res(M);
   A.vmult(initial_res.ptr(), x.ptr());
-  initial_res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  initial_res.sadd(dealii::make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
+  dealii::VectorizedArray<double> l2_norm_initial_res = initial_res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
     std::cout << "L2 norm of initial residual[" << v << "] = " << l2_norm_initial_res[v] <<
   std::endl;
    */
 
   gmres_solver.solve(&A, x.ptr(), b.ptr(), &preconditioner);
 
-  MyVector<VectorizedArray<double>> res(M);
+  MyVector<dealii::VectorizedArray<double>> res(M);
   A.vmult(res.ptr(), x.ptr());
-  res.sadd(make_vectorized_array<double>(-1.0), b.ptr());
+  res.sadd(dealii::make_vectorized_array<double>(-1.0), b.ptr());
 
-  VectorizedArray<double> l2_norm = res.l2_norm();
+  dealii::VectorizedArray<double> l2_norm = res.l2_norm();
 
-  for(unsigned int v = 0; v < VectorizedArray<double>::size(); ++v)
-    AssertThrow(l2_norm[v] < 1.e-12, ExcMessage("Did not converge."));
+  for(unsigned int v = 0; v < dealii::VectorizedArray<double>::size(); ++v)
+    AssertThrow(l2_norm[v] < 1.e-12, dealii::ExcMessage("Did not converge."));
 
   std::cout << "converged." << std::endl;
 }
@@ -490,7 +488,7 @@ main(int argc, char ** argv)
     ExaDG::gmres_test_1a();
     ExaDG::gmres_test_1b();
 
-    // VectorizedArray<double>
+    // dealii::VectorizedArray<double>
     ExaDG::gmres_test_2a();
     ExaDG::gmres_test_2b();
     ExaDG::gmres_test_2c();

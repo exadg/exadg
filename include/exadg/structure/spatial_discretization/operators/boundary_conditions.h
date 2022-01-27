@@ -29,22 +29,20 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 /*
  * This function calculates the Neumann boundary value.
  */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  Tensor<1, dim, VectorizedArray<Number>>
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>>
   calculate_neumann_value(unsigned int const                             q,
                           FaceIntegrator<dim, dim, Number> const &       integrator,
                           BoundaryType const &                           boundary_type,
-                          types::boundary_id const                       boundary_id,
+                          dealii::types::boundary_id const               boundary_id,
                           std::shared_ptr<BoundaryDescriptor<dim> const> boundary_descriptor,
                           double const &                                 time)
 {
-  Tensor<1, dim, VectorizedArray<Number>> traction;
+  dealii::Tensor<1, dim, dealii::VectorizedArray<Number>> traction;
 
   if(boundary_type == BoundaryType::Neumann)
   {
@@ -68,7 +66,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
     AssertThrow(boundary_type == BoundaryType::Dirichlet ||
                   boundary_type == BoundaryType::DirichletMortar,
-                ExcMessage("Boundary type of face is invalid or not implemented."));
+                dealii::ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return traction;

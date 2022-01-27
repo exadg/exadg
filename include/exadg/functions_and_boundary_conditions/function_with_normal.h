@@ -24,18 +24,16 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 /*
  * Class that extends the Function class of deal.II by the possibility of using normal vectors.
  */
 
 template<int dim>
-class FunctionWithNormal : public Function<dim>
+class FunctionWithNormal : public dealii::Function<dim>
 {
 public:
   FunctionWithNormal(unsigned int const n_components, double const time)
-    : Function<dim>(n_components, time)
+    : dealii::Function<dim>(n_components, time)
   {
   }
 
@@ -43,19 +41,19 @@ public:
   {
   }
 
-  void set_normal_vector(Tensor<1, dim> normal_vector_in)
+  void set_normal_vector(dealii::Tensor<1, dim> normal_vector_in)
   {
     normal_vector = normal_vector_in;
   }
 
-  Tensor<1, dim>
+  dealii::Tensor<1, dim>
   get_normal_vector() const
   {
     return normal_vector;
   }
 
 private:
-  Tensor<1, dim> normal_vector;
+  dealii::Tensor<1, dim> normal_vector;
 };
 
 } // namespace ExaDG

@@ -4,8 +4,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass(1.0)
 {
@@ -13,9 +11,10 @@ MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass(1.0)
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::initialize(MatrixFree<dim, Number> const &   matrix_free,
-                                          AffineConstraints<Number> const & affine_constraints,
-                                          MomentumOperatorData<dim> const & data)
+MomentumOperator<dim, Number>::initialize(
+  dealii::MatrixFree<dim, Number> const &   matrix_free,
+  dealii::AffineConstraints<Number> const & affine_constraints,
+  MomentumOperatorData<dim> const &         data)
 {
   operator_data = data;
 
@@ -64,8 +63,8 @@ MomentumOperator<dim, Number>::get_data() const
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                           matrix_free,
-  AffineConstraints<Number> const &                         affine_constraints,
+  dealii::MatrixFree<dim, Number> const &                   matrix_free,
+  dealii::AffineConstraints<Number> const &                 affine_constraints,
   MomentumOperatorData<dim> const &                         data,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
@@ -114,7 +113,7 @@ MomentumOperator<dim, Number>::get_viscous_kernel_data() const
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+dealii::LinearAlgebra::distributed::Vector<Number> const &
 MomentumOperator<dim, Number>::get_velocity() const
 {
   return convective_kernel->get_velocity();
@@ -172,8 +171,8 @@ MomentumOperator<dim, Number>::rhs(VectorType & dst) const
 {
   (void)dst;
 
-  AssertThrow(false,
-              ExcMessage("The function rhs() does not make sense for the momentum operator."));
+  AssertThrow(
+    false, dealii::ExcMessage("The function rhs() does not make sense for the momentum operator."));
 }
 
 template<int dim, typename Number>
@@ -183,7 +182,8 @@ MomentumOperator<dim, Number>::rhs_add(VectorType & dst) const
   (void)dst;
 
   AssertThrow(false,
-              ExcMessage("The function rhs_add() does not make sense for the momentum operator."));
+              dealii::ExcMessage(
+                "The function rhs_add() does not make sense for the momentum operator."));
 }
 
 template<int dim, typename Number>
@@ -194,7 +194,8 @@ MomentumOperator<dim, Number>::evaluate(VectorType & dst, VectorType const & src
   (void)src;
 
   AssertThrow(false,
-              ExcMessage("The function evaluate() does not make sense for the momentum operator."));
+              dealii::ExcMessage(
+                "The function evaluate() does not make sense for the momentum operator."));
 }
 
 template<int dim, typename Number>
@@ -205,7 +206,7 @@ MomentumOperator<dim, Number>::evaluate_add(VectorType & dst, VectorType const &
   (void)src;
 
   AssertThrow(false,
-              ExcMessage(
+              dealii::ExcMessage(
                 "The function evaluate_add() does not make sense for the momentum operator."));
 }
 
@@ -247,9 +248,10 @@ MomentumOperator<dim, Number>::reinit_boundary_face(unsigned int const face) con
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
-                                                      unsigned int const       face,
-                                                      types::boundary_id const boundary_id) const
+MomentumOperator<dim, Number>::reinit_face_cell_based(
+  unsigned int const               cell,
+  unsigned int const               face,
+  dealii::types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -298,7 +300,7 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
       }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        AssertThrow(false, dealii::ExcMessage("Not implemented."));
       }
     }
 
@@ -534,14 +536,15 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator,
-                                                    OperatorType const &       operator_type,
-                                                    types::boundary_id const & boundary_id) const
+MomentumOperator<dim, Number>::do_boundary_integral(
+  IntegratorFace &                   integrator,
+  OperatorType const &               operator_type,
+  dealii::types::boundary_id const & boundary_id) const
 {
   // make sure that this function is only accessed for OperatorType::homogeneous
   AssertThrow(
     operator_type == OperatorType::homogeneous,
-    ExcMessage(
+    dealii::ExcMessage(
       "For the linearized momentum operator, only OperatorType::homogeneous makes sense."));
 
   BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);

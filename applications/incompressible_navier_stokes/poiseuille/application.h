@@ -26,8 +26,6 @@ namespace ExaDG
 {
 namespace IncNS
 {
-using namespace dealii;
-
 enum class BoundaryCondition
 {
   ParabolicInflow,
@@ -42,21 +40,21 @@ string_to_enum(BoundaryCondition & enum_type, std::string const string_type)
   if     (string_type == "ParabolicInflow") enum_type = BoundaryCondition::ParabolicInflow;
   else if(string_type == "PressureInflow")  enum_type = BoundaryCondition::PressureInflow;
   else if(string_type == "Periodic")        enum_type = BoundaryCondition::Periodic;
-  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  else AssertThrow(false, dealii::ExcMessage("Unknown operator type. Not implemented."));
   // clang-format on
 }
 
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class AnalyticalSolutionVelocity : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionVelocity(double const max_velocity, double const H)
-    : Function<dim>(dim, 0.0), max_velocity(max_velocity), H(H)
+    : dealii::Function<dim>(dim, 0.0), max_velocity(max_velocity), H(H)
   {
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     double result = 0.0;
 
@@ -71,14 +69,14 @@ private:
 };
 
 template<int dim>
-class AnalyticalSolutionPressure : public Function<dim>
+class AnalyticalSolutionPressure : public dealii::Function<dim>
 {
 public:
   AnalyticalSolutionPressure(double const viscosity,
                              double const max_velocity,
                              double const L,
                              double const H)
-    : Function<dim>(1 /*n_components*/, 0.0),
+    : dealii::Function<dim>(1 /*n_components*/, 0.0),
       viscosity(viscosity),
       max_velocity(max_velocity),
       L(L),
@@ -87,7 +85,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const /*component*/) const
+  value(dealii::Point<dim> const & p, unsigned int const /*component*/) const
   {
     // pressure decreases linearly in flow direction
     double pressure_gradient = -2. * viscosity * max_velocity / std::pow(H / 2., 2.0);
@@ -102,14 +100,14 @@ private:
 };
 
 template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
+class NeumannBoundaryVelocity : public dealii::Function<dim>
 {
 public:
   NeumannBoundaryVelocity(FormulationViscousTerm const & formulation,
                           double const                   max_velocity,
                           double const                   H,
                           double const                   normal)
-    : Function<dim>(dim, 0.0),
+    : dealii::Function<dim>(dim, 0.0),
       formulation(formulation),
       max_velocity(max_velocity),
       H(H),
@@ -118,7 +116,7 @@ public:
   }
 
   double
-  value(Point<dim> const & p, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & p, unsigned int const component = 0) const
   {
     (void)p;
     (void)component;
@@ -151,16 +149,16 @@ private:
 };
 
 template<int dim>
-class RightHandSide : public Function<dim>
+class RightHandSide : public dealii::Function<dim>
 {
 public:
   RightHandSide(double const viscosity, double const max_velocity, double const H)
-    : Function<dim>(dim, 0.0), viscosity(viscosity), max_velocity(max_velocity), H(H)
+    : dealii::Function<dim>(dim, 0.0), viscosity(viscosity), max_velocity(max_velocity), H(H)
   {
   }
 
   double
-  value(Point<dim> const & /*p*/, unsigned int const component = 0) const
+  value(dealii::Point<dim> const & /*p*/, unsigned int const component = 0) const
   {
     double pressure_gradient = 0.0;
 
@@ -182,7 +180,7 @@ public:
     : ApplicationBase<dim, Number>(input_file, comm)
   {
     // parse application-specific parameters
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     add_parameters(prm);
     prm.parse_input(input_file, "", true, true);
 
@@ -190,7 +188,7 @@ public:
   }
 
   void
-  add_parameters(ParameterHandler & prm) final
+  add_parameters(dealii::ParameterHandler & prm) final
   {
     ApplicationBase<dim, Number>::add_parameters(prm);
 
@@ -199,11 +197,11 @@ public:
       prm.add_parameter("BoundaryConditionType",
                         boundary_condition_string,
                         "Type of boundary condition.",
-                        Patterns::Selection("ParabolicInflow|PressureInflow|Periodic"));
+                        dealii::Patterns::Selection("ParabolicInflow|PressureInflow|Periodic"));
       prm.add_parameter("ApplySymmetryBC",
                         apply_symmetry_bc,
                         "Apply symmetry boundary condition.",
-                        Patterns::Bool());
+                        dealii::Patterns::Bool());
     prm.leave_subsection();
     // clang-format on
   }
@@ -356,17 +354,17 @@ public:
   create_grid() final
   {
     double const              y_upper = apply_symmetry_bc ? 0.0 : H / 2.;
-    Point<dim>                point1(0.0, -H / 2.), point2(L, y_upper);
+    dealii::Point<dim>        point1(0.0, -H / 2.), point2(L, y_upper);
     std::vector<unsigned int> repetitions({2, 1});
-    GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
-                                              repetitions,
-                                              point1,
-                                              point2);
+    dealii::GridGenerator::subdivided_hyper_rectangle(*this->grid->triangulation,
+                                                      repetitions,
+                                                      point1,
+                                                      point2);
 
     // set boundary indicator
     for(auto cell : this->grid->triangulation->active_cell_iterators())
     {
-      for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+      for(unsigned int face = 0; face < dealii::GeometryInfo<dim>::faces_per_cell; ++face)
       {
         if((std::fabs(cell->face(face)->center()(0) - 0.0) < 1e-12))
           cell->face(face)->set_boundary_id(1);
@@ -381,7 +379,7 @@ public:
 
     if(boundary_condition == BoundaryCondition::Periodic)
     {
-      GridTools::collect_periodic_faces(
+      dealii::GridTools::collect_periodic_faces(
         *this->grid->triangulation, 1, 2, 0, this->grid->periodic_faces);
       this->grid->triangulation->add_periodicity(this->grid->periodic_faces);
     }
@@ -392,13 +390,14 @@ public:
   void
   set_boundary_descriptor() final
   {
-    typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+    typedef typename std::pair<dealii::types::boundary_id, std::shared_ptr<dealii::Function<dim>>>
+      pair;
 
     // fill boundary descriptor velocity
 
     // no-slip walls
     this->boundary_descriptor->velocity->dirichlet_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     if(boundary_condition != BoundaryCondition::Periodic)
     {
@@ -416,7 +415,7 @@ public:
       }
       else
       {
-        AssertThrow(false, ExcMessage("not implemented."));
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
       }
 
       // outflow
@@ -429,14 +428,14 @@ public:
       // slip boundary condition: always u*n=0
       // function will not be used -> use ZeroFunction
       this->boundary_descriptor->velocity->symmetry_bc.insert(
-        pair(3, new Functions::ZeroFunction<dim>(dim)));
+        pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
     }
 
     // fill boundary descriptor pressure
 
     // no-slip walls
     this->boundary_descriptor->pressure->neumann_bc.insert(
-      pair(0, new Functions::ZeroFunction<dim>(dim)));
+      pair(0, new dealii::Functions::ZeroFunction<dim>(dim)));
 
     if(boundary_condition != BoundaryCondition::Periodic)
     {
@@ -444,7 +443,7 @@ public:
       if(boundary_condition == BoundaryCondition::ParabolicInflow)
       {
         this->boundary_descriptor->pressure->neumann_bc.insert(
-          pair(1, new Functions::ZeroFunction<dim>(dim)));
+          pair(1, new dealii::Functions::ZeroFunction<dim>(dim)));
       }
       else if(boundary_condition == BoundaryCondition::PressureInflow)
       {
@@ -453,7 +452,7 @@ public:
       }
       else
       {
-        AssertThrow(false, ExcMessage("not implemented."));
+        AssertThrow(false, dealii::ExcMessage("not implemented."));
       }
 
       // outflow
@@ -468,18 +467,20 @@ public:
       // (du/dt)*n = d(u*n)/dt = d(0)/dt = 0, i.e., the time derivative term is multiplied by the
       // normal vector and the normal velocity is zero (= symmetry boundary condition).
       this->boundary_descriptor->pressure->neumann_bc.insert(
-        pair(3, new Functions::ZeroFunction<dim>(dim)));
+        pair(3, new dealii::Functions::ZeroFunction<dim>(dim)));
     }
   }
 
   void
   set_field_functions() final
   {
-    this->field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-    this->field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+    this->field_functions->initial_solution_velocity.reset(
+      new dealii::Functions::ZeroFunction<dim>(dim));
+    this->field_functions->initial_solution_pressure.reset(
+      new dealii::Functions::ZeroFunction<dim>(1));
     if(boundary_condition == BoundaryCondition::Periodic)
       this->field_functions->analytical_solution_pressure.reset(
-        new Functions::ZeroFunction<dim>(1));
+        new dealii::Functions::ZeroFunction<dim>(1));
     else
       this->field_functions->analytical_solution_pressure.reset(
         new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H));
@@ -520,7 +521,7 @@ public:
     // ... pressure error
     pp_data.error_data_p.analytical_solution_available = true;
     if(boundary_condition == BoundaryCondition::Periodic)
-      pp_data.error_data_p.analytical_solution.reset(new Functions::ZeroFunction<dim>(1));
+      pp_data.error_data_p.analytical_solution.reset(new dealii::Functions::ZeroFunction<dim>(1));
     else
       pp_data.error_data_p.analytical_solution.reset(
         new AnalyticalSolutionPressure<dim>(viscosity, max_velocity, L, H));

@@ -44,8 +44,6 @@ namespace ExaDG
 {
 namespace Structure
 {
-using namespace dealii;
-
 // forward declaration
 template<int dim, typename Number>
 class Operator;
@@ -59,7 +57,7 @@ template<int dim, typename Number>
 class ResidualOperator
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef Operator<dim, Number> PDEOperator;
 
@@ -111,7 +109,7 @@ template<int dim, typename Number>
 class LinearizedOperator : public dealii::Subscriptor
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef Operator<dim, Number> PDEOperator;
 
@@ -167,7 +165,7 @@ class Operator : public dealii::Subscriptor, public Interface::Operator<Number>
 private:
   typedef float MultigridNumber;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef dealii::LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
   /*
@@ -189,8 +187,8 @@ public:
    * related to the solution of linear systems of equations.
    */
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>     matrix_free,
-        std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data);
+  setup(std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free,
+        std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -283,16 +281,16 @@ public:
   /*
    * Setters and getters.
    */
-  MatrixFree<dim, Number> const &
+  dealii::MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
-  Mapping<dim> const &
+  dealii::Mapping<dim> const &
   get_mapping() const;
 
-  DoFHandler<dim> const &
+  dealii::DoFHandler<dim> const &
   get_dof_handler() const;
 
-  types::global_dof_index
+  dealii::types::global_dof_index
   get_number_of_dofs() const;
 
   unsigned int
@@ -306,7 +304,7 @@ public:
 
 private:
   /*
-   * Initializes DoFHandler.
+   * Initializes dealii::DoFHandler.
    */
   void
   distribute_dofs();
@@ -366,11 +364,11 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  FESystem<dim>             fe;
-  DoFHandler<dim>           dof_handler;
-  AffineConstraints<Number> affine_constraints;
+  dealii::FESystem<dim>             fe;
+  dealii::DoFHandler<dim>           dof_handler;
+  dealii::AffineConstraints<Number> affine_constraints;
   // constraints for mass operator (i.e., do not apply any constraints)
-  AffineConstraints<Number> constraints_mass;
+  dealii::AffineConstraints<Number> constraints_mass;
 
   std::string const dof_index                = "dof";
   std::string const dof_index_mass           = "dof_mass";
@@ -380,8 +378,8 @@ private:
   /*
    * Matrix-free operator evaluation.
    */
-  std::shared_ptr<MatrixFreeData<dim, Number>> matrix_free_data;
-  std::shared_ptr<MatrixFree<dim, Number>>     matrix_free;
+  std::shared_ptr<MatrixFreeData<dim, Number>>     matrix_free_data;
+  std::shared_ptr<dealii::MatrixFree<dim, Number>> matrix_free;
 
   /*
    * Basic operators.
@@ -434,7 +432,7 @@ private:
   /*
    * Output to screen.
    */
-  ConditionalOStream pcout;
+  dealii::ConditionalOStream pcout;
 };
 
 } // namespace Structure

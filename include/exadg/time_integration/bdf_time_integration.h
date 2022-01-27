@@ -30,8 +30,6 @@
 
 namespace ExaDG
 {
-using namespace dealii;
-
 class BDFTimeIntegratorConstants
 {
 public:
@@ -62,7 +60,7 @@ public:
    *  This function prints the time integrator constants
    */
   void
-  print(ConditionalOStream & pcout) const;
+  print(dealii::ConditionalOStream & pcout) const;
 
 
 private:

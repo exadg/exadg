@@ -30,14 +30,12 @@ namespace ExaDG
 {
 namespace FTI
 {
-using namespace dealii;
-
 template<int dim, typename Number>
 Driver<dim, Number>::Driver(MPI_Comm const &                              comm,
                             std::shared_ptr<ApplicationBase<dim, Number>> app,
                             bool const                                    is_test)
   : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     is_test(is_test),
     application(app),
     use_adaptive_time_stepping(false),
@@ -50,7 +48,7 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::setup()
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
   pcout << std::endl << "Setting up incompressible flow with scalar transport solver:" << std::endl;
@@ -66,16 +64,16 @@ Driver<dim, Number>::setup()
   {
     AssertThrow(application->get_parameters_scalar(i).problem_type ==
                   ConvDiff::ProblemType::Unsteady,
-                ExcMessage("ProblemType must be unsteady!"));
+                dealii::ExcMessage("ProblemType must be unsteady!"));
   }
 
   if(application->get_parameters().ale_formulation) // moving mesh
   {
     AssertThrow(application->get_parameters().mesh_movement_type ==
                   IncNS::MeshMovementType::Analytical,
-                ExcMessage("not implemented."));
+                dealii::ExcMessage("not implemented."));
 
-    std::shared_ptr<Function<dim>> mesh_motion;
+    std::shared_ptr<dealii::Function<dim>> mesh_motion;
     mesh_motion = application->create_mesh_movement_function();
     grid_motion =
       std::make_shared<GridMotionAnalytical<dim, Number>>(grid->mapping,
@@ -109,7 +107,7 @@ Driver<dim, Number>::setup()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   unsigned int const n_scalars = application->get_n_scalars();
@@ -138,7 +136,7 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
     matrix_free_data->append(scalar_operator[i]);
 
-  matrix_free = std::make_shared<MatrixFree<dim, Number>>();
+  matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
   if(application->get_parameters().use_cell_based_face_loops)
     Categorization::do_cell_based_loops(*grid->triangulation, matrix_free_data->data);
   matrix_free->reinit(*grid->mapping,
@@ -152,7 +150,7 @@ Driver<dim, Number>::setup()
     AssertThrow(
       application->get_parameters_scalar(i).use_cell_based_face_loops ==
         application->get_parameters().use_cell_based_face_loops,
-      ExcMessage(
+      dealii::ExcMessage(
         "Parameter use_cell_based_face_loops should be the same for fluid and scalar transport."));
   }
 
@@ -183,7 +181,7 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     scalar_postprocessor[i] = application->create_postprocessor_scalar(i);
-    std::shared_ptr<Mapping<dim> const> mapping =
+    std::shared_ptr<dealii::Mapping<dim> const> mapping =
       get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
     scalar_postprocessor[i]->setup(*scalar_operator[i], *mapping);
   }
@@ -210,7 +208,7 @@ Driver<dim, Number>::setup()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
@@ -230,7 +228,7 @@ Driver<dim, Number>::setup()
       // In case of a restart, start_with_low_order = false is possible since it has been
       // enforced that all previous time steps are identical for fluid and scalar transport.
       AssertThrow(application->get_parameters().start_with_low_order == true,
-                  ExcMessage("start_with_low_order has to be true for this solver."));
+                  dealii::ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
     fluid_time_integrator->setup(application->get_parameters().restarted_simulation);
@@ -247,7 +245,7 @@ Driver<dim, Number>::setup()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   for(unsigned int i = 0; i < n_scalars; ++i)
@@ -266,7 +264,7 @@ Driver<dim, Number>::setup()
     {
       // See comment above for fluid field.
       AssertThrow(application->get_parameters_scalar(i).start_with_low_order == true,
-                  ExcMessage("start_with_low_order has to be true for this solver."));
+                  dealii::ExcMessage("start_with_low_order has to be true for this solver."));
     }
 
     scalar_time_integrator[i]->setup(application->get_parameters_scalar(i).restarted_simulation);
@@ -282,7 +280,7 @@ Driver<dim, Number>::setup()
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     AssertThrow(application->get_parameters_scalar(i).analytical_velocity_field == false,
-                ExcMessage(
+                dealii::ExcMessage(
                   "An analytical velocity field can not be used for this coupled solver."));
 
     if(application->get_parameters_scalar(i).temporal_discretization ==
@@ -293,9 +291,9 @@ Driver<dim, Number>::setup()
       double const scaling_factor =
         scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
 
-      LinearAlgebra::distributed::Vector<Number> vector;
+      dealii::LinearAlgebra::distributed::Vector<Number> vector;
       fluid_operator->initialize_vector_velocity(vector);
-      LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
+      dealii::LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
 
       scalar_operator[i]->setup_solver(scaling_factor, velocity);
     }
@@ -303,7 +301,7 @@ Driver<dim, Number>::setup()
     {
       AssertThrow(application->get_parameters_scalar(i).temporal_discretization ==
                     ConvDiff::TemporalDiscretization::ExplRK,
-                  ExcMessage("Not implemented."));
+                  dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -441,7 +439,7 @@ Driver<dim, Number>::communicate_scalar_to_fluid() const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     fluid_operator->set_temperature(temperature);
@@ -454,8 +452,8 @@ Driver<dim, Number>::communicate_fluid_to_all_scalars() const
 {
   // We need to communicate between fluid solver and scalar transport solver, i.e., ask the
   // fluid solver for the velocity field and hand it over to all scalar transport solvers.
-  std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
-  std::vector<double>                                             times;
+  std::vector<dealii::LinearAlgebra::distributed::Vector<Number> const *> velocities;
+  std::vector<double>                                                     times;
 
   if(application->get_parameters().solver_type == IncNS::SolverType::Unsteady)
   {
@@ -467,12 +465,12 @@ Driver<dim, Number>::communicate_fluid_to_all_scalars() const
     times.resize(1);
 
     velocities.at(0) = &fluid_driver_steady->get_velocity();
-    AssertThrow(scalar_time_integrator[0].get() != nullptr, ExcMessage("Not implemented."));
+    AssertThrow(scalar_time_integrator[0].get() != nullptr, dealii::ExcMessage("Not implemented."));
     times.at(0) = scalar_time_integrator[0]->get_next_time();
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
@@ -493,7 +491,7 @@ Driver<dim, Number>::communicate_fluid_to_all_scalars() const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 }
@@ -502,17 +500,17 @@ template<int dim, typename Number>
 void
 Driver<dim, Number>::ale_update() const
 {
-  Timer timer;
+  dealii::Timer timer;
   timer.restart();
 
-  Timer sub_timer;
+  dealii::Timer sub_timer;
 
   sub_timer.restart();
   grid_motion->update(fluid_time_integrator->get_next_time(), false);
   timer_tree.insert({"Flow + transport", "ALE", "Reinit mapping"}, sub_timer.wall_time());
 
   sub_timer.restart();
-  std::shared_ptr<Mapping<dim> const> mapping =
+  std::shared_ptr<dealii::Mapping<dim> const> mapping =
     get_dynamic_mapping<dim, Number>(application->get_grid(), grid_motion);
   matrix_free->update_mapping(*mapping);
   timer_tree.insert({"Flow + transport", "ALE", "Update matrix-free"}, sub_timer.wall_time());
@@ -582,7 +580,7 @@ Driver<dim, Number>::solve() const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
 
     // Communicate fluid -> all scalars
@@ -646,7 +644,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   // Scalar
@@ -669,7 +667,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
     }
     else
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
+      AssertThrow(false, dealii::ExcMessage("Not implemented."));
     }
   }
 
@@ -687,7 +685,7 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(false, dealii::ExcMessage("Not implemented."));
   }
 
   for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
@@ -704,17 +702,18 @@ Driver<dim, Number>::print_performance_results(double const total_time) const
   timer_tree.print_level(pcout, 2);
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index DoFs = this->fluid_operator->get_number_of_dofs();
+  dealii::types::global_dof_index DoFs = this->fluid_operator->get_number_of_dofs();
 
   for(unsigned int i = 0; i < application->get_n_scalars(); ++i)
   {
     DoFs += this->scalar_operator[i]->get_number_of_dofs();
   }
 
-  unsigned int const N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+  unsigned int const N_mpi_processes = dealii::Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(total_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
+  dealii::Utilities::MPI::MinMaxAvg overall_time_data =
+    dealii::Utilities::MPI::min_max_avg(total_time, mpi_comm);
+  double const overall_time_avg = overall_time_data.avg;
 
   print_throughput_unsteady(pcout, DoFs, overall_time_avg, N_time_steps, N_mpi_processes);
 
