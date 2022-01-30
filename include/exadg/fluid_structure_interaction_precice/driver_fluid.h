@@ -61,8 +61,11 @@ private:
   using VectorType = typename LinearAlgebra::distributed::Vector<Number>;
 
 public:
-  DriverFluid(std::string const & input_file, MPI_Comm const & comm, bool const is_test)
-    : Driver<dim, Number>(input_file, comm, is_test)
+  DriverFluid(std::string const &                           input_file,
+              MPI_Comm const &                              comm,
+              std::shared_ptr<ApplicationBase<dim, Number>> app,
+              bool const                                    is_test)
+    : Driver<dim, Number>(input_file, comm, app, is_test)
   {
   }
 

@@ -304,7 +304,8 @@ public:
     GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
-  void create_triangulation_fluid(Triangulation<3> & tria)
+  void
+  create_triangulation_fluid(Triangulation<3> & tria)
   {
     (void)tria;
 
@@ -622,7 +623,8 @@ public:
     param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  void create_triangulation_structure(Triangulation<2> & tria)
+  void
+  create_triangulation_structure(Triangulation<2> & tria)
   {
     if(STRUCTURE_COVERS_FLAG_ONLY)
     {
@@ -637,7 +639,8 @@ public:
     }
   }
 
-  void create_triangulation_structure(Triangulation<3> & tria)
+  void
+  create_triangulation_structure(Triangulation<3> & tria)
   {
     (void)tria;
 

@@ -45,8 +45,12 @@ private:
   using VectorType = LinearAlgebra::distributed::Vector<Number>;
 
 public:
-  Driver(std::string const & input_file, MPI_Comm const & comm, bool const is_test)
+  Driver(std::string const &                           input_file,
+         MPI_Comm const &                              comm,
+         std::shared_ptr<ApplicationBase<dim, Number>> app,
+         bool const                                    is_test)
     : mpi_comm(comm),
+      application(app),
       pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
       is_test(is_test)
   {
@@ -72,6 +76,8 @@ public:
 
   virtual void
   print_performance_results(double const total_time) const = 0;
+
+  virtual ~Driver() = default;
 
 protected:
   // MPI communicator

@@ -123,6 +123,16 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   Timer timer;
   timer.restart();
 
+  std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
+    FSI::get_application<dim, Number>(input_file, mpi_comm);
+
+
+  ExaDG::ResolutionParameters resolution(input_file);
+  application->set_parameters_convergence_study(resolution.degree_fluid,
+                                                resolution.degree_structure,
+                                                resolution.refine_fluid,
+                                                resolution.refine_structure);
+
   Parameters::PreciceAdapterConfiguration precice_param;
   dealii::ParameterHandler                prm;
   precice_param.add_parameters(prm);
@@ -133,12 +143,11 @@ run(std::string const & input_file, MPI_Comm const & mpi_comm, bool const is_tes
   std::shared_ptr<FSI::Driver<dim, Number>> driver;
 
   if(is_solid)
-    driver = std::make_shared<FSI::DriverSolid<dim, Number>>(input_file, mpi_comm, is_test);
+    driver =
+      std::make_shared<FSI::DriverSolid<dim, Number>>(input_file, mpi_comm, application, is_test);
   else
-    driver = std::make_shared<FSI::DriverFluid<dim, Number>>(input_file, mpi_comm, is_test);
-
-  std::shared_ptr<FSI::ApplicationBase<dim, Number>> application =
-    FSI::get_application<dim, Number>(input_file, mpi_comm);
+    driver =
+      std::make_shared<FSI::DriverFluid<dim, Number>>(input_file, mpi_comm, application, is_test);
 
   driver->setup();
 
