@@ -106,7 +106,7 @@ public:
   }
 
   void
-  set_parameters_fluid(unsigned int const degree) final
+  set_parameters_fluid() final
   {
     using namespace IncNS;
 
@@ -157,10 +157,9 @@ public:
 
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type = TriangulationType::Distributed;
-    param.degree_u           = degree;
-    param.degree_p           = DegreePressure::MixedOrder;
-    param.mapping            = MappingType::Isoparametric;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree_u;
+    param.degree_p                = DegreePressure::MixedOrder;
 
     // convective term
     param.upwind_factor = 1.0;
@@ -268,8 +267,7 @@ public:
       SchurComplementPreconditioner::PressureConvectionDiffusion;
   }
 
-  void
-  create_triangulation_fluid(Triangulation<2> & tria)
+  void create_triangulation_fluid(Triangulation<2> & tria)
   {
     std::vector<Triangulation<2>> tria_vec;
     tria_vec.resize(5);
@@ -306,25 +304,21 @@ public:
     GridGenerator::merge_triangulations(tria_vec_ptr, tria);
   }
 
-  void
-  create_triangulation_fluid(Triangulation<3> & tria)
+  void create_triangulation_fluid(Triangulation<3> & tria)
   {
     (void)tria;
 
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  std::shared_ptr<Grid<dim, Number>>
-  create_grid_fluid(GridData const & grid_data) final
+  void
+  create_grid_fluid() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+    create_triangulation_fluid(*this->fluid_grid->triangulation);
 
-    create_triangulation_fluid(*grid->triangulation);
+    this->fluid_grid->triangulation->set_all_manifold_ids(0);
 
-    grid->triangulation->set_all_manifold_ids(0);
-
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->fluid_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -357,8 +351,7 @@ public:
         }
       }
     }
-    grid->triangulation->refine_global(grid_data.n_refine_global);
-    return grid;
+    this->fluid_grid->triangulation->refine_global(this->fluid_param.grid.n_refine_global);
   }
 
   void
@@ -431,7 +424,7 @@ public:
   }
 
   void
-  set_parameters_ale_poisson(unsigned int const degree) final
+  set_parameters_ale_poisson() final
   {
     using namespace Poisson;
 
@@ -441,10 +434,8 @@ public:
     param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION
-    param.triangulation_type     = TriangulationType::Distributed;
-    param.mapping                = MappingType::Isoparametric;
-    param.degree                 = degree;
     param.spatial_discretization = SpatialDiscretization::CG;
+    param.degree                 = this->fluid_param.grid.mapping_degree;
 
     // SOLVER
     param.solver         = Poisson::Solver::FGMRES;
@@ -494,7 +485,7 @@ public:
   }
 
   void
-  set_parameters_ale_elasticity(unsigned int const degree) final
+  set_parameters_ale_elasticity() final
   {
     using namespace Structure;
 
@@ -506,9 +497,7 @@ public:
     param.large_deformation    = false;
     param.pull_back_traction   = false;
 
-    param.triangulation_type = TriangulationType::Distributed;
-    param.mapping            = MappingType::Isoparametric;
-    param.degree             = degree;
+    param.degree = this->fluid_param.grid.mapping_degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -593,7 +582,7 @@ public:
 
   // Structure
   void
-  set_parameters_structure(unsigned int const degree) final
+  set_parameters_structure() final
   {
     using namespace Structure;
 
@@ -614,9 +603,8 @@ public:
     param.spectral_radius                      = 1;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
-    param.triangulation_type = TriangulationType::Distributed;
-    param.mapping            = MappingType::Isoparametric;
-    param.degree             = degree;
+    param.grid.triangulation_type = TriangulationType::Distributed;
+    param.grid.mapping_degree     = param.degree;
 
     param.newton_solver_data = Newton::SolverData(1e4, ABS_TOL, REL_TOL);
     param.solver             = Structure::Solver::FGMRES;
@@ -634,8 +622,7 @@ public:
     param.update_preconditioner_every_newton_iterations = 10;
   }
 
-  void
-  create_triangulation_structure(Triangulation<2> & tria)
+  void create_triangulation_structure(Triangulation<2> & tria)
   {
     if(STRUCTURE_COVERS_FLAG_ONLY)
     {
@@ -650,25 +637,21 @@ public:
     }
   }
 
-  void
-  create_triangulation_structure(Triangulation<3> & tria)
+  void create_triangulation_structure(Triangulation<3> & tria)
   {
     (void)tria;
 
     AssertThrow(false, ExcMessage("not implemented."));
   }
 
-  std::shared_ptr<Grid<dim, Number>>
-  create_grid_structure(GridData const & grid_data) final
+  void
+  create_grid_structure() final
   {
-    std::shared_ptr<Grid<dim, Number>> grid =
-      std::make_shared<Grid<dim, Number>>(grid_data, this->mpi_comm);
+    create_triangulation_structure(*this->structure_grid->triangulation);
 
-    create_triangulation_structure(*grid->triangulation);
+    this->structure_grid->triangulation->set_all_manifold_ids(0);
 
-    grid->triangulation->set_all_manifold_ids(0);
-
-    for(auto cell : grid->triangulation->active_cell_iterators())
+    for(auto cell : this->structure_grid->triangulation->active_cell_iterators())
     {
       for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -693,9 +676,7 @@ public:
       }
     }
 
-    grid->triangulation->refine_global(grid_data.n_refine_global);
-
-    return grid;
+    this->structure_grid->triangulation->refine_global(this->structure_param.grid.n_refine_global);
   }
 
   void

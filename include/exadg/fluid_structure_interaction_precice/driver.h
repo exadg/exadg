@@ -29,6 +29,9 @@
 #include <exadg/fluid_structure_interaction_precice/precice_adapter.h>
 #include <exadg/fluid_structure_interaction_precice/precice_parameter.h>
 
+// grid
+#include <exadg/grid/get_dynamic_mapping.h>
+
 namespace ExaDG
 {
 namespace FSI
@@ -62,11 +65,7 @@ public:
   }
 
   virtual void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree_fluid,
-        unsigned int const                            degree_structure,
-        unsigned int const                            refine_space_fluid,
-        unsigned int const                            refine_space_structure) = 0;
+  setup() = 0;
 
   virtual void
   solve() const = 0;

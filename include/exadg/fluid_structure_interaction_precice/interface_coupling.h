@@ -62,8 +62,8 @@ private:
 
   typedef std::pair<std::vector<types::global_dof_index>, std::vector<double>> Cache;
 
-  typedef std::vector<Point<dim>>                             ArrayQuadraturePoints;
-  typedef std::vector<std::vector<Tensor<rank, dim, double>>> ArrayVectorTensor;
+  typedef std::vector<Point<dim>> ArrayQuadraturePoints;
+  using ArrayTensor = std::vector<dealii::Tensor<rank, dim, double>>;
 
 public:
   InterfaceCoupling(std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice)
@@ -86,11 +86,11 @@ public:
       // initialize maps
       map_index_dst.emplace(quadrature, MapIndex());
       map_q_points_dst.emplace(quadrature, ArrayQuadraturePoints());
-      map_solution_dst.emplace(quadrature, ArrayVectorTensor());
+      map_solution_dst.emplace(quadrature, ArrayTensor());
 
       MapIndex &              map_index          = map_index_dst.find(quadrature)->second;
       ArrayQuadraturePoints & array_q_points_dst = map_q_points_dst.find(quadrature)->second;
-      ArrayVectorTensor &     array_solution_dst = map_solution_dst.find(quadrature)->second;
+      ArrayTensor &           array_solution_dst = map_solution_dst.find(quadrature)->second;
 
 
       /*
@@ -126,8 +126,7 @@ public:
           }
         }
       }
-      array_solution_dst.resize(array_q_points_dst.size(),
-                                std::vector<Tensor<rank, dim, double>>(1));
+      array_solution_dst.resize(array_q_points_dst.size());
     }
 
     ArrayQuadraturePoints map_q_points_dst_precice;
@@ -157,10 +156,10 @@ public:
     unsigned int c = 0;
     for(auto quadrature : quad_rules_dst)
     {
-      ArrayVectorTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;
+      ArrayTensor & array_solution_dst = map_solution_dst.find(quadrature)->second;
 
       for(unsigned int i = 0; i < array_solution_dst.size(); ++i, ++c)
-        array_solution_dst[i][0] = array_solution_dst_precice[c];
+        array_solution_dst[i] = array_solution_dst_precice[c];
     }
   }
 
@@ -170,7 +169,7 @@ private:
   std::vector<quad_index>                             quad_rules_dst;
   mutable std::map<quad_index, MapIndex>              map_index_dst;
   mutable std::map<quad_index, ArrayQuadraturePoints> map_q_points_dst;
-  mutable std::map<quad_index, ArrayVectorTensor>     map_solution_dst;
+  mutable std::map<quad_index, ArrayTensor>           map_solution_dst;
   mutable std::map<types::boundary_id, std::shared_ptr<FunctionCached<rank, dim, double>>> map_bc;
 };
 

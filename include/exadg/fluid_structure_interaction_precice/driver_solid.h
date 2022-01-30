@@ -34,7 +34,6 @@
 // grid
 #include <exadg/grid/grid_motion_elasticity.h>
 #include <exadg/grid/grid_motion_poisson.h>
-#include <exadg/grid/mapping_degree.h>
 #include <exadg/poisson/spatial_discretization/operator.h>
 
 // Structure
@@ -60,63 +59,32 @@ public:
   }
 
   void
-  setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
-        unsigned int const                            degree_fluid,
-        unsigned int const                            degree_structure,
-        unsigned int const                            refine_space_fluid,
-        unsigned int const                            refine_space_structure)
+  setup()
   {
-    (void)degree_fluid;
-    (void)refine_space_fluid;
+    dealii::Timer timer;
+    timer.restart();
 
-    print_exadg_header(this->pcout);
-    this->pcout << "Setting up fluid-structure interaction solver:" << std::endl;
+    this->pcout << std::endl << "Setting up fluid-structure interaction solver:" << std::endl;
 
-    if(!(this->is_test))
+    /************************************** APPLICATION *****************************************/
     {
-      print_dealii_info(this->pcout);
-      print_matrixfree_info<Number>(this->pcout);
-    }
-    print_MPI_info(this->pcout, this->mpi_comm);
+      dealii::Timer timer_local;
+      timer_local.restart();
 
-    this->application = application;
+      this->application->setup();
+
+      this->timer_tree.insert({"FSI", "Setup", "Application"}, timer_local.wall_time());
+    }
+    /************************************** APPLICATION *****************************************/
 
     /**************************************** STRUCTURE *****************************************/
     {
-      this->application->set_parameters_structure(degree_structure);
-      this->application->get_parameters_structure().check();
-      // Some FSI specific Asserts
-      AssertThrow(this->application->get_parameters_structure().pull_back_traction == true,
-                  ExcMessage("Invalid parameter in context of fluid-structure interaction."));
-      this->application->get_parameters_structure().print(this->pcout,
-                                                          "List of parameters for structure:");
-
-      // grid
-      GridData structure_grid_data;
-      structure_grid_data.triangulation_type =
-        this->application->get_parameters_structure().triangulation_type;
-      structure_grid_data.n_refine_global = refine_space_structure;
-      structure_grid_data.mapping_degree =
-        get_mapping_degree(this->application->get_parameters_structure().mapping,
-                           this->application->get_parameters_structure().degree);
-
-      structure_grid = this->application->create_grid_structure(structure_grid_data);
-      print_grid_info(this->pcout, *structure_grid);
-
-      // boundary conditions
-      this->application->set_boundary_descriptor_structure();
-      verify_boundary_conditions(*this->application->get_boundary_descriptor_structure(),
-                                 *structure_grid);
-
-      // material_descriptor
-      this->application->set_material_descriptor_structure();
-
-      // field functions
-      this->application->set_field_functions_structure();
+      dealii::Timer timer_local;
+      timer_local.restart();
 
       // setup spatial operator
       structure_operator = std::make_shared<Structure::Operator<dim, Number>>(
-        structure_grid,
+        this->application->get_grid_structure(),
         this->application->get_boundary_descriptor_structure(),
         this->application->get_field_functions_structure(),
         this->application->get_material_descriptor_structure(),
@@ -128,8 +96,8 @@ public:
       structure_matrix_free_data = std::make_shared<MatrixFreeData<dim, Number>>();
       structure_matrix_free_data->append(structure_operator);
 
-      structure_matrix_free = std::make_shared<MatrixFree<dim, Number>>();
-      structure_matrix_free->reinit(*structure_grid->mapping,
+      structure_matrix_free = std::make_shared<dealii::MatrixFree<dim, Number>>();
+      structure_matrix_free->reinit(*this->application->get_grid_structure()->mapping,
                                     structure_matrix_free_data->get_dof_handler_vector(),
                                     structure_matrix_free_data->get_constraint_vector(),
                                     structure_matrix_free_data->get_quadrature_vector(),
@@ -140,8 +108,11 @@ public:
       // initialize postprocessor
       structure_postprocessor = this->application->create_postprocessor_structure();
       structure_postprocessor->setup(structure_operator->get_dof_handler(),
-                                     *structure_grid->mapping);
+                                     *this->application->get_grid_structure()->mapping);
+
+      this->timer_tree.insert({"FSI", "Setup", "Structure"}, timer_local.wall_time());
     }
+    /**************************************** STRUCTURE *****************************************/
 
     /**************************************** STRUCTURE *****************************************/
 
@@ -150,7 +121,7 @@ public:
 
     this->precice = std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(
       this->precice_parameters,
-      application->get_boundary_descriptor_structure()->neumann_mortar_bc.begin()->first,
+      this->application->get_boundary_descriptor_structure()->neumann_mortar_bc.begin()->first,
       structure_matrix_free,
       structure_operator->get_dof_index(),
       0 /*dummy*/,
@@ -187,7 +158,6 @@ public:
       structure_time_integrator = std::make_shared<Structure::TimeIntGenAlpha<dim, Number>>(
         structure_operator,
         structure_postprocessor,
-        0 /* refine_time */,
         this->application->get_parameters_structure(),
         this->mpi_comm,
         this->is_test);
@@ -313,7 +283,7 @@ private:
   }
 
   // grid
-  std::shared_ptr<Grid<dim, Number>> structure_grid;
+  std::shared_ptr<Grid<dim>> structure_grid;
 
   // matrix-free
   std::shared_ptr<MatrixFreeData<dim, Number>> structure_matrix_free_data;
