@@ -25,6 +25,9 @@
 // C/C++
 #include <vector>
 
+// deal.II
+#include <deal.II/grid/tria.h>
+
 namespace ExaDG
 {
 /**
