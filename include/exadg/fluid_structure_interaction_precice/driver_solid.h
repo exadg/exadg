@@ -122,14 +122,18 @@ public:
 
     /*********************************** INTERFACE COUPLING *************************************/
 
-    this->precice = std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(
-      this->precice_parameters,
+    this->precice =
+      std::make_shared<Adapter::Adapter<dim, dim, VectorType>>(this->precice_parameters);
+
+    write_mesh_name = this->precice_parameters.write_mesh_name;
+    this->precice->add_write_interface(
       this->application->get_boundary_descriptor_structure()->neumann_mortar_bc.begin()->first,
+      this->precice_parameters.write_mesh_name,
+      this->precice_parameters.write_data_name,
+      "values_on_dofs",
       structure_matrix_free,
       structure_operator->get_dof_index(),
-      0 /*dummy*/,
-      /*unused(dummy)*/ false);
-
+      numbers::invalid_unsigned_int);
 
     // structure to ALE
     // structure to fluid
