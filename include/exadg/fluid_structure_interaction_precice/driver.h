@@ -50,8 +50,8 @@ public:
          std::shared_ptr<ApplicationBase<dim, Number>> app,
          bool const                                    is_test)
     : mpi_comm(comm),
-      application(app),
       pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
+      application(app),
       is_test(is_test)
   {
     dealii::ParameterHandler prm;
@@ -86,13 +86,13 @@ protected:
   // output to std::cout
   ConditionalOStream pcout;
 
-  // do not print wall times if is_test
-  bool const is_test;
-
   // application
   std::shared_ptr<ApplicationBase<dim, Number>>           application;
   std::shared_ptr<Adapter::Adapter<dim, dim, VectorType>> precice;
   Parameters::PreciceAdapterConfiguration                 precice_parameters;
+
+  // do not print wall times if is_test
+  bool const is_test;
 
   /*
    * Computation time (wall clock time).
