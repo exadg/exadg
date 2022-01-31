@@ -600,8 +600,8 @@ public:
     param.start_time                           = 0.0;
     param.end_time                             = END_TIME;
     param.time_step_size                       = DELTA_T;
-    param.gen_alpha_type                       = GenAlphaType::Newmark;
-    param.spectral_radius                      = 1;
+    param.gen_alpha_type                       = GenAlphaType::GenAlpha;
+    param.spectral_radius                      = 0.9;
     param.solver_info_data.interval_time_steps = OUTPUT_SOLVER_INFO_EVERY_TIME_STEPS;
 
     param.grid.triangulation_type = TriangulationType::Distributed;

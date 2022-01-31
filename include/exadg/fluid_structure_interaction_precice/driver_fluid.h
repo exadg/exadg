@@ -254,8 +254,7 @@ public:
                                        fluid_matrix_free,
                                        fluid_operator->get_dof_index_velocity(),
                                        fluid_operator->get_quad_index_velocity_linear());
-    //  fluid_matrix_free_data->get_quad_index(
-    //    "interface_quadrature"));
+
     // structure to ALE
     {
       if(this->application->get_parameters_fluid().mesh_movement_type ==
@@ -436,6 +435,7 @@ public:
     this->pcout << std::endl << "Timings for level 1:" << std::endl;
     this->timer_tree.print_level(this->pcout, 1);
 
+    // TODO: This assumes that we have at least two levels, otherwise failure
     this->pcout << std::endl << "Timings for level 2:" << std::endl;
     this->timer_tree.print_level(this->pcout, 2);
 

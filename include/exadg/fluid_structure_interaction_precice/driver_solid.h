@@ -151,7 +151,11 @@ public:
                           structure_operator->get_dof_index(),
                           quad_indices,
                           this->application->get_boundary_descriptor_structure()->neumann_mortar_bc,
-                          displacement_structure);
+                          this->precice_parameters.read_mesh_name,
+                          "Stress");
+
+      displacement_structure = 0;
+      this->precice->initialize_precice(displacement_structure);
     }
 
     /*********************************** INTERFACE COUPLING *************************************/
@@ -183,25 +187,23 @@ public:
   {
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
            ExcNotImplemented());
-    VectorType d_old;
-    structure_operator->initialize_dof_vector(d_old);
-    structure_time_integrator->advance_one_timestep_pre_solve(true);
+    // VectorType d_old;
+    // structure_operator->initialize_dof_vector(d_old);
+    bool is_new_time_window = true;
 
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
-      structure_time_integrator->advance_one_timestep_pre_solve(
-        this->precice->is_time_window_complete());
+      structure_time_integrator->advance_one_timestep_pre_solve(is_new_time_window);
 
-      this->precice->save_current_state_if_required(
-        [&]() { d_old = structure_time_integrator->get_displacement_np(); });
+      this->precice->save_current_state_if_required([&]() {});
 
       // update stress boundary condition for solid
       coupling_fluid_to_structure();
 
       // solve structural problem
       // store_solution needs to be true for compatibility
-      structure_time_integrator->advance_one_timestep_partitioned_solve(false, true);
+      structure_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window, true);
       // send displacement data to ale
       coupling_structure_to_ale(structure_time_integrator->get_displacement_np(),
                                 structure_time_integrator->get_time_step_size());
@@ -211,12 +213,12 @@ public:
       //                             structure_time_integrator->get_time_step_size());
 
       this->precice->advance(structure_time_integrator->get_time_step_size());
+      is_new_time_window = this->precice->is_time_window_complete();
 
       // Needs to be called before the swaps in post_solve
-      this->precice->reload_old_state_if_required(
-        [&]() { structure_time_integrator->set_displacement(d_old); });
+      this->precice->reload_old_state_if_required([&]() {});
 
-      if(this->precice->is_time_window_complete())
+      if(is_new_time_window)
         structure_time_integrator->advance_one_timestep_post_solve();
     }
   }
@@ -275,7 +277,10 @@ private:
   coupling_structure_to_ale(VectorType const & displacement_structure,
                             const double       time_step_size) const
   {
-    this->precice->write_data(displacement_structure, time_step_size);
+    this->precice->write_data(write_mesh_name,
+                              "Displacement",
+                              displacement_structure,
+                              time_step_size);
   }
 
   void
@@ -311,6 +316,8 @@ private:
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator;
+
+  std::string write_mesh_name{};
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };

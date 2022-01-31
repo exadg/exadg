@@ -20,7 +20,7 @@ public:
   ExaDGInterface(std::shared_ptr<const MatrixFree<dim, double, VectorizedArrayType>> data,
                  std::shared_ptr<precice::SolverInterface>                           precice,
                  std::string                                                         mesh_name,
-                 types::boundary_id                                                  interface_id)
+                 types::boundary_id interface_id = numbers::invalid_unsigned_int)
     : CouplingInterface<dim, data_dim, VectorizedArrayType>(data, precice, mesh_name, interface_id)
   {
   }
