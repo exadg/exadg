@@ -13,10 +13,11 @@ var searchData=
   ['preconditionerbase_3c_20dealii_3a_3avectorizedarray_3c_20number_20_3e_20_3e_10',['PreconditionerBase&lt; dealii::VectorizedArray&lt; Number &gt; &gt;',['../classExaDG_1_1Elementwise_1_1PreconditionerBase.html',1,'ExaDG::Elementwise']]],
   ['preconditionerbase_3c_20number_20_3e_11',['PreconditionerBase&lt; Number &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
   ['preconditionerbase_3c_20operator_3a_3avalue_5ftype_20_3e_12',['PreconditionerBase&lt; Operator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
-  ['preconditionerbase_3c_20typenameoperator_3a_3avalue_5ftype_20_3e_13',['PreconditionerBase&lt; typenameOperator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
-  ['preconditioneridentity_14',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
-  ['pressuredifferencecalculator_15',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
-  ['pressuredifferencedata_16',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
-  ['projectionoperator_17',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
-  ['projectionoperatordata_18',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
+  ['preconditionerbase_3c_20typename_20operator_3a_3avalue_5ftype_20_3e_13',['PreconditionerBase&lt; typename Operator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
+  ['preconditionerbase_3c_20typenameoperator_3a_3avalue_5ftype_20_3e_14',['PreconditionerBase&lt; typenameOperator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
+  ['preconditioneridentity_15',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
+  ['pressuredifferencecalculator_16',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
+  ['pressuredifferencedata_17',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
+  ['projectionoperator_18',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
+  ['projectionoperatordata_19',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
 ];

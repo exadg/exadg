@@ -15,6 +15,7 @@ var searchData=
   ['timertree_12',['TimerTree',['../classExaDG_1_1TimerTree.html',1,'ExaDG']]],
   ['triangulation_13',['triangulation',['../classExaDG_1_1Grid.html#a5655b41ce6108b3c3e50a5eb7fb2bcf5',1,'ExaDG::Grid']]],
   ['turbulencemodel_14',['TurbulenceModel',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
-  ['turbulencemodeldata_15',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
-  ['turbulentchanneldata_16',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
+  ['turbulencemodel_3c_20dim_2c_20double_20_3e_15',['TurbulenceModel&lt; dim, double &gt;',['../classExaDG_1_1IncNS_1_1TurbulenceModel.html',1,'ExaDG::IncNS']]],
+  ['turbulencemodeldata_16',['TurbulenceModelData',['../structExaDG_1_1IncNS_1_1TurbulenceModelData.html',1,'ExaDG::IncNS']]],
+  ['turbulentchanneldata_17',['TurbulentChannelData',['../structExaDG_1_1TurbulentChannelData.html',1,'ExaDG']]]
 ];

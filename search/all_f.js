@@ -14,12 +14,13 @@ var searchData=
   ['preconditionerbase_3c_20dealii_3a_3avectorizedarray_3c_20number_20_3e_20_3e_11',['PreconditionerBase&lt; dealii::VectorizedArray&lt; Number &gt; &gt;',['../classExaDG_1_1Elementwise_1_1PreconditionerBase.html',1,'ExaDG::Elementwise']]],
   ['preconditionerbase_3c_20number_20_3e_12',['PreconditionerBase&lt; Number &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
   ['preconditionerbase_3c_20operator_3a_3avalue_5ftype_20_3e_13',['PreconditionerBase&lt; Operator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
-  ['preconditionerbase_3c_20typenameoperator_3a_3avalue_5ftype_20_3e_14',['PreconditionerBase&lt; typenameOperator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
-  ['preconditioneridentity_15',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
-  ['pressuredifferencecalculator_16',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
-  ['pressuredifferencedata_17',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
-  ['print_5fiterations_18',['print_iterations',['../classExaDG_1_1GridMotionElasticity.html#afacd3193eece5fd85d68ddc3853eb602',1,'ExaDG::GridMotionElasticity::print_iterations()'],['../classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca',1,'ExaDG::GridMotionInterface::print_iterations()'],['../classExaDG_1_1GridMotionPoisson.html#ad2f9ee28df7619af9d82160f52b4edad',1,'ExaDG::GridMotionPoisson::print_iterations()']]],
-  ['printtimings_19',['printTimings',['../classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52',1,'dealspectrum::DealSpectrumTimer']]],
-  ['projectionoperator_20',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
-  ['projectionoperatordata_21',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
+  ['preconditionerbase_3c_20typename_20operator_3a_3avalue_5ftype_20_3e_14',['PreconditionerBase&lt; typename Operator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
+  ['preconditionerbase_3c_20typenameoperator_3a_3avalue_5ftype_20_3e_15',['PreconditionerBase&lt; typenameOperator::value_type &gt;',['../classExaDG_1_1PreconditionerBase.html',1,'ExaDG']]],
+  ['preconditioneridentity_16',['PreconditionerIdentity',['../classExaDG_1_1Elementwise_1_1PreconditionerIdentity.html',1,'ExaDG::Elementwise']]],
+  ['pressuredifferencecalculator_17',['PressureDifferenceCalculator',['../classExaDG_1_1PressureDifferenceCalculator.html',1,'ExaDG']]],
+  ['pressuredifferencedata_18',['PressureDifferenceData',['../structExaDG_1_1PressureDifferenceData.html',1,'ExaDG']]],
+  ['print_5fiterations_19',['print_iterations',['../classExaDG_1_1GridMotionElasticity.html#afacd3193eece5fd85d68ddc3853eb602',1,'ExaDG::GridMotionElasticity::print_iterations()'],['../classExaDG_1_1GridMotionInterface.html#a7bbc3a866cee232808762fced6f967ca',1,'ExaDG::GridMotionInterface::print_iterations()'],['../classExaDG_1_1GridMotionPoisson.html#ad2f9ee28df7619af9d82160f52b4edad',1,'ExaDG::GridMotionPoisson::print_iterations()']]],
+  ['printtimings_20',['printTimings',['../classdealspectrum_1_1DealSpectrumTimer.html#a679b686b7478ac7f65c3bafe70e64a52',1,'dealspectrum::DealSpectrumTimer']]],
+  ['projectionoperator_21',['ProjectionOperator',['../classExaDG_1_1IncNS_1_1ProjectionOperator.html',1,'ExaDG::IncNS']]],
+  ['projectionoperatordata_22',['ProjectionOperatorData',['../structExaDG_1_1IncNS_1_1ProjectionOperatorData.html',1,'ExaDG::IncNS']]]
 ];
