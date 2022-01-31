@@ -368,15 +368,12 @@ public:
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
            ExcNotImplemented());
 
-    // initial true
-    fluid_time_integrator->advance_one_timestep_pre_solve(true);
-
+    bool is_new_time_window = true;
     // preCICE dictates when the time loop is finished
     while(this->precice->is_coupling_ongoing())
     {
       // pre-solve
-      fluid_time_integrator->advance_one_timestep_pre_solve(
-        this->precice->is_time_window_complete());
+      fluid_time_integrator->advance_one_timestep_pre_solve(is_new_time_window);
 
       this->precice->save_current_state_if_required([&]() { /*TODO*/ });
 
@@ -391,19 +388,20 @@ public:
         coupling_structure_to_fluid();
 
         // solve fluid problem
-        fluid_time_integrator->advance_one_timestep_partitioned_solve(false, true);
+        fluid_time_integrator->advance_one_timestep_partitioned_solve(is_new_time_window, true);
 
-        // update stress boundary condition for solid
+        // compute and send stress to solid
         coupling_fluid_to_structure();
 
         this->precice->advance(fluid_time_integrator->get_time_step_size());
+        is_new_time_window = this->precice->is_time_window_complete();
       }
 
       // Needs to be called before the swaps in post_solve
       this->precice->reload_old_state_if_required([&]() { /*TODO*/ });
 
       // post-solve
-      if(this->precice->is_time_window_complete())
+      if(is_new_time_window)
         fluid_time_integrator->advance_one_timestep_post_solve();
     }
   }
@@ -499,8 +497,10 @@ private:
                                           fluid_time_integrator->get_velocity_np(),
                                           fluid_time_integrator->get_pressure_np());
     stress_fluid *= -1.0;
-
-    this->precice->advance(fluid_time_integrator->get_time_step_size());
+    this->precice->write_data(write_mesh_name,
+                              write_data_name,
+                              stress_fluid,
+                              fluid_time_integrator->get_time_step_size());
   }
 
   void
@@ -562,7 +562,8 @@ private:
 
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_fluid;
   std::shared_ptr<InterfaceCoupling<dim, dim, Number>> communicator_ale;
-
+  std::string                                          write_mesh_name{};
+  std::string                                          write_data_name{};
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 };
 

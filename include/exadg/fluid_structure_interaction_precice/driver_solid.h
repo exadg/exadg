@@ -187,8 +187,7 @@ public:
   {
     Assert(this->application->get_parameters_fluid().adaptive_time_stepping == false,
            ExcNotImplemented());
-    // VectorType d_old;
-    // structure_operator->initialize_dof_vector(d_old);
+
     bool is_new_time_window = true;
 
     // preCICE dictates when the time loop is finished
