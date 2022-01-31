@@ -50,7 +50,7 @@ refine_local(dealii::Triangulation<dim> & tria, std::vector<int> const & vector_
     // loop over all material IDs in refinement vector
     for(size_t material_id = 0; material_id < refine_local.size(); material_id++)
     {
-      // check if generation has to be refined
+      // only if cells with current material_id have to be refined
       if(refine_local[material_id] > 0)
       {
         for(auto & cell : tria.active_cell_iterators())
